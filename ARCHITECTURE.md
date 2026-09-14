@@ -1,0 +1,318 @@
+﻿# Office Automation System  Architecture
+
+## 1. Architecture Style
+
+The application uses a Modular Monolith architecture.
+
+It is a single Laravel application and a single deployable system.
+
+Microservices are explicitly out of scope.
+
+Modules have clear ownership boundaries and controlled dependencies.
+
+The initial implementation uses a directory-based modular architecture and does not introduce a third-party modularization package unless a future architectural decision explicitly requires one.
+
+---
+
+## 2. High-Level Structure
+
+The target logical structure is:
+
+app/
+ Core/
+    Authentication/
+    Users/
+    Authorization/
+    Departments/
+    Settings/
+    Shared/
+
+ Modules/
+    Projects/
+    Tasks/
+
+ Shared/
+     Infrastructure/
+     Support/
+
+This structure is an architectural target.
+
+It must not be created prematurely before the relevant implementation phase.
+
+---
+
+## 3. Core
+
+Core owns cross-cutting system capabilities and identity.
+
+Responsibilities include:
+
+- Authentication
+- Users
+- User profile
+- Roles
+- Permissions
+- Departments
+- Settings
+
+Core must not contain project- or task-specific business rules.
+
+---
+
+## 4. Projects Module
+
+Projects owns project-related business concepts.
+
+Expected concepts include:
+
+- Project
+- Project status
+- Project manager
+- Project membership
+- Project lifecycle
+
+Projects must expose stable application-level contracts when other modules need project information.
+
+Internal implementation details should not be accessed directly by other modules.
+
+---
+
+## 5. Tasks Module
+
+Tasks owns task-related business concepts.
+
+Expected concepts include:
+
+- Task
+- Task assignment
+- Task status
+- Priority
+- Due date
+- Comments
+- Attachments
+- Activity/history
+- Completion/report
+
+Tasks may depend on concepts exposed by Core and Projects through controlled application contracts.
+
+Tasks must not directly manipulate internal implementation details of another module.
+
+---
+
+## 6. Dependency Rules
+
+General rules:
+
+1. A module owns its business rules and data.
+2. Other modules must not directly modify another module's data.
+3. Cross-module communication should use explicit application contracts, interfaces, services, or events when appropriate.
+4. Infrastructure details must not leak into unrelated business logic.
+5. Circular module dependencies must be avoided.
+6. Shared code must remain genuinely generic.
+7. A shared folder must not become a dumping ground for business logic.
+
+The exact dependency graph will be refined when modules are implemented.
+
+---
+
+## 7. Layers
+
+Where useful, a module may contain:
+
+- Domain
+- Application
+- Infrastructure
+- Presentation
+
+Not every module must contain every layer.
+
+Layers should be introduced according to actual complexity rather than as empty architectural ceremony.
+
+### Domain
+
+Contains business concepts and rules that are independent of UI and infrastructure.
+
+### Application
+
+Coordinates use cases and application workflows.
+
+### Infrastructure
+
+Contains framework/database/storage/external-service implementations.
+
+### Presentation
+
+Contains controllers, requests, resources and UI-facing integration.
+
+---
+
+## 8. Database Ownership
+
+Each module owns the database structures associated with its business domain.
+
+Initial conceptual ownership:
+
+Core:
+- users
+- roles
+- permissions
+- role/permission relationships
+- departments
+- settings
+
+Projects:
+- projects
+- project memberships
+
+Tasks:
+- tasks
+- assignments
+- comments
+- attachments metadata
+- activities
+- reports
+
+The exact schema and relationships will be designed before implementation.
+
+Database naming remains English.
+
+---
+
+## 9. Authentication and Authorization
+
+Authentication uses Laravel's web/session authentication model unless a later architectural requirement changes this decision.
+
+Authorization is permission-based.
+
+Roles are collections of permissions.
+
+Business actions must be authorized on the backend.
+
+Frontend permission checks are for UX only and must never replace backend authorization.
+
+---
+
+## 10. Localization Architecture
+
+User-facing strings must not be hard-coded into business logic or Vue components where localization is required.
+
+Persian is the initial locale.
+
+English remains the programming/documentation language.
+
+The application must support a future locale switch without redesigning the UI architecture.
+
+RTL is the default presentation direction for the initial release.
+
+---
+
+## 11. Date, Time and Timezone
+
+Database storage uses standard Gregorian DateTime-compatible values.
+
+The application must distinguish:
+
+- Stored timestamp
+- Application timezone
+- User-facing formatted date
+
+Jalali presentation belongs to the presentation/localization layer and must not alter database storage semantics.
+
+Timezone must be configurable.
+
+---
+
+## 12. File Storage
+
+File handling must use Laravel's filesystem abstraction.
+
+Business logic should not depend directly on a local filesystem path.
+
+Attachments must have controlled access.
+
+Uploaded files must be validated and stored using safe generated filenames.
+
+The architecture must permit a future switch from local storage to S3-compatible object storage.
+
+---
+
+## 13. Infrastructure Evolution
+
+Redis is not required during the initial bootstrap.
+
+It may later be introduced for:
+
+- Cache
+- Queues
+- Rate limiting
+- Temporary state
+- Other justified use cases
+
+Laravel Reverb/WebSocket is also deferred until real-time functionality requires it.
+
+---
+
+## 14. Database Platform
+
+Microsoft SQL Server is the target database.
+
+SQLite may exist in the Laravel skeleton but is not considered the production database architecture.
+
+The application must be tested against SQL Server before database-dependent feature development is considered complete.
+
+---
+
+## 15. Frontend Architecture
+
+Vue 3 + TypeScript + Inertia.js is the frontend architecture.
+
+Components should remain focused.
+
+Avoid large components containing:
+
+- Data fetching
+- Business rules
+- Complex state management
+- Multiple unrelated UI responsibilities
+
+Reusable UI components belong in an appropriate shared UI layer.
+
+Business-specific components remain within their module.
+
+---
+
+## 16. API / Transport
+
+The initial application uses Inertia.js rather than creating a separate SPA/API architecture.
+
+A separate public API is not required unless a future requirement justifies it.
+
+---
+
+## 17. Testing Architecture
+
+Tests should exist at appropriate levels:
+
+- Unit tests for isolated business logic
+- Feature tests for application behavior
+- Authorization tests for permissions
+- Integration tests where infrastructure boundaries require them
+
+Tests must validate actual behavior.
+
+Tests must not be weakened or bypassed merely to obtain a passing result.
+
+---
+
+## 18. Architectural Change Policy
+
+Significant architectural changes require:
+
+1. Identification of the problem.
+2. Explanation of alternatives.
+3. Selection of the preferred approach.
+4. Documentation update.
+5. Implementation.
+6. Appropriate tests.
+
+No major architectural change should be introduced silently.

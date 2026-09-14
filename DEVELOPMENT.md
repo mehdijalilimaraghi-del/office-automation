@@ -1,0 +1,296 @@
+﻿# Office Automation System  Development Guide
+
+## 1. Development Phases
+
+### Phase 0  Architecture
+
+Current phase.
+
+Tasks:
+
+- Inspect environment
+- Inspect Laravel skeleton
+- Define architecture
+- Define module boundaries
+- Define database entities
+- Define localization strategy
+- Define authentication/authorization strategy
+- Create and maintain documentation
+
+No major business feature is implemented in Phase 0.
+
+---
+
+### Phase 1  Bootstrap
+
+Planned work:
+
+- Laravel configuration
+- Vue 3
+- TypeScript
+- Inertia.js
+- Tailwind CSS
+- shadcn-vue
+- Vite
+- Persian locale
+- RTL
+- Base layout
+- Authentication
+- SQL Server connection
+- Git repository
+- Build and tests
+
+---
+
+### Phase 2  Core
+
+Planned work:
+
+- Authentication
+- Users
+- User profile
+- Roles
+- Permissions
+- Departments
+- Settings
+
+---
+
+### Phase 3  Projects
+
+Planned work:
+
+- Project CRUD
+- Project status
+- Project manager
+- Members
+- Dates
+- Project view
+
+---
+
+### Phase 4  Tasks
+
+Planned work:
+
+- Task CRUD
+- Assignment
+- Status
+- Priority
+- Due date
+- Description
+- Comments
+- Attachments
+- Activity/history
+- Completion/report
+
+---
+
+### Phase 5  Dashboard
+
+Planned work:
+
+- My Tasks
+- Today's Tasks
+- Overdue Tasks
+- Active Projects
+- Completed Tasks
+- Basic statistics
+
+---
+
+### Phase 6  Stabilization
+
+Planned work:
+
+- Security review
+- Testing
+- Performance
+- RTL review
+- Persian UI review
+- Responsive UI
+- Error handling
+- Production readiness
+
+---
+
+## 2. Git Workflow
+
+Git is part of the project from the beginning.
+
+Commits should be:
+
+- Small
+- Focused
+- Meaningful
+- Related to one logical change
+
+Examples:
+
+chore: initialize laravel project
+chore: define project architecture
+feat: add core authentication
+feat: add users and roles
+feat: add projects module
+feat: add task management
+
+Do not combine unrelated changes into one commit.
+
+---
+
+## 3. Change Workflow
+
+Before every meaningful change:
+
+1. Inspect the relevant existing files.
+2. Identify the root cause or requirement.
+3. Define the smallest required change.
+4. Make the change.
+5. Run the relevant test.
+6. Inspect the result.
+7. Update documentation if required.
+8. Stop before moving to the next feature.
+
+---
+
+## 4. Troubleshooting
+
+Troubleshooting should normally follow a one-change/one-test approach.
+
+Do not change multiple unrelated variables at once.
+
+Do not remove migrations, data, validation or security controls to hide an error.
+
+Fix the root cause.
+
+When environment behavior differs from expectations, inspect the environment before modifying the application.
+
+---
+
+## 5. Dependencies
+
+A new Composer or NPM package requires a concrete reason.
+
+Before adding a dependency, evaluate:
+
+- Whether Laravel already provides the required capability
+- Maintenance status
+- Compatibility with the current PHP/Laravel version
+- Security implications
+- Long-term architectural impact
+
+Avoid unnecessary packages.
+
+---
+
+## 6. Database Rules
+
+- SQL Server is the target database.
+- Schema changes must use migrations.
+- Data must not be deleted to hide migration problems.
+- Existing migrations must not be rewritten merely to make development easier once they have become part of a shared environment.
+- Destructive database operations require explicit justification.
+- Foreign keys and indexes should be designed intentionally.
+- Date/time fields use standard database-compatible DateTime types.
+
+---
+
+## 7. Security Rules
+
+Security-sensitive behavior must be enforced server-side.
+
+Never rely solely on:
+
+- Vue conditions
+- Hidden buttons
+- Client-side validation
+- Route visibility
+
+Authorization must be enforced on the backend.
+
+File uploads require:
+
+- Type validation
+- Size validation
+- Safe generated names
+- Controlled storage
+- Authorization checks
+
+---
+
+## 8. Localization Rules
+
+All new user-facing text must support localization.
+
+Do not introduce Persian strings directly into business logic when a translation key is appropriate.
+
+Initial UI:
+
+- Persian
+- RTL
+
+Code:
+
+- English
+- English identifiers
+- English technical documentation
+
+---
+
+## 9. Frontend Rules
+
+Vue components should remain focused.
+
+Prefer reusable components for genuinely reusable UI.
+
+Do not create abstractions solely because two components happen to look similar once.
+
+TypeScript should be used for frontend application code.
+
+Inertia should be used for normal application navigation and server-driven page data.
+
+---
+
+## 10. Documentation
+
+The following documents are authoritative project documents:
+
+- PROJECT_SPEC.md
+- ARCHITECTURE.md
+- DEVELOPMENT.md
+
+When a significant requirement or architectural decision changes, update the relevant document in the same development phase.
+
+---
+
+## 11. Definition of Done
+
+A change is not considered complete merely because the code was written.
+
+A development step is complete when:
+
+- The intended behavior is implemented.
+- Relevant tests pass.
+- No known regression was introduced.
+- Authorization is correct.
+- Validation is correct.
+- Localization requirements are satisfied.
+- RTL requirements are satisfied where applicable.
+- Documentation is updated when necessary.
+- Git state is clean enough to understand the change.
+
+---
+
+## 12. Current Environment
+
+Current development environment:
+
+- Windows
+- PHP 8.5.x
+- Composer 2.10.x
+- Node.js 24.x
+- NPM 11.x
+- Laravel 12.x
+- Microsoft SQL Server target
+
+The actual installed versions should be verified rather than assumed when compatibility matters.
