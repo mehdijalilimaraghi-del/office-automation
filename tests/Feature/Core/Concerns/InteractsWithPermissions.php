@@ -1,0 +1,40 @@
+<?php
+
+namespace Tests\Feature\Core\Concerns;
+
+use App\Core\Permissions\Models\Permission;
+use App\Core\Roles\Models\Role;
+use App\Models\User;
+
+trait InteractsWithPermissions
+{
+    protected function grantPermissions(
+        User $user,
+        array $permissionCodes
+    ): void {
+        $role = Role::create([
+            'name' => 'Test Administrator',
+            'code' => 'TEST_ADMIN',
+            'description' => null,
+            'is_active' => true,
+            'is_system' => false,
+        ]);
+
+        $permissions = collect($permissionCodes)
+            ->map(
+                fn (string $code) => Permission::create([
+                    'name' => $code,
+                    'code' => $code,
+                    'description' => null,
+                    'is_active' => true,
+                    'is_system' => true,
+                ])
+            );
+
+        $role->permissions()->attach(
+            $permissions->pluck('id')->all()
+        );
+
+        $user->roles()->attach($role->id);
+    }
+}
