@@ -47,10 +47,8 @@ const statusLabels: Record<Project['status'], string> = {
                     </p>
                 </div>
 
-                <Button as-child>
-                    <Link :href="route('projects.create')">
-                        ایجاد پروژه
-                    </Link>
+                <Button type="button" disabled>
+                    ایجاد پروژه
                 </Button>
             </div>
         </template>
