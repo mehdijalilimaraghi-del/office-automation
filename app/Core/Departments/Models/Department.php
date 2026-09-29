@@ -3,6 +3,7 @@
 namespace App\Core\Departments\Models;
 
 use App\Models\User;
+use App\Modules\Projects\Models\Project;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -35,6 +36,15 @@ class Department extends Model
     public function children(): HasMany
     {
         return $this->hasMany(self::class, 'parent_id');
+    }
+
+    public function defaultProject(): BelongsTo
+    {
+        return $this->belongsTo(
+            Project::class,
+            'id',
+            'department_id'
+        )->where('is_system_default', true);
     }
 
     public function manager(): BelongsTo
