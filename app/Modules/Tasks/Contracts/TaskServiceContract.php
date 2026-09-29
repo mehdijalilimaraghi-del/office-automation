@@ -4,9 +4,12 @@ namespace App\Modules\Tasks\Contracts;
 
 use App\Models\User;
 use App\Modules\Tasks\Models\Task;
+use Illuminate\Support\Collection;
 
 interface TaskServiceContract
 {
+    public function list(): Collection;
+
     public function create(
         array $data,
         User $creator
@@ -26,4 +29,6 @@ interface TaskServiceContract
         Task $task,
         string $status
     ): Task;
+
+    public function delete(Task $task): void;
 }
