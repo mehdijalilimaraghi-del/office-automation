@@ -30,7 +30,8 @@ class Role extends Model
         return $this->belongsToMany(
             Permission::class,
             'permission_role'
-        )->withTimestamps();
+        )->withPivot('scope')
+            ->withTimestamps();
     }
 
     public function users(): BelongsToMany
