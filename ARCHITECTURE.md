@@ -316,3 +316,16 @@ Significant architectural changes require:
 6. Appropriate tests.
 
 No major architectural change should be introduced silently.
+
+## Internal Organization Structure
+
+The initial system represents a single internal company. The internal organization is not modeled as an `organizations` table.
+
+Users and departments have a many-to-many relationship through `department_memberships`. A user may belong to zero, one, or multiple departments. At most one membership per user may be marked `is_primary`; this is an application/domain rule.
+
+Departments support unlimited hierarchy through `parent_id`. Each department may have one manager through `manager_id`, and the department manager must also be a member of that department. A user may manage multiple departments.
+
+The legacy `users.department_id` field is removed after migration of existing assignments to `department_memberships`.
+
+External organizations (customers, suppliers, partners, and their contacts) are a separate future domain and must not be merged with the internal organization structure.
+
