@@ -8,6 +8,10 @@ interface Department {
     name: string;
     code: string | null;
     is_active: boolean;
+    pivot?: {
+        is_primary: boolean;
+        joined_at: string | null;
+    };
 }
 
 interface Role {
@@ -22,7 +26,7 @@ interface User {
     name: string;
     email: string;
     status: 'active' | 'inactive';
-    department: Department | null;
+    departments: Department[];
     roles: Role[];
 }
 
@@ -40,7 +44,8 @@ const form = useForm({
     email: '',
     password: '',
     password_confirmation: '',
-    department_id: '',
+    department_ids: [] as number[],
+    primary_department_id: null as number | null,
     status: 'active' as 'active' | 'inactive',
     role_ids: [] as number[],
 });
@@ -52,6 +57,8 @@ function openCreate(): void {
     form.clearErrors();
 
     form.status = 'active';
+    form.department_ids = [];
+    form.primary_department_id = null;
     form.role_ids = [];
 
     showForm.value = true;
@@ -66,9 +73,13 @@ function openEdit(user: User): void {
     form.email = user.email;
     form.password = '';
     form.password_confirmation = '';
-    form.department_id = user.department?.id
-        ? String(user.department.id)
-        : '';
+    form.department_ids = user.departments.map(
+        (department) => department.id,
+    );
+    form.primary_department_id =
+        user.departments.find(
+            (department) => department.pivot?.is_primary,
+        )?.id ?? null;
     form.status = user.status;
     form.role_ids = user.roles.map((role) => role.id);
 
@@ -98,6 +109,30 @@ function submit(): void {
     }
 
     form.post(route('users.store'), options);
+}
+
+function toggleDepartment(departmentId: number): void {
+    if (form.department_ids.includes(departmentId)) {
+        form.department_ids = form.department_ids.filter(
+            (id) => id !== departmentId,
+        );
+
+        if (form.primary_department_id === departmentId) {
+            form.primary_department_id =
+                form.department_ids[0] ?? null;
+        }
+
+        return;
+    }
+
+    form.department_ids = [
+        ...form.department_ids,
+        departmentId,
+    ];
+
+    if (form.primary_department_id === null) {
+        form.primary_department_id = departmentId;
+    }
 }
 
 function toggleRole(roleId: number): void {
@@ -463,39 +498,80 @@ function currentUserId(): number | null {
 
                             <div>
                                 <label
+                                    class="mb-2 block text-sm font-medium"
+                                >
+                                    واحدهای سازمانی
+                                </label>
+
+                                <div
+                                    class="grid gap-2 rounded-lg border p-3 md:grid-cols-2"
+                                >
+                                    <label
+                                        v-for="department in props.departments"
+                                        :key="department.id"
+                                        class="flex cursor-pointer items-center gap-2 rounded-md p-2 hover:bg-gray-50"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            :checked="form.department_ids.includes(department.id)"
+                                            :disabled="!department.is_active"
+                                            @change="toggleDepartment(department.id)"
+                                        />
+
+                                        <span>
+                                            {{ department.name }}
+                                        </span>
+
+                                        <span
+                                            v-if="!department.is_active"
+                                            class="text-xs text-gray-400"
+                                        >
+                                            غیرفعال
+                                        </span>
+                                    </label>
+                                </div>
+
+                                <p
+                                    v-if="form.errors.department_ids"
+                                    class="mt-1 text-xs text-red-600"
+                                >
+                                    {{ form.errors.department_ids }}
+                                </p>
+                            </div>
+
+                            <div>
+                                <label
                                     class="mb-1 block text-sm font-medium"
                                 >
-                                    واحد سازمانی
+                                    واحد سازمانی اصلی
                                 </label>
 
                                 <select
-                                    v-model="form.department_id"
+                                    v-model="form.primary_department_id"
                                     class="w-full rounded-lg border-gray-300"
+                                    :disabled="form.department_ids.length === 0"
                                 >
-                                    <option value="">
-                                        انتخاب واحد
+                                    <option :value="null">
+                                        بدون واحد اصلی
                                     </option>
 
                                     <option
-                                        v-for="department in props.departments"
+                                        v-for="department in props.departments.filter(
+                                            (department) =>
+                                                form.department_ids.includes(department.id),
+                                        )"
                                         :key="department.id"
-                                        :value="String(department.id)"
-                                        :disabled="!department.is_active"
+                                        :value="department.id"
                                     >
                                         {{ department.name }}
-                                        {{
-                                            !department.is_active
-                                                ? ' (غیرفعال)'
-                                                : ''
-                                        }}
                                     </option>
                                 </select>
 
                                 <p
-                                    v-if="form.errors.department_id"
+                                    v-if="form.errors.primary_department_id"
                                     class="mt-1 text-xs text-red-600"
                                 >
-                                    {{ form.errors.department_id }}
+                                    {{ form.errors.primary_department_id }}
                                 </p>
                             </div>
 
