@@ -247,6 +247,60 @@ class TaskPolicyTest extends TestCase
         );
     }
 
+    public function test_user_with_comment_permission_can_comment_accessible_task(): void
+    {
+        $user = $this->userWithPermission('tasks.comment');
+        $project = $this->createProject($user);
+        $task = $this->createTask($project, $user);
+
+        $this->assertTrue($user->can('comment', $task));
+    }
+
+    public function test_user_without_comment_permission_cannot_comment_task(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $project = $this->createProject($user);
+        $task = $this->createTask($project, $user);
+
+        $this->assertFalse($user->can('comment', $task));
+    }
+
+    public function test_user_with_work_log_permission_can_log_accessible_task(): void
+    {
+        $user = $this->userWithPermission('tasks.log_work');
+        $project = $this->createProject($user);
+        $task = $this->createTask($project, $user);
+
+        $this->assertTrue($user->can('logWork', $task));
+    }
+
+    public function test_user_without_work_log_permission_cannot_log_task(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $project = $this->createProject($user);
+        $task = $this->createTask($project, $user);
+
+        $this->assertFalse($user->can('logWork', $task));
+    }
+
+    public function test_user_with_reminder_permission_can_create_reminder_for_accessible_task(): void
+    {
+        $user = $this->userWithPermission('tasks.create_reminder');
+        $project = $this->createProject($user);
+        $task = $this->createTask($project, $user);
+
+        $this->assertTrue($user->can('createReminder', $task));
+    }
+
+    public function test_user_without_reminder_permission_cannot_create_reminder(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $project = $this->createProject($user);
+        $task = $this->createTask($project, $user);
+
+        $this->assertFalse($user->can('createReminder', $task));
+    }
+
     public function test_inactive_user_cannot_access_task(): void
     {
         $user = $this->userWithPermission('tasks.view');
