@@ -43,6 +43,15 @@ class ProjectController extends Controller
         ]);
     }
 
+    public function edit(Project $project): Response
+    {
+        Gate::authorize('update', $project);
+
+        return Inertia::render('Projects/Edit', [
+            'project' => $this->projectService->show($project),
+        ]);
+    }
+
     public function store(StoreProjectRequest $request): RedirectResponse
     {
         Gate::authorize('create', Project::class);
