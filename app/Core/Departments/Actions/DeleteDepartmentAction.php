@@ -15,6 +15,12 @@ class DeleteDepartmentAction
             ]);
         }
 
+        if ($department->manager_id !== null) {
+            throw ValidationException::withMessages([
+                'department' => 'دپارتمان دارای مدیر است. ابتدا مدیر دپارتمان را حذف کنید.',
+            ]);
+        }
+
         $department->delete();
     }
 }
