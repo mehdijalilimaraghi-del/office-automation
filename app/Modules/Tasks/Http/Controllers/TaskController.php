@@ -16,6 +16,7 @@ use App\Http\Requests\Modules\Tasks\UpdateTaskRequest;
 use App\Modules\Tasks\Contracts\TaskServiceContract;
 use App\Modules\Tasks\Models\Task;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -29,7 +30,7 @@ class TaskController extends Controller
     ) {
     }
 
-    public function index(\Illuminate\Http\Request $request): Response
+    public function index(Request $request): Response
     {
         Gate::authorize('viewAny', Task::class);
 
