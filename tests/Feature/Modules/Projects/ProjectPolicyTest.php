@@ -54,6 +54,22 @@ class ProjectPolicyTest extends TestCase
         );
     }
 
+    public function test_only_project_manager_can_manage_roles(): void
+    {
+        $manager = $this->userWithPermission('projects.manage_roles');
+        $member = $this->userWithPermission('projects.manage_roles');
+
+        $project = $this->createProject($manager);
+
+        $this->assertTrue(
+            $manager->can('manageRoles', $project)
+        );
+
+        $this->assertFalse(
+            $member->can('manageRoles', $project)
+        );
+    }
+
     public function test_only_project_manager_can_manage_members(): void
     {
         $manager = $this->userWithPermission('projects.manage_members');
@@ -67,6 +83,22 @@ class ProjectPolicyTest extends TestCase
 
         $this->assertFalse(
             $member->can('manageMembers', $project)
+        );
+    }
+
+    public function test_only_project_manager_can_delete_project(): void
+    {
+        $manager = $this->userWithPermission('projects.delete');
+        $member = $this->userWithPermission('projects.delete');
+
+        $project = $this->createProject($manager);
+
+        $this->assertTrue(
+            $manager->can('delete', $project)
+        );
+
+        $this->assertFalse(
+            $member->can('delete', $project)
         );
     }
 
