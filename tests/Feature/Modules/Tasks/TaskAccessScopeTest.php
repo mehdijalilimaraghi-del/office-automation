@@ -6,8 +6,8 @@ namespace Tests\Feature\Modules\Tasks;
 
 use App\Core\Permissions\Models\Permission;
 use App\Core\Roles\Models\Role;
-use App\Core\Departments\Models\Department;
 use App\Models\User;
+use App\Modules\Projects\Models\Project;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Services\TaskAccessService;
 use Database\Seeders\CorePermissionSeeder;
@@ -88,9 +88,9 @@ class TaskAccessScopeTest extends TestCase
         return $user->fresh();
     }
 
-    private function createProjectFor(User $manager): \App\Modules\Projects\Models\Project
+    private function createProjectFor(User $manager): Project
     {
-        $project = \App\Modules\Projects\Models\Project::query()->create([
+        $project = Project::query()->create([
             'name' => 'Scope Test Project',
             'code' => 'SCP-'.Str::upper(Str::random(8)),
             'status' => 'active',
