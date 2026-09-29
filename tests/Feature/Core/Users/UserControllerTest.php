@@ -330,6 +330,85 @@ class UserControllerTest extends TestCase
         $response->assertRedirect(route('login'));
     }
 
+    public function test_user_who_manages_department_cannot_be_deleted(): void
+    {
+        $user = $this->user();
+        $manager = User::factory()->create();
+
+        $this->grant($user, 'users.delete');
+
+        $department = Department::create([
+            'name' => 'فناوری اطلاعات',
+            'code' => 'IT',
+            'description' => null,
+            'parent_id' => null,
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+
+        $department->members()->attach($manager->id, [
+            'is_primary' => false,
+            'joined_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->delete(
+            route('users.destroy', $manager)
+        );
+
+        $response->assertSessionHasErrors('user');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $manager->id,
+        ]);
+
+        $this->assertDatabaseHas('departments', [
+            'id' => $department->id,
+            'manager_id' => $manager->id,
+        ]);
+    }
+
+    public function test_user_cannot_remove_department_membership_while_managing_department(): void
+    {
+        $user = $this->user();
+        $manager = User::factory()->create();
+        $department = Department::create([
+            'name' => 'فناوری اطلاعات',
+            'code' => 'IT',
+            'description' => null,
+            'parent_id' => null,
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+
+        $department->members()->attach($manager->id, [
+            'is_primary' => false,
+            'joined_at' => now(),
+        ]);
+
+        $this->grant($user, 'users.edit');
+
+        $response = $this->actingAs($user)->put(
+            route('users.update', $manager),
+            [
+                'name' => $manager->name,
+                'email' => $manager->email,
+                'password' => '',
+                'password_confirmation' => '',
+                'department_ids' => [],
+                'primary_department_id' => null,
+                'status' => 'active',
+                'role_ids' => [],
+            ]
+        );
+
+        $response->assertSessionHasErrors('department_ids');
+
+        $this->assertDatabaseHas('department_memberships', [
+            'department_id' => $department->id,
+            'user_id' => $manager->id,
+        ]);
+    }
+
     public function test_guest_cannot_create_user(): void
     {
         $response = $this->post(route('users.store'), [
