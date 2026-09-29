@@ -394,6 +394,112 @@ class DepartmentControllerTest extends TestCase
         ]);
     }
 
+    public function test_changing_department_manager_updates_default_project_manager(): void
+    {
+        $user = $this->user();
+        $oldManager = User::factory()->create();
+        $newManager = User::factory()->create();
+
+        $this->grant($user, 'departments.edit');
+
+        $department = Department::create([
+            'name' => 'فناوری اطلاعات',
+            'code' => 'IT',
+            'description' => null,
+            'parent_id' => null,
+            'manager_id' => $oldManager->id,
+            'is_active' => true,
+        ]);
+
+        $department->members()->attach($oldManager->id, [
+            'is_primary' => false,
+            'joined_at' => now(),
+        ]);
+
+        $project = Project::query()->create([
+            'department_id' => $department->id,
+            'name' => 'پروژه عمومی فناوری اطلاعات',
+            'code' => 'DEPT-'.$department->id.'-DEFAULT',
+            'status' => 'active',
+            'manager_id' => $oldManager->id,
+            'created_by' => null,
+            'is_active' => true,
+            'is_system_default' => true,
+        ]);
+
+        $this->actingAs($user)->put(
+            route('departments.update', $department),
+            [
+                'name' => 'فناوری اطلاعات',
+                'code' => 'IT',
+                'description' => null,
+                'parent_id' => null,
+                'manager_id' => $newManager->id,
+                'is_active' => true,
+            ]
+        )->assertRedirect();
+
+        $this->assertDatabaseHas('projects', [
+            'id' => $project->id,
+            'manager_id' => $newManager->id,
+        ]);
+
+        $this->assertDatabaseHas('project_user', [
+            'project_id' => $project->id,
+            'user_id' => $newManager->id,
+        ]);
+    }
+
+    public function test_removing_department_manager_clears_default_project_manager(): void
+    {
+        $user = $this->user();
+        $manager = User::factory()->create();
+
+        $this->grant($user, 'departments.edit');
+
+        $department = Department::create([
+            'name' => 'فناوری اطلاعات',
+            'code' => 'IT',
+            'description' => null,
+            'parent_id' => null,
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+
+        $department->members()->attach($manager->id, [
+            'is_primary' => false,
+            'joined_at' => now(),
+        ]);
+
+        $project = Project::query()->create([
+            'department_id' => $department->id,
+            'name' => 'پروژه عمومی فناوری اطلاعات',
+            'code' => 'DEPT-'.$department->id.'-DEFAULT',
+            'status' => 'active',
+            'manager_id' => $manager->id,
+            'created_by' => null,
+            'is_active' => true,
+            'is_system_default' => true,
+        ]);
+
+        $this->actingAs($user)->put(
+            route('departments.update', $department),
+            [
+                'name' => 'فناوری اطلاعات',
+                'code' => 'IT',
+                'description' => null,
+                'parent_id' => null,
+                'manager_id' => null,
+                'is_active' => true,
+            ]
+        )->assertRedirect();
+
+        $this->assertDatabaseHas('projects', [
+            'id' => $project->id,
+            'manager_id' => null,
+        ]);
+    }
+
     public function test_department_with_manager_cannot_be_deleted(): void
     {
         $user = $this->user();
