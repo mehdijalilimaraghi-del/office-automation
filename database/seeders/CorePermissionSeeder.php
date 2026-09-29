@@ -127,6 +127,10 @@ class CorePermissionSeeder extends Seeder
                 'code' => 'tasks.assign',
             ],
             [
+                'name' => 'ارجاع تسک',
+                'code' => 'tasks.refer',
+            ],
+            [
                 'name' => 'تغییر وضعیت تسک',
                 'code' => 'tasks.change_status',
             ],
