@@ -3,6 +3,7 @@
 namespace App\Modules\Tasks\Actions;
 
 use App\Modules\Tasks\Models\Task;
+use App\Models\User;
 use App\Modules\Tasks\Models\TaskStatusHistory;
 use InvalidArgumentException;
 
@@ -17,7 +18,8 @@ class ChangeTaskStatusAction
 
     public function execute(
         Task $task,
-        string $status
+        string $status,
+        User $actor
     ): Task {
         if (! in_array($status, self::ALLOWED_STATUSES, true)) {
             throw new InvalidArgumentException(
@@ -41,7 +43,7 @@ class ChangeTaskStatusAction
             'task_id' => $task->id,
             'from_status' => $fromStatus,
             'to_status' => $status,
-            'changed_by' => auth()->id(),
+            'changed_by' => $actor->id,
             'changed_at' => now(),
         ]);
 
