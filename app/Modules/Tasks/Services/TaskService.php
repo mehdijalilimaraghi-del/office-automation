@@ -6,9 +6,11 @@ use App\Models\User;
 use App\Modules\Tasks\Actions\AssignTaskAction;
 use App\Modules\Tasks\Actions\ChangeTaskStatusAction;
 use App\Modules\Tasks\Actions\CreateTaskAction;
+use App\Modules\Tasks\Actions\DeleteTaskAction;
 use App\Modules\Tasks\Actions\UpdateTaskAction;
 use App\Modules\Tasks\Contracts\TaskServiceContract;
 use App\Modules\Tasks\Models\Task;
+use Illuminate\Support\Collection;
 
 class TaskService implements TaskServiceContract
 {
@@ -16,8 +18,17 @@ class TaskService implements TaskServiceContract
         private readonly CreateTaskAction $createTaskAction,
         private readonly UpdateTaskAction $updateTaskAction,
         private readonly AssignTaskAction $assignTaskAction,
-        private readonly ChangeTaskStatusAction $changeTaskStatusAction
+        private readonly ChangeTaskStatusAction $changeTaskStatusAction,
+        private readonly DeleteTaskAction $deleteTaskAction,
     ) {
+    }
+
+    public function list(): Collection
+    {
+        return Task::query()
+            ->with(['project', 'assignee', 'creator'])
+            ->latest()
+            ->get();
     }
 
     public function create(
@@ -58,5 +69,10 @@ class TaskService implements TaskServiceContract
             task: $task,
             status: $status
         );
+    }
+
+    public function delete(Task $task): void
+    {
+        $this->deleteTaskAction->execute($task);
     }
 }
