@@ -26,11 +26,20 @@ class TaskService implements TaskServiceContract
         private readonly CreateTaskCommentAction $createTaskCommentAction,
         private readonly CreateTaskWorkLogAction $createTaskWorkLogAction,
         private readonly CreateTaskReminderAction $createTaskReminderAction,
+        private readonly TaskAccessService $taskAccessService,
     ) {}
 
-    public function list(): Collection
+    public function list(User $user): Collection
     {
-        return Task::query()
+        $query = Task::query();
+
+        $this->taskAccessService->applyScope(
+            query: $query,
+            user: $user,
+            permission: 'tasks.view',
+        );
+
+        return $query
             ->with(['project', 'department', 'assignee', 'creator'])
             ->latest()
             ->get();
