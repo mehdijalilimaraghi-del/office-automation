@@ -82,6 +82,56 @@ class CorePermissionSeeder extends Seeder
             ],
 
             [
+                'name' => 'مشاهده پروژه‌ها',
+                'code' => 'projects.view',
+            ],
+            [
+                'name' => 'ایجاد پروژه',
+                'code' => 'projects.create',
+            ],
+            [
+                'name' => 'ویرایش پروژه',
+                'code' => 'projects.update',
+            ],
+            [
+                'name' => 'حذف پروژه',
+                'code' => 'projects.delete',
+            ],
+            [
+                'name' => 'مدیریت نقش‌های پروژه',
+                'code' => 'projects.manage_roles',
+            ],
+            [
+                'name' => 'مدیریت اعضای پروژه',
+                'code' => 'projects.manage_members',
+            ],
+
+            [
+                'name' => 'مشاهده تسک‌ها',
+                'code' => 'tasks.view',
+            ],
+            [
+                'name' => 'ایجاد تسک',
+                'code' => 'tasks.create',
+            ],
+            [
+                'name' => 'ویرایش تسک',
+                'code' => 'tasks.update',
+            ],
+            [
+                'name' => 'حذف تسک',
+                'code' => 'tasks.delete',
+            ],
+            [
+                'name' => 'تخصیص تسک',
+                'code' => 'tasks.assign',
+            ],
+            [
+                'name' => 'تغییر وضعیت تسک',
+                'code' => 'tasks.change_status',
+            ],
+
+            [
                 'name' => 'مشاهده مجوزها',
                 'code' => 'permissions.view',
             ],
