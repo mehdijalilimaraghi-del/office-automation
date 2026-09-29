@@ -107,15 +107,6 @@ const formatDate = (date: string | null): string => {
                         </Link>
                     </Button>
 
-                    <Button
-                        v-if="project.manager"
-                        variant="outline"
-                        as-child
-                    >
-                        <Link :href="route('projects.show', project.id)">
-                            مشاهده
-                        </Link>
-                    </Button>
                 </div>
             </div>
         </template>
