@@ -4,6 +4,9 @@ namespace App\Modules\Tasks\Contracts;
 
 use App\Models\User;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Tasks\Models\TaskComment;
+use App\Modules\Tasks\Models\TaskReminder;
+use App\Modules\Tasks\Models\TaskWorkLog;
 use Illuminate\Support\Collection;
 
 interface TaskServiceContract
@@ -13,5 +16,8 @@ interface TaskServiceContract
     public function update(Task $task, array $data): Task;
     public function assign(Task $task, User $assignee, User $actor, string $type = 'assignment', ?string $note = null): Task;
     public function changeStatus(Task $task, string $status, User $actor): Task;
+    public function addComment(Task $task, User $author, string $body): TaskComment;
+    public function addWorkLog(Task $task, User $user, string $title, ?string $description = null, $startedAt = null, $completedAt = null): TaskWorkLog;
+    public function addReminder(Task $task, User $recipient, User $creator, string $title, $remindAt, ?string $description = null): TaskReminder;
     public function delete(Task $task): void;
 }
