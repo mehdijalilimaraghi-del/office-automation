@@ -7,6 +7,7 @@ namespace Tests\Feature\Modules\Tasks;
 use App\Core\Permissions\Models\Permission;
 use Database\Seeders\CorePermissionSeeder;
 use App\Core\Roles\Models\Role;
+use App\Core\Departments\Models\Department;
 use App\Models\User;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectMember;
@@ -342,6 +343,160 @@ class TaskPolicyTest extends TestCase
         );
     }
 
+    public function test_self_scope_allows_only_owned_task(): void
+    {
+        $user = $this->userWithPermissionScope(
+            'tasks.view',
+            'self'
+        );
+
+        $ownedTask = Task::query()->create([
+            'title' => 'Owned Task',
+            'created_by' => $user->id,
+            'assignee_id' => $user->id,
+            'status' => 'todo',
+            'priority' => 'normal',
+        ]);
+
+        $otherUser = User::factory()->create(['status' => 'active']);
+        $otherTask = Task::query()->create([
+            'title' => 'Other Task',
+            'created_by' => $otherUser->id,
+            'assignee_id' => $otherUser->id,
+            'status' => 'todo',
+            'priority' => 'normal',
+        ]);
+
+        $this->assertTrue($user->can('view', $ownedTask));
+        $this->assertFalse($user->can('view', $otherTask));
+    }
+
+    public function test_department_scope_allows_tasks_of_user_department(): void
+    {
+        $user = $this->userWithPermissionScope(
+            'tasks.view',
+            'department'
+        );
+
+        $department = Department::query()->create([
+            'name' => 'فروش',
+            'code' => 'SALES-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+        ]);
+
+        $user->departments()->attach($department->id, [
+            'is_primary' => true,
+            'joined_at' => now(),
+        ]);
+
+        $task = Task::query()->create([
+            'department_id' => $department->id,
+            'title' => 'Department Task',
+            'created_by' => User::factory()->create(['status' => 'active'])->id,
+            'status' => 'todo',
+            'priority' => 'normal',
+        ]);
+
+        $this->assertTrue($user->can('view', $task));
+    }
+
+    public function test_department_tree_scope_includes_child_departments(): void
+    {
+        $user = $this->userWithPermissionScope(
+            'tasks.view',
+            'department_tree'
+        );
+
+        $parent = Department::query()->create([
+            'name' => 'مدیریت',
+            'code' => 'MGMT-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+        ]);
+
+        $child = Department::query()->create([
+            'name' => 'فروش',
+            'code' => 'SALES-'.Str::upper(Str::random(6)),
+            'parent_id' => $parent->id,
+            'is_active' => true,
+        ]);
+
+        $user->departments()->attach($parent->id, [
+            'is_primary' => true,
+            'joined_at' => now(),
+        ]);
+
+        $task = Task::query()->create([
+            'department_id' => $child->id,
+            'title' => 'Child Department Task',
+            'created_by' => User::factory()->create(['status' => 'active'])->id,
+            'status' => 'todo',
+            'priority' => 'normal',
+        ]);
+
+        $this->assertTrue($user->can('view', $task));
+    }
+
+    public function test_organization_scope_allows_task_outside_user_project_and_department(): void
+    {
+        $user = $this->userWithPermissionScope(
+            'tasks.view',
+            'organization'
+        );
+
+        $otherUser = User::factory()->create(['status' => 'active']);
+        $project = $this->createProject($otherUser);
+
+        $task = $this->createTask($project, $otherUser);
+
+        $this->assertTrue($user->can('view', $task));
+    }
+
+    public function test_multiple_roles_combine_permission_scopes(): void
+    {
+        $user = $this->userWithPermissionScope(
+            'tasks.view',
+            'self'
+        );
+
+        $permission = Permission::query()
+            ->where('code', 'tasks.view')
+            ->firstOrFail();
+
+        $role = Role::query()->create([
+            'name' => 'Department Scope Role',
+            'code' => 'department-scope-'.Str::lower(Str::random(8)),
+            'description' => null,
+            'is_active' => true,
+            'is_system' => false,
+        ]);
+
+        $role->permissions()->attach($permission->id, [
+            'scope' => 'department',
+        ]);
+        $user->roles()->attach($role->id);
+
+        $department = Department::query()->create([
+            'name' => 'منابع انسانی',
+            'code' => 'HR-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+        ]);
+
+        $user->departments()->attach($department->id, [
+            'is_primary' => true,
+            'joined_at' => now(),
+        ]);
+
+        $task = Task::query()->create([
+            'department_id' => $department->id,
+            'title' => 'Combined Scope Task',
+            'created_by' => User::factory()->create(['status' => 'active'])->id,
+            'status' => 'todo',
+            'priority' => 'normal',
+        ]);
+
+        $this->assertTrue($user->can('view', $task));
+    }
+
     private function userWithPermission(string $permissionCode): User
     {
         $permission = Permission::query()
@@ -358,6 +513,35 @@ class TaskPolicyTest extends TestCase
 
         $role->permissions()->attach($permission->id, [
             'scope' => 'project',
+        ]);
+
+        $user = User::factory()->create([
+            'status' => 'active',
+        ]);
+
+        $user->roles()->attach($role->id);
+
+        return $user->fresh();
+    }
+
+    private function userWithPermissionScope(
+        string $permissionCode,
+        string $scope
+    ): User {
+        $permission = Permission::query()
+            ->where('code', $permissionCode)
+            ->firstOrFail();
+
+        $role = Role::query()->create([
+            'name' => 'Scope Test Role ' . Str::upper(Str::random(8)),
+            'code' => 'scope-' . Str::lower(Str::random(12)),
+            'description' => 'Scope test role',
+            'is_active' => true,
+            'is_system' => false,
+        ]);
+
+        $role->permissions()->attach($permission->id, [
+            'scope' => $scope,
         ]);
 
         $user = User::factory()->create([
