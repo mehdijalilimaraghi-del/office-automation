@@ -12,20 +12,50 @@ class UserRelationshipsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_user_belongs_to_department(): void
+    public function test_user_can_belong_to_multiple_departments(): void
     {
-        $department = Department::create([
+        $departmentOne = Department::create([
             'name' => 'فناوری اطلاعات',
             'code' => 'IT',
             'is_active' => true,
         ]);
 
-        $user = User::factory()->create([
-            'department_id' => $department->id,
+        $departmentTwo = Department::create([
+            'name' => 'فروش',
+            'code' => 'SALES',
+            'is_active' => true,
         ]);
 
+        $user = User::factory()->create();
+
+        $user->departments()->attach([
+            $departmentOne->id => [
+                'is_primary' => true,
+                'joined_at' => now(),
+            ],
+            $departmentTwo->id => [
+                'is_primary' => false,
+                'joined_at' => now(),
+            ],
+        ]);
+
+        $user->load('departments');
+
+        $this->assertCount(2, $user->departments);
         $this->assertTrue(
-            $user->department->is($department)
+            $user->departments->contains(
+                fn (Department $department) => $department->is($departmentOne)
+            )
+        );
+        $this->assertTrue(
+            $user->departments->contains(
+                fn (Department $department) => $department->is($departmentTwo)
+            )
+        );
+        $this->assertTrue(
+            (bool) $user->departments
+                ->firstWhere('id', $departmentOne->id)
+                ->pivot->is_primary
         );
     }
 
