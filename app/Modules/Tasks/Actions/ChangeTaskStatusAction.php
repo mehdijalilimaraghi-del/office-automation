@@ -3,6 +3,7 @@
 namespace App\Modules\Tasks\Actions;
 
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Tasks\Models\TaskStatusHistory;
 use InvalidArgumentException;
 
 class ChangeTaskStatusAction
@@ -24,6 +25,8 @@ class ChangeTaskStatusAction
             );
         }
 
+        $fromStatus = $task->status;
+
         $task->status = $status;
 
         if ($status === 'completed') {
@@ -33,6 +36,14 @@ class ChangeTaskStatusAction
         }
 
         $task->save();
+
+        TaskStatusHistory::query()->create([
+            'task_id' => $task->id,
+            'from_status' => $fromStatus,
+            'to_status' => $status,
+            'changed_by' => auth()->id(),
+            'changed_at' => now(),
+        ]);
 
         return $task->refresh()->load([
             'project',
