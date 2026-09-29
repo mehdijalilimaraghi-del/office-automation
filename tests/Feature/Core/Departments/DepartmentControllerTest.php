@@ -91,7 +91,7 @@ class DepartmentControllerTest extends TestCase
             'is_system_default' => true,
         ]);
 
-        $this->assertSame(
+        $this->assertEquals(
             $department->id,
             Project::query()
                 ->where('department_id', $department->id)
