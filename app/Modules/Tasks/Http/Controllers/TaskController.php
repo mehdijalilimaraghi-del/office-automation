@@ -9,6 +9,9 @@ use App\Http\Requests\Modules\Tasks\AssignTaskRequest;
 use App\Http\Requests\Modules\Tasks\ChangeTaskStatusRequest;
 use App\Http\Requests\Modules\Tasks\ReferTaskRequest;
 use App\Http\Requests\Modules\Tasks\StoreTaskRequest;
+use App\Http\Requests\Modules\Tasks\StoreTaskCommentRequest;
+use App\Http\Requests\Modules\Tasks\StoreTaskReminderRequest;
+use App\Http\Requests\Modules\Tasks\StoreTaskWorkLogRequest;
 use App\Http\Requests\Modules\Tasks\UpdateTaskRequest;
 use App\Modules\Tasks\Contracts\TaskServiceContract;
 use App\Modules\Tasks\Models\Task;
@@ -158,6 +161,62 @@ class TaskController extends Controller
         }
 
         return back()->with('success', 'تسک با موفقیت ارجاع شد.');
+    }
+
+    public function comment(
+        StoreTaskCommentRequest $request,
+        Task $task
+    ): RedirectResponse {
+        Gate::authorize('comment', $task);
+
+        $this->taskService->addComment(
+            task: $task,
+            author: $request->user(),
+            body: $request->validated()['body'],
+        );
+
+        return back()->with('success', 'کامنت با موفقیت ثبت شد.');
+    }
+
+    public function workLog(
+        StoreTaskWorkLogRequest $request,
+        Task $task
+    ): RedirectResponse {
+        Gate::authorize('logWork', $task);
+
+        $data = $request->validated();
+
+        $this->taskService->addWorkLog(
+            task: $task,
+            user: $request->user(),
+            title: $data['title'],
+            description: $data['description'] ?? null,
+            startedAt: $data['started_at'] ?? null,
+            completedAt: $data['completed_at'] ?? null,
+        );
+
+        return back()->with('success', 'گزارش فعالیت با موفقیت ثبت شد.');
+    }
+
+    public function reminder(
+        StoreTaskReminderRequest $request,
+        Task $task
+    ): RedirectResponse {
+        Gate::authorize('createReminder', $task);
+
+        $data = $request->validated();
+        $recipient = \App\Models\User::query()->findOrFail($data['user_id']);
+
+        $this->taskService->addReminder(
+            task: $task,
+            recipient: $recipient,
+            creator: $request->user(),
+            title: $data['title'],
+            remindAt: $data['remind_at'],
+            description: $data['description'] ?? null,
+        );
+
+        return back()->with('success', 'یادآور با موفقیت ایجاد شد.');
     }
 
     public function changeStatus(
