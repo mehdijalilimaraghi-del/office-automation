@@ -190,6 +190,38 @@ class ProjectHttpTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_project_manager_with_member_permission_receives_active_member_options(): void
+    {
+        $manager = $this->userWithPermission('projects.manage_members');
+        $member = User::factory()->create([
+            'name' => 'Existing Member',
+            'status' => 'active',
+        ]);
+        User::factory()->create([
+            'name' => 'Inactive User',
+            'status' => 'inactive',
+        ]);
+
+        $project = $this->createProject($manager);
+        ProjectMember::query()->create([
+            'project_id' => $project->id,
+            'user_id' => $member->id,
+            'project_role_id' => null,
+        ]);
+
+        $response = $this->actingAs($manager)
+            ->get(route('projects.show', $project));
+
+        $response->assertOk();
+        $response->assertInertia(
+            fn ($page) => $page
+                ->component('Projects/Show')
+                ->has('memberOptions', 1)
+                ->where('memberOptions.0.id', $member->id)
+                ->where('memberOptions.0.name', 'Existing Member')
+        );
+    }
+
     public function test_project_manager_can_open_edit_page(): void
     {
         $manager = $this->userWithPermission('projects.update');
