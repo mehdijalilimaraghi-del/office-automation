@@ -42,7 +42,7 @@ class CorePermissionSeederTest extends TestCase
         );
 
         $this->assertSame(
-            34,
+            35,
             Permission::count()
         );
     }
