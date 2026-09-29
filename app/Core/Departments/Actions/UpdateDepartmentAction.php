@@ -50,6 +50,22 @@ class UpdateDepartmentAction
                 'is_active' => $data['is_active'] ?? true,
             ]);
 
+            $defaultProject = $department->defaultProject()->first();
+
+            if ($defaultProject !== null) {
+                $defaultProject->update([
+                    'manager_id' => $managerId,
+                ]);
+
+                if ($managerId !== null) {
+                    $defaultProject->members()->firstOrCreate([
+                        'user_id' => $managerId,
+                    ], [
+                        'project_role_id' => null,
+                    ]);
+                }
+            }
+
             return $department->refresh();
         });
     }
