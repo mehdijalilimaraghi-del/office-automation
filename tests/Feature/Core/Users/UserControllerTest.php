@@ -69,7 +69,8 @@ class UserControllerTest extends TestCase
                 'email' => 'new-user@example.com',
                 'password' => 'password123',
                 'password_confirmation' => 'password123',
-                'department_id' => $department->id,
+                'department_ids' => [$department->id],
+                'primary_department_id' => $department->id,
                 'status' => 'active',
                 'role_ids' => [$role->id],
             ]);
@@ -81,7 +82,8 @@ class UserControllerTest extends TestCase
         $this->assertDatabaseHas('users', [
             'name' => 'New User',
             'email' => 'new-user@example.com',
-            'department_id' => $department->id,
+            'department_ids' => [$department->id],
+                'primary_department_id' => $department->id,
             'status' => 'active',
         ]);
 
@@ -117,7 +119,8 @@ class UserControllerTest extends TestCase
             ->put(route('users.update', $user), [
                 'name' => 'Updated Name',
                 'email' => 'updated@example.com',
-                'department_id' => $department->id,
+                'department_ids' => [$department->id],
+                'primary_department_id' => $department->id,
                 'status' => 'active',
                 'role_ids' => [$role->id],
             ]);
@@ -130,7 +133,8 @@ class UserControllerTest extends TestCase
             'id' => $user->id,
             'name' => 'Updated Name',
             'email' => 'updated@example.com',
-            'department_id' => $department->id,
+            'department_ids' => [$department->id],
+                'primary_department_id' => $department->id,
             'status' => 'active',
         ]);
 
@@ -159,7 +163,8 @@ class UserControllerTest extends TestCase
         ->put(route('users.update', $user), [
             'name' => $user->name,
             'email' => $user->email,
-            'department_id' => $department->id,
+            'department_ids' => [$department->id],
+                'primary_department_id' => $department->id,
             'status' => 'active',
             'role_ids' => [],
             'password' => 'new-password',
@@ -301,7 +306,8 @@ class UserControllerTest extends TestCase
                 'email' => 'existing@example.com',
                 'password' => 'password123',
                 'password_confirmation' => 'password123',
-                'department_id' => null,
+                'department_ids' => [],
+                'primary_department_id' => null,
                 'status' => 'active',
                 'role_ids' => [],
             ]);
@@ -323,7 +329,8 @@ class UserControllerTest extends TestCase
             'email' => 'guest@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
-            'department_id' => null,
+            'department_ids' => [],
+                'primary_department_id' => null,
             'status' => 'active',
             'role_ids' => [],
         ]);
@@ -340,7 +347,8 @@ class UserControllerTest extends TestCase
             [
                 'name' => 'Updated',
                 'email' => 'updated@example.com',
-                'department_id' => null,
+                'department_ids' => [],
+                'primary_department_id' => null,
                 'status' => 'active',
                 'role_ids' => [],
             ]
