@@ -262,7 +262,7 @@ class RolePermissionControllerTest extends TestCase
         $response = $this->put(
             route('roles.permissions.update', $role),
             [
-                'permission_ids' => [],
+                'permissions' => [],
             ]
         );
 
