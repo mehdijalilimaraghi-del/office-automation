@@ -77,8 +77,13 @@ class ProjectController extends Controller
     {
         Gate::authorize('view', $project);
 
+        $canManageMembers = Gate::allows('manageMembers', $project);
+
         return Inertia::render('Projects/Show', [
             'project' => $this->projectService->show($project),
+            'memberOptions' => $canManageMembers
+                ? $this->userService->activeList()
+                : [],
         ]);
     }
 
