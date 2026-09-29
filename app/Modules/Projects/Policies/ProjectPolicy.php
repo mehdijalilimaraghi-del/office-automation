@@ -29,28 +29,32 @@ class ProjectPolicy
 
     public function update(User $user, Project $project): bool
     {
-        return $user->isActive()
+        return ! $project->is_system_default
+            && $user->isActive()
             && $user->hasPermission('projects.update')
             && (int) $project->manager_id === (int) $user->id;
     }
 
     public function delete(User $user, Project $project): bool
     {
-        return $user->isActive()
+        return ! $project->is_system_default
+            && $user->isActive()
             && $user->hasPermission('projects.delete')
             && (int) $project->manager_id === (int) $user->id;
     }
 
     public function manageRoles(User $user, Project $project): bool
     {
-        return $user->isActive()
+        return ! $project->is_system_default
+            && $user->isActive()
             && $user->hasPermission('projects.manage_roles')
             && (int) $project->manager_id === (int) $user->id;
     }
 
     public function manageMembers(User $user, Project $project): bool
     {
-        return $user->isActive()
+        return ! $project->is_system_default
+            && $user->isActive()
             && $user->hasPermission('projects.manage_members')
             && (int) $project->manager_id === (int) $user->id;
     }
