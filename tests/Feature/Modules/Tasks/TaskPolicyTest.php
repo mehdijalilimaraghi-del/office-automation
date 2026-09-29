@@ -91,7 +91,7 @@ class TaskPolicyTest extends TestCase
         );
     }
 
-    public function test_non_manager_cannot_assign_task(): void
+    public function test_project_member_with_assign_permission_can_assign_task(): void
     {
         $manager = User::factory()->create([
             'status' => 'active',
@@ -100,6 +100,22 @@ class TaskPolicyTest extends TestCase
         $member = $this->userWithPermission('tasks.assign');
 
         $project = $this->createProject($manager, $member);
+        $task = $this->createTask($project, $manager);
+
+        $this->assertTrue(
+            $member->can('assign', $task)
+        );
+    }
+
+    public function test_non_project_member_cannot_assign_task_with_project_scope(): void
+    {
+        $manager = User::factory()->create([
+            'status' => 'active',
+        ]);
+
+        $member = $this->userWithPermission('tasks.assign');
+
+        $project = $this->createProject($manager);
         $task = $this->createTask($project, $manager);
 
         $this->assertFalse(
@@ -161,7 +177,7 @@ class TaskPolicyTest extends TestCase
         );
     }
 
-    public function test_non_assignee_member_cannot_change_task_status(): void
+    public function test_project_member_with_change_status_permission_can_change_task_status(): void
     {
         $manager = User::factory()->create([
             'status' => 'active',
@@ -177,7 +193,7 @@ class TaskPolicyTest extends TestCase
 
         $task = $this->createTask($project, $manager, $assignee);
 
-        $this->assertFalse(
+        $this->assertTrue(
             $member->can('changeStatus', $task)
         );
     }
@@ -208,30 +224,23 @@ class TaskPolicyTest extends TestCase
         );
     }
 
-    public function test_project_manager_can_update_and_delete_task(): void
+    public function test_project_member_with_update_permission_can_update_task(): void
     {
-        $manager = $this->userWithPermission('tasks.update');
-        $deleteManager = $this->userWithPermission('tasks.delete');
+        $manager = User::factory()->create([
+            'status' => 'active',
+        ]);
 
-        $project = $this->createProject($manager);
+        $member = $this->userWithPermission('tasks.update');
+
+        $project = $this->createProject($manager, $member);
         $task = $this->createTask($project, $manager);
 
         $this->assertTrue(
-            $manager->can('update', $task)
-        );
-
-        $project->update([
-            'manager_id' => $deleteManager->id,
-        ]);
-        $this->addMember($project, $deleteManager);
-        $task->load('project');
-
-        $this->assertTrue(
-            $deleteManager->can('delete', $task)
+            $member->can('update', $task)
         );
     }
 
-    public function test_non_manager_cannot_delete_task(): void
+    public function test_project_member_with_delete_permission_can_delete_task(): void
     {
         $manager = User::factory()->create([
             'status' => 'active',
@@ -240,6 +249,22 @@ class TaskPolicyTest extends TestCase
         $member = $this->userWithPermission('tasks.delete');
 
         $project = $this->createProject($manager, $member);
+        $task = $this->createTask($project, $manager);
+
+        $this->assertTrue(
+            $member->can('delete', $task)
+        );
+    }
+
+    public function test_non_project_member_cannot_delete_task_with_project_scope(): void
+    {
+        $manager = User::factory()->create([
+            'status' => 'active',
+        ]);
+
+        $member = $this->userWithPermission('tasks.delete');
+
+        $project = $this->createProject($manager);
         $task = $this->createTask($project, $manager);
 
         $this->assertFalse(
@@ -331,7 +356,9 @@ class TaskPolicyTest extends TestCase
             'is_system' => false,
         ]);
 
-        $role->permissions()->attach($permission->id);
+        $role->permissions()->attach($permission->id, [
+            'scope' => 'project',
+        ]);
 
         $user = User::factory()->create([
             'status' => 'active',
