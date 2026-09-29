@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
-
 interface Permission {
     id: number;
     name: string;
@@ -49,10 +47,6 @@ function existingScope(permission: Permission): string {
     return permission.pivot?.scope ?? defaultScope(permission);
 }
 
-const assignedPermissionIds = computed(() =>
-    new Set(props.role.permissions.map((permission) => permission.id)),
-);
-
 const form = useForm({
     permissions: props.role.permissions.map((permission) => ({
         permission_id: permission.id,
@@ -67,7 +61,9 @@ function assignedPermission(permissionId: number): AssignedPermission | undefine
 }
 
 function isAssigned(permissionId: number): boolean {
-    return assignedPermissionIds.value.has(permissionId);
+    return form.permissions.some(
+        (permission) => permission.permission_id === permissionId,
+    );
 }
 
 function togglePermission(permission: Permission): void {
