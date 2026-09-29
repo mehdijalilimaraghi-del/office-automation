@@ -174,6 +174,10 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:projects.create')
         ->name('projects.store');
 
+    Route::get('/projects/{project}/edit', [ProjectController::class, 'edit'])
+        ->middleware('permission:projects.update')
+        ->name('projects.edit');
+
     Route::get('/projects/{project}', [ProjectController::class, 'show'])
         ->middleware('permission:projects.view')
         ->name('projects.show');
