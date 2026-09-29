@@ -7,7 +7,7 @@ namespace App\Modules\Projects\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Modules\Projects\StoreProjectRequest;
 use App\Http\Requests\Modules\Projects\UpdateProjectRequest;
-use App\Models\User;
+use App\Core\Users\Contracts\UserServiceInterface;
 use App\Modules\Projects\Contracts\ProjectServiceContract;
 use App\Modules\Projects\Models\Project;
 use Illuminate\Http\RedirectResponse;
@@ -21,6 +21,7 @@ class ProjectController extends Controller
 {
     public function __construct(
         private readonly ProjectServiceContract $projectService,
+        private readonly UserServiceInterface $userService,
     ) {
     }
 
@@ -30,6 +31,15 @@ class ProjectController extends Controller
 
         return Inertia::render('Projects/Index', [
             'projects' => $this->projectService->list(),
+        ]);
+    }
+
+    public function create(): Response
+    {
+        Gate::authorize('create', Project::class);
+
+        return Inertia::render('Projects/Create', [
+            'managers' => $this->userService->activeList(),
         ]);
     }
 
@@ -100,8 +110,4 @@ class ProjectController extends Controller
         );
     }
 
-    private function ensureActiveUser(User $user): void
-    {
-        abort_unless($user->isActive(), 403);
-    }
-}
+undefined}
