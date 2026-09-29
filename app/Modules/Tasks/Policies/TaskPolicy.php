@@ -62,6 +62,21 @@ class TaskPolicy
             && (int) $task->assignee_id === (int) $user->id;
     }
 
+    public function comment(User $user, Task $task): bool
+    {
+        return $this->canAccessTask($user, $task, 'tasks.comment');
+    }
+
+    public function logWork(User $user, Task $task): bool
+    {
+        return $this->canAccessTask($user, $task, 'tasks.log_work');
+    }
+
+    public function createReminder(User $user, Task $task): bool
+    {
+        return $this->canAccessTask($user, $task, 'tasks.create_reminder');
+    }
+
     public function changeStatus(User $user, Task $task): bool
     {
         if (! $user->isActive() || ! $user->hasPermission('tasks.change_status')) {
@@ -80,6 +95,17 @@ class TaskPolicy
 
         return $this->isProjectManager($user, $task)
             || $task->created_by === $user->id;
+    }
+
+    private function canAccessTask(User $user, Task $task, string $permission): bool
+    {
+        if (! $user->isActive() || ! $user->hasPermission($permission)) {
+            return false;
+        }
+
+        return $this->hasProjectAccess($user, $task)
+            || (int) $task->assignee_id === (int) $user->id
+            || (int) $task->created_by === (int) $user->id;
     }
 
     private function hasProjectAccess(User $user, Task $task): bool
