@@ -100,7 +100,9 @@ const roleForm = useForm({
 });
 
 const editingRoleId = ref<number | null>(null);
-const roleActionForm = useForm({});
+const roleActionForm = useForm({
+    role: '',
+});
 
 const startEditRole = (role: ProjectRole): void => {
     editingRoleId.value = role.id;
