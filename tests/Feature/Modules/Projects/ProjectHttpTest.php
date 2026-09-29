@@ -39,7 +39,7 @@ class ProjectHttpTest extends TestCase
         $response->assertInertia(
             fn ($page) => $page
                 ->component('Projects/Create')
-                ->has('managers', 1)
+                ->has('managers', 2)
                 ->where('managers.0.id', $activeManager->id)
                 ->where('managers.0.name', 'Active Manager')
         );
