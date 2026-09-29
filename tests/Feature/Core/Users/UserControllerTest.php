@@ -357,7 +357,9 @@ class UserControllerTest extends TestCase
             route('users.destroy', $manager)
         );
 
-        $response->assertSessionHasErrors('user');
+        $response
+            ->assertRedirect()
+            ->assertSessionHas('error');
 
         $this->assertDatabaseHas('users', [
             'id' => $manager->id,
