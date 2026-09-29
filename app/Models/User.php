@@ -22,7 +22,6 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'department_id',
         'status',
     ];
 
@@ -37,14 +36,6 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
-    }
-
-    public function department(): BelongsTo
-    {
-        return $this->belongsTo(
-            Department::class,
-            'department_id'
-        );
     }
 
     public function departmentMemberships(): HasMany
