@@ -13,7 +13,6 @@ class CreateUserAction
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
-            'department_id' => $data['department_id'],
             'status' => $data['status'] ?? 'active',
         ]);
     }
