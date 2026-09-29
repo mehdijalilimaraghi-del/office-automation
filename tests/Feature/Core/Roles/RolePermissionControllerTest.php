@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Core\Roles;
 
+use App\Core\Permissions\Enums\PermissionScope;
 use App\Core\Permissions\Models\Permission;
 use App\Core\Roles\Models\Role;
 use App\Models\User;
@@ -66,8 +67,11 @@ class RolePermissionControllerTest extends TestCase
             ->put(
                 route('roles.permissions.update', $role),
                 [
-                    'permission_ids' => [
-                        $permission->id,
+                    'permissions' => [
+                        [
+                            'permission_id' => $permission->id,
+                            'scope' => PermissionScope::Organization->value,
+                        ],
                     ],
                 ]
             );
@@ -79,11 +83,15 @@ class RolePermissionControllerTest extends TestCase
                 'مجوزهای نقش با موفقیت به‌روزرسانی شد.'
             );
 
-        $this->assertTrue(
-            $role->fresh()
-                ->permissions()
-                ->whereKey($permission->id)
-                ->exists()
+        $assignedPermission = $role->fresh()
+            ->permissions()
+            ->whereKey($permission->id)
+            ->first();
+
+        $this->assertNotNull($assignedPermission);
+        $this->assertSame(
+            PermissionScope::Organization->value,
+            $assignedPermission->pivot->scope
         );
     }
 
@@ -126,8 +134,11 @@ class RolePermissionControllerTest extends TestCase
             ->put(
                 route('roles.permissions.update', $role),
                 [
-                    'permission_ids' => [
-                        $secondPermission->id,
+                    'permissions' => [
+                        [
+                            'permission_id' => $secondPermission->id,
+                            'scope' => PermissionScope::Self->value,
+                        ],
                     ],
                 ]
             );
@@ -180,7 +191,7 @@ class RolePermissionControllerTest extends TestCase
             ->put(
                 route('roles.permissions.update', $role),
                 [
-                    'permission_ids' => [],
+                    'permissions' => [],
                 ]
             );
 
@@ -221,8 +232,11 @@ class RolePermissionControllerTest extends TestCase
             ->put(
                 route('roles.permissions.update', $role),
                 [
-                    'permission_ids' => [
-                        $permission->id,
+                    'permissions' => [
+                        [
+                            'permission_id' => $permission->id,
+                            'scope' => PermissionScope::Organization->value,
+                        ],
                     ],
                 ]
             );
