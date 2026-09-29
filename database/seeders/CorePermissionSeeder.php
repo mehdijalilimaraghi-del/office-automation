@@ -134,6 +134,18 @@ class CorePermissionSeeder extends Seeder
                 'name' => 'تغییر وضعیت تسک',
                 'code' => 'tasks.change_status',
             ],
+            [
+                'name' => 'ثبت کامنت تسک',
+                'code' => 'tasks.comment',
+            ],
+            [
+                'name' => 'ثبت گزارش فعالیت تسک',
+                'code' => 'tasks.log_work',
+            ],
+            [
+                'name' => 'ایجاد یادآور تسک',
+                'code' => 'tasks.create_reminder',
+            ],
 
             [
                 'name' => 'مشاهده مجوزها',
