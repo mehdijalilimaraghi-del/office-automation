@@ -246,6 +246,10 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:tasks.assign')
         ->name('tasks.assign');
 
+    Route::patch('/tasks/{task}/refer', [TaskController::class, 'refer'])
+        ->middleware('permission:tasks.refer')
+        ->name('tasks.refer');
+
     Route::patch('/tasks/{task}/status', [TaskController::class, 'changeStatus'])
         ->middleware('permission:tasks.change_status')
         ->name('tasks.change-status');
