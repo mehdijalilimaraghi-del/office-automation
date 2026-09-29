@@ -4,6 +4,7 @@ namespace Tests\Feature\Core\Departments;
 
 use App\Core\Departments\Models\Department;
 use App\Models\User;
+use App\Modules\Projects\Models\Project;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Feature\Core\Concerns\InteractsWithPermissions;
 use Tests\TestCase;
@@ -59,6 +60,79 @@ class DepartmentControllerTest extends TestCase
         $this->assertDatabaseHas('departments', [
             'name' => 'فناوری اطلاعات',
             'code' => 'IT',
+        ]);
+    }
+
+    public function test_creating_department_creates_default_project(): void
+    {
+        $user = $this->user();
+
+        $this->grant($user, 'departments.create');
+
+        $response = $this->actingAs($user)->post(
+            route('departments.store'),
+            [
+                'name' => 'فناوری اطلاعات',
+                'code' => 'IT',
+                'description' => null,
+                'parent_id' => null,
+                'is_active' => true,
+            ]
+        );
+
+        $response->assertRedirect();
+
+        $department = Department::where('code', 'IT')->firstOrFail();
+
+        $this->assertDatabaseHas('projects', [
+            'department_id' => $department->id,
+            'name' => 'پروژه عمومی فناوری اطلاعات',
+            'code' => 'DEPT-'.$department->id.'-DEFAULT',
+            'is_system_default' => true,
+        ]);
+
+        $this->assertSame(
+            $department->id,
+            Project::query()
+                ->where('department_id', $department->id)
+                ->where('is_system_default', true)
+                ->value('department_id')
+        );
+    }
+
+    public function test_default_project_uses_department_manager_when_created(): void
+    {
+        $user = $this->user();
+        $manager = User::factory()->create();
+
+        $this->grant($user, 'departments.create');
+
+        $this->actingAs($user)->post(
+            route('departments.store'),
+            [
+                'name' => 'فناوری اطلاعات',
+                'code' => 'IT',
+                'description' => null,
+                'parent_id' => null,
+                'manager_id' => $manager->id,
+                'is_active' => true,
+            ]
+        )->assertRedirect();
+
+        $department = Department::where('code', 'IT')->firstOrFail();
+
+        $this->assertDatabaseHas('projects', [
+            'department_id' => $department->id,
+            'manager_id' => $manager->id,
+            'is_system_default' => true,
+        ]);
+
+        $this->assertDatabaseHas('project_user', [
+            'project_id' => Project::query()
+                ->where('department_id', $department->id)
+                ->where('is_system_default', true)
+                ->value('id'),
+            'user_id' => $manager->id,
         ]);
     }
 
