@@ -50,7 +50,10 @@ class DepartmentService implements DepartmentServiceInterface
     public function list(): Collection
     {
         return Department::query()
-            ->with('parent')
+            ->with([
+                'parent',
+                'manager:id,name',
+            ])
             ->orderBy('name')
             ->get();
     }
