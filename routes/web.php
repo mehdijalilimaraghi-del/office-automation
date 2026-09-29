@@ -254,6 +254,18 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:tasks.change_status')
         ->name('tasks.change-status');
 
+    Route::post('/tasks/{task}/comments', [TaskController::class, 'comment'])
+        ->middleware('permission:tasks.comment')
+        ->name('tasks.comments.store');
+
+    Route::post('/tasks/{task}/work-logs', [TaskController::class, 'workLog'])
+        ->middleware('permission:tasks.log_work')
+        ->name('tasks.work-logs.store');
+
+    Route::post('/tasks/{task}/reminders', [TaskController::class, 'reminder'])
+        ->middleware('permission:tasks.create_reminder')
+        ->name('tasks.reminders.store');
+
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])
         ->middleware('permission:tasks.delete')
         ->name('tasks.destroy');
