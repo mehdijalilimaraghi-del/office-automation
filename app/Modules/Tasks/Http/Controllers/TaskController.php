@@ -170,6 +170,7 @@ class TaskController extends Controller
             $this->taskService->changeStatus(
                 task: $task,
                 status: $request->validated()['status'],
+                actor: $request->user(),
             );
         } catch (InvalidArgumentException $exception) {
             throw ValidationException::withMessages([
