@@ -119,6 +119,7 @@ class TaskController extends Controller
             $this->taskService->assign(
                 task: $task,
                 assignee: $assignee,
+                actor: $request->user(),
             );
         } catch (InvalidArgumentException $exception) {
             throw ValidationException::withMessages([
