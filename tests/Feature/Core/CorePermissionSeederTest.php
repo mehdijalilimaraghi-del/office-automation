@@ -27,6 +27,7 @@ class CorePermissionSeederTest extends TestCase
             'tasks.update',
             'tasks.delete',
             'tasks.assign',
+            'tasks.refer',
             'tasks.change_status',
         ];
 
