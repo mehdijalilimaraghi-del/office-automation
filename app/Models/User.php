@@ -47,6 +47,35 @@ class User extends Authenticatable
         );
     }
 
+    public function departmentMemberships(): HasMany
+    {
+        return $this->hasMany(
+            \App\Core\Departments\Models\DepartmentMembership::class,
+            'user_id'
+        );
+    }
+
+    public function departments(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Department::class,
+            'department_memberships',
+            'user_id',
+            'department_id'
+        )->withPivot([
+            'is_primary',
+            'joined_at',
+        ])->withTimestamps();
+    }
+
+    public function managedDepartments(): HasMany
+    {
+        return $this->hasMany(
+            Department::class,
+            'manager_id'
+        );
+    }
+
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(
