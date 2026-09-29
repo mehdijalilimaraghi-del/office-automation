@@ -126,6 +126,25 @@ class ProjectHttpTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_project_manager_can_open_edit_page(): void
+    {
+        $manager = $this->userWithPermission('projects.update');
+        $project = $this->createProject($manager);
+
+        $response = $this->actingAs($manager)
+            ->get(route('projects.edit', $project));
+
+        $response->assertOk();
+
+        $response->assertInertia(
+            fn ($page) => $page
+                ->component('Projects/Edit')
+                ->where('project.id', $project->id)
+                ->where('project.name', $project->name)
+                ->where('project.code', $project->code)
+        );
+    }
+
     public function test_project_manager_can_update_project_through_http_layer(): void
     {
         $manager = $this->userWithPermission('projects.update');
