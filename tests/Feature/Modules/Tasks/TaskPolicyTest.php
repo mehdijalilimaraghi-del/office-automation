@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Modules\Tasks;
 
 use App\Core\Permissions\Models\Permission;
+use Database\Seeders\CorePermissionSeeder;
 use App\Core\Roles\Models\Role;
 use App\Models\User;
 use App\Modules\Projects\Models\Project;
@@ -17,6 +18,13 @@ use Tests\TestCase;
 class TaskPolicyTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(CorePermissionSeeder::class);
+    }
 
     public function test_project_member_with_view_permission_can_view_task(): void
     {
