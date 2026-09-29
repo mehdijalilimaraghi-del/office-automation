@@ -288,3 +288,10 @@ Phase 0 responsibilities:
 - Documentation
 
 After Phase 0 is completed, development stops for review/approval before Phase 1.
+
+## Internal Organization Model
+
+The system represents one internal company. Users may belong to multiple internal departments through `department_memberships`, with an optional primary department. Departments support unlimited parent/child hierarchy and have an optional manager. The manager must be a member of the same department and may manage multiple departments.
+
+The previous single `users.department_id` relationship is replaced by the membership model. External organizations and contacts are separate concepts and are not part of the internal department structure.
+
