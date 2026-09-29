@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Core\Roles;
 
+use App\Core\Permissions\Enums\PermissionScope;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class SyncRolePermissionsRequest extends FormRequest
 {
@@ -14,15 +16,21 @@ class SyncRolePermissionsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'permission_ids' => [
+            'permissions' => [
                 'present',
                 'array',
             ],
 
-            'permission_ids.*' => [
+            'permissions.*.permission_id' => [
+                'required',
                 'integer',
                 'distinct',
                 'exists:permissions,id',
+            ],
+
+            'permissions.*.scope' => [
+                'required',
+                Rule::enum(PermissionScope::class),
             ],
         ];
     }
@@ -30,8 +38,9 @@ class SyncRolePermissionsRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'permission_ids' => 'مجوزها',
-            'permission_ids.*' => 'مجوز',
+            'permissions' => 'مجوزها',
+            'permissions.*.permission_id' => 'مجوز',
+            'permissions.*.scope' => 'محدوده دسترسی',
         ];
     }
 }
