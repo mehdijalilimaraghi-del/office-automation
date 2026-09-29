@@ -146,6 +146,140 @@ class ProjectHttpTest extends TestCase
         ]);
     }
 
+    public function test_project_manager_can_create_project_role_through_http_layer(): void
+    {
+        $manager = $this->userWithPermission('projects.manage_roles');
+        $project = $this->createProject($manager);
+
+        $this->actingAs($manager)
+            ->post(route('projects.roles.store', $project), [
+                'name' => 'Developer',
+                'code' => 'developer',
+                'description' => 'Project developer',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('project_roles', [
+            'project_id' => $project->id,
+            'name' => 'Developer',
+            'code' => 'developer',
+            'is_active' => true,
+        ]);
+    }
+
+    public function test_user_without_project_role_permission_cannot_manage_project_roles(): void
+    {
+        $manager = User::factory()->create([
+            'status' => 'active',
+        ]);
+        $project = $this->createProject($manager);
+
+        $this->actingAs($manager)
+            ->post(route('projects.roles.store', $project), [
+                'name' => 'Developer',
+                'code' => 'developer',
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('project_roles', [
+            'project_id' => $project->id,
+            'code' => 'developer',
+        ]);
+    }
+
+    public function test_project_manager_can_update_project_role_through_http_layer(): void
+    {
+        $manager = $this->userWithPermission('projects.manage_roles');
+        $project = $this->createProject($manager);
+        $role = $project->roles()->create([
+            'name' => 'Developer',
+            'code' => 'developer',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($manager)
+            ->put(route('projects.roles.update', [$project, $role]), [
+                'name' => 'Senior Developer',
+                'code' => 'senior_developer',
+                'description' => 'Senior project developer',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('project_roles', [
+            'id' => $role->id,
+            'name' => 'Senior Developer',
+            'code' => 'senior_developer',
+            'description' => 'Senior project developer',
+        ]);
+    }
+
+    public function test_project_manager_can_toggle_project_role_status_through_http_layer(): void
+    {
+        $manager = $this->userWithPermission('projects.manage_roles');
+        $project = $this->createProject($manager);
+        $role = $project->roles()->create([
+            'name' => 'Developer',
+            'code' => 'developer',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($manager)
+            ->patch(route('projects.roles.toggle-status', [$project, $role]))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('project_roles', [
+            'id' => $role->id,
+            'is_active' => false,
+        ]);
+    }
+
+    public function test_project_manager_can_delete_unused_project_role_through_http_layer(): void
+    {
+        $manager = $this->userWithPermission('projects.manage_roles');
+        $project = $this->createProject($manager);
+        $role = $project->roles()->create([
+            'name' => 'Developer',
+            'code' => 'developer',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($manager)
+            ->delete(route('projects.roles.destroy', [$project, $role]))
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('project_roles', [
+            'id' => $role->id,
+        ]);
+    }
+
+    public function test_project_role_with_members_cannot_be_deleted_through_http_layer(): void
+    {
+        $manager = $this->userWithPermission('projects.manage_roles');
+        $project = $this->createProject($manager);
+        $role = $project->roles()->create([
+            'name' => 'Developer',
+            'code' => 'developer',
+            'is_active' => true,
+        ]);
+        $member = User::factory()->create([
+            'status' => 'active',
+        ]);
+
+        ProjectMember::query()->create([
+            'project_id' => $project->id,
+            'user_id' => $member->id,
+            'project_role_id' => $role->id,
+        ]);
+
+        $this->actingAs($manager)
+            ->delete(route('projects.roles.destroy', [$project, $role]))
+            ->assertSessionHasErrors('role');
+
+        $this->assertDatabaseHas('project_roles', [
+            'id' => $role->id,
+        ]);
+    }
+
     public function test_authorized_user_can_create_project(): void
     {
         $creator = $this->userWithPermission('projects.create');
