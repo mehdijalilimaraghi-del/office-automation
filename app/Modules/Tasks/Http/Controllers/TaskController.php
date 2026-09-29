@@ -29,12 +29,12 @@ class TaskController extends Controller
     ) {
     }
 
-    public function index(): Response
+    public function index(\Illuminate\Http\Request $request): Response
     {
         Gate::authorize('viewAny', Task::class);
 
         return Inertia::render('Tasks/Index', [
-            'tasks' => $this->taskService->list(),
+            'tasks' => $this->taskService->list($request->user()),
         ]);
     }
 
