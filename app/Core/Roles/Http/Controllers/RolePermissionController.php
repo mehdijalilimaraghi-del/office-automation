@@ -2,6 +2,7 @@
 
 namespace App\Core\Roles\Http\Controllers;
 
+use App\Core\Permissions\Enums\PermissionScope;
 use App\Core\Permissions\Services\PermissionService;
 use App\Core\Roles\Contracts\RoleServiceInterface;
 use App\Core\Roles\Models\Role;
@@ -24,6 +25,12 @@ class RolePermissionController extends Controller
         return Inertia::render('Core/Roles/Permissions', [
             'role' => $role->load('permissions'),
             'permissions' => $this->permissionService->list(),
+            'scopes' => collect(PermissionScope::cases())
+                ->map(fn (PermissionScope $scope) => [
+                    'value' => $scope->value,
+                    'label' => $scope->label(),
+                ])
+                ->values(),
         ]);
     }
 
@@ -33,7 +40,7 @@ class RolePermissionController extends Controller
     ): RedirectResponse {
         $this->roleService->syncPermissions(
             $role,
-            $request->validated('permission_ids')
+            $request->validated('permissions')
         );
 
         return back()->with(
