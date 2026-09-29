@@ -51,9 +51,13 @@ class TaskService implements TaskServiceContract
         );
     }
 
-    public function changeStatus(Task $task, string $status): Task
+    public function changeStatus(Task $task, string $status, User $actor): Task
     {
-        return $this->changeTaskStatusAction->execute(task: $task, status: $status);
+        return $this->changeTaskStatusAction->execute(
+            task: $task,
+            status: $status,
+            actor: $actor,
+        );
     }
 
     public function delete(Task $task): void
