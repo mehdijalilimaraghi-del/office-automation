@@ -248,6 +248,110 @@ class DepartmentControllerTest extends TestCase
         $response->assertSessionHasErrors('parent_id');
     }
 
+    public function test_department_manager_is_added_as_member_when_created(): void
+    {
+        $user = $this->user();
+        $manager = User::factory()->create();
+
+        $this->grant($user, 'departments.create');
+
+        $response = $this->actingAs($user)->post(
+            route('departments.store'),
+            [
+                'name' => 'فناوری اطلاعات',
+                'code' => 'IT',
+                'description' => null,
+                'parent_id' => null,
+                'manager_id' => $manager->id,
+                'is_active' => true,
+            ]
+        );
+
+        $response->assertRedirect();
+
+        $department = Department::where('name', 'فناوری اطلاعات')->firstOrFail();
+
+        $this->assertSame($manager->id, $department->manager_id);
+
+        $this->assertDatabaseHas('department_memberships', [
+            'department_id' => $department->id,
+            'user_id' => $manager->id,
+        ]);
+    }
+
+    public function test_department_manager_is_added_as_member_when_updated(): void
+    {
+        $user = $this->user();
+        $manager = User::factory()->create();
+
+        $this->grant($user, 'departments.edit');
+
+        $department = Department::create([
+            'name' => 'فناوری اطلاعات',
+            'code' => 'IT',
+            'description' => null,
+            'parent_id' => null,
+            'manager_id' => null,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($user)->put(
+            route('departments.update', $department),
+            [
+                'name' => 'فناوری اطلاعات',
+                'code' => 'IT',
+                'description' => null,
+                'parent_id' => null,
+                'manager_id' => $manager->id,
+                'is_active' => true,
+            ]
+        );
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('departments', [
+            'id' => $department->id,
+            'manager_id' => $manager->id,
+        ]);
+
+        $this->assertDatabaseHas('department_memberships', [
+            'department_id' => $department->id,
+            'user_id' => $manager->id,
+        ]);
+    }
+
+    public function test_department_with_manager_cannot_be_deleted(): void
+    {
+        $user = $this->user();
+        $manager = User::factory()->create();
+
+        $this->grant($user, 'departments.delete');
+
+        $department = Department::create([
+            'name' => 'فناوری اطلاعات',
+            'code' => 'IT',
+            'description' => null,
+            'parent_id' => null,
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+
+        $department->members()->attach($manager->id, [
+            'is_primary' => false,
+            'joined_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->delete(
+            route('departments.destroy', $department)
+        );
+
+        $response->assertSessionHasErrors('department');
+
+        $this->assertDatabaseHas('departments', [
+            'id' => $department->id,
+        ]);
+    }
+
     public function test_guest_cannot_create_department(): void
     {
         $response = $this->post(
