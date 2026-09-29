@@ -18,4 +18,6 @@ interface UserServiceInterface
     public function syncRoles(User $user, array $roleIds): User;
 
     public function list(): Collection;
+
+    public function activeList(): Collection;
 }
