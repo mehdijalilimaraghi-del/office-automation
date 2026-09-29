@@ -144,6 +144,47 @@ class User extends Authenticatable
             ->exists();
     }
 
+    /**
+     * Return all access scopes granted to the user for a permission.
+     *
+     * Scopes are combined across the user's active roles.
+     *
+     * @return array<int, string>
+     */
+    public function permissionScopes(string $permissionCode): array
+    {
+        if (! $this->isActive()) {
+            return [];
+        }
+
+        return $this->roles()
+            ->where('roles.is_active', true)
+            ->whereHas(
+                'permissions',
+                function ($query) use ($permissionCode): void {
+                    $query
+                        ->where('permissions.code', $permissionCode)
+                        ->where('permissions.is_active', true);
+                }
+            )
+            ->with([
+                'permissions' => function ($query) use ($permissionCode): void {
+                    $query
+                        ->where('permissions.code', $permissionCode)
+                        ->where('permissions.is_active', true);
+                },
+            ])
+            ->get()
+            ->flatMap(
+                fn (Role $role) => $role->permissions
+                    ->map(fn ($permission) => $permission->pivot->scope)
+            )
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
     public function hasPermission(string $permissionCode): bool
     {
         if (! $this->isActive()) {
