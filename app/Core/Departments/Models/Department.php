@@ -2,15 +2,18 @@
 
 namespace App\Core\Departments\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Department extends Model
 {
     protected $fillable = [
         'parent_id',
+        'manager_id',
         'name',
         'code',
         'description',
@@ -32,6 +35,24 @@ class Department extends Model
     public function children(): HasMany
     {
         return $this->hasMany(self::class, 'parent_id');
+    }
+
+    public function manager(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'manager_id');
+    }
+
+    public function members(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            User::class,
+            'department_memberships',
+            'department_id',
+            'user_id'
+        )->withPivot([
+            'is_primary',
+            'joined_at',
+        ])->withTimestamps();
     }
 
     public function hasChildren(): bool
