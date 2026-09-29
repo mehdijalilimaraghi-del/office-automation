@@ -10,20 +10,32 @@ interface Department {
     code: string | null;
     description: string | null;
     is_active: boolean;
+    manager_id: number | null;
+    manager?: {
+        id: number;
+        name: string;
+    } | null;
     parent?: {
         id: number;
         name: string;
     } | null;
 }
 
+interface User {
+    id: number;
+    name: string;
+}
+
 const props = defineProps<{
     departments: Department[];
+    users: User[];
 }>();
 
 const editingDepartment = ref<Department | null>(null);
 
 const form = useForm({
     parent_id: null as number | null,
+    manager_id: null as number | null,
     name: '',
     code: '',
     description: '',
@@ -89,6 +101,7 @@ const startEdit = (department: Department) => {
     editingDepartment.value = department;
 
     form.parent_id = department.parent_id;
+    form.manager_id = department.manager_id;
     form.name = department.name;
     form.code = department.code ?? '';
     form.description = department.description ?? '';
@@ -217,6 +230,39 @@ const getParentName = (department: Department): string => {
                                 class="mt-1 text-sm text-red-600"
                             >
                                 {{ form.errors.parent_id }}
+                            </p>
+                        </div>
+
+                        <!-- Manager -->
+                        <div>
+                            <label
+                                for="manager_id"
+                                class="mb-2 block text-sm font-medium text-gray-700"
+                            >
+                                مدیر دپارتمان
+                            </label>
+
+                            <select
+                                id="manager_id"
+                                v-model="form.manager_id"
+                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            >
+                                <option :value="null">بدون مدیر</option>
+
+                                <option
+                                    v-for="user in props.users"
+                                    :key="user.id"
+                                    :value="user.id"
+                                >
+                                    {{ user.name }}
+                                </option>
+                            </select>
+
+                            <p
+                                v-if="form.errors.manager_id"
+                                class="mt-1 text-sm text-red-600"
+                            >
+                                {{ form.errors.manager_id }}
                             </p>
                         </div>
 
@@ -402,6 +448,11 @@ const getParentName = (department: Department): string => {
                                     >
                                         دپارتمان والد
                                     </th>
+                                    <th
+                                        class="px-6 py-3 text-right text-xs font-medium text-gray-500"
+                                    >
+                                        مدیر
+                                    </th>
 
                                     <th
                                         class="px-6 py-3 text-right text-xs font-medium text-gray-500"
@@ -448,6 +499,11 @@ const getParentName = (department: Department): string => {
                                         class="whitespace-nowrap px-6 py-4 text-sm text-gray-600"
                                     >
                                         {{ getParentName(department) }}
+                                    </td>
+                                    <td
+                                        class="whitespace-nowrap px-6 py-4 text-sm text-gray-600"
+                                    >
+                                        {{ department.manager?.name || 'بدون مدیر' }}
                                     </td>
 
                                     <td
