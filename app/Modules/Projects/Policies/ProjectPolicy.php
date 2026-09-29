@@ -31,7 +31,7 @@ class ProjectPolicy
     {
         return $user->isActive()
             && $user->hasPermission('projects.update')
-            && $project->manager_id === $user->id;
+            && (int) $project->manager_id === (int) $user->id;
     }
 
     public function delete(User $user, Project $project): bool
