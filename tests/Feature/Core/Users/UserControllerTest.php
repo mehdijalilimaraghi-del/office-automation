@@ -82,8 +82,6 @@ class UserControllerTest extends TestCase
         $this->assertDatabaseHas('users', [
             'name' => 'New User',
             'email' => 'new-user@example.com',
-            'department_ids' => [$department->id],
-                'primary_department_id' => $department->id,
             'status' => 'active',
         ]);
 
@@ -91,6 +89,12 @@ class UserControllerTest extends TestCase
             'email',
             'new-user@example.com'
         )->firstOrFail();
+
+        $this->assertDatabaseHas('department_memberships', [
+            'user_id' => $createdUser->id,
+            'department_id' => $department->id,
+            'is_primary' => true,
+        ]);
 
         $this->assertDatabaseHas('role_user', [
             'user_id' => $createdUser->id,
@@ -133,9 +137,13 @@ class UserControllerTest extends TestCase
             'id' => $user->id,
             'name' => 'Updated Name',
             'email' => 'updated@example.com',
-            'department_ids' => [$department->id],
-                'primary_department_id' => $department->id,
             'status' => 'active',
+        ]);
+
+        $this->assertDatabaseHas('department_memberships', [
+            'user_id' => $user->id,
+            'department_id' => $department->id,
+            'is_primary' => true,
         ]);
 
         $this->assertDatabaseHas('role_user', [
