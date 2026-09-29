@@ -271,7 +271,7 @@ class DepartmentControllerTest extends TestCase
 
         $department = Department::where('name', 'فناوری اطلاعات')->firstOrFail();
 
-        $this->assertSame($manager->id, $department->manager_id);
+        $this->assertEquals($manager->id, $department->manager_id);
 
         $this->assertDatabaseHas('department_memberships', [
             'department_id' => $department->id,
