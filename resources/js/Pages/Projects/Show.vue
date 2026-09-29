@@ -2,7 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Button } from '@/Components/ui/button';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, reactive, ref } from 'vue';
 
 interface ProjectRole {
     id: number;
@@ -61,8 +61,24 @@ interface Project {
 
 const props = defineProps<{
     project: Project;
+    canManageMembers: boolean;
     memberOptions: MemberOption[];
 }>();
+
+const memberRoleSelections = reactive<Record<number, string>>(
+    Object.fromEntries(
+        props.project.members.map((member) => [
+            member.id,
+            member.project_role?.id?.toString() ?? '',
+        ]),
+    ),
+);
+
+const memberRoleForm = useForm({
+    project_role_id: '',
+});
+
+const deletingMemberId = ref<number | null>(null);
 
 const addMemberForm = useForm({
     user_id: '',
@@ -74,6 +90,42 @@ const availableMembers = computed(() => props.memberOptions);
 const activeProjectRoles = computed(() =>
     props.project.roles.filter((role) => role.is_active),
 );
+
+const submitMemberRole = (member: ProjectMember): void => {
+    memberRoleForm.project_role_id =
+        memberRoleSelections[member.id] ?? '';
+
+    memberRoleForm.put(
+        route('projects.members.update-role', [
+            props.project.id,
+            member.id,
+        ]),
+        {
+            preserveScroll: true,
+        },
+    );
+};
+
+const removeMember = (member: ProjectMember): void => {
+    if (!window.confirm('آیا از حذف این عضو از پروژه مطمئن هستید؟')) {
+        return;
+    }
+
+    deletingMemberId.value = member.id;
+
+    useForm({}).delete(
+        route('projects.members.destroy', [
+            props.project.id,
+            member.id,
+        ]),
+        {
+            preserveScroll: true,
+            onFinish: () => {
+                deletingMemberId.value = null;
+            },
+        },
+    );
+};
 
 const submitAddMember = (): void => {
     addMemberForm.post(route('projects.members.store', props.project.id), {
@@ -201,7 +253,7 @@ const formatDate = (date: string | null): string => {
                 </div>
             </section>
 
-            <section v-if="memberOptions.length > 0" class="rounded-lg border bg-card">
+            <section v-if="canManageMembers && memberOptions.length > 0" class="rounded-lg border bg-card">
                 <div class="border-b p-5">
                     <h3 class="font-semibold">افزودن عضو</h3>
                 </div>
@@ -272,6 +324,7 @@ const formatDate = (date: string | null): string => {
                             <tr>
                                 <th class="px-4 py-3 text-right font-medium">کاربر</th>
                                 <th class="px-4 py-3 text-right font-medium">نقش پروژه</th>
+                                <th v-if="canManageMembers" class="px-4 py-3 text-right font-medium">عملیات</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y">
@@ -280,7 +333,49 @@ const formatDate = (date: string | null): string => {
                                     {{ member.user?.name ?? '—' }}
                                 </td>
                                 <td class="px-4 py-3">
-                                    {{ member.project_role?.name ?? 'بدون نقش' }}
+                                    <select
+                                        v-if="canManageMembers"
+                                        v-model="memberRoleSelections[member.id]"
+                                        class="h-9 min-w-40 rounded-md border bg-background px-2 text-sm"
+                                        :disabled="memberRoleForm.processing"
+                                    >
+                                        <option value="">بدون نقش</option>
+                                        <option
+                                            v-for="role in activeProjectRoles"
+                                            :key="role.id"
+                                            :value="role.id.toString()"
+                                        >
+                                            {{ role.name }}
+                                        </option>
+                                    </select>
+                                    <span v-else>
+                                        {{ member.project_role?.name ?? 'بدون نقش' }}
+                                    </span>
+                                </td>
+                                <td v-if="canManageMembers" class="px-4 py-3">
+                                    <div class="flex flex-wrap gap-2">
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            :disabled="memberRoleForm.processing"
+                                            @click="submitMemberRole(member)"
+                                        >
+                                            ذخیره نقش
+                                        </Button>
+                                        <Button
+                                            v-if="member.user?.id !== project.manager?.id"
+                                            type="button"
+                                            size="sm"
+                                            variant="destructive"
+                                            :disabled="deletingMemberId === member.id"
+                                            @click="removeMember(member)"
+                                        >
+                                            حذف
+                                        </Button>
+                                    </div>
+                                    <p v-if="memberRoleForm.errors.project_role_id" class="mt-1 text-sm text-destructive">
+                                        {{ memberRoleForm.errors.project_role_id }}
+                                    </p>
                                 </td>
                             </tr>
                         </tbody>
