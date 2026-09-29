@@ -283,8 +283,9 @@ function currentUserId(): number | null {
                                         class="px-4 py-3 text-gray-600"
                                     >
                                         {{
-                                            user.department?.name ??
-                                            '—'
+                                            user.departments
+                                                .map((department) => department.name)
+                                                .join('، ') || '—'
                                         }}
                                     </td>
 
