@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('task_id')->constrained('tasks')->cascadeOnDelete();
             $table->string('from_status', 30)->nullable();
             $table->string('to_status', 30);
-            $table->foreignId('changed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('changed_by')->nullable()->constrained('users');
             $table->text('note')->nullable();
             $table->dateTime('changed_at');
             $table->timestamps();
