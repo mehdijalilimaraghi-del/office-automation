@@ -1,0 +1,128 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature\Modules\Projects;
+
+use App\Core\Permissions\Models\Permission;
+use App\Core\Roles\Models\Role;
+use App\Models\User;
+use App\Modules\Projects\Models\Project;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
+use Tests\TestCase;
+
+class ProjectPolicyTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_user_with_view_permission_can_view_project(): void
+    {
+        $user = $this->userWithPermission('projects.view');
+
+        $project = $this->createProject();
+
+        $this->assertTrue(
+            $user->can('view', $project)
+        );
+    }
+
+    public function test_user_without_view_permission_cannot_view_project(): void
+    {
+        $user = User::factory()->create();
+
+        $project = $this->createProject();
+
+        $this->assertFalse(
+            $user->can('view', $project)
+        );
+    }
+
+    public function test_only_project_manager_can_update_project(): void
+    {
+        $manager = $this->userWithPermission('projects.update');
+        $member = $this->userWithPermission('projects.update');
+
+        $project = $this->createProject($manager);
+
+        $this->assertTrue(
+            $manager->can('update', $project)
+        );
+
+        $this->assertFalse(
+            $member->can('update', $project)
+        );
+    }
+
+    public function test_only_project_manager_can_manage_members(): void
+    {
+        $manager = $this->userWithPermission('projects.manage_members');
+        $member = $this->userWithPermission('projects.manage_members');
+
+        $project = $this->createProject($manager);
+
+        $this->assertTrue(
+            $manager->can('manageMembers', $project)
+        );
+
+        $this->assertFalse(
+            $member->can('manageMembers', $project)
+        );
+    }
+
+    public function test_inactive_user_cannot_access_project_even_with_permission(): void
+    {
+        $user = $this->userWithPermission('projects.view');
+
+        $user->update([
+            'status' => 'inactive',
+        ]);
+
+        $project = $this->createProject();
+
+        $this->assertFalse(
+            $user->can('view', $project)
+        );
+    }
+
+    private function userWithPermission(string $permissionCode): User
+    {
+        $permission = Permission::query()
+            ->where('code', $permissionCode)
+            ->firstOrFail();
+
+        $role = Role::query()->create([
+            'name' => 'Test Role ' . Str::upper(Str::random(8)),
+            'code' => 'test-' . Str::lower(Str::random(12)),
+            'description' => 'Test role',
+            'is_active' => true,
+            'is_system' => false,
+        ]);
+
+        $role->permissions()->attach($permission->id);
+
+        $user = User::factory()->create([
+            'status' => 'active',
+        ]);
+
+        $user->roles()->attach($role->id);
+
+        return $user->fresh();
+    }
+
+    private function createProject(?User $manager = null): Project
+    {
+        $manager ??= User::factory()->create([
+            'status' => 'active',
+        ]);
+
+        return Project::query()->create([
+            'name' => 'Policy Test Project',
+            'code' => 'POL-' . Str::upper(Str::random(8)),
+            'status' => 'active',
+            'manager_id' => $manager->id,
+            'created_by' => $manager->id,
+            'is_active' => true,
+        ]);
+    }
+}

@@ -4,9 +4,13 @@ namespace App\Models;
 
 use App\Core\Departments\Models\Department;
 use App\Core\Roles\Models\Role;
+use App\Modules\Projects\Models\Project;
+use App\Modules\Projects\Models\ProjectMember;
+use App\Modules\Tasks\Models\Task;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -51,6 +55,57 @@ class User extends Authenticatable
         )->withTimestamps();
     }
 
+    public function managedProjects(): HasMany
+    {
+        return $this->hasMany(
+            Project::class,
+            'manager_id'
+        );
+    }
+
+    public function createdProjects(): HasMany
+    {
+        return $this->hasMany(
+            Project::class,
+            'created_by'
+        );
+    }
+
+    public function projectMemberships(): HasMany
+    {
+        return $this->hasMany(
+            ProjectMember::class,
+            'user_id'
+        );
+    }
+
+    public function projects(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Project::class,
+            'project_user',
+            'user_id',
+            'project_id'
+        )->withPivot('project_role_id')
+            ->withTimestamps();
+    }
+
+    public function createdTasks(): HasMany
+    {
+        return $this->hasMany(
+            Task::class,
+            'created_by'
+        );
+    }
+
+    public function assignedTasks(): HasMany
+    {
+        return $this->hasMany(
+            Task::class,
+            'assignee_id'
+        );
+    }
+
     public function isActive(): bool
     {
         return $this->status === 'active';
@@ -88,9 +143,8 @@ class User extends Authenticatable
             ->exists();
     }
 
-    public function hasAnyPermission(
-        array $permissionCodes
-    ): bool {
+    public function hasAnyPermission(array $permissionCodes): bool
+    {
         if (! $this->isActive()) {
             return false;
         }
@@ -111,9 +165,8 @@ class User extends Authenticatable
             ->exists();
     }
 
-    public function hasAllPermissions(
-        array $permissionCodes
-    ): bool {
+    public function hasAllPermissions(array $permissionCodes): bool
+    {
         foreach ($permissionCodes as $permissionCode) {
             if (! $this->hasPermission($permissionCode)) {
                 return false;

@@ -4,7 +4,6 @@ namespace Tests\Feature\Core\Roles;
 
 use App\Core\Permissions\Models\Permission;
 use App\Core\Roles\Models\Role;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -22,15 +21,15 @@ class RolePermissionTest extends TestCase
         ]);
 
         $view = Permission::create([
-            'name' => 'مشاهده پروژه‌ها',
-            'code' => 'projects.view',
+            'name' => 'تست مشاهده پروژه‌ها',
+            'code' => 'test.projects.view',
             'is_active' => true,
             'is_system' => false,
         ]);
 
         $create = Permission::create([
-            'name' => 'ایجاد پروژه',
-            'code' => 'projects.create',
+            'name' => 'تست ایجاد پروژه',
+            'code' => 'test.projects.create',
             'is_active' => true,
             'is_system' => false,
         ]);
@@ -41,9 +40,11 @@ class RolePermissionTest extends TestCase
         ]);
 
         $this->assertCount(2, $role->fresh()->permissions);
+
         $this->assertTrue(
             $role->fresh()->permissions->contains('id', $view->id)
         );
+
         $this->assertTrue(
             $role->fresh()->permissions->contains('id', $create->id)
         );
@@ -66,8 +67,8 @@ class RolePermissionTest extends TestCase
         ]);
 
         $permission = Permission::create([
-            'name' => 'مشاهده پروژه‌ها',
-            'code' => 'projects.view',
+            'name' => 'تست مشاهده پروژه‌ها',
+            'code' => 'test.projects.view',
             'is_active' => true,
             'is_system' => false,
         ]);
@@ -77,7 +78,10 @@ class RolePermissionTest extends TestCase
             $roleTwo->id,
         ]);
 
-        $this->assertCount(2, $permission->fresh()->roles);
+        $this->assertCount(
+            2,
+            $permission->fresh()->roles
+        );
     }
 
     public function test_duplicate_role_permission_assignment_is_prevented(): void
@@ -90,15 +94,17 @@ class RolePermissionTest extends TestCase
         ]);
 
         $permission = Permission::create([
-            'name' => 'مشاهده پروژه‌ها',
-            'code' => 'projects.view',
+            'name' => 'تست مشاهده پروژه‌ها',
+            'code' => 'test.projects.view',
             'is_active' => true,
             'is_system' => false,
         ]);
 
         $role->permissions()->attach($permission->id);
 
-        $this->expectException(\Illuminate\Database\QueryException::class);
+        $this->expectException(
+            \Illuminate\Database\QueryException::class
+        );
 
         $role->permissions()->attach($permission->id);
     }
