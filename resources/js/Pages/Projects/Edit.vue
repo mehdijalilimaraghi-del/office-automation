@@ -98,8 +98,6 @@ const submit = (): void => {
                     <p v-if="form.errors.description" class="text-sm text-destructive">{{ form.errors.description }}</p>
                 </div>
 
-                <div v-if="form.errors.project" class="text-sm text-destructive">{{ form.errors.project }}</div>
-
                 <div class="flex justify-end gap-2">
                     <Button type="button" variant="outline" as-child>
                         <Link :href="route('projects.show', project.id)">انصراف</Link>
