@@ -332,10 +332,12 @@ class UserControllerTest extends TestCase
 
     public function test_user_who_manages_department_cannot_be_deleted(): void
     {
-        $user = $this->user();
+        $user = User::factory()->create();
         $manager = User::factory()->create();
 
-        $this->grant($user, 'users.delete');
+        $this->grantPermissions($user, [
+            'users.delete',
+        ]);
 
         $department = Department::create([
             'name' => 'فناوری اطلاعات',
@@ -369,7 +371,7 @@ class UserControllerTest extends TestCase
 
     public function test_user_cannot_remove_department_membership_while_managing_department(): void
     {
-        $user = $this->user();
+        $user = User::factory()->create();
         $manager = User::factory()->create();
         $department = Department::create([
             'name' => 'فناوری اطلاعات',
@@ -385,7 +387,9 @@ class UserControllerTest extends TestCase
             'joined_at' => now(),
         ]);
 
-        $this->grant($user, 'users.edit');
+        $this->grantPermissions($user, [
+            'users.edit',
+        ]);
 
         $response = $this->actingAs($user)->put(
             route('users.update', $manager),
