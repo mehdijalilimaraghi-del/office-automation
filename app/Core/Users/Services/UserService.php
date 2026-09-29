@@ -4,12 +4,14 @@ namespace App\Core\Users\Services;
 
 use App\Core\Users\Actions\CreateUserAction;
 use App\Core\Users\Actions\DeleteUserAction;
+use App\Core\Users\Actions\SyncUserDepartmentsAction;
 use App\Core\Users\Actions\SyncUserRolesAction;
 use App\Core\Users\Actions\ToggleUserStatusAction;
 use App\Core\Users\Actions\UpdateUserAction;
 use App\Core\Users\Contracts\UserServiceInterface;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 class UserService implements UserServiceInterface
 {
@@ -18,43 +20,64 @@ class UserService implements UserServiceInterface
         private readonly UpdateUserAction $updateUserAction,
         private readonly DeleteUserAction $deleteUserAction,
         private readonly ToggleUserStatusAction $toggleUserStatusAction,
+        private readonly SyncUserDepartmentsAction $syncUserDepartmentsAction,
         private readonly SyncUserRolesAction $syncUserRolesAction,
     ) {
     }
 
     public function create(array $data): User
     {
-        $user = $this->createUserAction->execute($data);
+        return DB::transaction(function () use ($data): User {
+            $user = $this->createUserAction->execute($data);
 
-        $this->syncUserRolesAction->execute(
-            $user,
-            $data['role_ids'] ?? []
-        );
+            $this->syncUserDepartmentsAction->execute(
+                $user,
+                $data['department_ids'] ?? [],
+                isset($data['primary_department_id'])
+                    ? (int) $data['primary_department_id']
+                    : null
+            );
 
-        return $user->load([
-            'department',
-            'roles',
-        ]);
+            $this->syncUserRolesAction->execute(
+                $user,
+                $data['role_ids'] ?? []
+            );
+
+            return $user->load([
+                'departments',
+                'roles',
+            ]);
+        });
     }
 
     public function update(
         User $user,
         array $data
     ): User {
-        $user = $this->updateUserAction->execute(
-            $user,
-            $data
-        );
+        return DB::transaction(function () use ($user, $data): User {
+            $user = $this->updateUserAction->execute(
+                $user,
+                $data
+            );
 
-        $this->syncUserRolesAction->execute(
-            $user,
-            $data['role_ids'] ?? []
-        );
+            $this->syncUserDepartmentsAction->execute(
+                $user,
+                $data['department_ids'] ?? [],
+                isset($data['primary_department_id'])
+                    ? (int) $data['primary_department_id']
+                    : null
+            );
 
-        return $user->load([
-            'department',
-            'roles',
-        ]);
+            $this->syncUserRolesAction->execute(
+                $user,
+                $data['role_ids'] ?? []
+            );
+
+            return $user->load([
+                'departments',
+                'roles',
+            ]);
+        });
     }
 
     public function delete(User $user): void
@@ -81,7 +104,7 @@ class UserService implements UserServiceInterface
     {
         return User::query()
             ->with([
-                'department',
+                'departments',
                 'roles',
             ])
             ->orderBy('name')
