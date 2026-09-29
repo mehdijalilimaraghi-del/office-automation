@@ -5,6 +5,10 @@ use App\Core\Permissions\Http\Controllers\PermissionController;
 use App\Core\Roles\Http\Controllers\RoleController;
 use App\Core\Roles\Http\Controllers\RolePermissionController;
 use App\Core\Users\Http\Controllers\UserController;
+use App\Modules\Projects\Http\Controllers\ProjectController;
+use App\Modules\Projects\Http\Controllers\ProjectMemberController;
+use App\Modules\Projects\Http\Controllers\ProjectRoleController;
+use App\Modules\Tasks\Http\Controllers\TaskController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -154,10 +158,99 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Permissions
+    | Projects
     |--------------------------------------------------------------------------
     */
 
+    Route::get('/projects', [ProjectController::class, 'index'])
+        ->middleware('permission:projects.view')
+        ->name('projects.index');
+
+    Route::post('/projects', [ProjectController::class, 'store'])
+        ->middleware('permission:projects.create')
+        ->name('projects.store');
+
+    Route::get('/projects/{project}', [ProjectController::class, 'show'])
+        ->middleware('permission:projects.view')
+        ->name('projects.show');
+
+    Route::put('/projects/{project}', [ProjectController::class, 'update'])
+        ->middleware('permission:projects.update')
+        ->name('projects.update');
+
+    Route::delete('/projects/{project}', [ProjectController::class, 'destroy'])
+        ->middleware('permission:projects.delete')
+        ->name('projects.destroy');
+
+    Route::scopeBindings()->group(function () {
+        Route::post('/projects/{project}/roles', [ProjectRoleController::class, 'store'])
+            ->middleware('permission:projects.manage_roles')
+            ->name('projects.roles.store');
+
+        Route::put('/projects/{project}/roles/{role}', [ProjectRoleController::class, 'update'])
+            ->middleware('permission:projects.manage_roles')
+            ->name('projects.roles.update');
+
+        Route::patch('/projects/{project}/roles/{role}/toggle-status', [ProjectRoleController::class, 'toggleStatus'])
+            ->middleware('permission:projects.manage_roles')
+            ->name('projects.roles.toggle-status');
+
+        Route::delete('/projects/{project}/roles/{role}', [ProjectRoleController::class, 'destroy'])
+            ->middleware('permission:projects.manage_roles')
+            ->name('projects.roles.destroy');
+
+        Route::post('/projects/{project}/members', [ProjectMemberController::class, 'store'])
+            ->middleware('permission:projects.manage_members')
+            ->name('projects.members.store');
+
+        Route::put('/projects/{project}/members/{member}', [ProjectMemberController::class, 'updateRole'])
+            ->middleware('permission:projects.manage_members')
+            ->name('projects.members.update-role');
+
+        Route::delete('/projects/{project}/members/{member}', [ProjectMemberController::class, 'destroy'])
+            ->middleware('permission:projects.manage_members')
+            ->name('projects.members.destroy');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Tasks
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/tasks', [TaskController::class, 'index'])
+        ->middleware('permission:tasks.view')
+        ->name('tasks.index');
+
+    Route::post('/tasks', [TaskController::class, 'store'])
+        ->middleware('permission:tasks.create')
+        ->name('tasks.store');
+
+    Route::get('/tasks/{task}', [TaskController::class, 'show'])
+        ->middleware('permission:tasks.view')
+        ->name('tasks.show');
+
+    Route::put('/tasks/{task}', [TaskController::class, 'update'])
+        ->middleware('permission:tasks.update')
+        ->name('tasks.update');
+
+    Route::patch('/tasks/{task}/assign', [TaskController::class, 'assign'])
+        ->middleware('permission:tasks.assign')
+        ->name('tasks.assign');
+
+    Route::patch('/tasks/{task}/status', [TaskController::class, 'changeStatus'])
+        ->middleware('permission:tasks.change_status')
+        ->name('tasks.change-status');
+
+    Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])
+        ->middleware('permission:tasks.delete')
+        ->name('tasks.destroy');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Permissions
+    |--------------------------------------------------------------------------
+    */
     Route::get('/permissions', [PermissionController::class, 'index'])
         ->middleware('permission:permissions.view')
         ->name('permissions.index');
