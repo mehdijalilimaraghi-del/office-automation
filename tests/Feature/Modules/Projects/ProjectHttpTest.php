@@ -252,6 +252,34 @@ class ProjectHttpTest extends TestCase
         ]);
     }
 
+    public function test_project_role_from_another_project_cannot_be_managed_through_nested_route(): void
+    {
+        $manager = $this->userWithPermission('projects.manage_roles');
+        $project = $this->createProject($manager);
+        $otherProject = $this->createProject();
+
+        $role = $otherProject->roles()->create([
+            'name' => 'Other Project Role',
+            'code' => 'other_role',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($manager)
+            ->put(route('projects.roles.update', [$project, $role]), [
+                'name' => 'Should Not Update',
+                'code' => 'should_not_update',
+                'description' => null,
+            ])
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('project_roles', [
+            'id' => $role->id,
+            'project_id' => $otherProject->id,
+            'name' => 'Other Project Role',
+            'code' => 'other_role',
+        ]);
+    }
+
     public function test_project_role_with_members_cannot_be_deleted_through_http_layer(): void
     {
         $manager = $this->userWithPermission('projects.manage_roles');
