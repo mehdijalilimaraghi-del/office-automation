@@ -27,6 +27,21 @@ class SyncUserDepartmentsAction
             ]);
         }
 
+        $managedDepartmentIds = $user->managedDepartments()
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $removedManagedDepartmentIds = array_values(
+            array_diff($managedDepartmentIds, $departmentIds)
+        );
+
+        if ($removedManagedDepartmentIds !== []) {
+            throw ValidationException::withMessages([
+                'department_ids' => 'کاربر مدیر یک یا چند دپارتمان است. ابتدا مدیر دپارتمان را حذف یا تغییر دهید.',
+            ]);
+        }
+
         $existing = $user->departmentMemberships()
             ->get()
             ->keyBy('department_id');
