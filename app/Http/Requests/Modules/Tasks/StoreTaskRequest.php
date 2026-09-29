@@ -1,0 +1,66 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Requests\Modules\Tasks;
+
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+class StoreTaskRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'project_id' => ['required', 'integer', 'exists:projects,id'],
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'status' => [
+                'sometimes',
+                Rule::in([
+                    'todo',
+                    'in_progress',
+                    'completed',
+                    'cancelled',
+                ]),
+            ],
+            'priority' => [
+                'sometimes',
+                Rule::in([
+                    'low',
+                    'normal',
+                    'high',
+                    'urgent',
+                ]),
+            ],
+            'assignee_id' => [
+                'required',
+                'integer',
+                'exists:users,id',
+            ],
+            'start_date' => ['nullable', 'date'],
+            'due_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+            'is_active' => ['sometimes', 'boolean'],
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'project_id' => 'پروژه',
+            'title' => 'عنوان تسک',
+            'description' => 'توضیحات',
+            'status' => 'وضعیت',
+            'priority' => 'اولویت',
+            'assignee_id' => 'مسئول تسک',
+            'start_date' => 'تاریخ شروع',
+            'due_date' => 'تاریخ سررسید',
+            'is_active' => 'وضعیت فعال بودن',
+        ];
+    }
+}
