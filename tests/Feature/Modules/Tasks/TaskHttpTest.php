@@ -119,6 +119,30 @@ class TaskHttpTest extends TestCase
         );
     }
 
+    public function test_project_manager_can_assign_task_through_http_layer(): void
+    {
+        $manager = $this->userWithPermission('tasks.assign');
+        $project = $this->createProject($manager);
+        $assignee = User::factory()->create([
+            'status' => 'active',
+        ]);
+
+        $this->addMember($project, $assignee);
+
+        $task = $this->createTask($project, $manager);
+
+        $this->actingAs($manager)
+            ->patch(route('tasks.assign', $task), [
+                'assignee_id' => $assignee->id,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('tasks', [
+            'id' => $task->id,
+            'assignee_id' => $assignee->id,
+        ]);
+    }
+
     public function test_project_manager_can_delete_task(): void
     {
         $manager = $this->userWithPermission('tasks.delete');
