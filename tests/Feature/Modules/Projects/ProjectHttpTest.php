@@ -50,6 +50,38 @@ class ProjectHttpTest extends TestCase
         );
     }
 
+    public function test_authorized_user_can_open_project_show_page_with_project_details(): void
+    {
+        $manager = $this->userWithPermission('projects.view');
+        $member = User::factory()->create([
+            'name' => 'Project Member',
+            'status' => 'active',
+        ]);
+
+        $project = $this->createProject($manager);
+        ProjectMember::query()->create([
+            'project_id' => $project->id,
+            'user_id' => $member->id,
+            'project_role_id' => null,
+        ]);
+
+        $response = $this->actingAs($manager)
+            ->get(route('projects.show', $project));
+
+        $response->assertOk();
+
+        $response->assertInertia(
+            fn ($page) => $page
+                ->component('Projects/Show')
+                ->where('project.id', $project->id)
+                ->where('project.name', 'HTTP Project')
+                ->where('project.code', $project->code)
+                ->where('project.manager.id', $manager->id)
+                ->where('project.manager.name', $manager->name)
+                ->has('project.members', 2)
+        );
+    }
+
     public function test_authorized_user_can_create_project(): void
     {
         $creator = $this->userWithPermission('projects.create');
