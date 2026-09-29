@@ -41,8 +41,19 @@ class UpdateUserRequest extends FormRequest
                 'confirmed',
             ],
 
-            'department_id' => [
-                'required',
+            'department_ids' => [
+                'sometimes',
+                'array',
+            ],
+
+            'department_ids.*' => [
+                'integer',
+                'distinct',
+                'exists:departments,id',
+            ],
+
+            'primary_department_id' => [
+                'nullable',
                 'integer',
                 'exists:departments,id',
             ],
@@ -75,7 +86,9 @@ class UpdateUserRequest extends FormRequest
             'email' => 'ایمیل',
             'password' => 'رمز عبور',
             'password_confirmation' => 'تکرار رمز عبور',
-            'department_id' => 'واحد سازمانی',
+            'department_ids' => 'واحدهای سازمانی',
+            'department_ids.*' => 'واحد سازمانی',
+            'primary_department_id' => 'واحد سازمانی اصلی',
             'status' => 'وضعیت',
             'role_ids' => 'نقش‌ها',
             'role_ids.*' => 'نقش',
