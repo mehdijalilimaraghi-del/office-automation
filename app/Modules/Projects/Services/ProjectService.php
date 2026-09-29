@@ -8,6 +8,7 @@ use App\Modules\Projects\Actions\DeleteProjectAction;
 use App\Modules\Projects\Actions\UpdateProjectAction;
 use App\Modules\Projects\Contracts\ProjectServiceContract;
 use App\Modules\Projects\Models\Project;
+use Illuminate\Support\Collection;
 
 class ProjectService implements ProjectServiceContract
 {
@@ -16,6 +17,27 @@ class ProjectService implements ProjectServiceContract
         private readonly UpdateProjectAction $updateProjectAction,
         private readonly DeleteProjectAction $deleteProjectAction,
     ) {
+    }
+
+    public function list(): Collection
+    {
+        return Project::query()
+            ->with(['manager', 'creator'])
+            ->latest()
+            ->get();
+    }
+
+    public function show(Project $project): Project
+    {
+        return $project->load([
+            'manager',
+            'creator',
+            'roles',
+            'members.user',
+            'members.projectRole',
+            'tasks.assignee',
+            'tasks.creator',
+        ]);
     }
 
     public function create(
