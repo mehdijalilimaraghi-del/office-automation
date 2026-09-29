@@ -99,6 +99,44 @@ class TaskPolicyTest extends TestCase
         );
     }
 
+    public function test_current_assignee_can_refer_task(): void
+    {
+        $currentAssignee = $this->userWithPermission('tasks.refer');
+        $newAssignee = User::factory()->create(['status' => 'active']);
+
+        $project = $this->createProject($currentAssignee, $newAssignee);
+        $task = $this->createTask($project, $currentAssignee, $currentAssignee);
+
+        $this->assertTrue(
+            $currentAssignee->can('refer', $task)
+        );
+    }
+
+    public function test_non_assignee_cannot_refer_task(): void
+    {
+        $assignee = User::factory()->create(['status' => 'active']);
+        $user = $this->userWithPermission('tasks.refer');
+
+        $project = $this->createProject($assignee, $user);
+        $task = $this->createTask($project, $assignee, $assignee);
+
+        $this->assertFalse(
+            $user->can('refer', $task)
+        );
+    }
+
+    public function test_user_without_refer_permission_cannot_refer_task(): void
+    {
+        $assignee = User::factory()->create(['status' => 'active']);
+
+        $project = $this->createProject($assignee);
+        $task = $this->createTask($project, $assignee, $assignee);
+
+        $this->assertFalse(
+            $assignee->can('refer', $task)
+        );
+    }
+
     public function test_assignee_can_change_task_status(): void
     {
         $manager = User::factory()->create([
