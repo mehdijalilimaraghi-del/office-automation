@@ -26,6 +26,12 @@ class UpdateDepartmentRequest extends FormRequest
                 Rule::notIn([$department->id]),
             ],
 
+            'manager_id' => [
+                'nullable',
+                'integer',
+                'exists:users,id',
+            ],
+
             'name' => [
                 'required',
                 'string',
@@ -54,6 +60,7 @@ class UpdateDepartmentRequest extends FormRequest
     {
         return [
             'parent_id' => 'دپارتمان والد',
+            'manager_id' => 'مدیر دپارتمان',
             'name' => 'نام دپارتمان',
             'code' => 'کد دپارتمان',
             'description' => 'توضیحات',
