@@ -32,6 +32,7 @@ class TaskStatusHistoryTest extends TestCase
         $result = app(ChangeTaskStatusAction::class)->execute(
             task: $task,
             status: 'in_progress',
+            actor: $user,
         );
 
         $this->assertSame('in_progress', $result->status);
@@ -61,6 +62,7 @@ class TaskStatusHistoryTest extends TestCase
         app(ChangeTaskStatusAction::class)->execute(
             task: $task,
             status: 'completed',
+            actor: $user,
         );
 
         $task->refresh();
@@ -94,6 +96,7 @@ class TaskStatusHistoryTest extends TestCase
         app(ChangeTaskStatusAction::class)->execute(
             task: $task,
             status: 'invalid',
+            actor: $user,
         );
 
         $this->assertSame(
