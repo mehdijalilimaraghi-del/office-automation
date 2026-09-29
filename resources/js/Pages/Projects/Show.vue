@@ -107,6 +107,12 @@ const formatDate = (date: string | null): string => {
                         </Link>
                     </Button>
 
+                    <Button variant="outline" as-child>
+                        <Link :href="route('projects.edit', project.id)">
+                            ویرایش پروژه
+                        </Link>
+                    </Button>
+
                 </div>
             </div>
         </template>
