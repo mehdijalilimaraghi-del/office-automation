@@ -3,6 +3,8 @@
 namespace App\Core\Departments\Actions;
 
 use App\Core\Departments\Models\Department;
+use Illuminate\Support\Facades\DB;
+use App\Modules\Tasks\Models\Task;
 use Illuminate\Validation\ValidationException;
 
 class DeleteDepartmentAction
@@ -21,6 +23,12 @@ class DeleteDepartmentAction
             ]);
         }
 
-        $department->delete();
+        DB::transaction(function () use ($department): void {
+            Task::query()
+                ->where('department_id', $department->id)
+                ->update(['department_id' => null]);
+
+            $department->delete();
+        });
     }
 }
