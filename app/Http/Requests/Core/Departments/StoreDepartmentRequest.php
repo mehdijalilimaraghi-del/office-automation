@@ -20,6 +20,12 @@ class StoreDepartmentRequest extends FormRequest
                 'exists:departments,id',
             ],
 
+            'manager_id' => [
+                'nullable',
+                'integer',
+                'exists:users,id',
+            ],
+
             'name' => [
                 'required',
                 'string',
@@ -48,6 +54,7 @@ class StoreDepartmentRequest extends FormRequest
     {
         return [
             'parent_id' => 'دپارتمان والد',
+            'manager_id' => 'مدیر دپارتمان',
             'name' => 'نام دپارتمان',
             'code' => 'کد دپارتمان',
             'description' => 'توضیحات',
