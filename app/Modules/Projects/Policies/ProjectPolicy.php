@@ -38,7 +38,7 @@ class ProjectPolicy
     {
         return $user->isActive()
             && $user->hasPermission('projects.delete')
-            && $project->manager_id === $user->id;
+            && (int) $project->manager_id === (int) $user->id;
     }
 
     public function manageRoles(User $user, Project $project): bool
