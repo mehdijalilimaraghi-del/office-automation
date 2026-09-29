@@ -62,6 +62,7 @@ interface Project {
 const props = defineProps<{
     project: Project;
     canManageMembers: boolean;
+    canManageRoles: boolean;
     memberOptions: MemberOption[];
 }>();
 
@@ -90,6 +91,71 @@ const availableMembers = computed(() => props.memberOptions);
 const activeProjectRoles = computed(() =>
     props.project.roles.filter((role) => role.is_active),
 );
+
+const roleForm = useForm({
+    name: '',
+    code: '',
+    description: '',
+    is_active: true,
+});
+
+const editingRoleId = ref<number | null>(null);
+const roleActionForm = useForm({});
+
+const startEditRole = (role: ProjectRole): void => {
+    editingRoleId.value = role.id;
+    roleForm.name = role.name;
+    roleForm.code = role.code;
+    roleForm.description = role.description ?? '';
+    roleForm.is_active = role.is_active;
+};
+
+const cancelEditRole = (): void => {
+    editingRoleId.value = null;
+    roleForm.reset();
+};
+
+const submitCreateRole = (): void => {
+    roleForm.post(route('projects.roles.store', props.project.id), {
+        preserveScroll: true,
+        onSuccess: () => roleForm.reset(),
+    });
+};
+
+const submitEditRole = (role: ProjectRole): void => {
+    roleForm.put(
+        route('projects.roles.update', [props.project.id, role.id]),
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                editingRoleId.value = null;
+                roleForm.reset();
+            },
+        },
+    );
+};
+
+const toggleRoleStatus = (role: ProjectRole): void => {
+    roleActionForm.patch(
+        route('projects.roles.toggle-status', [props.project.id, role.id]),
+        {
+            preserveScroll: true,
+        },
+    );
+};
+
+const deleteRole = (role: ProjectRole): void => {
+    if (!window.confirm('آیا از حذف این نقش پروژه مطمئن هستید؟')) {
+        return;
+    }
+
+    roleActionForm.delete(
+        route('projects.roles.destroy', [props.project.id, role.id]),
+        {
+            preserveScroll: true,
+        },
+    );
+};
 
 const submitMemberRole = (member: ProjectMember): void => {
     memberRoleForm.project_role_id =
@@ -388,6 +454,56 @@ const formatDate = (date: string | null): string => {
                     <h3 class="font-semibold">نقش‌های پروژه</h3>
                 </div>
 
+                <div v-if="canManageRoles" class="border-b p-5">
+                    <form class="grid gap-4 md:grid-cols-[1fr_1fr_1.5fr_auto] md:items-end" @submit.prevent="submitCreateRole">
+                        <div>
+                            <label for="role-name" class="mb-2 block text-sm font-medium">نام نقش</label>
+                            <input
+                                id="role-name"
+                                v-model="roleForm.name"
+                                type="text"
+                                class="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                                :disabled="roleForm.processing"
+                            />
+                            <p v-if="roleForm.errors.name" class="mt-1 text-sm text-destructive">
+                                {{ roleForm.errors.name }}
+                            </p>
+                        </div>
+
+                        <div>
+                            <label for="role-code" class="mb-2 block text-sm font-medium">کد نقش</label>
+                            <input
+                                id="role-code"
+                                v-model="roleForm.code"
+                                type="text"
+                                class="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                                :disabled="roleForm.processing"
+                            />
+                            <p v-if="roleForm.errors.code" class="mt-1 text-sm text-destructive">
+                                {{ roleForm.errors.code }}
+                            </p>
+                        </div>
+
+                        <div>
+                            <label for="role-description" class="mb-2 block text-sm font-medium">توضیحات</label>
+                            <input
+                                id="role-description"
+                                v-model="roleForm.description"
+                                type="text"
+                                class="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                                :disabled="roleForm.processing"
+                            />
+                            <p v-if="roleForm.errors.description" class="mt-1 text-sm text-destructive">
+                                {{ roleForm.errors.description }}
+                            </p>
+                        </div>
+
+                        <Button type="submit" :disabled="roleForm.processing || !roleForm.name || !roleForm.code">
+                            افزودن نقش
+                        </Button>
+                    </form>
+                </div>
+
                 <div v-if="project.roles.length === 0" class="p-6 text-sm text-muted-foreground">
                     هنوز نقشی برای این پروژه تعریف نشده است.
                 </div>
@@ -398,16 +514,117 @@ const formatDate = (date: string | null): string => {
                             <tr>
                                 <th class="px-4 py-3 text-right font-medium">نام نقش</th>
                                 <th class="px-4 py-3 text-right font-medium">کد</th>
+                                <th class="px-4 py-3 text-right font-medium">توضیحات</th>
                                 <th class="px-4 py-3 text-right font-medium">وضعیت</th>
+                                <th v-if="canManageRoles" class="px-4 py-3 text-right font-medium">عملیات</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y">
                             <tr v-for="role in project.roles" :key="role.id">
-                                <td class="px-4 py-3 font-medium">{{ role.name }}</td>
-                                <td class="px-4 py-3 text-muted-foreground">{{ role.code }}</td>
-                                <td class="px-4 py-3">
-                                    {{ role.is_active ? 'فعال' : 'غیرفعال' }}
-                                </td>
+                                <template v-if="editingRoleId === role.id">
+                                    <td class="px-4 py-3">
+                                        <input
+                                            v-model="roleForm.name"
+                                            type="text"
+                                            class="h-9 w-full min-w-36 rounded-md border bg-background px-2 text-sm"
+                                            :disabled="roleForm.processing"
+                                        />
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <input
+                                            v-model="roleForm.code"
+                                            type="text"
+                                            class="h-9 w-full min-w-28 rounded-md border bg-background px-2 text-sm"
+                                            :disabled="roleForm.processing"
+                                        />
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <input
+                                            v-model="roleForm.description"
+                                            type="text"
+                                            class="h-9 w-full min-w-48 rounded-md border bg-background px-2 text-sm"
+                                            :disabled="roleForm.processing"
+                                        />
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        {{ role.is_active ? 'فعال' : 'غیرفعال' }}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex flex-wrap gap-2">
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                :disabled="roleForm.processing || !roleForm.name || !roleForm.code"
+                                                @click="submitEditRole(role)"
+                                            >
+                                                ذخیره
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="outline"
+                                                :disabled="roleForm.processing"
+                                                @click="cancelEditRole"
+                                            >
+                                                انصراف
+                                            </Button>
+                                        </div>
+                                        <p v-if="roleForm.errors.name" class="mt-1 text-sm text-destructive">
+                                            {{ roleForm.errors.name }}
+                                        </p>
+                                        <p v-else-if="roleForm.errors.code" class="mt-1 text-sm text-destructive">
+                                            {{ roleForm.errors.code }}
+                                        </p>
+                                        <p v-else-if="roleForm.errors.description" class="mt-1 text-sm text-destructive">
+                                            {{ roleForm.errors.description }}
+                                        </p>
+                                    </td>
+                                </template>
+
+                                <template v-else>
+                                    <td class="px-4 py-3 font-medium">{{ role.name }}</td>
+                                    <td class="px-4 py-3 text-muted-foreground">{{ role.code }}</td>
+                                    <td class="px-4 py-3 text-muted-foreground">
+                                        {{ role.description || '—' }}
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        {{ role.is_active ? 'فعال' : 'غیرفعال' }}
+                                    </td>
+                                    <td v-if="canManageRoles" class="px-4 py-3">
+                                        <div class="flex flex-wrap gap-2">
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="outline"
+                                                :disabled="roleActionForm.processing || roleForm.processing"
+                                                @click="startEditRole(role)"
+                                            >
+                                                ویرایش
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="outline"
+                                                :disabled="roleActionForm.processing"
+                                                @click="toggleRoleStatus(role)"
+                                            >
+                                                {{ role.is_active ? 'غیرفعال کردن' : 'فعال کردن' }}
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="destructive"
+                                                :disabled="roleActionForm.processing"
+                                                @click="deleteRole(role)"
+                                            >
+                                                حذف
+                                            </Button>
+                                        </div>
+                                        <p v-if="roleActionForm.errors.role" class="mt-1 text-sm text-destructive">
+                                            {{ roleActionForm.errors.role }}
+                                        </p>
+                                    </td>
+                                </template>
                             </tr>
                         </tbody>
                     </table>
