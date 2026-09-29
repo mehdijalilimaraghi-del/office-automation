@@ -22,13 +22,15 @@ trait InteractsWithPermissions
 
         $permissions = collect($permissionCodes)
             ->map(
-                fn (string $code) => Permission::create([
-                    'name' => $code,
-                    'code' => $code,
-                    'description' => null,
-                    'is_active' => true,
-                    'is_system' => true,
-                ])
+                fn (string $code) => Permission::query()->firstOrCreate(
+                    ['code' => $code],
+                    [
+                        'name' => $code,
+                        'description' => null,
+                        'is_active' => true,
+                        'is_system' => true,
+                    ]
+                )
             );
 
         $role->permissions()->attach(
