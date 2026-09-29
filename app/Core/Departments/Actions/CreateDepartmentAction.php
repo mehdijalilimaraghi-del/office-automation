@@ -3,11 +3,16 @@
 namespace App\Core\Departments\Actions;
 
 use App\Core\Departments\Models\Department;
+use App\Modules\Projects\Actions\CreateDepartmentDefaultProjectAction;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 class CreateDepartmentAction
 {
+    public function __construct(
+        private readonly CreateDepartmentDefaultProjectAction $createDefaultProjectAction,
+    ) {
+    }
+
     public function execute(array $data): Department
     {
         $managerId = isset($data['manager_id'])
@@ -31,6 +36,10 @@ class CreateDepartmentAction
                     'manager_id' => $managerId,
                 ]);
             }
+
+            $department = $department->refresh();
+
+            $this->createDefaultProjectAction->execute($department);
 
             return $department->refresh();
         });
