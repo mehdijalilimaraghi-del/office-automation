@@ -38,6 +38,54 @@ class CoreRouteAuthorizationTest extends TestCase
             ->assertOk();
     }
 
+    public function test_user_without_project_permission_gets_forbidden(): void
+    {
+        $user = User::factory()->create();
+
+        $this
+            ->actingAs($user)
+            ->get(route('projects.index'))
+            ->assertForbidden();
+    }
+
+    public function test_user_with_project_view_permission_can_access(): void
+    {
+        $user = User::factory()->create();
+
+        $this->grantPermissions($user, [
+            'projects.view',
+        ]);
+
+        $this
+            ->actingAs($user)
+            ->get(route('projects.index'))
+            ->assertOk();
+    }
+
+    public function test_user_without_task_permission_gets_forbidden(): void
+    {
+        $user = User::factory()->create();
+
+        $this
+            ->actingAs($user)
+            ->get(route('tasks.index'))
+            ->assertForbidden();
+    }
+
+    public function test_user_with_task_view_permission_can_access(): void
+    {
+        $user = User::factory()->create();
+
+        $this->grantPermissions($user, [
+            'tasks.view',
+        ]);
+
+        $this
+            ->actingAs($user)
+            ->get(route('tasks.index'))
+            ->assertOk();
+    }
+
     public function test_user_without_role_permission_gets_forbidden(): void
     {
         $user = User::factory()->create();
