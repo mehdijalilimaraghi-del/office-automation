@@ -6,7 +6,10 @@ use App\Modules\Projects\Actions\AddProjectMemberAction;
 use App\Modules\Projects\Actions\ChangeProjectMemberRoleAction;
 use App\Modules\Projects\Actions\RemoveProjectMemberAction;
 use App\Modules\Projects\Contracts\ProjectMemberServiceContract;
+use App\Models\User;
+use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectMember;
+use Illuminate\Support\Collection;
 
 class ProjectMemberService implements ProjectMemberServiceContract
 {
@@ -15,6 +18,18 @@ class ProjectMemberService implements ProjectMemberServiceContract
         private readonly ChangeProjectMemberRoleAction $changeRoleAction,
         private readonly RemoveProjectMemberAction $removeAction,
     ) {
+    }
+
+    public function availableUsers(Project $project): Collection
+    {
+        return User::query()
+            ->where('status', 'active')
+            ->whereDoesntHave(
+                'projectMemberships',
+                fn ($query) => $query->where('project_id', $project->id)
+            )
+            ->orderBy('name')
+            ->get(['id', 'name']);
     }
 
     public function add(
