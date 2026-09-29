@@ -4,6 +4,7 @@ namespace App\Core\Departments\Http\Controllers;
 
 use App\Core\Departments\Contracts\DepartmentServiceInterface;
 use App\Core\Departments\Models\Department;
+use App\Core\Users\Contracts\UserServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Core\Departments\StoreDepartmentRequest;
 use App\Http\Requests\Core\Departments\UpdateDepartmentRequest;
@@ -15,6 +16,7 @@ class DepartmentController extends Controller
 {
     public function __construct(
         private readonly DepartmentServiceInterface $departmentService,
+        private readonly UserServiceInterface $userService,
     ) {
     }
 
@@ -22,6 +24,7 @@ class DepartmentController extends Controller
     {
         return Inertia::render('Core/Departments/Index', [
             'departments' => $this->departmentService->list(),
+            'users' => $this->userService->activeList(),
         ]);
     }
 
