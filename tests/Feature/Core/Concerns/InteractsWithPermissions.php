@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Core\Concerns;
 
+use App\Core\Permissions\Enums\PermissionScope;
 use App\Core\Permissions\Models\Permission;
 use App\Core\Roles\Models\Role;
 use App\Models\User;
@@ -33,9 +34,19 @@ trait InteractsWithPermissions
                 )
             );
 
-        $role->permissions()->attach(
-            $permissions->pluck('id')->all()
-        );
+        $syncData = $permissions
+            ->mapWithKeys(
+                fn (Permission $permission) => [
+                    $permission->id => [
+                        'scope' => PermissionScope::defaultForPermission(
+                            $permission->code
+                        )->value,
+                    ],
+                ]
+            )
+            ->all();
+
+        $role->permissions()->sync($syncData);
 
         $user->roles()->attach($role->id);
     }
