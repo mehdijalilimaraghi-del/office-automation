@@ -17,6 +17,39 @@ class ProjectHttpTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_authorized_user_can_open_project_create_page_with_active_managers(): void
+    {
+        $creator = $this->userWithPermission('projects.create');
+
+        $activeManager = User::factory()->create([
+            'name' => 'Active Manager',
+            'status' => 'active',
+        ]);
+
+        $inactiveManager = User::factory()->create([
+            'name' => 'Inactive Manager',
+            'status' => 'inactive',
+        ]);
+
+        $response = $this->actingAs($creator)
+            ->get(route('projects.create'));
+
+        $response->assertOk();
+
+        $response->assertInertia(
+            fn ($page) => $page
+                ->component('Projects/Create')
+                ->has('managers', 1)
+                ->where('managers.0.id', $activeManager->id)
+                ->where('managers.0.name', 'Active Manager')
+        );
+
+        $this->assertNotSame(
+            $activeManager->id,
+            $inactiveManager->id
+        );
+    }
+
     public function test_authorized_user_can_create_project(): void
     {
         $creator = $this->userWithPermission('projects.create');
