@@ -5,6 +5,7 @@ namespace App\Modules\Tasks\Actions;
 use App\Models\User;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Tasks\Models\TaskAssignment;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -18,61 +19,72 @@ class CreateTaskAction
             $data,
             $creator
         ): Task {
-            $project = Project::query()
-                ->find($data['project_id']);
+            $project = isset($data['project_id'])
+                ? Project::query()->find($data['project_id'])
+                : null;
 
-            if ($project === null) {
-                throw new InvalidArgumentException(
-                    'پروژه مورد نظر یافت نشد.'
-                );
-            }
-
-            if (! $project->is_active) {
+            if ($project !== null && ! $project->is_active) {
                 throw new InvalidArgumentException(
                     'امکان ایجاد تسک در پروژه غیرفعال وجود ندارد.'
                 );
             }
 
-            $assignee = User::query()
-                ->find($data['assignee_id']);
+            $assignee = isset($data['assignee_id'])
+                ? User::query()->find($data['assignee_id'])
+                : null;
 
-            if ($assignee === null) {
+            if (isset($data['assignee_id']) && $assignee === null) {
                 throw new InvalidArgumentException(
                     'مسئول تسک یافت نشد.'
                 );
             }
 
-            if (! $assignee->isActive()) {
+            if ($assignee !== null && ! $assignee->isActive()) {
                 throw new InvalidArgumentException(
                     'مسئول تسک باید کاربر فعال باشد.'
                 );
             }
 
-            $isProjectMember = $project->members()
-                ->where('user_id', $assignee->id)
-                ->exists();
+            if ($project !== null && $assignee !== null) {
+                $isProjectMember = $project->members()
+                    ->where('user_id', $assignee->id)
+                    ->exists();
 
-            if (! $isProjectMember) {
-                throw new InvalidArgumentException(
-                    'مسئول تسک باید عضو همان پروژه باشد.'
-                );
+                if (! $isProjectMember) {
+                    throw new InvalidArgumentException(
+                        'مسئول تسک باید عضو همان پروژه باشد.'
+                    );
+                }
             }
 
             $this->validateDates($data);
 
             $task = Task::query()->create([
-                'project_id' => $project->id,
+                'project_id' => $project?->id,
+                'department_id' => $data['department_id'] ?? null,
                 'title' => $data['title'],
                 'description' => $data['description'] ?? null,
                 'status' => $data['status'] ?? 'todo',
                 'priority' => $data['priority'] ?? 'normal',
-                'assignee_id' => $assignee->id,
+                'assignee_id' => $assignee?->id,
                 'created_by' => $creator->id,
                 'start_date' => $data['start_date'] ?? null,
                 'due_date' => $data['due_date'] ?? null,
                 'completed_at' => null,
                 'is_active' => $data['is_active'] ?? true,
             ]);
+
+            if ($assignee !== null) {
+                TaskAssignment::query()->create([
+                    'task_id' => $task->id,
+                    'from_user_id' => null,
+                    'to_user_id' => $assignee->id,
+                    'assigned_by' => $creator->id,
+                    'type' => 'assignment',
+                    'note' => $data['assignment_note'] ?? null,
+                    'started_at' => now(),
+                ]);
+            }
 
             return $task->load([
                 'project',
