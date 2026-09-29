@@ -11,7 +11,7 @@ use Illuminate\Support\Collection;
 
 interface TaskServiceContract
 {
-    public function list(): Collection;
+    public function list(User $user): Collection;
     public function create(array $data, User $creator): Task;
     public function update(Task $task, array $data): Task;
     public function assign(Task $task, User $assignee, User $actor, string $type = 'assignment', ?string $note = null): Task;
