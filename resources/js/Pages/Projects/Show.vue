@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Button } from '@/Components/ui/button';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 interface ProjectRole {
     id: number;
@@ -9,6 +10,11 @@ interface ProjectRole {
     code: string;
     description: string | null;
     is_active: boolean;
+}
+
+interface MemberOption {
+    id: number;
+    name: string;
 }
 
 interface ProjectMember {
@@ -55,7 +61,26 @@ interface Project {
 
 const props = defineProps<{
     project: Project;
+    memberOptions: MemberOption[];
 }>();
+
+const addMemberForm = useForm({
+    user_id: '',
+    project_role_id: '',
+});
+
+const availableMembers = computed(() => props.memberOptions);
+
+const activeProjectRoles = computed(() =>
+    props.project.roles.filter((role) => role.is_active),
+);
+
+const submitAddMember = (): void => {
+    addMemberForm.post(route('projects.members.store', props.project.id), {
+        preserveScroll: true,
+        onSuccess: () => addMemberForm.reset(),
+    });
+};
 
 const statusLabels: Record<Project['status'], string> = {
     planning: 'در حال برنامه‌ریزی',
@@ -174,6 +199,62 @@ const formatDate = (date: string | null): string => {
                         {{ project.description }}
                     </p>
                 </div>
+            </section>
+
+            <section v-if="memberOptions.length > 0" class="rounded-lg border bg-card">
+                <div class="border-b p-5">
+                    <h3 class="font-semibold">افزودن عضو</h3>
+                </div>
+
+                <form class="grid gap-4 p-5 md:grid-cols-[1fr_1fr_auto] md:items-end" @submit.prevent="submitAddMember">
+                    <div>
+                        <label for="member-user" class="mb-2 block text-sm font-medium">کاربر</label>
+                        <select
+                            id="member-user"
+                            v-model="addMemberForm.user_id"
+                            class="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                            :disabled="addMemberForm.processing"
+                        >
+                            <option value="">انتخاب کاربر</option>
+                            <option
+                                v-for="member in availableMembers"
+                                :key="member.id"
+                                :value="member.id.toString()"
+                            >
+                                {{ member.name }}
+                            </option>
+                        </select>
+                        <p v-if="addMemberForm.errors.user_id" class="mt-1 text-sm text-destructive">
+                            {{ addMemberForm.errors.user_id }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <label for="member-role" class="mb-2 block text-sm font-medium">نقش پروژه</label>
+                        <select
+                            id="member-role"
+                            v-model="addMemberForm.project_role_id"
+                            class="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                            :disabled="addMemberForm.processing"
+                        >
+                            <option value="">بدون نقش</option>
+                            <option
+                                v-for="role in activeProjectRoles"
+                                :key="role.id"
+                                :value="role.id.toString()"
+                            >
+                                {{ role.name }}
+                            </option>
+                        </select>
+                        <p v-if="addMemberForm.errors.project_role_id" class="mt-1 text-sm text-destructive">
+                            {{ addMemberForm.errors.project_role_id }}
+                        </p>
+                    </div>
+
+                    <Button type="submit" :disabled="addMemberForm.processing || !addMemberForm.user_id">
+                        افزودن عضو
+                    </Button>
+                </form>
             </section>
 
             <section class="rounded-lg border bg-card">
