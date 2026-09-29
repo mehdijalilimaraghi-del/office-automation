@@ -2,6 +2,7 @@
 
 namespace App\Modules\Projects\Models;
 
+use App\Core\Departments\Models\Department;
 use App\Models\User;
 use App\Modules\Tasks\Models\Task;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,6 +16,7 @@ class Project extends Model
     use HasFactory;
 
     protected $fillable = [
+        'department_id',
         'name',
         'code',
         'description',
@@ -24,6 +26,7 @@ class Project extends Model
         'manager_id',
         'created_by',
         'is_active',
+        'is_system_default',
     ];
 
     protected function casts(): array
@@ -32,7 +35,16 @@ class Project extends Model
             'start_date' => 'date',
             'end_date' => 'date',
             'is_active' => 'boolean',
+            'is_system_default' => 'boolean',
         ];
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(
+            Department::class,
+            'department_id'
+        );
     }
 
     public function manager(): BelongsTo
