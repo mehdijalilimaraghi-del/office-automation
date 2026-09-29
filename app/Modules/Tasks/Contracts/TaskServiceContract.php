@@ -12,6 +12,6 @@ interface TaskServiceContract
     public function create(array $data, User $creator): Task;
     public function update(Task $task, array $data): Task;
     public function assign(Task $task, User $assignee, User $actor, string $type = 'assignment', ?string $note = null): Task;
-    public function changeStatus(Task $task, string $status): Task;
+    public function changeStatus(Task $task, string $status, User $actor): Task;
     public function delete(Task $task): void;
 }
