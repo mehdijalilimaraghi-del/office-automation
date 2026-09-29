@@ -7,6 +7,7 @@ namespace App\Modules\Tasks\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Modules\Tasks\AssignTaskRequest;
 use App\Http\Requests\Modules\Tasks\ChangeTaskStatusRequest;
+use App\Http\Requests\Modules\Tasks\ReferTaskRequest;
 use App\Http\Requests\Modules\Tasks\StoreTaskRequest;
 use App\Http\Requests\Modules\Tasks\UpdateTaskRequest;
 use App\Modules\Tasks\Contracts\TaskServiceContract;
@@ -40,7 +41,7 @@ class TaskController extends Controller
 
         Gate::authorize('create', [
             Task::class,
-            (int) $data['project_id'],
+            isset($data['project_id']) ? (int) $data['project_id'] : null,
         ]);
 
         try {
@@ -69,6 +70,14 @@ class TaskController extends Controller
                 'project',
                 'assignee',
                 'creator',
+                'department',
+                'assignments.fromUser',
+                'assignments.toUser',
+                'assignments.assignedBy',
+                'comments.user',
+                'workLogs.user',
+                'reminders.user',
+                'statusHistory.changedBy',
             ]),
         ]);
     }
@@ -121,6 +130,33 @@ class TaskController extends Controller
             'success',
             'مسئول تسک با موفقیت تغییر کرد.'
         );
+    }
+
+    public function refer(
+        ReferTaskRequest $request,
+        Task $task
+    ): RedirectResponse {
+        Gate::authorize('refer', $task);
+
+        $assignee = \App\Models\User::query()->findOrFail(
+            $request->validated()['assignee_id']
+        );
+
+        try {
+            $this->taskService->assign(
+                task: $task,
+                assignee: $assignee,
+                actor: $request->user(),
+                type: 'handoff',
+                note: $request->validated()['note'] ?? null,
+            );
+        } catch (InvalidArgumentException $exception) {
+            throw ValidationException::withMessages([
+                'assignee_id' => $exception->getMessage(),
+            ]);
+        }
+
+        return back()->with('success', 'تسک با موفقیت ارجاع شد.');
     }
 
     public function changeStatus(
