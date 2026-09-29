@@ -82,6 +82,70 @@ class ProjectHttpTest extends TestCase
         );
     }
 
+
+    public function test_project_manager_can_add_member_through_http_layer(): void
+    {
+        $manager = $this->userWithPermission('projects.manage_members');
+        $project = $this->createProject($manager);
+        $member = User::factory()->create([
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($manager)
+            ->post(route('projects.members.store', $project), [
+                'user_id' => $member->id,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('project_user', [
+            'project_id' => $project->id,
+            'user_id' => $member->id,
+            'project_role_id' => null,
+        ]);
+    }
+
+    public function test_user_without_project_member_permission_cannot_add_member(): void
+    {
+        $manager = User::factory()->create([
+            'status' => 'active',
+        ]);
+        $project = $this->createProject($manager);
+        $member = User::factory()->create([
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($manager)
+            ->post(route('projects.members.store', $project), [
+                'user_id' => $member->id,
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('project_user', [
+            'project_id' => $project->id,
+            'user_id' => $member->id,
+        ]);
+    }
+
+    public function test_project_manager_cannot_add_inactive_member(): void
+    {
+        $manager = $this->userWithPermission('projects.manage_members');
+        $project = $this->createProject($manager);
+        $member = User::factory()->create([
+            'status' => 'inactive',
+        ]);
+
+        $this->actingAs($manager)
+            ->post(route('projects.members.store', $project), [
+                'user_id' => $member->id,
+            ])
+            ->assertSessionHasErrors('user_id');
+
+        $this->assertDatabaseMissing('project_user', [
+            'project_id' => $project->id,
+            'user_id' => $member->id,
+        ]);
+    }
+
     public function test_authorized_user_can_create_project(): void
     {
         $creator = $this->userWithPermission('projects.create');
