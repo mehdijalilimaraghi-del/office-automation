@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Modules\Projects\StoreProjectRequest;
 use App\Http\Requests\Modules\Projects\UpdateProjectRequest;
 use App\Core\Users\Contracts\UserServiceInterface;
+use App\Modules\Projects\Contracts\ProjectMemberServiceContract;
 use App\Modules\Projects\Contracts\ProjectServiceContract;
 use App\Modules\Projects\Models\Project;
 use Illuminate\Http\RedirectResponse;
@@ -21,6 +22,7 @@ class ProjectController extends Controller
 {
     public function __construct(
         private readonly ProjectServiceContract $projectService,
+        private readonly ProjectMemberServiceContract $projectMemberService,
         private readonly UserServiceInterface $userService,
     ) {
     }
@@ -82,7 +84,7 @@ class ProjectController extends Controller
         return Inertia::render('Projects/Show', [
             'project' => $this->projectService->show($project),
             'memberOptions' => $canManageMembers
-                ? $this->userService->activeList()
+                ? $this->projectMemberService->availableUsers($project)
                 : [],
         ]);
     }
