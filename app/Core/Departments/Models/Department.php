@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Department extends Model
 {
@@ -38,11 +39,10 @@ class Department extends Model
         return $this->hasMany(self::class, 'parent_id');
     }
 
-    public function defaultProject(): BelongsTo
+    public function defaultProject(): HasOne
     {
-        return $this->belongsTo(
+        return $this->hasOne(
             Project::class,
-            'id',
             'department_id'
         )->where('is_system_default', true);
     }
