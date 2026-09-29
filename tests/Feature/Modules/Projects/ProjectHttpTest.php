@@ -199,7 +199,7 @@ class ProjectHttpTest extends TestCase
         $manager->roles()->first()->permissions()->attach($manageMembersPermission->id);
 
         $member = User::factory()->create([
-            'name' => 'Existing Member',
+            'name' => 'Available Member',
             'status' => 'active',
         ]);
         User::factory()->create([
@@ -208,12 +208,6 @@ class ProjectHttpTest extends TestCase
         ]);
 
         $project = $this->createProject($manager);
-        ProjectMember::query()->create([
-            'project_id' => $project->id,
-            'user_id' => $member->id,
-            'project_role_id' => null,
-        ]);
-
         $response = $this->actingAs($manager)
             ->get(route('projects.show', $project));
 
@@ -223,7 +217,7 @@ class ProjectHttpTest extends TestCase
                 ->component('Projects/Show')
                 ->has('memberOptions', 1)
                 ->where('memberOptions.0.id', $member->id)
-                ->where('memberOptions.0.name', 'Existing Member')
+                ->where('memberOptions.0.name', 'Available Member')
         );
     }
 
