@@ -56,11 +56,11 @@ class RoleService implements RoleServiceInterface
 
     public function syncPermissions(
         Role $role,
-        array $permissionIds
+        array $permissions
     ): Role {
         return $this->syncRolePermissionsAction->execute(
             $role,
-            $permissionIds
+            $permissions
         );
     }
 }
