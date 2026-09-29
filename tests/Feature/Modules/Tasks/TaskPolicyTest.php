@@ -178,6 +178,7 @@ class TaskPolicyTest extends TestCase
             'manager_id' => $deleteManager->id,
         ]);
         $this->addMember($project, $deleteManager);
+        $task->load('project');
 
         $this->assertTrue(
             $deleteManager->can('delete', $task)
