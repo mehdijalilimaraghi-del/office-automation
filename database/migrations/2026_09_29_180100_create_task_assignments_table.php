@@ -11,9 +11,9 @@ return new class extends Migration
         Schema::create('task_assignments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('task_id')->constrained('tasks')->cascadeOnDelete();
-            $table->foreignId('from_user_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('to_user_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('assigned_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('from_user_id')->nullable()->constrained('users');
+            $table->foreignId('to_user_id')->nullable()->constrained('users');
+            $table->foreignId('assigned_by')->nullable()->constrained('users');
             $table->string('type', 20)->default('assignment');
             $table->text('note')->nullable();
             $table->dateTime('started_at');
