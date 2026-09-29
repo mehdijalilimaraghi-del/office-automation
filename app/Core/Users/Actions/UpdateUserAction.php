@@ -12,7 +12,6 @@ class UpdateUserAction
         $attributes = [
             'name' => $data['name'],
             'email' => $data['email'],
-            'department_id' => $data['department_id'],
             'status' => $data['status'] ?? 'active',
         ];
 
