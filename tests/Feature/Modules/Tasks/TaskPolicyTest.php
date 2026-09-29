@@ -46,6 +46,31 @@ class TaskPolicyTest extends TestCase
         );
     }
 
+    public function test_project_member_can_create_task(): void
+    {
+        $member = $this->userWithPermission('tasks.create');
+
+        $project = $this->createProject($member);
+
+        $this->assertTrue(
+            $member->can('create', [Task::class, $project->id])
+        );
+    }
+
+    public function test_non_project_member_cannot_create_task(): void
+    {
+        $manager = User::factory()->create([
+            'status' => 'active',
+        ]);
+
+        $user = $this->userWithPermission('tasks.create');
+        $project = $this->createProject($manager);
+
+        $this->assertFalse(
+            $user->can('create', [Task::class, $project->id])
+        );
+    }
+
     public function test_project_manager_can_assign_task(): void
     {
         $manager = $this->userWithPermission('tasks.assign');
@@ -134,6 +159,44 @@ class TaskPolicyTest extends TestCase
 
         $this->assertFalse(
             $creator->can('update', $task)
+        );
+    }
+
+    public function test_project_manager_can_update_and_delete_task(): void
+    {
+        $manager = $this->userWithPermission('tasks.update');
+        $deleteManager = $this->userWithPermission('tasks.delete');
+
+        $project = $this->createProject($manager);
+        $task = $this->createTask($project, $manager);
+
+        $this->assertTrue(
+            $manager->can('update', $task)
+        );
+
+        $project->update([
+            'manager_id' => $deleteManager->id,
+        ]);
+        $this->addMember($project, $deleteManager);
+
+        $this->assertTrue(
+            $deleteManager->can('delete', $task)
+        );
+    }
+
+    public function test_non_manager_cannot_delete_task(): void
+    {
+        $manager = User::factory()->create([
+            'status' => 'active',
+        ]);
+
+        $member = $this->userWithPermission('tasks.delete');
+
+        $project = $this->createProject($manager, $member);
+        $task = $this->createTask($project, $manager);
+
+        $this->assertFalse(
+            $member->can('delete', $task)
         );
     }
 
