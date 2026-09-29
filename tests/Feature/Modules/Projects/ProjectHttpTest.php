@@ -192,7 +192,12 @@ class ProjectHttpTest extends TestCase
 
     public function test_project_manager_with_member_permission_receives_active_member_options(): void
     {
-        $manager = $this->userWithPermission('projects.manage_members');
+        $manager = $this->userWithPermission('projects.view');
+        $manageMembersPermission = Permission::query()
+            ->where('code', 'projects.manage_members')
+            ->firstOrFail();
+        $manager->roles()->first()->permissions()->attach($manageMembersPermission->id);
+
         $member = User::factory()->create([
             'name' => 'Existing Member',
             'status' => 'active',
