@@ -10,7 +10,7 @@ return new class extends Migration {
         Schema::create('external_departments', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('external_organization_id')->constrained('external_organizations')->cascadeOnDelete();
-            $table->foreignId('parent_id')->nullable()->constrained('external_departments')->nullOnDelete();
+            $table->foreignId('parent_id')->nullable()->constrained('external_departments')->noActionOnDelete();
             $table->string('name');
             $table->string('code')->nullable();
             $table->string('phone', 50)->nullable();
