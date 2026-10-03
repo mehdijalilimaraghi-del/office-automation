@@ -41,7 +41,7 @@ It must not be created prematurely before the relevant implementation phase.
 
 ---
 
-## 3. Core
+## 3. Dashboard\n\nDashboard is an application-facing module that aggregates read-only information from Core, Projects and Tasks. It does not own their business data or modify their records.\n\nDashboard is responsible for:\n\n- My Tasks\n- Today's Tasks\n- Overdue Tasks\n- Active Projects\n- Completed Tasks\n- Recent task activity summary\n\nDashboard access respects the authorization and task visibility rules of the underlying modules.\n\n---\n\n## 4. Core
 
 Core owns cross-cutting system capabilities and identity.
 
