@@ -70,6 +70,8 @@ Expected concepts include:
 - Project manager
 - Project membership
 - Project lifecycle
+- Optional department association
+- Department-owned system default project lifecycle
 
 Projects must expose stable application-level contracts when other modules need project information.
 
