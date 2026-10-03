@@ -33,7 +33,7 @@ class TaskActivityHttpTest extends TestCase
                 'body' => 'کامنت ثبت شده از طریق HTTP',
             ])
             ->assertRedirect()
-            ->assertSessionHas('success', 'کامنت با موفقیت ثبت شد.');
+            ->assertSessionHas('success', 'نظر با موفقیت ثبت شد.');
 
         $this->assertDatabaseHas('task_comments', [
             'task_id' => $task->id,
