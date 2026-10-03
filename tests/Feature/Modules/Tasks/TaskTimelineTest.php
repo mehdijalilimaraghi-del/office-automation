@@ -42,9 +42,9 @@ class TaskTimelineTest extends TestCase
             'to_user_id' => $user->id,
             'assigned_by' => $user->id,
             'type' => 'assignment',
-            'started_at' => $now->copy()->subMinutes(5),
-            'created_at' => $now->copy()->subMinutes(5),
-            'updated_at' => $now->copy()->subMinutes(5),
+            'started_at' => $now->copy()->subMinutes(10),
+            'created_at' => $now->copy()->subMinutes(10),
+            'updated_at' => $now->copy()->subMinutes(10),
         ]);
 
         TaskStatusHistory::query()->create([
@@ -52,7 +52,7 @@ class TaskTimelineTest extends TestCase
             'from_status' => 'todo',
             'to_status' => 'in_progress',
             'changed_by' => $user->id,
-            'changed_at' => $now->copy()->subMinutes(4),
+            'changed_at' => $now->copy()->subMinutes(8),
         ]);
 
         TaskWorkLog::query()->create([
@@ -60,16 +60,16 @@ class TaskTimelineTest extends TestCase
             'user_id' => $user->id,
             'title' => 'پیگیری فنی',
             'description' => 'بررسی انجام شد.',
-            'created_at' => $now->copy()->subMinutes(3),
-            'updated_at' => $now->copy()->subMinutes(3),
+            'created_at' => $now->copy()->subMinutes(6),
+            'updated_at' => $now->copy()->subMinutes(6),
         ]);
 
         TaskComment::query()->create([
             'task_id' => $task->id,
             'user_id' => $user->id,
             'body' => 'نیاز به بررسی بیشتر دارد.',
-            'created_at' => $now->copy()->subMinutes(2),
-            'updated_at' => $now->copy()->subMinutes(2),
+            'created_at' => $now->copy()->subMinutes(4),
+            'updated_at' => $now->copy()->subMinutes(4),
         ]);
 
         TaskReminder::query()->create([
@@ -80,8 +80,8 @@ class TaskTimelineTest extends TestCase
             'description' => 'فردا بررسی شود.',
             'remind_at' => $now->copy()->addHour(),
             'status' => 'pending',
-            'created_at' => $now->copy()->subMinute(),
-            'updated_at' => $now->copy()->subMinute(),
+            'created_at' => $now->copy()->subMinutes(2),
+            'updated_at' => $now->copy()->subMinutes(2),
         ]);
 
         $timeline = app(TaskTimelineService::class)->build($task);
