@@ -143,6 +143,8 @@ Responsible for:
 - Start date
 - End date
 - Project view
+- Optional department association
+- Department-owned system default projects that cannot be manually updated or deleted
 
 ### Tasks
 
