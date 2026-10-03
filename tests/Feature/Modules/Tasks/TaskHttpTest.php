@@ -18,6 +18,119 @@ class TaskHttpTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_project_scope_filters_task_index_at_http_layer(): void
+    {
+        $user = $this->userWithPermissionScope('tasks.view', 'project');
+        $visibleProject = $this->createProject($user);
+        $visibleTask = $this->createTask($visibleProject, $user);
+
+        $hiddenManager = User::factory()->create(['status' => 'active']);
+        $hiddenProject = $this->createProject($hiddenManager);
+        $hiddenTask = $this->createTask($hiddenProject, $hiddenManager);
+
+        $response = $this->actingAs($user)
+            ->get(route('tasks.index'));
+
+        $response->assertOk();
+        $response->assertInertia(
+            fn ($page) => $page
+                ->component('Tasks/Index')
+                ->has('tasks', 1)
+                ->where('tasks.0.id', $visibleTask->id)
+                ->where('tasks.0.title', $visibleTask->title)
+        );
+
+        $this->assertNotSame($visibleTask->id, $hiddenTask->id);
+    }
+
+    public function test_project_scope_denies_inaccessible_task_show_at_http_layer(): void
+    {
+        $user = $this->userWithPermissionScope('tasks.view', 'project');
+        $hiddenManager = User::factory()->create(['status' => 'active']);
+        $hiddenProject = $this->createProject($hiddenManager);
+        $task = $this->createTask($hiddenProject, $hiddenManager);
+
+        $this->actingAs($user)
+            ->get(route('tasks.show', $task))
+            ->assertForbidden();
+    }
+
+    public function test_project_scope_denies_inaccessible_task_update_at_http_layer(): void
+    {
+        $user = $this->userWithPermissionScope('tasks.update', 'project');
+        $hiddenManager = User::factory()->create(['status' => 'active']);
+        $hiddenProject = $this->createProject($hiddenManager);
+        $task = $this->createTask($hiddenProject, $hiddenManager);
+
+        $this->actingAs($user)
+            ->put(route('tasks.update', $task), [
+                'title' => 'Should Not Update',
+                'priority' => 'urgent',
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('tasks', [
+            'id' => $task->id,
+            'title' => $task->title,
+        ]);
+    }
+
+    public function test_project_scope_denies_inaccessible_task_assignment_at_http_layer(): void
+    {
+        $user = $this->userWithPermissionScope('tasks.assign', 'project');
+        $hiddenManager = User::factory()->create(['status' => 'active']);
+        $hiddenProject = $this->createProject($hiddenManager);
+        $newAssignee = User::factory()->create(['status' => 'active']);
+        $this->addMember($hiddenProject, $newAssignee);
+        $task = $this->createTask($hiddenProject, $hiddenManager);
+
+        $this->actingAs($user)
+            ->patch(route('tasks.assign', $task), [
+                'assignee_id' => $newAssignee->id,
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('tasks', [
+            'id' => $task->id,
+            'assignee_id' => $hiddenManager->id,
+        ]);
+    }
+
+    public function test_project_scope_denies_inaccessible_task_status_change_at_http_layer(): void
+    {
+        $user = $this->userWithPermissionScope('tasks.change_status', 'project');
+        $hiddenManager = User::factory()->create(['status' => 'active']);
+        $hiddenProject = $this->createProject($hiddenManager);
+        $task = $this->createTask($hiddenProject, $hiddenManager);
+
+        $this->actingAs($user)
+            ->patch(route('tasks.change-status', $task), [
+                'status' => 'completed',
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('tasks', [
+            'id' => $task->id,
+            'status' => 'todo',
+        ]);
+    }
+
+    public function test_project_scope_denies_inaccessible_task_delete_at_http_layer(): void
+    {
+        $user = $this->userWithPermissionScope('tasks.delete', 'project');
+        $hiddenManager = User::factory()->create(['status' => 'active']);
+        $hiddenProject = $this->createProject($hiddenManager);
+        $task = $this->createTask($hiddenProject, $hiddenManager);
+
+        $this->actingAs($user)
+            ->delete(route('tasks.destroy', $task))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('tasks', [
+            'id' => $task->id,
+        ]);
+    }
+
     public function test_project_member_can_create_task_through_http_layer(): void
     {
         $creator = $this->userWithPermission('tasks.create');
@@ -173,6 +286,33 @@ class TaskHttpTest extends TestCase
         ]);
 
         $role->permissions()->attach($permission->id);
+
+        $user = User::factory()->create([
+            'status' => 'active',
+        ]);
+
+        $user->roles()->attach($role->id);
+
+        return $user->fresh();
+    }
+
+    private function userWithPermissionScope(string $permissionCode, string $scope): User
+    {
+        $permission = Permission::query()
+            ->where('code', $permissionCode)
+            ->firstOrFail();
+
+        $role = Role::query()->create([
+            'name' => 'HTTP Task Scope Role '.Str::upper(Str::random(8)),
+            'code' => 'http-task-scope-'.Str::lower(Str::random(12)),
+            'description' => 'HTTP task scope test role',
+            'is_active' => true,
+            'is_system' => false,
+        ]);
+
+        $role->permissions()->attach($permission->id, [
+            'scope' => $scope,
+        ]);
 
         $user = User::factory()->create([
             'status' => 'active',
