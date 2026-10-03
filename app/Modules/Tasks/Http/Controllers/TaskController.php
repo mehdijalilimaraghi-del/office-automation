@@ -12,9 +12,11 @@ use App\Http\Requests\Modules\Tasks\StoreTaskRequest;
 use App\Http\Requests\Modules\Tasks\StoreTaskCommentRequest;
 use App\Http\Requests\Modules\Tasks\StoreTaskReminderRequest;
 use App\Http\Requests\Modules\Tasks\StoreTaskWorkLogRequest;
+use App\Http\Requests\Modules\Tasks\UpdateTaskReminderStatusRequest;
 use App\Http\Requests\Modules\Tasks\UpdateTaskRequest;
 use App\Modules\Tasks\Contracts\TaskServiceContract;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Tasks\Models\TaskReminder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -49,20 +51,12 @@ class TaskController extends Controller
         ]);
 
         try {
-            $this->taskService->create(
-                data: $data,
-                creator: $request->user(),
-            );
+            $this->taskService->create(data: $data, creator: $request->user());
         } catch (InvalidArgumentException $exception) {
-            throw ValidationException::withMessages([
-                'task' => $exception->getMessage(),
-            ]);
+            throw ValidationException::withMessages(['task' => $exception->getMessage()]);
         }
 
-        return back()->with(
-            'success',
-            'تسک با موفقیت ایجاد شد.'
-        );
+        return back()->with('success', 'تسک با موفقیت ایجاد شد.');
     }
 
     public function show(Task $task): Response
@@ -81,43 +75,31 @@ class TaskController extends Controller
                 'comments.user',
                 'workLogs.user',
                 'reminders.user',
+                'reminders.creator',
                 'statusHistory.changedBy',
             ]),
+            'timeline' => $this->taskService->timeline($task),
         ]);
     }
 
-    public function update(
-        UpdateTaskRequest $request,
-        Task $task
-    ): RedirectResponse {
+    public function update(UpdateTaskRequest $request, Task $task): RedirectResponse
+    {
         Gate::authorize('update', $task);
 
         try {
-            $this->taskService->update(
-                task: $task,
-                data: $request->validated(),
-            );
+            $this->taskService->update(task: $task, data: $request->validated());
         } catch (InvalidArgumentException $exception) {
-            throw ValidationException::withMessages([
-                'task' => $exception->getMessage(),
-            ]);
+            throw ValidationException::withMessages(['task' => $exception->getMessage()]);
         }
 
-        return back()->with(
-            'success',
-            'تسک با موفقیت ویرایش شد.'
-        );
+        return back()->with('success', 'تسک با موفقیت ویرایش شد.');
     }
 
-    public function assign(
-        AssignTaskRequest $request,
-        Task $task
-    ): RedirectResponse {
+    public function assign(AssignTaskRequest $request, Task $task): RedirectResponse
+    {
         Gate::authorize('assign', $task);
 
-        $assignee = \App\Models\User::query()->findOrFail(
-            $request->validated()['assignee_id']
-        );
+        $assignee = \App\Models\User::query()->findOrFail($request->validated()['assignee_id']);
 
         try {
             $this->taskService->assign(
@@ -126,26 +108,17 @@ class TaskController extends Controller
                 actor: $request->user(),
             );
         } catch (InvalidArgumentException $exception) {
-            throw ValidationException::withMessages([
-                'assignee_id' => $exception->getMessage(),
-            ]);
+            throw ValidationException::withMessages(['assignee_id' => $exception->getMessage()]);
         }
 
-        return back()->with(
-            'success',
-            'مسئول تسک با موفقیت تغییر کرد.'
-        );
+        return back()->with('success', 'مسئول تسک با موفقیت تغییر کرد.');
     }
 
-    public function refer(
-        ReferTaskRequest $request,
-        Task $task
-    ): RedirectResponse {
+    public function refer(ReferTaskRequest $request, Task $task): RedirectResponse
+    {
         Gate::authorize('refer', $task);
 
-        $assignee = \App\Models\User::query()->findOrFail(
-            $request->validated()['assignee_id']
-        );
+        $assignee = \App\Models\User::query()->findOrFail($request->validated()['assignee_id']);
 
         try {
             $this->taskService->assign(
@@ -156,18 +129,14 @@ class TaskController extends Controller
                 note: $request->validated()['note'] ?? null,
             );
         } catch (InvalidArgumentException $exception) {
-            throw ValidationException::withMessages([
-                'assignee_id' => $exception->getMessage(),
-            ]);
+            throw ValidationException::withMessages(['assignee_id' => $exception->getMessage()]);
         }
 
         return back()->with('success', 'تسک با موفقیت ارجاع شد.');
     }
 
-    public function comment(
-        StoreTaskCommentRequest $request,
-        Task $task
-    ): RedirectResponse {
+    public function comment(StoreTaskCommentRequest $request, Task $task): RedirectResponse
+    {
         Gate::authorize('comment', $task);
 
         $this->taskService->addComment(
@@ -179,10 +148,8 @@ class TaskController extends Controller
         return back()->with('success', 'کامنت با موفقیت ثبت شد.');
     }
 
-    public function workLog(
-        StoreTaskWorkLogRequest $request,
-        Task $task
-    ): RedirectResponse {
+    public function workLog(StoreTaskWorkLogRequest $request, Task $task): RedirectResponse
+    {
         Gate::authorize('logWork', $task);
 
         $data = $request->validated();
@@ -199,10 +166,8 @@ class TaskController extends Controller
         return back()->with('success', 'گزارش فعالیت با موفقیت ثبت شد.');
     }
 
-    public function reminder(
-        StoreTaskReminderRequest $request,
-        Task $task
-    ): RedirectResponse {
+    public function reminder(StoreTaskReminderRequest $request, Task $task): RedirectResponse
+    {
         Gate::authorize('createReminder', $task);
 
         $data = $request->validated();
@@ -220,10 +185,36 @@ class TaskController extends Controller
         return back()->with('success', 'یادآور با موفقیت ایجاد شد.');
     }
 
-    public function changeStatus(
-        ChangeTaskStatusRequest $request,
-        Task $task
+    public function updateReminderStatus(
+        UpdateTaskReminderStatusRequest $request,
+        Task $task,
+        TaskReminder $reminder,
     ): RedirectResponse {
+        $status = $request->validated()['status'];
+
+        Gate::authorize(
+            $status === 'completed' ? 'completeReminder' : 'cancelReminder',
+            [$task, $reminder],
+        );
+
+        try {
+            $this->taskService->updateReminderStatus(
+                reminder: $reminder,
+                status: $status,
+                actor: $request->user(),
+            );
+        } catch (InvalidArgumentException $exception) {
+            throw ValidationException::withMessages(['status' => $exception->getMessage()]);
+        }
+
+        return back()->with(
+            'success',
+            $status === 'completed' ? 'یادآور تکمیل شد.' : 'یادآور لغو شد.',
+        );
+    }
+
+    public function changeStatus(ChangeTaskStatusRequest $request, Task $task): RedirectResponse
+    {
         Gate::authorize('changeStatus', $task);
 
         try {
@@ -233,26 +224,17 @@ class TaskController extends Controller
                 actor: $request->user(),
             );
         } catch (InvalidArgumentException $exception) {
-            throw ValidationException::withMessages([
-                'status' => $exception->getMessage(),
-            ]);
+            throw ValidationException::withMessages(['status' => $exception->getMessage()]);
         }
 
-        return back()->with(
-            'success',
-            'وضعیت تسک با موفقیت تغییر کرد.'
-        );
+        return back()->with('success', 'وضعیت تسک با موفقیت تغییر کرد.');
     }
 
     public function destroy(Task $task): RedirectResponse
     {
         Gate::authorize('delete', $task);
-
         $this->taskService->delete($task);
 
-        return back()->with(
-            'success',
-            'تسک با موفقیت حذف شد.'
-        );
+        return back()->with('success', 'تسک با موفقیت حذف شد.');
     }
 }
