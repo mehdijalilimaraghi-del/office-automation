@@ -27,6 +27,8 @@ class ProjectDatabaseTest extends TestCase
                 'manager_id',
                 'created_by',
                 'is_active',
+                'department_id',
+                'is_system_default',
                 'created_at',
                 'updated_at',
             ])
