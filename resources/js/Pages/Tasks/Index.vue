@@ -139,221 +139,182 @@ const handleProjectChange = (): void => {
 
     <AuthenticatedLayout>
         <template #header>
-            <div>
-                <h2 class="text-xl font-semibold">تسک‌ها</h2>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    مشاهده و پیگیری کارهای قابل دسترسی شما
-                </p>
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-xl font-bold tracking-tight text-gray-900">تسک‌ها</h2>
+                    <p class="mt-1 text-sm text-gray-500">مشاهده و پیگیری کارهای قابل دسترسی شما</p>
+                </div>
+                <div class="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+                    {{ filteredTasks.length }} تسک
+                </div>
             </div>
         </template>
 
-        <div class="mx-auto max-w-7xl space-y-6">
+        <div class="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
             <section
                 v-if="canCreate && formOptions"
-                class="rounded-lg border bg-card p-5"
+                class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
             >
-                <div class="mb-5">
-                    <h3 class="text-lg font-semibold">ایجاد تسک جدید</h3>
-                    <p class="mt-1 text-sm text-muted-foreground">
-                        اطلاعات اصلی تسک را ثبت کنید. وضعیت اولیه به‌صورت «انجام نشده» ثبت می‌شود.
+                <div class="border-b border-gray-100 bg-gray-50/70 px-5 py-4 sm:px-6">
+                    <h3 class="font-bold text-gray-900">ایجاد تسک جدید</h3>
+                    <p class="mt-1 text-sm text-gray-500">
+                        اطلاعات اصلی تسک را ثبت کنید. وضعیت اولیه «انجام نشده» خواهد بود.
                     </p>
                 </div>
 
-                <form class="grid gap-4 md:grid-cols-2" @submit.prevent="submitCreate">
+                <form class="grid gap-4 p-5 sm:p-6 md:grid-cols-2" @submit.prevent="submitCreate">
                     <div class="md:col-span-2">
-                        <label class="mb-2 block text-sm font-medium">عنوان تسک</label>
-                        <input
-                            v-model="createForm.title"
-                            type="text"
-                            required
-                            maxlength="255"
-                            class="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                            placeholder="عنوان کار را وارد کنید"
-                        />
-                        <p v-if="createForm.errors.title" class="mt-1 text-sm text-red-600">
-                            {{ createForm.errors.title }}
-                        </p>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">عنوان تسک</label>
+                        <input v-model="createForm.title" type="text" required maxlength="255"
+                            class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                            placeholder="عنوان کار را وارد کنید" />
+                        <p v-if="createForm.errors.title" class="mt-1.5 text-sm text-red-600">{{ createForm.errors.title }}</p>
                     </div>
 
                     <div>
-                        <label class="mb-2 block text-sm font-medium">پروژه</label>
-                        <select
-                            v-model="createForm.project_id"
-                            class="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                            @change="handleProjectChange"
-                        >
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">پروژه</label>
+                        <select v-model="createForm.project_id" @change="handleProjectChange"
+                            class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
                             <option :value="null">بدون پروژه</option>
-                            <option
-                                v-for="project in formOptions.projects"
-                                :key="project.id"
-                                :value="project.id"
-                            >
-                                {{ project.name }}
-                            </option>
+                            <option v-for="project in formOptions.projects" :key="project.id" :value="project.id">{{ project.name }}</option>
                         </select>
                     </div>
 
                     <div>
-                        <label class="mb-2 block text-sm font-medium">واحد مسئول</label>
-                        <select
-                            v-model="createForm.department_id"
-                            class="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                        >
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">واحد مسئول</label>
+                        <select v-model="createForm.department_id"
+                            class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
                             <option :value="null">بدون واحد</option>
-                            <option
-                                v-for="department in formOptions.departments"
-                                :key="department.id"
-                                :value="department.id"
-                            >
-                                {{ department.name }}
-                            </option>
+                            <option v-for="department in formOptions.departments" :key="department.id" :value="department.id">{{ department.name }}</option>
                         </select>
                     </div>
 
                     <div>
-                        <label class="mb-2 block text-sm font-medium">مسئول تسک</label>
-                        <select
-                            v-model="createForm.assignee_id"
-                            class="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                        >
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">مسئول تسک</label>
+                        <select v-model="createForm.assignee_id"
+                            class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
                             <option :value="null">بدون مسئول</option>
-                            <option
-                                v-for="user in availableAssignees"
-                                :key="user.id"
-                                :value="user.id"
-                            >
-                                {{ user.name }}
-                            </option>
+                            <option v-for="user in availableAssignees" :key="user.id" :value="user.id">{{ user.name }}</option>
                         </select>
-                        <p v-if="createForm.project_id !== null" class="mt-1 text-xs text-muted-foreground">
-                            فقط اعضای همان پروژه قابل انتخاب هستند.
-                        </p>
+                        <p v-if="createForm.project_id !== null" class="mt-1 text-xs text-gray-500">فقط اعضای همان پروژه قابل انتخاب هستند.</p>
                     </div>
 
                     <div>
-                        <label class="mb-2 block text-sm font-medium">اولویت</label>
-                        <select
-                            v-model="createForm.priority"
-                            class="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                        >
-                            <option value="low">کم</option>
-                            <option value="normal">عادی</option>
-                            <option value="high">زیاد</option>
-                            <option value="urgent">فوری</option>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">اولویت</label>
+                        <select v-model="createForm.priority"
+                            class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
+                            <option value="low">کم</option><option value="normal">عادی</option><option value="high">زیاد</option><option value="urgent">فوری</option>
                         </select>
                     </div>
 
                     <div>
-                        <label class="mb-2 block text-sm font-medium">تاریخ شروع</label>
-                        <input
-                            v-model="createForm.start_date"
-                            type="date"
-                            class="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                        />
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">تاریخ شروع</label>
+                        <input v-model="createForm.start_date" type="date"
+                            class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
                     </div>
 
                     <div>
-                        <label class="mb-2 block text-sm font-medium">مهلت انجام</label>
-                        <input
-                            v-model="createForm.due_date"
-                            type="date"
-                            class="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                        />
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">مهلت انجام</label>
+                        <input v-model="createForm.due_date" type="date"
+                            class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
                     </div>
 
                     <div class="md:col-span-2">
-                        <label class="mb-2 block text-sm font-medium">توضیحات</label>
-                        <textarea
-                            v-model="createForm.description"
-                            rows="4"
-                            class="w-full rounded-md border bg-background p-3 text-sm"
-                            placeholder="شرح کار، خروجی مورد انتظار یا اطلاعات تکمیلی"
-                        />
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">توضیحات</label>
+                        <textarea v-model="createForm.description" rows="4"
+                            class="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                            placeholder="شرح کار، خروجی مورد انتظار یا اطلاعات تکمیلی" />
                     </div>
 
                     <div v-if="createForm.assignee_id" class="md:col-span-2">
-                        <label class="mb-2 block text-sm font-medium">توضیح تخصیص</label>
-                        <input
-                            v-model="createForm.assignment_note"
-                            type="text"
-                            maxlength="5000"
-                            class="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                            placeholder="در صورت نیاز، توضیحی برای مسئول تسک بنویسید"
-                        />
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">توضیح تخصیص</label>
+                        <input v-model="createForm.assignment_note" type="text" maxlength="5000"
+                            class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                            placeholder="در صورت نیاز، توضیحی برای مسئول تسک بنویسید" />
                     </div>
 
-                    <div class="flex gap-3 md:col-span-2">
-                        <button
-                            type="submit"
-                            :disabled="createForm.processing"
-                            class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
-                        >
+                    <div class="flex flex-wrap gap-2 border-t border-gray-100 pt-4 md:col-span-2">
+                        <button type="submit" :disabled="createForm.processing"
+                            class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
                             {{ createForm.processing ? 'در حال ذخیره...' : 'ایجاد تسک' }}
                         </button>
-                        <button
-                            type="button"
-                            :disabled="createForm.processing"
-                            class="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
-                            @click="resetCreateForm"
-                        >
+                        <button type="button" :disabled="createForm.processing"
+                            class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                            @click="resetCreateForm">
                             پاک کردن
                         </button>
                     </div>
-
                 </form>
             </section>
 
-            <section class="rounded-lg border bg-card p-5">
-                <label for="task-search" class="mb-2 block text-sm font-medium">
-                    جست‌وجوی تسک
-                </label>
-                <input
-                    id="task-search"
-                    v-model="search"
-                    type="search"
-                    placeholder="عنوان، پروژه، واحد یا مسئول..."
-                    class="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                />
+            <section class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+                <div class="relative">
+                    <label for="task-search" class="mb-1.5 block text-sm font-medium text-gray-700">جست‌وجوی تسک</label>
+                    <input id="task-search" v-model="search" type="search"
+                        placeholder="عنوان، پروژه، واحد یا مسئول..."
+                        class="h-11 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 text-sm outline-none transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10" />
+                </div>
             </section>
 
-            <section class="overflow-hidden rounded-lg border bg-card">
-                <div
-                    v-if="filteredTasks.length === 0"
-                    class="p-10 text-center text-sm text-muted-foreground"
-                >
-                    {{ search ? 'تسکی با این مشخصات پیدا نشد.' : 'تسکی برای نمایش وجود ندارد.' }}
+            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                <div class="flex items-center justify-between border-b border-gray-100 px-4 py-4 sm:px-5">
+                    <div>
+                        <h3 class="font-bold text-gray-900">فهرست تسک‌ها</h3>
+                        <p class="mt-0.5 text-xs text-gray-500">مواردی که بر اساس سطح دسترسی شما قابل مشاهده هستند</p>
+                    </div>
+                    <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">{{ filteredTasks.length }}</span>
+                </div>
+
+                <div v-if="filteredTasks.length === 0" class="px-6 py-14 text-center">
+                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-500">—</div>
+                    <p class="mt-3 font-medium text-gray-800">{{ search ? 'تسکی با این مشخصات پیدا نشد.' : 'تسکی برای نمایش وجود ندارد.' }}</p>
+                    <p v-if="search" class="mt-1 text-sm text-gray-500">عبارت جست‌وجو را تغییر دهید و دوباره تلاش کنید.</p>
                 </div>
 
                 <div v-else class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead class="border-b bg-muted/40">
+                    <table class="w-full min-w-[760px] text-sm">
+                        <thead class="border-b border-gray-100 bg-gray-50/70">
                             <tr>
-                                <th class="px-4 py-3 text-right font-medium">عنوان</th>
-                                <th class="px-4 py-3 text-right font-medium">پروژه</th>
-                                <th class="px-4 py-3 text-right font-medium">واحد</th>
-                                <th class="px-4 py-3 text-right font-medium">مسئول</th>
-                                <th class="px-4 py-3 text-right font-medium">وضعیت</th>
-                                <th class="px-4 py-3 text-right font-medium">اولویت</th>
-                                <th class="px-4 py-3 text-left font-medium">عملیات</th>
+                                <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500">عنوان</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500">پروژه</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500">واحد</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500">مسئول</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500">وضعیت</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500">اولویت</th>
+                                <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500">عملیات</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y">
-                            <tr
-                                v-for="task in filteredTasks"
-                                :key="task.id"
-                                class="transition-colors hover:bg-muted/30"
-                            >
-                                <td class="px-4 py-3 font-medium">{{ task.title }}</td>
-                                <td class="px-4 py-3">{{ task.project?.name ?? '—' }}</td>
-                                <td class="px-4 py-3">{{ task.department?.name ?? '—' }}</td>
-                                <td class="px-4 py-3">{{ task.assignee?.name ?? 'بدون مسئول' }}</td>
-                                <td class="px-4 py-3">{{ statusLabels[task.status] ?? task.status }}</td>
-                                <td class="px-4 py-3">{{ priorityLabels[task.priority] ?? task.priority }}</td>
-                                <td class="px-4 py-3 text-left">
-                                    <Link
-                                        :href="route('tasks.show', task.id)"
-                                        class="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-muted"
-                                    >
+                        <tbody class="divide-y divide-gray-100">
+                            <tr v-for="task in filteredTasks" :key="task.id" class="transition-colors hover:bg-gray-50/80">
+                                <td class="px-5 py-3.5 font-semibold text-gray-900">{{ task.title }}</td>
+                                <td class="px-4 py-3.5 text-gray-600">{{ task.project?.name ?? '—' }}</td>
+                                <td class="px-4 py-3.5 text-gray-600">{{ task.department?.name ?? '—' }}</td>
+                                <td class="px-4 py-3.5 text-gray-600">{{ task.assignee?.name ?? 'بدون مسئول' }}</td>
+                                <td class="px-4 py-3.5">
+                                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
+                                        :class="{
+                                            'bg-gray-100 text-gray-700': task.status === 'todo',
+                                            'bg-blue-50 text-blue-700': task.status === 'in_progress',
+                                            'bg-green-50 text-green-700': task.status === 'completed',
+                                            'bg-red-50 text-red-700': task.status === 'cancelled',
+                                        }">
+                                        {{ statusLabels[task.status] ?? task.status }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3.5">
+                                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
+                                        :class="{
+                                            'bg-gray-100 text-gray-700': task.priority === 'normal',
+                                            'bg-slate-100 text-slate-700': task.priority === 'low',
+                                            'bg-amber-50 text-amber-700': task.priority === 'high',
+                                            'bg-red-50 text-red-700': task.priority === 'urgent',
+                                        }">
+                                        {{ priorityLabels[task.priority] ?? task.priority }}
+                                    </span>
+                                </td>
+                                <td class="px-5 py-3.5 text-left">
+                                    <Link :href="route('tasks.show', task.id)"
+                                        class="inline-flex rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50">
                                         مشاهده
                                     </Link>
                                 </td>
