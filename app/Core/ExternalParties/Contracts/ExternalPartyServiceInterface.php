@@ -12,6 +12,7 @@ interface ExternalPartyServiceInterface
     public function organizations(): Collection;
     public function departments(): Collection;
     public function contacts(): Collection;
+    public function validateTaskContext(array $data): void;
     public function createOrganization(array $data): ExternalOrganization;
     public function updateOrganization(ExternalOrganization $organization, array $data): ExternalOrganization;
     public function deleteOrganization(ExternalOrganization $organization): void;
