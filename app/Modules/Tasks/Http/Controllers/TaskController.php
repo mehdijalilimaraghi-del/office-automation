@@ -49,12 +49,6 @@ class TaskController extends Controller
 
         return Inertia::render('Tasks/Index', [
             'tasks' => $this->taskService->list($request->user(), $filters),
-                'search' => ['nullable', 'string', 'max:255'],
-                'status' => ['nullable', 'in:todo,in_progress,completed,cancelled'],
-                'priority' => ['nullable', 'in:low,normal,high,urgent'],
-                'project_id' => ['nullable', 'integer'],
-                'department_id' => ['nullable', 'integer'],
-            ]),
             'filters' => $filters,
             'canCreate' => Gate::allows('create', Task::class),
             'formOptions' => Gate::allows('create', Task::class)
