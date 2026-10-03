@@ -2,9 +2,11 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Button } from '@/Components/ui/button';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 
 interface Project {
     id: number;
+    department_id: number | null;
     name: string;
     code: string;
     description: string | null;
@@ -12,11 +14,14 @@ interface Project {
     start_date: string | null;
     end_date: string | null;
     is_active: boolean;
+    is_system_default: boolean;
+    department: { id: number; name: string } | null;
 }
 
 const props = defineProps<{ project: Project }>();
 
 const form = useForm({
+    department_id: props.project.department_id?.toString() ?? '',
     name: props.project.name,
     code: props.project.code,
     description: props.project.description ?? '',
@@ -53,6 +58,17 @@ const submit = (): void => {
             <form class="space-y-6 rounded-lg border bg-card p-6" @submit.prevent="submit">
                 <div class="grid gap-6 md:grid-cols-2">
                     <div class="space-y-2">
+                        <label for="department_id" class="text-sm font-medium">واحد</label>
+                        <input
+                            id="department_id"
+                            :value="props.project.department?.name ?? 'بدون واحد'"
+                            type="text"
+                            disabled
+                            class="w-full rounded-md border bg-muted px-3 py-2 text-sm"
+                        />
+                    </div>
+
+                    <div class="space-y-2">
                         <label for="name" class="text-sm font-medium">نام پروژه</label>
                         <input id="name" v-model="form.name" type="text" class="w-full rounded-md border bg-background px-3 py-2 text-sm" />
                         <p v-if="form.errors.name" class="text-sm text-destructive">{{ form.errors.name }}</p>
@@ -81,13 +97,13 @@ const submit = (): void => {
 
                     <div class="space-y-2">
                         <label for="start_date" class="text-sm font-medium">تاریخ شروع</label>
-                        <input id="start_date" v-model="form.start_date" type="date" class="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+                        <JalaliDatePicker v-model="form.start_date" placeholder="انتخاب تاریخ شروع" />
                         <p v-if="form.errors.start_date" class="text-sm text-destructive">{{ form.errors.start_date }}</p>
                     </div>
 
                     <div class="space-y-2">
                         <label for="end_date" class="text-sm font-medium">تاریخ پایان</label>
-                        <input id="end_date" v-model="form.end_date" type="date" class="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+                        <JalaliDatePicker v-model="form.end_date" placeholder="انتخاب تاریخ پایان" />
                         <p v-if="form.errors.end_date" class="text-sm text-destructive">{{ form.errors.end_date }}</p>
                     </div>
                 </div>
