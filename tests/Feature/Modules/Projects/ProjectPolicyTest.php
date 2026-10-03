@@ -105,6 +105,15 @@ class ProjectPolicyTest extends TestCase
     public function test_system_default_project_cannot_be_updated_deleted_or_managed(): void
     {
         $user = $this->userWithPermission('projects.update');
+        $role = $user->roles()->firstOrFail();
+        $role->permissions()->attach(
+            Permission::query()->whereIn('code', [
+                'projects.delete',
+                'projects.manage_roles',
+                'projects.manage_members',
+            ])->pluck('id')->all()
+        );
+
         $project = $this->createProject($user);
         $project->update(['is_system_default' => true]);
 
