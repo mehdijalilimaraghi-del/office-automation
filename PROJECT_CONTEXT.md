@@ -620,3 +620,18 @@ Do not:
 When continuing this project in a new conversation, first inspect the repository state and this document, then continue from the current implementation.
 
 Do not assume old planned phases are still accurate if the repository already contains the implementation. The repository and this document together represent the current working context.
+
+
+## 23. Authorization Bootstrap Implementation
+
+Implemented:
+- system role `SYSTEM_ADMIN`
+- system role receives all active permissions
+- system administrator permissions use organization scope
+- system role is protected from normal permission edits/deletion
+- optional `OFFICE_AUTOMATION_BOOTSTRAP_ADMIN_EMAIL` can assign the system role during database seeding
+- `office:bootstrap-admin {email}` provides an explicit and safer operational bootstrap path for an existing active user
+- role assignment is already supported through the Users UI
+- tests cover system role seeding, bootstrap assignment, inactive-user rejection, and effective permission changes
+
+For the current local user, use the explicit bootstrap command with the intended administrator email rather than hard-coding that email into application code.
