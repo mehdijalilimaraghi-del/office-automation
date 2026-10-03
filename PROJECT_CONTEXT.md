@@ -771,3 +771,19 @@ Repository note:
 - Local PHPUnit and Vite execution could not be performed because the repository could not be cloned into the execution container due unavailable outbound DNS/network access. The code and tests were updated, but runtime test/build results must be verified in the project environment.
 
 Next step remains Tasks V1 Completion after the corrected project/task schema and lifecycle changes pass the full local suite.
+
+
+### Projects Audit Reconciliation — 2026-10-03
+
+Repository history was rechecked after the audit changes. The development branch already contained the 2026-09-29 migrations that add project department/default-project fields and make task project/assignee context nullable. The audit therefore keeps those existing migrations as the source of truth; duplicate temporary migrations introduced during the review were removed.
+
+The final lifecycle decision is:
+- A normal Project may optionally reference a Department.
+- Deleting a Department must not delete normal Projects; the Project department reference is now null-on-delete.
+- The Department-owned system default Project is explicitly deleted as part of Department deletion.
+- Tasks attached to the deleted default Project are preserved because tasks.project_id is null-on-delete, and their department_id is cleared by the existing Department deletion workflow.
+- Project manager and creator references are nullable to support system/default projects without authenticated ownership.
+
+This keeps the "default project is not manually deletable" rule while giving Department deletion an explicit, controlled lifecycle rather than relying on an implicit cascade.
+
+The Projects audit therefore requires no duplicate membership model, no new Project access scope, and no collapse of status/is_active.
