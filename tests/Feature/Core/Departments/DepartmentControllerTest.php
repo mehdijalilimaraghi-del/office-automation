@@ -5,6 +5,7 @@ namespace Tests\Feature\Core\Departments;
 use App\Core\Departments\Models\Department;
 use App\Models\User;
 use App\Modules\Projects\Models\Project;
+use App\Modules\Tasks\Models\Task;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Feature\Core\Concerns\InteractsWithPermissions;
 use Tests\TestCase;
@@ -218,6 +219,101 @@ class DepartmentControllerTest extends TestCase
 
         $this->assertDatabaseMissing('departments', [
             'id' => $department->id,
+        ]);
+    }
+
+    public function test_deleting_department_removes_default_project_but_preserves_its_tasks(): void
+    {
+        $user = $this->user();
+        $manager = User::factory()->create();
+
+        $this->grant($user, 'departments.delete');
+
+        $department = Department::create([
+            'name' => 'واحد حذف',
+            'code' => 'DEL',
+            'description' => null,
+            'parent_id' => null,
+            'manager_id' => null,
+            'is_active' => true,
+        ]);
+
+        $defaultProject = Project::query()->create([
+            'department_id' => $department->id,
+            'name' => 'پروژه عمومی واحد حذف',
+            'code' => 'DEPT-'.$department->id.'-DEFAULT',
+            'status' => 'active',
+            'manager_id' => null,
+            'created_by' => null,
+            'is_active' => true,
+            'is_system_default' => true,
+        ]);
+
+        $task = Task::query()->create([
+            'project_id' => $defaultProject->id,
+            'department_id' => $department->id,
+            'title' => 'Task survives department deletion',
+            'status' => 'todo',
+            'priority' => 'normal',
+            'assignee_id' => $manager->id,
+            'created_by' => $manager->id,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($user)->delete(
+            route('departments.destroy', $department)
+        );
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseMissing('departments', [
+            'id' => $department->id,
+        ]);
+
+        $this->assertDatabaseMissing('projects', [
+            'id' => $defaultProject->id,
+        ]);
+
+        $this->assertDatabaseHas('tasks', [
+            'id' => $task->id,
+            'project_id' => null,
+            'department_id' => null,
+        ]);
+    }
+
+    public function test_regular_projects_survive_department_deletion(): void
+    {
+        $user = $this->user();
+        $this->grant($user, 'departments.delete');
+
+        $department = Department::create([
+            'name' => 'واحد پروژه',
+            'code' => 'PRJDEP',
+            'description' => null,
+            'parent_id' => null,
+            'manager_id' => null,
+            'is_active' => true,
+        ]);
+
+        $project = Project::query()->create([
+            'department_id' => $department->id,
+            'name' => 'پروژه عادی',
+            'code' => 'PRJ-DEP-001',
+            'status' => 'active',
+            'manager_id' => null,
+            'created_by' => null,
+            'is_active' => true,
+            'is_system_default' => false,
+        ]);
+
+        $this->actingAs($user)
+            ->delete(route('departments.destroy', $department))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('projects', [
+            'id' => $project->id,
+            'department_id' => null,
+            'is_system_default' => false,
         ]);
     }
 
