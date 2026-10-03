@@ -4,7 +4,7 @@
     "type": "module",
     "scripts": {
         "build": "vue-tsc && vite build",
-        "dev": "vite"
+        "dev": "concurrently \"php artisan serve\" \"vite\""
     },
     "devDependencies": {
         "@inertiajs/vue3": "^2.0.0",
