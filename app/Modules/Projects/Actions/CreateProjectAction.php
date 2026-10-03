@@ -45,6 +45,7 @@ class CreateProjectAction
                 }
 
                 $project = Project::query()->create([
+                    'department_id' => $data['department_id'] ?? null,
                     'name' => $data['name'],
                     'code' => $data['code'],
                     'description' => $data['description'] ?? null,
@@ -65,6 +66,7 @@ class CreateProjectAction
                 return $project->load([
                     'manager',
                     'creator',
+                    'department',
                     'members',
                 ]);
             }
