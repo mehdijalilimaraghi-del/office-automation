@@ -23,13 +23,13 @@ class DeleteDepartmentAction
             ]);
         }
 
-        if ($department->defaultProject()->exists()) {
-            throw ValidationException::withMessages([
-                'department' => 'دپارتمان دارای پروژه عمومی و پیش‌فرض است و قابل حذف نیست.',
-            ]);
-        }
-
         DB::transaction(function () use ($department): void {
+            $defaultProject = $department->defaultProject()->first();
+
+            if ($defaultProject !== null) {
+                $defaultProject->delete();
+            }
+
             Task::query()
                 ->where('department_id', $department->id)
                 ->update(['department_id' => null]);
