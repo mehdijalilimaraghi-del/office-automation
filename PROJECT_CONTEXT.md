@@ -501,6 +501,16 @@ Frontend build has passed with:
 
 A full-suite run should still be performed after significant authorization changes.
 
+## 19.1 Task UX Completion Checkpoint
+
+Recent Task UX work completed:
+- Task Show uses the shared Jalali date-time picker for work-log and reminder date-time fields.
+- Task form validation errors are surfaced for status, referral, comment body, work-log fields, reminder time, and edit fields where applicable.
+- Task Index now shows loading feedback while applying filters and when navigating pagination.
+- Filter/pagination controls are disabled or visually indicate loading during navigation to avoid duplicate interaction.
+
+The latest frontend changes require a frontend build verification before the next UX checkpoint.
+
 ## 20. Current Development Priority
 
 The original bootstrap roadmap has been substantially completed. The repository now has working authorization/bootstrap roles, internal department/user management, projects, core task workflows, external-party management, optional external follow-up context on tasks, and a passing full test suite (284 tests at the latest checkpoint).
