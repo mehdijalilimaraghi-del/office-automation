@@ -54,6 +54,34 @@ class CreateProjectTest extends TestCase
         ]);
     }
 
+    public function test_project_department_is_persisted_when_provided(): void
+    {
+        $creator = User::factory()->create();
+        $manager = User::factory()->create();
+        $department = \App\Core\Departments\Models\Department::query()->create([
+            'name' => 'فناوری اطلاعات',
+            'code' => 'IT',
+            'is_active' => true,
+        ]);
+
+        $project = app(ProjectServiceContract::class)->create(
+            [
+                'department_id' => $department->id,
+                'name' => 'Department Project',
+                'code' => 'PRJ-DEPT-001',
+                'manager_id' => $manager->id,
+            ],
+            $creator
+        );
+
+        $this->assertSame($department->id, $project->department_id);
+        $this->assertDatabaseHas('projects', [
+            'id' => $project->id,
+            'department_id' => $department->id,
+            'is_system_default' => false,
+        ]);
+    }
+
     public function test_project_manager_must_be_active(): void
     {
         $creator = User::factory()->create();
