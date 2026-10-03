@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectMember;
 use App\Modules\Tasks\Actions\AssignTaskAction;
+use App\Modules\Tasks\Actions\CreateTaskAction;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskAssignment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -22,24 +23,18 @@ class TaskAssignmentTest extends TestCase
         $creator = User::factory()->create(['status' => 'active']);
         $assignee = User::factory()->create(['status' => 'active']);
 
-        $task = Task::query()->create([
-            'project_id' => null,
-            'department_id' => null,
-            'title' => 'Test Task',
-            'created_by' => $creator->id,
-            'assignee_id' => $assignee->id,
-            'status' => 'todo',
-            'priority' => 'normal',
-        ]);
-
-        TaskAssignment::query()->create([
-            'task_id' => $task->id,
-            'from_user_id' => null,
-            'to_user_id' => $assignee->id,
-            'assigned_by' => $creator->id,
-            'type' => 'assignment',
-            'started_at' => now(),
-        ]);
+        $task = app(CreateTaskAction::class)->execute(
+            data: [
+                'project_id' => null,
+                'department_id' => null,
+                'title' => 'Test Task',
+                'description' => null,
+                'assignee_id' => $assignee->id,
+                'status' => 'todo',
+                'priority' => 'normal',
+            ],
+            creator: $creator,
+        );
 
         $this->assertDatabaseHas('task_assignments', [
             'task_id' => $task->id,
