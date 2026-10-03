@@ -403,6 +403,7 @@ const formatDateTime = formatPersianDateTime;
                         <p class="mt-1 text-sm text-muted-foreground">نظر یا توضیح مرتبط با تسک را ثبت کنید.</p>
                         <form class="mt-4 space-y-3" @submit.prevent="submitComment">
                             <textarea v-model="commentForm.body" rows="4" required class="w-full rounded-lg border bg-background p-3 text-sm leading-6 shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-200" placeholder="نظر یا توضیح خود را وارد کنید..." />
+                            <p v-if="commentForm.errors.body" class="text-sm text-red-600">{{ commentForm.errors.body }}</p>
                             <button type="submit" :disabled="commentForm.processing" class="h-10 rounded-lg bg-gray-900 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
                                 {{ commentForm.processing ? 'در حال ثبت...' : 'ثبت نظر' }}
                             </button>
@@ -415,6 +416,8 @@ const formatDateTime = formatPersianDateTime;
                         <form class="mt-4 space-y-3" @submit.prevent="submitWorkLog">
                             <input v-model="workLogForm.title" required class="h-10 w-full rounded-lg border bg-background px-3 text-sm shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-200" placeholder="عنوان فعالیت" />
                             <textarea v-model="workLogForm.description" rows="3" class="w-full rounded-lg border bg-background p-3 text-sm leading-6 shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-200" placeholder="شرح فعالیت" />
+                            <p v-if="workLogForm.errors.title" class="text-sm text-red-600">{{ workLogForm.errors.title }}</p>
+                            <p v-if="workLogForm.errors.description" class="text-sm text-red-600">{{ workLogForm.errors.description }}</p>
                             <div class="grid gap-3 sm:grid-cols-2">
                                 <div>
                                     <label class="mb-1.5 block text-xs font-medium text-muted-foreground">شروع</label>
@@ -521,7 +524,6 @@ const formatDateTime = formatPersianDateTime;
                     <div class="md:col-span-2">
                         <label class="mb-2 block text-sm font-medium text-gray-700">عنوان تسک</label>
                         <input v-model="editForm.title" type="text" required maxlength="255" class="h-10 w-full rounded-lg border bg-background px-3 text-sm shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-200" />
-                        <p v-if="editForm.errors.title" class="mt-1.5 text-sm text-red-600">{{ editForm.errors.title }}</p>
                         <p v-if="editForm.errors.title" class="mt-1.5 text-sm text-red-600">{{ editForm.errors.title }}</p>
                     </div>
 
