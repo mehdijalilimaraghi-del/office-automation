@@ -15,7 +15,7 @@ use App\Modules\Tasks\Actions\UpdateTaskReminderStatusAction;
 use App\Modules\Tasks\Contracts\TaskServiceContract;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskReminder;
-use Illuminate\Support\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class TaskService implements TaskServiceContract
 {
@@ -33,7 +33,7 @@ class TaskService implements TaskServiceContract
         private readonly TaskAccessService $taskAccessService,
     ) {}
 
-    public function list(User $user): Collection
+    public function list(User $user, array $filters = []): LengthAwarePaginator
     {
         $query = Task::query();
 
@@ -43,10 +43,40 @@ class TaskService implements TaskServiceContract
             permission: 'tasks.view',
         );
 
+        if (! empty($filters['search'])) {
+            $search = trim((string) $filters['search']);
+
+            $query->where(function ($searchQuery) use ($search): void {
+                $searchQuery
+                    ->where('tasks.title', 'like', '%'.$search.'%')
+                    ->orWhere('tasks.description', 'like', '%'.$search.'%')
+                    ->orWhereHas('project', fn ($q) => $q->where('projects.name', 'like', '%'.$search.'%'))
+                    ->orWhereHas('department', fn ($q) => $q->where('departments.name', 'like', '%'.$search.'%'))
+                    ->orWhereHas('assignee', fn ($q) => $q->where('users.name', 'like', '%'.$search.'%'));
+            });
+        }
+
+        if (! empty($filters['status'])) {
+            $query->where('tasks.status', $filters['status']);
+        }
+
+        if (! empty($filters['priority'])) {
+            $query->where('tasks.priority', $filters['priority']);
+        }
+
+        if (! empty($filters['project_id'])) {
+            $query->where('tasks.project_id', (int) $filters['project_id']);
+        }
+
+        if (! empty($filters['department_id'])) {
+            $query->where('tasks.department_id', (int) $filters['department_id']);
+        }
+
         return $query
             ->with(['project', 'department', 'assignee', 'creator'])
             ->latest()
-            ->get();
+            ->paginate(15)
+            ->withQueryString();
     }
 
     public function create(array $data, User $creator): Task
