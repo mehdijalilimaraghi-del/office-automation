@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import { computed, ref } from 'vue';
 
 interface User {
@@ -209,14 +210,12 @@ const handleProjectChange = (): void => {
 
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">تاریخ شروع</label>
-                        <input v-model="createForm.start_date" type="date"
-                            class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+                        <JalaliDatePicker v-model="createForm.start_date" />
                     </div>
 
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">مهلت انجام</label>
-                        <input v-model="createForm.due_date" type="date"
-                            class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+                        <JalaliDatePicker v-model="createForm.due_date" />
                     </div>
 
                     <div class="md:col-span-2">
