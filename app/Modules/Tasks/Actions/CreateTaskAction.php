@@ -77,7 +77,7 @@ class CreateTaskAction
                 'created_by' => $creator->id,
                 'start_date' => $data['start_date'] ?? null,
                 'due_date' => $data['due_date'] ?? null,
-                'completed_at' => null,
+                'completed_at' => ($data['status'] ?? 'todo') === 'completed' ? now() : null,
                 'is_active' => $data['is_active'] ?? true,
             ]);
 
