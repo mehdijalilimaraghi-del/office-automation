@@ -33,6 +33,7 @@ class ProjectService implements ProjectServiceContract
         return $project->load([
             'manager',
             'creator',
+            'department',
             'roles',
             'members.user',
             'members.projectRole',
