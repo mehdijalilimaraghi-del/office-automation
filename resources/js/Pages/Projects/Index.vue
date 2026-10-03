@@ -42,6 +42,7 @@ interface ProjectPagination {
 
 const props = defineProps<{
     projects: ProjectPagination;
+    canCreate: boolean;
 }>();
 
 const statusLabels: Record<Project['status'], string> = {
@@ -65,7 +66,7 @@ const statusLabels: Record<Project['status'], string> = {
                     </p>
                 </div>
 
-                <Button type="button" as-child>
+                <Button v-if="props.canCreate" type="button" as-child>
                     <Link :href="route('projects.create')">
                         ایجاد پروژه
                     </Link>
