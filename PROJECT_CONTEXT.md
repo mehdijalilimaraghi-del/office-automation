@@ -597,6 +597,16 @@ Prepare:
 
 **Current immediate sequence:** Core Completion Audit → Projects Completion Audit → Tasks V1 Completion → Task UX Completion.
 
+### Core Audit Checkpoint — 2026-10-03
+The first Core audit pass identified and corrected:
+- internal user contact fields now persist on create/update
+- an authenticated user cannot change their own active/inactive status through the edit flow
+- external organization deletion is blocked while departments or contacts reference it
+- external department deletion is blocked while child departments or contacts reference it
+- existing system-role/permission protections remain enforced
+
+After the local full test suite confirms these corrections, continue with the Projects Completion Audit.
+
 
 ## 21. Development Discipline
 
