@@ -73,16 +73,18 @@ class TaskPolicy
 
     public function completeReminder(User $user, Task $task, TaskReminder $reminder): bool
     {
-        return $reminder->task_id === $task->id
-            && $reminder->user_id === $user->id
-            && $this->taskAccessService->canAccess($user, $task, 'tasks.view');
+        return $user->isActive()
+            && $user->hasPermission('tasks.view')
+            && (int) $reminder->task_id === (int) $task->id
+            && (int) $reminder->user_id === (int) $user->id;
     }
 
     public function cancelReminder(User $user, Task $task, TaskReminder $reminder): bool
     {
-        return $reminder->task_id === $task->id
-            && in_array($user->id, [$reminder->user_id, $reminder->created_by], true)
-            && $this->taskAccessService->canAccess($user, $task, 'tasks.view');
+        return $user->isActive()
+            && $user->hasPermission('tasks.view')
+            && (int) $reminder->task_id === (int) $task->id
+            && in_array((int) $user->id, [(int) $reminder->user_id, (int) $reminder->created_by], true);
     }
 
     public function changeStatus(User $user, Task $task): bool
