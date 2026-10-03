@@ -29,8 +29,8 @@ const form = useForm({
         | 'active'
         | 'completed'
         | 'archived',
-    start_date: '',
-    end_date: '',
+    start_date: null as string | null,
+    end_date: null as string | null,
     manager_id: '',
     is_active: true,
 });
