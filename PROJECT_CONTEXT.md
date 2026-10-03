@@ -598,6 +598,25 @@ Prepare:
 **Current immediate sequence:** Core Completion Audit → Projects Completion Audit → Tasks V1 Completion → Task UX Completion.
 
 ### Projects Audit Checkpoint — 2026-10-03
+### Projects Completion Audit — 2026-10-03
+
+The Projects completion audit reviewed CRUD, manager/member/role boundaries, default projects, nested route binding, pagination, project/task references, and manager lifecycle.
+
+Confirmed:
+- project listing is server-side paginated
+- project creation requires an active manager and automatically adds that manager as a project member
+- project update/delete and role/member management are restricted to the project manager plus the corresponding permission
+- system/default department projects cannot be updated, deleted, or normally managed
+- project role operations are constrained to the owning project
+- nested role/member routes use scoped bindings
+- deleting a project preserves its tasks because tasks.project_id uses null-on-delete
+- project deletion and default-project restrictions are covered by existing tests
+- project managers are now protected from being deactivated or deleted until project management is reassigned
+
+The project audit found one cross-domain lifecycle edge case: a user who manages a project could previously be made inactive or deleted, leaving the project without an active manager. This was corrected in the Core user lifecycle actions and covered by dedicated tests.
+
+After the full test suite confirms these changes, continue to **Tasks V1 Completion**.
+
 The first Projects completion audit pass reviewed CRUD, pagination, manager/member/role boundaries, nested route binding, default department projects, and project/task references.
 
 Confirmed:
