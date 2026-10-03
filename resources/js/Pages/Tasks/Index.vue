@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import { computed, ref } from 'vue';
 
@@ -26,6 +26,30 @@ interface FormOptions {
     users: User[];
 }
 
+interface PaginationLink {
+    url: string | null;
+    label: string;
+    active: boolean;
+}
+
+interface TaskPaginator {
+    data: Task[];
+    current_page: number;
+    last_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+    links: PaginationLink[];
+}
+
+interface TaskFilters {
+    search?: string;
+    status?: string;
+    priority?: string;
+    project_id?: number | string;
+    department_id?: number | string;
+}
+
 interface Task {
     id: number;
     title: string;
@@ -39,12 +63,17 @@ interface Task {
 }
 
 const props = defineProps<{
-    tasks: Task[];
+    tasks: TaskPaginator;
+    filters: TaskFilters;
     canCreate: boolean;
     formOptions: FormOptions | null;
 }>();
 
-const search = ref('');
+const search = ref(props.filters.search ?? '');
+const statusFilter = ref(props.filters.status ?? '');
+const priorityFilter = ref(props.filters.priority ?? '');
+const projectFilter = ref(props.filters.project_id?.toString() ?? '');
+const departmentFilter = ref(props.filters.department_id?.toString() ?? '');
 const createForm = useForm({
     project_id: null as number | null,
     department_id: null as number | null,
@@ -93,22 +122,32 @@ const availableAssignees = computed(() => {
     );
 });
 
-const filteredTasks = computed(() => {
-    const value = search.value.trim().toLocaleLowerCase('fa');
+const applyFilters = (): void => {
+    router.get(route('tasks.index'), {
+        search: search.value.trim() || undefined,
+        status: statusFilter.value || undefined,
+        priority: priorityFilter.value || undefined,
+        project_id: projectFilter.value || undefined,
+        department_id: departmentFilter.value || undefined,
+    }, {
+        preserveState: true,
+        preserveScroll: true,
+    });
+};
 
-    if (!value) {
-        return props.tasks;
-    }
+const clearFilters = (): void => {
+    search.value = '';
+    statusFilter.value = '';
+    priorityFilter.value = '';
+    projectFilter.value = '';
+    departmentFilter.value = '';
+    applyFilters();
+};
 
-    return props.tasks.filter((task) =>
-        [
-            task.title,
-            task.project?.name ?? '',
-            task.department?.name ?? '',
-            task.assignee?.name ?? '',
-        ].some((item) => item.toLocaleLowerCase('fa').includes(value)),
-    );
-});
+const paginationLinks = computed(() =>
+    props.tasks.links.filter((link) => link.url !== null),
+);
+
 
 const resetCreateForm = (): void => {
     createForm.reset();
@@ -146,7 +185,7 @@ const handleProjectChange = (): void => {
                     <p class="mt-1 text-sm text-gray-500">مشاهده و پیگیری کارهای قابل دسترسی شما</p>
                 </div>
                 <div class="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
-                    {{ filteredTasks.length }} تسک
+                    {{ props.tasks.total }} تسک
                 </div>
             </div>
         </template>
@@ -247,11 +286,51 @@ const handleProjectChange = (): void => {
             </section>
 
             <section class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
-                <div class="relative">
-                    <label for="task-search" class="mb-1.5 block text-sm font-medium text-gray-700">جست‌وجوی تسک</label>
-                    <input id="task-search" v-model="search" type="search"
-                        placeholder="عنوان، پروژه، واحد یا مسئول..."
-                        class="h-11 w-full rounded-lg border border-gray-300 bg-gray-50 px-4 text-sm outline-none transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/10" />
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+                    <div class="lg:col-span-2">
+                        <label for="task-search" class="mb-1.5 block text-sm font-medium text-gray-700">جست‌وجو</label>
+                        <input id="task-search" v-model="search" type="search"
+                            placeholder="عنوان، توضیحات، پروژه، واحد یا مسئول..."
+                            class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">وضعیت</label>
+                        <select v-model="statusFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                            <option value="">همه وضعیت‌ها</option>
+                            <option value="todo">انجام نشده</option>
+                            <option value="in_progress">در حال انجام</option>
+                            <option value="completed">تکمیل شده</option>
+                            <option value="cancelled">لغو شده</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">اولویت</label>
+                        <select v-model="priorityFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                            <option value="">همه اولویت‌ها</option>
+                            <option value="low">کم</option>
+                            <option value="normal">عادی</option>
+                            <option value="high">زیاد</option>
+                            <option value="urgent">فوری</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">پروژه</label>
+                        <select v-model="projectFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                            <option value="">همه پروژه‌ها</option>
+                            <option v-for="project in formOptions?.projects ?? []" :key="project.id" :value="project.id">{{ project.name }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">واحد</label>
+                        <select v-model="departmentFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                            <option value="">همه واحدها</option>
+                            <option v-for="department in formOptions?.departments ?? []" :key="department.id" :value="department.id">{{ department.name }}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-4 flex flex-wrap gap-2 border-t border-gray-100 pt-4">
+                    <button type="button" @click="applyFilters" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">اعمال فیلتر</button>
+                    <button type="button" @click="clearFilters" class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">پاک کردن</button>
                 </div>
             </section>
 
@@ -261,12 +340,12 @@ const handleProjectChange = (): void => {
                         <h3 class="font-bold text-gray-900">فهرست تسک‌ها</h3>
                         <p class="mt-0.5 text-xs text-gray-500">مواردی که بر اساس سطح دسترسی شما قابل مشاهده هستند</p>
                     </div>
-                    <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">{{ filteredTasks.length }}</span>
+                    <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">{{ props.tasks.total }}</span>
                 </div>
 
-                <div v-if="filteredTasks.length === 0" class="px-6 py-14 text-center">
+                <div v-if="props.tasks.data.length === 0" class="px-6 py-14 text-center">
                     <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-500">—</div>
-                    <p class="mt-3 font-medium text-gray-800">{{ search ? 'تسکی با این مشخصات پیدا نشد.' : 'تسکی برای نمایش وجود ندارد.' }}</p>
+                    <p class="mt-3 font-medium text-gray-800">{{ props.tasks.total === 0 ? 'تسکی با این مشخصات پیدا نشد.' : 'تسکی برای نمایش وجود ندارد.' }}</p>
                     <p v-if="search" class="mt-1 text-sm text-gray-500">عبارت جست‌وجو را تغییر دهید و دوباره تلاش کنید.</p>
                 </div>
 
@@ -284,7 +363,7 @@ const handleProjectChange = (): void => {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
-                            <tr v-for="task in filteredTasks" :key="task.id" class="transition-colors hover:bg-gray-50/80">
+                            <tr v-for="task in props.tasks.data" :key="task.id" class="transition-colors hover:bg-gray-50/80">
                                 <td class="px-5 py-3.5 font-semibold text-gray-900">{{ task.title }}</td>
                                 <td class="px-4 py-3.5 text-gray-600">{{ task.project?.name ?? '—' }}</td>
                                 <td class="px-4 py-3.5 text-gray-600">{{ task.department?.name ?? '—' }}</td>
@@ -322,6 +401,17 @@ const handleProjectChange = (): void => {
                     </table>
                 </div>
             </section>
+            <div v-if="props.tasks.last_page > 1" class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                <p class="text-xs text-gray-500">
+                    نمایش {{ props.tasks.from ?? 0 }} تا {{ props.tasks.to ?? 0 }} از {{ props.tasks.total }} تسک
+                </p>
+                <div class="flex flex-wrap items-center gap-1">
+                    <Link v-for="link in paginationLinks" :key="link.label" :href="link.url!" preserve-scroll preserve-state
+                        class="rounded-lg px-3 py-1.5 text-xs font-medium transition"
+                        :class="link.active ? 'bg-gray-900 text-white' : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50'"
+                        v-html="link.label" />
+                </div>
+            </div>
         </div>
     </AuthenticatedLayout>
 </template>
