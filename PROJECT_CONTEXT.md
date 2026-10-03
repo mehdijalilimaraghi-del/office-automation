@@ -788,3 +788,23 @@ The final lifecycle decision is:
 This keeps the "default project is not manually deletable" rule while giving Department deletion an explicit, controlled lifecycle rather than relying on an implicit cascade.
 
 The Projects audit therefore requires no duplicate membership model, no new Project access scope, and no collapse of status/is_active.
+
+
+### Tasks V1 Completion — 2026-10-03
+
+Tasks V1 was re-audited on the development branch after the Projects audit.
+
+Verified:
+- Task CRUD, assignment, referral/history, status/priority, comments, work logs, reminders, timeline/activity, filtering/search, pagination, optional project/department, external follow-up, and scoped authorization are implemented.
+- Task access scopes combine self, department, department tree, project, and organization scope according to the existing permission model.
+- Reminder lifecycle keeps its intentional recipient/creator semantics and is not coupled to generic Task scope checks.
+- Timeline timestamps are deterministic through the existing explicit timestamp handling.
+- Creating a task directly in completed status now records completed_at consistently with the normal status-change workflow.
+
+Task UX Completion has started with the first concrete correction:
+- native Gregorian datetime inputs in the Task Show work-log and reminder forms were replaced with a shared Jalali date-time picker while retaining Gregorian ISO storage/API values.
+
+Next Task UX review:
+- review create/edit/show flows
+- improve empty/loading/error states where gaps are real
+- verify remaining Jalali/RTL/Vazirmatn consistency
