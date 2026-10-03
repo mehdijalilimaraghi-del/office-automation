@@ -174,6 +174,34 @@ class CreateProjectTest extends TestCase
         );
     }
 
+    public function test_project_manager_cannot_be_changed_through_project_update(): void
+    {
+        $creator = User::factory()->create();
+        $manager = User::factory()->create();
+        $replacement = User::factory()->create();
+
+        $project = app(ProjectServiceContract::class)->create(
+            [
+                'name' => 'Managed Project',
+                'code' => 'PRJ-MANAGER-LOCK',
+                'manager_id' => $manager->id,
+            ],
+            $creator
+        );
+
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+
+        app(ProjectServiceContract::class)->update(
+            $project,
+            [
+                'name' => 'Managed Project',
+                'code' => 'PRJ-MANAGER-LOCK',
+                'status' => 'planning',
+                'manager_id' => $replacement->id,
+            ]
+        );
+    }
+
     public function test_manager_membership_does_not_require_a_project_role(): void
     {
         $creator = User::factory()->create();
