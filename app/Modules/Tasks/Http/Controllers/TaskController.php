@@ -85,6 +85,9 @@ class TaskController extends Controller
                 'assignee',
                 'creator',
                 'department',
+                'externalOrganization',
+                'externalDepartment',
+                'externalContact',
                 'assignments.fromUser',
                 'assignments.toUser',
                 'assignments.assignedBy',
@@ -106,6 +109,7 @@ class TaskController extends Controller
                 'delete' => Gate::allows('delete', $task),
             ],
             'assigneeOptions' => $this->taskFormOptionsService->assigneesFor($task),
+            'externalPartyOptions' => $this->taskFormOptionsService->forCreate($request->user()),
         ]);
     }
 
