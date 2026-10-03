@@ -3,10 +3,13 @@
 namespace App\Modules\Tasks\Actions;
 
 use App\Modules\Tasks\Models\Task;
+use App\Core\ExternalParties\Contracts\ExternalPartyServiceInterface;
 use InvalidArgumentException;
 
 class UpdateTaskAction
 {
+    public function __construct(private readonly ExternalPartyServiceInterface $externalPartyService) {}
+
     public function execute(
         Task $task,
         array $data
@@ -27,7 +30,16 @@ class UpdateTaskAction
             );
         }
 
+        $this->externalPartyService->validateTaskContext([
+            'external_organization_id' => array_key_exists('external_organization_id', $data) ? $data['external_organization_id'] : $task->external_organization_id,
+            'external_department_id' => array_key_exists('external_department_id', $data) ? $data['external_department_id'] : $task->external_department_id,
+            'external_contact_id' => array_key_exists('external_contact_id', $data) ? $data['external_contact_id'] : $task->external_contact_id,
+        ]);
+
         $task->fill([
+            'external_organization_id' => array_key_exists('external_organization_id', $data) ? $data['external_organization_id'] : $task->external_organization_id,
+            'external_department_id' => array_key_exists('external_department_id', $data) ? $data['external_department_id'] : $task->external_department_id,
+            'external_contact_id' => array_key_exists('external_contact_id', $data) ? $data['external_contact_id'] : $task->external_contact_id,
             'title' => $data['title'] ?? $task->title,
             'description' => array_key_exists(
                 'description',
