@@ -18,6 +18,7 @@ use App\Models\User;
 use App\Modules\Tasks\Contracts\TaskServiceContract;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskReminder;
+use App\Modules\Tasks\Services\TaskFormOptionsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -30,6 +31,7 @@ class TaskController extends Controller
 {
     public function __construct(
         private readonly TaskServiceContract $taskService,
+        private readonly TaskFormOptionsService $taskFormOptionsService,
     ) {
     }
 
@@ -39,6 +41,10 @@ class TaskController extends Controller
 
         return Inertia::render('Tasks/Index', [
             'tasks' => $this->taskService->list($request->user()),
+            'canCreate' => Gate::allows('create', Task::class),
+            'formOptions' => Gate::allows('create', Task::class)
+                ? $this->taskFormOptionsService->forCreate($request->user())
+                : null,
         ]);
     }
 
@@ -87,7 +93,10 @@ class TaskController extends Controller
                 'log_work' => Gate::allows('logWork', $task),
                 'create_reminder' => Gate::allows('createReminder', $task),
                 'change_status' => Gate::allows('changeStatus', $task),
+                'update' => Gate::allows('update', $task),
+                'delete' => Gate::allows('delete', $task),
             ],
+            'assigneeOptions' => $this->taskFormOptionsService->assigneesFor($task),
         ]);
     }
 
