@@ -17,6 +17,31 @@ class ProjectHttpTest extends TestCase
 {
     use RefreshDatabase;
 
+
+    public function test_authorized_user_can_open_paginated_project_index(): void
+    {
+        $user = $this->userWithPermission('projects.view');
+
+        for ($index = 0; $index < 16; $index++) {
+            $this->createProject($user);
+        }
+
+        $response = $this->actingAs($user)
+            ->get(route('projects.index'));
+
+        $response->assertOk();
+
+        $response->assertInertia(
+            fn ($page) => $page
+                ->component('Projects/Index')
+                ->where('projects.current_page', 1)
+                ->where('projects.per_page', 15)
+                ->where('projects.last_page', 2)
+                ->where('projects.total', 16)
+                ->has('projects.data', 15)
+        );
+    }
+
     public function test_authorized_user_can_open_project_create_page_with_active_managers(): void
     {
         $creator = $this->userWithPermission('projects.create');

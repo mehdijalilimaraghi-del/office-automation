@@ -8,7 +8,7 @@ use App\Modules\Projects\Actions\DeleteProjectAction;
 use App\Modules\Projects\Actions\UpdateProjectAction;
 use App\Modules\Projects\Contracts\ProjectServiceContract;
 use App\Modules\Projects\Models\Project;
-use Illuminate\Support\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class ProjectService implements ProjectServiceContract
 {
@@ -19,12 +19,13 @@ class ProjectService implements ProjectServiceContract
     ) {
     }
 
-    public function list(): Collection
+    public function list(): LengthAwarePaginator
     {
         return Project::query()
             ->with(['manager', 'creator'])
             ->latest()
-            ->get();
+            ->paginate(15)
+            ->withQueryString();
     }
 
     public function show(Project $project): Project

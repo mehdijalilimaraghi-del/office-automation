@@ -6,11 +6,11 @@ namespace App\Modules\Projects\Contracts;
 
 use App\Models\User;
 use App\Modules\Projects\Models\Project;
-use Illuminate\Support\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 interface ProjectServiceContract
 {
-    public function list(): Collection;
+    public function list(): LengthAwarePaginator;
 
     public function show(Project $project): Project;
 

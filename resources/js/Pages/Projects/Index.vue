@@ -22,8 +22,26 @@ interface Project {
     } | null;
 }
 
-defineProps<{
-    projects: Project[];
+interface PaginationLink {
+    url: string | null;
+    label: string;
+    active: boolean;
+}
+
+interface ProjectPagination {
+    data: Project[];
+    current_page: number;
+    last_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+    previous_page_url: string | null;
+    next_page_url: string | null;
+    links: PaginationLink[];
+}
+
+const props = defineProps<{
+    projects: ProjectPagination;
 }>();
 
 const statusLabels: Record<Project['status'], string> = {
@@ -58,7 +76,7 @@ const statusLabels: Record<Project['status'], string> = {
         <div class="mx-auto max-w-7xl">
             <div class="overflow-hidden rounded-lg border bg-card">
                 <div
-                    v-if="projects.length === 0"
+                    v-if="projects.data.length === 0"
                     class="p-8 text-center text-sm text-muted-foreground"
                 >
                     هنوز پروژه‌ای ثبت نشده است.
@@ -91,7 +109,7 @@ const statusLabels: Record<Project['status'], string> = {
 
                         <tbody class="divide-y">
                             <tr
-                                v-for="project in projects"
+                                v-for="project in projects.data"
                                 :key="project.id"
                                 class="transition-colors hover:bg-muted/30"
                             >
@@ -127,6 +145,53 @@ const statusLabels: Record<Project['status'], string> = {
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <div
+                    v-if="projects.last_page > 1"
+                    class="flex flex-wrap items-center justify-between gap-3 border-t p-4"
+                >
+                    <div class="text-sm text-muted-foreground">
+                        نمایش {{ projects.from }} تا {{ projects.to }}
+                        از {{ projects.total }} پروژه
+                    </div>
+
+                    <div class="flex items-center gap-1">
+                        <Button
+                            v-if="projects.previous_page_url"
+                            variant="outline"
+                            size="sm"
+                            as-child
+                        >
+                            <Link :href="projects.previous_page_url">
+                                قبلی
+                            </Link>
+                        </Button>
+
+                        <template v-for="link in projects.links" :key="link.label">
+                            <Button
+                                v-if="link.url && !link.label.includes('قبلی') && !link.label.includes('بعدی')"
+                                :variant="link.active ? 'default' : 'outline'"
+                                size="sm"
+                                as-child
+                            >
+                                <Link :href="link.url">
+                                    {{ link.label }}
+                                </Link>
+                            </Button>
+                        </template>
+
+                        <Button
+                            v-if="projects.next_page_url"
+                            variant="outline"
+                            size="sm"
+                            as-child
+                        >
+                            <Link :href="projects.next_page_url">
+                                بعدی
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>
