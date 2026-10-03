@@ -1,3 +1,4 @@
+import 'vazirmatn/Vazirmatn-Variable-font-face.css';
 import '../css/app.css';
 import './bootstrap';
 
