@@ -35,7 +35,7 @@ class TaskHttpTest extends TestCase
         $response->assertInertia(
             fn ($page) => $page
                 ->component('Tasks/Index')
-                ->has('tasks', 1)
+                ->has('tasks.data', 1)
                 ->where('tasks.0.id', $visibleTask->id)
                 ->where('tasks.0.title', $visibleTask->title)
         );
