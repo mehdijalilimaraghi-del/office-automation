@@ -635,3 +635,18 @@ Implemented:
 - tests cover system role seeding, bootstrap assignment, inactive-user rejection, and effective permission changes
 
 For the current local user, use the explicit bootstrap command with the intended administrator email rather than hard-coding that email into application code.
+
+
+## 24. Project Index Pagination
+
+Implemented:
+- Project index now uses server-side pagination with 15 projects per page.
+- Pagination preserves the current query string.
+- Project index UI shows the visible range and total project count.
+- Previous/next and numbered pagination links are available.
+- HTTP coverage verifies the first page contains 15 of 16 projects and reports two pages.
+
+Next project review focus:
+- verify project edge cases and authorization behavior
+- review project list/show data boundaries
+- then proceed to remaining Task V1 completion items
