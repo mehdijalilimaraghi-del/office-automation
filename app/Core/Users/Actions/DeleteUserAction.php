@@ -15,6 +15,12 @@ class DeleteUserAction
             ]);
         }
 
+        if ($user->managedProjects()->exists()) {
+            throw ValidationException::withMessages([
+                'user' => 'این کاربر مدیر یک یا چند پروژه است. ابتدا مدیریت پروژه‌ها را حذف یا تغییر دهید.',
+            ]);
+        }
+
         if ($user->managedDepartments()->exists()) {
             throw ValidationException::withMessages([
                 'user' => 'این کاربر مدیر یک یا چند دپارتمان است. ابتدا مدیریت دپارتمان‌ها را حذف یا تغییر دهید.',
