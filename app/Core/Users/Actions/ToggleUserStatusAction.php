@@ -15,6 +15,12 @@ class ToggleUserStatusAction
             ]);
         }
 
+        if ($user->managedProjects()->exists()) {
+            throw ValidationException::withMessages([
+                'user' => 'این کاربر مدیر یک یا چند پروژه است. ابتدا مدیریت پروژه‌ها را حذف یا تغییر دهید.',
+            ]);
+        }
+
         $user->update([
             'status' => $user->isActive()
                 ? 'inactive'
