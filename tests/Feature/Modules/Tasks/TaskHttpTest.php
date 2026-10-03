@@ -131,6 +131,47 @@ class TaskHttpTest extends TestCase
         ]);
     }
 
+    public function test_task_index_supports_server_side_filters_and_pagination(): void
+    {
+        $user = $this->userWithPermissionScope('tasks.view', 'project');
+        $project = $this->createProject($user);
+
+        foreach (range(1, 16) as $index) {
+            $task = $this->createTask($project, $user);
+            $task->update([
+                'title' => $index === 16 ? 'Find This Task' : 'Other Task '.$index,
+                'status' => $index === 16 ? 'completed' : 'todo',
+                'priority' => $index === 16 ? 'urgent' : 'normal',
+            ]);
+        }
+
+        $response = $this->actingAs($user)->get(route('tasks.index', [
+            'search' => 'Find This',
+            'status' => 'completed',
+            'priority' => 'urgent',
+            'project_id' => $project->id,
+        ]));
+
+        $response->assertOk();
+        $response->assertInertia(
+            fn ($page) => $page
+                ->component('Tasks/Index')
+                ->where('tasks.total', 1)
+                ->where('tasks.data.0.title', 'Find This Task')
+                ->where('filters.search', 'Find This')
+                ->where('filters.status', 'completed')
+                ->where('filters.priority', 'urgent')
+        );
+
+        $allResponse = $this->actingAs($user)->get(route('tasks.index'));
+        $allResponse->assertInertia(
+            fn ($page) => $page
+                ->where('tasks.total', 16)
+                ->where('tasks.per_page', 15)
+                ->where('tasks.last_page', 2)
+        );
+    }
+
     public function test_project_member_can_create_task_through_http_layer(): void
     {
         $creator = $this->userWithPermission('tasks.create');
