@@ -5,6 +5,7 @@ use App\Core\Permissions\Http\Controllers\PermissionController;
 use App\Core\Roles\Http\Controllers\RoleController;
 use App\Core\Roles\Http\Controllers\RolePermissionController;
 use App\Core\Users\Http\Controllers\UserController;
+use App\Core\ExternalParties\Http\Controllers\ExternalPartyController;
 use App\Modules\Projects\Http\Controllers\ProjectController;
 use App\Modules\Projects\Http\Controllers\ProjectMemberController;
 use App\Modules\Projects\Http\Controllers\ProjectRoleController;
@@ -90,6 +91,17 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->middleware('permission:tasks.delete')->name('tasks.destroy');
+
+    Route::get('/external-parties', [ExternalPartyController::class, 'index'])->middleware('permission:external_parties.view')->name('external-parties.index');
+    Route::post('/external-parties/organizations', [ExternalPartyController::class, 'storeOrganization'])->middleware('permission:external_parties.create')->name('external-parties.organizations.store');
+    Route::put('/external-parties/organizations/{organization}', [ExternalPartyController::class, 'updateOrganization'])->middleware('permission:external_parties.edit')->name('external-parties.organizations.update');
+    Route::delete('/external-parties/organizations/{organization}', [ExternalPartyController::class, 'destroyOrganization'])->middleware('permission:external_parties.delete')->name('external-parties.organizations.destroy');
+    Route::post('/external-parties/departments', [ExternalPartyController::class, 'storeDepartment'])->middleware('permission:external_parties.create')->name('external-parties.departments.store');
+    Route::put('/external-parties/departments/{department}', [ExternalPartyController::class, 'updateDepartment'])->middleware('permission:external_parties.edit')->name('external-parties.departments.update');
+    Route::delete('/external-parties/departments/{department}', [ExternalPartyController::class, 'destroyDepartment'])->middleware('permission:external_parties.delete')->name('external-parties.departments.destroy');
+    Route::post('/external-parties/contacts', [ExternalPartyController::class, 'storeContact'])->middleware('permission:external_parties.create')->name('external-parties.contacts.store');
+    Route::put('/external-parties/contacts/{contact}', [ExternalPartyController::class, 'updateContact'])->middleware('permission:external_parties.edit')->name('external-parties.contacts.update');
+    Route::delete('/external-parties/contacts/{contact}', [ExternalPartyController::class, 'destroyContact'])->middleware('permission:external_parties.delete')->name('external-parties.contacts.destroy');
 
     Route::get('/permissions', [PermissionController::class, 'index'])->middleware('permission:permissions.view')->name('permissions.index');
     Route::post('/permissions', [PermissionController::class, 'store'])->middleware('permission:permissions.create')->name('permissions.store');
