@@ -14,6 +14,7 @@ use App\Http\Requests\Modules\Tasks\StoreTaskReminderRequest;
 use App\Http\Requests\Modules\Tasks\StoreTaskWorkLogRequest;
 use App\Http\Requests\Modules\Tasks\UpdateTaskReminderStatusRequest;
 use App\Http\Requests\Modules\Tasks\UpdateTaskRequest;
+use App\Models\User;
 use App\Modules\Tasks\Contracts\TaskServiceContract;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskReminder;
@@ -79,6 +80,14 @@ class TaskController extends Controller
                 'statusHistory.changedBy',
             ]),
             'timeline' => $this->taskService->timeline($task),
+            'currentUserId' => (int) $request->user()->id,
+            'abilities' => [
+                'refer' => Gate::allows('refer', $task),
+                'comment' => Gate::allows('comment', $task),
+                'log_work' => Gate::allows('logWork', $task),
+                'create_reminder' => Gate::allows('createReminder', $task),
+                'change_status' => Gate::allows('changeStatus', $task),
+            ],
         ]);
     }
 
@@ -99,14 +108,10 @@ class TaskController extends Controller
     {
         Gate::authorize('assign', $task);
 
-        $assignee = \App\Models\User::query()->findOrFail($request->validated()['assignee_id']);
+        $assignee = User::query()->findOrFail($request->validated()['assignee_id']);
 
         try {
-            $this->taskService->assign(
-                task: $task,
-                assignee: $assignee,
-                actor: $request->user(),
-            );
+            $this->taskService->assign(task: $task, assignee: $assignee, actor: $request->user());
         } catch (InvalidArgumentException $exception) {
             throw ValidationException::withMessages(['assignee_id' => $exception->getMessage()]);
         }
@@ -118,7 +123,7 @@ class TaskController extends Controller
     {
         Gate::authorize('refer', $task);
 
-        $assignee = \App\Models\User::query()->findOrFail($request->validated()['assignee_id']);
+        $assignee = User::query()->findOrFail($request->validated()['assignee_id']);
 
         try {
             $this->taskService->assign(
@@ -145,13 +150,12 @@ class TaskController extends Controller
             body: $request->validated()['body'],
         );
 
-        return back()->with('success', 'کامنت با موفقیت ثبت شد.');
+        return back()->with('success', 'نظر با موفقیت ثبت شد.');
     }
 
     public function workLog(StoreTaskWorkLogRequest $request, Task $task): RedirectResponse
     {
         Gate::authorize('logWork', $task);
-
         $data = $request->validated();
 
         $this->taskService->addWorkLog(
@@ -169,9 +173,8 @@ class TaskController extends Controller
     public function reminder(StoreTaskReminderRequest $request, Task $task): RedirectResponse
     {
         Gate::authorize('createReminder', $task);
-
         $data = $request->validated();
-        $recipient = \App\Models\User::query()->findOrFail($data['user_id']);
+        $recipient = User::query()->findOrFail($data['user_id']);
 
         $this->taskService->addReminder(
             task: $task,
