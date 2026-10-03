@@ -64,3 +64,10 @@ const value = computed<string | undefined>({
         class="jalali-date-picker"
     />
 </template>
+
+<style>
+.jalali-date-picker,
+.jalali-date-picker * {
+    font-family: 'Vazirmatn', Tahoma, Arial, sans-serif !important;
+}
+</style>
