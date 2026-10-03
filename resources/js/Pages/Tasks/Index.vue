@@ -4,6 +4,8 @@ import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import { computed, ref } from 'vue';
 
+const isFiltering = ref(false);
+
 interface User {
     id: number;
     name: string;
@@ -135,6 +137,8 @@ const availableAssignees = computed(() => {
 });
 
 const applyFilters = (): void => {
+    isFiltering.value = true;
+
     router.get(route('tasks.index'), {
         search: search.value.trim() || undefined,
         status: statusFilter.value || undefined,
@@ -144,6 +148,9 @@ const applyFilters = (): void => {
     }, {
         preserveState: true,
         preserveScroll: true,
+        onFinish: () => {
+            isFiltering.value = false;
+        },
     });
 };
 
@@ -361,18 +368,28 @@ const handleProjectChange = (): void => {
                     </div>
                 </div>
                 <div class="mt-4 flex flex-wrap gap-2 border-t border-gray-100 pt-4">
-                    <button type="button" @click="applyFilters" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">اعمال فیلتر</button>
-                    <button type="button" @click="clearFilters" class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">پاک کردن</button>
+                    <button type="button" :disabled="isFiltering" @click="applyFilters" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
+                        {{ isFiltering ? 'در حال اعمال...' : 'اعمال فیلتر' }}
+                    </button>
+                    <button type="button" :disabled="isFiltering" @click="clearFilters" class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50">
+                        پاک کردن
+                    </button>
                 </div>
             </section>
 
-            <section class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <section class="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
                 <div class="flex items-center justify-between border-b border-gray-100 px-4 py-4 sm:px-5">
                     <div>
                         <h3 class="font-bold text-gray-900">فهرست تسک‌ها</h3>
                         <p class="mt-0.5 text-xs text-gray-500">مواردی که بر اساس سطح دسترسی شما قابل مشاهده هستند</p>
                     </div>
                     <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">{{ props.tasks.total }}</span>
+                </div>
+
+                <div v-if="isFiltering" class="absolute inset-0 z-10 flex items-center justify-center bg-white/70 backdrop-blur-[1px]">
+                    <div class="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm">
+                        در حال بارگذاری...
+                    </div>
                 </div>
 
                 <div v-if="props.tasks.data.length === 0" class="px-6 py-14 text-center">
@@ -439,6 +456,7 @@ const handleProjectChange = (): void => {
                 </p>
                 <div class="flex flex-wrap items-center gap-1">
                     <Link v-for="link in paginationLinks" :key="link.label" :href="link.url!" preserve-scroll preserve-state
+                        @click="isFiltering = true"
                         class="rounded-lg px-3 py-1.5 text-xs font-medium transition"
                         :class="link.active ? 'bg-gray-900 text-white' : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50'"
                         v-html="link.label" />
