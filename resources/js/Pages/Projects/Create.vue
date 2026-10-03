@@ -2,17 +2,25 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Button } from '@/Components/ui/button';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 
 interface Manager {
     id: number;
     name: string;
 }
 
+interface Department {
+    id: number;
+    name: string;
+}
+
 const props = defineProps<{
     managers: Manager[];
+    departments: Department[];
 }>();
 
 const form = useForm({
+    department_id: '',
     name: '',
     code: '',
     description: '',
@@ -114,6 +122,30 @@ function submit(): void {
 
                 <div class="grid gap-5 md:grid-cols-2">
                     <div>
+                        <label for="department_id" class="mb-2 block text-sm font-medium">
+                            واحد
+                        </label>
+                        <select
+                            id="department_id"
+                            v-model="form.department_id"
+                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                            :disabled="form.processing"
+                        >
+                            <option value="">بدون واحد</option>
+                            <option
+                                v-for="department in props.departments"
+                                :key="department.id"
+                                :value="String(department.id)"
+                            >
+                                {{ department.name }}
+                            </option>
+                        </select>
+                        <p v-if="form.errors.department_id" class="mt-1 text-xs text-destructive">
+                            {{ form.errors.department_id }}
+                        </p>
+                    </div>
+
+                    <div>
                         <label
                             for="manager_id"
                             class="mb-2 block text-sm font-medium"
@@ -189,13 +221,9 @@ function submit(): void {
                             تاریخ شروع
                         </label>
 
-                        <input
-                            id="start_date"
+                        <JalaliDatePicker
                             v-model="form.start_date"
-                            dir="ltr"
-                            type="date"
-                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-left text-sm"
-                            :disabled="form.processing"
+                            placeholder="انتخاب تاریخ شروع"
                         />
 
                         <p
@@ -214,13 +242,9 @@ function submit(): void {
                             تاریخ پایان
                         </label>
 
-                        <input
-                            id="end_date"
+                        <JalaliDatePicker
                             v-model="form.end_date"
-                            dir="ltr"
-                            type="date"
-                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-left text-sm"
-                            :disabled="form.processing"
+                            placeholder="انتخاب تاریخ پایان"
                         />
 
                         <p
