@@ -1,10 +1,10 @@
 <?php
 
-namespace App\\Core\\ExternalParties\\Models;
+namespace App\Core\ExternalParties\Models;
 
-use Illuminate\\Database\\Eloquent\\Factories\\HasFactory;
-use Illuminate\\Database\\Eloquent\\Model;
-use Illuminate\\Database\\Eloquent\\Relations\\HasMany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ExternalOrganization extends Model
 {
