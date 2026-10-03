@@ -53,6 +53,26 @@ class TaskServiceTest extends TestCase
         ]);
     }
 
+    public function test_task_can_be_created_without_a_project(): void
+    {
+        $creator = User::factory()->create();
+
+        $task = app(TaskServiceContract::class)->create(
+            [
+                'project_id' => null,
+                'title' => 'Standalone task',
+                'assignee_id' => null,
+            ],
+            $creator
+        );
+
+        $this->assertNull($task->project_id);
+        $this->assertDatabaseHas('tasks', [
+            'id' => $task->id,
+            'project_id' => null,
+        ]);
+    }
+
     public function test_task_assignee_must_be_project_member(): void
     {
         $creator = User::factory()->create();
