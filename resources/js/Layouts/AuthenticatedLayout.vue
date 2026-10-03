@@ -46,6 +46,14 @@ const showingNavigationDropdown = ref(false);
                                 </NavLink>
 
                                 <NavLink
+                                    v-if="$page.props.auth.abilities?.external_parties_view"
+                                    :href="route('external-parties.index')"
+                                    :active="route().current('external-parties.*')"
+                                >
+                                    طرف‌های خارجی
+                                </NavLink>
+
+                                <NavLink
                                     v-if="$page.props.auth.abilities?.projects_view"
                                     :href="route('projects.index')"
                                     :active="route().current('projects.*')"
@@ -167,6 +175,14 @@ const showingNavigationDropdown = ref(false);
                             :active="route().current('tasks.*')"
                         >
                             تسک‌ها
+                        </ResponsiveNavLink>
+
+                        <ResponsiveNavLink
+                            v-if="$page.props.auth.abilities?.external_parties_view"
+                            :href="route('external-parties.index')"
+                            :active="route().current('external-parties.*')"
+                        >
+                            طرف‌های خارجی
                         </ResponsiveNavLink>
 
                         <ResponsiveNavLink
