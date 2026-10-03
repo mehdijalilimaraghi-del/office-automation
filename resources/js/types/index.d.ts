@@ -8,6 +8,7 @@ export interface User {
 export interface AuthAbilities {
     tasks_view?: boolean;
     projects_view?: boolean;
+    external_parties_view?: boolean;
 }
 
 export type PageProps<
