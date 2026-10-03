@@ -38,6 +38,8 @@ interface Abilities {
     log_work: boolean;
     create_reminder: boolean;
     change_status: boolean;
+    update: boolean;
+    delete: boolean;
 }
 
 const props = defineProps<{
@@ -45,6 +47,7 @@ const props = defineProps<{
     timeline: TimelineItem[];
     currentUserId: number;
     abilities: Abilities;
+    assigneeOptions: User[];
 }>();
 
 const commentForm = useForm({ body: '' });
@@ -57,6 +60,14 @@ const reminderForm = useForm({
 });
 const referralForm = useForm({ assignee_id: '', note: '' });
 const statusForm = useForm({ status: props.task.status });
+const editForm = useForm({
+    title: props.task.title,
+    description: props.task.description ?? '',
+    priority: props.task.priority,
+    start_date: props.task.start_date ?? '',
+    due_date: props.task.due_date ?? '',
+    is_active: true,
+});
 
 const statusLabels: Record<string, string> = {
     todo: 'انجام نشده',
@@ -150,6 +161,103 @@ const formatDateTime = (value: string | null): string => value ? value.replace('
                 </div>
             </section>
 
+            <section v-if="abilities.update" class="rounded-lg border bg-card p-5">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h3 class="font-semibold">ویرایش اطلاعات تسک</h3>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            اطلاعات اصلی تسک را ویرایش کنید.
+                        </p>
+                    </div>
+                    <button
+                        v-if="abilities.delete"
+                        type="button"
+                        class="rounded-md border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                        @click="deleteTask"
+                    >
+                        حذف تسک
+                    </button>
+                </div>
+
+                <form class="mt-5 grid gap-4 md:grid-cols-2" @submit.prevent="submitEdit">
+                    <div class="md:col-span-2">
+                        <label class="mb-2 block text-sm font-medium">عنوان تسک</label>
+                        <input
+                            v-model="editForm.title"
+                            type="text"
+                            required
+                            maxlength="255"
+                            class="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                        />
+                        <p v-if="editForm.errors.title" class="mt-1 text-sm text-red-600">
+                            {{ editForm.errors.title }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-medium">اولویت</label>
+                        <select
+                            v-model="editForm.priority"
+                            class="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                        >
+                            <option value="low">کم</option>
+                            <option value="normal">عادی</option>
+                            <option value="high">زیاد</option>
+                            <option value="urgent">فوری</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center gap-2 pt-7">
+                        <input
+                            id="task-active"
+                            v-model="editForm.is_active"
+                            type="checkbox"
+                            class="h-4 w-4 rounded border-gray-300"
+                        />
+                        <label for="task-active" class="text-sm font-medium">
+                            تسک فعال باشد
+                        </label>
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-medium">تاریخ شروع</label>
+                        <input
+                            v-model="editForm.start_date"
+                            type="date"
+                            class="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-medium">مهلت انجام</label>
+                        <input
+                            v-model="editForm.due_date"
+                            type="date"
+                            class="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                        />
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="mb-2 block text-sm font-medium">توضیحات</label>
+                        <textarea
+                            v-model="editForm.description"
+                            rows="4"
+                            class="w-full rounded-md border bg-background p-3 text-sm"
+                        />
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <button
+                            type="submit"
+                            :disabled="editForm.processing"
+                            class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+                        >
+                            {{ editForm.processing ? 'در حال ذخیره...' : 'ذخیره تغییرات' }}
+                        </button>
+                    </div>
+                </form>
+            </section>
+
             <section v-if="abilities.change_status" class="rounded-lg border bg-card p-5">
                 <h3 class="font-semibold">تغییر وضعیت</h3>
                 <form class="mt-4 flex flex-wrap gap-3" @submit.prevent="changeStatus">
@@ -167,8 +275,24 @@ const formatDateTime = (value: string | null): string => value ? value.replace('
                 <h3 class="font-semibold">ارجاع تسک</h3>
                 <form class="mt-4 grid gap-4 md:grid-cols-2" @submit.prevent="submitReferral">
                     <div>
-                        <label class="mb-2 block text-sm font-medium">شناسه مسئول جدید</label>
-                        <input v-model="referralForm.assignee_id" type="number" min="1" required class="h-10 w-full rounded-md border bg-background px-3 text-sm" />
+                        <label class="mb-2 block text-sm font-medium">مسئول جدید</label>
+                        <select
+                            v-model="referralForm.assignee_id"
+                            required
+                            class="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                        >
+                            <option value="" disabled>انتخاب مسئول جدید</option>
+                            <option
+                                v-for="user in assigneeOptions"
+                                :key="user.id"
+                                :value="String(user.id)"
+                            >
+                                {{ user.name }}
+                            </option>
+                        </select>
+                        <p v-if="assigneeOptions.length === 0" class="mt-1 text-xs text-muted-foreground">
+                            برای این تسک مسئول فعالی قابل انتخاب نیست.
+                        </p>
                     </div>
                     <div>
                         <label class="mb-2 block text-sm font-medium">توضیح ارجاع</label>
