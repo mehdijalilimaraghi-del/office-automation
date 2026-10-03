@@ -102,6 +102,18 @@ class ProjectPolicyTest extends TestCase
         );
     }
 
+    public function test_system_default_project_cannot_be_updated_deleted_or_managed(): void
+    {
+        $user = $this->userWithPermission('projects.update');
+        $project = $this->createProject($user);
+        $project->update(['is_system_default' => true]);
+
+        $this->assertFalse($user->can('update', $project));
+        $this->assertFalse($user->can('delete', $project));
+        $this->assertFalse($user->can('manageRoles', $project));
+        $this->assertFalse($user->can('manageMembers', $project));
+    }
+
     public function test_inactive_user_cannot_access_project_even_with_permission(): void
     {
         $user = $this->userWithPermission('projects.view');
