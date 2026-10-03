@@ -4,7 +4,7 @@
 
 ### Phase 0  Architecture
 
-Current phase.
+Completed.
 
 Tasks:
 
@@ -87,6 +87,8 @@ Planned work:
 ---
 
 ### Phase 5  Dashboard
+
+Current phase.
 
 Planned work:
 
