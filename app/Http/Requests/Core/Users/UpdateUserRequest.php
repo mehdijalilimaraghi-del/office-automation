@@ -34,6 +34,12 @@ class UpdateUserRequest extends FormRequest
                     ->ignore($user->id),
             ],
 
+            'mobile' => ['nullable', 'string', 'max:50'],
+
+            'phone' => ['nullable', 'string', 'max:50'],
+
+            'extension' => ['nullable', 'string', 'max:20'],
+
             'password' => [
                 'nullable',
                 'string',
@@ -84,6 +90,9 @@ class UpdateUserRequest extends FormRequest
         return [
             'name' => 'نام کاربر',
             'email' => 'ایمیل',
+            'mobile' => 'موبایل',
+            'phone' => 'تلفن ثابت',
+            'extension' => 'داخلی',
             'password' => 'رمز عبور',
             'password_confirmation' => 'تکرار رمز عبور',
             'department_ids' => 'واحدهای سازمانی',
