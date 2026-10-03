@@ -731,3 +731,43 @@ Next project review focus:
 - verify project edge cases and authorization behavior
 - review project list/show data boundaries
 - then proceed to remaining Task V1 completion items
+
+
+### Projects Completion Audit — Repository Verification — 2026-10-03
+
+The development branch was re-audited from the repository state rather than relying on older checkpoint notes.
+
+Verified as correct:
+- ProjectService listing is server-side paginated (15 items) and preserves the query string.
+- ProjectMember is backed by the same `project_user` table used by `Project::users()`; there is no duplicate membership table in the current implementation.
+- Project manager membership is created automatically and cannot be removed through the member workflow.
+- Project roles are scoped to their owning project through nested route model binding.
+- Inactive project roles cannot be assigned to members.
+- Project roles with members cannot be deleted.
+- System/default projects are protected by backend authorization from update, delete, member management, and role management.
+- Regular project manager changes are intentionally not supported by Project Update; manager lifecycle is controlled through the existing manager assignment rules.
+- User deletion/deactivation is already blocked while the user manages projects, preventing a project from being left without an active manager.
+- Project viewing is permission-based and not membership-scoped; this matches the current authorization design, while mutation operations are manager-scoped.
+- `status` and `is_active` represent separate lifecycle dimensions and were retained; no evidence justified collapsing them.
+
+Real gaps found and corrected:
+- The repository's project schema was missing `department_id` and `is_system_default` even though the current Department/default-project implementation and tests already depended on them. A forward migration now adds both fields; `department_id` is nullable for ordinary projects.
+- Project create/update now persist `department_id`, and the UI exposes active departments.
+- The project/task relationship did not match the documented rule that Project is optional for Task. The task foreign key was non-null and cascade-deleted tasks with their project. A forward migration now makes `tasks.project_id` nullable and uses `nullOnDelete`, preserving tasks when a project is deleted.
+- Department deletion could leave a system default project orphaned. Department deletion now explicitly refuses deletion while its default project exists.
+- Project authorization controls were not fully reflected in the UI: the project list always showed Create and the project show page always showed Edit. The UI now receives backend authorization state and hides those actions when unavailable.
+- Project Create/Edit used native Gregorian date inputs despite the established Jalali presentation layer. Both flows now use the shared Jalali date picker while continuing to submit Gregorian ISO values.
+
+Additional regression coverage was added for:
+- project department persistence
+- standalone task creation
+- preserving tasks when deleting a project
+- blocking department deletion when a default project exists
+
+The audit found no architectural justification for replacing the existing `project_user` membership model, introducing a second membership relation, changing global project view authorization, or collapsing `status` and `is_active`.
+
+Repository note:
+- The execution environment did not contain a local checkout, so the requested literal `git pull origin development` could not be executed locally. GitHub repository state on the `development` branch was used for inspection and writes.
+- Local PHPUnit and Vite execution could not be performed because the repository could not be cloned into the execution container due unavailable outbound DNS/network access. The code and tests were updated, but runtime test/build results must be verified in the project environment.
+
+Next step remains Tasks V1 Completion after the corrected project/task schema and lifecycle changes pass the full local suite.
