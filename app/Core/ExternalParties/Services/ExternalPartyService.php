@@ -1,10 +1,10 @@
 <?php
 
-namespace App\\Core\\ExternalParties\\Services;
+namespace App\Core\ExternalParties\Services;
 
-use App\\Core\\ExternalParties\\Contracts\\ExternalPartyServiceInterface;
-use App\\Core\\ExternalParties\\Models\\{ExternalContact, ExternalDepartment, ExternalOrganization};
-use Illuminate\\Database\\Eloquent\\Collection;
+use App\Core\ExternalParties\Contracts\ExternalPartyServiceInterface;
+use App\Core\ExternalParties\Models\{ExternalContact, ExternalDepartment, ExternalOrganization};
+use Illuminate\Database\Eloquent\Collection;
 
 class ExternalPartyService implements ExternalPartyServiceInterface
 {
