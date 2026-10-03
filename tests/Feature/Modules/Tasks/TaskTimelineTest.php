@@ -91,7 +91,7 @@ class TaskTimelineTest extends TestCase
             ['reminder', 'comment', 'work_log', 'status', 'assignment'],
             array_column($timeline, 'type'),
         );
-        $this->assertSame('پیگیری نهایی', $timeline[0]['title']);
+        $this->assertSame('یادآور: پیگیری نهایی', $timeline[0]['title']);
         $this->assertSame('نیاز به بررسی بیشتر دارد.', $timeline[1]['description']);
     }
 }
