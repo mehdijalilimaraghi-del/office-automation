@@ -25,6 +25,9 @@ interface User {
     id: number;
     name: string;
     email: string;
+    mobile: string | null;
+    phone: string | null;
+    extension: string | null;
     status: 'active' | 'inactive';
     departments: Department[];
     roles: Role[];
@@ -42,6 +45,9 @@ const editingUser = ref<User | null>(null);
 const form = useForm({
     name: '',
     email: '',
+    mobile: '',
+    phone: '',
+    extension: '',
     password: '',
     password_confirmation: '',
     department_ids: [] as number[],
@@ -71,6 +77,9 @@ function openEdit(user: User): void {
 
     form.name = user.name;
     form.email = user.email;
+    form.mobile = user.mobile ?? '';
+    form.phone = user.phone ?? '';
+    form.extension = user.extension ?? '';
     form.password = '';
     form.password_confirmation = '';
     form.department_ids = user.departments.map(
@@ -241,6 +250,10 @@ function currentUserId(): number | null {
                                     </th>
 
                                     <th class="px-4 py-3">
+                                        تماس
+                                    </th>
+
+                                    <th class="px-4 py-3">
                                         واحد
                                     </th>
 
@@ -277,6 +290,11 @@ function currentUserId(): number | null {
                                         class="px-4 py-3 text-right text-gray-600"
                                     >
                                         {{ user.email }}
+                                    </td>
+
+                                    <td class="px-4 py-3 text-gray-600">
+                                        {{ user.mobile || user.phone || '—' }}
+                                        <span v-if="user.extension" class="text-xs text-gray-400"> · داخلی {{ user.extension }}</span>
                                     </td>
 
                                     <td
@@ -365,7 +383,7 @@ function currentUserId(): number | null {
 
                                 <tr v-if="props.users.length === 0">
                                     <td
-                                        colspan="6"
+                                        colspan="7"
                                         class="px-4 py-10 text-center text-gray-500"
                                     >
                                         کاربری ثبت نشده است.
@@ -452,9 +470,22 @@ function currentUserId(): number | null {
                                 </p>
                             </div>
 
-                            <div
-                                class="grid gap-4 md:grid-cols-2"
-                            >
+                            <div class="grid gap-4 md:grid-cols-3">
+                                <div>
+                                    <label class="mb-1 block text-sm font-medium">موبایل</label>
+                                    <input v-model="form.mobile" dir="ltr" type="text" class="w-full rounded-lg border-gray-300 text-left" />
+                                </div>
+                                <div>
+                                    <label class="mb-1 block text-sm font-medium">تلفن ثابت</label>
+                                    <input v-model="form.phone" dir="ltr" type="text" class="w-full rounded-lg border-gray-300 text-left" />
+                                </div>
+                                <div>
+                                    <label class="mb-1 block text-sm font-medium">داخلی</label>
+                                    <input v-model="form.extension" dir="ltr" type="text" class="w-full rounded-lg border-gray-300 text-left" />
+                                </div>
+                            </div>
+
+                            <div class="grid gap-4 md:grid-cols-2">
                                 <div>
                                     <label
                                         class="mb-1 block text-sm font-medium"
