@@ -3,6 +3,7 @@
 namespace Tests\Feature\Modules\Projects;
 
 use App\Models\User;
+use App\Modules\Tasks\Models\Task;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -72,6 +73,35 @@ class ProjectRelationshipTest extends TestCase
         ]);
 
         $this->assertDatabaseCount('project_user', 0);
+    }
+
+    public function test_deleting_project_preserves_tasks_by_nulling_project_reference(): void
+    {
+        $manager = User::factory()->create();
+        $projectId = $this->createProject(
+            code: 'PRJ-TASK-NULL',
+            managerId: $manager->id,
+            createdBy: $manager->id
+        );
+
+        $taskId = DB::table('tasks')->insertGetId([
+            'project_id' => $projectId,
+            'title' => 'Task to preserve',
+            'status' => 'todo',
+            'priority' => 'normal',
+            'assignee_id' => $manager->id,
+            'created_by' => $manager->id,
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('projects')->where('id', $projectId)->delete();
+
+        $this->assertDatabaseHas('tasks', [
+            'id' => $taskId,
+            'project_id' => null,
+        ]);
     }
 
     public function test_deleting_project_role_with_members_is_rejected(): void
