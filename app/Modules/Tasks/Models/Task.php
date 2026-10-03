@@ -4,6 +4,9 @@ namespace App\Modules\Tasks\Models;
 
 use App\Core\Departments\Models\Department;
 use App\Models\User;
+use App\Core\ExternalParties\Models\ExternalOrganization;
+use App\Core\ExternalParties\Models\ExternalDepartment;
+use App\Core\ExternalParties\Models\ExternalContact;
 use App\Modules\Projects\Models\Project;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +20,9 @@ class Task extends Model
     protected $fillable = [
         'project_id',
         'department_id',
+        'external_organization_id',
+        'external_department_id',
+        'external_contact_id',
         'title',
         'description',
         'status',
@@ -50,6 +56,21 @@ class Task extends Model
             Project::class,
             'project_id'
         );
+    }
+
+    public function externalOrganization(): BelongsTo
+    {
+        return $this->belongsTo(ExternalOrganization::class, 'external_organization_id');
+    }
+
+    public function externalDepartment(): BelongsTo
+    {
+        return $this->belongsTo(ExternalDepartment::class, 'external_department_id');
+    }
+
+    public function externalContact(): BelongsTo
+    {
+        return $this->belongsTo(ExternalContact::class, 'external_contact_id');
     }
 
     public function assignee(): BelongsTo
