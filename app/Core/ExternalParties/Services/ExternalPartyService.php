@@ -47,7 +47,16 @@ class ExternalPartyService implements ExternalPartyServiceInterface
 
     public function createOrganization(array $data): ExternalOrganization { return ExternalOrganization::create($data); }
     public function updateOrganization(ExternalOrganization $organization, array $data): ExternalOrganization { $organization->update($data); return $organization->refresh(); }
-    public function deleteOrganization(ExternalOrganization $organization): void { $organization->delete(); }
+    public function deleteOrganization(ExternalOrganization $organization): void
+    {
+        if ($organization->departments()->exists() || $organization->contacts()->exists()) {
+            throw ValidationException::withMessages([
+                'organization' => 'سازمان خارجی دارای واحد یا شخص است و قابل حذف نیست.',
+            ]);
+        }
+
+        $organization->delete();
+    }
     public function createDepartment(array $data): ExternalDepartment
     {
         $this->validateDepartmentParent($data);
@@ -59,7 +68,16 @@ class ExternalPartyService implements ExternalPartyServiceInterface
         $department->update($data);
         return $department->refresh();
     }
-    public function deleteDepartment(ExternalDepartment $department): void { $department->delete(); }
+    public function deleteDepartment(ExternalDepartment $department): void
+    {
+        if ($department->children()->exists() || $department->contacts()->exists()) {
+            throw ValidationException::withMessages([
+                'department' => 'واحد خارجی دارای زیرواحد یا شخص است و قابل حذف نیست.',
+            ]);
+        }
+
+        $department->delete();
+    }
     public function createContact(array $data): ExternalContact
     {
         $this->validateContactDepartment($data);
