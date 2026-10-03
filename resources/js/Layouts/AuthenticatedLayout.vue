@@ -36,6 +36,22 @@ const showingNavigationDropdown = ref(false);
                                 >
                                     داشبورد
                                 </NavLink>
+
+                                <NavLink
+                                    v-if="$page.props.auth.abilities?.tasks_view"
+                                    :href="route('tasks.index')"
+                                    :active="route().current('tasks.*')"
+                                >
+                                    تسک‌ها
+                                </NavLink>
+
+                                <NavLink
+                                    v-if="$page.props.auth.abilities?.projects_view"
+                                    :href="route('projects.index')"
+                                    :active="route().current('projects.*')"
+                                >
+                                    پروژه‌ها
+                                </NavLink>
                             </div>
                         </div>
 
@@ -143,6 +159,22 @@ const showingNavigationDropdown = ref(false);
                             :active="route().current('dashboard')"
                         >
                             داشبورد
+                        </ResponsiveNavLink>
+
+                        <ResponsiveNavLink
+                            v-if="$page.props.auth.abilities?.tasks_view"
+                            :href="route('tasks.index')"
+                            :active="route().current('tasks.*')"
+                        >
+                            تسک‌ها
+                        </ResponsiveNavLink>
+
+                        <ResponsiveNavLink
+                            v-if="$page.props.auth.abilities?.projects_view"
+                            :href="route('projects.index')"
+                            :active="route().current('projects.*')"
+                        >
+                            پروژه‌ها
                         </ResponsiveNavLink>
                     </div>
 
