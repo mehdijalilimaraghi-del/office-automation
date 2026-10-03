@@ -7,6 +7,7 @@ namespace App\Modules\Projects\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Modules\Projects\StoreProjectRequest;
 use App\Http\Requests\Modules\Projects\UpdateProjectRequest;
+use App\Core\Departments\Contracts\DepartmentServiceInterface;
 use App\Core\Users\Contracts\UserServiceInterface;
 use App\Modules\Projects\Contracts\ProjectMemberServiceContract;
 use App\Modules\Projects\Contracts\ProjectServiceContract;
@@ -25,6 +26,7 @@ class ProjectController extends Controller
         private readonly ProjectServiceContract $projectService,
         private readonly ProjectMemberServiceContract $projectMemberService,
         private readonly UserServiceInterface $userService,
+        private readonly DepartmentServiceInterface $departmentService,
     ) {
     }
 
@@ -34,6 +36,7 @@ class ProjectController extends Controller
 
         return Inertia::render('Projects/Index', [
             'projects' => $this->projectService->list(),
+            'canCreate' => Gate::allows('create', Project::class),
         ]);
     }
 
@@ -43,6 +46,7 @@ class ProjectController extends Controller
 
         return Inertia::render('Projects/Create', [
             'managers' => $this->userService->activeList(),
+            'departments' => $this->departmentService->list()->where('is_active', true)->values(),
         ]);
     }
 
@@ -52,6 +56,8 @@ class ProjectController extends Controller
 
         return Inertia::render('Projects/Edit', [
             'project' => $this->projectService->show($project),
+            'canUpdate' => Gate::allows('update', $project),
+            'isSystemDefault' => $project->is_system_default,
         ]);
     }
 
