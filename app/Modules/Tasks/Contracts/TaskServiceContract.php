@@ -19,5 +19,7 @@ interface TaskServiceContract
     public function addComment(Task $task, User $author, string $body): TaskComment;
     public function addWorkLog(Task $task, User $user, string $title, ?string $description = null, $startedAt = null, $completedAt = null): TaskWorkLog;
     public function addReminder(Task $task, User $recipient, User $creator, string $title, $remindAt, ?string $description = null): TaskReminder;
+    public function updateReminderStatus(TaskReminder $reminder, string $status, User $actor): TaskReminder;
+    public function timeline(Task $task): array;
     public function delete(Task $task): void;
 }
