@@ -45,6 +45,8 @@ const defaultDate = computed(() => {
         ...jalali,
         hour: Number.isFinite(hour) ? hour : 0,
         minute: Number.isFinite(minute) ? minute : 0,
+        second: 0,
+        millisecond: 0,
     };
 });
 
