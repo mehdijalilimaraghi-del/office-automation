@@ -60,7 +60,7 @@ class TaskController extends Controller
         return back()->with('success', 'تسک با موفقیت ایجاد شد.');
     }
 
-    public function show(Task $task): Response
+    public function show(Request $request, Task $task): Response
     {
         Gate::authorize('view', $task);
 
