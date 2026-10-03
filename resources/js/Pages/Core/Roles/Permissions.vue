@@ -48,6 +48,13 @@ function existingScope(permission: Permission): string {
     return permission.pivot?.scope ?? defaultScope(permission);
 }
 
+const form = useForm({
+    permissions: props.role.permissions.map((permission) => ({
+        permission_id: permission.id,
+        scope: existingScope(permission),
+    })),
+});
+
 const search = ref('');
 
 const filteredPermissions = computed(() => {
@@ -67,13 +74,6 @@ const filteredPermissions = computed(() => {
 
 const assignedCount = computed(() => form.permissions.length);
 const activeCount = computed(() => props.permissions.filter((permission) => permission.is_active).length);
-
-const form = useForm({
-    permissions: props.role.permissions.map((permission) => ({
-        permission_id: permission.id,
-        scope: existingScope(permission),
-    })),
-});
 
 function assignedPermission(permissionId: number): AssignedPermission | undefined {
     return form.permissions.find(
