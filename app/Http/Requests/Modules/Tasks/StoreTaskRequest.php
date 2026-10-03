@@ -16,6 +16,9 @@ class StoreTaskRequest extends FormRequest
         return [
             'project_id' => ['nullable', 'integer', 'exists:projects,id'],
             'department_id' => ['nullable', 'integer', 'exists:departments,id'],
+            'external_organization_id' => ['nullable', 'integer', 'exists:external_organizations,id'],
+            'external_department_id' => ['nullable', 'integer', 'exists:external_departments,id'],
+            'external_contact_id' => ['nullable', 'integer', 'exists:external_contacts,id'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'status' => ['sometimes', Rule::in(['todo', 'in_progress', 'completed', 'cancelled'])],
@@ -33,6 +36,12 @@ class StoreTaskRequest extends FormRequest
         return [
             'project_id' => 'پروژه',
             'department_id' => 'واحد',
+            'external_organization_id' => 'سازمان خارجی',
+            'external_department_id' => 'واحد خارجی',
+            'external_contact_id' => 'شخص خارجی',
+            'external_organization_id' => 'سازمان خارجی',
+            'external_department_id' => 'واحد خارجی',
+            'external_contact_id' => 'شخص خارجی',
             'title' => 'عنوان تسک',
             'description' => 'توضیحات',
             'status' => 'وضعیت',
