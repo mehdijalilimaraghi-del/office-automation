@@ -808,3 +808,7 @@ Next Task UX review:
 - review create/edit/show flows
 - improve empty/loading/error states where gaps are real
 - verify remaining Jalali/RTL/Vazirmatn consistency
+
+
+Task UX progress:
+- Task Show forms now surface backend validation errors for status, reminder time, work-log completion time, and editable task fields instead of failing silently at field level.
