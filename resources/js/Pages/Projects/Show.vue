@@ -3,10 +3,10 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Button } from '@/Components/ui/button';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { computed, reactive, ref } from 'vue';
+import { formatPersianDate } from '@/Utils/date';
 
 interface ProjectRole {
     id: number;
-    department_id: number | null;
     name: string;
     code: string;
     description: string | null;
@@ -232,7 +232,7 @@ const formatDate = (date: string | null): string => {
         return '—';
     }
 
-    return date;
+    return formatPersianDate(date);
 };
 </script>
 
