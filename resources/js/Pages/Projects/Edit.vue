@@ -18,7 +18,15 @@ interface Project {
     department: { id: number; name: string } | null;
 }
 
-const props = defineProps<{ project: Project }>();
+interface Department {
+    id: number;
+    name: string;
+}
+
+const props = defineProps<{
+    project: Project;
+    departments: Department[];
+}>();
 
 const form = useForm({
     department_id: props.project.department_id?.toString() ?? '',
@@ -59,13 +67,22 @@ const submit = (): void => {
                 <div class="grid gap-6 md:grid-cols-2">
                     <div class="space-y-2">
                         <label for="department_id" class="text-sm font-medium">واحد</label>
-                        <input
+                        <select
                             id="department_id"
-                            :value="props.project.department?.name ?? 'بدون واحد'"
-                            type="text"
-                            disabled
-                            class="w-full rounded-md border bg-muted px-3 py-2 text-sm"
-                        />
+                            v-model="form.department_id"
+                            class="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                            :disabled="form.processing"
+                        >
+                            <option value="">بدون واحد</option>
+                            <option
+                                v-for="department in props.departments"
+                                :key="department.id"
+                                :value="String(department.id)"
+                            >
+                                {{ department.name }}
+                            </option>
+                        </select>
+                        <p v-if="form.errors.department_id" class="text-sm text-destructive">{{ form.errors.department_id }}</p>
                     </div>
 
                     <div class="space-y-2">
