@@ -3,8 +3,8 @@
 namespace App\Core\Departments\Actions;
 
 use App\Core\Departments\Models\Department;
-use Illuminate\Support\Facades\DB;
 use App\Modules\Tasks\Models\Task;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class DeleteDepartmentAction
@@ -20,6 +20,12 @@ class DeleteDepartmentAction
         if ($department->manager_id !== null) {
             throw ValidationException::withMessages([
                 'department' => 'دپارتمان دارای مدیر است. ابتدا مدیر دپارتمان را حذف کنید.',
+            ]);
+        }
+
+        if ($department->defaultProject()->exists()) {
+            throw ValidationException::withMessages([
+                'department' => 'دپارتمان دارای پروژه عمومی و پیش‌فرض است و قابل حذف نیست.',
             ]);
         }
 
