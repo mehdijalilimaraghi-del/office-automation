@@ -36,6 +36,7 @@ class UpdateProjectAction
 
         return DB::transaction(function () use ($project, $data): Project {
             $project->update([
+                'department_id' => $data['department_id'] ?? null,
                 'name' => $data['name'],
                 'code' => $data['code'],
                 'description' => $data['description'] ?? null,
