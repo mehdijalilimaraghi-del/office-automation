@@ -24,13 +24,14 @@
         "vue-tsc": "^2.0.24"
     },
     "dependencies": {
+        "@fontsource/vazirmatn": "^5.2.6",
         "@inertiajs/vue3": "^3.7.1",
+        "@jalali-js/vue": "^0.4.2",
         "@lucide/vue": "^1.47.0",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "reka-ui": "^2.10.5",
         "tailwind-merge": "^3.7.0",
-        "vue": "^3.5.42",
-        "@fontsource/vazirmatn": "^5.2.6"
+        "vue": "^3.5.42"
     }
 }
