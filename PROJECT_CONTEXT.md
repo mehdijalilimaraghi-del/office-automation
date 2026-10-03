@@ -600,7 +600,7 @@ Prepare:
 ### Projects Audit Checkpoint — 2026-10-03
 ### Projects Completion Audit — 2026-10-03
 
-The Projects completion audit reviewed CRUD, manager/member/role boundaries, default projects, nested route binding, pagination, project/task references, and manager lifecycle.
+The Projects completion audit reviewed CRUD, manager/member/role boundaries, default projects, nested route binding, pagination, project/task references, department lifecycle, and manager lifecycle.
 
 Confirmed:
 - project listing is server-side paginated
@@ -754,7 +754,7 @@ Real gaps found and corrected:
 - The repository's project schema was missing `department_id` and `is_system_default` even though the current Department/default-project implementation and tests already depended on them. A forward migration now adds both fields; `department_id` is nullable for ordinary projects.
 - Project create/update now persist `department_id`, and the UI exposes active departments.
 - The project/task relationship did not match the documented rule that Project is optional for Task. The task foreign key was non-null and cascade-deleted tasks with their project. A forward migration now makes `tasks.project_id` nullable and uses `nullOnDelete`, preserving tasks when a project is deleted.
-- Department deletion could leave a system default project orphaned. Department deletion now explicitly refuses deletion while its default project exists.
+- Department deletion now explicitly removes the Department-owned system default Project as part of the same transaction, while normal Projects survive with a null department reference.
 - Project authorization controls were not fully reflected in the UI: the project list always showed Create and the project show page always showed Edit. The UI now receives backend authorization state and hides those actions when unavailable.
 - Project Create/Edit used native Gregorian date inputs despite the established Jalali presentation layer. Both flows now use the shared Jalali date picker while continuing to submit Gregorian ISO values.
 
@@ -762,7 +762,8 @@ Additional regression coverage was added for:
 - project department persistence
 - standalone task creation
 - preserving tasks when deleting a project
-- blocking department deletion when a default project exists
+- deleting a Department removes its system default Project while preserving attached Tasks
+- deleting a Department preserves normal Projects and clears their department reference
 
 The audit found no architectural justification for replacing the existing `project_user` membership model, introducing a second membership relation, changing global project view authorization, or collapsing `status` and `is_active`.
 
