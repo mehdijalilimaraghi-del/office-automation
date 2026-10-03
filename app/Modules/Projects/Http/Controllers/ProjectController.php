@@ -56,8 +56,7 @@ class ProjectController extends Controller
 
         return Inertia::render('Projects/Edit', [
             'project' => $this->projectService->show($project),
-            'canUpdate' => Gate::allows('update', $project),
-            'isSystemDefault' => $project->is_system_default,
+            'departments' => $this->departmentService->list()->where('is_active', true)->values(),
         ]);
     }
 
