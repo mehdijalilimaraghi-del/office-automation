@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
+import { formatPersianDate, formatPersianDateTime } from '@/Utils/date';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
 interface User { id: number; name: string; }
@@ -161,7 +163,7 @@ const updateReminderStatus = (reminderId: number, status: 'completed' | 'cancell
         { preserveScroll: true },
     );
 };
-const formatDateTime = (value: string | null): string => value ? value.replace('T', ' ').slice(0, 16) : '—';
+const formatDateTime = formatPersianDateTime;
 </script>
 
 <template>
@@ -242,11 +244,11 @@ const formatDateTime = (value: string | null): string => value ? value.replace('
                     </div>
                     <div>
                         <p class="text-xs font-medium text-muted-foreground">تاریخ شروع</p>
-                        <p class="mt-1.5 font-medium text-gray-900">{{ task.start_date ?? '—' }}</p>
+                        <p class="mt-1.5 font-medium text-gray-900">{{ formatPersianDate(task.start_date) }}</p>
                     </div>
                     <div>
                         <p class="text-xs font-medium text-muted-foreground">مهلت انجام</p>
-                        <p class="mt-1.5 font-medium text-gray-900">{{ task.due_date ?? '—' }}</p>
+                        <p class="mt-1.5 font-medium text-gray-900">{{ formatPersianDate(task.due_date) }}</p>
                     </div>
                     <div class="sm:col-span-2 lg:col-span-2">
                         <p class="text-xs font-medium text-muted-foreground">وضعیت و اولویت</p>
@@ -517,12 +519,12 @@ const formatDateTime = (value: string | null): string => value ? value.replace('
 
                     <div>
                         <label class="mb-2 block text-sm font-medium text-gray-700">تاریخ شروع</label>
-                        <input v-model="editForm.start_date" type="date" class="h-10 w-full rounded-lg border bg-background px-3 text-sm shadow-sm" />
+                        <JalaliDatePicker v-model="editForm.start_date" />
                     </div>
 
                     <div>
                         <label class="mb-2 block text-sm font-medium text-gray-700">مهلت انجام</label>
-                        <input v-model="editForm.due_date" type="date" class="h-10 w-full rounded-lg border bg-background px-3 text-sm shadow-sm" />
+                        <JalaliDatePicker v-model="editForm.due_date" />
                     </div>
 
                     <div class="md:col-span-2">
