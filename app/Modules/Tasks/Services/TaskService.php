@@ -11,8 +11,10 @@ use App\Modules\Tasks\Actions\CreateTaskReminderAction;
 use App\Modules\Tasks\Actions\CreateTaskWorkLogAction;
 use App\Modules\Tasks\Actions\DeleteTaskAction;
 use App\Modules\Tasks\Actions\UpdateTaskAction;
+use App\Modules\Tasks\Actions\UpdateTaskReminderStatusAction;
 use App\Modules\Tasks\Contracts\TaskServiceContract;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Tasks\Models\TaskReminder;
 use Illuminate\Support\Collection;
 
 class TaskService implements TaskServiceContract
@@ -26,6 +28,8 @@ class TaskService implements TaskServiceContract
         private readonly CreateTaskCommentAction $createTaskCommentAction,
         private readonly CreateTaskWorkLogAction $createTaskWorkLogAction,
         private readonly CreateTaskReminderAction $createTaskReminderAction,
+        private readonly UpdateTaskReminderStatusAction $updateTaskReminderStatusAction,
+        private readonly TaskTimelineService $taskTimelineService,
         private readonly TaskAccessService $taskAccessService,
     ) {}
 
@@ -105,7 +109,7 @@ class TaskService implements TaskServiceContract
         string $title,
         $remindAt,
         ?string $description = null,
-    ): \App\Modules\Tasks\Models\TaskReminder {
+    ): TaskReminder {
         return $this->createTaskReminderAction->execute(
             task: $task,
             recipient: $recipient,
@@ -114,6 +118,23 @@ class TaskService implements TaskServiceContract
             remindAt: $remindAt,
             description: $description,
         );
+    }
+
+    public function updateReminderStatus(
+        TaskReminder $reminder,
+        string $status,
+        User $actor,
+    ): TaskReminder {
+        return $this->updateTaskReminderStatusAction->execute(
+            reminder: $reminder,
+            status: $status,
+            actor: $actor,
+        );
+    }
+
+    public function timeline(Task $task): array
+    {
+        return $this->taskTimelineService->build($task);
     }
 
     public function delete(Task $task): void
