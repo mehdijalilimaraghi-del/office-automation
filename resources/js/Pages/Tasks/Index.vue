@@ -300,9 +300,6 @@ const handleProjectChange = (): void => {
                         </button>
                     </div>
 
-                    <p v-if="createForm.errors.task" class="text-sm text-red-600 md:col-span-2">
-                        {{ createForm.errors.task }}
-                    </p>
                 </form>
             </section>
 
