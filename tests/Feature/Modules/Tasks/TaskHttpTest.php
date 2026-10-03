@@ -224,6 +224,22 @@ class TaskHttpTest extends TestCase
         ]);
     }
 
+    public function test_creating_completed_task_sets_completed_at(): void
+    {
+        $creator = $this->userWithPermission('tasks.create');
+
+        $this->actingAs($creator)->post(route('tasks.store'), [
+            'title' => 'Completed Task',
+            'status' => 'completed',
+            'priority' => 'normal',
+        ])->assertRedirect();
+
+        $task = Task::query()->where('title', 'Completed Task')->firstOrFail();
+
+        $this->assertSame('completed', $task->status);
+        $this->assertNotNull($task->completed_at);
+    }
+
     public function test_task_creator_can_update_task(): void
     {
         $creator = $this->userWithPermission('tasks.update');
