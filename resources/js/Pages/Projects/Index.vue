@@ -170,7 +170,7 @@ const statusLabels: Record<Project['status'], string> = {
 
                         <template v-for="link in projects.links" :key="link.label">
                             <Button
-                                v-if="link.url && !link.label.includes('قبلی') && !link.label.includes('بعدی')"
+                                v-if="link.url && link.url !== projects.previous_page_url && link.url !== projects.next_page_url"
                                 :variant="link.active ? 'default' : 'outline'"
                                 size="sm"
                                 as-child
