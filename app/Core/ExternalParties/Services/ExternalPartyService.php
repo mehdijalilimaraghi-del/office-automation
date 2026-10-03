@@ -52,7 +52,7 @@ class ExternalPartyService implements ExternalPartyServiceInterface
             ->where('external_organization_id', (int) $data['external_organization_id']);
 
         if ($currentId !== null) {
-            $query->whereKeyNot($currentId);
+            $query->where('id', '<>', $currentId);
         }
 
         if (! $query->exists()) {
