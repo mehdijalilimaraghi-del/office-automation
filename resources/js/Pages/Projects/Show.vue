@@ -6,6 +6,7 @@ import { computed, reactive, ref } from 'vue';
 
 interface ProjectRole {
     id: number;
+    department_id: number | null;
     name: string;
     code: string;
     description: string | null;
@@ -57,12 +58,15 @@ interface Project {
     roles: ProjectRole[];
     members: ProjectMember[];
     tasks: Task[];
+    is_system_default: boolean;
+    department: { id: number; name: string } | null;
 }
 
 const props = defineProps<{
     project: Project;
     canManageMembers: boolean;
     canManageRoles: boolean;
+    canUpdate: boolean;
     memberOptions: MemberOption[];
 }>();
 
@@ -252,7 +256,7 @@ const formatDate = (date: string | null): string => {
                         </Link>
                     </Button>
 
-                    <Button variant="outline" as-child>
+                    <Button v-if="props.canUpdate" variant="outline" as-child>
                         <Link :href="route('projects.edit', project.id)">
                             ویرایش پروژه
                         </Link>
@@ -268,6 +272,13 @@ const formatDate = (date: string | null): string => {
                     <div>
                         <p class="text-sm text-muted-foreground">کد پروژه</p>
                         <p class="mt-1 font-medium">{{ project.code }}</p>
+                    </div>
+
+                    <div>
+                        <p class="text-sm text-muted-foreground">واحد</p>
+                        <p class="mt-1 font-medium">
+                            {{ project.department?.name ?? 'بدون واحد' }}
+                        </p>
                     </div>
 
                     <div>
