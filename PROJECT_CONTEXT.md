@@ -637,6 +637,42 @@ Implemented:
 For the current local user, use the explicit bootstrap command with the intended administrator email rather than hard-coding that email into application code.
 
 
+## 24. Internal and External Organization Model
+
+The system must explicitly support two separate organizational worlds:
+
+### Internal Organization
+- The company's own organization.
+- Internal departments/units with hierarchy, managers, memberships, roles, permissions, and authenticated internal users.
+- Internal users have application accounts and can log in.
+- Internal users may have contact information such as mobile, landline, extension, and email.
+
+### External Organizations
+- Customers, suppliers, contractors, partners, authorities, and other third parties.
+- External organizations are separate from the internal organization and must not be represented by internal departments/users.
+- Each external organization may contain its own departments/units and external people/contacts.
+- External people do not have application accounts by default and do not receive internal roles or permissions.
+- External people exist primarily so work can be tracked and followed up with the correct person/department/organization.
+- External people may have name, position, mobile, landline, extension, email, and other contact details.
+
+### Architectural Rules
+- Do not merge internal and external organizations into one generic department/user model.
+- Do not make external contacts subclasses of the authenticated User model.
+- A future external-account capability may be added separately if external people ever need system login.
+- Tasks and projects may reference an external organization, external department, and/or external person when the business flow requires external follow-up.
+- Internal responsibility and external follow-up are separate concepts: an internal user can be responsible for a task while an external person is the party being contacted/followed up with.
+- Contact data should be modeled so multiple phone/contact methods can be supported without coupling external people to authentication.
+
+### Required Core Roadmap Update
+Before continuing advanced Task features, complete the core model and management surfaces for:
+1. Internal organization and departments review.
+2. Internal user management review.
+3. External organization management.
+4. External department/unit management.
+5. External person/contact management.
+6. Contact information and follow-up references.
+7. Authorization and tests for internal management; external records remain business data rather than authenticated users.
+
 ## 24. Project Index Pagination
 
 Implemented:
