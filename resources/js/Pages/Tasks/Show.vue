@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
+import JalaliDateTimePicker from '@/Components/JalaliDateTimePicker.vue';
 import { formatPersianDate, formatPersianDateTime } from '@/Utils/date';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
@@ -416,11 +417,11 @@ const formatDateTime = formatPersianDateTime;
                             <div class="grid gap-3 sm:grid-cols-2">
                                 <div>
                                     <label class="mb-1.5 block text-xs font-medium text-muted-foreground">شروع</label>
-                                    <input v-model="workLogForm.started_at" type="datetime-local" class="h-10 w-full rounded-lg border bg-background px-3 text-sm shadow-sm" />
+                                    <JalaliDateTimePicker v-model="workLogForm.started_at" placeholder="انتخاب زمان شروع" />
                                 </div>
                                 <div>
                                     <label class="mb-1.5 block text-xs font-medium text-muted-foreground">پایان</label>
-                                    <input v-model="workLogForm.completed_at" type="datetime-local" class="h-10 w-full rounded-lg border bg-background px-3 text-sm shadow-sm" />
+                                    <JalaliDateTimePicker v-model="workLogForm.completed_at" placeholder="انتخاب زمان پایان" />
                                 </div>
                             </div>
                             <button type="submit" :disabled="workLogForm.processing" class="h-10 rounded-lg bg-gray-900 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
@@ -437,7 +438,7 @@ const formatDateTime = formatPersianDateTime;
                             <textarea v-model="reminderForm.description" rows="3" class="w-full rounded-lg border bg-background p-3 text-sm leading-6 shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-200" placeholder="توضیحات" />
                             <div>
                                 <label class="mb-1.5 block text-xs font-medium text-muted-foreground">زمان یادآور</label>
-                                <input v-model="reminderForm.remind_at" type="datetime-local" required class="h-10 w-full rounded-lg border bg-background px-3 text-sm shadow-sm" />
+                                <JalaliDateTimePicker v-model="reminderForm.remind_at" placeholder="انتخاب زمان یادآوری" />
                             </div>
                             <button type="submit" :disabled="reminderForm.processing" class="h-10 rounded-lg bg-gray-900 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
                                 {{ reminderForm.processing ? 'در حال ایجاد...' : 'ایجاد یادآور' }}
