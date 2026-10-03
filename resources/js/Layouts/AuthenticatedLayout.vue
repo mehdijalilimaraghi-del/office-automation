@@ -61,7 +61,7 @@ const showingNavigationDropdown = ref(false);
                                     پروژه‌ها
                                 </NavLink>
                                 <NavLink
-                                    v-if="$page.props.auth.permissions?.includes('users.view')"
+                                    v-if="$page.props.auth.abilities?.users_view"
                                     :href="route('users.index')"
                                     :active="route().current('users.*')"
                                 >
@@ -69,7 +69,7 @@ const showingNavigationDropdown = ref(false);
                                 </NavLink>
 
                                 <NavLink
-                                    v-if="$page.props.auth.permissions?.includes('departments.view')"
+                                    v-if="$page.props.auth.abilities?.departments_view"
                                     :href="route('departments.index')"
                                     :active="route().current('departments.*')"
                                 >
@@ -77,7 +77,7 @@ const showingNavigationDropdown = ref(false);
                                 </NavLink>
 
                                 <NavLink
-                                    v-if="$page.props.auth.permissions?.includes('roles.view')"
+                                    v-if="$page.props.auth.abilities?.roles_view"
                                     :href="route('roles.index')"
                                     :active="route().current('roles.*')"
                                 >
@@ -216,7 +216,7 @@ const showingNavigationDropdown = ref(false);
                             پروژه‌ها
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
-                            v-if="$page.props.auth.permissions?.includes('users.view')"
+                            v-if="$page.props.auth.abilities?.users_view"
                             :href="route('users.index')"
                             :active="route().current('users.*')"
                         >
@@ -224,7 +224,7 @@ const showingNavigationDropdown = ref(false);
                         </ResponsiveNavLink>
 
                         <ResponsiveNavLink
-                            v-if="$page.props.auth.permissions?.includes('departments.view')"
+                            v-if="$page.props.auth.abilities?.departments_view"
                             :href="route('departments.index')"
                             :active="route().current('departments.*')"
                         >
@@ -232,7 +232,7 @@ const showingNavigationDropdown = ref(false);
                         </ResponsiveNavLink>
 
                         <ResponsiveNavLink
-                            v-if="$page.props.auth.permissions?.includes('roles.view')"
+                            v-if="$page.props.auth.abilities?.roles_view"
                             :href="route('roles.index')"
                             :active="route().current('roles.*')"
                         >
