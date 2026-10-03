@@ -7,11 +7,11 @@ use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskComment;
 use App\Modules\Tasks\Models\TaskReminder;
 use App\Modules\Tasks\Models\TaskWorkLog;
-use Illuminate\Support\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 interface TaskServiceContract
 {
-    public function list(User $user): Collection;
+    public function list(User $user, array $filters = []): LengthAwarePaginator;
     public function create(array $data, User $creator): Task;
     public function update(Task $task, array $data): Task;
     public function assign(Task $task, User $assignee, User $actor, string $type = 'assignment', ?string $note = null): Task;
