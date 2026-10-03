@@ -20,57 +20,26 @@ class CoreRoleSeederTest extends TestCase
         $this->seed(CorePermissionSeeder::class);
         $this->seed(CoreRoleSeeder::class);
 
-        $role = Role::query()
-            ->where('code', 'SYSTEM_ADMIN')
-            ->firstOrFail();
+        $role = Role::query()->where('code', 'SYSTEM_ADMIN')->firstOrFail();
 
         $this->assertTrue($role->is_system);
         $this->assertTrue($role->is_active);
-
-        $this->assertSame(
-            Permission::query()->where('is_active', true)->count(),
-            $role->permissions()->count()
-        );
-
-        $this->assertSame(
-            38,
-            $role->permissions()->count()
-        );
-
-        $this->assertSame(
-            38,
-            $role->permissions()
-                ->wherePivot('scope', PermissionScope::Organization->value)
-                ->count()
-        );
+        $this->assertSame(Permission::query()->where('is_active', true)->count(), $role->permissions()->count());
+        $this->assertSame(42, $role->permissions()->count());
+        $this->assertSame(42, $role->permissions()->wherePivot('scope', PermissionScope::Organization->value)->count());
     }
 
     public function test_bootstrap_email_assigns_system_admin_role_to_active_user(): void
     {
-        $user = User::factory()->create([
-            'email' => 'admin@example.test',
-            'status' => 'active',
-        ]);
-
-        config([
-            'app.name' => 'Office Automation',
-        ]);
-
+        $user = User::factory()->create(['email' => 'admin@example.test', 'status' => 'active']);
+        config(['app.name' => 'Office Automation']);
         putenv('OFFICE_AUTOMATION_BOOTSTRAP_ADMIN_EMAIL=admin@example.test');
-
         try {
             $this->seed(CorePermissionSeeder::class);
             $this->seed(CoreRoleSeeder::class);
-
             $user->refresh();
-
-            $this->assertTrue(
-                $user->hasRole('SYSTEM_ADMIN')
-            );
-
-            $this->assertTrue(
-                $user->hasPermission('tasks.view')
-            );
+            $this->assertTrue($user->hasRole('SYSTEM_ADMIN'));
+            $this->assertTrue($user->hasPermission('tasks.view'));
         } finally {
             putenv('OFFICE_AUTOMATION_BOOTSTRAP_ADMIN_EMAIL');
         }
@@ -78,19 +47,12 @@ class CoreRoleSeederTest extends TestCase
 
     public function test_bootstrap_does_not_assign_role_to_inactive_user(): void
     {
-        $user = User::factory()->inactive()->create([
-            'email' => 'inactive@example.test',
-        ]);
-
+        $user = User::factory()->inactive()->create(['email' => 'inactive@example.test']);
         putenv('OFFICE_AUTOMATION_BOOTSTRAP_ADMIN_EMAIL=inactive@example.test');
-
         try {
             $this->seed(CorePermissionSeeder::class);
             $this->seed(CoreRoleSeeder::class);
-
-            $this->assertFalse(
-                $user->fresh()->hasRole('SYSTEM_ADMIN')
-            );
+            $this->assertFalse($user->fresh()->hasRole('SYSTEM_ADMIN'));
         } finally {
             putenv('OFFICE_AUTOMATION_BOOTSTRAP_ADMIN_EMAIL');
         }
