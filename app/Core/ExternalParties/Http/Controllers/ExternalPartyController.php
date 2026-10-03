@@ -1,14 +1,14 @@
 <?php
 
-namespace App\\Core\\ExternalParties\\Http\\Controllers;
+namespace App\Core\ExternalParties\Http\Controllers;
 
-use App\\Core\\ExternalParties\\Contracts\\ExternalPartyServiceInterface;
-use App\\Core\\ExternalParties\\Models\\{ExternalContact, ExternalDepartment, ExternalOrganization};
-use App\\Http\\Controllers\\Controller;
-use Illuminate\\Http\\{RedirectResponse, Request};
-use Illuminate\\Support\\Facades\\Gate;
-use Inertia\\Inertia;
-use Inertia\\Response;
+use App\Core\ExternalParties\Contracts\ExternalPartyServiceInterface;
+use App\Core\ExternalParties\Models\{ExternalContact, ExternalDepartment, ExternalOrganization};
+use App\Http\Controllers\Controller;
+use Illuminate\Http\{RedirectResponse, Request};
+use Illuminate\Support\Facades\Gate;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class ExternalPartyController extends Controller
 {
