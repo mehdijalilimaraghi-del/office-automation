@@ -108,6 +108,22 @@ const submitReminder = (): void => {
         onSuccess: () => reminderForm.reset('title', 'description', 'remind_at'),
     });
 };
+const submitEdit = (): void => {
+    editForm.put(route('tasks.update', props.task.id), {
+        preserveScroll: true,
+    });
+};
+
+const deleteTask = (): void => {
+    if (!window.confirm(`آیا از حذف تسک «${props.task.title}» مطمئن هستید؟`)) {
+        return;
+    }
+
+    editForm.delete(route('tasks.destroy', props.task.id), {
+        preserveScroll: false,
+    });
+};
+
 const submitReferral = (): void => {
     referralForm.patch(route('tasks.refer', props.task.id), {
         preserveScroll: true,
