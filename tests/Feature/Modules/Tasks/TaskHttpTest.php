@@ -115,6 +115,34 @@ class TaskHttpTest extends TestCase
         ]);
     }
 
+    public function test_project_scope_denies_inaccessible_task_reminder_update_at_http_layer(): void
+    {
+        $user = $this->userWithPermissionScope('tasks.view', 'project');
+        $hiddenManager = User::factory()->create(['status' => 'active']);
+        $hiddenProject = $this->createProject($hiddenManager);
+        $task = $this->createTask($hiddenProject, $hiddenManager);
+
+        $reminder = $task->reminders()->create([
+            'user_id' => $user->id,
+            'created_by' => $user->id,
+            'title' => 'Hidden task reminder',
+            'description' => null,
+            'remind_at' => now()->addHour(),
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($user)
+            ->patch(route('tasks.reminders.update-status', [$task, $reminder]), [
+                'status' => 'completed',
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('task_reminders', [
+            'id' => $reminder->id,
+            'status' => 'pending',
+        ]);
+    }
+
     public function test_project_scope_denies_inaccessible_task_delete_at_http_layer(): void
     {
         $user = $this->userWithPermissionScope('tasks.delete', 'project');
