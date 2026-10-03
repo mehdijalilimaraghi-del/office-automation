@@ -3,8 +3,14 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import { formatPersianDate, formatPersianDateTime } from '@/Utils/date';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 interface User { id: number; name: string; }
+interface ExternalOrganizationOption { id: number; name: string; }
+interface ExternalDepartmentOption { id: number; external_organization_id: number; name: string; }
+interface ExternalContactOption { id: number; external_organization_id: number; external_department_id: number | null; name: string; position: string | null; mobile: string | null; phone: string | null; extension: string | null; }
+interface ExternalPartyOptions { external_organizations: ExternalOrganizationOption[]; external_departments: ExternalDepartmentOption[]; external_contacts: ExternalContactOption[]; }
+
 interface Reminder {
     id: number;
     title: string;
@@ -25,6 +31,9 @@ interface Task {
     assignee: User | null;
     creator: User | null;
     department: { id: number; name: string } | null;
+    externalOrganization: ExternalOrganizationOption | null;
+    externalDepartment: ExternalDepartmentOption | null;
+    externalContact: ExternalContactOption | null;
     project: { id: number; name: string } | null;
     reminders: Reminder[];
 }
@@ -51,6 +60,7 @@ const props = defineProps<{
     currentUserId: number;
     abilities: Abilities;
     assigneeOptions: User[];
+    externalPartyOptions: ExternalPartyOptions;
 }>();
 
 const commentForm = useForm({ body: '' });
@@ -70,7 +80,15 @@ const editForm = useForm({
     start_date: props.task.start_date ?? '',
     due_date: props.task.due_date ?? '',
     is_active: props.task.is_active,
+    external_organization_id: props.task.externalOrganization?.id ?? null,
+    external_department_id: props.task.externalDepartment?.id ?? null,
+    external_contact_id: props.task.externalContact?.id ?? null,
 });
+
+const externalDepartments = computed(() => props.externalPartyOptions.external_departments.filter(item => item.external_organization_id === editForm.external_organization_id));
+const externalContacts = computed(() => props.externalPartyOptions.external_contacts.filter(item => item.external_organization_id === editForm.external_organization_id && (editForm.external_department_id === null || item.external_department_id === editForm.external_department_id)));
+const handleExternalOrganizationChange = (): void => { editForm.external_department_id = null; editForm.external_contact_id = null; };
+const handleExternalDepartmentChange = (): void => { editForm.external_contact_id = null; };
 
 const statusLabels: Record<string, string> = {
     todo: 'انجام نشده',
@@ -525,6 +543,15 @@ const formatDateTime = formatPersianDateTime;
                     <div>
                         <label class="mb-2 block text-sm font-medium text-gray-700">مهلت انجام</label>
                         <JalaliDatePicker v-model="editForm.due_date" />
+                    </div>
+
+                    <div class="rounded-xl border border-gray-200 bg-gray-50/60 p-4 md:col-span-2">
+                        <div class="mb-3"><h4 class="text-sm font-semibold text-gray-900">پیگیری خارجی <span class="font-normal text-gray-500">(اختیاری)</span></h4><p class="mt-1 text-xs text-gray-500">برای تسک‌هایی مثل «طراحی برد» می‌توانید این بخش را خالی بگذارید.</p></div>
+                        <div class="grid gap-4 md:grid-cols-3">
+                            <select v-model="editForm.external_organization_id" @change="handleExternalOrganizationChange" class="h-10 w-full rounded-lg border bg-background px-3 text-sm"><option :value="null">بدون پیگیری خارجی</option><option v-for="item in externalPartyOptions.external_organizations" :key="item.id" :value="item.id">{{ item.name }}</option></select>
+                            <select v-model="editForm.external_department_id" :disabled="editForm.external_organization_id === null" @change="handleExternalDepartmentChange" class="h-10 w-full rounded-lg border bg-background px-3 text-sm"><option :value="null">بدون واحد خارجی</option><option v-for="item in externalDepartments" :key="item.id" :value="item.id">{{ item.name }}</option></select>
+                            <select v-model="editForm.external_contact_id" :disabled="editForm.external_organization_id === null" class="h-10 w-full rounded-lg border bg-background px-3 text-sm"><option :value="null">بدون شخص مشخص</option><option v-for="item in externalContacts" :key="item.id" :value="item.id">{{ item.name }}{{ item.position ? ' — ' + item.position : '' }}</option></select>
+                        </div>
                     </div>
 
                     <div class="md:col-span-2">
