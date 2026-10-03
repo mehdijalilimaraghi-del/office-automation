@@ -59,10 +59,8 @@ class TaskAccessScopeTest extends TestCase
         $this->assertFalse($query->whereKey($hidden->id)->exists());
     }
 
-    private function userWithScope(
-        string $permissionCode,
-        string $scope
-    ): User {
+    private function userWithScope(string $permissionCode, string $scope): User
+    {
         $permission = Permission::query()
             ->where('code', $permissionCode)
             ->firstOrFail();
@@ -99,7 +97,7 @@ class TaskAccessScopeTest extends TestCase
             'is_active' => true,
         ]);
 
-        $project->members()->attach($manager->id, [
+        $project->users()->attach($manager->id, [
             'project_role_id' => null,
         ]);
 
