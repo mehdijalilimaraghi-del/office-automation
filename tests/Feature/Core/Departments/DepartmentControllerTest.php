@@ -532,6 +532,41 @@ class DepartmentControllerTest extends TestCase
         ]);
     }
 
+    public function test_department_with_default_project_cannot_be_deleted(): void
+    {
+        $user = $this->user();
+        $this->grant($user, 'departments.delete');
+
+        $department = Department::create([
+            'name' => 'واحد دارای پروژه پیش‌فرض',
+            'code' => 'DDEFAULT',
+            'description' => null,
+            'parent_id' => null,
+            'manager_id' => null,
+            'is_active' => true,
+        ]);
+
+        Project::query()->create([
+            'department_id' => $department->id,
+            'name' => 'پروژه عمومی واحد',
+            'code' => 'DEPT-'.$department->id.'-DEFAULT',
+            'status' => 'active',
+            'manager_id' => null,
+            'created_by' => null,
+            'is_active' => true,
+            'is_system_default' => true,
+        ]);
+
+        $response = $this->actingAs($user)->delete(
+            route('departments.destroy', $department)
+        );
+
+        $response->assertSessionHasErrors('department');
+        $this->assertDatabaseHas('departments', [
+            'id' => $department->id,
+        ]);
+    }
+
     public function test_guest_cannot_create_department(): void
     {
         $response = $this->post(
