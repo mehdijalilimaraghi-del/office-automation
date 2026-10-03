@@ -17,7 +17,12 @@ class UpdateProjectRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'department_id' => [
+                'nullable',
+                'integer',
+                'exists:departments,id',
+            ],
+            'name' => ['required', 'string', 'max:150'],
             'code' => [
                 'required',
                 'string',
@@ -44,6 +49,7 @@ class UpdateProjectRequest extends FormRequest
     public function attributes(): array
     {
         return [
+            'department_id' => 'واحد',
             'name' => 'نام پروژه',
             'code' => 'کد پروژه',
             'description' => 'توضیحات',
