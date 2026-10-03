@@ -37,15 +37,10 @@ class TaskService implements TaskServiceContract
     {
         $query = Task::query();
 
-        $this->taskAccessService->applyScope(
-            query: $query,
-            user: $user,
-            permission: 'tasks.view',
-        );
+        $this->taskAccessService->applyScope(query: $query, user: $user, permission: 'tasks.view');
 
         if (! empty($filters['search'])) {
             $search = trim((string) $filters['search']);
-
             $query->where(function ($searchQuery) use ($search): void {
                 $searchQuery
                     ->where('tasks.title', 'like', '%'.$search.'%')
@@ -56,27 +51,12 @@ class TaskService implements TaskServiceContract
             });
         }
 
-        if (! empty($filters['status'])) {
-            $query->where('tasks.status', $filters['status']);
-        }
+        if (! empty($filters['status'])) $query->where('tasks.status', $filters['status']);
+        if (! empty($filters['priority'])) $query->where('tasks.priority', $filters['priority']);
+        if (! empty($filters['project_id'])) $query->where('tasks.project_id', (int) $filters['project_id']);
+        if (! empty($filters['department_id'])) $query->where('tasks.department_id', (int) $filters['department_id']);
 
-        if (! empty($filters['priority'])) {
-            $query->where('tasks.priority', $filters['priority']);
-        }
-
-        if (! empty($filters['project_id'])) {
-            $query->where('tasks.project_id', (int) $filters['project_id']);
-        }
-
-        if (! empty($filters['department_id'])) {
-            $query->where('tasks.department_id', (int) $filters['department_id']);
-        }
-
-        return $query
-            ->with(['project', 'department', 'assignee', 'creator'])
-            ->latest()
-            ->paginate(15)
-            ->withQueryString();
+        return $query->with(['project', 'department', 'assignee', 'creator'])->latest()->paginate(15)->withQueryString();
     }
 
     public function create(array $data, User $creator): Task
@@ -89,24 +69,22 @@ class TaskService implements TaskServiceContract
         return $this->updateTaskAction->execute(task: $task, data: $data);
     }
 
-    public function assign(Task $task, User $assignee, User $actor, string $type = 'assignment', ?string $note = null): Task
+    public function assign(Task $task, User $assignee, ?User $actor = null, string $type = 'assignment', ?string $note = null): Task
     {
-        return $this->assignTaskAction->execute(
-            task: $task,
-            assignee: $assignee,
-            actor: $actor,
-            type: $type,
-            note: $note,
-        );
+        $actor ??= $task->assignee ?? $assignee;
+
+        return $this->assignTaskAction->execute(task: $task, assignee: $assignee, actor: $actor, type: $type, note: $note);
     }
 
-    public function changeStatus(Task $task, string $status, User $actor): Task
+    public function changeStatus(Task $task, string $status, ?User $actor = null): Task
     {
-        return $this->changeTaskStatusAction->execute(
-            task: $task,
-            status: $status,
-            actor: $actor,
-        );
+        $actor ??= $task->assignee;
+
+        if ($actor === null) {
+            throw new \InvalidArgumentException('Task must have an assignee or an actor must be provided.');
+        }
+
+        return $this->changeTaskStatusAction->execute(task: $task, status: $status, actor: $actor);
     }
 
     public function addComment(Task $task, User $author, string $body): \App\Modules\Tasks\Models\TaskComment
@@ -114,52 +92,19 @@ class TaskService implements TaskServiceContract
         return $this->createTaskCommentAction->execute($task, $author, $body);
     }
 
-    public function addWorkLog(
-        Task $task,
-        User $user,
-        string $title,
-        ?string $description = null,
-        $startedAt = null,
-        $completedAt = null,
-    ): \App\Modules\Tasks\Models\TaskWorkLog {
-        return $this->createTaskWorkLogAction->execute(
-            task: $task,
-            user: $user,
-            title: $title,
-            description: $description,
-            startedAt: $startedAt,
-            completedAt: $completedAt,
-        );
+    public function addWorkLog(Task $task, User $user, string $title, ?string $description = null, $startedAt = null, $completedAt = null): \App\Modules\Tasks\Models\TaskWorkLog
+    {
+        return $this->createTaskWorkLogAction->execute(task: $task, user: $user, title: $title, description: $description, startedAt: $startedAt, completedAt: $completedAt);
     }
 
-    public function addReminder(
-        Task $task,
-        User $recipient,
-        User $creator,
-        string $title,
-        $remindAt,
-        ?string $description = null,
-    ): TaskReminder {
-        return $this->createTaskReminderAction->execute(
-            task: $task,
-            recipient: $recipient,
-            creator: $creator,
-            title: $title,
-            remindAt: $remindAt,
-            description: $description,
-        );
+    public function addReminder(Task $task, User $recipient, User $creator, string $title, $remindAt, ?string $description = null): TaskReminder
+    {
+        return $this->createTaskReminderAction->execute(task: $task, recipient: $recipient, creator: $creator, title: $title, remindAt: $remindAt, description: $description);
     }
 
-    public function updateReminderStatus(
-        TaskReminder $reminder,
-        string $status,
-        User $actor,
-    ): TaskReminder {
-        return $this->updateTaskReminderStatusAction->execute(
-            reminder: $reminder,
-            status: $status,
-            actor: $actor,
-        );
+    public function updateReminderStatus(TaskReminder $reminder, string $status, User $actor): TaskReminder
+    {
+        return $this->updateTaskReminderStatusAction->execute(reminder: $reminder, status: $status, actor: $actor);
     }
 
     public function timeline(Task $task): array
