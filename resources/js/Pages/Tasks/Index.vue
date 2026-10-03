@@ -19,11 +19,17 @@ interface DepartmentOption {
     id: number;
     name: string;
 }
+interface ExternalOrganizationOption { id: number; name: string; }
+interface ExternalDepartmentOption { id: number; external_organization_id: number; name: string; }
+interface ExternalContactOption { id: number; external_organization_id: number; external_department_id: number | null; name: string; position: string | null; mobile: string | null; phone: string | null; extension: string | null; }
 
 interface FormOptions {
     projects: ProjectOption[];
     departments: DepartmentOption[];
     users: User[];
+    external_organizations: ExternalOrganizationOption[];
+    external_departments: ExternalDepartmentOption[];
+    external_contacts: ExternalContactOption[];
 }
 
 interface PaginationLink {
@@ -77,6 +83,9 @@ const departmentFilter = ref(props.filters.department_id?.toString() ?? '');
 const createForm = useForm({
     project_id: null as number | null,
     department_id: null as number | null,
+    external_organization_id: null as number | null,
+    external_department_id: null as number | null,
+    external_contact_id: null as number | null,
     title: '',
     description: '',
     priority: 'normal',
@@ -99,6 +108,9 @@ const priorityLabels: Record<string, string> = {
     high: 'زیاد',
     urgent: 'فوری',
 };
+
+const externalDepartments = computed(() => props.formOptions?.external_departments.filter(item => item.external_organization_id === createForm.external_organization_id) ?? []);
+const externalContacts = computed(() => props.formOptions?.external_contacts.filter(item => item.external_organization_id === createForm.external_organization_id && (createForm.external_department_id === null || item.external_department_id === createForm.external_department_id)) ?? []);
 
 const availableAssignees = computed(() => {
     if (!props.formOptions) {
@@ -160,6 +172,14 @@ const submitCreate = (): void => {
         preserveScroll: true,
         onSuccess: () => resetCreateForm(),
     });
+};
+
+const handleExternalOrganizationChange = (): void => {
+    createForm.external_department_id = null;
+    createForm.external_contact_id = null;
+};
+const handleExternalDepartmentChange = (): void => {
+    createForm.external_contact_id = null;
 };
 
 const handleProjectChange = (): void => {
@@ -255,6 +275,18 @@ const handleProjectChange = (): void => {
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">مهلت انجام</label>
                         <JalaliDatePicker v-model="createForm.due_date" />
+                    </div>
+
+                    <div class="rounded-xl border border-gray-200 bg-gray-50/60 p-4 md:col-span-2">
+                        <div class="mb-3">
+                            <h4 class="text-sm font-semibold text-gray-900">پیگیری خارجی <span class="font-normal text-gray-500">(اختیاری)</span></h4>
+                            <p class="mt-1 text-xs text-gray-500">اگر این تسک نیاز به پیگیری با سازمان یا شخص خارج از شرکت دارد، اطلاعات آن را انتخاب کنید.</p>
+                        </div>
+                        <div class="grid gap-4 md:grid-cols-3">
+                            <select v-model="createForm.external_organization_id" @change="handleExternalOrganizationChange" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm"><option :value="null">بدون پیگیری خارجی</option><option v-for="item in formOptions.external_organizations" :key="item.id" :value="item.id">{{ item.name }}</option></select>
+                            <select v-model="createForm.external_department_id" :disabled="createForm.external_organization_id === null" @change="handleExternalDepartmentChange" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm"><option :value="null">بدون واحد خارجی</option><option v-for="item in externalDepartments" :key="item.id" :value="item.id">{{ item.name }}</option></select>
+                            <select v-model="createForm.external_contact_id" :disabled="createForm.external_organization_id === null" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm"><option :value="null">بدون شخص مشخص</option><option v-for="item in externalContacts" :key="item.id" :value="item.id">{{ item.name }}{{ item.position ? ' — ' + item.position : '' }}</option></select>
+                        </div>
                     </div>
 
                     <div class="md:col-span-2">
