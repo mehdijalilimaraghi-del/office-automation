@@ -503,99 +503,100 @@ A full-suite run should still be performed after significant authorization chang
 
 ## 20. Current Development Priority
 
-Do not continue polishing the UI before authorization is operational.
+The original bootstrap roadmap has been substantially completed. The repository now has working authorization/bootstrap roles, internal department/user management, projects, core task workflows, external-party management, optional external follow-up context on tasks, and a passing full test suite (284 tests at the latest checkpoint).
 
-Recommended order:
+From this point, development follows a **completion-first roadmap** rather than adding unrelated features.
 
-### Step 1 — Authorization / Core Access
-Complete:
-- Roles
-- Permissions
-- Permission scopes
-- User-role assignment
-- Effective permission evaluation
-- Default/system roles
-- Initial permission grants
-- Authorization tests
-
-Fix the current Tasks 403 through the proper role/permission mechanism.
-
-### Step 2 — Complete Core
-Review and complete:
+### Step 1 — Core Completion Audit
+Before adding more advanced task features, verify the existing core surfaces as a complete business workflow:
 - users
-- departments
+- departments and hierarchy
 - roles
-- permissions
-- settings
-- profile/access management
+- permissions and scopes
+- user-role assignment
+- profile/contact information
+- internal authorization edge cases
+- external organizations
+- external departments
+- external contacts
+- external contact information
+- deletion/reference edge cases
+- feature tests
 
-### Step 3 — Projects Feature Completion
-Review:
+Do not introduce a second organization/user model for external parties.
+
+### Step 2 — Projects Completion Audit
+Review and test:
 - CRUD
 - manager
 - members
+- default department projects
 - permissions
-- scopes
-- project view
+- access boundaries
+- deletion/update restrictions
+- list/show behavior
+- pagination
 - edge cases
-- tests
 
-### Step 4 — Tasks Feature Completion
-Review:
+### Step 3 — Tasks V1 Completion
+Complete the task workflow as one coherent feature set:
 - CRUD
-- assignment
-- referral
-- status
-- priority
+- optional project and department
+- internal assignment
+- referral/history
+- status and priority
 - comments
 - work logs
+- optional external follow-up
 - reminders
-- history
-- filtering
+- status/activity history
+- filtering/search
 - pagination
 - My Tasks
 - validation
 - authorization
+- HTTP/service tests
+
+### Step 4 — Task UX Completion
+After the V1 business behavior is stable:
+- finish Reminder UI
+- replace remaining native Gregorian date-time inputs with the Jalali date/time presentation where appropriate
+- review task create/edit/show flows
+- improve empty/loading/error states
+- keep RTL/Vazirmatn consistency
 
 ### Step 5 — Attachments
-Introduce attachments cleanly, keeping the architecture ready for a future Documents module.
+Introduce controlled task attachments using Laravel Filesystem abstraction, while keeping the model ready for a future Documents module.
 
-### Step 6 — Persian/Jalali Localization
-Review:
-- Jalali display
-- date inputs
-- localized labels/messages
-- RTL consistency
-
-### Step 7 — UI Design System
-After functionality is stable:
-- reusable components
-- consistent spacing
-- states
-- tables
-- forms
-- responsive behavior
-- accessibility
-
-### Step 8 — Audit and Notifications
+### Step 6 — Notifications and Audit
 Add:
-- general activity/audit history
-- notifications
+- general activity/audit history where justified
+- internal notifications
 - reminder delivery
+- queue-backed delivery when the operational need is established
 
-### Step 9 — Security / Integration Testing
-Test real role/user combinations and permission scopes end-to-end.
+### Step 7 — Task Views
+Then add higher-level task views:
+- My Tasks
+- Board
+- Calendar
+- advanced filtering
+Only introduce Gantt/dependencies/subtasks/recurring tasks after the core V1 workflow proves stable.
 
-### Step 10 — Deployment / Operations
+### Step 8 — Security / Integration Testing
+Test realistic role/user combinations and permission scopes end-to-end, including cross-department and external-follow-up cases.
+
+### Step 9 — Deployment / Operations
 Prepare:
 - production configuration
-- backup
-- restore
+- backup/restore
 - logging
-- queue
-- cache
+- queue/cache strategy
 - deployment procedure
 - LAN production checklist
+
+**Current immediate sequence:** Core Completion Audit → Projects Completion Audit → Tasks V1 Completion → Task UX Completion.
+
 
 ## 21. Development Discipline
 
