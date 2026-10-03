@@ -74,6 +74,8 @@ const reminderForm = useForm({
 });
 const referralForm = useForm({ assignee_id: '', note: '' });
 const statusForm = useForm({ status: props.task.status });
+const reminderStatusForm = useForm({ status: '' as 'completed' | 'cancelled' | '' });
+const deleteForm = useForm({});
 const editForm = useForm({
     title: props.task.title,
     description: props.task.description ?? '',
@@ -160,7 +162,7 @@ const deleteTask = (): void => {
         return;
     }
 
-    editForm.delete(route('tasks.destroy', props.task.id), {
+    deleteForm.delete(route('tasks.destroy', props.task.id), {
         preserveScroll: false,
     });
 };
@@ -177,9 +179,17 @@ const changeStatus = (): void => {
     });
 };
 const updateReminderStatus = (reminderId: number, status: 'completed' | 'cancelled'): void => {
-    useForm({ status }).patch(
+    if (reminderStatusForm.processing) {
+        return;
+    }
+
+    reminderStatusForm.status = status;
+    reminderStatusForm.patch(
         route('tasks.reminders.update-status', [props.task.id, reminderId]),
-        { preserveScroll: true },
+        {
+            preserveScroll: true,
+            onFinish: () => reminderStatusForm.reset(),
+        },
     );
 };
 const formatDateTime = formatPersianDateTime;
@@ -391,6 +401,7 @@ const formatDateTime = formatPersianDateTime;
                             <div>
                                 <label class="mb-2 block text-sm font-medium text-gray-700">توضیح ارجاع</label>
                                 <input v-model="referralForm.note" type="text" class="h-10 w-full rounded-lg border bg-background px-3 text-sm shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-200" />
+                                <p v-if="referralForm.errors.note" class="mt-1.5 text-sm text-red-600">{{ referralForm.errors.note }}</p>
                             </div>
                             <button type="submit" :disabled="referralForm.processing || assigneeOptions.length === 0" class="h-10 w-full rounded-lg bg-gray-900 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
                                 {{ referralForm.processing ? 'در حال ارجاع...' : 'ارجاع تسک' }}
@@ -491,11 +502,11 @@ const formatDateTime = formatPersianDateTime;
                                 </p>
 
                                 <div v-if="reminder.status === 'pending' && reminder.user?.id === currentUserId" class="mt-4 flex flex-wrap gap-2">
-                                    <button type="button" class="rounded-lg border bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition hover:bg-gray-50" @click="updateReminderStatus(reminder.id, 'completed')">
-                                        تکمیل یادآور
+                                    <button type="button" :disabled="reminderStatusForm.processing" class="rounded-lg border bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50" @click="updateReminderStatus(reminder.id, 'completed')">
+                                        {{ reminderStatusForm.processing && reminderStatusForm.status === 'completed' ? 'در حال ثبت...' : 'تکمیل یادآور' }}
                                     </button>
-                                    <button type="button" class="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 shadow-sm transition hover:bg-red-50" @click="updateReminderStatus(reminder.id, 'cancelled')">
-                                        لغو یادآور
+                                    <button type="button" :disabled="reminderStatusForm.processing" class="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 shadow-sm transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50" @click="updateReminderStatus(reminder.id, 'cancelled')">
+                                        {{ reminderStatusForm.processing && reminderStatusForm.status === 'cancelled' ? 'در حال ثبت...' : 'لغو یادآور' }}
                                     </button>
                                 </div>
                             </div>
@@ -513,7 +524,8 @@ const formatDateTime = formatPersianDateTime;
                     <button
                         v-if="abilities.delete"
                         type="button"
-                        class="rounded-lg border border-red-200 bg-white px-3.5 py-2 text-sm font-medium text-red-600 shadow-sm transition hover:bg-red-50"
+                        :disabled="deleteForm.processing"
+                        class="rounded-lg border border-red-200 bg-white px-3.5 py-2 text-sm font-medium text-red-600 shadow-sm transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                         @click="deleteTask"
                     >
                         حذف تسک
@@ -565,6 +577,7 @@ const formatDateTime = formatPersianDateTime;
                     <div class="md:col-span-2">
                         <label class="mb-2 block text-sm font-medium text-gray-700">توضیحات</label>
                         <textarea v-model="editForm.description" rows="4" class="w-full rounded-lg border bg-background p-3 text-sm leading-6 shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-200" />
+                        <p v-if="editForm.errors.description" class="mt-1.5 text-sm text-red-600">{{ editForm.errors.description }}</p>
                     </div>
 
                     <div class="md:col-span-2">
