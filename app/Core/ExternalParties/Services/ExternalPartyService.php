@@ -29,6 +29,9 @@ class ExternalPartyService implements ExternalPartyServiceInterface
         }
 
         if ($contactId !== null) {
+            if ($organizationId === null) {
+                throw ValidationException::withMessages(['external_contact_id' => 'برای انتخاب شخص خارجی، ابتدا سازمان خارجی را انتخاب کنید.']);
+            }
             $contact = ExternalContact::query()->find($contactId);
             if ($contact === null) {
                 throw ValidationException::withMessages(['external_contact_id' => 'شخص خارجی انتخاب‌شده یافت نشد.']);
