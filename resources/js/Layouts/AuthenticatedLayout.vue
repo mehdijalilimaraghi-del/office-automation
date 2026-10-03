@@ -60,6 +60,29 @@ const showingNavigationDropdown = ref(false);
                                 >
                                     پروژه‌ها
                                 </NavLink>
+                                <NavLink
+                                    v-if="$page.props.auth.abilities?.users_view"
+                                    :href="route('users.index')"
+                                    :active="route().current('users.*')"
+                                >
+                                    کاربران
+                                </NavLink>
+
+                                <NavLink
+                                    v-if="$page.props.auth.abilities?.departments_view"
+                                    :href="route('departments.index')"
+                                    :active="route().current('departments.*')"
+                                >
+                                    سازمان
+                                </NavLink>
+
+                                <NavLink
+                                    v-if="$page.props.auth.abilities?.roles_view"
+                                    :href="route('roles.index')"
+                                    :active="route().current('roles.*')"
+                                >
+                                    نقش‌ها
+                                </NavLink>
                             </div>
                         </div>
 
@@ -191,6 +214,29 @@ const showingNavigationDropdown = ref(false);
                             :active="route().current('projects.*')"
                         >
                             پروژه‌ها
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            v-if="$page.props.auth.abilities?.users_view"
+                            :href="route('users.index')"
+                            :active="route().current('users.*')"
+                        >
+                            کاربران
+                        </ResponsiveNavLink>
+
+                        <ResponsiveNavLink
+                            v-if="$page.props.auth.abilities?.departments_view"
+                            :href="route('departments.index')"
+                            :active="route().current('departments.*')"
+                        >
+                            سازمان
+                        </ResponsiveNavLink>
+
+                        <ResponsiveNavLink
+                            v-if="$page.props.auth.abilities?.roles_view"
+                            :href="route('roles.index')"
+                            :active="route().current('roles.*')"
+                        >
+                            نقش‌ها
                         </ResponsiveNavLink>
                     </div>
 
