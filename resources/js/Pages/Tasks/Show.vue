@@ -17,6 +17,7 @@ interface Task {
     description: string | null;
     status: string;
     priority: string;
+    is_active: boolean;
     start_date: string | null;
     due_date: string | null;
     assignee: User | null;
@@ -66,7 +67,7 @@ const editForm = useForm({
     priority: props.task.priority,
     start_date: props.task.start_date ?? '',
     due_date: props.task.due_date ?? '',
-    is_active: true,
+    is_active: props.task.is_active,
 });
 
 const statusLabels: Record<string, string> = {
