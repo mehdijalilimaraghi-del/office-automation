@@ -17,6 +17,9 @@ class UpdateTaskRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'external_organization_id' => ['sometimes', 'nullable', 'integer', 'exists:external_organizations,id'],
+            'external_department_id' => ['sometimes', 'nullable', 'integer', 'exists:external_departments,id'],
+            'external_contact_id' => ['sometimes', 'nullable', 'integer', 'exists:external_contacts,id'],
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string'],
             'priority' => [
@@ -42,6 +45,9 @@ class UpdateTaskRequest extends FormRequest
     public function attributes(): array
     {
         return [
+            'external_organization_id' => 'سازمان خارجی',
+            'external_department_id' => 'واحد خارجی',
+            'external_contact_id' => 'شخص خارجی',
             'title' => 'عنوان تسک',
             'description' => 'توضیحات',
             'priority' => 'اولویت',
