@@ -6,6 +6,7 @@ namespace App\Modules\Tasks\Policies;
 
 use App\Models\User;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Tasks\Models\TaskReminder;
 use App\Modules\Tasks\Services\TaskAccessService;
 
 class TaskPolicy
@@ -22,11 +23,7 @@ class TaskPolicy
 
     public function view(User $user, Task $task): bool
     {
-        return $this->taskAccessService->canAccess(
-            user: $user,
-            task: $task,
-            permission: 'tasks.view',
-        );
+        return $this->taskAccessService->canAccess($user, $task, 'tasks.view');
     }
 
     public function create(User $user, ?int $projectId = null): bool
@@ -39,27 +36,17 @@ class TaskPolicy
             return true;
         }
 
-        return $user->projects()
-            ->where('projects.id', $projectId)
-            ->exists();
+        return $user->projects()->where('projects.id', $projectId)->exists();
     }
 
     public function update(User $user, Task $task): bool
     {
-        return $this->taskAccessService->canAccess(
-            user: $user,
-            task: $task,
-            permission: 'tasks.update',
-        );
+        return $this->taskAccessService->canAccess($user, $task, 'tasks.update');
     }
 
     public function assign(User $user, Task $task): bool
     {
-        return $this->taskAccessService->canAccess(
-            user: $user,
-            task: $task,
-            permission: 'tasks.assign',
-        );
+        return $this->taskAccessService->canAccess($user, $task, 'tasks.assign');
     }
 
     public function refer(User $user, Task $task): bool
@@ -71,46 +58,40 @@ class TaskPolicy
 
     public function comment(User $user, Task $task): bool
     {
-        return $this->taskAccessService->canAccess(
-            user: $user,
-            task: $task,
-            permission: 'tasks.comment',
-        );
+        return $this->taskAccessService->canAccess($user, $task, 'tasks.comment');
     }
 
     public function logWork(User $user, Task $task): bool
     {
-        return $this->taskAccessService->canAccess(
-            user: $user,
-            task: $task,
-            permission: 'tasks.log_work',
-        );
+        return $this->taskAccessService->canAccess($user, $task, 'tasks.log_work');
     }
 
     public function createReminder(User $user, Task $task): bool
     {
-        return $this->taskAccessService->canAccess(
-            user: $user,
-            task: $task,
-            permission: 'tasks.create_reminder',
-        );
+        return $this->taskAccessService->canAccess($user, $task, 'tasks.create_reminder');
+    }
+
+    public function completeReminder(User $user, Task $task, TaskReminder $reminder): bool
+    {
+        return $reminder->task_id === $task->id
+            && $reminder->user_id === $user->id
+            && $this->taskAccessService->canAccess($user, $task, 'tasks.view');
+    }
+
+    public function cancelReminder(User $user, Task $task, TaskReminder $reminder): bool
+    {
+        return $reminder->task_id === $task->id
+            && in_array($user->id, [$reminder->user_id, $reminder->created_by], true)
+            && $this->taskAccessService->canAccess($user, $task, 'tasks.view');
     }
 
     public function changeStatus(User $user, Task $task): bool
     {
-        return $this->taskAccessService->canAccess(
-            user: $user,
-            task: $task,
-            permission: 'tasks.change_status',
-        );
+        return $this->taskAccessService->canAccess($user, $task, 'tasks.change_status');
     }
 
     public function delete(User $user, Task $task): bool
     {
-        return $this->taskAccessService->canAccess(
-            user: $user,
-            task: $task,
-            permission: 'tasks.delete',
-        );
+        return $this->taskAccessService->canAccess($user, $task, 'tasks.delete');
     }
 }
