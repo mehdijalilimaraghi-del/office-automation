@@ -13,37 +13,13 @@ class CorePermissionSeederTest extends TestCase
 
     public function test_core_permissions_are_seeded(): void
     {
-        $this->seed(
-            CorePermissionSeeder::class
-        );
+        $this->seed(CorePermissionSeeder::class);
 
-        $this->assertDatabaseHas(
-            'permissions',
-            [
-                'code' => 'users.view',
-                'is_system' => true,
-            ]
-        );
+        $this->assertDatabaseHas('permissions', ['code' => 'users.view', 'is_system' => true]);
+        $this->assertDatabaseHas('permissions', ['code' => 'users.create', 'is_system' => true]);
+        $this->assertDatabaseHas('permissions', ['code' => 'roles.manage_permissions', 'is_system' => true]);
+        $this->assertDatabaseHas('permissions', ['code' => 'external_parties.view', 'is_system' => true]);
 
-        $this->assertDatabaseHas(
-            'permissions',
-            [
-                'code' => 'users.create',
-                'is_system' => true,
-            ]
-        );
-
-        $this->assertDatabaseHas(
-            'permissions',
-            [
-                'code' => 'roles.manage_permissions',
-                'is_system' => true,
-            ]
-        );
-
-        $this->assertSame(
-            38,
-            Permission::count()
-        );
+        $this->assertSame(42, Permission::count());
     }
 }
