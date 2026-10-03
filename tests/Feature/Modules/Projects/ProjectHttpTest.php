@@ -42,6 +42,22 @@ class ProjectHttpTest extends TestCase
         );
     }
 
+    public function test_project_index_exposes_create_authorization_state(): void
+    {
+        $user = $this->userWithPermission('projects.view');
+
+        $response = $this->actingAs($user)
+            ->get(route('projects.index'));
+
+        $response->assertOk();
+
+        $response->assertInertia(
+            fn ($page) => $page
+                ->component('Projects/Index')
+                ->where('canCreate', false)
+        );
+    }
+
     public function test_authorized_user_can_open_project_create_page_with_active_managers(): void
     {
         $creator = $this->userWithPermission('projects.create');
@@ -405,6 +421,23 @@ class ProjectHttpTest extends TestCase
                 ->has('memberOptions', 1)
                 ->where('memberOptions.0.id', $member->id)
                 ->where('memberOptions.0.name', 'Available Member')
+        );
+    }
+
+    public function test_project_show_exposes_update_authorization_state(): void
+    {
+        $viewer = $this->userWithPermission('projects.view');
+        $project = $this->createProject();
+
+        $response = $this->actingAs($viewer)
+            ->get(route('projects.show', $project));
+
+        $response->assertOk();
+
+        $response->assertInertia(
+            fn ($page) => $page
+                ->component('Projects/Show')
+                ->where('canUpdate', false)
         );
     }
 
