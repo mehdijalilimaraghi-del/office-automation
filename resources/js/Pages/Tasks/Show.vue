@@ -311,6 +311,7 @@ const formatDateTime = formatPersianDateTime;
                         <option value="completed">تکمیل شده</option>
                         <option value="cancelled">لغو شده</option>
                     </select>
+                    <p v-if="statusForm.errors.status" class="text-sm text-red-600 sm:col-span-2">{{ statusForm.errors.status }}</p>
                     <button type="submit" :disabled="statusForm.processing" class="h-10 rounded-lg bg-gray-900 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
                         {{ statusForm.processing ? 'در حال ذخیره...' : 'ذخیره وضعیت' }}
                     </button>
@@ -422,6 +423,7 @@ const formatDateTime = formatPersianDateTime;
                                 <div>
                                     <label class="mb-1.5 block text-xs font-medium text-muted-foreground">پایان</label>
                                     <JalaliDateTimePicker v-model="workLogForm.completed_at" placeholder="انتخاب زمان پایان" />
+                                    <p v-if="workLogForm.errors.completed_at" class="mt-1.5 text-xs text-red-600">{{ workLogForm.errors.completed_at }}</p>
                                 </div>
                             </div>
                             <button type="submit" :disabled="workLogForm.processing" class="h-10 rounded-lg bg-gray-900 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
@@ -439,6 +441,7 @@ const formatDateTime = formatPersianDateTime;
                             <div>
                                 <label class="mb-1.5 block text-xs font-medium text-muted-foreground">زمان یادآور</label>
                                 <JalaliDateTimePicker v-model="reminderForm.remind_at" placeholder="انتخاب زمان یادآوری" />
+                                <p v-if="reminderForm.errors.remind_at" class="mt-1.5 text-xs text-red-600">{{ reminderForm.errors.remind_at }}</p>
                             </div>
                             <button type="submit" :disabled="reminderForm.processing" class="h-10 rounded-lg bg-gray-900 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
                                 {{ reminderForm.processing ? 'در حال ایجاد...' : 'ایجاد یادآور' }}
@@ -519,6 +522,7 @@ const formatDateTime = formatPersianDateTime;
                         <label class="mb-2 block text-sm font-medium text-gray-700">عنوان تسک</label>
                         <input v-model="editForm.title" type="text" required maxlength="255" class="h-10 w-full rounded-lg border bg-background px-3 text-sm shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-200" />
                         <p v-if="editForm.errors.title" class="mt-1.5 text-sm text-red-600">{{ editForm.errors.title }}</p>
+                        <p v-if="editForm.errors.title" class="mt-1.5 text-sm text-red-600">{{ editForm.errors.title }}</p>
                     </div>
 
                     <div>
@@ -544,6 +548,7 @@ const formatDateTime = formatPersianDateTime;
                     <div>
                         <label class="mb-2 block text-sm font-medium text-gray-700">مهلت انجام</label>
                         <JalaliDatePicker v-model="editForm.due_date" />
+                        <p v-if="editForm.errors.due_date" class="mt-1.5 text-sm text-red-600">{{ editForm.errors.due_date }}</p>
                     </div>
 
                     <div class="rounded-xl border border-gray-200 bg-gray-50/60 p-4 md:col-span-2">
