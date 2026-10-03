@@ -9,6 +9,9 @@ export interface AuthAbilities {
     tasks_view?: boolean;
     projects_view?: boolean;
     external_parties_view?: boolean;
+    users_view?: boolean;
+    departments_view?: boolean;
+    roles_view?: boolean;
 }
 
 export type PageProps<
