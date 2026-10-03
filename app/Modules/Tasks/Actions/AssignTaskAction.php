@@ -35,12 +35,15 @@ class AssignTaskAction
         }
 
         return DB::transaction(function () use ($task, $assignee, $actor, $type, $note): Task {
+            $previousAssigneeId = $task->assignee_id;
+
             $current = $task->assignments()
                 ->whereNull('ended_at')
                 ->latest('started_at')
                 ->first();
 
             if ($current !== null) {
+                $previousAssigneeId = $current->to_user_id;
                 $current->update(['ended_at' => now()]);
             }
 
@@ -48,7 +51,7 @@ class AssignTaskAction
 
             TaskAssignment::query()->create([
                 'task_id' => $task->id,
-                'from_user_id' => $current?->to_user_id ?? $task->getOriginal('assignee_id'),
+                'from_user_id' => $previousAssigneeId,
                 'to_user_id' => $assignee->id,
                 'assigned_by' => $actor->id,
                 'type' => $type,
