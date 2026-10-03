@@ -3,6 +3,7 @@
 namespace App\Modules\Tasks\Actions;
 
 use App\Models\User;
+use App\Core\ExternalParties\Contracts\ExternalPartyServiceInterface;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskAssignment;
@@ -11,6 +12,8 @@ use InvalidArgumentException;
 
 class CreateTaskAction
 {
+    public function __construct(private readonly ExternalPartyServiceInterface $externalPartyService) {}
+
     public function execute(
         array $data,
         User $creator
@@ -58,10 +61,14 @@ class CreateTaskAction
             }
 
             $this->validateDates($data);
+            $this->externalPartyService->validateTaskContext($data);
 
             $task = Task::query()->create([
                 'project_id' => $project?->id,
                 'department_id' => $data['department_id'] ?? null,
+                'external_organization_id' => $data['external_organization_id'] ?? null,
+                'external_department_id' => $data['external_department_id'] ?? null,
+                'external_contact_id' => $data['external_contact_id'] ?? null,
                 'title' => $data['title'],
                 'description' => $data['description'] ?? null,
                 'status' => $data['status'] ?? 'todo',
