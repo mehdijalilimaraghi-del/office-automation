@@ -597,6 +597,21 @@ Prepare:
 
 **Current immediate sequence:** Core Completion Audit → Projects Completion Audit → Tasks V1 Completion → Task UX Completion.
 
+### Projects Audit Checkpoint — 2026-10-03
+The first Projects completion audit pass reviewed CRUD, pagination, manager/member/role boundaries, nested route binding, default department projects, and project/task references.
+
+Confirmed:
+- project index uses server-side pagination
+- project manager is automatically added as a member on creation
+- inactive users cannot be added as project members
+- project roles are scoped to their owning project
+- nested project role/member routes use scoped bindings
+- system/default department projects cannot be updated, deleted, or have normal role/member management applied
+- deleting a project does not delete its tasks; task.project_id is nullable with nullOnDelete
+- project schema tests now cover department_id and is_system_default
+
+No architectural change was required in this audit pass; the main work was closing test coverage around the current business rules.
+
 ### Core Audit Checkpoint — 2026-10-03
 The first Core audit pass identified and corrected:
 - internal user contact fields now persist on create/update
