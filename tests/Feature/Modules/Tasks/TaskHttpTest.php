@@ -36,8 +36,8 @@ class TaskHttpTest extends TestCase
             fn ($page) => $page
                 ->component('Tasks/Index')
                 ->has('tasks.data', 1)
-                ->where('tasks.0.id', $visibleTask->id)
-                ->where('tasks.0.title', $visibleTask->title)
+                ->where('tasks.data.0.id', $visibleTask->id)
+                ->where('tasks.data.0.title', $visibleTask->title)
         );
 
         $this->assertNotSame($visibleTask->id, $hiddenTask->id);
