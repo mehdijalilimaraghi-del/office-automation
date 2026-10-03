@@ -148,6 +148,23 @@ class CorePermissionSeeder extends Seeder
             ],
 
             [
+                'name' => 'مشاهده طرف‌های خارجی',
+                'code' => 'external_parties.view',
+            ],
+            [
+                'name' => 'ایجاد طرف خارجی',
+                'code' => 'external_parties.create',
+            ],
+            [
+                'name' => 'ویرایش طرف خارجی',
+                'code' => 'external_parties.edit',
+            ],
+            [
+                'name' => 'حذف طرف خارجی',
+                'code' => 'external_parties.delete',
+            ],
+
+            [
                 'name' => 'مشاهده مجوزها',
                 'code' => 'permissions.view',
             ],
