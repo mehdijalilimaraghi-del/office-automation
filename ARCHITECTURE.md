@@ -53,7 +53,12 @@ Responsibilities include:
 - Roles
 - Permissions
 - Departments
+- Organizational positions and position assignments
 - Settings
+
+### Organization model
+
+Department Membership answers **which organizational units a user belongs to**. Position and Position Assignment answer **which organizational title the user holds within a unit**. These concepts remain separate so a user can belong to multiple departments and hold one or more formal positions without overloading membership data. The current Department Manager reference remains the fast-path current manager used by existing task and approval rules; position-based actor resolution can be added to Workflow without changing membership semantics.
 
 Core must not contain project- or task-specific business rules.
 
