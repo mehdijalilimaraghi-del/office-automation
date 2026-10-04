@@ -69,6 +69,10 @@ class CorePermissionSeeder extends Seeder
                 'name' => 'تغییر وضعیت واحد',
                 'code' => 'departments.toggle_status',
             ],
+            [
+                'name' => 'مدیریت سمت‌های سازمانی',
+                'code' => 'departments.manage_positions',
+            ],
 
             [
                 'name' => 'مشاهده نقش‌ها',
