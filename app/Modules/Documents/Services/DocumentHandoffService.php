@@ -7,7 +7,6 @@ namespace App\Modules\Documents\Services;
 use App\Models\User;
 use App\Modules\Documents\Models\DocumentLink;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 
 class DocumentHandoffService
 {
