@@ -8,6 +8,7 @@ use App\Core\Users\Contracts\UserServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Core\Users\StoreUserRequest;
 use App\Http\Requests\Core\Users\UpdateUserRequest;
+use App\Http\Requests\Core\Users\SyncUserDepartmentsRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\ValidationException;
@@ -42,6 +43,22 @@ class UserController extends Controller
         return back()->with(
             'success',
             'کاربر با موفقیت ایجاد شد.'
+        );
+    }
+
+    public function syncDepartments(
+        SyncUserDepartmentsRequest $request,
+        User $user
+    ): RedirectResponse {
+        $this->userService->syncDepartments(
+            $user,
+            $request->validated('department_ids', []),
+            $request->validated('primary_department_id')
+        );
+
+        return back()->with(
+            'success',
+            'عضویت کاربر در واحدهای سازمانی با موفقیت به‌روزرسانی شد.'
         );
     }
 
