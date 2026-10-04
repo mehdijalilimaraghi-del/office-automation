@@ -495,3 +495,13 @@ Core/backbone owns:
 Future business modules own their domain data and rules.
 
 This boundary is mandatory for long-term maintainability.
+
+
+## User & Organization Onboarding
+
+- Public self-registration is disabled; this is an internal organizational system.
+- `SYSTEM_ADMIN` is a normal user with the system role and does not require department membership or an organizational position.
+- User profile data is separated from the authentication record in `user_profiles`, including employee code, national ID, birth date and avatar path.
+- Initial department membership may be supplied during user creation. Subsequent department membership changes use the dedicated `users.manage_departments` permission and endpoint rather than general user editing.
+- New users are created inactive by default and receive an invitation link. The user activates the account by choosing their own password.
+- Direct password creation remains possible only when an administrator explicitly creates an active user.
