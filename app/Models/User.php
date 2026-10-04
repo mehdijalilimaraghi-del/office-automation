@@ -7,6 +7,7 @@ use App\Core\Departments\Models\Position;
 use App\Core\Departments\Models\PositionAssignment;
 use App\Core\Roles\Models\Role;
 use App\Core\Users\Models\UserProfile;
+use App\Core\CustomFields\Models\CustomFieldValue;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectMember;
 use App\Modules\Tasks\Models\Task;
@@ -48,6 +49,12 @@ class User extends Authenticatable
     public function profile(): HasOne
     {
         return $this->hasOne(UserProfile::class);
+    }
+
+    public function customFieldValues(): HasMany
+    {
+        return $this->hasMany(CustomFieldValue::class, 'entity_id')
+            ->where('entity_type', self::class);
     }
 
     public function departmentMemberships(): HasMany
