@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\\Modules\\Documents\\Infrastructure;
+namespace App\Modules\Documents\Infrastructure;
 
-use App\\Modules\\Documents\\Contracts\\DocumentStorageContract;
-use Illuminate\\Http\\UploadedFile;
-use Illuminate\\Support\\Facades\\Storage;
+use App\Modules\Documents\Contracts\DocumentStorageContract;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 class FilesystemDocumentStorage implements DocumentStorageContract
 {
