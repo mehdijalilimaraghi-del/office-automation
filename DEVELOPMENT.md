@@ -340,3 +340,27 @@ Before implementing a feature, determine whether it belongs to:
 Shared infrastructure must be implemented once and reused by later modules.
 
 For the detailed module scope and priorities, see ROADMAP.md.
+
+
+## Current Architecture Sequence
+
+1. Organizational positions and position assignments
+2. Task lifecycle review/approval
+3. Task dependencies
+4. Document foundation
+5. Workflow V1
+6. Unified Cartable
+7. Notifications
+8. Audit expansion
+9. Correspondence
+10. Digital Archive
+11. Forms & Requests
+12. Meetings & Calendar
+13. CRM
+14. Procurement
+15. Inventory & Assets
+16. HR
+17. Reporting/Search/SLA
+18. Internal Chat
+19. PBX/integrations
+20. Production hardening
