@@ -7,6 +7,7 @@ use App\Core\Roles\Http\Controllers\RoleController;
 use App\Core\Roles\Http\Controllers\RolePermissionController;
 use App\Core\Users\Http\Controllers\UserController;
 use App\Core\Users\Http\Controllers\UserInvitationController;
+use App\Core\CustomFields\Http\Controllers\CustomFieldController;
 use App\Core\ExternalParties\Http\Controllers\ExternalPartyController;
 use App\Modules\Projects\Http\Controllers\ProjectController;
 use App\Modules\Projects\Http\Controllers\ProjectMemberController;
@@ -53,6 +54,11 @@ Route::middleware('auth')->group(function () {
     Route::put('/users/{user}/departments', [UserController::class, 'syncDepartments'])->middleware('permission:users.manage_departments')->name('users.departments.update');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->middleware('permission:users.delete')->name('users.destroy');
     Route::patch('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->middleware('permission:users.toggle_status')->name('users.toggle-status');
+
+    Route::get('/custom-fields', [CustomFieldController::class, 'index'])->middleware('permission:custom_fields.manage')->name('custom-fields.index');
+    Route::post('/custom-fields', [CustomFieldController::class, 'store'])->middleware('permission:custom_fields.manage')->name('custom-fields.store');
+    Route::put('/custom-fields/{customField}', [CustomFieldController::class, 'update'])->middleware('permission:custom_fields.manage')->name('custom-fields.update');
+    Route::delete('/custom-fields/{customField}', [CustomFieldController::class, 'destroy'])->middleware('permission:custom_fields.manage')->name('custom-fields.destroy');
 
     Route::get('/departments', [DepartmentController::class, 'index'])->middleware('permission:departments.view')->name('departments.index');
     Route::post('/departments', [DepartmentController::class, 'store'])->middleware('permission:departments.create')->name('departments.store');
