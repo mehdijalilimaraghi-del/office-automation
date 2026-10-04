@@ -303,25 +303,25 @@ The original bootstrap phases are substantially complete. From this point, devel
 
 The next architectural sequence is:
 
-1. Task lifecycle review/approval
-2. Task dependencies
-3. Document foundation
-4. Workflow V1
-5. Unified Cartable
-6. Notifications
-7. Audit expansion
-8. Correspondence
-9. Digital Archive
-10. Forms & Requests
-11. Meetings & Calendar
-12. CRM
-13. Procurement
-14. Inventory & Assets
-15. HR
-16. Reporting/Search/SLA
-17. Internal Chat
+1. Organizational positions and position assignments
+3. Task dependencies
+4. Document foundation
+5. Workflow V1
+6. Unified Cartable
+7. Notifications
+8. Audit expansion
+9. Correspondence
+10. Digital Archive
+11. Forms & Requests
+12. Meetings & Calendar
+13. CRM
+14. Procurement
+15. Inventory & Assets
+16. HR
+17. Reporting/Search/SLA
+18. Internal Chat
 18. PBX and integrations
-19. Production hardening
+20. Production hardening
 
 ### Important Rule
 
