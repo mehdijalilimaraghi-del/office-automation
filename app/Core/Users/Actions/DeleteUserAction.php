@@ -3,6 +3,7 @@
 namespace App\Core\Users\Actions;
 
 use App\Core\Users\Models\UserInvitation;
+use App\Core\CustomFields\Models\CustomFieldValue;
 use App\Models\User;
 use Illuminate\Validation\ValidationException;
 
