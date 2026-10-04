@@ -40,8 +40,6 @@ class UserService implements UserServiceInterface
 
             $this->customFieldService->sync($user, $data['custom_fields'] ?? []);
 
-            $this->customFieldService->sync($user, $data['custom_fields'] ?? []);
-
             return $user->load([
                 'departments',
                 'roles',
@@ -65,6 +63,8 @@ class UserService implements UserServiceInterface
                 $user,
                 $data['role_ids'] ?? []
             );
+
+            $this->customFieldService->sync($user, $data['custom_fields'] ?? []);
 
             return $user->load([
                 'departments',
