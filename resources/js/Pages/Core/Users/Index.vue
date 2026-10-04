@@ -21,10 +21,20 @@ interface Role {
     is_active: boolean;
 }
 
+interface UserProfile {
+    first_name: string | null;
+    last_name: string | null;
+    employee_code: string | null;
+    national_id: string | null;
+    birth_date: string | null;
+    avatar_path: string | null;
+}
+
 interface User {
     id: number;
     name: string;
     email: string;
+    profile: UserProfile | null;
     mobile: string | null;
     phone: string | null;
     extension: string | null;
@@ -55,6 +65,11 @@ const form = useForm({
     primary_department_id: null as number | null,
     status: 'active' as 'active' | 'inactive',
     role_ids: [] as number[],
+    first_name: '',
+    last_name: '',
+    employee_code: '',
+    national_id: '',
+    birth_date: '',
 });
 
 function openCreate(): void {
@@ -67,6 +82,11 @@ function openCreate(): void {
     form.department_ids = [];
     form.primary_department_id = null;
     form.role_ids = [];
+    form.first_name = '';
+    form.last_name = '';
+    form.employee_code = '';
+    form.national_id = '';
+    form.birth_date = '';
 
     showForm.value = true;
 }
@@ -78,6 +98,11 @@ function openEdit(user: User): void {
 
     form.name = user.name;
     form.email = user.email;
+    form.first_name = user.profile?.first_name ?? '';
+    form.last_name = user.profile?.last_name ?? '';
+    form.employee_code = user.profile?.employee_code ?? '';
+    form.national_id = user.profile?.national_id ?? '';
+    form.birth_date = user.profile?.birth_date ?? '';
     form.mobile = user.mobile ?? '';
     form.phone = user.phone ?? '';
     form.extension = user.extension ?? '';
@@ -341,6 +366,16 @@ function currentUserId(): number | null {
                             <input v-model="form.email" dir="ltr" type="email" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" />
                             <p v-if="form.errors.email" class="mt-1 text-xs text-red-600">{{ form.errors.email }}</p>
                         </div>
+                    </div>
+                    <div class="grid gap-4 md:grid-cols-3">
+                        <div><label class="mb-1.5 block text-sm font-semibold text-slate-700">نام</label><input v-model="form.first_name" type="text" class="w-full rounded-xl border-slate-200 bg-slate-50/50 focus:border-teal-500 focus:ring-teal-500" /><p v-if="form.errors.first_name" class="mt-1 text-xs text-red-600">{{ form.errors.first_name }}</p></div>
+                        <div><label class="mb-1.5 block text-sm font-semibold text-slate-700">نام خانوادگی</label><input v-model="form.last_name" type="text" class="w-full rounded-xl border-slate-200 bg-slate-50/50 focus:border-teal-500 focus:ring-teal-500" /><p v-if="form.errors.last_name" class="mt-1 text-xs text-red-600">{{ form.errors.last_name }}</p></div>
+                        <div><label class="mb-1.5 block text-sm font-semibold text-slate-700">کد پرسنلی</label><input v-model="form.employee_code" dir="ltr" type="text" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" /><p v-if="form.errors.employee_code" class="mt-1 text-xs text-red-600">{{ form.errors.employee_code }}</p></div>
+                    </div>
+                    <div class="grid gap-4 md:grid-cols-3">
+                        <div><label class="mb-1.5 block text-sm font-semibold text-slate-700">کد ملی</label><input v-model="form.national_id" dir="ltr" type="text" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" /><p v-if="form.errors.national_id" class="mt-1 text-xs text-red-600">{{ form.errors.national_id }}</p></div>
+                        <div><label class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ تولد</label><input v-model="form.birth_date" type="date" class="w-full rounded-xl border-slate-200 bg-slate-50/50 focus:border-teal-500 focus:ring-teal-500" /><p v-if="form.errors.birth_date" class="mt-1 text-xs text-red-600">{{ form.errors.birth_date }}</p></div>
+                        <div></div>
                     </div>
                     <div class="grid gap-4 md:grid-cols-3">
                         <div><label class="mb-1.5 block text-sm font-semibold text-slate-700">موبایل</label><input v-model="form.mobile" dir="ltr" type="text" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" /></div>
