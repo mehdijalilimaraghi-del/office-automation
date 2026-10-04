@@ -18,6 +18,16 @@ class Task extends Model
 {
     use HasFactory;
 
+    protected static function booted(): void
+    {
+        static::deleting(function (Task $task): void {
+            TaskDependency::query()
+                ->where('predecessor_task_id', $task->id)
+                ->orWhere('successor_task_id', $task->id)
+                ->delete();
+        });
+    }
+
     protected $fillable = [
         'project_id',
         'department_id',
