@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Modules\Workflows\Models;
 
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Documents\Models\DocumentLink;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class WorkflowInstanceStep extends Model
 {
@@ -41,4 +43,9 @@ class WorkflowInstanceStep extends Model
     {
         return $this->belongsTo(Task::class);
     }
-};
+
+    public function documents(): MorphMany
+    {
+        return $this->morphMany(DocumentLink::class, 'linkable');
+    }
+}
