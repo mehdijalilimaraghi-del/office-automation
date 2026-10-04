@@ -165,6 +165,47 @@ class TaskReviewLifecycleTest extends TestCase
         app(ReviewTaskAction::class)->approve($task, $reviewer);
     }
 
+    public function test_direct_status_change_cannot_submit_task_for_review(): void
+    {
+        $actor = User::factory()->create(['status' => 'active']);
+
+        $task = Task::query()->create([
+            'title' => 'Protected submit task',
+            'status' => 'in_progress',
+            'priority' => 'normal',
+            'review_required' => true,
+            'review_status' => 'not_started',
+            'assignee_id' => $actor->id,
+            'created_by' => $actor->id,
+        ]);
+
+        $this->expectException(\InvalidArgumentException::class);
+
+        app(\App\Modules\Tasks\Actions\ChangeTaskStatusAction::class)
+            ->execute($task, 'submitted', $actor);
+    }
+
+    public function test_completed_task_cannot_be_reopened_through_status_change(): void
+    {
+        $actor = User::factory()->create(['status' => 'active']);
+
+        $task = Task::query()->create([
+            'title' => 'Completed task',
+            'status' => 'completed',
+            'priority' => 'normal',
+            'review_required' => false,
+            'review_status' => 'not_required',
+            'assignee_id' => $actor->id,
+            'created_by' => $actor->id,
+            'completed_at' => now(),
+        ]);
+
+        $this->expectException(\InvalidArgumentException::class);
+
+        app(\App\Modules\Tasks\Actions\ChangeTaskStatusAction::class)
+            ->execute($task, 'in_progress', $actor);
+    }
+
     private function userWithPermission(string $permissionCode): User
     {
         $permission = Permission::query()->where('code', $permissionCode)->firstOrFail();
