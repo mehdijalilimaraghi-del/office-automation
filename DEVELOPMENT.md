@@ -364,3 +364,12 @@ For the detailed module scope and priorities, see ROADMAP.md.
 18. Internal Chat
 19. PBX/integrations
 20. Production hardening
+
+
+## User Onboarding Rules
+
+- Public registration is disabled.
+- New users should normally be created as inactive and activated through the invitation flow.
+- The invitation is valid for 48 hours and the invited user sets their own password.
+- Department membership is managed separately from general user profile editing through `users.manage_departments`.
+- Use `office:bootstrap-admin` or the configured bootstrap environment variables for the initial `SYSTEM_ADMIN` account.
