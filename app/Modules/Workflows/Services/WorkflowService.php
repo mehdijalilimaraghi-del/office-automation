@@ -6,6 +6,7 @@ namespace App\Modules\Workflows\Services;
 
 use App\Models\User;
 use App\Core\Departments\Models\Department;
+use App\Modules\Documents\Services\DocumentHandoffService;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Tasks\Actions\CreateTaskAction;
 use App\Modules\Tasks\Models\Task;
@@ -22,6 +23,7 @@ class WorkflowService
     public function __construct(
         private readonly CreateTaskAction $createTask,
         private readonly TaskDependencyService $taskDependencies,
+        private readonly DocumentHandoffService $documentHandoff,
     ) {}
 
     public function start(
@@ -99,7 +101,13 @@ class WorkflowService
                 return $instance->refresh()->load(['definition', 'steps.workflowStep', 'steps.task']);
             }
 
-            $this->activateStep($instance, $nextStep, (int) $instanceStep->task_id);
+            $nextTask = $this->activateStep($instance, $nextStep, (int) $instanceStep->task_id);
+
+            $this->documentHandoff->handoff(
+                $instanceStep->task,
+                $nextTask,
+                $instance->initiator()->firstOrFail(),
+            );
 
             return $instance->refresh()->load(['definition', 'steps.workflowStep', 'steps.task']);
         });
@@ -109,7 +117,7 @@ class WorkflowService
         WorkflowInstance $instance,
         WorkflowStep $step,
         ?int $predecessorTaskId = null,
-    ): void {
+    ): Task {
         $instanceStep = $instance->steps()
             ->where('workflow_step_id', $step->id)
             ->firstOrFail();
@@ -137,6 +145,8 @@ class WorkflowService
             'status' => 'active',
             'started_at' => now(),
         ]);
+
+        return $task;
     }
 
     private function resolveActor(WorkflowInstance $instance, WorkflowStep $step): User
