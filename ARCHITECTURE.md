@@ -41,7 +41,27 @@ It must not be created prematurely before the relevant implementation phase.
 
 ---
 
-## 3. Dashboard\n\nDashboard is an application-facing module that aggregates read-only information from Core, Projects and Tasks. It does not own their business data or modify their records.\n\nDashboard is responsible for:\n\n- My Tasks\n- Today's Tasks\n- Overdue Tasks\n- Active Projects\n- Completed Tasks\n- Recent task activity summary\n\nDashboard access respects the authorization and task visibility rules of the underlying modules.\n\n---\n\n## 4. Core
+## 3. Dashboard\n\nDashboard is an application-facing module that aggregates read-only information from Core, Projects and Tasks. It does not own their business data or modify their records.\n\nDashboard is responsible for:\n\n- My Tasks\n- Today's Tasks\n- Overdue Tasks\n- Active Projects\n- Completed Tasks\n- Recent task activity summary\n\nDashboard access respects the authorization and task visibility rules of the underlying modules.\n\n---\n\n## Custom Fields
+
+Custom Fields are a Core capability for organization-specific metadata that should not become first-class columns on every business table.
+
+The framework uses:
+- CustomField: definition scoped to an entity model, with stable key, label, type, required/active state, ordering and select options.
+- CustomFieldValue: value attached to a concrete entity through an entity type + entity id pair.
+
+Supported initial field types:
+- text
+- textarea
+- number
+- date
+- boolean
+- select
+
+Stable domain attributes such as employee code, national ID, name and birth date remain first-class profile fields. Custom Fields are intended for genuinely variable attributes such as personnel grade, badge number or organization-specific classifications.
+
+The value service owns type normalization and validation. Business modules consume the service rather than implementing their own custom-field storage.
+
+## 4. Core
 
 Core owns cross-cutting system capabilities and identity.
 
