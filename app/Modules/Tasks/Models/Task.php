@@ -8,11 +8,13 @@ use App\Core\ExternalParties\Models\ExternalOrganization;
 use App\Core\ExternalParties\Models\ExternalDepartment;
 use App\Core\ExternalParties\Models\ExternalContact;
 use App\Modules\Projects\Models\Project;
+use App\Modules\Documents\Models\DocumentLink;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Task extends Model
 {
@@ -78,6 +80,7 @@ class Task extends Model
     public function workLogs(): HasMany { return $this->hasMany(TaskWorkLog::class); }
     public function reminders(): HasMany { return $this->hasMany(TaskReminder::class); }
     public function statusHistory(): HasMany { return $this->hasMany(TaskStatusHistory::class); }
+    public function documents(): MorphMany { return $this->morphMany(DocumentLink::class, 'linkable'); }
     public function dependencies(): HasMany { return $this->hasMany(TaskDependency::class, 'successor_task_id'); }
     public function predecessors(): BelongsToMany
     {
