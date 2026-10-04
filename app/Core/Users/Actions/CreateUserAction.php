@@ -9,7 +9,7 @@ class CreateUserAction
 {
     public function execute(array $data): User
     {
-        return User::create([
+        $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'mobile' => $data['mobile'] ?? null,
@@ -18,5 +18,15 @@ class CreateUserAction
             'password' => Hash::make($data['password']),
             'status' => $data['status'] ?? 'active',
         ]);
+
+        $user->profile()->create([
+            'first_name' => $data['first_name'] ?? null,
+            'last_name' => $data['last_name'] ?? null,
+            'employee_code' => $data['employee_code'] ?? null,
+            'national_id' => $data['national_id'] ?? null,
+            'birth_date' => $data['birth_date'] ?? null,
+        ]);
+
+        return $user;
     }
 }
