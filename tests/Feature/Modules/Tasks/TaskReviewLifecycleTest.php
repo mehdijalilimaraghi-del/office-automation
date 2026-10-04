@@ -1,0 +1,188 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature\Modules\Tasks;
+
+use App\Core\Departments\Models\Department;
+use App\Core\Permissions\Models\Permission;
+use App\Core\Roles\Models\Role;
+use App\Models\User;
+use App\Modules\Tasks\Actions\ReviewTaskAction;
+use App\Modules\Tasks\Actions\SubmitTaskAction;
+use App\Modules\Tasks\Models\Task;
+use App\Modules\Tasks\Models\TaskStatusHistory;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
+use Tests\TestCase;
+
+class TaskReviewLifecycleTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(\Database\Seeders\CorePermissionSeeder::class);
+    }
+
+    public function test_assignee_can_submit_review_required_task(): void
+    {
+        $manager = User::factory()->create(['status' => 'active']);
+        $assignee = $this->userWithPermission('tasks.submit');
+
+        $department = Department::query()->create([
+            'name' => 'Review Unit',
+            'code' => 'REV-'.Str::upper(Str::random(6)),
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+
+        $task = Task::query()->create([
+            'department_id' => $department->id,
+            'title' => 'Review task',
+            'status' => 'in_progress',
+            'priority' => 'normal',
+            'review_required' => true,
+            'review_status' => 'not_started',
+            'assignee_id' => $assignee->id,
+            'created_by' => $manager->id,
+        ]);
+
+        $result = app(SubmitTaskAction::class)->execute($task, $assignee);
+
+        $this->assertSame('submitted', $result->status);
+        $this->assertSame('pending', $result->review_status);
+        $this->assertNotNull($result->review_requested_at);
+        $this->assertDatabaseHas('task_status_histories', [
+            'task_id' => $task->id,
+            'from_status' => 'in_progress',
+            'to_status' => 'submitted',
+            'changed_by' => $assignee->id,
+        ]);
+    }
+
+    public function test_department_manager_can_approve_submitted_task(): void
+    {
+        $manager = $this->userWithPermission('tasks.review');
+        $assignee = User::factory()->create(['status' => 'active']);
+
+        $department = Department::query()->create([
+            'name' => 'Approval Unit',
+            'code' => 'APR-'.Str::upper(Str::random(6)),
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+
+        $task = Task::query()->create([
+            'department_id' => $department->id,
+            'title' => 'Approval task',
+            'status' => 'submitted',
+            'priority' => 'normal',
+            'review_required' => true,
+            'review_status' => 'pending',
+            'assignee_id' => $assignee->id,
+            'created_by' => $manager->id,
+            'review_requested_at' => now(),
+        ]);
+
+        $result = app(ReviewTaskAction::class)->approve($task, $manager);
+
+        $this->assertSame('completed', $result->status);
+        $this->assertSame('approved', $result->review_status);
+        $this->assertSame($manager->id, $result->reviewed_by);
+        $this->assertNotNull($result->completed_at);
+        $this->assertDatabaseHas('task_status_histories', [
+            'task_id' => $task->id,
+            'from_status' => 'submitted',
+            'to_status' => 'completed',
+            'changed_by' => $manager->id,
+        ]);
+    }
+
+    public function test_department_manager_can_return_task_with_reason(): void
+    {
+        $manager = $this->userWithPermission('tasks.review');
+        $assignee = User::factory()->create(['status' => 'active']);
+
+        $department = Department::query()->create([
+            'name' => 'Return Unit',
+            'code' => 'RET-'.Str::upper(Str::random(6)),
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+
+        $task = Task::query()->create([
+            'department_id' => $department->id,
+            'title' => 'Return task',
+            'status' => 'submitted',
+            'priority' => 'normal',
+            'review_required' => true,
+            'review_status' => 'pending',
+            'assignee_id' => $assignee->id,
+            'created_by' => $manager->id,
+            'review_requested_at' => now(),
+        ]);
+
+        $result = app(ReviewTaskAction::class)->returnTask(
+            $task,
+            $manager,
+            'مدرک نهایی باید اصلاح شود.',
+        );
+
+        $this->assertSame('in_progress', $result->status);
+        $this->assertSame('rejected', $result->review_status);
+        $this->assertSame('مدرک نهایی باید اصلاح شود.', $result->review_note);
+        $this->assertSame($manager->id, $result->reviewed_by);
+    }
+
+    public function test_non_manager_cannot_review_task(): void
+    {
+        $manager = User::factory()->create(['status' => 'active']);
+        $reviewer = $this->userWithPermission('tasks.review');
+        $assignee = User::factory()->create(['status' => 'active']);
+
+        $department = Department::query()->create([
+            'name' => 'Protected Review Unit',
+            'code' => 'PRV-'.Str::upper(Str::random(6)),
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+
+        $task = Task::query()->create([
+            'department_id' => $department->id,
+            'title' => 'Protected review task',
+            'status' => 'submitted',
+            'priority' => 'normal',
+            'review_required' => true,
+            'review_status' => 'pending',
+            'assignee_id' => $assignee->id,
+            'created_by' => $manager->id,
+            'review_requested_at' => now(),
+        ]);
+
+        $this->expectException(\InvalidArgumentException::class);
+        app(ReviewTaskAction::class)->approve($task, $reviewer);
+    }
+
+    private function userWithPermission(string $permissionCode): User
+    {
+        $permission = Permission::query()->where('code', $permissionCode)->firstOrFail();
+
+        $role = Role::query()->create([
+            'name' => 'Review Test Role '.Str::upper(Str::random(8)),
+            'code' => 'review-'.Str::lower(Str::random(12)),
+            'description' => 'Review lifecycle test role',
+            'is_active' => true,
+            'is_system' => false,
+        ]);
+
+        $role->permissions()->attach($permission->id, ['scope' => 'organization']);
+
+        $user = User::factory()->create(['status' => 'active']);
+        $user->roles()->attach($role->id);
+
+        return $user->fresh();
+    }
+}
+
