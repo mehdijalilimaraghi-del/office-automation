@@ -12,16 +12,9 @@ class SyncUserDepartmentsAction
         array $departmentIds,
         ?int $primaryDepartmentId = null
     ): void {
-        $departmentIds = array_values(
-            array_unique(
-                array_map('intval', $departmentIds)
-            )
-        );
+        $departmentIds = array_values(array_unique(array_map('intval', $departmentIds)));
 
-        if (
-            $primaryDepartmentId !== null &&
-            ! in_array($primaryDepartmentId, $departmentIds, true)
-        ) {
+        if ($primaryDepartmentId !== null && ! in_array($primaryDepartmentId, $departmentIds, true)) {
             throw ValidationException::withMessages([
                 'primary_department_id' => 'واحد اصلی باید یکی از واحدهای انتخاب‌شده باشد.',
             ]);
@@ -32,30 +25,19 @@ class SyncUserDepartmentsAction
             ->map(fn ($id) => (int) $id)
             ->all();
 
-        $removedManagedDepartmentIds = array_values(
-            array_diff($managedDepartmentIds, $departmentIds)
-        );
-
-        if ($removedManagedDepartmentIds !== []) {
+        if (array_diff($managedDepartmentIds, $departmentIds) !== []) {
             throw ValidationException::withMessages([
                 'department_ids' => 'کاربر مدیر یک یا چند دپارتمان است. ابتدا مدیر دپارتمان را حذف یا تغییر دهید.',
             ]);
         }
 
-        $existing = $user->departmentMemberships()
-            ->get()
-            ->keyBy('department_id');
-
-        $keepIds = [];
+        $existing = $user->departmentMemberships()->get()->keyBy('department_id');
 
         foreach ($departmentIds as $departmentId) {
-            $keepIds[] = $departmentId;
-
             if ($existing->has($departmentId)) {
                 $existing->get($departmentId)->update([
                     'is_primary' => $primaryDepartmentId === $departmentId,
                 ]);
-
                 continue;
             }
 
@@ -66,15 +48,12 @@ class SyncUserDepartmentsAction
             ]);
         }
 
-        $user->departmentMemberships()
-            ->when(
-                $keepIds !== [],
-                fn ($query) => $query->whereNotIn('department_id', $keepIds)
-            )
-            ->when(
-                $keepIds === [],
-                fn ($query) => $query
-            )
-            ->delete();
+        $query = $user->departmentMemberships();
+
+        if ($departmentIds !== []) {
+            $query->whereNotIn('department_id', $departmentIds);
+        }
+
+        $query->delete();
     }
 }
