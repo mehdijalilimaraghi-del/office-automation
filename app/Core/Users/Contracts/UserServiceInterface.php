@@ -15,6 +15,8 @@ interface UserServiceInterface
 
     public function toggleStatus(User $user): User;
 
+    public function syncDepartments(User $user, array $departmentIds, ?int $primaryDepartmentId = null): User;
+
     public function syncRoles(User $user, array $roleIds): User;
 
     public function list(): Collection;
