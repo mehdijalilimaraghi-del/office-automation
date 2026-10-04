@@ -37,6 +37,7 @@ class StoreUserRequest extends FormRequest
 
             'password' => [
                 'nullable',
+                'required_if:status,active',
                 'string',
                 'min:8',
                 'confirmed',
