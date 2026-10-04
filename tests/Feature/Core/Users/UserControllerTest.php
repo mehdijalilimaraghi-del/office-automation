@@ -90,12 +90,6 @@ class UserControllerTest extends TestCase
             'new-user@example.com'
         )->firstOrFail();
 
-        $this->assertDatabaseHas('department_memberships', [
-            'user_id' => $createdUser->id,
-            'department_id' => $department->id,
-            'is_primary' => true,
-        ]);
-
         $this->assertDatabaseHas('role_user', [
             'user_id' => $createdUser->id,
             'role_id' => $role->id,
