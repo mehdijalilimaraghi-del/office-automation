@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::table('tasks', function (Blueprint $table) {
             $table->boolean('review_required')->default(false)->after('priority');
             $table->string('review_status', 20)->default('not_required')->after('review_required');
-            $table->foreignId('reviewed_by')->nullable()->after('assignee_id')->constrained('users')->nullOnDelete();
+            $table->foreignId('reviewed_by')->nullable()->after('assignee_id')->constrained('users');
             $table->dateTime('review_requested_at')->nullable();
             $table->dateTime('reviewed_at')->nullable();
             $table->text('review_note')->nullable();
