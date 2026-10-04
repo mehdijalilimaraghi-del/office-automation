@@ -79,6 +79,10 @@ class StoreUserRequest extends FormRequest
                 'array',
             ],
 
+            'custom_fields' => ['sometimes', 'array'],
+
+            'custom_fields.*' => ['nullable'],
+
             'role_ids.*' => [
                 'integer',
                 'distinct',
