@@ -6,7 +6,7 @@ namespace Tests\Feature\Modules\Workflows;
 
 use App\Core\Roles\Models\Role;
 use App\Models\User;
-use App\Modules\Core\Departments\Models\Department;
+use App\Modules\Core\Models\Department;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Workflows\Models\WorkflowDefinition;
 use App\Modules\Workflows\Models\WorkflowStep;
@@ -121,7 +121,7 @@ class WorkflowServiceTest extends TestCase
         ]);
 
         $instance = app(WorkflowService::class)->start($definition, $initiator, null, $department);
-        $firstTask = $instance->steps()->where('step_order', 1)->firstOrFail()->task;
+        $firstTask = $instance->steps()->whereHas('workflowStep', fn ($query) => $query->where('step_order', 1))->firstOrFail()->task;
 
         $firstTask->update([
             'status' => 'submitted',
