@@ -224,6 +224,11 @@ function toggleRole(roleId: number): void {
     ];
 }
 
+function inviteUser(user: User): void {
+    if (!confirm(`دعوت‌نامه برای «${user.name}» ارسال شود؟`)) return;
+    useForm({}).post(route('users.invite', user.id), { preserveScroll: true });
+}
+
 function toggleStatus(user: User): void {
     if (user.id === currentUserId()) {
         return;
@@ -372,6 +377,7 @@ function currentUserId(): number | null {
                                     <td class="px-5 py-4">
                                         <div class="flex flex-wrap gap-2">
                                             <button type="button" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50" @click="openEdit(user)">ویرایش</button>\n                                            <button type="button" class="rounded-lg border border-teal-100 px-3 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-50" @click="openMembership(user)">واحدها</button>
+                                            <button v-if="user.status === 'inactive'" type="button" class="rounded-lg border border-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-50" @click="inviteUser(user)">دعوت</button>
                                             <button type="button" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50" @click="toggleStatus(user)">{{ user.status === 'active' ? 'غیرفعال' : 'فعال' }}</button>
                                             <button type="button" class="rounded-lg border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50" @click="deleteUser(user)">حذف</button>
                                         </div>
