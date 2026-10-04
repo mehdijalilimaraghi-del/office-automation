@@ -6,6 +6,8 @@ use App\Core\Departments\Services\DepartmentService;
 use App\Core\Roles\Services\RoleService;
 use App\Core\Users\Actions\InviteUserAction;
 use App\Core\Users\Contracts\UserServiceInterface;
+use App\Core\CustomFields\Models\CustomField;
+use App\Core\CustomFields\Services\CustomFieldService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Core\Users\StoreUserRequest;
 use App\Http\Requests\Core\Users\UpdateUserRequest;
@@ -23,6 +25,7 @@ class UserController extends Controller
         private readonly DepartmentService $departmentService,
         private readonly RoleService $roleService,
         private readonly InviteUserAction $inviteUserAction,
+        private readonly CustomFieldService $customFieldService,
     ) {
     }
 
@@ -32,6 +35,8 @@ class UserController extends Controller
             'users' => $this->userService->list(),
             'departments' => $this->departmentService->list(),
             'roles' => $this->roleService->list(),
+            'customFields' => CustomField::query()->where('entity_type', User::class)->where('is_active', true)->orderBy('sort_order')->orderBy('label')->get(),
+            'customFieldValues' => $this->userService->list()->mapWithKeys(fn (User $user) => [$user->id => $this->customFieldService->values($user)]),
         ]);
     }
 
