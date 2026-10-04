@@ -35,6 +35,11 @@ class DeleteUserAction
 
         UserInvitation::query()->where('user_id', $user->id)->delete();
 
+        CustomFieldValue::query()
+            ->where('entity_type', User::class)
+            ->where('entity_id', $user->id)
+            ->delete();
+
         $user->delete();
     }
 }
