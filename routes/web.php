@@ -80,6 +80,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/tasks/{task}/assign', [TaskController::class, 'assign'])->middleware('permission:tasks.assign')->name('tasks.assign');
     Route::patch('/tasks/{task}/refer', [TaskController::class, 'refer'])->middleware('permission:tasks.refer')->name('tasks.refer');
     Route::patch('/tasks/{task}/status', [TaskController::class, 'changeStatus'])->middleware('permission:tasks.change_status')->name('tasks.change-status');
+    Route::patch('/tasks/{task}/submit', [TaskController::class, 'submit'])->middleware('permission:tasks.submit')->name('tasks.submit');
+    Route::patch('/tasks/{task}/approve', [TaskController::class, 'approve'])->middleware('permission:tasks.review')->name('tasks.approve');
+    Route::patch('/tasks/{task}/return', [TaskController::class, 'returnFromReview'])->middleware('permission:tasks.review')->name('tasks.return');
     Route::post('/tasks/{task}/comments', [TaskController::class, 'comment'])->middleware('permission:tasks.comment')->name('tasks.comments.store');
     Route::post('/tasks/{task}/work-logs', [TaskController::class, 'workLog'])->middleware('permission:tasks.log_work')->name('tasks.work-logs.store');
     Route::post('/tasks/{task}/reminders', [TaskController::class, 'reminder'])->middleware('permission:tasks.create_reminder')->name('tasks.reminders.store');
