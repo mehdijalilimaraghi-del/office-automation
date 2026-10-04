@@ -50,6 +50,11 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        if (! $this->user()?->isActive()) {
+            Auth::logout();
+            throw ValidationException::withMessages(['email' => 'حساب کاربری شما فعال نیست.']);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 
