@@ -30,13 +30,6 @@ class UserService implements UserServiceInterface
         return DB::transaction(function () use ($data): User {
             $user = $this->createUserAction->execute($data);
 
-            $this->syncUserDepartmentsAction->execute(
-                $user,
-                $data['department_ids'] ?? [],
-                isset($data['primary_department_id'])
-                    ? (int) $data['primary_department_id']
-                    : null
-            );
 
             $this->syncUserRolesAction->execute(
                 $user,
