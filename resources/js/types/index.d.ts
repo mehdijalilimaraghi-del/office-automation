@@ -12,6 +12,7 @@ export interface AuthAbilities {
     users_view?: boolean;
     departments_view?: boolean;
     roles_view?: boolean;
+    cartable_view?: boolean;
 }
 
 export type PageProps<
