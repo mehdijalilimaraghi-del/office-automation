@@ -52,6 +52,12 @@ const props = defineProps<{
 
 const showForm = ref(false);
 const editingUser = ref<User | null>(null);
+const membershipUser = ref<User | null>(null);
+
+const membershipForm = useForm({
+    department_ids: [] as number[],
+    primary_department_id: null as number | null,
+});
 
 const form = useForm({
     name: '',
@@ -119,6 +125,39 @@ function openEdit(user: User): void {
     form.role_ids = user.roles.map((role) => role.id);
 
     showForm.value = true;
+}
+
+function openMembership(user: User): void {
+    membershipUser.value = user;
+    membershipForm.clearErrors();
+    membershipForm.department_ids = user.departments.map((department) => department.id);
+    membershipForm.primary_department_id = user.departments.find((department) => department.pivot?.is_primary)?.id ?? null;
+}
+
+function closeMembership(): void {
+    membershipUser.value = null;
+    membershipForm.reset();
+    membershipForm.clearErrors();
+}
+
+function toggleMembershipDepartment(departmentId: number): void {
+    if (membershipForm.department_ids.includes(departmentId)) {
+        membershipForm.department_ids = membershipForm.department_ids.filter((id) => id !== departmentId);
+        if (membershipForm.primary_department_id === departmentId) {
+            membershipForm.primary_department_id = membershipForm.department_ids[0] ?? null;
+        }
+        return;
+    }
+    membershipForm.department_ids = [...membershipForm.department_ids, departmentId];
+    if (membershipForm.primary_department_id === null) membershipForm.primary_department_id = departmentId;
+}
+
+function submitMembership(): void {
+    if (!membershipUser.value) return;
+    membershipForm.put(route('users.departments.update', membershipUser.value.id), {
+        preserveScroll: true,
+        onSuccess: () => closeMembership(),
+    });
 }
 
 function closeForm(): void {
@@ -332,7 +371,7 @@ function currentUserId(): number | null {
                                     </td>
                                     <td class="px-5 py-4">
                                         <div class="flex flex-wrap gap-2">
-                                            <button type="button" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50" @click="openEdit(user)">ویرایش</button>
+                                            <button type="button" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50" @click="openEdit(user)">ویرایش</button>\n                                            <button type="button" class="rounded-lg border border-teal-100 px-3 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-50" @click="openMembership(user)">واحدها</button>
                                             <button type="button" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50" @click="toggleStatus(user)">{{ user.status === 'active' ? 'غیرفعال' : 'فعال' }}</button>
                                             <button type="button" class="rounded-lg border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50" @click="deleteUser(user)">حذف</button>
                                         </div>
@@ -387,8 +426,8 @@ function currentUserId(): number | null {
                         <div><label class="mb-1.5 block text-sm font-semibold text-slate-700">تکرار رمز عبور</label><input v-model="form.password_confirmation" dir="ltr" type="password" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" /></div>
                     </div>
                     <div class="grid gap-5 md:grid-cols-2">
-                        <div class="rounded-xl border border-slate-200 p-4">
-                            <label class="mb-3 block text-sm font-semibold text-slate-700">واحدهای سازمانی</label>
+                        <div v-if="!editingUser" class="rounded-xl border border-slate-200 p-4">
+                            <label class="mb-3 block text-sm font-semibold text-slate-700">واحدهای سازمانی اولیه</label>
                             <div class="max-h-44 space-y-2 overflow-y-auto">
                                 <label v-for="department in props.departments" :key="department.id" class="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 hover:bg-slate-50">
                                     <input type="checkbox" :checked="form.department_ids.includes(department.id)" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" @change="toggleDepartment(department.id)" />
@@ -420,6 +459,32 @@ function currentUserId(): number | null {
                     </div>
                 </form>
             </div>
+        <div v-if="membershipUser" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
+            <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
+                <div class="flex items-center justify-between">
+                    <div><p class="text-xs font-semibold text-teal-600">ساختار سازمانی</p><h3 class="mt-1 text-lg font-bold text-slate-900">مدیریت واحدهای کاربر</h3><p class="mt-1 text-xs text-slate-500">{{ membershipUser.name }}</p></div>
+                    <button type="button" class="rounded-lg p-2 text-xl text-slate-400 hover:bg-slate-100" @click="closeMembership">×</button>
+                </div>
+                <div class="mt-5 max-h-72 space-y-2 overflow-y-auto">
+                    <label v-for="department in props.departments" :key="department.id" class="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 hover:bg-slate-50">
+                        <input type="checkbox" :checked="membershipForm.department_ids.includes(department.id)" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" @change="toggleMembershipDepartment(department.id)" />
+                        <span class="text-sm text-slate-700">{{ department.name }}</span>
+                    </label>
+                </div>
+                <p v-if="membershipForm.errors.department_ids" class="mt-2 text-xs text-red-600">{{ membershipForm.errors.department_ids }}</p>
+                <label class="mt-4 mb-1.5 block text-xs font-semibold text-slate-500">واحد اصلی</label>
+                <select v-model="membershipForm.primary_department_id" class="w-full rounded-xl border-slate-200 text-sm focus:border-teal-500 focus:ring-teal-500">
+                    <option :value="null">بدون واحد اصلی</option>
+                    <option v-for="department in props.departments.filter(d => membershipForm.department_ids.includes(d.id))" :key="department.id" :value="department.id">{{ department.name }}</option>
+                </select>
+                <p v-if="membershipForm.errors.primary_department_id" class="mt-1 text-xs text-red-600">{{ membershipForm.errors.primary_department_id }}</p>
+                <div class="mt-6 flex justify-end gap-3 border-t border-slate-200 pt-4">
+                    <button type="button" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700" @click="closeMembership">انصراف</button>
+                    <button type="button" :disabled="membershipForm.processing" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50" @click="submitMembership">{{ membershipForm.processing ? 'در حال ذخیره...' : 'ذخیره عضویت' }}</button>
+                </div>
+            </div>
+        </div>
+
         </div>
     </AuthenticatedLayout>
 </template>
