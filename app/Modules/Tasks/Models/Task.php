@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Task extends Model
 {
@@ -27,7 +28,13 @@ class Task extends Model
         'description',
         'status',
         'priority',
+        'review_required',
+        'review_status',
         'assignee_id',
+        'reviewed_by',
+        'review_requested_at',
+        'reviewed_at',
+        'review_note',
         'created_by',
         'start_date',
         'due_date',
@@ -41,76 +48,35 @@ class Task extends Model
             'start_date' => 'date',
             'due_date' => 'date',
             'completed_at' => 'datetime',
+            'review_required' => 'boolean',
+            'review_requested_at' => 'datetime',
+            'reviewed_at' => 'datetime',
             'is_active' => 'boolean',
         ];
     }
 
-    public function department(): BelongsTo
+    public function department(): BelongsTo { return $this->belongsTo(Department::class, 'department_id'); }
+    public function project(): BelongsTo { return $this->belongsTo(Project::class, 'project_id'); }
+    public function externalOrganization(): BelongsTo { return $this->belongsTo(ExternalOrganization::class, 'external_organization_id'); }
+    public function externalDepartment(): BelongsTo { return $this->belongsTo(ExternalDepartment::class, 'external_department_id'); }
+    public function externalContact(): BelongsTo { return $this->belongsTo(ExternalContact::class, 'external_contact_id'); }
+    public function assignee(): BelongsTo { return $this->belongsTo(User::class, 'assignee_id'); }
+    public function reviewedBy(): BelongsTo { return $this->belongsTo(User::class, 'reviewed_by'); }
+    public function assignments(): HasMany { return $this->hasMany(TaskAssignment::class); }
+    public function comments(): HasMany { return $this->hasMany(TaskComment::class); }
+    public function workLogs(): HasMany { return $this->hasMany(TaskWorkLog::class); }
+    public function reminders(): HasMany { return $this->hasMany(TaskReminder::class); }
+    public function statusHistory(): HasMany { return $this->hasMany(TaskStatusHistory::class); }
+    public function dependencies(): HasMany { return $this->hasMany(TaskDependency::class, 'successor_task_id'); }
+    public function predecessors(): BelongsToMany
     {
-        return $this->belongsTo(Department::class, 'department_id');
+        return $this->belongsToMany(Task::class, 'task_dependencies', 'successor_task_id', 'predecessor_task_id')
+            ->withPivot('type');
     }
-
-    public function project(): BelongsTo
+    public function successors(): BelongsToMany
     {
-        return $this->belongsTo(
-            Project::class,
-            'project_id'
-        );
+        return $this->belongsToMany(Task::class, 'task_dependencies', 'predecessor_task_id', 'successor_task_id')
+            ->withPivot('type');
     }
-
-    public function externalOrganization(): BelongsTo
-    {
-        return $this->belongsTo(ExternalOrganization::class, 'external_organization_id');
-    }
-
-    public function externalDepartment(): BelongsTo
-    {
-        return $this->belongsTo(ExternalDepartment::class, 'external_department_id');
-    }
-
-    public function externalContact(): BelongsTo
-    {
-        return $this->belongsTo(ExternalContact::class, 'external_contact_id');
-    }
-
-    public function assignee(): BelongsTo
-    {
-        return $this->belongsTo(
-            User::class,
-            'assignee_id'
-        );
-    }
-
-    public function assignments(): HasMany
-    {
-        return $this->hasMany(TaskAssignment::class);
-    }
-
-    public function comments(): HasMany
-    {
-        return $this->hasMany(TaskComment::class);
-    }
-
-    public function workLogs(): HasMany
-    {
-        return $this->hasMany(TaskWorkLog::class);
-    }
-
-    public function reminders(): HasMany
-    {
-        return $this->hasMany(TaskReminder::class);
-    }
-
-    public function statusHistory(): HasMany
-    {
-        return $this->hasMany(TaskStatusHistory::class);
-    }
-
-    public function creator(): BelongsTo
-    {
-        return $this->belongsTo(
-            User::class,
-            'created_by'
-        );
-    }
+    public function creator(): BelongsTo { return $this->belongsTo(User::class, 'created_by'); }
 }
