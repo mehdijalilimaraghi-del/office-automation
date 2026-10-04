@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Workflows\Models;
 
-use App\Modules\Core\Models\Department;
+use App\Core\Departments\Models\Department;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
