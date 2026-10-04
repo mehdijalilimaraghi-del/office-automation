@@ -31,6 +31,14 @@ class ChangeTaskStatusAction
             );
         }
 
+        if ($status === 'submitted') {
+            throw new InvalidArgumentException('ارسال تسک برای بررسی فقط از مسیر ارسال نتیجه کار امکان‌پذیر است.');
+        }
+
+        if (in_array($task->status, ['completed', 'cancelled'], true) && $status !== $task->status) {
+            throw new InvalidArgumentException('تسک نهایی‌شده امکان تغییر وضعیت ندارد.');
+        }
+
         if ($status === 'completed' && $task->review_required && $task->review_status !== 'approved') {
             throw new InvalidArgumentException('این تسک باید ابتدا توسط بررسی‌کننده تأیید شود.');
         }
