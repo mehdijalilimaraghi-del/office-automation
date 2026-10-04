@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('task_dependencies', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('predecessor_task_id')->constrained('tasks')->cascadeOnDelete();
+            $table->foreignId('predecessor_task_id')->constrained('tasks');
             $table->foreignId('successor_task_id')->constrained('tasks')->cascadeOnDelete();
             $table->string('type', 30)->default('completion');
             $table->timestamps();
