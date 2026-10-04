@@ -26,6 +26,7 @@ Projects and Tasks remain important, but they are not the architectural center o
 - Permissions
 - Authorization/scopes
 - Settings
+- Custom Fields foundation
 
 **Status: implemented / audited**
 
