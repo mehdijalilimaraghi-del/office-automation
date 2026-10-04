@@ -6,6 +6,7 @@ use App\Core\Permissions\Http\Controllers\PermissionController;
 use App\Core\Roles\Http\Controllers\RoleController;
 use App\Core\Roles\Http\Controllers\RolePermissionController;
 use App\Core\Users\Http\Controllers\UserController;
+use App\Core\Users\Http\Controllers\UserInvitationController;
 use App\Core\ExternalParties\Http\Controllers\ExternalPartyController;
 use App\Modules\Projects\Http\Controllers\ProjectController;
 use App\Modules\Projects\Http\Controllers\ProjectMemberController;
@@ -27,6 +28,9 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
     ]);
 });
+
+Route::get('/users/invitations/{token}', [UserInvitationController::class, 'accept'])->middleware('guest')->name('users.invitation.accept');
+Route::post('/users/invitations', [UserInvitationController::class, 'store'])->middleware('guest')->name('users.invitation.store');
 
 Route::get('/dashboard', DashboardController::class)
     ->middleware(['auth', 'verified'])
