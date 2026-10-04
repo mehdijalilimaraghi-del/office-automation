@@ -10,6 +10,12 @@ class UpdateUserAction
 {
     public function execute(User $user, array $data): User
     {
+        if ($user->isInactive() && ($data['status'] ?? $user->status) === 'active') {
+            throw ValidationException::withMessages([
+                'status' => 'فعال‌سازی کاربر باید از طریق دعوت‌نامه انجام شود.',
+            ]);
+        }
+
         if (
             $user->id === auth()->id() &&
             array_key_exists('status', $data) &&
