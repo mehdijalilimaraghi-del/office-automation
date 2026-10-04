@@ -4,6 +4,7 @@ namespace App\Core\Users\Http\Controllers;
 
 use App\Core\Departments\Services\DepartmentService;
 use App\Core\Roles\Services\RoleService;
+use App\Core\Users\Actions\InviteUserAction;
 use App\Core\Users\Contracts\UserServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Core\Users\StoreUserRequest;
@@ -21,6 +22,7 @@ class UserController extends Controller
         private readonly UserServiceInterface $userService,
         private readonly DepartmentService $departmentService,
         private readonly RoleService $roleService,
+        private readonly InviteUserAction $inviteUserAction,
     ) {
     }
 
@@ -36,9 +38,13 @@ class UserController extends Controller
     public function store(
         StoreUserRequest $request
     ): RedirectResponse {
-        $this->userService->create(
+        $user = $this->userService->create(
             $request->validated()
         );
+
+        if ($user->isInactive()) {
+            $this->inviteUserAction->execute($user);
+        }
 
         return back()->with(
             'success',
