@@ -45,6 +45,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/users', [UserController::class, 'index'])->middleware('permission:users.view')->name('users.index');
     Route::post('/users', [UserController::class, 'store'])->middleware('permission:users.create')->name('users.store');
     Route::put('/users/{user}', [UserController::class, 'update'])->middleware('permission:users.edit')->name('users.update');
+    Route::put('/users/{user}/departments', [UserController::class, 'syncDepartments'])->middleware('permission:users.manage_departments')->name('users.departments.update');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->middleware('permission:users.delete')->name('users.destroy');
     Route::patch('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->middleware('permission:users.toggle_status')->name('users.toggle-status');
 
