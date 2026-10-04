@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('position_assignments', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('position_id')->constrained('positions')->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained('users')->restrictOnDelete();
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->boolean('is_primary')->default(false);
             $table->boolean('is_active')->default(true);
             $table->dateTime('started_at')->nullable();
