@@ -85,7 +85,7 @@ class CartableServiceTest extends TestCase
         $this->assertSame(0, $cartable['summary']['pending_approvals']);
         $this->assertSame(1, $cartable['summary']['referrals']);
         $this->assertContains($myTask->id, $cartable['myTasks']->pluck('id')->all());
-        $this->assertSame($referredTask->id, $cartable['referrals']->first()->task_id);
+        $this->assertContains($referredTask->id, $cartable['referrals']->pluck('task_id')->all());
 
         $managerCartable = app(CartableService::class)->for($manager);
 
