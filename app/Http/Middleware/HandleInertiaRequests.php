@@ -37,6 +37,7 @@ class HandleInertiaRequests extends Middleware
                     'tasks_view' => $request->user()?->hasPermission('tasks.view') ?? false,
                     'projects_view' => $request->user()?->hasPermission('projects.view') ?? false,
                     'external_parties_view' => $request->user()?->hasPermission('external_parties.view') ?? false,
+                    'notification_view' => $request->user()?->hasPermission('notifications.view') ?? false,
                 ],
             ],
         ];
