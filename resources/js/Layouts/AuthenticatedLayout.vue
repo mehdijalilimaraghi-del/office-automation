@@ -201,6 +201,14 @@ const showingNavigationDropdown = ref(false);
                         </ResponsiveNavLink>
 
                         <ResponsiveNavLink
+                            v-if="$page.props.auth.abilities?.cartable_view"
+                            :href="route('cartable.index')"
+                            :active="route().current('cartable.*')"
+                        >
+                            کارتابل
+                        </ResponsiveNavLink>
+
+                        <ResponsiveNavLink
                             v-if="$page.props.auth.abilities?.tasks_view"
                             :href="route('tasks.index')"
                             :active="route().current('tasks.*')"
