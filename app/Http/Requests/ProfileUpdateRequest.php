@@ -18,6 +18,12 @@ class ProfileUpdateRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
+            'first_name' => ['nullable', 'string', 'max:100'],
+            'last_name' => ['nullable', 'string', 'max:100'],
+            'employee_code' => ['nullable', 'string', 'max:50', Rule::unique('user_profiles', 'employee_code')->ignore($this->user()->profile?->id)],
+            'national_id' => ['nullable', 'string', 'max:20', Rule::unique('user_profiles', 'national_id')->ignore($this->user()->profile?->id)],
+            'birth_date' => ['nullable', 'date'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'email' => [
                 'required',
                 'string',
