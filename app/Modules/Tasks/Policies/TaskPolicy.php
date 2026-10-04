@@ -87,6 +87,24 @@ class TaskPolicy
             && in_array((int) $user->id, [(int) $reminder->user_id, (int) $reminder->created_by], true);
     }
 
+    public function submit(User $user, Task $task): bool
+    {
+        return $user->isActive()
+            && $user->hasPermission('tasks.submit')
+            && (int) $task->assignee_id === (int) $user->id
+            && $task->review_required;
+    }
+
+    public function review(User $user, Task $task): bool
+    {
+        if (! $user->isActive() || ! $user->hasPermission('tasks.review')) {
+            return false;
+        }
+
+        return $task->review_status === 'pending'
+            && ($task->department?->manager_id === $user->id || $task->project?->manager_id === $user->id);
+    }
+
     public function changeStatus(User $user, Task $task): bool
     {
         return $this->taskAccessService->canAccess($user, $task, 'tasks.change_status');
