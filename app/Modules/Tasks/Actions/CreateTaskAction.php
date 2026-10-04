@@ -73,6 +73,8 @@ class CreateTaskAction
                 'description' => $data['description'] ?? null,
                 'status' => $data['status'] ?? 'todo',
                 'priority' => $data['priority'] ?? 'normal',
+                'review_required' => (bool) ($data['review_required'] ?? false),
+                'review_status' => ($data['review_required'] ?? false) ? 'pending' : 'not_required',
                 'assignee_id' => $assignee?->id,
                 'created_by' => $creator->id,
                 'start_date' => $data['start_date'] ?? null,
