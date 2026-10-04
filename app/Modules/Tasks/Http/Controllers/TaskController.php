@@ -42,7 +42,7 @@ class TaskController extends Controller
 
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
-            'status' => ['nullable', 'in:todo,in_progress,completed,cancelled'],
+            'status' => ['nullable', 'in:todo,in_progress,submitted,completed,cancelled'],
             'priority' => ['nullable', 'in:low,normal,high,urgent'],
             'project_id' => ['nullable', 'integer'],
             'department_id' => ['nullable', 'integer'],
@@ -97,6 +97,7 @@ class TaskController extends Controller
                 'reminders.user',
                 'reminders.creator',
                 'statusHistory.changedBy',
+                'reviewedBy',
             ]),
             'timeline' => $this->taskService->timeline($task),
             'currentUserId' => (int) $request->user()->id,
