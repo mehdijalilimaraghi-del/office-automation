@@ -69,8 +69,8 @@ class UserControllerTest extends TestCase
                 'email' => 'new-user@example.com',
                 'password' => 'password123',
                 'password_confirmation' => 'password123',
-                'department_ids' => [$department->id],
-                'primary_department_id' => $department->id,
+                'department_ids' => [],
+                'primary_department_id' => null,
                 'status' => 'active',
                 'role_ids' => [$role->id],
             ]);
@@ -99,6 +99,36 @@ class UserControllerTest extends TestCase
         $this->assertDatabaseHas('role_user', [
             'user_id' => $createdUser->id,
             'role_id' => $role->id,
+        ]);
+    }
+
+
+    public function test_authenticated_user_can_manage_created_user_department_membership(): void
+    {
+        $admin = User::factory()->create();
+
+        $this->grantPermissions($admin, [
+            'users.create',
+            'users.manage_departments',
+        ]);
+
+        $user = User::factory()->create();
+        $department = $this->department();
+
+        $response = $this->actingAs($admin)->put(
+            route('users.departments.update', $user),
+            [
+                'department_ids' => [$department->id],
+                'primary_department_id' => $department->id,
+            ]
+        );
+
+        $response->assertRedirect()->assertSessionHas('success');
+
+        $this->assertDatabaseHas('department_memberships', [
+            'user_id' => $user->id,
+            'department_id' => $department->id,
+            'is_primary' => true,
         ]);
     }
 
