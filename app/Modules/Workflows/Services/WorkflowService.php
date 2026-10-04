@@ -34,7 +34,6 @@ class WorkflowService
 
         $steps = $definition->steps()
             ->where('is_active', true)
-            ->orderBy('step_order')
             ->get();
 
         if ($steps->isEmpty()) {
@@ -87,7 +86,6 @@ class WorkflowService
             $nextStep = $instance->definition->steps()
                 ->where('is_active', true)
                 ->where('step_order', '>', $instanceStep->workflowStep->step_order)
-                ->orderBy('step_order')
                 ->first();
 
             if ($nextStep === null) {
