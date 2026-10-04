@@ -140,4 +140,24 @@ class NotificationTest extends TestCase
         $this->assertSame(0, $user->fresh()->unreadNotifications()->count());
         $this->assertNotNull($notification->fresh()->read_at);
     }
+    private function userWithPermission(string $permissionCode): User
+    {
+        $permission = Permission::query()->where('code', $permissionCode)->firstOrFail();
+
+        $role = Role::query()->create([
+            'name' => 'Notification Test Role '.Str::upper(Str::random(8)),
+            'code' => 'notification-'.Str::lower(Str::random(12)),
+            'description' => 'Notification lifecycle test role',
+            'is_active' => true,
+            'is_system' => false,
+        ]);
+
+        $role->permissions()->attach($permission->id);
+
+        $user = User::factory()->create(['status' => 'active']);
+        $user->roles()->attach($role->id);
+
+        return $user->fresh();
+    }
+
 }
