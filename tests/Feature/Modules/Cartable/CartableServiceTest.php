@@ -30,7 +30,7 @@ class CartableServiceTest extends TestCase
             'is_active' => true,
         ]);
 
-        $myTask = Task::factory()->create([
+        $myTask = Task::query()->create([
             'title' => 'کار من',
             'assignee_id' => $employee->id,
             'created_by' => $creator->id,
@@ -39,7 +39,7 @@ class CartableServiceTest extends TestCase
             'is_active' => true,
         ]);
 
-        $completedTask = Task::factory()->create([
+        $completedTask = Task::query()->create([
             'title' => 'کار تمام‌شده',
             'assignee_id' => $employee->id,
             'created_by' => $creator->id,
@@ -48,7 +48,7 @@ class CartableServiceTest extends TestCase
             'is_active' => true,
         ]);
 
-        $approvalTask = Task::factory()->create([
+        $approvalTask = Task::query()->create([
             'title' => 'در انتظار تایید',
             'assignee_id' => $employee->id,
             'created_by' => $creator->id,
@@ -60,7 +60,7 @@ class CartableServiceTest extends TestCase
             'is_active' => true,
         ]);
 
-        $referredTask = Task::factory()->create([
+        $referredTask = Task::query()->create([
             'title' => 'ارجاع شده',
             'assignee_id' => $employee->id,
             'created_by' => $creator->id,
