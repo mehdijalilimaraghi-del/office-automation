@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Tasks\Actions;
 
 use App\Models\User;
+use App\Modules\Tasks\Events\TaskSubmitted;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskStatusHistory;
 use App\Modules\Tasks\Services\TaskDependencyService;
@@ -56,7 +57,11 @@ class SubmitTaskAction
                 'changed_at' => now(),
             ]);
 
-            return $task->refresh()->load(['project', 'department', 'assignee', 'creator']);
+            $task = $task->refresh()->load(['project', 'department', 'assignee', 'creator']);
+
+            TaskSubmitted::dispatch($task);
+
+            return $task;
         });
     }
 }
