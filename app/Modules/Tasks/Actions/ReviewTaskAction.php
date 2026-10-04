@@ -78,8 +78,12 @@ class ReviewTaskAction
             throw new InvalidArgumentException('کاربر مجوز بررسی تسک را ندارد.');
         }
 
-        $isDepartmentManager = $task->department?->manager_id === $reviewer->id;
-        $isProjectManager = $task->project?->manager_id === $reviewer->id;
+        $isDepartmentManager = $task->department()
+            ->whereKey($reviewer->getKey())
+            ->exists();
+        $isProjectManager = $task->project()
+            ->whereKey($reviewer->getKey())
+            ->exists();
 
         if (! $isDepartmentManager && ! $isProjectManager) {
             throw new InvalidArgumentException('فقط مدیر واحد یا مدیر پروژه می‌تواند این تسک را بررسی کند.');
