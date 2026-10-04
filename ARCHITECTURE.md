@@ -331,3 +331,162 @@ The legacy `users.department_id` field is removed after migration of existing as
 
 External organizations (customers, suppliers, partners, and their contacts) are a separate future domain and must not be merged with the internal organization structure.
 
+
+---
+
+## 18. Operational Backbone Architecture
+
+The original Project/Task-first design remains valid, but the system is now explicitly treated as an enterprise operational platform rather than a collection of isolated CRUD modules.
+
+The stable architectural backbone is:
+
+**Identity & Organization → Cartable → Workflow → Work Items → Documents → Audit/Notifications**
+
+Business modules such as Correspondence, CRM, HR, Procurement and Inventory build on this backbone.
+
+### 18.1 Work Item vs Workflow
+
+A Task is a unit of execution. A Workflow is the process that controls how work moves between actors and states.
+
+Do not encode workflow semantics by continually expanding the Task status enum.
+
+Task execution state and review state are separate concepts. The target lifecycle supports:
+
+- execution: todo, in_progress, submitted
+- review: not_required, pending, approved, rejected
+
+Typical flow:
+
+Employee → Submit → Manager Review → Approve → Completed
+
+or:
+
+Employee → Submit → Manager Review → Return with reason → Employee continues
+
+The exact persistence model will be finalized during Workflow V1 design.
+
+### 18.2 Assignment vs Review/Approval
+
+Assignment answers who performs the work.
+
+Review/Approval answers who evaluates the submitted work.
+
+They must remain separate domain concepts.
+
+The first Workflow V1 must support actor resolution such as:
+
+- current task assignee
+- task creator
+- department manager
+- project manager
+- specific user
+- specific role
+
+Do not hard-code department-manager checks into individual business modules when the same rule can be represented as a workflow actor resolver.
+
+### 18.3 Task Dependencies
+
+Dependencies must support more than a single next-task relation.
+
+The target model must allow at least:
+
+- sequential dependency
+- completion-gated next work
+- multiple predecessors
+- future branching/conditional transitions
+
+A dependency should reference work items/process steps rather than copying task data.
+
+### 18.4 Documents
+
+Documents are a first-class cross-module domain, not merely task attachments.
+
+Target concepts:
+
+- Document
+- Document Version
+- Document Link
+- Document Access
+- optional document metadata/type/category
+
+A document may be linked to:
+
+- Project
+- Task
+- Workflow instance/step
+- Correspondence
+- future contracts, HR records, CRM records, etc.
+
+When work moves from one task to another, the same document reference should be passed forward rather than duplicating the file.
+
+Storage remains behind Laravel Filesystem abstraction so local storage can later move to S3-compatible storage.
+
+### 18.5 Cartable / Inbox
+
+A unified Cartable is a first-class application concept.
+
+It will eventually aggregate actionable items such as:
+
+- My Tasks
+- Tasks awaiting my review
+- My referrals
+- Documents requiring action
+- Incoming correspondence
+- future approvals/requests
+
+Modules own their records, but Cartable provides the user's operational entry point through module contracts/read models. It must not become a second owner of business data.
+
+### 18.6 Events and Module Boundaries
+
+Modules must communicate through explicit contracts and domain/application events where appropriate.
+
+Examples:
+
+- TaskSubmitted
+- TaskApproved
+- TaskReturned
+- WorkflowStepCompleted
+- DocumentLinked
+- CorrespondenceReferred
+
+Events should notify other modules without creating direct database coupling.
+
+### 18.7 Workflow V1 Scope
+
+Workflow V1 is intentionally not a visual workflow designer.
+
+Initial scope:
+
+- workflow definitions
+- workflow instances
+- ordered steps
+- actor resolution
+- task creation/execution
+- submit
+- approve
+- reject/return
+- transition history
+- sequential and dependency-aware progression
+- audit integration
+
+A visual designer, conditional branching UI and advanced rule engine are deferred until the domain model proves stable.
+
+### 18.8 Architectural Boundary
+
+The platform should provide shared operational capabilities, not attempt to replace every specialized ERP.
+
+Core/backbone owns:
+
+- identity
+- organization
+- authorization
+- cartable
+- workflow
+- documents
+- notifications
+- audit
+- shared search/reporting infrastructure
+
+Future business modules own their domain data and rules.
+
+This boundary is mandatory for long-term maintainability.
