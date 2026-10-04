@@ -192,6 +192,27 @@ class CorePermissionSeeder extends Seeder
                 'name' => 'تغییر وضعیت مجوز',
                 'code' => 'permissions.toggle_status',
             ],
+
+            [
+                'name' => 'مشاهده اسناد',
+                'code' => 'documents.view',
+            ],
+            [
+                'name' => 'ایجاد سند',
+                'code' => 'documents.create',
+            ],
+            [
+                'name' => 'ویرایش سند',
+                'code' => 'documents.update',
+            ],
+            [
+                'name' => 'حذف سند',
+                'code' => 'documents.delete',
+            ],
+            [
+                'name' => 'مدیریت دسترسی اسناد',
+                'code' => 'documents.manage_access',
+            ],
         ];
 
         foreach ($permissions as $permission) {
