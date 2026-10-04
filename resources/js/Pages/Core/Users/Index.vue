@@ -69,7 +69,7 @@ const form = useForm({
     password_confirmation: '',
     department_ids: [] as number[],
     primary_department_id: null as number | null,
-    status: 'active' as 'active' | 'inactive',
+    status: 'inactive' as 'active' | 'inactive',
     role_ids: [] as number[],
     first_name: '',
     last_name: '',
@@ -84,7 +84,7 @@ function openCreate(): void {
     form.reset();
     form.clearErrors();
 
-    form.status = 'active';
+    form.status = 'inactive';
     form.department_ids = [];
     form.primary_department_id = null;
     form.role_ids = [];
@@ -422,7 +422,7 @@ function currentUserId(): number | null {
                         <div><label class="mb-1.5 block text-sm font-semibold text-slate-700">داخلی</label><input v-model="form.extension" dir="ltr" type="text" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" /></div>
                     </div>
                     <div class="grid gap-4 md:grid-cols-2">
-                        <div><label class="mb-1.5 block text-sm font-semibold text-slate-700">{{ editingUser ? 'رمز عبور جدید' : 'رمز عبور' }}</label><input v-model="form.password" dir="ltr" type="password" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" /><p v-if="form.errors.password" class="mt-1 text-xs text-red-600">{{ form.errors.password }}</p></div>
+                        <div><label class="mb-1.5 block text-sm font-semibold text-slate-700">{{ editingUser ? 'رمز عبور جدید' : 'رمز عبور (اختیاری برای دعوت)' }}</label><input v-model="form.password" dir="ltr" type="password" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" /><p v-if="form.errors.password" class="mt-1 text-xs text-red-600">{{ form.errors.password }}</p></div>
                         <div><label class="mb-1.5 block text-sm font-semibold text-slate-700">تکرار رمز عبور</label><input v-model="form.password_confirmation" dir="ltr" type="password" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" /></div>
                     </div>
                     <div class="grid gap-5 md:grid-cols-2">
