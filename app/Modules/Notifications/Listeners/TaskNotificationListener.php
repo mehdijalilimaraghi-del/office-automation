@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Notifications\Listeners;
 
+use App\Models\User;
 use App\Modules\Notifications\Services\NotificationService;
 use App\Modules\Tasks\Events\TaskApproved;
 use App\Modules\Tasks\Events\TaskAssigned;
