@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Core\Departments\Models\Department;
 use App\Modules\Tasks\Actions\ReviewTaskAction;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Tasks\Models\TaskDependency;
 use App\Modules\Workflows\Models\WorkflowDefinition;
 use App\Modules\Workflows\Models\WorkflowInstance;
 use App\Modules\Workflows\Models\WorkflowStep;
@@ -147,6 +148,12 @@ class WorkflowServiceTest extends TestCase
         $this->assertSame('running', $instanceAfterFirstApproval->status);
         $nextStep = $instanceAfterFirstApproval->steps()->where('status', 'active')->firstOrFail();
         $this->assertSame((int) $manager->id, (int) $nextStep->task->assignee_id);
+
+        $this->assertDatabaseHas('task_dependencies', [
+            'predecessor_task_id' => $firstTask->id,
+            'successor_task_id' => $nextStep->task->id,
+            'type' => 'completion',
+        ]);
 
         $nextStep->task->update([
             'status' => 'submitted',
