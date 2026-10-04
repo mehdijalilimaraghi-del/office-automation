@@ -7,6 +7,7 @@ use App\Core\Permissions\Models\Permission;
 use App\Core\Roles\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class CoreRoleSeeder extends Seeder
 {
@@ -22,34 +23,32 @@ class CoreRoleSeeder extends Seeder
             ]
         );
 
-        $permissions = Permission::query()
-            ->where('is_active', true)
-            ->get();
+        $permissions = Permission::query()->where('is_active', true)->get();
 
-        $syncData = $permissions
-            ->mapWithKeys(
-                fn (Permission $permission): array => [
-                    $permission->id => [
-                        'scope' => PermissionScope::Organization->value,
-                    ],
-                ]
-            )
-            ->all();
+        $syncData = $permissions->mapWithKeys(
+            fn (Permission $permission): array => [
+                $permission->id => ['scope' => PermissionScope::Organization->value],
+            ]
+        )->all();
 
         $role->permissions()->sync($syncData);
 
         $bootstrapEmail = trim((string) env('OFFICE_AUTOMATION_BOOTSTRAP_ADMIN_EMAIL'));
+        $bootstrapPassword = (string) env('OFFICE_AUTOMATION_BOOTSTRAP_ADMIN_PASSWORD');
 
-        if ($bootstrapEmail === '') {
+        if ($bootstrapEmail === '' || $bootstrapPassword === '') {
             return;
         }
 
-        $user = User::query()
-            ->whereRaw('LOWER(email) = ?', [strtolower($bootstrapEmail)])
-            ->first();
+        $user = User::updateOrCreate(
+            ['email' => strtolower($bootstrapEmail)],
+            [
+                'name' => (string) env('OFFICE_AUTOMATION_BOOTSTRAP_ADMIN_NAME', 'مدیر سیستم'),
+                'password' => Hash::make($bootstrapPassword),
+                'status' => 'active',
+            ]
+        );
 
-        if ($user !== null && $user->isActive()) {
-            $user->roles()->syncWithoutDetaching([$role->id]);
-        }
+        $user->roles()->syncWithoutDetaching([$role->id]);
     }
 }
