@@ -9,6 +9,7 @@ use App\Core\Users\Actions\SyncUserRolesAction;
 use App\Core\Users\Actions\ToggleUserStatusAction;
 use App\Core\Users\Actions\UpdateUserAction;
 use App\Core\Users\Contracts\UserServiceInterface;
+use App\Core\CustomFields\Services\CustomFieldService;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,7 @@ class UserService implements UserServiceInterface
         private readonly ToggleUserStatusAction $toggleUserStatusAction,
         private readonly SyncUserDepartmentsAction $syncUserDepartmentsAction,
         private readonly SyncUserRolesAction $syncUserRolesAction,
+        private readonly CustomFieldService $customFieldService,
     ) {
     }
 
@@ -35,6 +37,10 @@ class UserService implements UserServiceInterface
                 $user,
                 $data['role_ids'] ?? []
             );
+
+            $this->customFieldService->sync($user, $data['custom_fields'] ?? []);
+
+            $this->customFieldService->sync($user, $data['custom_fields'] ?? []);
 
             return $user->load([
                 'departments',
