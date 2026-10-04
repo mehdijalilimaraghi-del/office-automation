@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature\Modules\Notifications;
 
 use App\Core\Departments\Models\Department;
+use App\Core\Permissions\Models\Permission;
+use App\Core\Roles\Models\Role;
 use App\Models\User;
 use App\Modules\Tasks\Actions\AssignTaskAction;
 use App\Modules\Tasks\Actions\ReviewTaskAction;
@@ -77,7 +79,7 @@ class NotificationTest extends TestCase
 
     public function test_return_notifies_assignee_and_approval_notifies_creator(): void
     {
-        $manager = User::factory()->create(['status' => 'active']);
+        $manager = $this->userWithPermission('tasks.review');
         $assignee = User::factory()->create(['status' => 'active']);
         $creator = User::factory()->create(['status' => 'active']);
 
