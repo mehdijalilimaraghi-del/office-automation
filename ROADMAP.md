@@ -118,7 +118,7 @@ Projects and Tasks remain important, but they are not the architectural center o
 - Transition history
 - Workflow audit
 
-**Priority: immediate**
+**Status: V1 implemented / audited**
 
 Do not build a visual workflow designer in V1.
 
@@ -131,7 +131,7 @@ Unified operational inbox containing:
 - Incoming correspondence
 - Future module actions
 
-**Priority: immediate after Workflow V1**
+**Status: V1 implemented / UX completed**
 
 ### 10. Notifications
 - In-app notifications
@@ -142,7 +142,7 @@ Unified operational inbox containing:
 - Read/unread state
 - Queue-backed delivery when justified
 
-**Priority: high**
+**Status: V1 implemented / audited**
 
 ### 11. Audit
 - Business audit trail
@@ -151,13 +151,13 @@ Unified operational inbox containing:
 - Administrative actions
 - Security-sensitive actions
 
-**Priority: high**
+**Status: core audit implemented; expansion pending**
 
 ---
 
 ## Phase 3 — Office Automation
 
-### 11. Correspondence
+### 12. Correspondence
 - Incoming letters
 - Outgoing letters
 - Internal letters
@@ -173,7 +173,7 @@ Unified operational inbox containing:
 
 **Priority: high**
 
-### 12. Digital Archive
+### 13. Digital Archive
 - Central document archive
 - Categories
 - Metadata
@@ -186,7 +186,7 @@ Unified operational inbox containing:
 
 **Priority: high**
 
-### 13. Forms & Requests
+### 14. Forms & Requests
 Generic request engine for:
 - leave requests
 - purchase requests
@@ -198,7 +198,7 @@ Built on Workflow + Cartable + Documents.
 
 **Priority: high**
 
-### 14. Meetings & Calendar
+### 15. Meetings & Calendar
 - Meetings
 - Invitations
 - Participants
@@ -210,7 +210,7 @@ Built on Workflow + Cartable + Documents.
 
 **Priority: medium**
 
-### 15. My Work / Personal Workspace
+### 16. My Work / Personal Workspace
 - Unified personal dashboard
 - My work
 - My approvals
@@ -225,7 +225,7 @@ Built on Workflow + Cartable + Documents.
 
 ## Phase 4 — Business Modules
 
-### 16. CRM
+### 17. CRM
 - Customers
 - Contacts
 - Leads
@@ -237,7 +237,7 @@ Built on Workflow + Cartable + Documents.
 
 **Priority: medium**
 
-### 17. Sales
+### 18. Sales
 - Opportunities
 - Quotations
 - Sales pipeline
@@ -247,7 +247,7 @@ Built on Workflow + Cartable + Documents.
 
 **Priority: medium**
 
-### 18. Procurement
+### 19. Procurement
 - Purchase requests
 - Supplier management
 - RFQ
@@ -258,7 +258,7 @@ Built on Workflow + Cartable + Documents.
 
 **Priority: medium**
 
-### 19. Inventory & Assets
+### 20. Inventory & Assets
 - Warehouses
 - Items
 - Stock movements
@@ -270,7 +270,7 @@ Built on Workflow + Cartable + Documents.
 
 **Priority: medium**
 
-### 20. HR
+### 21. HR
 - Employee records
 - Organizational positions
 - Employment documents
@@ -281,7 +281,7 @@ Built on Workflow + Cartable + Documents.
 
 **Priority: medium**
 
-### 21. Internal Chat
+### 22. Internal Chat
 - Private chat
 - Group chat
 - Department channels
@@ -291,7 +291,7 @@ Built on Workflow + Cartable + Documents.
 
 **Priority: later**
 
-### 22. Telephony / PBX
+### 23. Telephony / PBX
 - Extensions
 - Call logs
 - Call history
@@ -308,7 +308,7 @@ Built on Workflow + Cartable + Documents.
 
 ## Phase 5 — Platform Intelligence
 
-### 23. Reporting & Analytics
+### 24. Reporting & Analytics
 - Operational reports
 - Task performance
 - Workflow bottlenecks
@@ -320,7 +320,7 @@ Built on Workflow + Cartable + Documents.
 
 **Priority: medium/later**
 
-### 24. Search
+### 25. Search
 Unified search across:
 - Tasks
 - Projects
@@ -332,7 +332,7 @@ Unified search across:
 
 **Priority: medium**
 
-### 25. SLA & Escalation
+### 26. SLA & Escalation
 - Due dates
 - SLA policies
 - Escalation rules
@@ -342,7 +342,7 @@ Unified search across:
 
 **Priority: later**
 
-### 26. Automation Rules
+### 27. Automation Rules
 Event-driven automation such as:
 - task completed → create next task
 - document approved → move workflow forward
@@ -352,7 +352,7 @@ Event-driven automation such as:
 
 **Priority: later**
 
-### 27. Integrations
+### 28. Integrations
 Driver-based integrations for:
 - Email
 - SMS
@@ -369,7 +369,7 @@ Driver-based integrations for:
 
 ## Phase 6 — Production & Enterprise Readiness
 
-### 28. Security
+### 29. Security
 - Authorization review
 - File access review
 - Rate limiting
@@ -377,7 +377,7 @@ Driver-based integrations for:
 - Audit review
 - Dependency/security scanning
 
-### 29. Performance
+### 30. Performance
 - SQL Server query optimization
 - indexes
 - caching
@@ -386,7 +386,7 @@ Driver-based integrations for:
 - large-list pagination
 - background processing
 
-### 30. Deployment & Operations
+### 31. Deployment & Operations
 - Production configuration
 - Backup/restore
 - Logging
@@ -397,7 +397,7 @@ Driver-based integrations for:
 - Deployment procedure
 - LAN/VPS/cloud deployment guides
 
-### 31. Reliability
+### 32. Reliability
 - Integration tests
 - Critical end-to-end tests
 - Failure/retry handling
