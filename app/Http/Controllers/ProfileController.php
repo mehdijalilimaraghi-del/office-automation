@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -29,13 +30,45 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $data = $request->validated();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        $user = $request->user();
+
+        $user->fill([
+            'name' => $data['first_name'] && $data['last_name']
+                ? trim($data['first_name'].' '.$data['last_name'])
+                : ($data['first_name'] ?? $data['last_name'] ?? $user->name),
+            'email' => $data['email'],
+        ]);
+
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        $user->save();
+
+        $profile = $user->profile()->firstOrCreate([], [
+            'first_name' => null,
+            'last_name' => null,
+        ]);
+
+        $profile->fill([
+            'first_name' => $data['first_name'] ?? null,
+            'last_name' => $data['last_name'] ?? null,
+            'employee_code' => $data['employee_code'] ?? null,
+            'national_id' => $data['national_id'] ?? null,
+            'birth_date' => $data['birth_date'] ?? null,
+        ]);
+
+        if ($request->hasFile('avatar')) {
+            if ($profile->avatar_path) {
+                Storage::disk('public')->delete($profile->avatar_path);
+            }
+
+            $profile->avatar_path = $request->file('avatar')->store('avatars', 'public');
+        }
+
+        $profile->save();
 
         return Redirect::route('profile.edit');
     }
