@@ -99,7 +99,7 @@ class WorkflowService
                 return $instance->refresh()->load(['definition', 'steps.workflowStep', 'steps.task']);
             }
 
-            $this->activateStep($instance, $nextStep, $instanceStep->task_id);
+            $this->activateStep($instance, $nextStep, (int) $instanceStep->task_id);
 
             return $instance->refresh()->load(['definition', 'steps.workflowStep', 'steps.task']);
         });
