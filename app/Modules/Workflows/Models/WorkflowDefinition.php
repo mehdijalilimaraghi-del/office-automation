@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Modules\Workflows\Models;
 
 use App\Models\User;
+use App\Modules\Documents\Models\DocumentLink;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class WorkflowDefinition extends Model
 {
@@ -32,4 +34,9 @@ class WorkflowDefinition extends Model
     {
         return $this->hasMany(WorkflowInstance::class);
     }
-};
+
+    public function documents(): MorphMany
+    {
+        return $this->morphMany(DocumentLink::class, 'linkable');
+    }
+}
