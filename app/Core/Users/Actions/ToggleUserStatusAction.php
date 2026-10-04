@@ -18,6 +18,12 @@ class ToggleUserStatusAction
             ]);
         }
 
+        if ($user->isInactive()) {
+            throw ValidationException::withMessages([
+                'user' => 'فعال‌سازی کاربر باید از طریق دعوت‌نامه انجام شود.',
+            ]);
+        }
+
         if ($user->managedProjects()->exists()) {
             throw ValidationException::withMessages([
                 'user' => 'این کاربر مدیر یک یا چند پروژه است. ابتدا مدیریت پروژه‌ها را حذف یا تغییر دهید.',
