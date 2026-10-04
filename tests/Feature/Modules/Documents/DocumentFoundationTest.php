@@ -124,6 +124,40 @@ class DocumentFoundationTest extends TestCase
         ]);
     }
 
+    public function test_deleting_document_removes_database_records_and_all_version_files(): void
+    {
+        $creator = $this->userWithPermissions(['documents.view', 'documents.create', 'documents.delete']);
+        $task = $this->createTask($creator, 'Delete document task');
+
+        $service = app(DocumentService::class);
+        $document = $service->create(
+            ['title' => 'Document to delete'],
+            UploadedFile::fake()->create('v1.pdf', 16, 'application/pdf'),
+            $creator,
+            $task,
+        );
+
+        $versionTwo = $service->addVersion(
+            $document,
+            UploadedFile::fake()->create('v2.pdf', 24, 'application/pdf'),
+            $creator,
+        );
+
+        $firstVersion = $document->refresh()->versions()->where('version_number', 1)->firstOrFail();
+        $this->assertTrue($creator->can('delete', $document));
+        $this->assertTrue(Storage::disk(config('filesystems.default'))->exists($firstVersion->path));
+        $this->assertTrue(Storage::disk(config('filesystems.default'))->exists($versionTwo->path));
+
+        $service->delete($document);
+
+        $this->assertDatabaseMissing('documents', ['id' => $document->id]);
+        $this->assertDatabaseMissing('document_versions', ['document_id' => $document->id]);
+        $this->assertDatabaseMissing('document_links', ['document_id' => $document->id]);
+        $this->assertDatabaseMissing('document_accesses', ['document_id' => $document->id]);
+        Storage::disk(config('filesystems.default'))->assertMissing($firstVersion->path);
+        Storage::disk(config('filesystems.default'))->assertMissing($versionTwo->path);
+    }
+
     public function test_explicit_document_access_allows_view_without_being_creator(): void
     {
         $creator = $this->userWithPermissions(['documents.view', 'documents.create']);
