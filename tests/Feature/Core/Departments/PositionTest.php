@@ -42,7 +42,7 @@ class PositionTest extends TestCase
             'user_id' => $user->id,
             'is_primary' => 1,
         ]);
-        $this->assertSame($user->id, $assignment->user_id);
+        $this->assertSame((int) $user->id, (int) $assignment->user_id);
     }
 
     public function test_position_cannot_be_assigned_to_user_outside_department(): void
