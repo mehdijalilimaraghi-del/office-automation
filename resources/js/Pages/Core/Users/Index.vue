@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 interface Department {
@@ -44,6 +44,8 @@ interface User {
     positions: { id: number; name: string; department?: { id: number; name: string } | null; }[];
 }
 
+const page = usePage();
+
 const props = defineProps<{
     users: User[];
     departments: Department[];
@@ -67,8 +69,6 @@ const form = useForm({
     extension: '',
     password: '',
     password_confirmation: '',
-    department_ids: [] as number[],
-    primary_department_id: null as number | null,
     status: 'inactive' as 'active' | 'inactive',
     role_ids: [] as number[],
     first_name: '',
@@ -85,8 +85,6 @@ function openCreate(): void {
     form.clearErrors();
 
     form.status = 'inactive';
-    form.department_ids = [];
-    form.primary_department_id = null;
     form.role_ids = [];
     form.first_name = '';
     form.last_name = '';
@@ -114,13 +112,6 @@ function openEdit(user: User): void {
     form.extension = user.extension ?? '';
     form.password = '';
     form.password_confirmation = '';
-    form.department_ids = user.departments.map(
-        (department) => department.id,
-    );
-    form.primary_department_id =
-        user.departments.find(
-            (department) => department.pivot?.is_primary,
-        )?.id ?? null;
     form.status = user.status;
     form.role_ids = user.roles.map((role) => role.id);
 
@@ -272,7 +263,7 @@ function deleteUser(user: User): void {
 }
 
 function currentUserId(): number | null {
-    return null;
+    return page.props.auth.user?.id ?? null;
 }
 </script>
 
@@ -432,20 +423,8 @@ function currentUserId(): number | null {
                         <div><label class="mb-1.5 block text-sm font-semibold text-slate-700">تکرار رمز عبور</label><input v-model="form.password_confirmation" dir="ltr" type="password" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" /></div>
                     </div>
                     <div class="grid gap-5 md:grid-cols-2">
-                        <div v-if="!editingUser" class="rounded-xl border border-slate-200 p-4">
-                            <label class="mb-3 block text-sm font-semibold text-slate-700">واحدهای سازمانی اولیه</label>
-                            <div class="max-h-44 space-y-2 overflow-y-auto">
-                                <label v-for="department in props.departments" :key="department.id" class="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 hover:bg-slate-50">
-                                    <input type="checkbox" :checked="form.department_ids.includes(department.id)" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" @change="toggleDepartment(department.id)" />
-                                    <span class="text-sm text-slate-700">{{ department.name }}</span>
-                                </label>
-                            </div>
-                            <p v-if="form.errors.department_ids" class="mt-1 text-xs text-red-600">{{ form.errors.department_ids }}</p>
-                            <label class="mt-4 mb-1.5 block text-xs font-semibold text-slate-500">واحد اصلی</label>
-                            <select v-model="form.primary_department_id" class="w-full rounded-xl border-slate-200 text-sm focus:border-teal-500 focus:ring-teal-500">
-                                <option :value="null">بدون واحد اصلی</option>
-                                <option v-for="department in props.departments.filter(d => form.department_ids.includes(d.id))" :key="department.id" :value="department.id">{{ department.name }}</option>
-                            </select>
+                        <div v-if="!editingUser" class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 text-sm text-slate-600">
+                            پس از ایجاد کاربر، عضویت او در واحدهای سازمانی را از بخش «مدیریت واحدها» تعیین کنید.
                         </div>
                         <div class="rounded-xl border border-slate-200 p-4">
                             <label class="mb-3 block text-sm font-semibold text-slate-700">نقش‌های دسترسی</label>
