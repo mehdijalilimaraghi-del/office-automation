@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Tasks\Actions;
 
 use App\Models\User;
+use App\Modules\Tasks\Events\TaskAssigned;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskAssignment;
 use Illuminate\Support\Facades\DB;
@@ -59,7 +60,7 @@ class AssignTaskAction
                 'started_at' => now(),
             ]);
 
-            return $task->refresh()->load([
+            $task = $task->refresh()->load([
                 'project',
                 'department',
                 'assignee',
@@ -68,6 +69,10 @@ class AssignTaskAction
                 'assignments.toUser',
                 'assignments.assignedBy',
             ]);
+
+            TaskAssigned::dispatch($task, $assignee, $actor, $type);
+
+            return $task;
         });
     }
 }
