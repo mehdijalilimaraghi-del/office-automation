@@ -14,6 +14,8 @@ use App\Modules\Projects\Services\ProjectRoleService;
 use App\Modules\Projects\Services\ProjectService;
 use App\Modules\Tasks\Contracts\TaskServiceContract;
 use App\Modules\Tasks\Services\TaskService;
+use App\Core\CustomFields\Contracts\CustomFieldServiceInterface;
+use App\Core\CustomFields\Services\CustomFieldService;
 use App\Modules\Documents\Contracts\DocumentStorageContract;
 use App\Modules\Documents\Infrastructure\FilesystemDocumentStorage;
 use App\Modules\Documents\Models\Document;
@@ -24,6 +26,8 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->bind(CustomFieldServiceInterface::class, CustomFieldService::class);
+
         $this->app->bind(
             ProjectServiceContract::class,
             ProjectService::class
