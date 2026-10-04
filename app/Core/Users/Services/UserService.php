@@ -46,6 +46,7 @@ class UserService implements UserServiceInterface
             return $user->load([
                 'departments',
                 'roles',
+                'profile',
                 'positions.department:id,name',
             ]);
         });
