@@ -42,7 +42,7 @@ class ReviewTaskAction
         });
     }
 
-    public function return(Task $task, User $reviewer, string $note): Task
+    public function returnTask(Task $task, User $reviewer, string $note): Task
     {
         $this->authorizeReviewer($task, $reviewer);
 
