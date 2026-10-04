@@ -9,7 +9,7 @@ use App\Core\Departments\Actions\UnassignPositionAction;
 use App\Core\Departments\Actions\UpdatePositionAction;
 use App\Core\Departments\Models\Department;
 use App\Core\Departments\Models\Position;
-use App\Core\Users\Contracts\UserServiceInterface;
+use App\Models\User;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Core\Departments\AssignPositionRequest;
 use App\Http\Requests\Core\Departments\StorePositionRequest;
@@ -24,7 +24,6 @@ class PositionController extends Controller
         private readonly DeletePositionAction $delete,
         private readonly AssignPositionAction $assign,
         private readonly UnassignPositionAction $unassign,
-        private readonly UserServiceInterface $users,
     ) {}
 
     public function store(StorePositionRequest $request, Department $department): RedirectResponse
@@ -50,8 +49,7 @@ class PositionController extends Controller
     public function assign(AssignPositionRequest $request, Department $department, Position $position): RedirectResponse
     {
         abort_unless($position->department_id === $department->id, 404);
-        $user = $this->users->list()->firstWhere('id', (int) $request->validated('user_id'));
-        abort_unless($user !== null, 404);
+        $user = User::query()->findOrFail((int) $request->validated('user_id'));
         $this->assign->execute($position, $user, (bool) ($request->validated('is_primary') ?? false));
         return back()->with('success', 'کاربر با موفقیت به سمت تخصیص یافت.');
     }
@@ -59,8 +57,7 @@ class PositionController extends Controller
     public function unassign(Department $department, Position $position, int $user): RedirectResponse
     {
         abort_unless($position->department_id === $department->id, 404);
-        $model = $this->users->list()->firstWhere('id', $user);
-        abort_unless($model !== null, 404);
+        $model = User::query()->findOrFail($user);
         $this->unassign->execute($position, $model);
         return back()->with('success', 'تخصیص سمت حذف شد.');
     }
