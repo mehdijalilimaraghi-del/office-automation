@@ -176,30 +176,6 @@ function submit(): void {
     form.post(route('users.store'), options);
 }
 
-function toggleDepartment(departmentId: number): void {
-    if (form.department_ids.includes(departmentId)) {
-        form.department_ids = form.department_ids.filter(
-            (id) => id !== departmentId,
-        );
-
-        if (form.primary_department_id === departmentId) {
-            form.primary_department_id =
-                form.department_ids[0] ?? null;
-        }
-
-        return;
-    }
-
-    form.department_ids = [
-        ...form.department_ids,
-        departmentId,
-    ];
-
-    if (form.primary_department_id === null) {
-        form.primary_department_id = departmentId;
-    }
-}
-
 function toggleRole(roleId: number): void {
     if (form.role_ids.includes(roleId)) {
         form.role_ids = form.role_ids.filter(
