@@ -12,6 +12,7 @@ use App\Modules\Projects\Http\Controllers\ProjectRoleController;
 use App\Modules\Tasks\Http\Controllers\TaskController;
 use App\Http\Controllers\ProfileController;
 use App\Modules\Dashboard\Http\Controllers\DashboardController;
+use App\Modules\Cartable\Http\Controllers\CartableController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -30,6 +31,8 @@ Route::get('/dashboard', DashboardController::class)
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/cartable', [CartableController::class, 'index'])->middleware('permission:cartable.view')->name('cartable.index');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
