@@ -94,6 +94,16 @@ class UserService implements UserServiceInterface
         return $this->toggleUserStatusAction->execute($user);
     }
 
+    public function syncDepartments(
+        User $user,
+        array $departmentIds,
+        ?int $primaryDepartmentId = null
+    ): User {
+        $this->syncUserDepartmentsAction->execute($user, $departmentIds, $primaryDepartmentId);
+
+        return $user->load('departments');
+    }
+
     public function syncRoles(
         User $user,
         array $roleIds
