@@ -14,6 +14,10 @@ use App\Modules\Projects\Services\ProjectRoleService;
 use App\Modules\Projects\Services\ProjectService;
 use App\Modules\Tasks\Contracts\TaskServiceContract;
 use App\Modules\Tasks\Services\TaskService;
+use App\Modules\Documents\Contracts\DocumentStorageContract;
+use App\Modules\Documents\Infrastructure\FilesystemDocumentStorage;
+use App\Modules\Documents\Models\Document;
+use App\Modules\Documents\Policies\DocumentPolicy;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -38,6 +42,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             TaskServiceContract::class,
             TaskService::class
+        );
+
+        $this->app->bind(
+            DocumentStorageContract::class,
+            FilesystemDocumentStorage::class
         );
     }
 
