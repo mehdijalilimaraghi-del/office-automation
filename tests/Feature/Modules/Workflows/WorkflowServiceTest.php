@@ -6,7 +6,7 @@ namespace Tests\Feature\Modules\Workflows;
 
 use App\Core\Roles\Models\Role;
 use App\Models\User;
-use App\Modules\Core\Models\Department;
+use App\Core\Departments\Models\Department;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Workflows\Models\WorkflowDefinition;
 use App\Modules\Workflows\Models\WorkflowStep;
