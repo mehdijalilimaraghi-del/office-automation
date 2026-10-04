@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Workflows\Services;
 
 use App\Models\User;
-use App\Modules\Core\Departments\Models\Department;
+use App\Core\Departments\Models\Department;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Tasks\Actions\CreateTaskAction;
 use App\Modules\Tasks\Models\Task;
