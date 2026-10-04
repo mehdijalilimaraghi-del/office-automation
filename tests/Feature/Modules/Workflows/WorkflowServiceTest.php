@@ -11,6 +11,7 @@ use App\Core\Departments\Models\Department;
 use App\Modules\Tasks\Actions\ReviewTaskAction;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Workflows\Models\WorkflowDefinition;
+use App\Modules\Workflows\Models\WorkflowInstance;
 use App\Modules\Workflows\Models\WorkflowStep;
 use App\Modules\Workflows\Services\WorkflowService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -141,10 +142,9 @@ class WorkflowServiceTest extends TestCase
 
         $this->assertSame('completed', $advanced->status);
 
-        $instanceAfterFirstApproval = app(WorkflowService::class)
-            ->advanceAfterTaskApproval($firstTask);
+        $instanceAfterFirstApproval = WorkflowInstance::query()->findOrFail($instance->id);
 
-        $this->assertNotNull($instanceAfterFirstApproval);
+        $this->assertSame('running', $instanceAfterFirstApproval->status);
         $nextStep = $instanceAfterFirstApproval->steps()->where('status', 'active')->firstOrFail();
         $this->assertSame((int) $manager->id, (int) $nextStep->task->assignee_id);
 
@@ -158,11 +158,10 @@ class WorkflowServiceTest extends TestCase
 
         $this->assertSame('completed', $completed->status);
 
-        $finalInstance = app(WorkflowService::class)
-            ->advanceAfterTaskApproval($nextStep->task);
+        $finalInstance = WorkflowInstance::query()->findOrFail($instance->id);
 
-        $this->assertSame('completed', $finalInstance?->status);
-        $this->assertNotNull($finalInstance?->completed_at);
+        $this->assertSame('completed', $finalInstance->status);
+        $this->assertNotNull($finalInstance->completed_at);
     }
 
     private function userWithPermission(string $permissionCode): User
