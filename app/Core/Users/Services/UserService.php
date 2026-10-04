@@ -78,6 +78,8 @@ class UserService implements UserServiceInterface
             return $user->load([
                 'departments',
                 'roles',
+                'profile',
+                'positions.department:id,name',
             ]);
         });
     }
@@ -108,6 +110,8 @@ class UserService implements UserServiceInterface
             ->with([
                 'departments',
                 'roles',
+                'profile',
+                'positions.department:id,name',
             ])
             ->orderBy('name')
             ->get();
