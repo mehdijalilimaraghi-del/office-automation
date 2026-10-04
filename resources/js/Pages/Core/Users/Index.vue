@@ -31,6 +31,7 @@ interface User {
     status: 'active' | 'inactive';
     departments: Department[];
     roles: Role[];
+    positions: { id: number; name: string; department?: { id: number; name: string } | null; }[];
 }
 
 const props = defineProps<{
@@ -267,7 +268,7 @@ function currentUserId(): number | null {
                                     <th class="px-5 py-3.5">کاربر</th>
                                     <th class="px-5 py-3.5">تماس</th>
                                     <th class="px-5 py-3.5">واحدهای سازمانی</th>
-                                    <th class="px-5 py-3.5">نقش‌ها</th>
+                                    <th class="px-5 py-3.5">سمت سازمانی</th><th class="px-5 py-3.5">نقش‌ها</th>
                                     <th class="px-5 py-3.5">وضعیت</th>
                                     <th class="px-5 py-3.5">عملیات</th>
                                 </tr>
