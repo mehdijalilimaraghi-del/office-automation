@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Tests\Feature\Modules\Workflows;
 
 use App\Core\Roles\Models\Role;
+use App\Core\Permissions\Models\Permission;
 use App\Models\User;
 use App\Core\Departments\Models\Department;
+use App\Modules\Tasks\Actions\ReviewTaskAction;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Workflows\Models\WorkflowDefinition;
 use App\Modules\Workflows\Models\WorkflowStep;
@@ -18,6 +20,12 @@ use Tests\TestCase;
 class WorkflowServiceTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(\Database\Seeders\CorePermissionSeeder::class);
+    }
 
     public function test_start_creates_first_task_for_department_manager_and_keeps_later_steps_pending(): void
     {
@@ -77,7 +85,7 @@ class WorkflowServiceTest extends TestCase
 
     public function test_approval_advances_to_next_step_and_final_approval_completes_instance(): void
     {
-        $manager = User::factory()->create(['status' => 'active']);
+        $manager = $this->userWithPermission('tasks.review');
         $employee = User::factory()->create(['status' => 'active']);
         $initiator = User::factory()->create(['status' => 'active']);
 
@@ -115,7 +123,7 @@ class WorkflowServiceTest extends TestCase
             'task_title' => 'تایید نهایی',
             'actor_type' => 'department_manager',
             'department_id' => $department->id,
-            'review_required' => false,
+            'review_required' => true,
             'priority' => 'normal',
             'is_active' => true,
         ]);
@@ -129,21 +137,51 @@ class WorkflowServiceTest extends TestCase
             'review_requested_at' => now(),
         ]);
 
-        $advanced = app(WorkflowService::class)->advanceAfterTaskApproval($firstTask);
+        $advanced = app(ReviewTaskAction::class)->approve($firstTask, $manager);
 
-        $this->assertNotNull($advanced);
-        $nextStep = $advanced->steps()->where('status', 'active')->firstOrFail();
+        $this->assertSame('completed', $advanced->status);
+
+        $instanceAfterFirstApproval = app(WorkflowService::class)
+            ->advanceAfterTaskApproval($firstTask);
+
+        $this->assertNotNull($instanceAfterFirstApproval);
+        $nextStep = $instanceAfterFirstApproval->steps()->where('status', 'active')->firstOrFail();
         $this->assertSame((int) $manager->id, (int) $nextStep->task->assignee_id);
 
         $nextStep->task->update([
-            'status' => 'completed',
-            'review_status' => 'not_required',
-            'completed_at' => now(),
+            'status' => 'submitted',
+            'review_status' => 'pending',
+            'review_requested_at' => now(),
         ]);
 
-        $completed = app(WorkflowService::class)->advanceAfterTaskApproval($nextStep->task);
+        $completed = app(ReviewTaskAction::class)->approve($nextStep->task, $manager);
 
-        $this->assertSame('completed', $completed?->status);
-        $this->assertNotNull($completed?->completed_at);
+        $this->assertSame('completed', $completed->status);
+
+        $finalInstance = app(WorkflowService::class)
+            ->advanceAfterTaskApproval($nextStep->task);
+
+        $this->assertSame('completed', $finalInstance?->status);
+        $this->assertNotNull($finalInstance?->completed_at);
+    }
+
+    private function userWithPermission(string $permissionCode): User
+    {
+        $permission = Permission::query()->where('code', $permissionCode)->firstOrFail();
+
+        $role = Role::query()->create([
+            'name' => 'Workflow Test Role '.Str::upper(Str::random(8)),
+            'code' => 'workflow-'.Str::lower(Str::random(12)),
+            'description' => 'Workflow integration test role',
+            'is_active' => true,
+            'is_system' => false,
+        ]);
+
+        $role->permissions()->attach($permission->id, ['scope' => 'organization']);
+
+        $user = User::factory()->create(['status' => 'active']);
+        $user->roles()->attach($role->id);
+
+        return $user->fresh();
     }
 }
