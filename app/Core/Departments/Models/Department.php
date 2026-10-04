@@ -65,6 +65,11 @@ class Department extends Model
         ])->withTimestamps();
     }
 
+    public function positions(): HasMany
+    {
+        return $this->hasMany(Position::class)->orderBy('name');
+    }
+
     public function hasChildren(): bool
     {
         return $this->children()->exists();
