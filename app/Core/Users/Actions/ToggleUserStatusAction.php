@@ -9,6 +9,9 @@ class ToggleUserStatusAction
 {
     public function execute(User $user): User
     {
+        if ($user->hasRole('SYSTEM_ADMIN')) {
+            throw ValidationException::withMessages(['user' => 'وضعیت مدیر سیستم قابل تغییر نیست.']);
+        }
         if ($user->id === auth()->id()) {
             throw ValidationException::withMessages([
                 'user' => 'وضعیت کاربر جاری قابل تغییر نیست.',
