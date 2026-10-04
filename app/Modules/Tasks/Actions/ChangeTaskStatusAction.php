@@ -5,15 +5,19 @@ namespace App\Modules\Tasks\Actions;
 use App\Modules\Tasks\Models\Task;
 use App\Models\User;
 use App\Modules\Tasks\Models\TaskStatusHistory;
+use App\Modules\Tasks\Services\TaskDependencyService;
 use InvalidArgumentException;
 
 class ChangeTaskStatusAction
 {
+    public function __construct(private readonly TaskDependencyService $dependencyService) {}
+
     private const ALLOWED_STATUSES = [
         'todo',
         'in_progress',
         'completed',
         'cancelled',
+        'submitted',
     ];
 
     public function execute(
@@ -27,6 +31,14 @@ class ChangeTaskStatusAction
             );
         }
 
+        if ($status === 'completed' && $task->review_required && $task->review_status !== 'approved') {
+            throw new InvalidArgumentException('این تسک باید ابتدا توسط بررسی‌کننده تأیید شود.');
+        }
+
+        if ($status === 'in_progress' && ! $this->dependencyService->canStart($task)) {
+            throw new InvalidArgumentException('تا تکمیل و تأیید تسک‌های پیش‌نیاز، امکان شروع این تسک وجود ندارد.');
+        }
+
         $fromStatus = $task->status;
 
         $task->status = $status;
@@ -35,6 +47,11 @@ class ChangeTaskStatusAction
             $task->completed_at ??= now();
         } else {
             $task->completed_at = null;
+        }
+
+        if ($status === 'submitted' && $task->review_required) {
+            $task->review_status = 'pending';
+            $task->review_requested_at = now();
         }
 
         $task->save();
