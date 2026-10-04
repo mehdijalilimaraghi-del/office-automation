@@ -79,10 +79,10 @@ class ReviewTaskAction
         }
 
         $isDepartmentManager = $task->department()
-            ->whereKey($reviewer->getKey())
+            ->where('manager_id', $reviewer->getKey())
             ->exists();
         $isProjectManager = $task->project()
-            ->whereKey($reviewer->getKey())
+            ->where('manager_id', $reviewer->getKey())
             ->exists();
 
         if (! $isDepartmentManager && ! $isProjectManager) {
