@@ -47,23 +47,6 @@ class UpdateUserRequest extends FormRequest
                 'confirmed',
             ],
 
-            'department_ids' => [
-                'sometimes',
-                'array',
-            ],
-
-            'department_ids.*' => [
-                'integer',
-                'distinct',
-                'exists:departments,id',
-            ],
-
-            'primary_department_id' => [
-                'nullable',
-                'integer',
-                'exists:departments,id',
-            ],
-
             'first_name' => ['nullable', 'string', 'max:100'],
             'last_name' => ['nullable', 'string', 'max:100'],
             'employee_code' => ['nullable', 'string', 'max:50', Rule::unique('user_profiles', 'employee_code')->ignore($user->profile?->id)],
@@ -101,9 +84,6 @@ class UpdateUserRequest extends FormRequest
             'extension' => 'داخلی',
             'password' => 'رمز عبور',
             'password_confirmation' => 'تکرار رمز عبور',
-            'department_ids' => 'واحدهای سازمانی',
-            'department_ids.*' => 'واحد سازمانی',
-            'primary_department_id' => 'واحد سازمانی اصلی',
             'status' => 'وضعیت',
             'role_ids' => 'نقش‌ها',
             'role_ids.*' => 'نقش',
