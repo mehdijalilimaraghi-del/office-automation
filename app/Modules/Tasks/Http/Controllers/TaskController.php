@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Modules\Tasks\AssignTaskRequest;
 use App\Http\Requests\Modules\Tasks\ChangeTaskStatusRequest;
 use App\Http\Requests\Modules\Tasks\ReferTaskRequest;
+use App\Http\Requests\Modules\Tasks\ReviewTaskRequest;
 use App\Http\Requests\Modules\Tasks\StoreTaskRequest;
 use App\Http\Requests\Modules\Tasks\StoreTaskCommentRequest;
 use App\Http\Requests\Modules\Tasks\StoreTaskReminderRequest;
@@ -105,6 +106,8 @@ class TaskController extends Controller
                 'log_work' => Gate::allows('logWork', $task),
                 'create_reminder' => Gate::allows('createReminder', $task),
                 'change_status' => Gate::allows('changeStatus', $task),
+                'submit' => Gate::allows('submit', $task),
+                'review' => Gate::allows('review', $task),
                 'update' => Gate::allows('update', $task),
                 'delete' => Gate::allows('delete', $task),
             ],
@@ -236,6 +239,50 @@ class TaskController extends Controller
             'success',
             $status === 'completed' ? 'یادآور تکمیل شد.' : 'یادآور لغو شد.',
         );
+    }
+
+    public function submit(Request $request, Task $task): RedirectResponse
+    {
+        Gate::authorize('submit', $task);
+
+        try {
+            $this->taskService->submit(task: $task, actor: $request->user());
+        } catch (InvalidArgumentException $exception) {
+            throw ValidationException::withMessages(['task' => $exception->getMessage()]);
+        }
+
+        return back()->with('success', 'تسک برای بررسی و تأیید ارسال شد.');
+    }
+
+    public function approve(Task $task, Request $request): RedirectResponse
+    {
+        Gate::authorize('review', $task);
+
+        try {
+            $this->taskService->approve(task: $task, reviewer: $request->user());
+        } catch (InvalidArgumentException $exception) {
+            throw ValidationException::withMessages(['task' => $exception->getMessage()]);
+        }
+
+        return back()->with('success', 'تسک تأیید و تکمیل شد.');
+    }
+
+    public function returnFromReview(ReviewTaskRequest $request, Task $task): RedirectResponse
+    {
+        Gate::authorize('review', $task);
+
+        $note = trim((string) ($request->validated()['note'] ?? ''));
+        if ($note === '') {
+            throw ValidationException::withMessages(['note' => 'برای بازگرداندن تسک، درج توضیح الزامی است.']);
+        }
+
+        try {
+            $this->taskService->returnFromReview(task: $task, reviewer: $request->user(), note: $note);
+        } catch (InvalidArgumentException $exception) {
+            throw ValidationException::withMessages(['task' => $exception->getMessage()]);
+        }
+
+        return back()->with('success', 'تسک برای اصلاح به مسئول آن بازگردانده شد.');
     }
 
     public function changeStatus(ChangeTaskStatusRequest $request, Task $task): RedirectResponse
