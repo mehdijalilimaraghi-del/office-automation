@@ -25,7 +25,14 @@ const showingNavigationDropdown = ref(false);
                                         class="block h-9 w-auto fill-current text-gray-800"
                                     />
                                 </Link>
-                            </div>
+                            <ResponsiveNavLink
+                    v-if="$page.props.auth.abilities?.notification_view"
+                    :href="route('notifications.index')"
+                    :active="route().current('notifications.*')"
+                >
+                    اعلان‌ها
+                </ResponsiveNavLink>
+</div>
 
                             <div
                                 class="hidden h-full items-center space-x-8 space-x-reverse sm:ms-10 sm:flex"
@@ -285,6 +292,13 @@ const showingNavigationDropdown = ref(false);
                         </div>
                     </div>
                 </div>
+            <NavLink
+                    v-if="$page.props.auth.abilities?.notification_view"
+                    :href="route('notifications.index')"
+                    :active="route().current('notifications.*')"
+                >
+                    اعلان‌ها
+                </NavLink>
             </nav>
 
             <!-- عنوان صفحه -->
