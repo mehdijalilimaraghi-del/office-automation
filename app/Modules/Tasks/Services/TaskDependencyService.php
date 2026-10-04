@@ -6,7 +6,6 @@ namespace App\Modules\Tasks\Services;
 
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskDependency;
-use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class TaskDependencyService
