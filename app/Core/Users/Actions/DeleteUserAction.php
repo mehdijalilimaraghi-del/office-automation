@@ -9,6 +9,10 @@ class DeleteUserAction
 {
     public function execute(User $user): void
     {
+        if ($user->hasRole('SYSTEM_ADMIN')) {
+            throw ValidationException::withMessages(['user' => 'مدیر سیستم قابل حذف نیست.']);
+        }
+
         if ($user->id === auth()->id()) {
             throw ValidationException::withMessages([
                 'user' => 'کاربر جاری قابل حذف نیست.',
