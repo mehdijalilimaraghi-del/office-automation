@@ -297,3 +297,39 @@ The system represents one internal company. Users may belong to multiple interna
 
 The previous single `users.department_id` relationship is replaced by the membership model. External organizations and contacts are separate concepts and are not part of the internal department structure.
 
+
+## 11. Long-Term Product Architecture
+
+The system is not limited to Project/Task management. The long-term product is an operational office-automation platform built around shared capabilities:
+
+- Identity and internal organization
+- Authorization
+- Cartable
+- Workflow
+- Work items/tasks
+- Documents
+- Notifications
+- Audit
+- Shared search/reporting
+
+Future business modules must consume these capabilities instead of implementing parallel workflow, document, approval, or identity systems.
+
+### Workflow Requirement
+
+The platform must support processes in which:
+
+1. work is assigned to an actor
+2. the actor performs the work
+3. the actor submits the result
+4. a manager or designated reviewer evaluates it
+5. the result is approved or returned with a reason
+6. returned work can be resubmitted
+7. subsequent work can depend on completion/approval of previous work
+
+### Document Requirement
+
+Documents must eventually be independent first-class records with versions and links to business records. A document may belong to a Project, Task, Workflow step, Correspondence record, or future business module. Passing a document to a subsequent task must reuse the same document/version reference rather than duplicating the file.
+
+### Module Expansion
+
+The supported long-term module roadmap is maintained in ROADMAP.md.
