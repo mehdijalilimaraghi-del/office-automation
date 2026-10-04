@@ -9,6 +9,7 @@ use App\Core\Departments\Models\Department;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Tasks\Actions\CreateTaskAction;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Tasks\Services\TaskDependencyService;
 use App\Modules\Workflows\Models\WorkflowDefinition;
 use App\Modules\Workflows\Models\WorkflowInstance;
 use App\Modules\Workflows\Models\WorkflowInstanceStep;
@@ -20,6 +21,7 @@ class WorkflowService
 {
     public function __construct(
         private readonly CreateTaskAction $createTask,
+        private readonly TaskDependencyService $taskDependencies,
     ) {}
 
     public function start(
@@ -97,14 +99,17 @@ class WorkflowService
                 return $instance->refresh()->load(['definition', 'steps.workflowStep', 'steps.task']);
             }
 
-            $this->activateStep($instance, $nextStep);
+            $this->activateStep($instance, $nextStep, $instanceStep->task_id);
 
             return $instance->refresh()->load(['definition', 'steps.workflowStep', 'steps.task']);
         });
     }
 
-    private function activateStep(WorkflowInstance $instance, WorkflowStep $step): void
-    {
+    private function activateStep(
+        WorkflowInstance $instance,
+        WorkflowStep $step,
+        ?int $predecessorTaskId = null,
+    ): void {
         $instanceStep = $instance->steps()
             ->where('workflow_step_id', $step->id)
             ->firstOrFail();
@@ -121,6 +126,11 @@ class WorkflowService
             'review_required' => $step->review_required,
             'assignee_id' => $assignee->id,
         ], $instance->initiator()->firstOrFail());
+
+        if ($predecessorTaskId !== null) {
+            $predecessorTask = Task::query()->findOrFail($predecessorTaskId);
+            $this->taskDependencies->add($predecessorTask, $task);
+        }
 
         $instanceStep->update([
             'task_id' => $task->id,
