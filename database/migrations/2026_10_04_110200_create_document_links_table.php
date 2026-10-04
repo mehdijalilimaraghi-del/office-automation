@@ -8,10 +8,6 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // The previous migration attempt may have created the table before
-        // SQL Server rejected the duplicate index definition.
-        Schema::dropIfExists('document_links');
-
         Schema::create('document_links', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('document_id')->constrained('documents');
