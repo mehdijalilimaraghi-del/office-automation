@@ -296,3 +296,47 @@ Current development environment:
 - Microsoft SQL Server target
 
 The actual installed versions should be verified rather than assumed when compatibility matters.
+
+## 12. Enterprise Development Roadmap
+
+The original bootstrap phases are substantially complete. From this point, development follows the enterprise roadmap in ROADMAP.md.
+
+The next architectural sequence is:
+
+1. Task lifecycle review/approval
+2. Task dependencies
+3. Document foundation
+4. Workflow V1
+5. Unified Cartable
+6. Notifications
+7. Audit expansion
+8. Correspondence
+9. Digital Archive
+10. Forms & Requests
+11. Meetings & Calendar
+12. CRM
+13. Procurement
+14. Inventory & Assets
+15. HR
+16. Reporting/Search/SLA
+17. Internal Chat
+18. PBX and integrations
+19. Production hardening
+
+### Important Rule
+
+Do not continue adding isolated Task/Project features that duplicate future Workflow, Document, Cartable or Notification concepts.
+
+Before implementing a feature, determine whether it belongs to:
+- Core
+- Workflow
+- Work Items/Tasks
+- Documents
+- Cartable
+- Notifications
+- Audit
+- a business module
+
+Shared infrastructure must be implemented once and reused by later modules.
+
+For the detailed module scope and priorities, see ROADMAP.md.
