@@ -25,13 +25,6 @@ const showingNavigationDropdown = ref(false);
                                         class="block h-9 w-auto fill-current text-gray-800"
                                     />
                                 </Link>
-                            <ResponsiveNavLink
-                    v-if="$page.props.auth.abilities?.notification_view"
-                    :href="route('notifications.index')"
-                    :active="route().current('notifications.*')"
-                >
-                    اعلان‌ها
-                </ResponsiveNavLink>
 </div>
 
                             <div
@@ -50,6 +43,14 @@ const showingNavigationDropdown = ref(false);
                                     :active="route().current('cartable.*')"
                                 >
                                     کارتابل
+                                </NavLink>
+
+                                <NavLink
+                                    v-if="$page.props.auth.abilities?.notification_view"
+                                    :href="route('notifications.index')"
+                                    :active="route().current('notifications.*')"
+                                >
+                                    اعلان‌ها
                                 </NavLink>
 
                                 <NavLink
@@ -216,6 +217,14 @@ const showingNavigationDropdown = ref(false);
                         </ResponsiveNavLink>
 
                         <ResponsiveNavLink
+                            v-if="$page.props.auth.abilities?.notification_view"
+                            :href="route('notifications.index')"
+                            :active="route().current('notifications.*')"
+                        >
+                            اعلان‌ها
+                        </ResponsiveNavLink>
+
+                        <ResponsiveNavLink
                             v-if="$page.props.auth.abilities?.tasks_view"
                             :href="route('tasks.index')"
                             :active="route().current('tasks.*')"
@@ -292,13 +301,6 @@ const showingNavigationDropdown = ref(false);
                         </div>
                     </div>
                 </div>
-            <NavLink
-                    v-if="$page.props.auth.abilities?.notification_view"
-                    :href="route('notifications.index')"
-                    :active="route().current('notifications.*')"
-                >
-                    اعلان‌ها
-                </NavLink>
             </nav>
 
             <!-- عنوان صفحه -->
