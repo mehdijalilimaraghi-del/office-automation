@@ -126,6 +126,32 @@ class UserControllerTest extends TestCase
         ]);
     }
 
+    public function test_user_edit_permission_cannot_manage_department_membership(): void
+    {
+        $admin = User::factory()->create();
+        $this->grantPermissions($admin, ['users.edit']);
+
+        $user = User::factory()->create();
+        $department = $this->department();
+
+        $this->actingAs($admin)->put(
+            route('users.update', $user),
+            [
+                'name' => $user->name,
+                'email' => $user->email,
+                'status' => 'active',
+                'role_ids' => [],
+                'department_ids' => [$department->id],
+                'primary_department_id' => $department->id,
+            ]
+        )->assertRedirect()->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('department_memberships', [
+            'user_id' => $user->id,
+            'department_id' => $department->id,
+        ]);
+    }
+
     public function test_authenticated_user_can_update_user(): void
     {
         $admin = User::factory()->create();
