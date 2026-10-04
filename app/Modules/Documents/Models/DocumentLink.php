@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\\Modules\\Documents\\Models;
+namespace App\Modules\Documents\Models;
 
-use App\\Models\\User;
-use Illuminate\\Database\\Eloquent\\Model;
-use Illuminate\\Database\\Eloquent\\Relations\\BelongsTo;
-use Illuminate\\Database\\Eloquent\\Relations\\MorphTo;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class DocumentLink extends Model
 {
