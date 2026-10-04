@@ -59,6 +59,12 @@ class StoreUserRequest extends FormRequest
                 'exists:departments,id',
             ],
 
+            'first_name' => ['nullable', 'string', 'max:100'],
+            'last_name' => ['nullable', 'string', 'max:100'],
+            'employee_code' => ['nullable', 'string', 'max:50', Rule::unique('user_profiles', 'employee_code')],
+            'national_id' => ['nullable', 'string', 'max:20', Rule::unique('user_profiles', 'national_id')],
+            'birth_date' => ['nullable', 'date'],
+
             'status' => [
                 'sometimes',
                 Rule::in([
