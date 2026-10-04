@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('positions', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('department_id')->constrained('departments')->restrictOnDelete();
+            $table->foreignId('department_id')->constrained('departments');
             $table->string('name', 150);
             $table->string('code', 50)->nullable();
             $table->text('description')->nullable();
