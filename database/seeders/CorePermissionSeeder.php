@@ -135,6 +135,14 @@ class CorePermissionSeeder extends Seeder
                 'code' => 'tasks.change_status',
             ],
             [
+                'name' => 'ارسال تسک برای بررسی',
+                'code' => 'tasks.submit',
+            ],
+            [
+                'name' => 'بررسی و تأیید تسک',
+                'code' => 'tasks.review',
+            ],
+            [
                 'name' => 'ثبت کامنت تسک',
                 'code' => 'tasks.comment',
             ],
