@@ -30,6 +30,10 @@ interface UserProfile {
     avatar_path: string | null;
 }
 
+interface CustomField {
+    id: number; key: string; label: string; type: 'text'|'textarea'|'number'|'date'|'boolean'|'select'; is_required: boolean; options: string[]|null;
+}
+
 interface User {
     id: number;
     name: string;
@@ -44,12 +48,16 @@ interface User {
     positions: { id: number; name: string; department?: { id: number; name: string } | null; }[];
 }
 
+type CustomFieldValues = Record<number, Record<string, string|number|boolean|null>>;
+
 const page = usePage();
 
 const props = defineProps<{
     users: User[];
     departments: Department[];
     roles: Role[];
+    customFields: CustomField[];
+    customFieldValues: CustomFieldValues;
 }>();
 
 const showForm = ref(false);
@@ -76,6 +84,7 @@ const form = useForm({
     employee_code: '',
     national_id: '',
     birth_date: '',
+    custom_fields: {} as Record<string, string|number|boolean|null>,
 });
 
 function openCreate(): void {
@@ -91,6 +100,7 @@ function openCreate(): void {
     form.employee_code = '';
     form.national_id = '';
     form.birth_date = '';
+    form.custom_fields = {};
 
     showForm.value = true;
 }
@@ -114,6 +124,7 @@ function openEdit(user: User): void {
     form.password_confirmation = '';
     form.status = user.status;
     form.role_ids = user.roles.map((role) => role.id);
+    form.custom_fields = { ...(props.customFieldValues[user.id] ?? {}) };
 
     showForm.value = true;
 }
@@ -397,6 +408,19 @@ function currentUserId(): number | null {
                     <div class="grid gap-4 md:grid-cols-2">
                         <div><label class="mb-1.5 block text-sm font-semibold text-slate-700">{{ editingUser ? 'رمز عبور جدید' : 'رمز عبور (اختیاری برای دعوت)' }}</label><input v-model="form.password" dir="ltr" type="password" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" /><p v-if="form.errors.password" class="mt-1 text-xs text-red-600">{{ form.errors.password }}</p></div>
                         <div><label class="mb-1.5 block text-sm font-semibold text-slate-700">تکرار رمز عبور</label><input v-model="form.password_confirmation" dir="ltr" type="password" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" /></div>
+                    </div>
+                    <div v-if="props.customFields.length" class="rounded-xl border border-teal-100 bg-teal-50/40 p-4">
+                        <div class="mb-4"><h4 class="text-sm font-bold text-slate-800">اطلاعات تکمیلی سازمانی</h4><p class="mt-1 text-xs text-slate-500">فیلدهای سفارشی تعریف‌شده توسط مدیر سامانه</p></div>
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div v-for="field in props.customFields" :key="field.id">
+                                <label class="mb-1.5 block text-sm font-semibold text-slate-700">{{ field.label }}<span v-if="field.is_required" class="text-red-500"> *</span></label>
+                                <textarea v-if="field.type === 'textarea'" v-model="form.custom_fields[field.key]" rows="3" class="w-full rounded-xl border-slate-200 bg-white"></textarea>
+                                <select v-else-if="field.type === 'select'" v-model="form.custom_fields[field.key]" class="w-full rounded-xl border-slate-200 bg-white"><option :value="null">انتخاب کنید</option><option v-for="option in field.options ?? []" :key="option" :value="option">{{ option }}</option></select>
+                                <input v-else-if="field.type === 'boolean'" v-model="form.custom_fields[field.key]" type="checkbox" class="rounded border-slate-300 text-teal-600" />
+                                <input v-else v-model="form.custom_fields[field.key]" :type="field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'" class="w-full rounded-xl border-slate-200 bg-white" />
+                                <p v-if="form.errors['custom_fields.' + field.key]" class="mt-1 text-xs text-red-600">{{ form.errors['custom_fields.' + field.key] }}</p>
+                            </div>
+                        </div>
                     </div>
                     <div class="grid gap-5 md:grid-cols-2">
                         <div v-if="!editingUser" class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 text-sm text-slate-600">
