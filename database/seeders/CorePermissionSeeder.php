@@ -11,6 +11,11 @@ class CorePermissionSeeder extends Seeder
     {
         $permissions = [
             [
+                'name' => 'مشاهده کارتابل',
+                'code' => 'cartable.view',
+            ],
+
+            [
                 'name' => 'مشاهده کاربران',
                 'code' => 'users.view',
             ],
