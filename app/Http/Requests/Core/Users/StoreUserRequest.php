@@ -36,7 +36,7 @@ class StoreUserRequest extends FormRequest
             'extension' => ['nullable', 'string', 'max:20'],
 
             'password' => [
-                'required',
+                'nullable',
                 'string',
                 'min:8',
                 'confirmed',
