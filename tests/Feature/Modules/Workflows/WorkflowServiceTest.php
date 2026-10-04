@@ -70,8 +70,8 @@ class WorkflowServiceTest extends TestCase
         $this->assertSame(2, $instance->steps()->count());
 
         $activeStep = $instance->steps()->where('status', 'active')->firstOrFail();
-        $this->assertSame($first->id, $activeStep->workflow_step_id);
-        $this->assertSame($manager->id, $activeStep->task->assignee_id);
+        $this->assertSame((int) $first->id, (int) $activeStep->workflow_step_id);
+        $this->assertSame((int) $manager->id, (int) $activeStep->task->assignee_id);
         $this->assertSame('pending', $instance->steps()->where('status', 'pending')->firstOrFail()->status);
     }
 
@@ -133,7 +133,7 @@ class WorkflowServiceTest extends TestCase
 
         $this->assertNotNull($advanced);
         $nextStep = $advanced->steps()->where('status', 'active')->firstOrFail();
-        $this->assertSame($manager->id, $nextStep->task->assignee_id);
+        $this->assertSame((int) $manager->id, (int) $nextStep->task->assignee_id);
 
         $nextStep->task->update([
             'status' => 'completed',
