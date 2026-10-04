@@ -52,6 +52,17 @@ class UserController extends Controller
         );
     }
 
+    public function invite(User $user): RedirectResponse
+    {
+        try {
+            $this->inviteUserAction->execute($user);
+        } catch (ValidationException $exception) {
+            return back()->with('error', $exception->validator->errors()->first('user'));
+        }
+
+        return back()->with('success', 'دعوت‌نامه کاربر ارسال شد.');
+    }
+
     public function syncDepartments(
         SyncUserDepartmentsRequest $request,
         User $user
