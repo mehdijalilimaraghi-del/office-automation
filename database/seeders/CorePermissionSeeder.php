@@ -52,6 +52,10 @@ class CorePermissionSeeder extends Seeder
                 'name' => 'مدیریت عضویت کاربر در واحدها',
                 'code' => 'users.manage_departments',
             ],
+            [
+                'name' => 'دعوت کاربر',
+                'code' => 'users.invite',
+            ],
 
             [
                 'name' => 'مشاهده واحدها',
