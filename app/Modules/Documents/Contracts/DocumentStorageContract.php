@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\\Modules\\Documents\\Contracts;
+namespace App\Modules\Documents\Contracts;
 
-use Illuminate\\Http\\UploadedFile;
+use Illuminate\Http\UploadedFile;
 
 interface DocumentStorageContract
 {
