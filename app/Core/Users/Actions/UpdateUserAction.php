@@ -40,6 +40,14 @@ class UpdateUserAction
 
         $user->update($attributes);
 
+        $user->profile()->updateOrCreate([], [
+            'first_name' => $data['first_name'] ?? null,
+            'last_name' => $data['last_name'] ?? null,
+            'employee_code' => $data['employee_code'] ?? null,
+            'national_id' => $data['national_id'] ?? null,
+            'birth_date' => $data['birth_date'] ?? null,
+        ]);
+
         return $user->refresh();
     }
 }
