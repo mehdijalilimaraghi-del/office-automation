@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Tasks\Actions;
 
 use App\Models\User;
+use App\Modules\Tasks\Events\TaskApproved;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskStatusHistory;
 use Illuminate\Support\Facades\DB;
@@ -38,7 +39,11 @@ class ReviewTaskAction
                 'changed_at' => now(),
             ]);
 
-            return $task->refresh()->load(['project', 'department', 'assignee', 'creator', 'reviewedBy']);
+            $task = $task->refresh()->load(['project', 'department', 'assignee', 'creator', 'reviewedBy']);
+
+            TaskApproved::dispatch($task);
+
+            return $task;
         });
     }
 
