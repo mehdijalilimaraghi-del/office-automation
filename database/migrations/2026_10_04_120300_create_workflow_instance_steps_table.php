@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -19,9 +20,17 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['workflow_instance_id', 'workflow_step_id']);
-            $table->unique('task_id');
+            // Added below as a filtered unique index on SQL Server.
             $table->index(['workflow_instance_id', 'status']);
         });
+
+        if (DB::getDriverName() === 'sqlsrv') {
+            DB::statement('CREATE UNIQUE INDEX workflow_instance_steps_task_id_unique ON workflow_instance_steps (task_id) WHERE task_id IS NOT NULL');
+        } else {
+            Schema::table('workflow_instance_steps', function (Blueprint $table): void {
+                $table->unique('task_id');
+            });
+        }
     }
 
     public function down(): void
