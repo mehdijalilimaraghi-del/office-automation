@@ -7,9 +7,11 @@ namespace App\Modules\Workflows\Models;
 use App\Models\User;
 use App\Modules\Projects\Models\Project;
 use App\Core\Departments\Models\Department;
+use App\Modules\Documents\Models\DocumentLink;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class WorkflowInstance extends Model
 {
@@ -55,4 +57,9 @@ class WorkflowInstance extends Model
     {
         return $this->hasMany(WorkflowInstanceStep::class);
     }
-};
+
+    public function documents(): MorphMany
+    {
+        return $this->morphMany(DocumentLink::class, 'linkable');
+    }
+}
