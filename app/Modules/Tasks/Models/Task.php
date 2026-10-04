@@ -59,6 +59,7 @@ class Task extends Model
             'due_date' => 'date',
             'completed_at' => 'datetime',
             'review_required' => 'boolean',
+            'reviewed_by' => 'integer',
             'review_requested_at' => 'datetime',
             'reviewed_at' => 'datetime',
             'is_active' => 'boolean',
