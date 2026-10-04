@@ -4,6 +4,7 @@ namespace App\Core\Users\Actions;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class CreateUserAction
 {
@@ -15,8 +16,8 @@ class CreateUserAction
             'mobile' => $data['mobile'] ?? null,
             'phone' => $data['phone'] ?? null,
             'extension' => $data['extension'] ?? null,
-            'password' => Hash::make($data['password']),
-            'status' => $data['status'] ?? 'active',
+            'password' => Hash::make($data['password'] ?? Str::random(40)),
+            'status' => $data['status'] ?? 'inactive',
         ]);
 
         $user->profile()->create([
