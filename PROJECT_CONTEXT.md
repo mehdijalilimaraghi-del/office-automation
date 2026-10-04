@@ -822,3 +822,72 @@ Next Task UX review:
 
 Task UX progress:
 - Task Show forms now surface backend validation errors for status, reminder time, work-log completion time, and editable task fields instead of failing silently at field level.
+
+
+## 25. Enterprise Architecture Direction — 2026-10-04
+
+The project direction was reviewed against the intended long-term goal: one company-wide operational automation platform with multiple business modules.
+
+The current Project/Task architecture is not being discarded. It is being promoted into a shared operational backbone.
+
+### Target Backbone
+
+Identity & Organization → Cartable → Workflow → Work Items → Documents → Notifications/Audit
+
+Projects and Tasks remain domain modules, while Workflow, Documents and Cartable become shared capabilities for later modules.
+
+### Critical Domain Decisions
+
+1. Task is a unit of execution; Workflow controls process progression.
+2. Assignment and Approval are separate concepts.
+3. Task execution state and review state should not be collapsed into one large status enum.
+4. Department manager, project manager and other reviewers should be resolved as workflow actors rather than hard-coded per module.
+5. Task dependencies must support multiple predecessors and future conditional progression.
+6. Documents are first-class records with versions and links, not only task attachments.
+7. A document passed from one task to another should be linked/reused, not duplicated.
+8. Cartable is a unified operational entry point but does not own business records.
+9. Cross-module communication should use contracts/events rather than direct database coupling.
+10. Workflow V1 must not start with a visual workflow designer; the domain model comes first.
+
+### Immediate Architectural Sequence
+
+Before adding more isolated business features:
+
+1. Task lifecycle review/approval
+2. Task dependencies
+3. Document foundation
+4. Workflow V1
+5. Unified Cartable
+6. Notifications
+7. Audit expansion
+8. Correspondence
+
+The complete module roadmap is maintained in ROADMAP.md.
+
+### Long-Term Module Families
+
+The planned expansion includes:
+
+- Core / Organization
+- Projects
+- Tasks / Work Items
+- Workflow
+- Documents / Digital Archive
+- Cartable
+- Correspondence
+- Forms & Requests
+- Meetings & Calendar
+- Notifications
+- Audit
+- CRM
+- Sales
+- Procurement
+- Inventory & Assets
+- HR
+- Reporting / Search / SLA
+- Internal Chat
+- PBX / Telephony
+- External integrations
+
+Accounting is intentionally outside the current product boundary.
+
