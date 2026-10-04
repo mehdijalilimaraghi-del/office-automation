@@ -48,6 +48,10 @@ class CorePermissionSeeder extends Seeder
                 'name' => 'مدیریت نقش‌های کاربر',
                 'code' => 'users.manage_roles',
             ],
+            [
+                'name' => 'مدیریت عضویت کاربر در واحدها',
+                'code' => 'users.manage_departments',
+            ],
 
             [
                 'name' => 'مشاهده واحدها',
