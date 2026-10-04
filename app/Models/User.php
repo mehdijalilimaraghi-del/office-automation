@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Core\Departments\Models\Department;
+use App\Core\Departments\Models\Position;
+use App\Core\Departments\Models\PositionAssignment;
 use App\Core\Roles\Models\Role;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectMember;
@@ -68,6 +70,18 @@ class User extends Authenticatable
             Department::class,
             'manager_id'
         );
+    }
+
+    public function positionAssignments(): HasMany
+    {
+        return $this->hasMany(PositionAssignment::class);
+    }
+
+    public function positions(): BelongsToMany
+    {
+        return $this->belongsToMany(Position::class, 'position_assignments', 'user_id', 'position_id')
+            ->withPivot(['is_primary', 'is_active', 'started_at', 'ended_at'])
+            ->withTimestamps();
     }
 
     public function roles(): BelongsToMany
