@@ -27,10 +27,25 @@ Projects and Tasks remain important, but they are not the architectural center o
 - Authorization/scopes
 - Settings
 - Custom Fields foundation
+- User onboarding lifecycle
+  - Admin-created users
+  - Department membership lifecycle
+  - Organizational position assignment
+  - Role assignment
+  - Invitation-based activation
+  - SYSTEM_ADMIN bootstrap protection
 
 **Status: implemented / audited**
 
-### 2. Projects
+### 2. Organizational Structure
+- Organizational positions
+- Position assignments
+- Primary position
+- Department membership prerequisite for position assignment
+
+**Status: V1 implemented / audited**
+
+### 3. Projects
 - Project lifecycle
 - Managers
 - Members
@@ -40,7 +55,7 @@ Projects and Tasks remain important, but they are not the architectural center o
 
 **Status: implemented / audited**
 
-### 3. Tasks
+### 4. Tasks
 - CRUD
 - Assignment
 - Referral/history
@@ -59,7 +74,7 @@ Projects and Tasks remain important, but they are not the architectural center o
 
 ## Phase 2 — Operational Backbone
 
-### 4. Task Lifecycle & Review
+### 5. Task Lifecycle & Review
 - Submitted state
 - Review state
 - Approve
@@ -67,18 +82,18 @@ Projects and Tasks remain important, but they are not the architectural center o
 - Resubmission
 - Separate assignment and approval concepts
 
-**Priority: immediate**
+**Status: implemented / audited**
 
-### 5. Task Dependencies
+### 6. Task Dependencies
 - Sequential dependencies
 - Completion-gated progression
 - Multiple predecessors
 - Dependency history
 - Future conditional branching
 
-**Priority: immediate after review lifecycle**
+**Status: implemented / audited**
 
-### 6. Documents
+### 7. Documents
 - Document entity
 - Document versions
 - Document links
@@ -90,9 +105,9 @@ Projects and Tasks remain important, but they are not the architectural center o
 - Document handoff between tasks
 - Storage abstraction
 
-**Priority: immediate**
+**Status: implemented / audited**
 
-### 7. Workflow
+### 8. Workflow
 - Workflow definitions
 - Workflow instances
 - Workflow steps
@@ -107,7 +122,7 @@ Projects and Tasks remain important, but they are not the architectural center o
 
 Do not build a visual workflow designer in V1.
 
-### 8. Cartable
+### 9. Cartable
 Unified operational inbox containing:
 - My Tasks
 - My Approvals
@@ -118,7 +133,7 @@ Unified operational inbox containing:
 
 **Priority: immediate after Workflow V1**
 
-### 9. Notifications
+### 10. Notifications
 - In-app notifications
 - Task assignment notifications
 - Referral notifications
@@ -129,7 +144,7 @@ Unified operational inbox containing:
 
 **Priority: high**
 
-### 10. Audit
+### 11. Audit
 - Business audit trail
 - Workflow transitions
 - Document access/history
@@ -411,26 +426,31 @@ If required later, these should integrate with the platform rather than distort 
 
 ## Implementation Order
 
-The next implementation sequence is intentionally:
+The implementation sequence is currently:
 
-1. Task lifecycle review/approval
-2. Task dependencies
-3. Document foundation
-4. Workflow V1
-5. Unified Cartable
-6. Notifications
-7. Audit expansion
-8. Correspondence
-9. Digital Archive
-10. Forms & Requests
-11. Meetings & Calendar
-12. CRM
-13. Procurement
-14. Inventory & Assets
-15. HR
-16. Reporting/Search/SLA
-17. Internal Chat
-18. PBX and external integrations
-19. Production hardening
+1. Core identity & organization foundation
+2. User onboarding lifecycle
+3. Custom Fields foundation and User integration
+4. Task lifecycle review/approval
+5. Task dependencies
+6. Document foundation
+7. Workflow V1
+8. Unified Cartable
+9. Notifications
+10. Audit expansion
+11. Correspondence
+12. Digital Archive
+13. Forms & Requests
+14. Meetings & Calendar
+15. CRM
+16. Procurement
+17. Inventory & Assets
+18. HR
+19. Reporting/Search/SLA
+20. Internal Chat
+21. PBX and external integrations
+22. Production hardening
+
+Completed items remain documented in their respective phase; new work must update this roadmap in the same change set.
 
 The exact priority of business modules may change with company requirements, but the shared backbone must be implemented before adding many independent business modules.
