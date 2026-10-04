@@ -56,6 +56,11 @@ class CorePermissionSeeder extends Seeder
                 'name' => 'دعوت کاربر',
                 'code' => 'users.invite',
             ],
+            [
+                'name' => 'مدیریت فیلدهای سفارشی',
+                'code' => 'custom_fields.manage',
+            ],
+
 
             [
                 'name' => 'مشاهده واحدها',
