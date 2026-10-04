@@ -115,7 +115,6 @@ class UserControllerTest extends TestCase
             'email' => 'old@example.com',
         ]);
 
-        $department = $this->department();
         $role = $this->role();
 
         $response = $this
@@ -123,8 +122,6 @@ class UserControllerTest extends TestCase
             ->put(route('users.update', $user), [
                 'name' => 'Updated Name',
                 'email' => 'updated@example.com',
-                'department_ids' => [$department->id],
-                'primary_department_id' => $department->id,
                 'status' => 'active',
                 'role_ids' => [$role->id],
             ]);
@@ -138,12 +135,6 @@ class UserControllerTest extends TestCase
             'name' => 'Updated Name',
             'email' => 'updated@example.com',
             'status' => 'active',
-        ]);
-
-        $this->assertDatabaseHas('department_memberships', [
-            'user_id' => $user->id,
-            'department_id' => $department->id,
-            'is_primary' => true,
         ]);
 
         $this->assertDatabaseHas('role_user', [
@@ -314,8 +305,6 @@ class UserControllerTest extends TestCase
                 'email' => 'existing@example.com',
                 'password' => 'password123',
                 'password_confirmation' => 'password123',
-                'department_ids' => [],
-                'primary_department_id' => null,
                 'status' => 'active',
                 'role_ids' => [],
             ]);
@@ -390,20 +379,14 @@ class UserControllerTest extends TestCase
         ]);
 
         $this->grantPermissions($user, [
-            'users.edit',
+            'users.manage_departments',
         ]);
 
         $response = $this->actingAs($user)->put(
-            route('users.update', $manager),
+            route('users.departments.update', $manager),
             [
-                'name' => $manager->name,
-                'email' => $manager->email,
-                'password' => '',
-                'password_confirmation' => '',
                 'department_ids' => [],
                 'primary_department_id' => null,
-                'status' => 'active',
-                'role_ids' => [],
             ]
         );
 
