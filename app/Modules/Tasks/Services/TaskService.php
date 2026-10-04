@@ -11,6 +11,8 @@ use App\Modules\Tasks\Actions\CreateTaskReminderAction;
 use App\Modules\Tasks\Actions\CreateTaskWorkLogAction;
 use App\Modules\Tasks\Actions\DeleteTaskAction;
 use App\Modules\Tasks\Actions\UpdateTaskAction;
+use App\Modules\Tasks\Actions\SubmitTaskAction;
+use App\Modules\Tasks\Actions\ReviewTaskAction;
 use App\Modules\Tasks\Actions\UpdateTaskReminderStatusAction;
 use App\Modules\Tasks\Contracts\TaskServiceContract;
 use App\Modules\Tasks\Models\Task;
@@ -29,6 +31,8 @@ class TaskService implements TaskServiceContract
         private readonly CreateTaskWorkLogAction $createTaskWorkLogAction,
         private readonly CreateTaskReminderAction $createTaskReminderAction,
         private readonly UpdateTaskReminderStatusAction $updateTaskReminderStatusAction,
+        private readonly SubmitTaskAction $submitTaskAction,
+        private readonly ReviewTaskAction $reviewTaskAction,
         private readonly TaskTimelineService $taskTimelineService,
         private readonly TaskAccessService $taskAccessService,
     ) {}
@@ -105,6 +109,21 @@ class TaskService implements TaskServiceContract
     public function updateReminderStatus(TaskReminder $reminder, string $status, User $actor): TaskReminder
     {
         return $this->updateTaskReminderStatusAction->execute(reminder: $reminder, status: $status, actor: $actor);
+    }
+
+    public function submit(Task $task, User $actor): Task
+    {
+        return $this->submitTaskAction->execute($task, $actor);
+    }
+
+    public function approve(Task $task, User $reviewer): Task
+    {
+        return $this->reviewTaskAction->approve($task, $reviewer);
+    }
+
+    public function returnFromReview(Task $task, User $reviewer, string $note): Task
+    {
+        return $this->reviewTaskAction->returnTask($task, $reviewer, $note);
     }
 
     public function timeline(Task $task): array
