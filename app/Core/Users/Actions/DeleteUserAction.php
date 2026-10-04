@@ -2,6 +2,7 @@
 
 namespace App\Core\Users\Actions;
 
+use App\Core\Users\Models\UserInvitation;
 use App\Models\User;
 use Illuminate\Validation\ValidationException;
 
@@ -30,6 +31,8 @@ class DeleteUserAction
                 'user' => 'این کاربر مدیر یک یا چند دپارتمان است. ابتدا مدیریت دپارتمان‌ها را حذف یا تغییر دهید.',
             ]);
         }
+
+        UserInvitation::query()->where('user_id', $user->id)->delete();
 
         $user->delete();
     }
