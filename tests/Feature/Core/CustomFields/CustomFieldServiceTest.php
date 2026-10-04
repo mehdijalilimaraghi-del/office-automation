@@ -4,6 +4,7 @@ namespace Tests\Feature\Core\CustomFields;
 
 use App\Core\CustomFields\Models\CustomField;
 use App\Core\CustomFields\Services\CustomFieldService;
+use App\Core\Users\Actions\DeleteUserAction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -61,6 +62,28 @@ class CustomFieldServiceTest extends TestCase
 
         app(CustomFieldService::class)->sync($user, [
             'personnel_grade' => 'X',
+        ]);
+    }
+
+    public function test_user_deletion_cleans_custom_field_values(): void
+    {
+        $user = User::factory()->create();
+
+        $field = CustomField::create([
+            'entity_type' => User::class,
+            'key' => 'badge_number',
+            'label' => 'شماره کارت',
+            'type' => 'text',
+        ]);
+
+        app(CustomFieldService::class)->sync($user, ['badge_number' => '123']);
+
+        app(DeleteUserAction::class)->execute($user);
+
+        $this->assertDatabaseMissing('custom_field_values', [
+            'custom_field_id' => $field->id,
+            'entity_type' => User::class,
+            'entity_id' => $user->id,
         ]);
     }
 
