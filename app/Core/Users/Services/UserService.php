@@ -55,14 +55,6 @@ class UserService implements UserServiceInterface
                 $data
             );
 
-            $this->syncUserDepartmentsAction->execute(
-                $user,
-                $data['department_ids'] ?? [],
-                isset($data['primary_department_id'])
-                    ? (int) $data['primary_department_id']
-                    : null
-            );
-
             $this->syncUserRolesAction->execute(
                 $user,
                 $data['role_ids'] ?? []
