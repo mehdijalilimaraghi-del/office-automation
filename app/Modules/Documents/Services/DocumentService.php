@@ -103,6 +103,22 @@ class DocumentService
         );
     }
 
+    public function delete(Document $document): void
+    {
+        $versions = $document->versions()->get(['disk', 'path']);
+
+        DB::transaction(function () use ($document): void {
+            $document->accesses()->delete();
+            $document->links()->delete();
+            $document->versions()->delete();
+            $document->delete();
+        });
+
+        foreach ($versions as $version) {
+            $this->storage->delete($version->disk, $version->path);
+        }
+    }
+
     public function grantAccess(Document $document, User $user, User $grantedBy, string $accessLevel = 'view'): DocumentAccess
     {
         if (! in_array($accessLevel, ['view', 'edit'], true)) {
