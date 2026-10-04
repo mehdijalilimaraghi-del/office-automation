@@ -1,6 +1,7 @@
 <?php
 
 use App\Core\Departments\Http\Controllers\DepartmentController;
+use App\Core\Departments\Http\Controllers\PositionController;
 use App\Core\Permissions\Http\Controllers\PermissionController;
 use App\Core\Roles\Http\Controllers\RoleController;
 use App\Core\Roles\Http\Controllers\RolePermissionController;
@@ -52,6 +53,11 @@ Route::middleware('auth')->group(function () {
     Route::put('/departments/{department}', [DepartmentController::class, 'update'])->middleware('permission:departments.edit')->name('departments.update');
     Route::delete('/departments/{department}', [DepartmentController::class, 'destroy'])->middleware('permission:departments.delete')->name('departments.destroy');
     Route::patch('/departments/{department}/toggle-status', [DepartmentController::class, 'toggleStatus'])->middleware('permission:departments.toggle_status')->name('departments.toggle-status');
+    Route::post('/departments/{department}/positions', [PositionController::class, 'store'])->middleware('permission:departments.manage_positions')->name('departments.positions.store');
+    Route::put('/departments/{department}/positions/{position}', [PositionController::class, 'update'])->middleware('permission:departments.manage_positions')->name('departments.positions.update');
+    Route::delete('/departments/{department}/positions/{position}', [PositionController::class, 'destroy'])->middleware('permission:departments.manage_positions')->name('departments.positions.destroy');
+    Route::post('/departments/{department}/positions/{position}/members', [PositionController::class, 'assign'])->middleware('permission:departments.manage_positions')->name('departments.positions.members.store');
+    Route::delete('/departments/{department}/positions/{position}/members/{user}', [PositionController::class, 'unassign'])->middleware('permission:departments.manage_positions')->name('departments.positions.members.destroy');
 
     Route::get('/roles', [RoleController::class, 'index'])->middleware('permission:roles.view')->name('roles.index');
     Route::post('/roles', [RoleController::class, 'store'])->middleware('permission:roles.create')->name('roles.store');
