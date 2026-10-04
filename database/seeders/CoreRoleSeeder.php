@@ -51,22 +51,5 @@ class CoreRoleSeeder extends Seeder
 
         $user->roles()->syncWithoutDetaching([$role->id]);
 
-        return;
-        $bootstrapPassword = (string) env('OFFICE_AUTOMATION_BOOTSTRAP_ADMIN_PASSWORD');
-
-        if ($bootstrapEmail === '' || $bootstrapPassword === '') {
-            return;
-        }
-
-        $user = User::updateOrCreate(
-            ['email' => strtolower($bootstrapEmail)],
-            [
-                'name' => (string) env('OFFICE_AUTOMATION_BOOTSTRAP_ADMIN_NAME', 'مدیر سیستم'),
-                'password' => Hash::make($bootstrapPassword),
-                'status' => 'active',
-            ]
-        );
-
-        $user->roles()->syncWithoutDetaching([$role->id]);
     }
 }
