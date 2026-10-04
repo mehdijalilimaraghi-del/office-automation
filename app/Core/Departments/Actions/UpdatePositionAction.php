@@ -9,7 +9,7 @@ class UpdatePositionAction
 {
     public function execute(Position $position, array $data): Position
     {
-        if ($position->department()->whereHas('positions', fn ($q) => $q->where('name', $data['name'])->whereKeyNot($position->id))->exists()) {
+        if (Position::query()->where('department_id', $position->department_id)->where('name', $data['name'])->whereKeyNot($position->id)->exists()) {
             throw ValidationException::withMessages(['name' => 'این سمت در این واحد قبلاً تعریف شده است.']);
         }
         $position->update([
