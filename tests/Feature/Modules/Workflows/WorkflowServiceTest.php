@@ -8,14 +8,16 @@ use App\Core\Roles\Models\Role;
 use App\Core\Permissions\Models\Permission;
 use App\Models\User;
 use App\Core\Departments\Models\Department;
+use App\Modules\Documents\Services\DocumentService;
 use App\Modules\Tasks\Actions\ReviewTaskAction;
 use App\Modules\Tasks\Models\Task;
-use App\Modules\Tasks\Models\TaskDependency;
 use App\Modules\Workflows\Models\WorkflowDefinition;
 use App\Modules\Workflows\Models\WorkflowInstance;
 use App\Modules\Workflows\Models\WorkflowStep;
 use App\Modules\Workflows\Services\WorkflowService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -27,6 +29,7 @@ class WorkflowServiceTest extends TestCase
     {
         parent::setUp();
         $this->seed(\Database\Seeders\CorePermissionSeeder::class);
+        Storage::fake();
     }
 
     public function test_start_creates_first_task_for_department_manager_and_keeps_later_steps_pending(): void
@@ -85,7 +88,7 @@ class WorkflowServiceTest extends TestCase
         $this->assertSame('pending', $instance->steps()->where('status', 'pending')->firstOrFail()->status);
     }
 
-    public function test_approval_advances_to_next_step_and_final_approval_completes_instance(): void
+    public function test_approval_advances_to_next_step_and_hands_off_output_documents(): void
     {
         $manager = $this->userWithPermission('tasks.review');
         $employee = User::factory()->create(['status' => 'active']);
@@ -131,7 +134,18 @@ class WorkflowServiceTest extends TestCase
         ]);
 
         $instance = app(WorkflowService::class)->start($definition, $initiator, null, $department);
-        $firstTask = $instance->steps()->whereHas('workflowStep', fn ($query) => $query->where('step_order', 1))->firstOrFail()->task;
+        $firstTask = $instance->steps()
+            ->whereHas('workflowStep', fn ($query) => $query->where('step_order', 1))
+            ->firstOrFail()
+            ->task;
+
+        $document = app(DocumentService::class)->create(
+            ['title' => 'خروجی مرحله اول'],
+            UploadedFile::fake()->create('output.pdf', 32, 'application/pdf'),
+            $employee,
+            $firstTask,
+            'task_output',
+        );
 
         $firstTask->update([
             'status' => 'submitted',
@@ -144,24 +158,37 @@ class WorkflowServiceTest extends TestCase
         $this->assertSame('completed', $advanced->status);
 
         $instanceAfterFirstApproval = WorkflowInstance::query()->findOrFail($instance->id);
-
         $this->assertSame('running', $instanceAfterFirstApproval->status);
+
         $nextStep = $instanceAfterFirstApproval->steps()->where('status', 'active')->firstOrFail();
-        $this->assertSame((int) $manager->id, (int) $nextStep->task->assignee_id);
+        $nextTask = $nextStep->task;
+
+        $this->assertSame((int) $manager->id, (int) $nextTask->assignee_id);
 
         $this->assertDatabaseHas('task_dependencies', [
             'predecessor_task_id' => $firstTask->id,
-            'successor_task_id' => $nextStep->task->id,
+            'successor_task_id' => $nextTask->id,
             'type' => 'completion',
         ]);
 
-        $nextStep->task->update([
+        $this->assertDatabaseHas('document_links', [
+            'document_id' => $document->id,
+            'linkable_type' => $nextTask->getMorphClass(),
+            'linkable_id' => $nextTask->id,
+            'purpose' => 'handoff',
+        ]);
+
+        $this->assertSame(1, $document->refresh()->versions()->count());
+        $this->assertSame(2, $document->links()->count());
+        Storage::disk(config('filesystems.default'))->assertExists($document->versions()->firstOrFail()->path);
+
+        $nextTask->update([
             'status' => 'submitted',
             'review_status' => 'pending',
             'review_requested_at' => now(),
         ]);
 
-        $completed = app(ReviewTaskAction::class)->approve($nextStep->task, $manager);
+        $completed = app(ReviewTaskAction::class)->approve($nextTask, $manager);
 
         $this->assertSame('completed', $completed->status);
 
