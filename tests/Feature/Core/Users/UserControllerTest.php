@@ -152,6 +152,48 @@ class UserControllerTest extends TestCase
         ]);
     }
 
+    public function test_inactive_user_cannot_be_activated_from_user_edit(): void
+    {
+        $admin = User::factory()->create();
+        $this->grantPermissions($admin, ['users.edit']);
+
+        $user = User::factory()->create([
+            'status' => 'inactive',
+        ]);
+
+        $this->actingAs($admin)->put(route('users.update', $user), [
+            'name' => $user->name,
+            'email' => $user->email,
+            'status' => 'active',
+            'role_ids' => [],
+        ])->assertSessionHasErrors('status');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'status' => 'inactive',
+        ]);
+    }
+
+    public function test_inactive_user_cannot_be_activated_from_status_toggle(): void
+    {
+        $admin = User::factory()->create();
+        $this->grantPermissions($admin, ['users.toggle_status']);
+
+        $user = User::factory()->create([
+            'status' => 'inactive',
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('users.toggle-status', $user))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'status' => 'inactive',
+        ]);
+    }
+
     public function test_authenticated_user_can_update_user(): void
     {
         $admin = User::factory()->create();
