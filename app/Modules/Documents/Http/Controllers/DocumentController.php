@@ -36,7 +36,7 @@ class DocumentController extends Controller
             purpose: 'attachment',
         );
 
-        return back()->with('success', 'فایل با موفقیت به تسک پیوست شد.');
+        return redirect()->route('tasks.show', $task)->with('success', 'فایل با موفقیت به تسک پیوست شد.');
     }
 
     public function download(Document $document): StreamedResponse
