@@ -25,8 +25,7 @@ class UpdateProjectRoleRequest extends FormRequest
     {
         return [
             'name' => 'نام نقش',
-            'code' => 'کد نقش',
-            'description' => 'توضیحات',
+                        'description' => 'توضیحات',
         ];
     }
 }
