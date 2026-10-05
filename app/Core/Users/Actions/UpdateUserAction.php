@@ -65,12 +65,19 @@ class UpdateUserAction
         ]);
 
         if (($data['avatar'] ?? null) instanceof UploadedFile) {
-            if ($profile->avatar_path) {
-                Storage::disk('public')->delete($profile->avatar_path);
+            $oldAvatarPath = $profile->avatar_path;
+            $newAvatarPath = $data['avatar']->store('avatars', 'public');
+
+            if ($newAvatarPath === false) {
+                throw new \RuntimeException('ذخیره تصویر پروفایل انجام نشد.');
             }
 
-            $profile->avatar_path = $data['avatar']->store('avatars', 'public');
+            $profile->avatar_path = $newAvatarPath;
             $profile->save();
+
+            if ($oldAvatarPath && $oldAvatarPath !== $newAvatarPath) {
+                Storage::disk('public')->delete($oldAvatarPath);
+            }
         }
 
         $user->refresh();
