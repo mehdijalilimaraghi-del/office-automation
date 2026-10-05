@@ -5,6 +5,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import { Link, useForm, usePage } from '@inertiajs/vue3';
+import type { User } from '@/types';
 
 defineProps<{
     mustVerifyEmail?: boolean;
@@ -20,22 +21,12 @@ type UserProfile = {
     avatar_path?: string | null;
 };
 
-type ProfileUser = {
-    name: string;
-    username: string;
-    email: string;
-    email_verified_at: string | null;
+type ProfileUser = User & {
     profile?: UserProfile | null;
 };
 
-type ProfilePageProps = {
-    auth: {
-        user: ProfileUser;
-    };
-};
-
-const page = usePage<ProfilePageProps>();
-const user = page.props.auth.user;
+const page = usePage();
+const user = page.props.auth.user as ProfileUser;
 
 const form = useForm({
     username: user.username,
