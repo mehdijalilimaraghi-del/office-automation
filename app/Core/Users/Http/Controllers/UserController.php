@@ -43,9 +43,11 @@ class UserController extends Controller
     public function store(
         StoreUserRequest $request
     ): RedirectResponse {
-        $user = $this->userService->create(
-            $request->validated()
-        );
+        $data = $request->validated();
+
+        $this->ensureRoleManagementAllowed($request->user(), $data['role_ids'] ?? []);
+
+        $user = $this->userService->create($data);
 
         if ($user->isInactive()) {
             $this->inviteUserAction->execute($user);
@@ -88,10 +90,11 @@ class UserController extends Controller
         UpdateUserRequest $request,
         User $user
     ): RedirectResponse {
-        $this->userService->update(
-            $user,
-            $request->validated()
-        );
+        $data = $request->validated();
+
+        $this->ensureRoleManagementAllowed($request->user(), $data['role_ids'] ?? []);
+
+        $this->userService->update($user, $data);
 
         return back()->with(
             'success',
@@ -133,5 +136,13 @@ class UserController extends Controller
             'success',
             'وضعیت کاربر با موفقیت تغییر کرد.'
         );
+        private function ensureRoleManagementAllowed(User $actor, array $roleIds): void
+    {
+        if ($roleIds === [] || $actor->hasPermission('users.manage_roles')) {
+            return;
+        }
+
+        abort(403, 'برای تخصیص یا تغییر نقش کاربران، مجوز مدیریت نقش‌های کاربر لازم است.');
     }
+}
 }
