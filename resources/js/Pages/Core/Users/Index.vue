@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
+import UserAvatar from '@/Components/UserAvatar.vue';
 
 interface Department {
     id: number;
@@ -330,7 +331,11 @@ function currentUserId(): number | null {
                                 <tr v-for="user in props.users" :key="user.id" class="transition hover:bg-slate-50/80">
                                     <td class="px-5 py-4">
                                         <div class="flex items-center gap-3">
-                                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 font-bold text-teal-700">{{ user.name.charAt(0) }}</div>
+                                            <UserAvatar
+                                                :name="user.name"
+                                                :avatar-path="user.profile?.avatar_path"
+                                                size="md"
+                                            />
                                             <div class="min-w-0">
                                                 <div class="font-semibold text-slate-900">{{ user.name }}</div>
                                                 <div dir="ltr" class="truncate text-xs text-slate-500 text-right">@{{ user.username }}</div>
