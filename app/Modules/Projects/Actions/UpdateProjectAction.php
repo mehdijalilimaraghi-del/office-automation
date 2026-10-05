@@ -5,11 +5,17 @@ declare(strict_types=1);
 namespace App\Modules\Projects\Actions;
 
 use App\Modules\Projects\Models\Project;
+use App\Core\CustomFields\Services\CustomFieldService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class UpdateProjectAction
 {
+    public function __construct(
+        private readonly CustomFieldService $customFieldService,
+    ) {
+    }
+
     public function execute(
         Project $project,
         array $data
@@ -44,6 +50,8 @@ class UpdateProjectAction
                 'end_date' => $data['end_date'] ?? null,
                 'is_active' => $data['is_active'] ?? $project->is_active,
             ]);
+
+            $this->customFieldService->sync($project, $data['custom_fields'] ?? []);
 
             return $project->refresh();
         });
