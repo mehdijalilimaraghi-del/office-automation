@@ -40,6 +40,7 @@ class StoreProjectRequest extends FormRequest
                 'integer',
                 'exists:users,id',
             ],
+            'custom_fields' => ['nullable', 'array'],
             'is_active' => ['sometimes', 'boolean'],
         ];
     }
