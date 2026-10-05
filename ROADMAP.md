@@ -72,6 +72,8 @@ Bootstrap protection regression coverage now verifies that an existing inactive 
 
 **Status: V1 implemented / UX refinement completed / lifecycle regression suite aligned**
 
+Regression expectations are aligned with the enforced lifecycle rules: terminal tasks cannot be reopened, and the task timeline is validated newest-first.
+
 Timeline regression ordering is explicitly validated as newest-first.
 
 ---
