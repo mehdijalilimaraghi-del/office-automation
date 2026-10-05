@@ -3,10 +3,18 @@
 namespace App\Core\ExternalParties\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\HasSystemCode;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ExternalContact extends Model
 {
+    use HasSystemCode;
+
+    protected static function systemCodePrefix(): string
+    {
+        return 'EXTCNT';
+    }
+
     protected $fillable = ['external_organization_id', 'external_department_id', 'name', 'position', 'mobile', 'phone', 'extension', 'email', 'notes', 'status'];
 
     public function organization(): BelongsTo { return $this->belongsTo(ExternalOrganization::class, 'external_organization_id'); }
