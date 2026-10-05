@@ -11,7 +11,6 @@ defineProps<{
     status?: string;
 }>();
 
-const page = usePage();
 type UserProfile = {
     first_name?: string | null;
     last_name?: string | null;
@@ -29,7 +28,14 @@ type ProfileUser = {
     profile?: UserProfile | null;
 };
 
-const user = page.props.auth.user as ProfileUser;
+type ProfilePageProps = {
+    auth: {
+        user: ProfileUser;
+    };
+};
+
+const page = usePage<ProfilePageProps>();
+const user = page.props.auth.user;
 
 const form = useForm({
     username: user.username,
