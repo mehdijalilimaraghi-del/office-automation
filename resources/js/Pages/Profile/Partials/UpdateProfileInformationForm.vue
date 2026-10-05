@@ -4,6 +4,7 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
+import UserAvatar from '@/Components/UserAvatar.vue';
 import { Link, useForm, usePage } from '@inertiajs/vue3';
 import type { User } from '@/types';
 
@@ -59,15 +60,12 @@ function submit(): void {
 
         <form @submit.prevent="submit" class="mt-6 space-y-5">
             <div class="flex items-center gap-4 rounded-2xl bg-slate-50 p-4">
-                <div class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-teal-50 text-xl font-bold text-teal-700">
-                    <img
-                        v-if="user.profile?.avatar_path"
-                        :src="'/storage/' + user.profile.avatar_path"
-                        alt="تصویر پروفایل"
-                        class="h-full w-full object-cover"
-                    />
-                    <span v-else>{{ user.name?.charAt(0) }}</span>
-                </div>
+                <UserAvatar
+                    :name="user.name"
+                    :avatar-path="user.profile?.avatar_path"
+                    size="xl"
+                    alt="تصویر پروفایل"
+                />
                 <div class="min-w-0 flex-1">
                     <label class="mb-1.5 block text-sm font-semibold text-slate-700">تصویر پروفایل</label>
                     <input
