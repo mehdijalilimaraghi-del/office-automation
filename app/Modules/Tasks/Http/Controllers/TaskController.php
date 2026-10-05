@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Tasks\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Core\CustomFields\Services\CustomFieldService;
 use App\Http\Requests\Modules\Tasks\AssignTaskRequest;
 use App\Http\Requests\Modules\Tasks\ChangeTaskStatusRequest;
 use App\Http\Requests\Modules\Tasks\ReferTaskRequest;
@@ -33,6 +34,7 @@ class TaskController extends Controller
     public function __construct(
         private readonly TaskServiceContract $taskService,
         private readonly TaskFormOptionsService $taskFormOptionsService,
+        private readonly CustomFieldService $customFieldService,
     ) {
     }
 
@@ -55,6 +57,7 @@ class TaskController extends Controller
             'formOptions' => Gate::allows('create', Task::class)
                 ? $this->taskFormOptionsService->forCreate($request->user())
                 : null,
+            'customFields' => $this->customFieldService->definitions(Task::class),
         ]);
     }
 
@@ -117,6 +120,8 @@ class TaskController extends Controller
             ],
             'assigneeOptions' => $this->taskFormOptionsService->assigneesFor($task),
             'externalPartyOptions' => $this->taskFormOptionsService->forCreate($request->user()),
+            'customFields' => $this->customFieldService->definitions(Task::class),
+            'customFieldValues' => $this->customFieldService->values($task),
         ]);
     }
 
