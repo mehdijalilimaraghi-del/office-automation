@@ -25,7 +25,6 @@ class UpdateRoleAction
 
         $role->update([
             'name' => $data['name'],
-            'code' => $this->normalizeCode($data['code'] ?? null),
             'description' => $data['description'] ?? null,
             'is_active' => $data['is_active'] ?? true,
         ]);
@@ -33,14 +32,5 @@ class UpdateRoleAction
         $role->refresh();
         $this->audit->record('role.updated', $role, $oldValues, ['name' => $role->name, 'code' => $role->code, 'is_active' => $role->is_active]);
         return $role;
-    }
-
-    private function normalizeCode(?string $code): ?string
-    {
-        if ($code === null || trim($code) === '') {
-            return null;
-        }
-
-        return strtoupper(trim($code));
     }
 }
