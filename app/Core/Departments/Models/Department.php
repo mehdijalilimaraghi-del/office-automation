@@ -3,6 +3,7 @@
 namespace App\Core\Departments\Models;
 
 use App\Models\User;
+use App\Models\Concerns\HasSystemCode;
 use App\Modules\Projects\Models\Project;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -11,8 +12,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-class Department extends Model
-{
+class Department extends Model$2
+    protected static function systemCodePrefix(): string
+    {
+        return 'ORG';
+    }
+
     protected $fillable = [
         'parent_id',
         'manager_id',
