@@ -22,14 +22,7 @@ class StoreRoleRequest extends FormRequest
                 'unique:roles,name',
             ],
 
-            'code' => [
-                'nullable',
-                'string',
-                'max:50',
-                'alpha_dash',
-                Rule::unique('roles', 'code'),
-            ],
-
+            
             'description' => [
                 'nullable',
                 'string',
