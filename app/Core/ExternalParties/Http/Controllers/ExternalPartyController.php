@@ -3,6 +3,7 @@
 namespace App\Core\ExternalParties\Http\Controllers;
 
 use App\Core\ExternalParties\Contracts\ExternalPartyServiceInterface;
+use App\Core\CustomFields\Services\CustomFieldService;
 use App\Core\ExternalParties\Models\{ExternalContact, ExternalDepartment, ExternalOrganization};
 use App\Http\Controllers\Controller;
 use Illuminate\Http\{RedirectResponse, Request};
@@ -12,7 +13,7 @@ use Inertia\Response;
 
 class ExternalPartyController extends Controller
 {
-    public function __construct(private readonly ExternalPartyServiceInterface $service) {}
+    public function __construct(private readonly ExternalPartyServiceInterface $service, private readonly CustomFieldService $customFieldService) {}
 
     public function index(): Response
     {
@@ -21,12 +22,17 @@ class ExternalPartyController extends Controller
             'departments' => $this->service->departments(),
             'contacts' => $this->service->contacts(),
             'canCreate' => Gate::allows('external_parties.create'),
+            'customFields' => [
+                'organization' => $this->customFieldService->definitions(ExternalOrganization::class),
+                'department' => $this->customFieldService->definitions(ExternalDepartment::class),
+                'contact' => $this->customFieldService->definitions(ExternalContact::class),
+            ],
         ]);
     }
 
     public function storeOrganization(Request $request): RedirectResponse
     {
-        $data = $request->validate(['name'=>['required','string','max:255'],'code'=>['nullable','string','max:100'],'phone'=>['nullable','string','max:50'],'email'=>['nullable','email','max:255'],'address'=>['nullable','string'],'status'=>['required','in:active,inactive']]);
+        $data = $request->validate(['name'=>['required','string','max:255'],'custom_fields'=>['nullable','array'],'phone'=>['nullable','string','max:50'],'email'=>['nullable','email','max:255'],'address'=>['nullable','string'],'status'=>['required','in:active,inactive']]);
         $this->service->createOrganization($data); return back()->with('success','سازمان خارجی ایجاد شد.');
     }
 
