@@ -26,17 +26,28 @@ class UpdateRoleAction
         }
 
         return DB::transaction(function () use ($role, $data): Role {
-        $oldValues = $role->only(['name', 'code', 'description', 'is_active']);
+            $oldValues = $role->only(['name', 'code', 'description', 'is_active']);
 
-        $role->update([
-            'name' => $data['name'],
-            'description' => $data['description'] ?? null,
-            'is_active' => $data['is_active'] ?? true,
-        ]);
+            $role->update([
+                'name' => $data['name'],
+                'description' => $data['description'] ?? null,
+                'is_active' => $data['is_active'] ?? true,
+            ]);
 
-        $this->customFieldService->sync($role, $data['custom_fields'] ?? []);
-        $role->refresh();
-        $this->audit->record('role.updated', $role, $oldValues, ['name' => $role->name, 'code' => $role->code, 'is_active' => $role->is_active]);
+            $this->customFieldService->sync($role, $data['custom_fields'] ?? []);
+            $role->refresh();
+
+            $this->audit->record(
+                'role.updated',
+                $role,
+                $oldValues,
+                [
+                    'name' => $role->name,
+                    'code' => $role->code,
+                    'is_active' => $role->is_active,
+                ],
+            );
+
             return $role;
         });
     }
