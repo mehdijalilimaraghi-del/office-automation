@@ -26,6 +26,7 @@ export interface AuthAbilities {
     departments_manage_positions?: boolean;
     users_manage_departments?: boolean;
     users_manage_roles?: boolean;
+    custom_fields_manage?: boolean;
 }
 
 export type PageProps<
