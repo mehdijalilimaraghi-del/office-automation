@@ -45,6 +45,10 @@ class UserController extends Controller
     ): RedirectResponse {
         $data = $request->validated();
 
+        if ($request->user()->hasPermission('users.manage_roles')) {
+            $data['role_ids'] = $data['role_ids'] ?? [];
+        }
+
         if (array_key_exists('role_ids', $data)) {
             $this->ensureRoleManagementAllowed($request->user(), $data['role_ids']);
         }
@@ -93,6 +97,10 @@ class UserController extends Controller
         User $user
     ): RedirectResponse {
         $data = $request->validated();
+
+        if ($request->user()->hasPermission('users.manage_roles')) {
+            $data['role_ids'] = $data['role_ids'] ?? [];
+        }
 
         if (array_key_exists('role_ids', $data)) {
             $this->ensureRoleManagementAllowed($request->user(), $data['role_ids']);
