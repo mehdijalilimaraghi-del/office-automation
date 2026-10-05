@@ -14,7 +14,7 @@ class CreatePositionAction
             throw ValidationException::withMessages(['name' => 'این سمت در این واحد قبلاً تعریف شده است.']);
         }
         return $department->positions()->create([
-            'name'=>$data['name'],'code'=>$data['code']??null,
+            'name' => $data['name'],
             'description'=>$data['description']??null,'is_active'=>$data['is_active']??true,
         ]);
     }
