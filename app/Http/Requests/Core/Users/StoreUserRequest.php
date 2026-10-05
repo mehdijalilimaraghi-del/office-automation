@@ -84,7 +84,7 @@ class StoreUserRequest extends FormRequest
             ],
 
             'role_ids' => [
-                'present',
+                'sometimes',
                 'array',
             ],
 
