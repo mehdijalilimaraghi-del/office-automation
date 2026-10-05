@@ -49,6 +49,7 @@ class HandleInertiaRequests extends Middleware
                     'departments_manage_positions' => $request->user()?->hasPermission('departments.manage_positions') ?? false,
                     'users_manage_departments' => $request->user()?->hasPermission('users.manage_departments') ?? false,
                     'users_manage_roles' => $request->user()?->hasPermission('users.manage_roles') ?? false,
+                    'custom_fields_manage' => $request->user()?->hasPermission('custom_fields.manage') ?? false,
                 ],
             ],
         ];
