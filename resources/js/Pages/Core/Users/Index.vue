@@ -4,7 +4,7 @@ import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { onBeforeUnmount, ref } from 'vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import UserAvatar from '@/Components/UserAvatar.vue';
-import { Eye, EyeOff } from 'lucide-vue-next';
+import { Eye, EyeOff } from '@lucide/vue';
 
 interface Department {
     id: number;
