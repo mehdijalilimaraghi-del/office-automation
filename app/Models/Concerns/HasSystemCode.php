@@ -3,11 +3,23 @@
 namespace App\Models\Concerns;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 trait HasSystemCode
 {
     protected static function bootHasSystemCode(): void
     {
+        static::creating(function (Model $model): void {
+            if (! $model->shouldGenerateSystemCode()) {
+                return;
+            }
+
+            $model->setAttribute(
+                'code',
+                '__SYS_'.Str::uuid()->toString(),
+            );
+        });
+
         static::created(function (Model $model): void {
             if (! $model->shouldGenerateSystemCode()) {
                 return;
