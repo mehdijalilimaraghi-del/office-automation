@@ -72,6 +72,22 @@ class ProfileTest extends TestCase
         Storage::disk('public')->assertExists($avatarPath);
     }
 
+    public function test_birth_date_serializes_as_a_calendar_date_without_timezone_shift(): void
+    {
+        $user = User::factory()->create();
+
+        $user->profile()->create([
+            'first_name' => 'Test',
+            'last_name' => 'User',
+            'birth_date' => '1987-03-26',
+        ]);
+
+        $this->assertSame(
+            '1987-03-26',
+            $user->refresh()->profile?->toArray()['birth_date']
+        );
+    }
+
     public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void
     {
         $user = User::factory()->create();
