@@ -305,17 +305,17 @@ const submitPosition = () => {
 
     if (editingPosition.value) {
         positionForm.put(
-            route('departments.positions.update', [
-                department.id,
-                editingPosition.value.id,
-            ]),
+            route('departments.positions.update', {
+                department: department.id,
+                position: editingPosition.value.id,
+            }),
             options,
         );
         return;
     }
 
     positionForm.post(
-        route('departments.positions.store', department.id),
+        route('departments.positions.store', { department: department.id }),
         options,
     );
 };
@@ -330,10 +330,10 @@ const deletePosition = (position: Position) => {
     }
 
     positionForm.delete(
-        route('departments.positions.destroy', [
-            selectedDepartment.value.id,
-            position.id,
-        ]),
+        route('departments.positions.destroy', {
+            department: selectedDepartment.value.id,
+            position: position.id,
+        }),
         { preserveScroll: true },
     );
 };
@@ -344,10 +344,10 @@ const assignPosition = (position: Position) => {
     }
 
     assignmentForm.post(
-        route('departments.positions.members.store', [
-            selectedDepartment.value.id,
-            position.id,
-        ]),
+        route('departments.positions.members.store', {
+            department: selectedDepartment.value.id,
+            position: position.id,
+        }),
         {
             preserveScroll: true,
             onSuccess: () => {
@@ -368,11 +368,11 @@ const unassignPosition = (position: Position, user: PositionUser) => {
     }
 
     assignmentForm.delete(
-        route('departments.positions.members.destroy', [
-            selectedDepartment.value.id,
-            position.id,
-            user.id,
-        ]),
+        route('departments.positions.members.destroy', {
+            department: selectedDepartment.value.id,
+            position: position.id,
+            user: user.id,
+        }),
         { preserveScroll: true },
     );
 };
