@@ -17,7 +17,6 @@ class CreateDepartmentDefaultProjectAction
             $project = Project::query()->create([
                 'department_id' => $department->id,
                 'name' => 'پروژه عمومی '.$department->name,
-                'code' => 'DEPT-'.$department->id.'-DEFAULT',
                 'description' => 'پروژه عمومی و پیش‌فرض دپارتمان',
                 'status' => 'active',
                 'start_date' => null,
