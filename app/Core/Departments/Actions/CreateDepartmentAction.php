@@ -3,6 +3,7 @@
 namespace App\Core\Departments\Actions;
 
 use App\Core\Departments\Models\Department;
+use App\Core\CustomFields\Services\CustomFieldService;
 use App\Modules\Projects\Actions\CreateDepartmentDefaultProjectAction;
 use Illuminate\Support\Facades\DB;
 
@@ -10,6 +11,7 @@ class CreateDepartmentAction
 {
     public function __construct(
         private readonly CreateDepartmentDefaultProjectAction $createDefaultProjectAction,
+        private readonly CustomFieldService $customFieldService,
     ) {
     }
 
@@ -36,6 +38,8 @@ class CreateDepartmentAction
                     'manager_id' => $managerId,
                 ]);
             }
+
+            $this->customFieldService->sync($department, $data['custom_fields'] ?? []);
 
             $department = $department->refresh();
 
