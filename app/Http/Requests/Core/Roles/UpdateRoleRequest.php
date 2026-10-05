@@ -32,6 +32,7 @@ class UpdateRoleRequest extends FormRequest
                 'string',
             ],
 
+            'custom_fields' => ['nullable', 'array'],
             'is_active' => [
                 'sometimes',
                 'boolean',
