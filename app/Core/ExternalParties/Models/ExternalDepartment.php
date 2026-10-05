@@ -5,6 +5,7 @@ namespace App\Core\ExternalParties\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Concerns\HasSystemCode;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Core\CustomFields\Models\CustomFieldValue;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ExternalDepartment extends Model
@@ -14,6 +15,12 @@ class ExternalDepartment extends Model
     protected static function systemCodePrefix(): string
     {
         return 'EXTDPT';
+    }
+
+    public function customFieldValues(): HasMany
+    {
+        return $this->hasMany(CustomFieldValue::class, 'entity_id')
+            ->where('entity_type', self::class);
     }
 
     protected $fillable = ['external_organization_id', 'parent_id', 'name', 'code', 'phone', 'extension', 'email', 'status'];
