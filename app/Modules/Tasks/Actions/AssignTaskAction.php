@@ -14,6 +14,10 @@ use InvalidArgumentException;
 
 class AssignTaskAction
 {
+    public function __construct(private readonly AuditServiceInterface $audit)
+    {
+    }
+
     public function execute(
         Task $task,
         User $assignee,
@@ -72,6 +76,7 @@ class AssignTaskAction
             ]);
 
             TaskAssigned::dispatch($task, $assignee, $actor, $type);
+            $this->audit->record('task.assigned', $task, ['assignee_id' => $previousAssigneeId], ['assignee_id' => $assignee->id, 'type' => $type]);
 
             return $task;
         });
