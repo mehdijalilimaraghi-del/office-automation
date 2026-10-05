@@ -100,7 +100,7 @@ const submit = () => {
                     <InputLabel
                         for="password"
                         value="رمز عبور"
-                        class="text-sm font-semibold text-slate-800"
+                        class="text-left text-sm font-semibold text-slate-800"
                     />
 
                     <div class="relative">
