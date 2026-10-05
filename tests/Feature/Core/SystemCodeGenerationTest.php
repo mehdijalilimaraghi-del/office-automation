@@ -5,6 +5,9 @@ namespace Tests\Feature\Core;
 use App\Core\Departments\Models\Department;
 use App\Core\Departments\Models\Position;
 use App\Core\Roles\Models\Role;
+use App\Core\ExternalParties\Models\ExternalContact;
+use App\Core\ExternalParties\Models\ExternalDepartment;
+use App\Core\ExternalParties\Models\ExternalOrganization;
 use App\Models\User;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectRole;
@@ -53,6 +56,25 @@ class SystemCodeGenerationTest extends TestCase
             'is_active' => true,
         ]);
 
+        $externalOrganization = ExternalOrganization::create([
+            'name' => 'سازمان برون‌سازمانی آزمایشی',
+            'status' => 'active',
+        ]);
+
+        $externalDepartment = ExternalDepartment::create([
+            'external_organization_id' => $externalOrganization->id,
+            'name' => 'واحد برون‌سازمانی آزمایشی',
+            'status' => 'active',
+        ]);
+
+        $externalContact = ExternalContact::create([
+            'external_organization_id' => $externalOrganization->id,
+            'external_department_id' => $externalDepartment->id,
+            'name' => 'مخاطب آزمایشی',
+            'status' => 'active',
+        ]);
+
+
         $this->assertSame(
             sprintf('ORG-%06d', $department->id),
             $department->refresh()->code,
@@ -72,6 +94,19 @@ class SystemCodeGenerationTest extends TestCase
         $this->assertSame(
             sprintf('PRL-%06d', $projectRole->refresh()->id),
             $projectRole->refresh()->code,
+        );
+
+        $this->assertSame(
+            sprintf('EXTORG-%06d', $externalOrganization->refresh()->id),
+            $externalOrganization->refresh()->code,
+        );
+        $this->assertSame(
+            sprintf('EXTDPT-%06d', $externalDepartment->refresh()->id),
+            $externalDepartment->refresh()->code,
+        );
+        $this->assertSame(
+            sprintf('EXTCNT-%06d', $externalContact->refresh()->id),
+            $externalContact->refresh()->code,
         );
     }
 
