@@ -58,6 +58,8 @@ class DepartmentService implements DepartmentServiceInterface
                 'members.profile:user_id,avatar_path',
                 'positions.users:id,name',
                 'positions.users.profile:user_id,avatar_path',
+                'customFieldValues.field',
+                'positions.customFieldValues.field',
             ])
             ->withCount('children')
             ->orderBy('name')
