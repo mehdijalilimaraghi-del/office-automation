@@ -7,6 +7,7 @@ namespace App\Modules\Cartable\Services;
 use App\Models\User;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskAssignment;
+use App\Modules\Correspondence\Models\CorrespondenceReferral;
 use Illuminate\Database\Eloquent\Builder;
 
 class CartableService
@@ -18,6 +19,7 @@ class CartableService
                 'my_tasks' => $this->myTasksQuery($user)->count(),
                 'pending_approvals' => $this->pendingApprovalsQuery($user)->count(),
                 'referrals' => $this->referralsQuery($user)->count(),
+                'correspondence_referrals' => $this->correspondenceReferralsQuery($user)->count(),
             ],
             'myTasks' => $this->myTasksQuery($user)
                 ->with(['project', 'department', 'assignee'])
@@ -32,6 +34,11 @@ class CartableService
             'referrals' => $this->referralsQuery($user)
                 ->with(['task.project', 'task.department', 'fromUser', 'assignedBy'])
                 ->latest('created_at')
+                ->limit(10)
+                ->get(),
+            'correspondenceReferrals' => $this->correspondenceReferralsQuery($user)
+                ->with(['correspondence', 'fromUser', 'referredBy'])
+                ->latest('referred_at')
                 ->limit(10)
                 ->get(),
         ];
@@ -64,5 +71,12 @@ class CartableService
             ->where('to_user_id', $user->id)
             ->where('type', 'handoff')
             ->whereNull('ended_at');
+    }
+
+    private function correspondenceReferralsQuery(User $user): Builder
+    {
+        return CorrespondenceReferral::query()
+            ->where('to_user_id', $user->id)
+            ->whereNull('completed_at');
     }
 }
