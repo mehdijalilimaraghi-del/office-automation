@@ -548,64 +548,40 @@ Review and test:
 - pagination
 - edge cases
 
-### Step 3 — Tasks V1 Completion
-Complete the task workflow as one coherent feature set:
-- CRUD
-- optional project and department
-- internal assignment
-- referral/history
-- status and priority
-- comments
-- work logs
-- optional external follow-up
-- reminders
-- status/activity history
-- filtering/search
-- pagination
-- My Tasks
-- validation
-- authorization
-- HTTP/service tests
+### V1 Completion Status
 
-### Step 4 — Task UX Completion
-After the V1 business behavior is stable:
-- finish Reminder UI
-- replace remaining native Gregorian date-time inputs with the Jalali date/time presentation where appropriate
-- review task create/edit/show flows
-- improve empty/loading/error states
-- keep RTL/Vazirmatn consistency
+V1 business scope is now implementation-complete.
 
-### Step 5 — Attachments
-Introduce controlled task attachments using Laravel Filesystem abstraction, while keeping the model ready for a future Documents module.
+Completed:
+- Core identity, users, profiles, departments, roles, permissions and authorization/scopes
+- User onboarding and invitation activation
+- Custom Fields foundation
+- Projects CRUD, lifecycle, managers, members, roles, default projects and pagination
+- Tasks CRUD, assignment, referral/history, status/priority, comments, work logs, reminders, filtering/search, pagination and access scopes
+- Task review lifecycle: submit, review, approve, return and resubmission
+- Task dependencies
+- Controlled task attachments backed by the Documents storage abstraction
+- Workflow V1
+- Unified Cartable V1
+- Notifications V1
+- Audit V1 core
+- Persian RTL task/project/core UI and Jalali date presentation where applicable
+- Regression coverage for the implemented V1 behavior
 
-### Step 6 — Notifications and Audit
-Add:
-- general activity/audit history where justified
-- internal notifications
-- reminder delivery
-- queue-backed delivery when the operational need is established
+The repository's full test suite passed before the final attachment integration; the dedicated TaskDocumentTest also passes after that integration. A final full-suite run and frontend build are the remaining technical validation steps before manual UI/functional acceptance.
 
-### Step 7 — Task Views
-Then add higher-level task views:
-- My Tasks
-- Board
-- Calendar
-- advanced filtering
-Only introduce Gantt/dependencies/subtasks/recurring tasks after the core V1 workflow proves stable.
+### Post-V1 / Deferred
 
-### Step 8 — Security / Integration Testing
-Test realistic role/user combinations and permission scopes end-to-end, including cross-department and external-follow-up cases.
+The following are intentionally outside V1 acceptance and remain deferred:
+- Board and Calendar task views
+- Gantt, subtasks and recurring tasks
+- Visual workflow designer
+- Correspondence and other business modules
+- Production hardening, deployment and operations work
 
-### Step 9 — Deployment / Operations
-Prepare:
-- production configuration
-- backup/restore
-- logging
-- queue/cache strategy
-- deployment procedure
-- LAN production checklist
+These are not blockers for V1 functional acceptance.
 
-**Current immediate sequence:** Core Completion Audit → Projects Completion Audit → Tasks V1 Completion → Task UX Completion.
+**Current immediate sequence:** final full-suite validation → frontend build validation → manual visual/functional acceptance of V1.
 
 ### Projects Audit Checkpoint — 2026-10-03
 ### Projects Completion Audit — 2026-10-03
