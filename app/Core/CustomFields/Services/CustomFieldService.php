@@ -7,6 +7,7 @@ use App\Core\CustomFields\Models\CustomField;
 use App\Core\CustomFields\Models\CustomFieldValue;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class CustomFieldService implements CustomFieldServiceInterface
