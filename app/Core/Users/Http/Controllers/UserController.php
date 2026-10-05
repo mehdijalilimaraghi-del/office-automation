@@ -136,6 +136,8 @@ class UserController extends Controller
             'success',
             'وضعیت کاربر با موفقیت تغییر کرد.'
         );
+    }
+
     private function ensureRoleManagementAllowed(User $actor, array $roleIds): void
     {
         if ($roleIds === [] || $actor->hasPermission('users.manage_roles')) {
@@ -144,5 +146,5 @@ class UserController extends Controller
 
         abort(403, 'برای تخصیص یا تغییر نقش کاربران، مجوز مدیریت نقش‌های کاربر لازم است.');
     }
-}
+    }
 }
