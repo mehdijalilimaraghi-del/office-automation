@@ -11,6 +11,11 @@ class CorePermissionSeeder extends Seeder
     {
         $permissions = [
             [
+                'name' => 'مدیریت تنظیمات سازمان',
+                'code' => 'settings.manage',
+            ],
+
+            [
                 'name' => 'مشاهده اعلان‌ها',
                 'code' => 'notifications.view',
             ],
