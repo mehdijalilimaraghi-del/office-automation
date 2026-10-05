@@ -13,7 +13,7 @@ class Position extends Model
 {
     use HasSystemCode;
 
-protected static function systemCodePrefix(): string
+    protected static function systemCodePrefix(): string
     {
         return 'POS';
     }
