@@ -16,6 +16,8 @@ use App\Modules\Tasks\Contracts\TaskServiceContract;
 use App\Modules\Tasks\Services\TaskService;
 use App\Core\CustomFields\Contracts\CustomFieldServiceInterface;
 use App\Core\CustomFields\Services\CustomFieldService;
+use App\Core\Audit\Contracts\AuditServiceInterface;
+use App\Core\Audit\Services\AuditService;
 use App\Modules\Documents\Contracts\DocumentStorageContract;
 use App\Modules\Documents\Infrastructure\FilesystemDocumentStorage;
 use App\Modules\Documents\Models\Document;
@@ -27,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(CustomFieldServiceInterface::class, CustomFieldService::class);
+        $this->app->bind(AuditServiceInterface::class, AuditService::class);
 
         $this->app->bind(
             ProjectServiceContract::class,
