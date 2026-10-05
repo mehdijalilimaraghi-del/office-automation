@@ -17,6 +17,7 @@ class SubmitTaskAction
 {
     public function __construct(
         private readonly TaskDependencyService $dependencyService,
+        private readonly AuditServiceInterface $audit,
     ) {
     }
 
@@ -61,6 +62,7 @@ class SubmitTaskAction
             $task = $task->refresh()->load(['project', 'department', 'assignee', 'creator']);
 
             TaskSubmitted::dispatch($task);
+            $this->audit->record('task.submitted', $task, ['status' => $fromStatus], ['status' => $task->status, 'review_status' => $task->review_status]);
 
             return $task;
         });
