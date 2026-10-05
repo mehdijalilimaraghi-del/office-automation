@@ -308,7 +308,7 @@ class TaskServiceTest extends TestCase
         );
     }
 
-    public function test_completed_task_can_return_to_in_progress(): void
+    public function test_completed_task_cannot_return_to_in_progress(): void
     {
         $creator = User::factory()->create();
         $project = $this->createProject();
@@ -332,18 +332,12 @@ class TaskServiceTest extends TestCase
             'completed'
         );
 
-        $updated = $service->changeStatus(
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('تسک نهایی‌شده امکان تغییر وضعیت ندارد.');
+
+        $service->changeStatus(
             $task->refresh(),
             'in_progress'
-        );
-
-        $this->assertSame(
-            'in_progress',
-            $updated->status
-        );
-
-        $this->assertNull(
-            $updated->completed_at
         );
     }
 
