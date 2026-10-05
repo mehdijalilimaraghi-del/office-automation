@@ -5,16 +5,21 @@ namespace App\Modules\Tasks\Actions;
 use App\Modules\Tasks\Models\Task;
 use App\Core\CustomFields\Services\CustomFieldService;
 use App\Core\ExternalParties\Contracts\ExternalPartyServiceInterface;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class UpdateTaskAction
 {
-    public function __construct(private readonly ExternalPartyServiceInterface $externalPartyService) {}
+    public function __construct(
+        private readonly ExternalPartyServiceInterface $externalPartyService,
+        private readonly CustomFieldService $customFieldService,
+    ) {}
 
     public function execute(
         Task $task,
         array $data
     ): Task {
+        return DB::transaction(function () use ($task, $data): Task {
         $startDate = $data['start_date']
             ?? $task->start_date?->format('Y-m-d');
 
@@ -68,10 +73,11 @@ class UpdateTaskAction
 
         $this->customFieldService->sync($task, $data['custom_fields'] ?? []);
 
-        return $task->refresh()->load([
-            'project',
-            'assignee',
-            'creator',
-        ]);
+            return $task->refresh()->load([
+                'project',
+                'assignee',
+                'creator',
+            ]);
+        });
     }
 }
