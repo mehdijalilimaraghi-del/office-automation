@@ -13,6 +13,7 @@ use App\Modules\Projects\Http\Controllers\ProjectController;
 use App\Modules\Projects\Http\Controllers\ProjectMemberController;
 use App\Modules\Projects\Http\Controllers\ProjectRoleController;
 use App\Modules\Tasks\Http\Controllers\TaskController;
+use App\Modules\Documents\Http\Controllers\DocumentController;
 use App\Http\Controllers\ProfileController;
 use App\Modules\Dashboard\Http\Controllers\DashboardController;
 use App\Modules\Cartable\Http\Controllers\CartableController;
@@ -101,11 +102,19 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/tasks', [TaskController::class, 'index'])->middleware('permission:tasks.view')->name('tasks.index');
     Route::post('/tasks', [TaskController::class, 'store'])->middleware('permission:tasks.create')->name('tasks.store');
+    Route::post('/tasks/{task}/documents', [DocumentController::class, 'storeForTask'])
+        ->middleware('permission:documents.create')
+        ->name('tasks.documents.store');
     Route::get('/tasks/{task}', [TaskController::class, 'show'])->middleware('permission:tasks.view')->name('tasks.show');
     Route::put('/tasks/{task}', [TaskController::class, 'update'])->middleware('permission:tasks.update')->name('tasks.update');
     Route::patch('/tasks/{task}/assign', [TaskController::class, 'assign'])->middleware('permission:tasks.assign')->name('tasks.assign');
     Route::patch('/tasks/{task}/refer', [TaskController::class, 'refer'])->middleware('permission:tasks.refer')->name('tasks.refer');
     Route::patch('/tasks/{task}/status', [TaskController::class, 'changeStatus'])->middleware('permission:tasks.change_status')->name('tasks.change-status');
+
+    Route::get('/documents/{document}/download', [DocumentController::class, 'download'])
+        ->middleware('permission:documents.view')
+        ->name('documents.download');
+
     Route::patch('/tasks/{task}/submit', [TaskController::class, 'submit'])->middleware('permission:tasks.submit')->name('tasks.submit');
     Route::patch('/tasks/{task}/approve', [TaskController::class, 'approve'])->middleware('permission:tasks.review')->name('tasks.approve');
     Route::patch('/tasks/{task}/return', [TaskController::class, 'returnFromReview'])->middleware('permission:tasks.review')->name('tasks.return');
