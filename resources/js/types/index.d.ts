@@ -19,15 +19,13 @@ export interface AuthAbilities {
     cartable_view?: boolean;
     notification_view?: boolean;
     settings_manage?: boolean;
-    users_view?: boolean;
-    departments_view?: boolean;
-    roles_view?: boolean;
     departments_create?: boolean;
     departments_edit?: boolean;
     departments_delete?: boolean;
     departments_toggle_status?: boolean;
     departments_manage_positions?: boolean;
     users_manage_departments?: boolean;
+    users_manage_roles?: boolean;
 }
 
 export type PageProps<
