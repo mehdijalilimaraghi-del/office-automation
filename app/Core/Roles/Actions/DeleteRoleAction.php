@@ -8,6 +8,10 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class DeleteRoleAction
 {
+    public function __construct(private readonly AuditServiceInterface $audit)
+    {
+    }
+
     public function execute(Role $role): void
     {
         if ($role->is_system) {
