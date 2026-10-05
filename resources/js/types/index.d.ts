@@ -15,6 +15,7 @@ export interface AuthAbilities {
     roles_view?: boolean;
     cartable_view?: boolean;
     notification_view?: boolean;
+    settings_manage?: boolean;
 }
 
 export type PageProps<
