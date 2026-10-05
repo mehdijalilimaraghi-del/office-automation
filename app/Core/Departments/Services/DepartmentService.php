@@ -56,6 +56,7 @@ class DepartmentService implements DepartmentServiceInterface
                 'members:id,name',
                 'positions.users:id,name',
             ])
+            ->withCount('children')
             ->orderBy('name')
             ->get();
     }
