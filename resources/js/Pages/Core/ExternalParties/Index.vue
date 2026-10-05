@@ -19,7 +19,7 @@ type CustomFieldValue = {
 
 type Organization={id:number;name:string;code:string|null;phone:string|null;email:string|null;address:string|null;status:string;departments_count:number;contacts_count:number;customFieldValues?:CustomFieldValue[]};
 type Department={id:number;external_organization_id:number;parent_id:number|null;name:string;code:string|null;phone:string|null;extension:string|null;email:string|null;status:string;organization?:{id:number;name:string};customFieldValues?:CustomFieldValue[]};
-type Contact={id:number;external_organization_id:number;external_department_id:number|null;name:string;position:string|null;mobile:string|null;phone:string|null;extension:string|null;email:string|null;notes:string|null;status:string;organization?:{id:number;name:string};department?:{id:number;name:string};customFieldValues?:CustomFieldValue[]};
+type Contact={id:number;external_organization_id:number;external_department_id:number|null;code:string|null;name:string;position:string|null;mobile:string|null;phone:string|null;extension:string|null;email:string|null;notes:string|null;status:string;organization?:{id:number;name:string};department?:{id:number;name:string};customFieldValues?:CustomFieldValue[]};
 
 const props=defineProps<{
     organizations: Organization[];
@@ -146,7 +146,7 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
           <select v-model="depForm.external_organization_id" required class="w-full rounded-xl border border-slate-200 px-3 py-2.5"><option value="">سازمان *</option><option v-for="o in organizations" :key="o.id" :value="o.id">{{o.name}}</option></select>
           <select v-model="depForm.parent_id" class="w-full rounded-xl border border-slate-200 px-3 py-2.5"><option value="">واحد بالادست</option><option v-for="d in departmentsForEdit" :key="d.id" :value="d.id">{{d.name}}</option></select>
           <input v-model="depForm.name" required placeholder="نام واحد *" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
-          <input v-model="depForm.code" placeholder="کد" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
+          
           <div class="grid grid-cols-2 gap-3"><input v-model="depForm.phone" placeholder="تلفن" class="rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr"><input v-model="depForm.extension" placeholder="داخلی" class="rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr"></div>
           <input v-model="depForm.email" type="email" placeholder="ایمیل" class="w-full rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr">
         </div>
@@ -195,7 +195,7 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
         <div class="border-b p-5"><h2 class="font-black">افراد طرف تعامل</h2></div>
         <div v-if="!contacts.length" class="p-12 text-center text-sm text-slate-400">هنوز فردی ثبت نشده است.</div>
         <div v-else class="divide-y divide-slate-100">
-          <div v-for="c in contacts" :key="c.id" class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"><div class="min-w-0"><h3 class="font-bold text-slate-900">{{c.name}}</h3><p class="mt-1 text-xs text-slate-500">{{c.position||'بدون سمت'}} · {{c.organization?.name||'—'}}{{c.department?.name?' · '+c.department.name:''}}</p><p class="mt-1 text-xs text-slate-400" dir="ltr">{{c.mobile||c.phone||'بدون شماره'}}{{c.email?' · '+c.email:''}}</p><p class="mt-1 font-mono text-[10px] text-slate-400" dir="ltr">کد سیستمی: EXTCNT-{{String(c.id).padStart(6,'0')}}</p></div><div class="flex gap-2"><button @click="edit(contactForm,c)" class="rounded-lg px-3 py-2 text-xs font-bold text-teal-700 hover:bg-teal-50">ویرایش</button><button @click="destroy('external-parties.contacts.destroy',c.id)" class="rounded-lg px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">حذف</button></div></div>
+          <div v-for="c in contacts" :key="c.id" class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"><div class="min-w-0"><h3 class="font-bold text-slate-900">{{c.name}}</h3><p class="mt-1 text-xs text-slate-500">{{c.position||'بدون سمت'}} · {{c.organization?.name||'—'}}{{c.department?.name?' · '+c.department.name:''}}</p><p class="mt-1 text-xs text-slate-400" dir="ltr">{{c.mobile||c.phone||'بدون شماره'}}{{c.email?' · '+c.email:''}}</p><p class="mt-1 font-mono text-[10px] text-slate-400" dir="ltr">کد سیستمی: {{c.code||'—'}}</p></div><div class="flex gap-2"><button @click="edit(contactForm,c)" class="rounded-lg px-3 py-2 text-xs font-bold text-teal-700 hover:bg-teal-50">ویرایش</button><button @click="destroy('external-parties.contacts.destroy',c.id)" class="rounded-lg px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">حذف</button></div></div>
         </div>
       </div>
     </section>
