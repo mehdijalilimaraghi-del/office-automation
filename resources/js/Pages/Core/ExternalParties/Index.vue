@@ -34,8 +34,8 @@ const props=defineProps<{
 const page=usePage();
 const tab=ref<'organizations'|'departments'|'contacts'>('organizations');
 const saving=ref(false);
-const orgForm=reactive<any>({id:null,name:'',code:'',phone:'',email:'',address:'',status:'active',custom_fields:{}});
-const depForm=reactive<any>({id:null,external_organization_id:'',parent_id:'',name:'',code:'',phone:'',extension:'',email:'',status:'active',custom_fields:{}});
+const orgForm=reactive<any>({id:null,name:'',phone:'',email:'',address:'',status:'active',custom_fields:{}});
+const depForm=reactive<any>({id:null,external_organization_id:'',parent_id:'',name:'',phone:'',extension:'',email:'',status:'active',custom_fields:{}});
 const contactForm=reactive<any>({id:null,external_organization_id:'',external_department_id:'',name:'',position:'',mobile:'',phone:'',extension:'',email:'',notes:'',status:'active',custom_fields:{}});
 
 const departmentsForContact=computed(()=>props.departments.filter(d=>String(d.external_organization_id)===String(contactForm.external_organization_id)));
@@ -67,6 +67,7 @@ function edit(f:any,item:any){
     Object.assign(f,item);
     f.custom_fields = customFieldValueMap(item.customFieldValues);
     delete f.customFieldValues;
+    delete f.code;
     if(f===depForm) f.parent_id=item.parent_id??'';
     if(f===contactForm) f.external_department_id=item.external_department_id??'';
     window.scrollTo({top:0,behavior:'smooth'});
@@ -87,7 +88,7 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
       <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p class="text-xs font-bold text-teal-200">ارتباطات سازمانی</p>
-          <h1 class="mt-2 text-2xl font-black sm:text-3xl">طرف‌های خارجی</h1>
+          <h1 class="mt-2 text-2xl font-black sm:text-3xl">برون‌سازمانی</h1>
           <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-300">سازمان‌ها، واحدها و افراد طرف تعامل را یکپارچه مدیریت کنید.</p>
         </div>
         <div class="grid grid-cols-3 gap-2 sm:gap-3">
