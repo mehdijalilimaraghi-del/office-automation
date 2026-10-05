@@ -13,7 +13,10 @@ use InvalidArgumentException;
 
 class CreateTaskAction
 {
-    public function __construct(private readonly ExternalPartyServiceInterface $externalPartyService) {}
+    public function __construct(
+        private readonly ExternalPartyServiceInterface $externalPartyService,
+        private readonly CustomFieldService $customFieldService,
+    ) {}
 
     public function execute(
         array $data,
