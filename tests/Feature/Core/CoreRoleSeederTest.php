@@ -26,10 +26,10 @@ class CoreRoleSeederTest extends TestCase
                 'projects.manage_members',
                 'tasks.assign',
             ],
-            'DEPARTMENT_MANAGER' => [
-                'users.manage_departments',
-                'departments.manage_positions',
+            'DEPARTMENT_SUPERVISOR' => [
+                'departments.view',
                 'tasks.view',
+                'tasks.update',
             ],
             'ORGANIZATION_MANAGER' => [
                 'users.manage_roles',
