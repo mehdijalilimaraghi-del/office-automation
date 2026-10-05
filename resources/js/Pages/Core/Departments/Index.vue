@@ -76,14 +76,12 @@ const form = useForm({
     manager_id: null as number | null,
     name: '',
     icon: 'building-2',
-    code: '',
     description: '',
     is_active: true,
 });
 
 const positionForm = useForm({
     name: '',
-    code: '',
     description: '',
     is_active: true,
 });
@@ -221,7 +219,6 @@ const openEdit = (department: Department) => {
     form.manager_id = department.manager_id;
     form.name = department.name;
     form.icon = department.icon ?? 'building-2';
-    form.code = department.code ?? '';
     form.description = department.description ?? '';
     form.is_active = department.is_active;
     form.clearErrors();
@@ -293,7 +290,6 @@ const openPositionCreate = () => {
 const openPositionEdit = (position: Position) => {
     editingPosition.value = position;
     positionForm.name = position.name;
-    positionForm.code = position.code ?? '';
     positionForm.description = position.description ?? '';
     positionForm.is_active = position.is_active;
     positionForm.clearErrors();
@@ -916,12 +912,6 @@ watch(
                             <InputError class="mt-1.5" :message="form.errors.name" />
                         </div>
 
-                        <div>
-                            <label class="mb-2 block text-sm font-semibold text-slate-700">کد واحد</label>
-                            <TextInput v-model="form.code" dir="ltr" class="block min-h-11 w-full rounded-xl text-left" maxlength="50" />
-                            <InputError class="mt-1.5" :message="form.errors.code" />
-                        </div>
-
                         <div class="md:col-span-2">
                             <div class="flex items-center justify-between gap-3">
                                 <div>
@@ -1053,12 +1043,6 @@ watch(
                         <label class="mb-2 block text-sm font-semibold text-slate-700">نام سمت</label>
                         <TextInput v-model="positionForm.name" class="block min-h-11 w-full rounded-xl text-right" required maxlength="150" />
                         <InputError class="mt-1.5" :message="positionForm.errors.name" />
-                    </div>
-
-                    <div>
-                        <label class="mb-2 block text-sm font-semibold text-slate-700">کد سمت</label>
-                        <TextInput v-model="positionForm.code" dir="ltr" class="block min-h-11 w-full rounded-xl text-left" maxlength="50" placeholder="مثلاً IT-MGR" />
-                        <InputError class="mt-1.5" :message="positionForm.errors.code" />
                     </div>
 
                     <div>
