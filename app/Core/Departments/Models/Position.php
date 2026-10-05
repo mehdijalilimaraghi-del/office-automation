@@ -3,6 +3,7 @@
 namespace App\Core\Departments\Models;
 
 use App\Models\User;
+use App\Core\CustomFields\Models\CustomFieldValue;
 use App\Models\Concerns\HasSystemCode;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,6 +17,12 @@ class Position extends Model
     protected static function systemCodePrefix(): string
     {
         return 'POS';
+    }
+
+    public function customFieldValues(): HasMany
+    {
+        return $this->hasMany(CustomFieldValue::class, 'entity_id')
+            ->where('entity_type', self::class);
     }
 
     protected $fillable = ['department_id','name','code','description','is_active'];
