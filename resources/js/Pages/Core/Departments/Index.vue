@@ -1,13 +1,20 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import InputError from '@/Components/InputError.vue';
+import PrimaryButton from '@/Components/PrimaryButton.vue';
+import TextInput from '@/Components/TextInput.vue';
 
 interface PositionUser {
     id: number;
     name: string;
-    pivot?: { is_primary: boolean; is_active: boolean };
+    pivot?: {
+        is_primary: boolean;
+        is_active: boolean;
+    };
 }
+
 interface Position {
     id: number;
     name: string;
@@ -16,6 +23,12 @@ interface Position {
     is_active: boolean;
     users?: PositionUser[];
 }
+
+interface DepartmentMember {
+    id: number;
+    name: string;
+}
+
 interface Department {
     id: number;
     parent_id: number | null;
@@ -26,14 +39,26 @@ interface Department {
     manager_id: number | null;
     manager?: { id: number; name: string } | null;
     parent?: { id: number; name: string } | null;
+    members?: DepartmentMember[];
     positions?: Position[];
 }
-interface User { id: number; name: string; }
 
-const props = defineProps<{ departments: Department[]; users: User[] }>();
+interface User {
+    id: number;
+    name: string;
+}
+
+const props = defineProps<{
+    departments: Department[];
+    users: User[];
+}>();
+
+const page = usePage();
+const selectedDepartmentId = ref<number | null>(props.departments[0]?.id ?? null);
 const editingDepartment = ref<Department | null>(null);
-const expandedDepartmentId = ref<number | null>(null);
 const editingPosition = ref<Position | null>(null);
+const showDepartmentForm = ref(false);
+const showPositionForm = ref(false);
 
 const form = useForm({
     parent_id: null as number | null,
@@ -43,51 +68,137 @@ const form = useForm({
     description: '',
     is_active: true,
 });
+
 const positionForm = useForm({
     name: '',
     code: '',
     description: '',
     is_active: true,
 });
+
 const assignmentForm = useForm({
     user_id: null as number | null,
     is_primary: false,
 });
 
-const getDescendantIds = (id: number): number[] => {
+const abilities = computed(() => page.props.auth.abilities ?? {});
+
+const selectedDepartment = computed(
+    () =>
+        props.departments.find(
+            (department) => department.id === selectedDepartmentId.value,
+        ) ?? null,
+);
+
+const childrenCount = (departmentId: number): number =>
+    props.departments.filter(
+        (department) => department.parent_id === departmentId,
+    ).length;
+
+const descendantIds = (id: number): number[] => {
     const result: number[] = [];
-    const collect = (parentId: number) => {
-        props.departments.forEach((d) => {
-            if (d.parent_id === parentId) { result.push(d.id); collect(d.id); }
+
+    const visit = (parentId: number) => {
+        props.departments.forEach((department) => {
+            if (department.parent_id === parentId) {
+                result.push(department.id);
+                visit(department.id);
+            }
         });
     };
-    collect(id);
+
+    visit(id);
+
     return result;
 };
 
 const parentOptions = computed(() => {
-    if (!editingDepartment.value) return props.departments;
-    const excluded = new Set([editingDepartment.value.id, ...getDescendantIds(editingDepartment.value.id)]);
-    return props.departments.filter((d) => !excluded.has(d.id));
+    if (!editingDepartment.value) {
+        return props.departments;
+    }
+
+    const excluded = new Set([
+        editingDepartment.value.id,
+        ...descendantIds(editingDepartment.value.id),
+    ]);
+
+    return props.departments.filter(
+        (department) => !excluded.has(department.id),
+    );
 });
 
-const stats = computed(() => ({
-    total: props.departments.length,
-    active: props.departments.filter((d) => d.is_active).length,
-    managers: props.departments.filter((d) => d.manager_id).length,
-    positions: props.departments.reduce((sum, d) => sum + (d.positions?.length ?? 0), 0),
-}));
+const treeRows = computed(() => {
+    const rows: Array<{
+        department: Department;
+        depth: number;
+        childCount: number;
+    }> = [];
 
-function resetDepartmentForm() {
+    const visit = (parentId: number | null, depth: number) => {
+        props.departments
+            .filter((department) => department.parent_id === parentId)
+            .forEach((department) => {
+                rows.push({
+                    department,
+                    depth,
+                    childCount: childrenCount(department.id),
+                });
+
+                visit(department.id, depth + 1);
+            });
+    };
+
+    visit(null, 0);
+
+    const listedIds = new Set(rows.map((row) => row.department.id));
+
+    props.departments
+        .filter((department) => !listedIds.has(department.id))
+        .forEach((department) => {
+            rows.push({
+                department,
+                depth: 0,
+                childCount: childrenCount(department.id),
+            });
+        });
+
+    return rows;
+});
+
+const stats = computed(() => {
+    const memberIds = new Set(
+        props.departments.flatMap(
+            (department) => department.members?.map((member) => member.id) ?? [],
+        ),
+    );
+
+    return {
+        total: props.departments.length,
+        active: props.departments.filter((item) => item.is_active).length,
+        members: memberIds.size,
+        managers: props.departments.filter((item) => item.manager_id).length,
+        positions: props.departments.reduce(
+            (sum, item) => sum + (item.positions?.length ?? 0),
+            0,
+        ),
+    };
+});
+
+const resetDepartmentForm = () => {
     form.reset();
     form.is_active = true;
     form.clearErrors();
-}
-function openCreate() {
+};
+
+const openCreate = () => {
     editingDepartment.value = null;
     resetDepartmentForm();
-}
-function openEdit(department: Department) {
+    form.parent_id = selectedDepartment.value?.id ?? null;
+    showDepartmentForm.value = true;
+};
+
+const openEdit = (department: Department) => {
+    selectedDepartmentId.value = department.id;
     editingDepartment.value = department;
     form.parent_id = department.parent_id;
     form.manager_id = department.manager_id;
@@ -96,165 +207,839 @@ function openEdit(department: Department) {
     form.description = department.description ?? '';
     form.is_active = department.is_active;
     form.clearErrors();
-}
-function submitDepartment() {
-    const options = { preserveScroll: true, onSuccess: () => { editingDepartment.value = null; resetDepartmentForm(); } };
-    if (editingDepartment.value) form.put(route('departments.update', editingDepartment.value.id), options);
-    else form.post(route('departments.store'), options);
-}
-function deleteDepartment(department: Department) {
-    if (!confirm(`آیا از حذف «${department.name}» مطمئن هستید؟`)) return;
-    form.delete(route('departments.destroy', department.id), { preserveScroll: true });
-}
-function toggleStatus(department: Department) {
-    useForm({}).patch(route('departments.toggle-status', department.id), { preserveScroll: true });
-}
-function togglePositions(department: Department) {
-    expandedDepartmentId.value = expandedDepartmentId.value === department.id ? null : department.id;
-    editingPosition.value = null;
-    positionForm.reset();
-    positionForm.is_active = true;
-}
-function openPositionCreate() {
-    editingPosition.value = null;
+    showDepartmentForm.value = true;
+};
+
+const submitDepartment = () => {
+    const options = {
+        preserveScroll: true,
+        onSuccess: () => {
+            showDepartmentForm.value = false;
+            editingDepartment.value = null;
+            resetDepartmentForm();
+        },
+    };
+
+    if (editingDepartment.value) {
+        form.put(
+            route('departments.update', editingDepartment.value.id),
+            options,
+        );
+        return;
+    }
+
+    form.post(route('departments.store'), options);
+};
+
+const deleteDepartment = (department: Department) => {
+    const hasChildren = childrenCount(department.id) > 0;
+    const warning = hasChildren
+        ? '\nاین واحد دارای زیرواحد است و قوانین حذف ساختار سازمانی نیز اعمال می‌شود.'
+        : '';
+
+    if (!confirm('آیا از حذف «' + department.name + '» مطمئن هستید؟' + warning)) {
+        return;
+    }
+
+    form.delete(route('departments.destroy', department.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            if (selectedDepartmentId.value === department.id) {
+                selectedDepartmentId.value =
+                    props.departments.find((item) => item.id !== department.id)?.id ??
+                    null;
+            }
+        },
+    });
+};
+
+const toggleStatus = (department: Department) => {
+    useForm({}).patch(
+        route('departments.toggle-status', department.id),
+        { preserveScroll: true },
+    );
+};
+
+const resetPositionForm = () => {
     positionForm.reset();
     positionForm.is_active = true;
     positionForm.clearErrors();
-}
-function openPositionEdit(position: Position) {
+};
+
+const openPositionCreate = () => {
+    editingPosition.value = null;
+    resetPositionForm();
+    showPositionForm.value = true;
+};
+
+const openPositionEdit = (position: Position) => {
     editingPosition.value = position;
     positionForm.name = position.name;
     positionForm.code = position.code ?? '';
     positionForm.description = position.description ?? '';
     positionForm.is_active = position.is_active;
     positionForm.clearErrors();
-}
-function submitPosition(department: Department) {
-    const options = { preserveScroll: true, onSuccess: () => openPositionCreate() };
-    if (editingPosition.value) positionForm.put(route('departments.positions.update', [department.id, editingPosition.value.id]), options);
-    else positionForm.post(route('departments.positions.store', department.id), options);
-}
-function deletePosition(department: Department, position: Position) {
-    if (!confirm(`آیا از حذف سمت «${position.name}» مطمئن هستید؟`)) return;
-    positionForm.delete(route('departments.positions.destroy', [department.id, position.id]), { preserveScroll: true });
-}
-function assignPosition(department: Department, position: Position) {
-    if (!assignmentForm.user_id) return;
-    assignmentForm.post(route('departments.positions.members.store', [department.id, position.id]), {
+    showPositionForm.value = true;
+};
+
+const submitPosition = () => {
+    if (!selectedDepartment.value) {
+        return;
+    }
+
+    const department = selectedDepartment.value;
+
+    const options = {
         preserveScroll: true,
-        onSuccess: () => { assignmentForm.reset(); assignmentForm.is_primary = false; },
-    });
-}
-function unassignPosition(department: Department, position: Position, user: PositionUser) {
-    if (!confirm(`تخصیص «${user.name}» از این سمت حذف شود؟`)) return;
-    assignmentForm.delete(route('departments.positions.members.destroy', [department.id, position.id, user.id]), { preserveScroll: true });
-}
+        onSuccess: () => {
+            showPositionForm.value = false;
+            editingPosition.value = null;
+            resetPositionForm();
+        },
+    };
+
+    if (editingPosition.value) {
+        positionForm.put(
+            route('departments.positions.update', [
+                department.id,
+                editingPosition.value.id,
+            ]),
+            options,
+        );
+        return;
+    }
+
+    positionForm.post(
+        route('departments.positions.store', department.id),
+        options,
+    );
+};
+
+const deletePosition = (position: Position) => {
+    if (!selectedDepartment.value) {
+        return;
+    }
+
+    if (!confirm('آیا از حذف سمت «' + position.name + '» مطمئن هستید؟')) {
+        return;
+    }
+
+    positionForm.delete(
+        route('departments.positions.destroy', [
+            selectedDepartment.value.id,
+            position.id,
+        ]),
+        { preserveScroll: true },
+    );
+};
+
+const assignPosition = (position: Position) => {
+    if (!selectedDepartment.value || !assignmentForm.user_id) {
+        return;
+    }
+
+    assignmentForm.post(
+        route('departments.positions.members.store', [
+            selectedDepartment.value.id,
+            position.id,
+        ]),
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                assignmentForm.reset();
+                assignmentForm.is_primary = false;
+            },
+        },
+    );
+};
+
+const unassignPosition = (position: Position, user: PositionUser) => {
+    if (!selectedDepartment.value) {
+        return;
+    }
+
+    if (!confirm('تخصیص «' + user.name + '» از این سمت حذف شود؟')) {
+        return;
+    }
+
+    assignmentForm.delete(
+        route('departments.positions.members.destroy', [
+            selectedDepartment.value.id,
+            position.id,
+            user.id,
+        ]),
+        { preserveScroll: true },
+    );
+};
+
+watch(
+    () => props.departments,
+    (departments) => {
+        if (
+            selectedDepartmentId.value === null ||
+            !departments.some(
+                (department) => department.id === selectedDepartmentId.value,
+            )
+        ) {
+            selectedDepartmentId.value = departments[0]?.id ?? null;
+        }
+    },
+);
 </script>
 
 <template>
-    <Head title="ساختار سازمانی" />
+    <Head title="سازمان داخلی" />
+
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                    <div class="flex items-center gap-2 text-xs font-medium text-slate-500"><span class="h-2 w-2 rounded-full bg-teal-500"></span>مدیریت سازمان</div>
-                    <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-900">ساختار سازمانی</h2>
-                    <p class="mt-1 text-sm text-slate-500">واحدها، مدیران، اعضا و سمت‌های سازمانی را در یک ساختار منسجم مدیریت کنید.</p>
+                    <div class="flex items-center gap-2 text-xs font-semibold text-teal-700">
+                        <span class="h-2 w-2 rounded-full bg-teal-500"></span>
+                        مدیریت هسته سازمان
+                    </div>
+
+                    <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">
+                        سازمان داخلی
+                    </h2>
+
+                    <p class="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
+                        ساختار واحدها، مدیران، اعضا و سمت‌های سازمانی را از یک نمای مدیریتی یکپارچه کنترل کنید.
+                    </p>
                 </div>
-                <button type="button" class="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-800" @click="openCreate">+ واحد جدید</button>
+
+                <div class="flex flex-wrap gap-2">
+                    <Link
+                        v-if="abilities.users_manage_departments"
+                        :href="route('users.index')"
+                        class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+                    >
+                        مدیریت اعضا
+                    </Link>
+
+                    <button
+                        v-if="abilities.departments_create"
+                        type="button"
+                        class="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+                        @click="openCreate"
+                    >
+                        <span class="ml-2 text-lg leading-none">+</span>
+                        واحد جدید
+                    </button>
+                </div>
             </div>
         </template>
 
-        <div class="min-h-[calc(100vh-8rem)] bg-slate-50 py-6 md:py-8">
+        <div class="min-h-[calc(100vh-8rem)] bg-slate-50 py-6 md:py-8" dir="rtl">
             <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
-                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p class="text-xs text-slate-500">کل واحدها</p><p class="mt-2 text-2xl font-bold text-slate-900">{{ stats.total }}</p></div>
-                    <div class="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-5 shadow-sm"><p class="text-xs text-emerald-700">واحدهای فعال</p><p class="mt-2 text-2xl font-bold text-emerald-900">{{ stats.active }}</p></div>
-                    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p class="text-xs text-slate-500">دارای مدیر</p><p class="mt-2 text-2xl font-bold text-slate-900">{{ stats.managers }}</p></div>
-                    <div class="rounded-2xl border border-teal-100 bg-teal-50/70 p-5 shadow-sm"><p class="text-xs text-teal-700">سمت‌های سازمانی</p><p class="mt-2 text-2xl font-bold text-teal-900">{{ stats.positions }}</p></div>
-                </div>
-
-                <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <div class="border-b border-slate-200 px-5 py-5">
-                        <h3 class="font-bold text-slate-900">نقشه سازمان</h3>
-                        <p class="mt-1 text-xs text-slate-500">هر واحد می‌تواند چند عضو و چند سمت داشته باشد؛ عضویت و سمت دو مفهوم مستقل هستند.</p>
+                <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                        <div class="flex items-start justify-between">
+                            <span class="text-xs font-semibold text-slate-500">کل واحدها</span>
+                            <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-700">⌘</span>
+                        </div>
+                        <p class="mt-4 text-3xl font-bold tracking-tight text-slate-950">{{ stats.total }}</p>
+                        <p class="mt-1 text-xs text-slate-400">تمام سطوح ساختار سازمانی</p>
                     </div>
-                    <div v-if="!props.departments.length" class="px-6 py-16 text-center text-sm text-slate-500">هنوز واحدی تعریف نشده است.</div>
-                    <div v-else class="divide-y divide-slate-100">
-                        <div v-for="department in props.departments" :key="department.id" class="p-5 transition hover:bg-slate-50/60">
-                            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                                <div class="flex min-w-0 items-start gap-4">
-                                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-lg font-bold text-teal-700">{{ department.name.charAt(0) }}</div>
-                                    <div class="min-w-0">
-                                        <div class="flex flex-wrap items-center gap-2">
-                                            <h4 class="font-bold text-slate-900">{{ department.name }}</h4>
-                                            <span v-if="department.code" dir="ltr" class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500">{{ department.code }}</span>
-                                            <span :class="department.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'" class="rounded-full px-2.5 py-1 text-[11px] font-semibold">{{ department.is_active ? 'فعال' : 'غیرفعال' }}</span>
+
+                    <div class="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-5 shadow-sm">
+                        <div class="flex items-start justify-between">
+                            <span class="text-xs font-semibold text-emerald-700">واحدهای فعال</span>
+                            <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-white/70 text-emerald-700">✓</span>
+                        </div>
+                        <p class="mt-4 text-3xl font-bold tracking-tight text-emerald-950">{{ stats.active }}</p>
+                        <p class="mt-1 text-xs text-emerald-700/70">واحدهای آماده بهره‌برداری</p>
+                    </div>
+
+                    <div class="rounded-2xl border border-blue-100 bg-blue-50/70 p-5 shadow-sm">
+                        <div class="flex items-start justify-between">
+                            <span class="text-xs font-semibold text-blue-700">کاربران سازمان</span>
+                            <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-white/70 text-blue-700">◉</span>
+                        </div>
+                        <p class="mt-4 text-3xl font-bold tracking-tight text-blue-950">{{ stats.members }}</p>
+                        <p class="mt-1 text-xs text-blue-700/70">کاربر دارای عضویت در واحدها</p>
+                    </div>
+
+                    <div class="rounded-2xl border border-teal-100 bg-teal-50/70 p-5 shadow-sm">
+                        <div class="flex items-start justify-between">
+                            <span class="text-xs font-semibold text-teal-700">سمت‌های سازمانی</span>
+                            <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-white/70 text-teal-700">◆</span>
+                        </div>
+                        <p class="mt-4 text-3xl font-bold tracking-tight text-teal-950">{{ stats.positions }}</p>
+                        <p class="mt-1 text-xs text-teal-700/70">سمت‌های تعریف‌شده در واحدها</p>
+                    </div>
+                </section>
+
+                <div class="grid gap-6 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.5fr)]">
+                    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        <div class="border-b border-slate-100 px-5 py-5">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <p class="text-xs font-semibold text-teal-700">Organization Tree</p>
+                                    <h3 class="mt-1 text-base font-bold text-slate-950">ساختار واحدها</h3>
+                                </div>
+                                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+                                    {{ stats.total }} واحد
+                                </span>
+                            </div>
+                        </div>
+
+                        <div v-if="treeRows.length === 0" class="px-6 py-16 text-center">
+                            <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">⌘</div>
+                            <p class="mt-4 text-sm font-bold text-slate-700">هنوز ساختار سازمانی ساخته نشده است.</p>
+                            <p class="mt-1 text-xs leading-6 text-slate-400">اولین واحد را ایجاد کنید تا نقشه سازمان شکل بگیرد.</p>
+                            <button
+                                v-if="abilities.departments_create"
+                                type="button"
+                                class="mt-5 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white"
+                                @click="openCreate"
+                            >
+                                ایجاد اولین واحد
+                            </button>
+                        </div>
+
+                        <div v-else class="max-h-[680px] overflow-y-auto p-3">
+                            <button
+                                v-for="row in treeRows"
+                                :key="row.department.id"
+                                type="button"
+                                class="group relative flex w-full items-center rounded-xl px-3 py-3 text-right transition"
+                                :class="selectedDepartmentId === row.department.id ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-50'"
+                                @click="selectedDepartmentId = row.department.id"
+                            >
+                                <span
+                                    class="absolute inset-y-2 w-px bg-slate-200"
+                                    :class="selectedDepartmentId === row.department.id ? 'bg-slate-700' : ''"
+                                    :style="{ right: (14 + row.depth * 20) + 'px' }"
+                                ></span>
+
+                                <span
+                                    class="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold"
+                                    :class="selectedDepartmentId === row.department.id ? 'bg-white/10 text-teal-200' : 'bg-teal-50 text-teal-700'"
+                                    :style="{ marginRight: (row.depth * 20) + 'px' }"
+                                >
+                                    {{ row.department.name.charAt(0) }}
+                                </span>
+
+                                <span class="min-w-0 flex-1 pe-3">
+                                    <span
+                                        class="block truncate text-sm font-semibold"
+                                        :class="selectedDepartmentId === row.department.id ? 'text-white' : 'text-slate-800'"
+                                    >
+                                        {{ row.department.name }}
+                                    </span>
+                                    <span class="mt-0.5 flex items-center gap-2 text-[11px]" :class="selectedDepartmentId === row.department.id ? 'text-slate-300' : 'text-slate-400'">
+                                        <span>{{ row.department.members?.length ?? 0 }} عضو</span>
+                                        <span>·</span>
+                                        <span>{{ row.childCount }} زیرواحد</span>
+                                    </span>
+                                </span>
+
+                                <span
+                                    v-if="row.department.is_active"
+                                    class="h-2 w-2 rounded-full bg-emerald-400"
+                                ></span>
+                            </button>
+                        </div>
+                    </section>
+
+                    <section v-if="selectedDepartment" class="space-y-6">
+                        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                            <div class="bg-slate-950 px-6 py-6 text-white sm:px-7">
+                                <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                                    <div class="flex items-start gap-4">
+                                        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-xl font-bold ring-1 ring-white/10">
+                                            {{ selectedDepartment.name.charAt(0) }}
                                         </div>
-                                        <div class="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate-500">
-                                            <span>والد: {{ department.parent?.name ?? 'ریشه سازمان' }}</span>
-                                            <span>مدیر: {{ department.manager?.name ?? 'تعیین نشده' }}</span>
-                                            <span>{{ department.positions?.length ?? 0 }} سمت</span>
+
+                                        <div class="min-w-0">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <h3 class="text-xl font-bold tracking-tight">
+                                                    {{ selectedDepartment.name }}
+                                                </h3>
+
+                                                <span
+                                                    v-if="selectedDepartment.code"
+                                                    dir="ltr"
+                                                    class="rounded-full bg-white/10 px-2.5 py-1 text-[11px] text-slate-300"
+                                                >
+                                                    {{ selectedDepartment.code }}
+                                                </span>
+                                            </div>
+
+                                            <p class="mt-2 text-sm text-slate-300">
+                                                {{ selectedDepartment.description || 'برای این واحد توضیحی ثبت نشده است.' }}
+                                            </p>
                                         </div>
                                     </div>
+
+                                    <span
+                                        class="inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold"
+                                        :class="selectedDepartment.is_active ? 'bg-emerald-400/15 text-emerald-200' : 'bg-white/10 text-slate-300'"
+                                    >
+                                        {{ selectedDepartment.is_active ? 'فعال' : 'غیرفعال' }}
+                                    </span>
                                 </div>
-                                <div class="flex flex-wrap gap-2">
-                                    <button type="button" class="rounded-lg border border-teal-200 bg-teal-50 px-3 py-2 text-xs font-semibold text-teal-700 hover:bg-teal-100" @click="togglePositions(department)">{{ expandedDepartmentId === department.id ? 'بستن سمت‌ها' : 'مدیریت سمت‌ها' }}</button>
-                                    <button type="button" class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50" @click="openEdit(department)">ویرایش</button>
-                                    <button type="button" class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50" @click="toggleStatus(department)">{{ department.is_active ? 'غیرفعال' : 'فعال' }}</button>
-                                    <button type="button" class="rounded-lg border border-red-100 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50" @click="deleteDepartment(department)">حذف</button>
+
+                                <div class="mt-6 grid gap-3 sm:grid-cols-4">
+                                    <div class="rounded-xl bg-white/5 p-3 ring-1 ring-white/5">
+                                        <p class="text-[11px] text-slate-400">والد</p>
+                                        <p class="mt-1 truncate text-sm font-semibold text-white">{{ selectedDepartment.parent?.name ?? 'ریشه سازمان' }}</p>
+                                    </div>
+
+                                    <div class="rounded-xl bg-white/5 p-3 ring-1 ring-white/5">
+                                        <p class="text-[11px] text-slate-400">مدیر</p>
+                                        <p class="mt-1 truncate text-sm font-semibold text-white">{{ selectedDepartment.manager?.name ?? 'تعیین نشده' }}</p>
+                                    </div>
+
+                                    <div class="rounded-xl bg-white/5 p-3 ring-1 ring-white/5">
+                                        <p class="text-[11px] text-slate-400">اعضا</p>
+                                        <p class="mt-1 text-sm font-semibold text-white">{{ selectedDepartment.members?.length ?? 0 }} نفر</p>
+                                    </div>
+
+                                    <div class="rounded-xl bg-white/5 p-3 ring-1 ring-white/5">
+                                        <p class="text-[11px] text-slate-400">سمت‌ها</p>
+                                        <p class="mt-1 text-sm font-semibold text-white">{{ selectedDepartment.positions?.length ?? 0 }} سمت</p>
+                                    </div>
+                                </div>
+
+                                <div class="mt-5 flex flex-wrap gap-2">
+                                    <button
+                                        v-if="abilities.departments_edit"
+                                        type="button"
+                                        class="rounded-xl bg-white px-3.5 py-2 text-xs font-semibold text-slate-900 transition hover:bg-slate-100"
+                                        @click="openEdit(selectedDepartment)"
+                                    >
+                                        ویرایش واحد
+                                    </button>
+
+                                    <button
+                                        v-if="abilities.departments_toggle_status"
+                                        type="button"
+                                        class="rounded-xl bg-white/10 px-3.5 py-2 text-xs font-semibold text-white ring-1 ring-white/10 transition hover:bg-white/15"
+                                        @click="toggleStatus(selectedDepartment)"
+                                    >
+                                        {{ selectedDepartment.is_active ? 'غیرفعال کردن' : 'فعال کردن' }}
+                                    </button>
+
+                                    <button
+                                        v-if="abilities.departments_delete"
+                                        type="button"
+                                        class="rounded-xl bg-red-500/10 px-3.5 py-2 text-xs font-semibold text-red-200 ring-1 ring-red-300/10 transition hover:bg-red-500/15"
+                                        @click="deleteDepartment(selectedDepartment)"
+                                    >
+                                        حذف واحد
+                                    </button>
                                 </div>
                             </div>
 
-                            <div v-if="expandedDepartmentId === department.id" class="mt-5 rounded-2xl border border-teal-100 bg-slate-50/70 p-4">
-                                <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-                                    <div class="space-y-3">
-                                        <div class="flex items-center justify-between"><div><h5 class="font-bold text-slate-900">سمت‌های {{ department.name }}</h5><p class="mt-1 text-xs text-slate-500">برای هر سمت، افراد شاغل را مشخص کنید.</p></div><button type="button" class="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white" @click="openPositionCreate">+ سمت</button></div>
-                                        <div v-if="!(department.positions?.length)" class="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-center text-xs text-slate-500">هنوز سمتی برای این واحد تعریف نشده است.</div>
-                                        <div v-for="position in department.positions" :key="position.id" class="rounded-xl border border-slate-200 bg-white p-4">
-                                            <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                                                <div><div class="flex items-center gap-2"><span class="font-semibold text-slate-900">{{ position.name }}</span><span v-if="position.code" dir="ltr" class="text-[10px] text-slate-400">{{ position.code }}</span></div><p v-if="position.description" class="mt-1 text-xs text-slate-500">{{ position.description }}</p></div>
-                                                <div class="flex gap-2"><button type="button" class="text-xs font-semibold text-slate-600 hover:text-teal-700" @click="openPositionEdit(position)">ویرایش</button><button type="button" class="text-xs font-semibold text-red-600" @click="deletePosition(department, position)">حذف</button></div>
-                                            </div>
-                                            <div class="mt-3 flex flex-wrap gap-2">
-                                                <span v-for="user in position.users" :key="user.id" class="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-700">{{ user.name }}<span v-if="user.pivot?.is_primary"> · اصلی</span><button type="button" class="mr-1 text-teal-500 hover:text-red-600" @click="unassignPosition(department, position, user)">×</button></span>
-                                                <span v-if="!position.users?.length" class="text-xs text-slate-400">بدون فرد</span>
-                                            </div>
-                                            <div class="mt-3 flex flex-col gap-2 sm:flex-row">
-                                                <select v-model="assignmentForm.user_id" class="min-w-0 flex-1 rounded-lg border-slate-200 text-xs focus:border-teal-500 focus:ring-teal-500"><option :value="null">انتخاب عضو واحد...</option><option v-for="user in props.users" :key="user.id" :value="user.id">{{ user.name }}</option></select>
-                                                <label class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-600"><input v-model="assignmentForm.is_primary" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500"> سمت اصلی</label>
-                                                <button type="button" :disabled="assignmentForm.processing || !assignmentForm.user_id" class="rounded-lg bg-teal-600 px-3 py-2 text-xs font-semibold text-white disabled:opacity-40" @click="assignPosition(department, position)">تخصیص</button>
-                                            </div>
+                            <div class="grid gap-5 p-5 sm:p-6 lg:grid-cols-2">
+                                <div>
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div>
+                                            <h4 class="font-bold text-slate-900">اعضای واحد</h4>
+                                            <p class="mt-1 text-xs text-slate-500">عضویت افراد مستقل از سمت سازمانی مدیریت می‌شود.</p>
+                                        </div>
+
+                                        <Link
+                                            v-if="abilities.users_manage_departments"
+                                            :href="route('users.index')"
+                                            class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                                        >
+                                            مدیریت
+                                        </Link>
+                                    </div>
+
+                                    <div v-if="selectedDepartment.members?.length" class="mt-4 flex flex-wrap gap-2">
+                                        <span
+                                            v-for="member in selectedDepartment.members"
+                                            :key="member.id"
+                                            class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700"
+                                        >
+                                            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-white text-[10px] font-bold text-teal-700 ring-1 ring-slate-200">
+                                                {{ member.name.charAt(0) }}
+                                            </span>
+                                            {{ member.name }}
+                                        </span>
+                                    </div>
+
+                                    <div v-else class="mt-4 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-5 text-center">
+                                        <p class="text-xs font-semibold text-slate-600">عضوی در این واحد ثبت نشده است.</p>
+                                        <p class="mt-1 text-[11px] leading-5 text-slate-400">از بخش مدیریت اعضا افراد را به واحد اضافه کنید.</p>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div>
+                                        <h4 class="font-bold text-slate-900">اطلاعات مدیریتی</h4>
+                                        <p class="mt-1 text-xs text-slate-500">جایگاه این واحد در ساختار داخلی سازمان</p>
+                                    </div>
+
+                                    <div class="mt-4 space-y-2">
+                                        <div class="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                                            <span class="text-xs text-slate-500">واحد والد</span>
+                                            <span class="text-sm font-semibold text-slate-800">{{ selectedDepartment.parent?.name ?? 'ریشه سازمان' }}</span>
+                                        </div>
+                                        <div class="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                                            <span class="text-xs text-slate-500">تعداد زیرواحد</span>
+                                            <span class="text-sm font-semibold text-slate-800">{{ childrenCount(selectedDepartment.id) }}</span>
+                                        </div>
+                                        <div class="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+                                            <span class="text-xs text-slate-500">مدیر واحد</span>
+                                            <span class="text-sm font-semibold text-slate-800">{{ selectedDepartment.manager?.name ?? 'تعیین نشده' }}</span>
                                         </div>
                                     </div>
-                                    <form class="h-fit rounded-xl border border-slate-200 bg-white p-4" @submit.prevent="submitPosition(department)">
-                                        <h5 class="font-bold text-slate-900">{{ editingPosition ? 'ویرایش سمت' : 'سمت جدید' }}</h5>
-                                        <div class="mt-4 space-y-3">
-                                            <input v-model="positionForm.name" required maxlength="150" placeholder="نام سمت" class="w-full rounded-lg border-slate-200 text-sm focus:border-teal-500 focus:ring-teal-500">
-                                            <input v-model="positionForm.code" dir="ltr" maxlength="50" placeholder="کد سمت (اختیاری)" class="w-full rounded-lg border-slate-200 text-sm text-left focus:border-teal-500 focus:ring-teal-500">
-                                            <textarea v-model="positionForm.description" rows="3" placeholder="شرح مختصر مسئولیت" class="w-full rounded-lg border-slate-200 text-sm focus:border-teal-500 focus:ring-teal-500"></textarea>
-                                            <label class="flex items-center gap-2 text-xs font-medium text-slate-600"><input v-model="positionForm.is_active" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500"> سمت فعال باشد</label>
-                                            <p v-if="positionForm.errors.name" class="text-xs text-red-600">{{ positionForm.errors.name }}</p>
-                                            <div class="flex gap-2 pt-2"><button type="submit" :disabled="positionForm.processing" class="flex-1 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">{{ positionForm.processing ? 'در حال ذخیره...' : editingPosition ? 'ذخیره تغییرات' : 'ایجاد سمت' }}</button><button v-if="editingPosition" type="button" class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600" @click="openPositionCreate">انصراف</button></div>
-                                        </div>
-                                    </form>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </section>
 
-                <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <div class="border-b border-slate-200 px-5 py-4"><h3 class="font-bold text-slate-900">{{ editingDepartment ? 'ویرایش واحد' : 'ایجاد واحد جدید' }}</h3><p class="mt-1 text-xs text-slate-500">مدیر واحد همیشه عضو همان واحد نیز خواهد بود.</p></div>
-                    <form class="grid gap-4 p-5 md:grid-cols-2 lg:grid-cols-3" @submit.prevent="submitDepartment">
-                        <div><label class="mb-1.5 block text-xs font-semibold text-slate-600">نام واحد</label><input v-model="form.name" required maxlength="150" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-sm focus:border-teal-500 focus:ring-teal-500"><p v-if="form.errors.name" class="mt-1 text-xs text-red-600">{{ form.errors.name }}</p></div>
-                        <div><label class="mb-1.5 block text-xs font-semibold text-slate-600">کد واحد</label><input v-model="form.code" dir="ltr" maxlength="50" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left text-sm focus:border-teal-500 focus:ring-teal-500"></div>
-                        <div><label class="mb-1.5 block text-xs font-semibold text-slate-600">واحد والد</label><select v-model="form.parent_id" class="w-full rounded-xl border-slate-200 text-sm focus:border-teal-500 focus:ring-teal-500"><option :value="null">ریشه سازمان</option><option v-for="d in parentOptions" :key="d.id" :value="d.id">{{ d.name }}</option></select></div>
-                        <div><label class="mb-1.5 block text-xs font-semibold text-slate-600">مدیر واحد</label><select v-model="form.manager_id" class="w-full rounded-xl border-slate-200 text-sm focus:border-teal-500 focus:ring-teal-500"><option :value="null">بدون مدیر</option><option v-for="u in props.users" :key="u.id" :value="u.id">{{ u.name }}</option></select></div>
-                        <div class="lg:col-span-2"><label class="mb-1.5 block text-xs font-semibold text-slate-600">توضیحات</label><textarea v-model="form.description" rows="2" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-sm focus:border-teal-500 focus:ring-teal-500"></textarea></div>
-                        <div class="flex items-center gap-3"><label class="flex items-center gap-2 text-xs font-semibold text-slate-600"><input v-model="form.is_active" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500"> واحد فعال باشد</label><button type="submit" :disabled="form.processing" class="mr-auto rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white disabled:opacity-50">{{ form.processing ? 'در حال ذخیره...' : editingDepartment ? 'ذخیره تغییرات' : 'ایجاد واحد' }}</button></div>
-                    </form>
-                </section>
+                        <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                            <div class="flex flex-col gap-3 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-xs font-semibold text-teal-700">Positions</p>
+                                    <h4 class="mt-1 text-lg font-bold text-slate-950">سمت‌های سازمانی</h4>
+                                    <p class="mt-1 text-xs text-slate-500">سمت‌ها به واحد وابسته‌اند و افراد دارای عضویت را می‌توان به آن‌ها تخصیص داد.</p>
+                                </div>
+
+                                <button
+                                    v-if="abilities.departments_manage_positions"
+                                    type="button"
+                                    class="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+                                    @click="openPositionCreate"
+                                >
+                                    + سمت جدید
+                                </button>
+                            </div>
+
+                            <div v-if="!selectedDepartment.positions?.length" class="px-6 py-12 text-center">
+                                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">◆</div>
+                                <p class="mt-4 text-sm font-semibold text-slate-700">هنوز سمتی برای این واحد تعریف نشده است.</p>
+                                <p class="mt-1 text-xs text-slate-400">برای ساختاردهی دقیق‌تر، سمت‌های سازمانی را اضافه کنید.</p>
+                            </div>
+
+                            <div v-else class="divide-y divide-slate-100">
+                                <div
+                                    v-for="position in selectedDepartment.positions"
+                                    :key="position.id"
+                                    class="p-5 sm:p-6"
+                                >
+                                    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                                        <div class="min-w-0">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <h5 class="font-bold text-slate-900">{{ position.name }}</h5>
+
+                                                <span
+                                                    v-if="position.code"
+                                                    dir="ltr"
+                                                    class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500"
+                                                >
+                                                    {{ position.code }}
+                                                </span>
+
+                                                <span
+                                                    class="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                                                    :class="position.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'"
+                                                >
+                                                    {{ position.is_active ? 'فعال' : 'غیرفعال' }}
+                                                </span>
+                                            </div>
+
+                                            <p v-if="position.description" class="mt-2 text-xs leading-6 text-slate-500">
+                                                {{ position.description }}
+                                            </p>
+                                        </div>
+
+                                        <div v-if="abilities.departments_manage_positions" class="flex gap-2">
+                                            <button
+                                                type="button"
+                                                class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                                                @click="openPositionEdit(position)"
+                                            >
+                                                ویرایش
+                                            </button>
+                                            <button
+                                                type="button"
+                                                class="rounded-lg border border-red-100 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50"
+                                                @click="deletePosition(position)"
+                                            >
+                                                حذف
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-4 rounded-xl border border-slate-100 bg-slate-50/70 p-4">
+                                        <div class="flex items-center justify-between gap-3">
+                                            <div>
+                                                <p class="text-xs font-bold text-slate-800">افراد این سمت</p>
+                                                <p class="mt-1 text-[11px] text-slate-400">{{ position.users?.length ?? 0 }} نفر</p>
+                                            </div>
+                                        </div>
+
+                                        <div v-if="position.users?.length" class="mt-3 flex flex-wrap gap-2">
+                                            <span
+                                                v-for="user in position.users"
+                                                :key="user.id"
+                                                class="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-slate-200"
+                                            >
+                                                {{ user.name }}
+                                                <span v-if="user.pivot?.is_primary" class="text-[10px] font-semibold text-teal-700">· اصلی</span>
+                                                <button
+                                                    v-if="abilities.departments_manage_positions"
+                                                    type="button"
+                                                    class="text-slate-300 transition hover:text-red-500"
+                                                    aria-label="حذف تخصیص سمت"
+                                                    @click="unassignPosition(position, user)"
+                                                >
+                                                    ×
+                                                </button>
+                                            </span>
+                                        </div>
+
+                                        <div
+                                            v-else
+                                            class="mt-3 rounded-lg border border-dashed border-slate-200 bg-white px-3 py-3 text-xs text-slate-400"
+                                        >
+                                            هنوز فردی به این سمت تخصیص داده نشده است.
+                                        </div>
+
+                                        <div
+                                            v-if="abilities.departments_manage_positions && selectedDepartment.members?.length"
+                                            class="mt-4 flex flex-col gap-2 sm:flex-row"
+                                        >
+                                            <select
+                                                v-model="assignmentForm.user_id"
+                                                class="min-w-0 flex-1 rounded-lg border-slate-200 bg-white text-xs text-slate-700 focus:border-teal-500 focus:ring-teal-500"
+                                            >
+                                                <option :value="null">انتخاب عضو واحد برای تخصیص سمت...</option>
+                                                <option
+                                                    v-for="member in selectedDepartment.members"
+                                                    :key="member.id"
+                                                    :value="member.id"
+                                                >
+                                                    {{ member.name }}
+                                                </option>
+                                            </select>
+
+                                            <label class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-600">
+                                                <input
+                                                    v-model="assignmentForm.is_primary"
+                                                    type="checkbox"
+                                                    class="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                                                />
+                                                سمت اصلی
+                                            </label>
+
+                                            <button
+                                                type="button"
+                                                :disabled="assignmentForm.processing || !assignmentForm.user_id"
+                                                class="rounded-lg bg-teal-600 px-3.5 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+                                                @click="assignPosition(position)"
+                                            >
+                                                تخصیص
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </section>
+
+                    <section
+                        v-else
+                        class="flex min-h-[420px] items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center"
+                    >
+                        <div>
+                            <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">⌘</div>
+                            <h3 class="mt-4 text-base font-bold text-slate-800">واحدی انتخاب نشده است</h3>
+                            <p class="mt-1 text-sm text-slate-500">از ساختار سمت مقابل یک واحد را برای مشاهده جزئیات انتخاب کنید.</p>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <div
+            v-if="showDepartmentForm"
+            class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
+            @click.self="showDepartmentForm = false"
+        >
+            <div class="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+                <div class="flex items-start justify-between border-b border-slate-100 px-5 py-5 sm:px-6">
+                    <div>
+                        <p class="text-xs font-semibold text-teal-700">Internal Organization</p>
+                        <h3 class="mt-1 text-lg font-bold text-slate-950">
+                            {{ editingDepartment ? 'ویرایش واحد سازمانی' : 'ایجاد واحد سازمانی' }}
+                        </h3>
+                        <p class="mt-1 text-xs text-slate-500">اطلاعات ساختاری واحد را تعریف کنید.</p>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="rounded-lg p-2 text-xl leading-none text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                        aria-label="بستن"
+                        @click="showDepartmentForm = false"
+                    >
+                        ×
+                    </button>
+                </div>
+
+                <form class="space-y-5 p-5 sm:p-6" @submit.prevent="submitDepartment">
+                    <div class="grid gap-5 md:grid-cols-2">
+                        <div>
+                            <label class="mb-2 block text-sm font-semibold text-slate-700">نام واحد</label>
+                            <TextInput v-model="form.name" class="block min-h-11 w-full rounded-xl text-right" required maxlength="150" />
+                            <InputError class="mt-1.5" :message="form.errors.name" />
+                        </div>
+
+                        <div>
+                            <label class="mb-2 block text-sm font-semibold text-slate-700">کد واحد</label>
+                            <TextInput v-model="form.code" dir="ltr" class="block min-h-11 w-full rounded-xl text-left" maxlength="50" />
+                            <InputError class="mt-1.5" :message="form.errors.code" />
+                        </div>
+
+                        <div>
+                            <label class="mb-2 block text-sm font-semibold text-slate-700">واحد والد</label>
+                            <select
+                                v-model="form.parent_id"
+                                class="block min-h-11 w-full rounded-xl border-slate-300 bg-white text-sm text-slate-700 focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                            >
+                                <option :value="null">ریشه سازمان</option>
+                                <option v-for="department in parentOptions" :key="department.id" :value="department.id">
+                                    {{ department.name }}
+                                </option>
+                            </select>
+                            <InputError class="mt-1.5" :message="form.errors.parent_id" />
+                        </div>
+
+                        <div>
+                            <label class="mb-2 block text-sm font-semibold text-slate-700">مدیر واحد</label>
+                            <select
+                                v-model="form.manager_id"
+                                class="block min-h-11 w-full rounded-xl border-slate-300 bg-white text-sm text-slate-700 focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                            >
+                                <option :value="null">بدون مدیر</option>
+                                <option v-for="user in props.users" :key="user.id" :value="user.id">
+                                    {{ user.name }}
+                                </option>
+                            </select>
+                            <InputError class="mt-1.5" :message="form.errors.manager_id" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-slate-700">توضیحات</label>
+                        <textarea
+                            v-model="form.description"
+                            rows="4"
+                            class="block w-full rounded-xl border-slate-300 text-sm text-slate-900 shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                            placeholder="شرح کوتاهی از مأموریت یا مسئولیت این واحد..."
+                        ></textarea>
+                        <InputError class="mt-1.5" :message="form.errors.description" />
+                    </div>
+
+                    <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
+                        <input
+                            v-model="form.is_active"
+                            type="checkbox"
+                            class="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                        />
+                        واحد فعال باشد
+                    </label>
+
+                    <div class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
+                        <button
+                            type="button"
+                            class="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                            @click="showDepartmentForm = false"
+                        >
+                            انصراف
+                        </button>
+
+                        <PrimaryButton
+                            :disabled="form.processing"
+                            class="min-h-11 rounded-xl bg-slate-950 px-5 text-sm font-semibold tracking-normal hover:bg-slate-800"
+                        >
+                            {{ form.processing ? 'در حال ذخیره...' : editingDepartment ? 'ذخیره تغییرات' : 'ایجاد واحد' }}
+                        </PrimaryButton>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div
+            v-if="showPositionForm && selectedDepartment"
+            class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
+            @click.self="showPositionForm = false"
+        >
+            <div class="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+                <div class="flex items-start justify-between border-b border-slate-100 px-5 py-5 sm:px-6">
+                    <div>
+                        <p class="text-xs font-semibold text-teal-700">Organizational Position</p>
+                        <h3 class="mt-1 text-lg font-bold text-slate-950">
+                            {{ editingPosition ? 'ویرایش سمت' : 'ایجاد سمت جدید' }}
+                        </h3>
+                        <p class="mt-1 text-xs text-slate-500">واحد: {{ selectedDepartment.name }}</p>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="rounded-lg p-2 text-xl leading-none text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                        aria-label="بستن"
+                        @click="showPositionForm = false"
+                    >
+                        ×
+                    </button>
+                </div>
+
+                <form class="space-y-5 p-5 sm:p-6" @submit.prevent="submitPosition">
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-slate-700">نام سمت</label>
+                        <TextInput v-model="positionForm.name" class="block min-h-11 w-full rounded-xl text-right" required maxlength="150" />
+                        <InputError class="mt-1.5" :message="positionForm.errors.name" />
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-slate-700">کد سمت</label>
+                        <TextInput v-model="positionForm.code" dir="ltr" class="block min-h-11 w-full rounded-xl text-left" maxlength="50" placeholder="مثلاً IT-MGR" />
+                        <InputError class="mt-1.5" :message="positionForm.errors.code" />
+                    </div>
+
+                    <div>
+                        <label class="mb-2 block text-sm font-semibold text-slate-700">شرح مسئولیت</label>
+                        <textarea
+                            v-model="positionForm.description"
+                            rows="4"
+                            class="block w-full rounded-xl border-slate-300 text-sm text-slate-900 shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                        ></textarea>
+                        <InputError class="mt-1.5" :message="positionForm.errors.description" />
+                    </div>
+
+                    <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
+                        <input
+                            v-model="positionForm.is_active"
+                            type="checkbox"
+                            class="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                        />
+                        سمت فعال باشد
+                    </label>
+
+                    <div class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
+                        <button
+                            type="button"
+                            class="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                            @click="showPositionForm = false"
+                        >
+                            انصراف
+                        </button>
+
+                        <PrimaryButton
+                            :disabled="positionForm.processing"
+                            class="min-h-11 rounded-xl bg-slate-950 px-5 text-sm font-semibold tracking-normal hover:bg-slate-800"
+                        >
+                            {{ positionForm.processing ? 'در حال ذخیره...' : editingPosition ? 'ذخیره تغییرات' : 'ایجاد سمت' }}
+                        </PrimaryButton>
+                    </div>
+                </form>
             </div>
         </div>
     </AuthenticatedLayout>
