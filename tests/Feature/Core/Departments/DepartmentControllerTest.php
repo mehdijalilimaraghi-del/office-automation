@@ -137,6 +137,33 @@ class DepartmentControllerTest extends TestCase
         ]);
     }
 
+
+    public function test_authenticated_user_can_create_department_with_icon(): void
+    {
+        $user = $this->user();
+
+        $this->grant($user, 'departments.create');
+
+        $response = $this->actingAs($user)->post(
+            route('departments.store'),
+            [
+                'name' => 'فناوری اطلاعات',
+                'code' => 'IT',
+                'description' => 'واحد فناوری اطلاعات',
+                'icon' => 'monitor',
+                'parent_id' => null,
+                'is_active' => true,
+            ]
+        );
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('departments', [
+            'name' => 'فناوری اطلاعات',
+            'icon' => 'monitor',
+        ]);
+    }
+
     public function test_authenticated_user_can_update_department(): void
     {
         $user = $this->user();
