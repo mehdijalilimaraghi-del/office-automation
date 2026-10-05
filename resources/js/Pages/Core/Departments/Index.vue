@@ -91,11 +91,13 @@ const selectedDepartment = computed(
         ) ?? null,
 );
 
+const parentIdOf = (department: Department): number | null =>
+    department.parent_id === null ? null : Number(department.parent_id);
+
 const childrenCount = (department: Department): number =>
-    department.children_count ?? props.departments.filter(
-        (child) =>
-            child.parent_id !== null &&
-            Number(child.parent_id) === department.id,
+    department.children_count ??
+    props.departments.filter(
+        (child) => parentIdOf(child) === department.id,
     ).length;
 
 const descendantIds = (id: number): number[] => {
@@ -103,7 +105,7 @@ const descendantIds = (id: number): number[] => {
 
     const visit = (parentId: number) => {
         props.departments.forEach((department) => {
-            if (department.parent_id === parentId) {
+            if (parentIdOf(department) === parentId) {
                 result.push(department.id);
                 visit(department.id);
             }
@@ -139,7 +141,7 @@ const treeRows = computed(() => {
 
     const visit = (parentId: number | null, depth: number) => {
         props.departments
-            .filter((department) => department.parent_id === parentId)
+            .filter((department) => parentIdOf(department) === parentId)
             .forEach((department) => {
                 rows.push({
                     department,
@@ -161,7 +163,7 @@ const treeRows = computed(() => {
             rows.push({
                 department,
                 depth: 0,
-                childCount: childrenCount(department.id),
+                childCount: childrenCount(department),
             });
         });
 
@@ -685,7 +687,7 @@ watch(
                                         </div>
                                         <div class="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
                                             <span class="text-xs text-slate-500">تعداد زیرواحد</span>
-                                            <span class="text-sm font-semibold text-slate-800">{{ childrenCount(selectedDepartment.id) }}</span>
+                                            <span class="text-sm font-semibold text-slate-800">{{ childrenCount(selectedDepartment) }}</span>
                                         </div>
                                         <div class="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
                                             <span class="text-xs text-slate-500">مدیر واحد</span>
