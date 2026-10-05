@@ -11,6 +11,7 @@ use App\Core\CustomFields\Models\CustomFieldValue;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectMember;
 use App\Modules\Tasks\Models\Task;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
