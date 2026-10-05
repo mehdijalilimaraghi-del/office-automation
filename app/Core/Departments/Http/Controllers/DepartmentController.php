@@ -3,6 +3,7 @@
 namespace App\Core\Departments\Http\Controllers;
 
 use App\Core\Departments\Contracts\DepartmentServiceInterface;
+use App\Core\CustomFields\Services\CustomFieldService;
 use App\Core\Departments\Models\Department;
 use App\Core\Users\Contracts\UserServiceInterface;
 use App\Http\Controllers\Controller;
@@ -17,6 +18,7 @@ class DepartmentController extends Controller
     public function __construct(
         private readonly DepartmentServiceInterface $departmentService,
         private readonly UserServiceInterface $userService,
+        private readonly CustomFieldService $customFieldService,
     ) {
     }
 
@@ -25,6 +27,10 @@ class DepartmentController extends Controller
         return Inertia::render('Core/Departments/Index', [
             'departments' => $this->departmentService->list(),
             'users' => $this->userService->activeList(),
+            'customFields' => [
+                'department' => $this->customFieldService->definitions(Department::class),
+                'position' => $this->customFieldService->definitions(\App\Core\Departments\Models\Position::class),
+            ],
         ]);
     }
 
