@@ -68,7 +68,7 @@ Projects and Tasks remain important, but they are not the architectural center o
 - External follow-up
 - Access scopes
 
-**Status: V1 implemented / UX refinement completed**
+**Status: V1 implemented / UX refinement completed / lifecycle regression suite aligned**
 
 ---
 
@@ -155,7 +155,7 @@ Unified operational inbox containing:
 - Before/after change payloads
 - Core User/Role/Task lifecycle coverage
 
-**Status: V1 core implemented / expansion pending**
+**Status: V1 core implemented / regression coverage aligned / expansion pending**
 
 ---
 
