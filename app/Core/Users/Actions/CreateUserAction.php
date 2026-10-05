@@ -3,11 +3,16 @@
 namespace App\Core\Users\Actions;
 
 use App\Models\User;
+use App\Core\Audit\Contracts\AuditServiceInterface;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class CreateUserAction
 {
+    public function __construct(private readonly AuditServiceInterface $audit)
+    {
+    }
+
     public function execute(array $data): User
     {
         $user = User::create([
@@ -26,6 +31,12 @@ class CreateUserAction
             'employee_code' => $data['employee_code'] ?? null,
             'national_id' => $data['national_id'] ?? null,
             'birth_date' => $data['birth_date'] ?? null,
+        ]);
+
+        $this->audit->record('user.created', $user, null, [
+            'name' => $user->name,
+            'email' => $user->email,
+            'status' => $user->status,
         ]);
 
         return $user;
