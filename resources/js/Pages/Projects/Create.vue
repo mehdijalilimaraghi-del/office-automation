@@ -22,7 +22,6 @@ const props = defineProps<{
 const form = useForm({
     department_id: '',
     name: '',
-    code: '',
     description: '',
     status: 'planning' as
         | 'planning'
@@ -94,30 +93,7 @@ function submit(): void {
                         </p>
                     </div>
 
-                    <div>
-                        <label
-                            for="code"
-                            class="mb-2 block text-sm font-medium"
-                        >
-                            کد پروژه
-                        </label>
 
-                        <input
-                            id="code"
-                            v-model="form.code"
-                            dir="ltr"
-                            type="text"
-                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-left text-sm"
-                            :disabled="form.processing"
-                        />
-
-                        <p
-                            v-if="form.errors.code"
-                            class="mt-1 text-xs text-destructive"
-                        >
-                            {{ form.errors.code }}
-                        </p>
-                    </div>
                 </div>
 
                 <div class="grid gap-5 md:grid-cols-2">
