@@ -183,7 +183,7 @@ Unified operational inbox containing:
 
 **Status: V1 foundation implemented / validation pending**
 
-Implemented foundation: correspondence types (incoming/outgoing/internal), registration numbering, draft/registered lifecycle, referrals, audit events, permissions, routes and initial RTL UI.
+Implemented foundation: correspondence types (incoming/outgoing/internal), registration numbering, draft/registered lifecycle, referrals, audit events, permissions, routes, initial RTL UI, and Cartable integration for active correspondence referrals.
 
 **Priority: high**
 
