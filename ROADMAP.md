@@ -434,6 +434,23 @@ If required later, these should integrate with the platform rather than distort 
 
 ---
 
+## Repository Checkpoint — 2026-10-05
+
+The development branch was reviewed before starting Correspondence.
+
+Confirmed from the repository:
+- Audit V1 Core is implemented and its current Role integration coverage is in place.
+- Documents V1 foundation is implemented, including document/version/link/access models and filesystem storage abstraction.
+- Workflow V1 is implemented with definitions, steps, instances and task progression services.
+- Unified Cartable V1 is implemented as an aggregation surface and does not own module business records.
+- Notifications V1 is implemented.
+- The remaining historical Phase/Development notes have been reconciled with the current enterprise roadmap.
+- Correspondence is the next business module and must build on these shared capabilities rather than duplicate them.
+
+The next implementation work is therefore Correspondence V1 design and implementation, beginning with repository-level domain/boundary review before code changes.
+
+---
+
 ## Implementation Order
 
 The implementation sequence is currently:
