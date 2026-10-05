@@ -141,6 +141,37 @@ class UserControllerTest extends TestCase
         ]);
     }
 
+    public function test_user_can_remove_system_admin_role_when_actor_has_role_management_access(): void
+    {
+        $this->seed();
+
+        $admin = User::factory()->create();
+        $this->grantPermissions($admin, ['users.edit', 'users.manage_roles']);
+
+        $user = User::factory()->create();
+        $systemAdminRole = Role::query()
+            ->where('code', 'SYSTEM_ADMIN')
+            ->firstOrFail();
+
+        $user->roles()->attach($systemAdminRole->id);
+
+        $response = $this->actingAs($admin)->post(route('users.update', $user), [
+            '_method' => 'put',
+            'name' => $user->name,
+            'username' => $user->username,
+            'email' => $user->email,
+            'status' => 'active',
+            'role_ids' => [],
+        ]);
+
+        $response->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->assertDatabaseMissing('role_user', [
+            'user_id' => $user->id,
+            'role_id' => $systemAdminRole->id,
+        ]);
+    }
+
     public function test_user_role_assignment_requires_manage_roles_permission(): void
     {
         $admin = User::factory()->create();
