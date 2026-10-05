@@ -3,6 +3,7 @@
 namespace App\Modules\Tasks\Actions;
 
 use App\Modules\Tasks\Models\Task;
+use App\Core\CustomFields\Services\CustomFieldService;
 use App\Core\ExternalParties\Contracts\ExternalPartyServiceInterface;
 use InvalidArgumentException;
 
@@ -64,6 +65,8 @@ class UpdateTaskAction
         ]);
 
         $task->save();
+
+        $this->customFieldService->sync($task, $data['custom_fields'] ?? []);
 
         return $task->refresh()->load([
             'project',
