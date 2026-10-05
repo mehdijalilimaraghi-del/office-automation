@@ -27,7 +27,7 @@ class CustomFieldService implements CustomFieldServiceInterface
             $value = Arr::get($values, $field->key);
 
             if ($field->is_required && ($value === null || $value === '')) {
-                $errors[$field->key] = 'این فیلد الزامی است.';
+                $errors['custom_fields.'.$field->key] = 'این فیلد الزامی است.';
                 continue;
             }
 
@@ -41,7 +41,7 @@ class CustomFieldService implements CustomFieldServiceInterface
             }
 
             if (! $this->isValid($field, $value)) {
-                $errors[$field->key] = 'مقدار واردشده برای این فیلد معتبر نیست.';
+                $errors['custom_fields.'.$field->key] = 'مقدار واردشده برای این فیلد معتبر نیست.';
                 continue;
             }
 
@@ -101,6 +101,51 @@ class CustomFieldService implements CustomFieldServiceInterface
             'boolean' => $value === '1',
             default => $value,
         };
+    }
+
+    public static function supportedEntities(): array
+    {
+        return [
+            \App\Models\User::class => 'کاربر',
+            \App\Core\Departments\Models\Department::class => 'واحد سازمانی',
+            \App\Core\Departments\Models\Position::class => 'سمت سازمانی',
+            \App\Core\Roles\Models\Role::class => 'نقش کاربری',
+            \App\Modules\Projects\Models\Project::class => 'پروژه',
+            \App\Modules\Tasks\Models\Task::class => 'تسک',
+        ];
+    }
+
+    public static function isSupportedEntity(string $entityType): bool
+    {
+        return array_key_exists($entityType, self::supportedEntities());
+    }
+
+    public function definitions(string $entityType, bool $activeOnly = true)
+    {
+        $query = CustomField::query()
+            ->where('entity_type', $entityType)
+            ->orderBy('sort_order')
+            ->orderBy('label');
+
+        if ($activeOnly) {
+            $query->where('is_active', true);
+        }
+
+        return $query->get();
+    }
+
+    public function generateKey(string $entityType): string
+    {
+        do {
+            $key = 'cf_' . Str::lower(Str::random(16));
+        } while (
+            CustomField::query()
+                ->where('entity_type', $entityType)
+                ->where('key', $key)
+                ->exists()
+        );
+
+        return $key;
     }
 
     public static function supportedTypes(): array
