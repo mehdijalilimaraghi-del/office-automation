@@ -12,8 +12,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-class Department extends Model$2
-    protected static function systemCodePrefix(): string
+class Department extends Model
+{
+    use HasSystemCode;
+
+protected static function systemCodePrefix(): string
     {
         return 'ORG';
     }
