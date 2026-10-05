@@ -23,13 +23,7 @@ class StoreProjectRequest extends FormRequest
                 'exists:departments,id',
             ],
             'name' => ['required', 'string', 'max:150'],
-            'code' => [
-                'required',
-                'string',
-                'max:50',
-                Rule::unique('projects', 'code'),
-            ],
-            'description' => ['nullable', 'string'],
+                        'description' => ['nullable', 'string'],
             'status' => [
                 'sometimes',
                 Rule::in([
