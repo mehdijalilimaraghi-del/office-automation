@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
+import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
 import JalaliDateTimePicker from '@/Components/JalaliDateTimePicker.vue';
 import { formatPersianDate, formatPersianDateTime } from '@/Utils/date';
 import { Head, Link, useForm } from '@inertiajs/vue3';
@@ -111,6 +112,7 @@ const editForm = useForm({
     external_organization_id: props.task.externalOrganization?.id ?? null,
     external_department_id: props.task.externalDepartment?.id ?? null,
     external_contact_id: props.task.externalContact?.id ?? null,
+    custom_fields: props.customFieldValues ?? {},
 });
 
 const externalDepartments = computed(() => props.externalPartyOptions.external_departments.filter(item => item.external_organization_id === editForm.external_organization_id));
@@ -708,6 +710,15 @@ const formatDateTime = formatPersianDateTime;
                         <textarea v-model="editForm.description" rows="4" class="w-full rounded-lg border bg-background p-3 text-sm leading-6 shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-200" />
                         <p v-if="editForm.errors.description" class="mt-1.5 text-sm text-red-600">{{ editForm.errors.description }}</p>
                     </div>
+
+                    <CustomFieldsForm
+                        v-if="props.customFields.length"
+                        v-model="editForm.custom_fields"
+                        :fields="props.customFields"
+                        :errors="editForm.errors as Record<string, string>"
+                        title="اطلاعات تکمیلی تسک"
+                        description="اطلاعات اختصاصی این تسک را مدیریت کنید."
+                    />
 
                     <div class="md:col-span-2">
                         <button type="submit" :disabled="editForm.processing" class="h-10 rounded-lg bg-gray-900 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
