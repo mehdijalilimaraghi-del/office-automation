@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
-import { onBeforeUnmount, ref } from 'vue';
+import { computed, onBeforeUnmount, ref } from 'vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import UserAvatar from '@/Components/UserAvatar.vue';
 import { Eye, EyeOff } from '@lucide/vue';
@@ -278,20 +278,16 @@ function submit(): void {
     form.post(route('users.store'), options);
 }
 
-function toggleRole(roleId: number): void {
-    if (form.role_ids.includes(roleId)) {
-        form.role_ids = form.role_ids.filter(
-            (id) => id !== roleId,
-        );
+const activeRoles = computed(() =>
+    props.roles.filter((role) => role.is_active),
+);
 
-        return;
-    }
-
-    form.role_ids = [
-        ...form.role_ids,
-        roleId,
-    ];
-}
+const selectedRoleId = computed<number | null>({
+    get: () => form.role_ids[0] ?? null,
+    set: (value) => {
+        form.role_ids = value === null ? [] : [value];
+    },
+});
 
 function inviteUser(user: User): void {
     if (!confirm(`دعوت‌نامه برای «${user.name}» ارسال شود؟`)) return;
