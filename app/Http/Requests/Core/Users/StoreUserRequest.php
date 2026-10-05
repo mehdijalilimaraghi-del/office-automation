@@ -103,6 +103,7 @@ class StoreUserRequest extends FormRequest
     {
         return [
             'name' => 'نام کاربر',
+            'username' => 'نام کاربری',
             'email' => 'ایمیل',
             'mobile' => 'موبایل',
             'phone' => 'تلفن ثابت',
