@@ -3,11 +3,16 @@
 namespace App\Core\Users\Actions;
 
 use App\Models\User;
+use App\Core\Audit\Contracts\AuditServiceInterface;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class UpdateUserAction
 {
+    public function __construct(private readonly AuditServiceInterface $audit)
+    {
+    }
+
     public function execute(User $user, array $data): User
     {
         if ($user->isInactive() && ($data['status'] ?? $user->status) === 'active') {
@@ -25,6 +30,8 @@ class UpdateUserAction
                 'status' => 'وضعیت کاربر جاری قابل تغییر نیست.',
             ]);
         }
+
+        $oldValues = $user->only(['name', 'email', 'mobile', 'phone', 'extension', 'status']);
 
         $attributes = [
             'name' => $data['name'],
@@ -54,6 +61,10 @@ class UpdateUserAction
             'birth_date' => $data['birth_date'] ?? null,
         ]);
 
-        return $user->refresh();
+        $user->refresh();
+
+        $this->audit->record('user.updated', $user, $oldValues, $user->only(['name', 'email', 'mobile', 'phone', 'extension', 'status']));
+
+        return $user;
     }
 }
