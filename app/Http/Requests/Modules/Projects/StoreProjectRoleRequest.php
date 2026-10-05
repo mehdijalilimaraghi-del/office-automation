@@ -26,8 +26,7 @@ class StoreProjectRoleRequest extends FormRequest
     {
         return [
             'name' => 'نام نقش',
-            'code' => 'کد نقش',
-            'description' => 'توضیحات',
+                        'description' => 'توضیحات',
             'is_active' => 'وضعیت فعال بودن',
         ];
     }
