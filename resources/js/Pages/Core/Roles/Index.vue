@@ -164,7 +164,7 @@ const toggleStatus = (role: Role) => {
                             <div v-for="role in props.roles" :key="role.id" class="flex flex-col gap-4 px-6 py-5 transition hover:bg-slate-50/80 sm:flex-row sm:items-center sm:justify-between">
                                 <div class="min-w-0">
                                     <div class="flex flex-wrap items-center gap-2"><h4 class="font-bold text-slate-900">{{ role.name }}</h4><span v-if="role.is_system" class="rounded-full bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-teal-700">سیستمی</span><span :class="role.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'" class="rounded-full px-2.5 py-1 text-[11px] font-bold">{{ role.is_active ? 'فعال' : 'غیرفعال' }}</span></div>
-                                    <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500"><span dir="ltr" class="font-mono">{{ role.code || 'بدون کد' }}</span><span v-if="role.description">• {{ role.description }}</span></div>
+                                    <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500"><span class="text-[11px] font-medium text-slate-400">کد سیستمی:</span><span dir="ltr" class="font-mono text-[11px] text-slate-500">{{ role.code || '—' }}</span><span v-if="role.description">• {{ role.description }}</span></div>
                                 </div>
                                 <div class="flex shrink-0 flex-wrap gap-2">
                                     <a :href="route('roles.permissions.edit', role.id)" class="rounded-xl bg-teal-50 px-3 py-2 text-xs font-bold text-teal-700 transition hover:bg-teal-100">مجوزها</a>
