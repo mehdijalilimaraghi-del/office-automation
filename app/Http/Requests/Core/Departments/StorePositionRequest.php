@@ -11,8 +11,7 @@ class StorePositionRequest extends FormRequest
     {
         return [
             'name'=>['required','string','max:150'],
-            'code'=>['nullable','string','max:50'],
-            'description'=>['nullable','string','max:5000'],
+                        'description'=>['nullable','string','max:5000'],
             'is_active'=>['boolean'],
         ];
     }
