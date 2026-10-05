@@ -393,15 +393,21 @@ class DepartmentControllerTest extends TestCase
         $child->refresh();
         $grandchild->refresh();
 
+        $withCounts = Department::query()
+            ->withCount('children')
+            ->whereKey([$parent->id, $child->id, $grandchild->id])
+            ->get()
+            ->keyBy('id');
+
         $this->assertNull($parent->parent_id);
         $this->assertSame($parent->id, (int) $child->parent_id);
         $this->assertSame($child->id, (int) $grandchild->parent_id);
         $this->assertSame(1, $parent->children()->count());
         $this->assertSame(1, $child->children()->count());
         $this->assertSame(0, $grandchild->children()->count());
-        $this->assertSame(1, (int) $parent->children_count);
-        $this->assertSame(1, (int) $child->children_count);
-        $this->assertSame(0, (int) $grandchild->children_count);
+        $this->assertSame(1, (int) $withCounts[$parent->id]->children_count);
+        $this->assertSame(1, (int) $withCounts[$child->id]->children_count);
+        $this->assertSame(0, (int) $withCounts[$grandchild->id]->children_count);
     }
 
     public function test_department_cannot_be_its_own_parent(): void
