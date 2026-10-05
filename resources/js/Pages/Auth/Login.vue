@@ -114,18 +114,6 @@ const submit = () => {
                 </PrimaryButton>
             </div>
 
-            <div class="mt-6 border-t pt-4 text-center">
-                <span class="text-sm text-gray-600">
-                    حساب کاربری ندارید؟
-                </span>
-
-                <Link
-                    :href="route('register')"
-                    class="ms-1 text-sm font-medium text-gray-900 underline hover:text-gray-700"
-                >
-                    ثبت‌نام کنید
-                </Link>
-            </div>
         </form>
     </GuestLayout>
 </template>
