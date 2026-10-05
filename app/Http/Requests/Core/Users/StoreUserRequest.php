@@ -86,6 +86,7 @@ class StoreUserRequest extends FormRequest
             'role_ids' => [
                 'sometimes',
                 'array',
+                'max:1',
             ],
 
             'custom_fields' => ['sometimes', 'array'],
@@ -115,8 +116,8 @@ class StoreUserRequest extends FormRequest
             'department_ids.*' => 'واحد سازمانی',
             'primary_department_id' => 'واحد سازمانی اصلی',
             'status' => 'وضعیت',
-            'role_ids' => 'نقش‌ها',
-            'role_ids.*' => 'نقش',
+            'role_ids' => 'نقش کاربری',
+            'role_ids.*' => 'نقش کاربری',
         ];
     }
 }
