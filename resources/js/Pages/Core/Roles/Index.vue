@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
 
 interface Role {
     id: number;
@@ -10,10 +11,16 @@ interface Role {
     description: string | null;
     is_active: boolean;
     is_system: boolean;
+    customFieldValues?: Array<{ value: string; field: { key: string; type: string } }>;
 }
 
 const props = defineProps<{
     roles: Role[];
+    customFields: Array<{
+        id: number; key: string; label: string;
+        type: 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select';
+        is_required: boolean; options: string[] | null;
+    }>;
 }>();
 
 const editingRole = ref<Role | null>(null);
@@ -22,6 +29,7 @@ const form = useForm({
     name: '',
     description: '',
     is_active: true,
+    custom_fields: {} as Record<string, string | number | boolean | null>,
 });
 
 const submit = () => {
@@ -57,6 +65,16 @@ const startEdit = (role: Role) => {
     form.name = role.name;
     form.description = role.description ?? '';
     form.is_active = role.is_active;
+    form.custom_fields = Object.fromEntries(
+        (role.customFieldValues ?? []).map((item: any) => [
+            item.field.key,
+            item.field.type === 'number'
+                ? Number(item.value)
+                : item.field.type === 'boolean'
+                    ? item.value === '1'
+                    : item.value,
+        ]),
+    );
 
     form.clearErrors();
 };
@@ -152,6 +170,15 @@ const toggleStatus = (role: Role) => {
                         <form class="space-y-5" @submit.prevent="submit">
                             <div><label for="role-name" class="mb-2 block text-sm font-semibold text-slate-700">نام نقش</label><input id="role-name" v-model="form.name" required maxlength="100" class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500" /><p v-if="form.errors.name" class="mt-1 text-xs text-red-600">{{ form.errors.name }}</p></div>
                                                         <div><label for="role-description" class="mb-2 block text-sm font-semibold text-slate-700">توضیحات</label><textarea id="role-description" v-model="form.description" rows="4" class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500"></textarea><p v-if="form.errors.description" class="mt-1 text-xs text-red-600">{{ form.errors.description }}</p></div>
+                            <CustomFieldsForm
+                                v-if="props.customFields.length"
+                                v-model="form.custom_fields"
+                                :fields="props.customFields"
+                                :errors="form.errors as Record<string, string>"
+                                title="اطلاعات تکمیلی نقش"
+                                description="فیلدهای سفارشی تعریف‌شده برای نقش کاربری را تکمیل کنید."
+                            />
+
                             <label class="flex items-center gap-3 rounded-2xl bg-slate-50 p-4"><input v-model="form.is_active" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500" /><span class="text-sm font-semibold text-slate-700">نقش فعال باشد</span></label>
                             <div class="flex gap-2"><button type="submit" :disabled="form.processing" class="flex-1 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50">{{ form.processing ? 'در حال ذخیره...' : editingRole ? 'ذخیره تغییرات' : 'ایجاد نقش' }}</button><button v-if="editingRole" type="button" :disabled="form.processing" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600" @click="cancelEdit">انصراف</button></div>
                         </form>
