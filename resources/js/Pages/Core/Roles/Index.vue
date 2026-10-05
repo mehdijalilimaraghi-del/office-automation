@@ -115,13 +115,13 @@ const toggleStatus = (role: Role) => {
 </script>
 
 <template>
-    <Head title="نقش‌ها" />
+    <Head title="نقش‌های کاربری" />
     <AuthenticatedLayout>
         <template #header>
             <div class="flex items-center justify-between gap-4">
                 <div>
                     <p class="text-xs font-semibold text-slate-400">مدیریت سازمان</p>
-                    <h2 class="mt-1 text-xl font-bold text-slate-900">نقش‌ها و دسترسی‌ها</h2>
+                    <h2 class="mt-1 text-xl font-bold text-slate-900">نقش‌های کاربری و دسترسی‌ها</h2>
                 </div>
                 <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{{ props.roles.length }} نقش</span>
             </div>
@@ -133,9 +133,9 @@ const toggleStatus = (role: Role) => {
                         <div class="max-w-2xl">
                             <div class="mb-4 inline-flex rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-medium text-teal-100">کنترل دسترسی</div>
                             <h1 class="text-2xl font-black tracking-tight sm:text-3xl">نقش‌ها، مرز دسترسی کاربران را مشخص می‌کنند.</h1>
-                            <p class="mt-3 text-sm leading-7 text-slate-300">نقش‌های سازمانی را مدیریت کنید و دسترسی‌های هر نقش را از یک نقطه کنترل کنید.</p>
+                            <p class="mt-3 text-sm leading-7 text-slate-300">نقش‌های کاربری سامانه را مدیریت کنید و دسترسی‌های هر نقش را از یک نقطه کنترل کنید.</p>
                         </div>
-                        <button type="button" class="rounded-2xl bg-white px-5 py-3 text-sm font-bold text-slate-900 shadow-lg transition hover:-translate-y-0.5 hover:bg-teal-50" @click="resetForm">+ نقش جدید</button>
+                        <button type="button" class="rounded-2xl bg-white px-5 py-3 text-sm font-bold text-slate-900 shadow-lg transition hover:-translate-y-0.5 hover:bg-teal-50" @click="resetForm">+ نقش کاربری جدید</button>
                     </div>
                 </section>
 
@@ -148,8 +148,8 @@ const toggleStatus = (role: Role) => {
                 <section class="grid gap-6 lg:grid-cols-3">
                     <div class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 lg:col-span-1">
                         <div class="mb-6">
-                            <p class="text-xs font-bold text-teal-600">{{ editingRole ? 'ویرایش نقش' : 'نقش جدید' }}</p>
-                            <h3 class="mt-1 text-xl font-black text-slate-900">{{ editingRole ? 'به‌روزرسانی اطلاعات' : 'تعریف نقش سازمانی' }}</h3>
+                            <p class="text-xs font-bold text-teal-600">{{ editingRole ? 'ویرایش نقش' : 'نقش کاربری جدید' }}</p>
+                            <h3 class="mt-1 text-xl font-black text-slate-900">{{ editingRole ? 'به‌روزرسانی اطلاعات' : 'تعریف نقش کاربری' }}</h3>
                         </div>
                         <form class="space-y-5" @submit.prevent="submit">
                             <div><label for="role-name" class="mb-2 block text-sm font-semibold text-slate-700">نام نقش</label><input id="role-name" v-model="form.name" required maxlength="100" class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500" /><p v-if="form.errors.name" class="mt-1 text-xs text-red-600">{{ form.errors.name }}</p></div>
@@ -162,7 +162,7 @@ const toggleStatus = (role: Role) => {
 
                     <div class="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 lg:col-span-2">
                         <div class="flex items-center justify-between border-b border-slate-100 px-6 py-5"><div><h3 class="font-black text-slate-900">فهرست نقش‌ها</h3><p class="mt-1 text-xs text-slate-500">نقش‌های سیستمی قابل ویرایش یا حذف نیستند.</p></div></div>
-                        <div v-if="props.roles.length === 0" class="px-6 py-16 text-center"><p class="font-bold text-slate-700">هنوز نقشی ثبت نشده است.</p><p class="mt-1 text-sm text-slate-400">اولین نقش سازمانی را ایجاد کنید.</p></div>
+                        <div v-if="props.roles.length === 0" class="px-6 py-16 text-center"><p class="font-bold text-slate-700">هنوز نقشی ثبت نشده است.</p><p class="mt-1 text-sm text-slate-400">اولین نقش کاربری را ایجاد کنید.</p></div>
                         <div v-else class="divide-y divide-slate-100">
                             <div v-for="role in props.roles" :key="role.id" class="flex flex-col gap-4 px-6 py-5 transition hover:bg-slate-50/80 sm:flex-row sm:items-center sm:justify-between">
                                 <div class="min-w-0">
