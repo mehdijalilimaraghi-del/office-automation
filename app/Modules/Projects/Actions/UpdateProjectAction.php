@@ -38,7 +38,6 @@ class UpdateProjectAction
             $project->update([
                 'department_id' => $data['department_id'] ?? null,
                 'name' => $data['name'],
-                'code' => $data['code'],
                 'description' => $data['description'] ?? null,
                 'status' => $data['status'],
                 'start_date' => $data['start_date'] ?? null,
