@@ -33,10 +33,12 @@ class UserService implements UserServiceInterface
             $user = $this->createUserAction->execute($data);
 
 
-            $this->syncUserRolesAction->execute(
-                $user,
-                $data['role_ids'] ?? []
-            );
+            if (array_key_exists('role_ids', $data)) {
+                $this->syncUserRolesAction->execute(
+                    $user,
+                    $data['role_ids']
+                );
+            }
 
             $this->customFieldService->sync($user, $data['custom_fields'] ?? []);
 
@@ -59,10 +61,12 @@ class UserService implements UserServiceInterface
                 $data
             );
 
-            $this->syncUserRolesAction->execute(
-                $user,
-                $data['role_ids'] ?? []
-            );
+            if (array_key_exists('role_ids', $data)) {
+                $this->syncUserRolesAction->execute(
+                    $user,
+                    $data['role_ids']
+                );
+            }
 
             $this->customFieldService->sync($user, $data['custom_fields'] ?? []);
 
