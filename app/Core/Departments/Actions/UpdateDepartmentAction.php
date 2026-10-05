@@ -3,11 +3,17 @@
 namespace App\Core\Departments\Actions;
 
 use App\Core\Departments\Models\Department;
+use App\Core\CustomFields\Services\CustomFieldService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class UpdateDepartmentAction
 {
+    public function __construct(
+        private readonly CustomFieldService $customFieldService,
+    ) {
+    }
+
     public function execute(Department $department, array $data): Department
     {
         $parentId = $data['parent_id'] ?? null;
@@ -50,6 +56,8 @@ class UpdateDepartmentAction
                 'description' => $data['description'] ?? null,
                 'is_active' => $data['is_active'] ?? true,
             ]);
+
+            $this->customFieldService->sync($department, $data['custom_fields'] ?? []);
 
             $defaultProject = $department->defaultProject()->first();
 
