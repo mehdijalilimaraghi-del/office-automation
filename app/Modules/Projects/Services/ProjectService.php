@@ -31,6 +31,7 @@ class ProjectService implements ProjectServiceContract
     public function show(Project $project): Project
     {
         return $project->load([
+            'customFieldValues.field',
             'manager',
             'creator',
             'department',
