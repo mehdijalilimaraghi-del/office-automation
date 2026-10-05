@@ -32,12 +32,7 @@ class StoreDepartmentRequest extends FormRequest
                 'max:150',
             ],
 
-            'code' => [
-                'nullable',
-                'string',
-                'max:50',
-            ],
-
+            
             'icon' => [
                 'nullable',
                 'string',
