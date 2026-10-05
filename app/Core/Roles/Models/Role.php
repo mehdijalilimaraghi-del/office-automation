@@ -8,8 +8,11 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-class Role extends Model$2
-    protected static function systemCodePrefix(): string
+class Role extends Model
+{
+    use HasSystemCode;
+
+protected static function systemCodePrefix(): string
     {
         return 'ROLE';
     }
