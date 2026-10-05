@@ -1,14 +1,75 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import UserAvatar from '@/Components/UserAvatar.vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
+import { ChevronDown } from '@lucide/vue';
 
+const page = usePage();
 const showingNavigationDropdown = ref(false);
+const openDesktopMenu = ref<string | null>(null);
+const expandedMobileMenus = ref<Record<string, boolean>>({
+    work: false,
+    organization: false,
+    settings: false,
+});
+
+const abilities = computed(
+    () => (page.props.auth.abilities ?? {}) as Record<string, boolean>,
+);
+
+const can = (ability: string): boolean => Boolean(abilities.value[ability]);
+
+const hasWorkMenu = computed(() =>
+    ['cartable_view', 'tasks_view', 'projects_view', 'notification_view'].some(can),
+);
+
+const hasOrganizationMenu = computed(() =>
+    ['departments_view', 'users_view', 'roles_view', 'custom_fields_manage'].some(can),
+);
+
+const hasSettingsMenu = computed(() => can('settings_manage'));
+
+function toggleDesktopMenu(menu: string): void {
+    openDesktopMenu.value =
+        openDesktopMenu.value === menu ? null : menu;
+}
+
+function toggleMobileMenu(menu: string): void {
+    expandedMobileMenus.value[menu] = !expandedMobileMenus.value[menu];
+}
+
+function closeMobileNavigation(): void {
+    showingNavigationDropdown.value = false;
+}
+
+onMounted(() => {
+    if (
+        route().current('cartable.*') ||
+        route().current('notifications.*') ||
+        route().current('tasks.*') ||
+        route().current('projects.*')
+    ) {
+        expandedMobileMenus.value.work = true;
+    }
+
+    if (
+        route().current('departments.*') ||
+        route().current('users.*') ||
+        route().current('roles.*') ||
+        route().current('custom-fields.*')
+    ) {
+        expandedMobileMenus.value.organization = true;
+    }
+
+    if (route().current('settings.*')) {
+        expandedMobileMenus.value.settings = true;
+    }
+});
 </script>
 
 <template>
@@ -17,7 +78,6 @@ const showingNavigationDropdown = ref(false);
             <nav class="border-b border-gray-100 bg-white">
                 <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div class="flex h-16 items-center justify-between">
-
                         <!-- سمت راست: لوگو و منو -->
                         <div class="flex h-full items-center">
                             <div class="flex shrink-0 items-center">
@@ -26,10 +86,10 @@ const showingNavigationDropdown = ref(false);
                                         class="block h-9 w-auto fill-current text-gray-800"
                                     />
                                 </Link>
-</div>
+                            </div>
 
                             <div
-                                class="hidden h-full items-center space-x-8 space-x-reverse sm:ms-10 sm:flex"
+                                class="hidden h-full items-center gap-1 sm:ms-10 sm:flex"
                             >
                                 <NavLink
                                     :href="route('dashboard')"
@@ -38,84 +98,177 @@ const showingNavigationDropdown = ref(false);
                                     داشبورد
                                 </NavLink>
 
-                                <NavLink
-                                    v-if="$page.props.auth.abilities?.cartable_view"
-                                    :href="route('cartable.index')"
-                                    :active="route().current('cartable.*')"
-                                >
-                                    کارتابل
-                                </NavLink>
+                                <div v-if="hasWorkMenu" class="relative h-full">
+                                    <button
+                                        type="button"
+                                        class="inline-flex h-full items-center gap-1 border-b-2 px-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
+                                        :class="
+                                            route().current('cartable.*') ||
+                                            route().current('notifications.*') ||
+                                            route().current('tasks.*') ||
+                                            route().current('projects.*')
+                                                ? 'border-indigo-400 text-gray-900'
+                                                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                                        "
+                                        aria-haspopup="menu"
+                                        :aria-expanded="openDesktopMenu === 'work'"
+                                        @click="toggleDesktopMenu('work')"
+                                        @keydown.escape="openDesktopMenu = null"
+                                    >
+                                        کار و عملیات
+                                        <ChevronDown
+                                            class="h-4 w-4 transition-transform"
+                                            :class="{ 'rotate-180': openDesktopMenu === 'work' }"
+                                        />
+                                    </button>
+
+                                    <div
+                                        v-if="openDesktopMenu === 'work'"
+                                        class="absolute right-0 z-50 mt-1 w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg shadow-slate-200/50"
+                                        role="menu"
+                                    >
+                                        <NavLink
+                                            v-if="can('cartable_view')"
+                                            :href="route('cartable.index')"
+                                            :active="route().current('cartable.*')"
+                                            class="w-full justify-start rounded-lg border-0 px-3 py-2 text-right"
+                                        >
+                                            کارتابل
+                                        </NavLink>
+                                        <NavLink
+                                            v-if="can('tasks_view')"
+                                            :href="route('tasks.index')"
+                                            :active="route().current('tasks.*')"
+                                            class="w-full justify-start rounded-lg border-0 px-3 py-2 text-right"
+                                        >
+                                            تسک‌ها
+                                        </NavLink>
+                                        <NavLink
+                                            v-if="can('projects_view')"
+                                            :href="route('projects.index')"
+                                            :active="route().current('projects.*')"
+                                            class="w-full justify-start rounded-lg border-0 px-3 py-2 text-right"
+                                        >
+                                            پروژه‌ها
+                                        </NavLink>
+                                        <NavLink
+                                            v-if="can('notification_view')"
+                                            :href="route('notifications.index')"
+                                            :active="route().current('notifications.*')"
+                                            class="w-full justify-start rounded-lg border-0 px-3 py-2 text-right"
+                                        >
+                                            اعلان‌ها
+                                        </NavLink>
+                                    </div>
+                                </div>
+
+                                <div v-if="hasOrganizationMenu" class="relative h-full">
+                                    <button
+                                        type="button"
+                                        class="inline-flex h-full items-center gap-1 border-b-2 px-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
+                                        :class="
+                                            route().current('departments.*') ||
+                                            route().current('users.*') ||
+                                            route().current('roles.*') ||
+                                            route().current('custom-fields.*')
+                                                ? 'border-indigo-400 text-gray-900'
+                                                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                                        "
+                                        aria-haspopup="menu"
+                                        :aria-expanded="openDesktopMenu === 'organization'"
+                                        @click="toggleDesktopMenu('organization')"
+                                        @keydown.escape="openDesktopMenu = null"
+                                    >
+                                        سازمان داخلی
+                                        <ChevronDown
+                                            class="h-4 w-4 transition-transform"
+                                            :class="{ 'rotate-180': openDesktopMenu === 'organization' }"
+                                        />
+                                    </button>
+
+                                    <div
+                                        v-if="openDesktopMenu === 'organization'"
+                                        class="absolute right-0 z-50 mt-1 w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg shadow-slate-200/50"
+                                        role="menu"
+                                    >
+                                        <NavLink
+                                            v-if="can('departments_view')"
+                                            :href="route('departments.index')"
+                                            :active="route().current('departments.*')"
+                                            class="w-full justify-start rounded-lg border-0 px-3 py-2 text-right"
+                                        >
+                                            سازمان
+                                        </NavLink>
+                                        <NavLink
+                                            v-if="can('users_view')"
+                                            :href="route('users.index')"
+                                            :active="route().current('users.*')"
+                                            class="w-full justify-start rounded-lg border-0 px-3 py-2 text-right"
+                                        >
+                                            کاربران
+                                        </NavLink>
+                                        <NavLink
+                                            v-if="can('roles_view')"
+                                            :href="route('roles.index')"
+                                            :active="route().current('roles.*')"
+                                            class="w-full justify-start rounded-lg border-0 px-3 py-2 text-right"
+                                        >
+                                            نقش‌ها
+                                        </NavLink>
+                                        <NavLink
+                                            v-if="can('custom_fields_manage')"
+                                            :href="route('custom-fields.index')"
+                                            :active="route().current('custom-fields.*')"
+                                            class="w-full justify-start rounded-lg border-0 px-3 py-2 text-right"
+                                        >
+                                            فیلدهای سفارشی
+                                        </NavLink>
+                                    </div>
+                                </div>
 
                                 <NavLink
-                                    v-if="$page.props.auth.abilities?.notification_view"
-                                    :href="route('notifications.index')"
-                                    :active="route().current('notifications.*')"
-                                >
-                                    اعلان‌ها
-                                </NavLink>
-
-                                <NavLink
-                                    v-if="$page.props.auth.abilities?.tasks_view"
-                                    :href="route('tasks.index')"
-                                    :active="route().current('tasks.*')"
-                                >
-                                    تسک‌ها
-                                </NavLink>
-
-                                <NavLink
-                                    v-if="$page.props.auth.abilities?.external_parties_view"
+                                    v-if="can('external_parties_view')"
                                     :href="route('external-parties.index')"
                                     :active="route().current('external-parties.*')"
                                 >
                                     برون‌سازمانی
                                 </NavLink>
 
-                                <NavLink
-                                    v-if="$page.props.auth.abilities?.projects_view"
-                                    :href="route('projects.index')"
-                                    :active="route().current('projects.*')"
-                                >
-                                    پروژه‌ها
-                                </NavLink>
-                                <NavLink
-                                    v-if="$page.props.auth.abilities?.users_view"
-                                    :href="route('users.index')"
-                                    :active="route().current('users.*')"
-                                >
-                                    کاربران
-                                </NavLink>
+                                <div v-if="hasSettingsMenu" class="relative h-full">
+                                    <button
+                                        type="button"
+                                        class="inline-flex h-full items-center gap-1 border-b-2 px-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
+                                        :class="
+                                            route().current('settings.*')
+                                                ? 'border-indigo-400 text-gray-900'
+                                                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                                        "
+                                        aria-haspopup="menu"
+                                        :aria-expanded="openDesktopMenu === 'settings'"
+                                        @click="toggleDesktopMenu('settings')"
+                                        @keydown.escape="openDesktopMenu = null"
+                                    >
+                                        تنظیمات
+                                        <ChevronDown
+                                            class="h-4 w-4 transition-transform"
+                                            :class="{ 'rotate-180': openDesktopMenu === 'settings' }"
+                                        />
+                                    </button>
 
-                                <NavLink
-                                    v-if="$page.props.auth.abilities?.departments_view"
-                                    :href="route('departments.index')"
-                                    :active="route().current('departments.*')"
-                                >
-                                    سازمان
-                                </NavLink>
-
-                                <NavLink
-                                    v-if="$page.props.auth.abilities?.roles_view"
-                                    :href="route('roles.index')"
-                                    :active="route().current('roles.*')"
-                                >
-                                    نقش‌ها
-                                </NavLink>
-
-                                <NavLink
-                                    v-if="$page.props.auth.abilities?.custom_fields_manage"
-                                    :href="route('custom-fields.index')"
-                                    :active="route().current('custom-fields.*')"
-                                >
-                                    فیلدهای سفارشی
-                                </NavLink>
-
-                                <NavLink
-                                    v-if="$page.props.auth.abilities?.settings_manage"
-                                    :href="route('settings.organization.edit')"
-                                    :active="route().current('settings.*')"
-                                >
-                                    تنظیمات سازمان
-                                </NavLink>
+                                    <div
+                                        v-if="openDesktopMenu === 'settings'"
+                                        class="absolute right-0 z-50 mt-1 w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg shadow-slate-200/50"
+                                        role="menu"
+                                    >
+                                        <NavLink
+                                            :href="route('settings.organization.edit')"
+                                            :active="route().current('settings.*')"
+                                            class="w-full justify-start rounded-lg border-0 px-3 py-2 text-right"
+                                        >
+                                            تنظیمات سازمان
+                                        </NavLink>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -135,7 +288,6 @@ const showingNavigationDropdown = ref(false);
                                                     size="sm"
                                                 />
                                                 <span>{{ $page.props.auth.user.name }}</span>
-
                                                 <svg
                                                     class="-ms-0.5 me-2 h-4 w-4"
                                                     xmlns="http://www.w3.org/2000/svg"
@@ -153,9 +305,7 @@ const showingNavigationDropdown = ref(false);
                                     </template>
 
                                     <template #content>
-                                        <DropdownLink
-                                            :href="route('profile.edit')"
-                                        >
+                                        <DropdownLink :href="route('profile.edit')">
                                             پروفایل
                                         </DropdownLink>
 
@@ -179,6 +329,8 @@ const showingNavigationDropdown = ref(false);
                                         !showingNavigationDropdown
                                 "
                                 class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 transition duration-150 ease-in-out hover:bg-gray-100 hover:text-gray-500 focus:bg-gray-100 focus:text-gray-500 focus:outline-none"
+                                :aria-expanded="showingNavigationDropdown"
+                                aria-label="باز و بسته کردن منو"
                             >
                                 <svg
                                     class="h-6 w-6"
@@ -220,94 +372,174 @@ const showingNavigationDropdown = ref(false);
                         block: showingNavigationDropdown,
                         hidden: !showingNavigationDropdown,
                     }"
-                    class="sm:hidden"
+                    class="border-t border-slate-100 bg-white sm:hidden"
                 >
-                    <div class="space-y-1 pb-3 pt-2">
+                    <div class="space-y-1 p-3">
                         <ResponsiveNavLink
                             :href="route('dashboard')"
                             :active="route().current('dashboard')"
+                            @click="closeMobileNavigation"
                         >
                             داشبورد
                         </ResponsiveNavLink>
 
-                        <ResponsiveNavLink
-                            v-if="$page.props.auth.abilities?.cartable_view"
-                            :href="route('cartable.index')"
-                            :active="route().current('cartable.*')"
-                        >
-                            کارتابل
-                        </ResponsiveNavLink>
+                        <div v-if="hasWorkMenu" class="rounded-xl bg-slate-50">
+                            <button
+                                type="button"
+                                class="flex w-full items-center justify-between rounded-xl px-4 py-3 text-right text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+                                :class="
+                                    route().current('cartable.*') ||
+                                    route().current('notifications.*') ||
+                                    route().current('tasks.*') ||
+                                    route().current('projects.*')
+                                        ? 'text-slate-900'
+                                        : 'text-slate-600'
+                                "
+                                :aria-expanded="expandedMobileMenus.work"
+                                @click="toggleMobileMenu('work')"
+                            >
+                                <span>کار و عملیات</span>
+                                <ChevronDown
+                                    class="h-4 w-4 transition-transform"
+                                    :class="{ 'rotate-180': expandedMobileMenus.work }"
+                                />
+                            </button>
+
+                            <div v-show="expandedMobileMenus.work" class="space-y-1 px-2 pb-2">
+                                <ResponsiveNavLink
+                                    v-if="can('cartable_view')"
+                                    :href="route('cartable.index')"
+                                    :active="route().current('cartable.*')"
+                                    @click="closeMobileNavigation"
+                                >
+                                    کارتابل
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink
+                                    v-if="can('tasks_view')"
+                                    :href="route('tasks.index')"
+                                    :active="route().current('tasks.*')"
+                                    @click="closeMobileNavigation"
+                                >
+                                    تسک‌ها
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink
+                                    v-if="can('projects_view')"
+                                    :href="route('projects.index')"
+                                    :active="route().current('projects.*')"
+                                    @click="closeMobileNavigation"
+                                >
+                                    پروژه‌ها
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink
+                                    v-if="can('notification_view')"
+                                    :href="route('notifications.index')"
+                                    :active="route().current('notifications.*')"
+                                    @click="closeMobileNavigation"
+                                >
+                                    اعلان‌ها
+                                </ResponsiveNavLink>
+                            </div>
+                        </div>
+
+                        <div v-if="hasOrganizationMenu" class="rounded-xl bg-slate-50">
+                            <button
+                                type="button"
+                                class="flex w-full items-center justify-between rounded-xl px-4 py-3 text-right text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+                                :class="
+                                    route().current('departments.*') ||
+                                    route().current('users.*') ||
+                                    route().current('roles.*') ||
+                                    route().current('custom-fields.*')
+                                        ? 'text-slate-900'
+                                        : 'text-slate-600'
+                                "
+                                :aria-expanded="expandedMobileMenus.organization"
+                                @click="toggleMobileMenu('organization')"
+                            >
+                                <span>سازمان داخلی</span>
+                                <ChevronDown
+                                    class="h-4 w-4 transition-transform"
+                                    :class="{ 'rotate-180': expandedMobileMenus.organization }"
+                                />
+                            </button>
+
+                            <div
+                                v-show="expandedMobileMenus.organization"
+                                class="space-y-1 px-2 pb-2"
+                            >
+                                <ResponsiveNavLink
+                                    v-if="can('departments_view')"
+                                    :href="route('departments.index')"
+                                    :active="route().current('departments.*')"
+                                    @click="closeMobileNavigation"
+                                >
+                                    سازمان
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink
+                                    v-if="can('users_view')"
+                                    :href="route('users.index')"
+                                    :active="route().current('users.*')"
+                                    @click="closeMobileNavigation"
+                                >
+                                    کاربران
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink
+                                    v-if="can('roles_view')"
+                                    :href="route('roles.index')"
+                                    :active="route().current('roles.*')"
+                                    @click="closeMobileNavigation"
+                                >
+                                    نقش‌ها
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink
+                                    v-if="can('custom_fields_manage')"
+                                    :href="route('custom-fields.index')"
+                                    :active="route().current('custom-fields.*')"
+                                    @click="closeMobileNavigation"
+                                >
+                                    فیلدهای سفارشی
+                                </ResponsiveNavLink>
+                            </div>
+                        </div>
 
                         <ResponsiveNavLink
-                            v-if="$page.props.auth.abilities?.notification_view"
-                            :href="route('notifications.index')"
-                            :active="route().current('notifications.*')"
-                        >
-                            اعلان‌ها
-                        </ResponsiveNavLink>
-
-                        <ResponsiveNavLink
-                            v-if="$page.props.auth.abilities?.tasks_view"
-                            :href="route('tasks.index')"
-                            :active="route().current('tasks.*')"
-                        >
-                            تسک‌ها
-                        </ResponsiveNavLink>
-
-                        <ResponsiveNavLink
-                            v-if="$page.props.auth.abilities?.external_parties_view"
+                            v-if="can('external_parties_view')"
                             :href="route('external-parties.index')"
                             :active="route().current('external-parties.*')"
+                            @click="closeMobileNavigation"
                         >
                             برون‌سازمانی
                         </ResponsiveNavLink>
 
-                        <ResponsiveNavLink
-                            v-if="$page.props.auth.abilities?.projects_view"
-                            :href="route('projects.index')"
-                            :active="route().current('projects.*')"
-                        >
-                            پروژه‌ها
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink
-                            v-if="$page.props.auth.abilities?.users_view"
-                            :href="route('users.index')"
-                            :active="route().current('users.*')"
-                        >
-                            کاربران
-                        </ResponsiveNavLink>
+                        <div v-if="hasSettingsMenu" class="rounded-xl bg-slate-50">
+                            <button
+                                type="button"
+                                class="flex w-full items-center justify-between rounded-xl px-4 py-3 text-right text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500"
+                                :class="
+                                    route().current('settings.*')
+                                        ? 'text-slate-900'
+                                        : 'text-slate-600'
+                                "
+                                :aria-expanded="expandedMobileMenus.settings"
+                                @click="toggleMobileMenu('settings')"
+                            >
+                                <span>تنظیمات</span>
+                                <ChevronDown
+                                    class="h-4 w-4 transition-transform"
+                                    :class="{ 'rotate-180': expandedMobileMenus.settings }"
+                                />
+                            </button>
 
-                        <ResponsiveNavLink
-                            v-if="$page.props.auth.abilities?.departments_view"
-                            :href="route('departments.index')"
-                            :active="route().current('departments.*')"
-                        >
-                            سازمان
-                        </ResponsiveNavLink>
-
-                        <ResponsiveNavLink
-                            v-if="$page.props.auth.abilities?.roles_view"
-                            :href="route('roles.index')"
-                            :active="route().current('roles.*')"
-                        >
-                            نقش‌ها
-                        </ResponsiveNavLink>
-
-                        <ResponsiveNavLink
-                            v-if="$page.props.auth.abilities?.custom_fields_manage"
-                            :href="route('custom-fields.index')"
-                            :active="route().current('custom-fields.*')"
-                        >
-                            فیلدهای سفارشی
-                        </ResponsiveNavLink>
-
-                        <ResponsiveNavLink
-                            v-if="$page.props.auth.abilities?.settings_manage"
-                            :href="route('settings.organization.edit')"
-                            :active="route().current('settings.*')"
-                        >
-                            تنظیمات سازمان
-                        </ResponsiveNavLink>
+                            <div v-show="expandedMobileMenus.settings" class="space-y-1 px-2 pb-2">
+                                <ResponsiveNavLink
+                                    :href="route('settings.organization.edit')"
+                                    :active="route().current('settings.*')"
+                                    @click="closeMobileNavigation"
+                                >
+                                    تنظیمات سازمان
+                                </ResponsiveNavLink>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- اطلاعات کاربر -->
@@ -325,6 +557,7 @@ const showingNavigationDropdown = ref(false);
                         <div class="mt-3 space-y-1">
                             <ResponsiveNavLink
                                 :href="route('profile.edit')"
+                                @click="closeMobileNavigation"
                             >
                                 پروفایل
                             </ResponsiveNavLink>
@@ -333,6 +566,7 @@ const showingNavigationDropdown = ref(false);
                                 :href="route('logout')"
                                 method="post"
                                 as="button"
+                                @click="closeMobileNavigation"
                             >
                                 خروج
                             </ResponsiveNavLink>
