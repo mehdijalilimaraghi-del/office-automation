@@ -10,6 +10,10 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class SyncRolePermissionsAction
 {
+    public function __construct(private readonly AuditServiceInterface $audit)
+    {
+    }
+
     public function execute(
         Role $role,
         array $permissions
