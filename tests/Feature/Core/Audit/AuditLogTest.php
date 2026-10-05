@@ -39,31 +39,21 @@ class AuditLogTest extends TestCase
         $this->assertSame(['source' => 'test'], $audit->metadata);
     }
 
-    public function test_user_update_creates_business_audit_entry(): void
+    public function test_user_creation_action_creates_business_audit_entry(): void
     {
         $actor = User::factory()->create();
-        $user = User::factory()->create([
-            'name' => 'Old Name',
-            'email' => 'old@example.com',
-        ]);
 
         $this->actingAs($actor);
 
-        $user->update([
-            'name' => 'New Name',
-            'email' => 'new@example.com',
+        $user = app(\App\Core\Users\Actions\CreateUserAction::class)->execute([
+            'name' => 'Audited User',
+            'email' => 'audited@example.com',
+            'status' => 'inactive',
         ]);
-
-        app(\App\Core\Audit\Contracts\AuditServiceInterface::class)->record(
-            'user.updated',
-            $user->refresh(),
-            ['name' => 'Old Name', 'email' => 'old@example.com'],
-            ['name' => 'New Name', 'email' => 'new@example.com'],
-        );
 
         $this->assertDatabaseHas('audit_logs', [
             'actor_id' => $actor->id,
-            'event' => 'user.updated',
+            'event' => 'user.created',
             'auditable_type' => User::class,
             'auditable_id' => $user->id,
         ]);
