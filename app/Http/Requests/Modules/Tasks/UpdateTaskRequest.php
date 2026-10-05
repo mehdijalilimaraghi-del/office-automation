@@ -38,6 +38,7 @@ class UpdateTaskRequest extends FormRequest
                 'date',
                 'after_or_equal:start_date',
             ],
+            'custom_fields' => ['nullable', 'array'],
             'is_active' => ['sometimes', 'boolean'],
         ];
     }
