@@ -3,12 +3,17 @@
 namespace App\Core\Departments\Actions;
 
 use App\Core\Departments\Models\Position;
+use App\Core\Audit\Contracts\AuditServiceInterface;
 use App\Core\Departments\Models\PositionAssignment;
 use App\Models\User;
 use Illuminate\Validation\ValidationException;
 
 class AssignPositionAction
 {
+    public function __construct(private readonly AuditServiceInterface $audit)
+    {
+    }
+
     public function execute(Position $position, User $user, bool $primary = false): PositionAssignment
     {
         if (! $position->department()->whereHas('members', fn ($q) => $q->whereKey($user->id))->exists()) {
@@ -30,6 +35,14 @@ class AssignPositionAction
                 ->update(['is_primary'=>false]);
         }
 
-        return $assignment->refresh();
+        $assignment->refresh();
+
+        $this->audit->record('position.assigned', $assignment, null, [
+            'user_id' => $user->id,
+            'position_id' => $position->id,
+            'is_primary' => $assignment->is_primary,
+        ]);
+
+        return $assignment;
     }
 }
