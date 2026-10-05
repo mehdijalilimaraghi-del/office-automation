@@ -116,9 +116,14 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
           <textarea v-model="orgForm.address" rows="3" placeholder="نشانی" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500"></textarea>
           <p v-if="errors.name" class="text-xs text-red-600">{{ errors.name }}</p>
         </div>
-        <CustomFieldsForm v-if="props.customFields.organization.length" v-model="orgForm.custom_fields" :fields="props.customFields.organization" :errors="errors" title="اطلاعات تکمیلی سازمان" description="اطلاعات اختصاصی تعریف‌شده برای این سازمان را در این بخش ثبت کنید." />
-        <CustomFieldsForm v-if="props.customFields.department.length" v-model="depForm.custom_fields" :fields="props.customFields.department" :errors="errors" title="اطلاعات تکمیلی واحد" description="اطلاعات اختصاصی تعریف‌شده برای این واحد را در این بخش ثبت کنید." />
-        <CustomFieldsForm v-if="props.customFields.contact.length" v-model="contactForm.custom_fields" :fields="props.customFields.contact" :errors="errors" title="اطلاعات تکمیلی مخاطب" description="اطلاعات اختصاصی تعریف‌شده برای این مخاطب را در این بخش ثبت کنید." />
+                <CustomFieldsForm
+          v-if="props.customFields.organization.length"
+          v-model="orgForm.custom_fields"
+          :fields="props.customFields.organization"
+          :errors="errors"
+          title="اطلاعات تکمیلی سازمان"
+          description="اطلاعات اختصاصی تعریف‌شده برای این سازمان را در این بخش ثبت کنید."
+        />
         <div class="mt-5 flex gap-2"><button :disabled="saving" class="flex-1 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">{{saving?'در حال ذخیره…':orgForm.id?'ذخیره تغییرات':'ثبت سازمان'}}</button><button v-if="orgForm.id" type="button" @click="reset(orgForm)" class="rounded-xl border px-4 py-2.5 text-sm">انصراف</button></div>
       </form>
       <div class="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
@@ -144,6 +149,14 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
           <div class="grid grid-cols-2 gap-3"><input v-model="depForm.phone" placeholder="تلفن" class="rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr"><input v-model="depForm.extension" placeholder="داخلی" class="rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr"></div>
           <input v-model="depForm.email" type="email" placeholder="ایمیل" class="w-full rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr">
         </div>
+                <CustomFieldsForm
+          v-if="props.customFields.department.length"
+          v-model="depForm.custom_fields"
+          :fields="props.customFields.department"
+          :errors="errors"
+          title="اطلاعات تکمیلی واحد"
+          description="اطلاعات اختصاصی تعریف‌شده برای این واحد را در این بخش ثبت کنید."
+        />
         <div class="mt-5 flex gap-2"><button :disabled="saving" class="flex-1 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">{{saving?'در حال ذخیره…':depForm.id?'ذخیره تغییرات':'ثبت واحد'}}</button><button v-if="depForm.id" type="button" @click="reset(depForm)" class="rounded-xl border px-4 py-2.5 text-sm">انصراف</button></div>
       </form>
       <div class="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
@@ -167,6 +180,14 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
           <input v-model="contactForm.email" type="email" placeholder="ایمیل" class="w-full rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr">
           <textarea v-model="contactForm.notes" rows="3" placeholder="یادداشت" class="w-full rounded-xl border border-slate-200 px-3 py-2.5"></textarea>
         </div>
+                <CustomFieldsForm
+          v-if="props.customFields.contact.length"
+          v-model="contactForm.custom_fields"
+          :fields="props.customFields.contact"
+          :errors="errors"
+          title="اطلاعات تکمیلی مخاطب"
+          description="اطلاعات اختصاصی تعریف‌شده برای این مخاطب را در این بخش ثبت کنید."
+        />
         <div class="mt-5 flex gap-2"><button :disabled="saving" class="flex-1 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">{{saving?'در حال ذخیره…':contactForm.id?'ذخیره تغییرات':'ثبت فرد'}}</button><button v-if="contactForm.id" type="button" @click="reset(contactForm)" class="rounded-xl border px-4 py-2.5 text-sm">انصراف</button></div>
       </form>
       <div class="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
