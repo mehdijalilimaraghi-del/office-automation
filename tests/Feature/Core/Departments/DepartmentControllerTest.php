@@ -354,6 +354,56 @@ class DepartmentControllerTest extends TestCase
         ]);
     }
 
+    public function test_department_hierarchy_supports_multiple_levels(): void
+    {
+        $user = $this->user();
+
+        $this->grant($user, 'departments.view');
+
+        $parent = Department::create([
+            'name' => 'مدیریت',
+            'code' => 'MNG',
+            'description' => null,
+            'parent_id' => null,
+            'is_active' => true,
+        ]);
+
+        $child = Department::create([
+            'name' => 'اداری',
+            'code' => 'ADM',
+            'description' => null,
+            'parent_id' => $parent->id,
+            'is_active' => true,
+        ]);
+
+        $grandchild = Department::create([
+            'name' => 'دبیرخانه',
+            'code' => 'SEC',
+            'description' => null,
+            'parent_id' => $child->id,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->get(route('departments.index'));
+
+        $response->assertOk();
+
+        $parent->refresh();
+        $child->refresh();
+        $grandchild->refresh();
+
+        $this->assertNull($parent->parent_id);
+        $this->assertSame($parent->id, (int) $child->parent_id);
+        $this->assertSame($child->id, (int) $grandchild->parent_id);
+        $this->assertSame(1, $parent->children()->count());
+        $this->assertSame(1, $child->children()->count());
+        $this->assertSame(0, $grandchild->children()->count());
+        $this->assertSame(1, (int) $parent->children_count);
+        $this->assertSame(1, (int) $child->children_count);
+        $this->assertSame(0, (int) $grandchild->children_count);
+    }
+
     public function test_department_cannot_be_its_own_parent(): void
     {
         $user = $this->user();
