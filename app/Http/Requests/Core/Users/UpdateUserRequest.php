@@ -72,7 +72,7 @@ class UpdateUserRequest extends FormRequest
             ],
 
             'role_ids' => [
-                'present',
+                'sometimes',
                 'array',
             ],
 
