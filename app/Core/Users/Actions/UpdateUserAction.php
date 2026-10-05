@@ -31,10 +31,11 @@ class UpdateUserAction
             ]);
         }
 
-        $oldValues = $user->only(['name', 'email', 'mobile', 'phone', 'extension', 'status']);
+        $oldValues = $user->only(['name', 'username', 'email', 'mobile', 'phone', 'extension', 'status']);
 
         $attributes = [
             'name' => $data['name'],
+            'username' => $data['username'],
             'email' => $data['email'],
             'mobile' => $data['mobile'] ?? null,
             'phone' => $data['phone'] ?? null,
