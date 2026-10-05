@@ -48,7 +48,7 @@ class UpdateDepartmentRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:50',
-                'in:building-2,landmark,briefcase,users,factory,calculator,scale,monitor,wrench,truck,shield-check,clipboard-list,megaphone,warehouse,settings,home',
+                'in:building-2,building,landmark,briefcase,users,users-round,user-round,user-cog,factory,warehouse,store,shopping-cart,truck,package,boxes,handshake,calculator,banknote,dollar-sign,receipt-text,scale,gavel,file-text,files,folder,folder-open,archive,clipboard,clipboard-list,clipboard-check,list-checks,check-circle-2,monitor,laptop,server,database,code-2,wrench,hard-hat,cog,settings,shield,shield-check,lock-keyhole,key-round,megaphone,radio,headphones,phone,mail,globe,map-pin,route,calendar-days,clock-3,target,bar-chart-3,pie-chart,trending-up,tag,search,printer,scan-line,ruler,book-open,home',
             ],
 
             'description' => [
