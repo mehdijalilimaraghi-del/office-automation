@@ -8,6 +8,7 @@ class UpdateCustomFieldAction
 {
     public function execute(CustomField $field, array $data): CustomField
     {
+        unset($data['key']);
         $data['options'] = $data['type'] === 'select' ? array_values($data['options'] ?? []) : null;
         $field->update($data);
         return $field->refresh();
