@@ -633,8 +633,8 @@ function currentUserId(): number | null {
                         </div>
                         <div v-if="canManageUserRoles()" class="rounded-xl border border-slate-200 p-4">
                             <div class="mb-3">
-                                <label class="block text-sm font-semibold text-slate-700">نقش‌های کاربری</label>
-                                <p class="mt-1 text-xs leading-5 text-slate-500">نقش کاربری، مجموعه مجوزها و محدوده دسترسی این کاربر را مشخص می‌کند.</p>
+                                <label class="block text-sm font-semibold text-slate-700">نقش کاربری</label>
+                                <p class="mt-1 text-xs leading-5 text-slate-500">نقش کاربری، مجموعه مجوزهای این کاربر در سامانه را مشخص می‌کند.</p>
                             </div>
                             <div>
                                  <select
@@ -651,6 +651,7 @@ function currentUserId(): number | null {
                                      نقش کاربری فعالی برای تخصیص تعریف نشده است؛ این کاربر به‌صورت عادی و بدون نقش ایجاد می‌شود.
                                  </p>
                              </div>
+                         </div>
                         <div v-else class="rounded-xl border border-amber-100 bg-amber-50/60 p-4 text-sm leading-6 text-amber-800">
                             تخصیص و تغییر نقش‌های کاربری فقط برای مدیرانی که مجوز «مدیریت نقش‌های کاربر» دارند فعال است.
                         </div>
