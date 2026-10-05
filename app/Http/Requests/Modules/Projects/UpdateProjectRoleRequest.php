@@ -15,9 +15,6 @@ class UpdateProjectRoleRequest extends FormRequest
 
     public function rules(): array
     {
-        $project = $this->route('project');
-        $role = $this->route('role');
-
         return [
             'name' => ['required', 'string', 'max:150'],
                         'description' => ['nullable', 'string'],
