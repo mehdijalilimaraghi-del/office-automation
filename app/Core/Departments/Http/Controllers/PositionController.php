@@ -34,21 +34,21 @@ class PositionController extends Controller
 
     public function update(UpdatePositionRequest $request, Department $department, Position $position): RedirectResponse
     {
-        abort_unless($position->department_id === $department->id, 404);
+        $position = $department->positions()->whereKey($position->getKey())->firstOrFail();
         $this->update->execute($position, $request->validated());
         return back()->with('success', 'سمت با موفقیت ویرایش شد.');
     }
 
     public function destroy(Department $department, Position $position): RedirectResponse
     {
-        abort_unless($position->department_id === $department->id, 404);
+        $position = $department->positions()->whereKey($position->getKey())->firstOrFail();
         $this->delete->execute($position);
         return back()->with('success', 'سمت با موفقیت حذف شد.');
     }
 
     public function assign(AssignPositionRequest $request, Department $department, Position $position): RedirectResponse
     {
-        abort_unless($position->department_id === $department->id, 404);
+        $position = $department->positions()->whereKey($position->getKey())->firstOrFail();
         $user = User::query()->findOrFail((int) $request->validated('user_id'));
         $this->assign->execute($position, $user, (bool) ($request->validated('is_primary') ?? false));
         return back()->with('success', 'کاربر با موفقیت به سمت تخصیص یافت.');
@@ -56,7 +56,7 @@ class PositionController extends Controller
 
     public function unassign(Department $department, Position $position, int $user): RedirectResponse
     {
-        abort_unless($position->department_id === $department->id, 404);
+        $position = $department->positions()->whereKey($position->getKey())->firstOrFail();
         $model = User::query()->findOrFail($user);
         $this->unassign->execute($position, $model);
         return back()->with('success', 'تخصیص سمت حذف شد.');
