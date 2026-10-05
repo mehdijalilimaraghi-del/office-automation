@@ -74,6 +74,7 @@ class UpdateUserRequest extends FormRequest
             'role_ids' => [
                 'sometimes',
                 'array',
+                'max:1',
             ],
 
             'custom_fields' => ['sometimes', 'array'],
@@ -100,8 +101,8 @@ class UpdateUserRequest extends FormRequest
             'password' => 'رمز عبور',
             'password_confirmation' => 'تکرار رمز عبور',
             'status' => 'وضعیت',
-            'role_ids' => 'نقش‌ها',
-            'role_ids.*' => 'نقش',
+            'role_ids' => 'نقش کاربری',
+            'role_ids.*' => 'نقش کاربری',
         ];
     }
 }
