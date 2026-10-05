@@ -12,7 +12,13 @@ class Position extends Model
 {
     protected $fillable = ['department_id','name','code','description','is_active'];
 
-    protected function casts(): array { return ['is_active' => 'boolean']; }
+    protected function casts(): array
+    {
+        return [
+            'department_id' => 'integer',
+            'is_active' => 'boolean',
+        ];
+    }
 
     public function department(): BelongsTo { return $this->belongsTo(Department::class); }
     public function assignments(): HasMany { return $this->hasMany(PositionAssignment::class); }
