@@ -23,6 +23,7 @@ class ProjectMemberService implements ProjectMemberServiceContract
     public function availableUsers(Project $project): Collection
     {
         return User::query()
+            ->operational()
             ->where('status', 'active')
             ->whereDoesntHave(
                 'projectMemberships',
