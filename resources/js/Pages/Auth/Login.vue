@@ -107,7 +107,7 @@ const submit = () => {
                         <TextInput
                             id="password"
                             :type="showPassword ? 'text' : 'password'"
-                            class="block min-h-12 w-full rounded-xl border-slate-300 bg-white px-4 pe-12 text-base tracking-normal text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                            class="block min-h-12 w-full rounded-xl border-slate-300 bg-white px-4 pe-12 text-right text-base tracking-normal text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
                             v-model="form.password"
                             required
                             autocomplete="current-password"
@@ -116,7 +116,7 @@ const submit = () => {
 
                         <button
                             type="button"
-                            class="absolute inset-y-0 end-0 flex w-12 items-center justify-center rounded-e-xl text-slate-500 transition hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-inset"
+                            class="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-s-xl text-slate-500 transition hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-inset"
                             :aria-label="showPassword ? 'مخفی کردن رمز عبور' : 'نمایش رمز عبور'"
                             :title="showPassword ? 'مخفی کردن رمز عبور' : 'نمایش رمز عبور'"
                             @click="showPassword = !showPassword"
