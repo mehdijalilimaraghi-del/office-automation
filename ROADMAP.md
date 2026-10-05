@@ -150,8 +150,12 @@ Unified operational inbox containing:
 - Document access/history
 - Administrative actions
 - Security-sensitive actions
+- Actor/IP/User-Agent capture
+- Auditable entity references
+- Before/after change payloads
+- Core User/Role/Task lifecycle coverage
 
-**Status: core audit implemented; expansion pending**
+**Status: V1 core implemented / expansion pending**
 
 ---
 
@@ -437,7 +441,7 @@ The implementation sequence is currently:
 7. Workflow V1
 8. Unified Cartable
 9. Notifications
-10. Audit expansion
+10. Audit V1 core
 11. Correspondence
 12. Digital Archive
 13. Forms & Requests
