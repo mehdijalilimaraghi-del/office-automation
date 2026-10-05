@@ -934,7 +934,7 @@ watch(
                                 </div>
                             </div>
 
-                            <div class="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-8">
+                            <div class="mt-3 grid max-h-72 grid-cols-4 gap-2 overflow-y-auto rounded-xl border border-slate-100 bg-slate-50/60 p-2 pr-1 sm:grid-cols-8">
                                 <button
                                     v-for="option in departmentIconOptions"
                                     :key="option.key"
