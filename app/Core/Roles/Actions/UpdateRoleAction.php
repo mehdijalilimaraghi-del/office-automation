@@ -3,6 +3,7 @@
 namespace App\Core\Roles\Actions;
 
 use App\Core\Roles\Models\Role;
+use App\Core\Audit\Contracts\AuditServiceInterface;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class UpdateRoleAction
@@ -16,6 +17,8 @@ class UpdateRoleAction
             );
         }
 
+        $oldValues = $role->only(['name', 'code', 'description', 'is_active']);
+
         $role->update([
             'name' => $data['name'],
             'code' => $this->normalizeCode($data['code'] ?? null),
@@ -23,7 +26,9 @@ class UpdateRoleAction
             'is_active' => $data['is_active'] ?? true,
         ]);
 
-        return $role->refresh();
+        $role->refresh();
+        $this->audit->record('role.updated', $role, $oldValues, ['name' => $role->name, 'code' => $role->code, 'is_active' => $role->is_active]);
+        return $role;
     }
 
     private function normalizeCode(?string $code): ?string
