@@ -4,6 +4,9 @@ export interface User {
     username: string;
     email: string;
     email_verified_at?: string;
+    profile?: {
+        avatar_path?: string | null;
+    } | null;
 }
 
 export interface AuthAbilities {
