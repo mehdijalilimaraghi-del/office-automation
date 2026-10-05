@@ -466,7 +466,7 @@ const formatDate = (date: string | null): string => {
                 </div>
 
                 <div v-if="canManageRoles" class="border-b p-5">
-                    <form class="grid gap-4 md:grid-cols-[1fr_1fr_1.5fr_auto] md:items-end" @submit.prevent="submitCreateRole">
+                    <form class="grid gap-4 md:grid-cols-[1fr_1.5fr_auto] md:items-end" @submit.prevent="submitCreateRole">
                         <div>
                             <label for="role-name" class="mb-2 block text-sm font-medium">نام نقش</label>
                             <input
@@ -563,9 +563,6 @@ const formatDate = (date: string | null): string => {
                                         </div>
                                         <p v-if="roleForm.errors.name" class="mt-1 text-sm text-destructive">
                                             {{ roleForm.errors.name }}
-                                        </p>
-                                        <p v-else-if="roleForm.errors.code" class="mt-1 text-sm text-destructive">
-                                            {{ roleForm.errors.code }}
                                         </p>
                                         <p v-else-if="roleForm.errors.description" class="mt-1 text-sm text-destructive">
                                             {{ roleForm.errors.description }}
