@@ -28,15 +28,6 @@ const emit = defineEmits<{
     'update:modelValue': [value: Record<string, CustomValue>];
 }>();
 
-const typeLabels: Record<CustomField['type'], string> = {
-    text: 'متن کوتاه',
-    textarea: 'متن چندخطی',
-    number: 'عدد',
-    date: 'تاریخ',
-    boolean: 'بله/خیر',
-    select: 'انتخابی',
-};
-
 const valueOf = (key: string): CustomValue => props.modelValue[key] ?? null;
 
 const setValue = (key: string, value: CustomValue): void => {
@@ -94,9 +85,6 @@ const onCheckboxChange = (key: string, event: Event): void => {
                     <span v-if="field.is_required" class="text-red-500"> *</span>
                 </label>
 
-                <p class="mb-2 text-[11px] text-slate-400">
-                    نوع ورودی: {{ typeLabels[field.type] }}
-                </p>
 
                 <textarea
                     v-if="field.type === 'textarea'"
