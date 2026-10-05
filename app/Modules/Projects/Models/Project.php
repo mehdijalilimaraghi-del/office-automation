@@ -3,6 +3,7 @@
 namespace App\Modules\Projects\Models;
 
 use App\Core\Departments\Models\Department;
+use App\Core\CustomFields\Models\CustomFieldValue;
 use App\Models\Concerns\HasSystemCode;
 use App\Models\User;
 use App\Modules\Tasks\Models\Task;
@@ -22,6 +23,12 @@ class Project extends Model
     protected static function systemCodePrefix(): string
     {
         return 'PRJ';
+    }
+
+    public function customFieldValues(): HasMany
+    {
+        return $this->hasMany(CustomFieldValue::class, 'entity_id')
+            ->where('entity_type', self::class);
     }
 
     protected $fillable = [
