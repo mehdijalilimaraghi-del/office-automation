@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -16,6 +16,13 @@ const props = withDefaults(defineProps<{
 });
 
 const imageFailed = ref(false);
+
+watch(
+    () => props.avatarPath,
+    () => {
+        imageFailed.value = false;
+    },
+);
 
 const imageSrc = computed(() => {
     if (!imageFailed.value && props.avatarPath) {
