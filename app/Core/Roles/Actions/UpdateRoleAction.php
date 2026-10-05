@@ -8,6 +8,10 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class UpdateRoleAction
 {
+    public function __construct(private readonly AuditServiceInterface $audit)
+    {
+    }
+
     public function execute(Role $role, array $data): Role
     {
         if ($role->is_system) {
