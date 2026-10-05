@@ -98,7 +98,6 @@ const activeProjectRoles = computed(() =>
 
 const roleForm = useForm({
     name: '',
-    code: '',
     description: '',
     is_active: true,
 });
@@ -111,7 +110,6 @@ const roleActionForm = useForm({
 const startEditRole = (role: ProjectRole): void => {
     editingRoleId.value = role.id;
     roleForm.name = role.name;
-    roleForm.code = role.code;
     roleForm.description = role.description ?? '';
     roleForm.is_active = role.is_active;
 };
@@ -511,7 +509,7 @@ const formatDate = (date: string | null): string => {
                             </p>
                         </div>
 
-                        <Button type="submit" :disabled="roleForm.processing || !roleForm.name || !roleForm.code">
+                        <Button type="submit" :disabled="roleForm.processing || !roleForm.name">
                             افزودن نقش
                         </Button>
                     </form>
@@ -545,14 +543,6 @@ const formatDate = (date: string | null): string => {
                                     </td>
                                     <td class="px-4 py-3">
                                         <input
-                                            v-model="roleForm.code"
-                                            type="text"
-                                            class="h-9 w-full min-w-28 rounded-md border bg-background px-2 text-sm"
-                                            :disabled="roleForm.processing"
-                                        />
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <input
                                             v-model="roleForm.description"
                                             type="text"
                                             class="h-9 w-full min-w-48 rounded-md border bg-background px-2 text-sm"
@@ -567,7 +557,7 @@ const formatDate = (date: string | null): string => {
                                             <Button
                                                 type="button"
                                                 size="sm"
-                                                :disabled="roleForm.processing || !roleForm.name || !roleForm.code"
+                                                :disabled="roleForm.processing || !roleForm.name"
                                                 @click="submitEditRole(role)"
                                             >
                                                 ذخیره
