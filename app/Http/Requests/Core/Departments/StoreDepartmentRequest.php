@@ -58,8 +58,7 @@ class StoreDepartmentRequest extends FormRequest
             'parent_id' => 'دپارتمان والد',
             'manager_id' => 'مدیر دپارتمان',
             'name' => 'نام دپارتمان',
-            'code' => 'کد دپارتمان',
-            'icon' => 'آیکون واحد',
+                        'icon' => 'آیکون واحد',
             'description' => 'توضیحات',
             'is_active' => 'وضعیت فعال بودن',
         ];
