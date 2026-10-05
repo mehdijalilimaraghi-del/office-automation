@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Button } from '@/Components/ui/button';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
+import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
 
 interface Manager {
     id: number;
@@ -17,6 +18,11 @@ interface Department {
 const props = defineProps<{
     managers: Manager[];
     departments: Department[];
+    customFields: Array<{
+        id: number; key: string; label: string;
+        type: 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select';
+        is_required: boolean; options: string[] | null;
+    }>;
 }>();
 
 const form = useForm({
@@ -32,6 +38,7 @@ const form = useForm({
     end_date: null as string | null,
     manager_id: '',
     is_active: true,
+    custom_fields: {} as Record<string, string | number | boolean | null>,
 });
 
 const statusOptions = [
