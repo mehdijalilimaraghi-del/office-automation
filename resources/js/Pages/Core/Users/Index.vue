@@ -316,13 +316,14 @@ function currentUserId(): number | null {
                     </div>
 
                     <div v-else class="overflow-x-auto">
-                        <table class="min-w-[980px] w-full text-right">
+                        <table class="min-w-[1120px] w-full text-right">
                             <thead class="bg-slate-50 text-xs font-semibold text-slate-500">
                                 <tr>
                                     <th class="px-5 py-3.5">کاربر</th>
                                     <th class="px-5 py-3.5">تماس</th>
                                     <th class="px-5 py-3.5">واحدهای سازمانی</th>
-                                    <th class="px-5 py-3.5">سمت سازمانی</th><th class="px-5 py-3.5">نقش‌ها</th>
+                                    <th class="px-5 py-3.5">سمت سازمانی</th>
+                                    <th class="px-5 py-3.5">نقش‌ها</th>
                                     <th class="px-5 py-3.5">وضعیت</th>
                                     <th class="px-5 py-3.5">عملیات</th>
                                 </tr>
@@ -355,7 +356,17 @@ function currentUserId(): number | null {
                                     </td>
                                     <td class="px-5 py-4">
                                         <div class="flex max-w-xs flex-wrap gap-1.5">
-                                            <span v-for="role in user.roles" :key="role.id" class="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-700">{{ role.name }}</span>
+                                            <span v-for="position in user.positions" :key="position.id" class="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-700">
+                                                {{ position.name }}
+                                            </span>
+                                            <span v-if="user.positions.length === 0" class="text-xs text-slate-400">بدون سمت</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-5 py-4">
+                                        <div class="flex max-w-xs flex-wrap gap-1.5">
+                                            <span v-for="role in user.roles" :key="role.id" class="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-700">
+                                                {{ role.name }}
+                                            </span>
                                             <span v-if="user.roles.length === 0" class="text-xs text-slate-400">بدون نقش</span>
                                         </div>
                                     </td>
@@ -366,7 +377,8 @@ function currentUserId(): number | null {
                                     </td>
                                     <td class="px-5 py-4">
                                         <div class="flex flex-wrap gap-2">
-                                            <button type="button" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50" @click="openEdit(user)">ویرایش</button>\n                                            <button type="button" class="rounded-lg border border-teal-100 px-3 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-50" @click="openMembership(user)">واحدها</button>
+                                            <button type="button" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50" @click="openEdit(user)">ویرایش</button>
+                                            <button type="button" class="rounded-lg border border-teal-100 px-3 py-1.5 text-xs font-semibold text-teal-700 transition hover:bg-teal-50" @click="openMembership(user)">واحدها</button>
                                             <button v-if="user.status === 'inactive'" type="button" class="rounded-lg border border-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-50" @click="inviteUser(user)">دعوت</button>
                                             <button v-if="user.status === 'active'" type="button" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50" @click="toggleStatus(user)">غیرفعال</button>
                                             <button type="button" class="rounded-lg border border-red-100 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50" @click="deleteUser(user)">حذف</button>
