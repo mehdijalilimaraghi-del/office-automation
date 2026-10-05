@@ -8,8 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class ProjectRole extends Model$2
-    use HasFactory;
+class ProjectRole extends Model
+{
+    use HasSystemCode;
+
+use HasFactory;
 
     protected static function systemCodePrefix(): string
     {
