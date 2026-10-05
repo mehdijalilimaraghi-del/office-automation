@@ -2,14 +2,19 @@
 
 namespace App\Modules\Projects\Models;
 
+use App\Models\Concerns\HasSystemCode;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class ProjectRole extends Model
-{
+class ProjectRole extends Model$2
     use HasFactory;
+
+    protected static function systemCodePrefix(): string
+    {
+        return 'PRL';
+    }
 
     protected $fillable = [
         'project_id',
