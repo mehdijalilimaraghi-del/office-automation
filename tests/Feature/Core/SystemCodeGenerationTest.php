@@ -19,7 +19,6 @@ class SystemCodeGenerationTest extends TestCase
     {
         $department = Department::create([
             'name' => 'واحد آزمایشی',
-            'code' => 'MANUAL-ORG',
             'icon' => 'building-2',
             'is_active' => true,
         ]);
@@ -27,13 +26,11 @@ class SystemCodeGenerationTest extends TestCase
         $position = Position::create([
             'department_id' => $department->id,
             'name' => 'سمت آزمایشی',
-            'code' => 'MANUAL-POS',
             'is_active' => true,
         ]);
 
         $role = Role::create([
             'name' => 'نقش آزمایشی',
-            'code' => 'MANUAL-ROLE',
             'is_active' => true,
             'is_system' => false,
         ]);
@@ -42,7 +39,6 @@ class SystemCodeGenerationTest extends TestCase
 
         $project = Project::create([
             'name' => 'پروژه آزمایشی',
-            'code' => 'MANUAL-PRJ',
             'description' => null,
             'status' => 'planning',
             'manager_id' => $user->id,
@@ -54,7 +50,6 @@ class SystemCodeGenerationTest extends TestCase
         $projectRole = ProjectRole::create([
             'project_id' => $project->id,
             'name' => 'نقش پروژه آزمایشی',
-            'code' => 'MANUAL-PRL',
             'is_active' => true,
         ]);
 
