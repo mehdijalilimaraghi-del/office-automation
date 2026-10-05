@@ -357,7 +357,7 @@ function currentUserId(): number | null {
                         مدیریت سازمان
                     </div>
                     <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-900">کاربران سازمان</h2>
-                    <p class="mt-1 text-sm text-slate-500">اعضا، واحدها، نقش‌ها و وضعیت دسترسی کاربران را مدیریت کنید.</p>
+                    <p class="mt-1 text-sm text-slate-500">اعضا، واحدها، نقش‌های کاربری و وضعیت دسترسی کاربران را مدیریت کنید.</p>
                 </div>
                 <button type="button" class="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800" @click="openCreate">
                     <span class="text-lg leading-none">+</span>
@@ -378,7 +378,7 @@ function currentUserId(): number | null {
                         <p class="mt-2 text-2xl font-bold text-emerald-900">{{ props.users.filter(user => user.status === 'active').length }}</p>
                     </div>
                     <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <p class="text-xs font-medium text-slate-500">کاربران دارای نقش</p>
+                        <p class="text-xs font-medium text-slate-500">کاربران دارای نقش کاربری</p>
                         <p class="mt-2 text-2xl font-bold text-slate-900">{{ props.users.filter(user => user.roles.length > 0).length }}</p>
                     </div>
                 </div>
@@ -407,7 +407,7 @@ function currentUserId(): number | null {
                                     <th class="px-5 py-3.5">تماس</th>
                                     <th class="px-5 py-3.5">واحدهای سازمانی</th>
                                     <th class="px-5 py-3.5">سمت سازمانی</th>
-                                    <th class="px-5 py-3.5">نقش‌ها</th>
+                                    <th class="px-5 py-3.5">نقش‌های کاربری</th>
                                     <th class="px-5 py-3.5">وضعیت</th>
                                     <th class="px-5 py-3.5">عملیات</th>
                                 </tr>
@@ -451,7 +451,7 @@ function currentUserId(): number | null {
                                             <span v-for="role in user.roles" :key="role.id" class="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-700">
                                                 {{ role.name }}
                                             </span>
-                                            <span v-if="user.roles.length === 0" class="text-xs text-slate-400">بدون نقش</span>
+                                            <span v-if="user.roles.length === 0" class="text-xs text-slate-400">بدون نقش کاربری</span>
                                         </div>
                                     </td>
                                     <td class="px-5 py-4">
@@ -637,8 +637,8 @@ function currentUserId(): number | null {
                         </div>
                         <div v-if="canManageUserRoles()" class="rounded-xl border border-slate-200 p-4">
                             <div class="mb-3">
-                                <label class="block text-sm font-semibold text-slate-700">نقش‌های دسترسی</label>
-                                <p class="mt-1 text-xs leading-5 text-slate-500">نقش، مجموعه مجوزها و محدوده دسترسی این کاربر را مشخص می‌کند.</p>
+                                <label class="block text-sm font-semibold text-slate-700">نقش‌های کاربری</label>
+                                <p class="mt-1 text-xs leading-5 text-slate-500">نقش کاربری، مجموعه مجوزها و محدوده دسترسی این کاربر را مشخص می‌کند.</p>
                             </div>
                             <div class="max-h-52 space-y-2 overflow-y-auto">
                                 <label v-for="role in props.roles.filter(role => role.is_active)" :key="role.id" class="flex cursor-pointer items-start gap-2 rounded-xl px-2 py-2.5 hover:bg-slate-50">
@@ -648,12 +648,12 @@ function currentUserId(): number | null {
                                         <span v-if="role.code" dir="ltr" class="mt-0.5 block text-[10px] text-slate-400 text-right">{{ role.code }}</span>
                                     </span>
                                 </label>
-                                <p v-if="props.roles.filter(role => role.is_active).length === 0" class="text-xs text-slate-400">نقش فعالی برای تخصیص تعریف نشده است.</p>
+                                <p v-if="props.roles.filter(role => role.is_active).length === 0" class="text-xs text-slate-400">نقش کاربری فعالی برای تخصیص تعریف نشده است.</p>
                             </div>
                             <p v-if="form.errors.role_ids" class="mt-1 text-xs text-red-600">{{ form.errors.role_ids }}</p>
                         </div>
                         <div v-else class="rounded-xl border border-amber-100 bg-amber-50/60 p-4 text-sm leading-6 text-amber-800">
-                            تخصیص و تغییر نقش‌های دسترسی فقط برای مدیرانی که مجوز «مدیریت نقش‌های کاربر» دارند فعال است.
+                            تخصیص و تغییر نقش‌های کاربری فقط برای مدیرانی که مجوز «مدیریت نقش‌های کاربر» دارند فعال است.
                         </div>
                     </div>
                     <label class="flex items-center gap-2 text-sm font-medium text-slate-700"><input v-model="form.status" type="checkbox" :true-value="'active'" :false-value="'inactive'" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> کاربر فعال باشد</label>
