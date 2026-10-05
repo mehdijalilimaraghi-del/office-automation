@@ -119,7 +119,7 @@ function submit(): void {
 
             <div>
                 <InputLabel for="email" value="ایمیل" />
-                <TextInput id="email" v-model="form.email" type="email" dir="ltr" class="mt-1 block w-full text-left" autocomplete="username" />
+                <TextInput id="email" v-model="form.email" type="email" dir="ltr" class="mt-1 block w-full text-left" autocomplete="email" />
                 <InputError class="mt-1" :message="form.errors.email" />
             </div>
 
