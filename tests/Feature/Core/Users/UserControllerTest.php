@@ -180,7 +180,8 @@ class UserControllerTest extends TestCase
             'avatar_path' => $oldPath,
         ]);
 
-        $response = $this->actingAs($admin)->put(route('users.update', $user), [
+        $response = $this->actingAs($admin)->post(route('users.update', $user), [
+            '_method' => 'put',
             'name' => $user->name,
             'username' => $user->username,
             'email' => $user->email,
