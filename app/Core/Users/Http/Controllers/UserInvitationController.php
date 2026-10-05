@@ -27,6 +27,7 @@ class UserInvitationController
         return Inertia::render('Auth/AcceptInvitation', [
             'token' => $token,
             'email' => $invitation->user->email,
+            'username' => $invitation->user->username,
             'name' => $invitation->user->name,
         ]);
     }
