@@ -20,8 +20,6 @@ class StoreRoleRequest extends FormRequest
                 'max:100',
                 'unique:roles,name',
             ],
-
-            
             'description' => [
                 'nullable',
                 'string',
@@ -38,7 +36,7 @@ class StoreRoleRequest extends FormRequest
     {
         return [
             'name' => 'نام نقش',
-                        'description' => 'توضیحات',
+            'description' => 'توضیحات',
             'is_active' => 'وضعیت فعال بودن',
         ];
     }
