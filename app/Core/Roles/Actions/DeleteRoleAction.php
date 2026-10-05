@@ -3,6 +3,7 @@
 namespace App\Core\Roles\Actions;
 
 use App\Core\Roles\Models\Role;
+use App\Core\Audit\Contracts\AuditServiceInterface;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class DeleteRoleAction
@@ -16,6 +17,7 @@ class DeleteRoleAction
             );
         }
 
+        $this->audit->record('role.deleted', $role, ['name' => $role->name, 'code' => $role->code], null);
         $role->delete();
     }
 }
