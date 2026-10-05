@@ -4,6 +4,7 @@ namespace App\Core\Roles\Actions;
 
 use App\Core\Permissions\Enums\PermissionScope;
 use App\Core\Roles\Models\Role;
+use App\Core\Audit\Contracts\AuditServiceInterface;
 use Illuminate\Support\Arr;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -20,6 +21,7 @@ class SyncRolePermissionsAction
             );
         }
 
+        $oldPermissionIds = $role->permissions()->pluck('permissions.id')->map(fn ($id) => (int) $id)->all();
         $syncData = [];
 
         foreach ($permissions as $permission) {
@@ -51,6 +53,8 @@ class SyncRolePermissionsAction
 
         $role->permissions()->sync($syncData);
 
-        return $role->load('permissions');
+        $role = $role->load('permissions');
+        $this->audit->record('role.permissions_synced', $role, ['permission_ids' => $oldPermissionIds], ['permission_ids' => array_values(array_map(fn ($id) => (int) $id, array_keys($syncData)))]);
+        return $role;
     }
 }
