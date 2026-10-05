@@ -213,7 +213,7 @@ onMounted(() => {
                                             :active="route().current('roles.*')"
                                             class="w-full justify-start rounded-lg border-0 px-3 py-2 text-right"
                                         >
-                                            نقش‌ها
+                                            نقش‌های کاربری
                                         </NavLink>
                                         <NavLink
                                             v-if="can('custom_fields_manage')"
@@ -489,7 +489,7 @@ onMounted(() => {
                                     :active="route().current('roles.*')"
                                     @click="closeMobileNavigation"
                                 >
-                                    نقش‌ها
+                                    نقش‌های کاربری
                                 </ResponsiveNavLink>
                                 <ResponsiveNavLink
                                     v-if="can('custom_fields_manage')"
