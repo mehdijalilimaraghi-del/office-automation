@@ -2,6 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
+import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
 import { computed, ref } from 'vue';
 
 const isFiltering = ref(false);
@@ -75,6 +76,11 @@ const props = defineProps<{
     filters: TaskFilters;
     canCreate: boolean;
     formOptions: FormOptions | null;
+    customFields: Array<{
+        id: number; key: string; label: string;
+        type: 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select';
+        is_required: boolean; options: string[] | null;
+    }>;
 }>();
 
 const search = ref(props.filters.search ?? '');
@@ -95,6 +101,7 @@ const createForm = useForm({
     assignment_note: '',
     start_date: '',
     due_date: '',
+    custom_fields: {} as Record<string, string | number | boolean | null>,
 });
 
 const statusLabels: Record<string, string> = {
@@ -171,6 +178,7 @@ const paginationLinks = computed(() =>
 const resetCreateForm = (): void => {
     createForm.reset();
     createForm.priority = 'normal';
+    createForm.custom_fields = {};
     createForm.clearErrors();
 };
 
@@ -302,6 +310,15 @@ const handleProjectChange = (): void => {
                             class="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
                             placeholder="شرح کار، خروجی مورد انتظار یا اطلاعات تکمیلی" />
                     </div>
+
+                    <CustomFieldsForm
+                        v-if="props.customFields.length"
+                        v-model="createForm.custom_fields"
+                        :fields="props.customFields"
+                        :errors="createForm.errors as Record<string, string>"
+                        title="اطلاعات تکمیلی تسک"
+                        description="اطلاعات اختصاصی تعریف‌شده برای تسک را در این بخش ثبت کنید."
+                    />
 
                     <div v-if="createForm.assignee_id" class="md:col-span-2">
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">توضیح تخصیص</label>
