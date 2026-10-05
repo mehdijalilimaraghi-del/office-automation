@@ -3,6 +3,7 @@
 namespace App\Modules\Tasks\Models;
 
 use App\Core\Departments\Models\Department;
+use App\Core\CustomFields\Models\CustomFieldValue;
 use App\Models\User;
 use App\Core\ExternalParties\Models\ExternalOrganization;
 use App\Core\ExternalParties\Models\ExternalDepartment;
@@ -28,6 +29,12 @@ class Task extends Model
                 ->orWhere('successor_task_id', $task->id)
                 ->delete();
         });
+    }
+
+    public function customFieldValues(): HasMany
+    {
+        return $this->hasMany(CustomFieldValue::class, 'entity_id')
+            ->where('entity_type', self::class);
     }
 
     protected $fillable = [
