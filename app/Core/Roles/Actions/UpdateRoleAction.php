@@ -9,8 +9,10 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class UpdateRoleAction
 {
-    public function __construct(private readonly AuditServiceInterface $audit)
-    {
+    public function __construct(
+        private readonly AuditServiceInterface $audit,
+        private readonly CustomFieldService $customFieldService,
+    ) {
     }
 
     public function execute(Role $role, array $data): Role
