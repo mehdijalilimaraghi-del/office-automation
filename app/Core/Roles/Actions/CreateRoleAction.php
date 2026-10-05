@@ -5,6 +5,7 @@ namespace App\Core\Roles\Actions;
 use App\Core\Roles\Models\Role;
 use App\Core\CustomFields\Services\CustomFieldService;
 use App\Core\Audit\Contracts\AuditServiceInterface;
+use Illuminate\Support\Facades\DB;
 
 class CreateRoleAction
 {
@@ -16,6 +17,7 @@ class CreateRoleAction
 
     public function execute(array $data): Role
     {
+        return DB::transaction(function () use ($data): Role {
         $role = Role::create([
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
@@ -27,6 +29,7 @@ class CreateRoleAction
 
         $this->audit->record('role.created', $role, null, ['name' => $role->name, 'code' => $role->code, 'is_active' => $role->is_active]);
 
-        return $role;
+            return $role;
+        });
     }
 }
