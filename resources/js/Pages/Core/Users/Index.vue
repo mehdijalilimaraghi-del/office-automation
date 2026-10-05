@@ -253,7 +253,9 @@ function submit(): void {
         };
 
         if (!canManageUserRoles()) {
-            delete payload.role_ids;
+            const { role_ids: _roleIds, ...payloadWithoutRoles } = payload;
+
+            return payloadWithoutRoles;
         }
 
         return payload;
