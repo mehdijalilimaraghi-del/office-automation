@@ -102,6 +102,14 @@ const showingNavigationDropdown = ref(false);
                                 </NavLink>
 
                                 <NavLink
+                                    v-if="$page.props.auth.abilities?.custom_fields_manage"
+                                    :href="route('custom-fields.index')"
+                                    :active="route().current('custom-fields.*')"
+                                >
+                                    فیلدهای سفارشی
+                                </NavLink>
+
+                                <NavLink
                                     v-if="$page.props.auth.abilities?.settings_manage"
                                     :href="route('settings.organization.edit')"
                                     :active="route().current('settings.*')"
@@ -283,6 +291,14 @@ const showingNavigationDropdown = ref(false);
                             :active="route().current('roles.*')"
                         >
                             نقش‌ها
+                        </ResponsiveNavLink>
+
+                        <ResponsiveNavLink
+                            v-if="$page.props.auth.abilities?.custom_fields_manage"
+                            :href="route('custom-fields.index')"
+                            :active="route().current('custom-fields.*')"
+                        >
+                            فیلدهای سفارشی
                         </ResponsiveNavLink>
 
                         <ResponsiveNavLink
