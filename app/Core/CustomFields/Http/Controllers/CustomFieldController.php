@@ -6,6 +6,7 @@ use App\Core\CustomFields\Actions\CreateCustomFieldAction;
 use App\Core\CustomFields\Actions\DeleteCustomFieldAction;
 use App\Core\CustomFields\Actions\UpdateCustomFieldAction;
 use App\Core\CustomFields\Models\CustomField;
+use App\Core\CustomFields\Services\CustomFieldService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Core\CustomFields\StoreCustomFieldRequest;
 use App\Http\Requests\Core\CustomFields\UpdateCustomFieldRequest;
@@ -19,9 +20,10 @@ class CustomFieldController extends Controller
     {
         return Inertia::render('Core/CustomFields/Index', [
             'fields' => CustomField::query()->orderBy('entity_type')->orderBy('sort_order')->orderBy('label')->get(),
-            'entityTypes' => [
-                ['value' => \App\Models\User::class, 'label' => 'کاربر'],
-            ],
+            'entityTypes' => collect(CustomFieldService::supportedEntities())
+                ->map(fn (string $label, string $value) => ['value' => $value, 'label' => $label])
+                ->values()
+                ->all(),
             'types' => \App\Core\CustomFields\Services\CustomFieldService::supportedTypes(),
         ]);
     }
