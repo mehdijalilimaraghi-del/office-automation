@@ -53,8 +53,11 @@ class DepartmentService implements DepartmentServiceInterface
             ->with([
                 'parent',
                 'manager:id,name',
+                'manager.profile:user_id,avatar_path',
                 'members:id,name',
+                'members.profile:user_id,avatar_path',
                 'positions.users:id,name',
+                'positions.users.profile:user_id,avatar_path',
             ])
             ->withCount('children')
             ->orderBy('name')
