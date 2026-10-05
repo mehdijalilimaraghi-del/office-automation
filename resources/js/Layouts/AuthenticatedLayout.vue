@@ -66,7 +66,7 @@ const showingNavigationDropdown = ref(false);
                                     :href="route('external-parties.index')"
                                     :active="route().current('external-parties.*')"
                                 >
-                                    طرف‌های خارجی
+                                    برون‌سازمانی
                                 </NavLink>
 
                                 <NavLink
@@ -245,7 +245,7 @@ const showingNavigationDropdown = ref(false);
                             :href="route('external-parties.index')"
                             :active="route().current('external-parties.*')"
                         >
-                            طرف‌های خارجی
+                            برون‌سازمانی
                         </ResponsiveNavLink>
 
                         <ResponsiveNavLink
