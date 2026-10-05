@@ -57,11 +57,13 @@ class ProjectController extends Controller
     {
         Gate::authorize('update', $project);
 
+        $project = $this->projectService->show($project);
+
         return Inertia::render('Projects/Edit', [
-            'project' => $this->projectService->show($project),
+            'project' => $project,
             'departments' => $this->departmentService->list()->where('is_active', true)->values(),
             'customFields' => $this->customFieldService->definitions(Project::class),
-            'customFieldValues' => $this->customFieldService->values($this->projectService->show($project)),
+            'customFieldValues' => $this->customFieldService->values($project),
         ]);
     }
 
