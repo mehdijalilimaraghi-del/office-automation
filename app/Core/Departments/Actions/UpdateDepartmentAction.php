@@ -51,7 +51,6 @@ class UpdateDepartmentAction
                 'parent_id' => $parentId,
                 'manager_id' => $managerId,
                 'name' => $data['name'],
-                'code' => $data['code'] ?? null,
                 'icon' => $data['icon'] ?? 'building-2',
                 'description' => $data['description'] ?? null,
                 'is_active' => $data['is_active'] ?? true,
