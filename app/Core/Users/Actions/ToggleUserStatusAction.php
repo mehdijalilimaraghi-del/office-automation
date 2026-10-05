@@ -3,10 +3,15 @@
 namespace App\Core\Users\Actions;
 
 use App\Models\User;
+use App\Core\Audit\Contracts\AuditServiceInterface;
 use Illuminate\Validation\ValidationException;
 
 class ToggleUserStatusAction
 {
+    public function __construct(private readonly AuditServiceInterface $audit)
+    {
+    }
+
     public function execute(User $user): User
     {
         if ($user->hasRole('SYSTEM_ADMIN')) {
@@ -30,12 +35,18 @@ class ToggleUserStatusAction
             ]);
         }
 
+        $oldStatus = $user->status;
+
         $user->update([
             'status' => $user->isActive()
                 ? 'inactive'
                 : 'active',
         ]);
 
-        return $user->refresh();
+        $user->refresh();
+
+        $this->audit->record('user.status_changed', $user, ['status' => $oldStatus], ['status' => $user->status]);
+
+        return $user;
     }
 }
