@@ -22,11 +22,15 @@ class CoreRoleSeederTest extends TestCase
 
         $role = Role::query()->where('code', 'SYSTEM_ADMIN')->firstOrFail();
 
+        $activePermissionsCount = Permission::query()->where('is_active', true)->count();
+
         $this->assertTrue($role->is_system);
         $this->assertTrue($role->is_active);
-        $this->assertSame(Permission::query()->where('is_active', true)->count(), $role->permissions()->count());
-        $this->assertSame(42, $role->permissions()->count());
-        $this->assertSame(42, $role->permissions()->wherePivot('scope', PermissionScope::Organization->value)->count());
+        $this->assertSame($activePermissionsCount, $role->permissions()->count());
+        $this->assertSame(
+            $activePermissionsCount,
+            $role->permissions()->wherePivot('scope', PermissionScope::Organization->value)->count()
+        );
     }
 
     public function test_bootstrap_email_assigns_system_admin_role_to_active_user(): void
@@ -34,14 +38,18 @@ class CoreRoleSeederTest extends TestCase
         $user = User::factory()->create(['email' => 'admin@example.test', 'status' => 'active']);
         config(['app.name' => 'Office Automation']);
         putenv('OFFICE_AUTOMATION_BOOTSTRAP_ADMIN_EMAIL=admin@example.test');
+        putenv('OFFICE_AUTOMATION_BOOTSTRAP_ADMIN_PASSWORD=secret-password');
+
         try {
             $this->seed(CorePermissionSeeder::class);
             $this->seed(CoreRoleSeeder::class);
             $user->refresh();
+
             $this->assertTrue($user->hasRole('SYSTEM_ADMIN'));
             $this->assertTrue($user->hasPermission('tasks.view'));
         } finally {
             putenv('OFFICE_AUTOMATION_BOOTSTRAP_ADMIN_EMAIL');
+            putenv('OFFICE_AUTOMATION_BOOTSTRAP_ADMIN_PASSWORD');
         }
     }
 
@@ -49,12 +57,15 @@ class CoreRoleSeederTest extends TestCase
     {
         $user = User::factory()->inactive()->create(['email' => 'inactive@example.test']);
         putenv('OFFICE_AUTOMATION_BOOTSTRAP_ADMIN_EMAIL=inactive@example.test');
+        putenv('OFFICE_AUTOMATION_BOOTSTRAP_ADMIN_PASSWORD=secret-password');
+
         try {
             $this->seed(CorePermissionSeeder::class);
             $this->seed(CoreRoleSeeder::class);
             $this->assertFalse($user->fresh()->hasRole('SYSTEM_ADMIN'));
         } finally {
             putenv('OFFICE_AUTOMATION_BOOTSTRAP_ADMIN_EMAIL');
+            putenv('OFFICE_AUTOMATION_BOOTSTRAP_ADMIN_PASSWORD');
         }
     }
 }
