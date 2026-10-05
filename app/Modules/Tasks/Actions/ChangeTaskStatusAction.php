@@ -86,10 +86,5 @@ class ChangeTaskStatusAction
 
         return $task;
 
-        /* return $task->refresh()->load([
-            'project',
-            'assignee',
-            'creator',
-        ]); */
     }
 }
