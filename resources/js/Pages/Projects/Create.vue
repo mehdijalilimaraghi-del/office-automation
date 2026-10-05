@@ -68,7 +68,7 @@ function submit(): void {
                 class="space-y-6 rounded-lg border bg-card p-6 shadow-sm"
                 @submit.prevent="submit"
             >
-                <div class="grid gap-5 md:grid-cols-2">
+                <div class="grid gap-5">
                     <div>
                         <label
                             for="name"
