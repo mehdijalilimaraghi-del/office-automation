@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ProfileTest extends TestCase
@@ -42,6 +44,32 @@ class ProfileTest extends TestCase
         $this->assertSame('Test User', $user->name);
         $this->assertSame('test@example.com', $user->email);
         $this->assertNull($user->email_verified_at);
+    }
+
+
+    public function test_user_can_upload_profile_avatar(): void
+    {
+        Storage::fake('public');
+
+        $user = User::factory()->create();
+
+        $response = $this
+            ->actingAs($user)
+            ->patch('/profile', [
+                'name' => $user->name,
+                'username' => $user->username,
+                'email' => $user->email,
+                'avatar' => UploadedFile::fake()->image('avatar.jpg'),
+            ]);
+
+        $response
+            ->assertSessionHasNoErrors()
+            ->assertRedirect('/profile');
+
+        $avatarPath = $user->refresh()->profile?->avatar_path;
+
+        $this->assertNotNull($avatarPath);
+        Storage::disk('public')->assertExists($avatarPath);
     }
 
     public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void
