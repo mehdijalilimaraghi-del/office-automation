@@ -28,7 +28,7 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
+            'username' => ['required', 'string', 'max:50'],
             'password' => ['required', 'string'],
         ];
     }
@@ -42,17 +42,17 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        if (! Auth::attempt($this->only('username', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+                'username' => trans('auth.failed'),
             ]);
         }
 
         if (! $this->user()?->isActive()) {
             Auth::logout();
-            throw ValidationException::withMessages(['email' => 'حساب کاربری شما فعال نیست.']);
+            throw ValidationException::withMessages(['username' => 'حساب کاربری شما فعال نیست.']);
         }
 
         RateLimiter::clear($this->throttleKey());
@@ -86,6 +86,6 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        return Str::transliterate(Str::lower($this->string('username')).'|'.$this->ip());
     }
 }
