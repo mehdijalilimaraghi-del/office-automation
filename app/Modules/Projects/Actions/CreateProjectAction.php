@@ -3,6 +3,7 @@
 namespace App\Modules\Projects\Actions;
 
 use App\Models\User;
+use App\Core\CustomFields\Services\CustomFieldService;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectMember;
 use Illuminate\Support\Facades\DB;
@@ -10,9 +11,14 @@ use InvalidArgumentException;
 
 class CreateProjectAction
 {
+    public function __construct(
+        private readonly CustomFieldService $customFieldService,
+    ) {
+    }
+
     public function execute(
         array $data,
-        User $creator
+        User $creator,
     ): Project {
         return DB::transaction(
             function () use ($data, $creator): Project {
@@ -55,6 +61,8 @@ class CreateProjectAction
                     'created_by' => $creator->id,
                     'is_active' => $data['is_active'] ?? true,
                 ]);
+
+                $this->customFieldService->sync($project, $data['custom_fields'] ?? []);
 
                 ProjectMember::query()->create([
                     'project_id' => $project->id,
