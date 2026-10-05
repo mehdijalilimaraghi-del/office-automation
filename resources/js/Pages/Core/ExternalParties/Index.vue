@@ -1,18 +1,42 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
+import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
 
-type Organization={id:number;name:string;code:string|null;phone:string|null;email:string|null;address:string|null;status:string;departments_count:number;contacts_count:number};
-type Department={id:number;external_organization_id:number;parent_id:number|null;name:string;code:string|null;phone:string|null;extension:string|null;email:string|null;status:string;organization?:{id:number;name:string}};
-type Contact={id:number;external_organization_id:number;external_department_id:number|null;name:string;position:string|null;mobile:string|null;phone:string|null;extension:string|null;email:string|null;notes:string|null;status:string;organization?:{id:number;name:string};department?:{id:number;name:string}};
+type CustomField = {
+    id: number;
+    key: string;
+    label: string;
+    type: 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select';
+    is_required: boolean;
+    options: string[] | null;
+};
 
-const props=defineProps<{organizations:Organization[];departments:Department[];contacts:Contact[]}>();
+type CustomFieldValue = {
+    value: string;
+    field: { key: string; type: string };
+};
+
+type Organization={id:number;name:string;code:string|null;phone:string|null;email:string|null;address:string|null;status:string;departments_count:number;contacts_count:number;customFieldValues?:CustomFieldValue[]};
+type Department={id:number;external_organization_id:number;parent_id:number|null;name:string;code:string|null;phone:string|null;extension:string|null;email:string|null;status:string;organization?:{id:number;name:string};customFieldValues?:CustomFieldValue[]};
+type Contact={id:number;external_organization_id:number;external_department_id:number|null;name:string;position:string|null;mobile:string|null;phone:string|null;extension:string|null;email:string|null;notes:string|null;status:string;organization?:{id:number;name:string};department?:{id:number;name:string};customFieldValues?:CustomFieldValue[]};
+
+const props=defineProps<{
+    organizations: Organization[];
+    departments: Department[];
+    contacts: Contact[];
+    customFields: {
+        organization: CustomField[];
+        department: CustomField[];
+        contact: CustomField[];
+    };
+}>();
 const page=usePage();
 const tab=ref<'organizations'|'departments'|'contacts'>('organizations');
 const saving=ref(false);
-const orgForm=reactive<any>({id:null,name:'',code:'',phone:'',email:'',address:'',status:'active'});
-const depForm=reactive<any>({id:null,external_organization_id:'',parent_id:'',name:'',code:'',phone:'',extension:'',email:'',status:'active'});
-const contactForm=reactive<any>({id:null,external_organization_id:'',external_department_id:'',name:'',position:'',mobile:'',phone:'',extension:'',email:'',notes:'',status:'active'});
+const orgForm=reactive<any>({id:null,name:'',code:'',phone:'',email:'',address:'',status:'active',custom_fields:{}});
+const depForm=reactive<any>({id:null,external_organization_id:'',parent_id:'',name:'',code:'',phone:'',extension:'',email:'',status:'active',custom_fields:{}});
+const contactForm=reactive<any>({id:null,external_organization_id:'',external_department_id:'',name:'',position:'',mobile:'',phone:'',extension:'',email:'',notes:'',status:'active',custom_fields:{}});
 
 const departmentsForContact=computed(()=>props.departments.filter(d=>String(d.external_organization_id)===String(contactForm.external_organization_id)));
 const departmentsForEdit=computed(()=>props.departments.filter(d=>String(d.external_organization_id)===String(depForm.external_organization_id) && d.id!==depForm.id));
@@ -20,8 +44,33 @@ const activeOrgCount=computed(()=>props.organizations.filter(x=>x.status==='acti
 const activeContactCount=computed(()=>props.contacts.filter(x=>x.status==='active').length);
 const errors=computed(()=>page.props.errors as Record<string,string>);
 
-function reset(f:any){for(const k of Object.keys(f)) f[k]=k==='status'?'active':k==='id'?null:''}
-function edit(f:any,item:any){Object.assign(f,item); if(f===depForm) f.parent_id=item.parent_id??''; if(f===contactForm) f.external_department_id=item.external_department_id??''; window.scrollTo({top:0,behavior:'smooth'})}
+function reset(f:any){
+    for(const k of Object.keys(f)){
+        f[k]=k==='status'?'active':k==='id'?null:k==='custom_fields'?{}:'';
+    }
+}
+
+function customFieldValueMap(values?: CustomFieldValue[]): Record<string, string | number | boolean | null> {
+    return Object.fromEntries(
+        (values ?? []).map((item) => [
+            item.field.key,
+            item.field.type === 'number'
+                ? Number(item.value)
+                : item.field.type === 'boolean'
+                    ? item.value === '1'
+                    : item.value,
+        ]),
+    );
+}
+
+function edit(f:any,item:any){
+    Object.assign(f,item);
+    f.custom_fields = customFieldValueMap(item.customFieldValues);
+    delete f.customFieldValues;
+    if(f===depForm) f.parent_id=item.parent_id??'';
+    if(f===contactForm) f.external_department_id=item.external_department_id??'';
+    window.scrollTo({top:0,behavior:'smooth'});
+}
 function submit(f:any,base:string){
     saving.value=true;
     const id=f.id; const payload={...f}; delete payload.id;
@@ -61,12 +110,15 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
         <div class="mb-5"><h2 class="font-black text-slate-900">{{ orgForm.id?'ویرایش سازمان':'سازمان جدید' }}</h2><p class="mt-1 text-xs text-slate-500">اطلاعات پایه طرف خارجی</p></div>
         <div class="space-y-3">
           <input v-model="orgForm.name" required placeholder="نام سازمان *" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500">
-          <input v-model="orgForm.code" placeholder="کد سازمان" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500">
+          
           <input v-model="orgForm.phone" placeholder="تلفن" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500" dir="ltr">
           <input v-model="orgForm.email" type="email" placeholder="ایمیل" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500" dir="ltr">
           <textarea v-model="orgForm.address" rows="3" placeholder="نشانی" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500"></textarea>
           <p v-if="errors.name" class="text-xs text-red-600">{{ errors.name }}</p>
         </div>
+        <CustomFieldsForm v-if="props.customFields.organization.length" v-model="orgForm.custom_fields" :fields="props.customFields.organization" :errors="errors" title="اطلاعات تکمیلی سازمان" description="اطلاعات اختصاصی تعریف‌شده برای این سازمان را در این بخش ثبت کنید." />
+        <CustomFieldsForm v-if="props.customFields.department.length" v-model="depForm.custom_fields" :fields="props.customFields.department" :errors="errors" title="اطلاعات تکمیلی واحد" description="اطلاعات اختصاصی تعریف‌شده برای این واحد را در این بخش ثبت کنید." />
+        <CustomFieldsForm v-if="props.customFields.contact.length" v-model="contactForm.custom_fields" :fields="props.customFields.contact" :errors="errors" title="اطلاعات تکمیلی مخاطب" description="اطلاعات اختصاصی تعریف‌شده برای این مخاطب را در این بخش ثبت کنید." />
         <div class="mt-5 flex gap-2"><button :disabled="saving" class="flex-1 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">{{saving?'در حال ذخیره…':orgForm.id?'ذخیره تغییرات':'ثبت سازمان'}}</button><button v-if="orgForm.id" type="button" @click="reset(orgForm)" class="rounded-xl border px-4 py-2.5 text-sm">انصراف</button></div>
       </form>
       <div class="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
@@ -74,7 +126,7 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
         <div v-if="!organizations.length" class="p-12 text-center text-sm text-slate-400">هنوز سازمانی ثبت نشده است.</div>
         <div v-else class="divide-y divide-slate-100">
           <div v-for="o in organizations" :key="o.id" class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
-            <div class="min-w-0"><div class="flex items-center gap-2"><h3 class="truncate font-bold text-slate-900">{{o.name}}</h3><span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="o.status==='active'?'bg-emerald-50 text-emerald-700':'bg-slate-100 text-slate-500'">{{o.status==='active'?'فعال':'غیرفعال'}}</span></div><p class="mt-1 text-xs text-slate-500">{{o.phone||'بدون تلفن'}} · {{o.departments_count}} واحد · {{o.contacts_count}} فرد</p></div>
+            <div class="min-w-0"><div class="flex items-center gap-2"><h3 class="truncate font-bold text-slate-900">{{o.name}}</h3><span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="o.status==='active'?'bg-emerald-50 text-emerald-700':'bg-slate-100 text-slate-500'">{{o.status==='active'?'فعال':'غیرفعال'}}</span></div><p class="mt-1 text-xs text-slate-500">{{o.phone||'بدون تلفن'}} · {{o.departments_count}} واحد · {{o.contacts_count}} فرد</p><p class="mt-1 font-mono text-[10px] text-slate-400" dir="ltr">کد سیستمی: {{o.code||'—'}}</p></div>
             <div class="flex gap-2"><button @click="edit(orgForm,o)" class="rounded-lg px-3 py-2 text-xs font-bold text-teal-700 hover:bg-teal-50">ویرایش</button><button @click="destroy('external-parties.organizations.destroy',o.id)" class="rounded-lg px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">حذف</button></div>
           </div>
         </div>
@@ -98,7 +150,7 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
         <div class="border-b p-5"><h2 class="font-black">واحدهای ثبت‌شده</h2></div>
         <div v-if="!departments.length" class="p-12 text-center text-sm text-slate-400">هنوز واحدی ثبت نشده است.</div>
         <div v-else class="divide-y divide-slate-100">
-          <div v-for="d in departments" :key="d.id" class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"><div><h3 class="font-bold text-slate-900">{{d.name}}</h3><p class="mt-1 text-xs text-slate-500">{{d.organization?.name||'—'}} · {{d.phone||'بدون تلفن'}}<span v-if="d.extension"> · داخلی {{d.extension}}</span></p></div><div class="flex gap-2"><button @click="edit(depForm,d)" class="rounded-lg px-3 py-2 text-xs font-bold text-teal-700 hover:bg-teal-50">ویرایش</button><button @click="destroy('external-parties.departments.destroy',d.id)" class="rounded-lg px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">حذف</button></div></div>
+          <div v-for="d in departments" :key="d.id" class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"><div><h3 class="font-bold text-slate-900">{{d.name}}</h3><p class="mt-1 text-xs text-slate-500">{{d.organization?.name||'—'}} · {{d.phone||'بدون تلفن'}}<span v-if="d.extension"> · داخلی {{d.extension}}</span></p><p class="mt-1 font-mono text-[10px] text-slate-400" dir="ltr">کد سیستمی: {{d.code||'—'}}</p></div><div class="flex gap-2"><button @click="edit(depForm,d)" class="rounded-lg px-3 py-2 text-xs font-bold text-teal-700 hover:bg-teal-50">ویرایش</button><button @click="destroy('external-parties.departments.destroy',d.id)" class="rounded-lg px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">حذف</button></div></div>
         </div>
       </div>
     </section>
@@ -121,7 +173,7 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
         <div class="border-b p-5"><h2 class="font-black">افراد طرف تعامل</h2></div>
         <div v-if="!contacts.length" class="p-12 text-center text-sm text-slate-400">هنوز فردی ثبت نشده است.</div>
         <div v-else class="divide-y divide-slate-100">
-          <div v-for="c in contacts" :key="c.id" class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"><div class="min-w-0"><h3 class="font-bold text-slate-900">{{c.name}}</h3><p class="mt-1 text-xs text-slate-500">{{c.position||'بدون سمت'}} · {{c.organization?.name||'—'}}{{c.department?.name?' · '+c.department.name:''}}</p><p class="mt-1 text-xs text-slate-400" dir="ltr">{{c.mobile||c.phone||'بدون شماره'}}{{c.email?' · '+c.email:''}}</p></div><div class="flex gap-2"><button @click="edit(contactForm,c)" class="rounded-lg px-3 py-2 text-xs font-bold text-teal-700 hover:bg-teal-50">ویرایش</button><button @click="destroy('external-parties.contacts.destroy',c.id)" class="rounded-lg px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">حذف</button></div></div>
+          <div v-for="c in contacts" :key="c.id" class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"><div class="min-w-0"><h3 class="font-bold text-slate-900">{{c.name}}</h3><p class="mt-1 text-xs text-slate-500">{{c.position||'بدون سمت'}} · {{c.organization?.name||'—'}}{{c.department?.name?' · '+c.department.name:''}}</p><p class="mt-1 text-xs text-slate-400" dir="ltr">{{c.mobile||c.phone||'بدون شماره'}}{{c.email?' · '+c.email:''}}</p><p class="mt-1 font-mono text-[10px] text-slate-400" dir="ltr">کد سیستمی: EXTCNT-{{String(c.id).padStart(6,'0')}}</p></div><div class="flex gap-2"><button @click="edit(contactForm,c)" class="rounded-lg px-3 py-2 text-xs font-bold text-teal-700 hover:bg-teal-50">ویرایش</button><button @click="destroy('external-parties.contacts.destroy',c.id)" class="rounded-lg px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">حذف</button></div></div>
         </div>
       </div>
     </section>
