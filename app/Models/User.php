@@ -168,6 +168,27 @@ class User extends Authenticatable
         return $this->status === 'inactive';
     }
 
+    public function isSystemAdmin(): bool
+    {
+        return $this->hasRole('SYSTEM_ADMIN');
+    }
+
+    /**
+     * Restrict user queries to operational users.
+     *
+     * System administrator accounts are infrastructure accounts and should
+     * not be selectable for operational responsibilities such as department
+     * managers, project managers, members, or task assignees.
+     */
+    public function scopeOperational(Builder $query): Builder
+    {
+        return $query->whereDoesntHave(
+            'roles',
+            fn ($roleQuery) => $roleQuery->where('roles.code', 'SYSTEM_ADMIN')
+                ->where('roles.is_active', true)
+        );
+    }
+
     public function hasRole(string $roleCode): bool
     {
         return $this->roles()
