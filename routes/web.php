@@ -8,6 +8,7 @@ use App\Core\Roles\Http\Controllers\RolePermissionController;
 use App\Core\Users\Http\Controllers\UserController;
 use App\Core\Users\Http\Controllers\UserInvitationController;
 use App\Core\CustomFields\Http\Controllers\CustomFieldController;
+use App\Core\Settings\Http\Controllers\OrganizationSettingsController;
 use App\Core\ExternalParties\Http\Controllers\ExternalPartyController;
 use App\Modules\Projects\Http\Controllers\ProjectController;
 use App\Modules\Projects\Http\Controllers\ProjectMemberController;
@@ -56,6 +57,13 @@ Route::middleware('auth')->group(function () {
     Route::put('/users/{user}/departments', [UserController::class, 'syncDepartments'])->middleware('permission:users.manage_departments')->name('users.departments.update');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->middleware('permission:users.delete')->name('users.destroy');
     Route::patch('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->middleware('permission:users.toggle_status')->name('users.toggle-status');
+
+    Route::get('/settings/organization', [OrganizationSettingsController::class, 'edit'])
+        ->middleware('permission:settings.manage')
+        ->name('settings.organization.edit');
+    Route::put('/settings/organization', [OrganizationSettingsController::class, 'update'])
+        ->middleware('permission:settings.manage')
+        ->name('settings.organization.update');
 
     Route::get('/custom-fields', [CustomFieldController::class, 'index'])->middleware('permission:custom_fields.manage')->name('custom-fields.index');
     Route::post('/custom-fields', [CustomFieldController::class, 'store'])->middleware('permission:custom_fields.manage')->name('custom-fields.store');
