@@ -165,6 +165,7 @@ class UserControllerTest extends TestCase
 
         $this->actingAs($admin)->put(route('users.update', $user), [
             'name' => $user->name,
+            'username' => $user->username,
             'email' => $user->email,
             'status' => 'active',
             'role_ids' => [],
@@ -256,6 +257,7 @@ class UserControllerTest extends TestCase
         ->actingAs($admin)
         ->put(route('users.update', $user), [
             'name' => $user->name,
+            'username' => $user->username,
             'email' => $user->email,
             'department_ids' => [$department->id],
                 'primary_department_id' => $department->id,
