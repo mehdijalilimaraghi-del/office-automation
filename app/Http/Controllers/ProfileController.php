@@ -36,6 +36,7 @@ class ProfileController extends Controller
 
         $user->fill([
             'name' => $data['name'],
+            'username' => $data['username'],
             'email' => $data['email'],
         ]);
 
