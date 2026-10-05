@@ -482,20 +482,6 @@ const formatDate = (date: string | null): string => {
                         </div>
 
                         <div>
-                            <label for="role-code" class="mb-2 block text-sm font-medium">کد نقش</label>
-                            <input
-                                id="role-code"
-                                v-model="roleForm.code"
-                                type="text"
-                                class="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                                :disabled="roleForm.processing"
-                            />
-                            <p v-if="roleForm.errors.code" class="mt-1 text-sm text-destructive">
-                                {{ roleForm.errors.code }}
-                            </p>
-                        </div>
-
-                        <div>
                             <label for="role-description" class="mb-2 block text-sm font-medium">توضیحات</label>
                             <input
                                 id="role-description"
@@ -524,7 +510,7 @@ const formatDate = (date: string | null): string => {
                         <thead class="border-b bg-muted/40">
                             <tr>
                                 <th class="px-4 py-3 text-right font-medium">نام نقش</th>
-                                <th class="px-4 py-3 text-right font-medium">کد</th>
+                                <th class="px-4 py-3 text-right font-medium">کد سیستمی</th>
                                 <th class="px-4 py-3 text-right font-medium">توضیحات</th>
                                 <th class="px-4 py-3 text-right font-medium">وضعیت</th>
                                 <th v-if="canManageRoles" class="px-4 py-3 text-right font-medium">عملیات</th>
@@ -533,6 +519,9 @@ const formatDate = (date: string | null): string => {
                         <tbody class="divide-y">
                             <tr v-for="role in project.roles" :key="role.id">
                                 <template v-if="editingRoleId === role.id">
+                                    <td class="px-4 py-3 font-mono text-xs text-slate-500" dir="ltr">
+                                        {{ role.code }}
+                                    </td>
                                     <td class="px-4 py-3">
                                         <input
                                             v-model="roleForm.name"
