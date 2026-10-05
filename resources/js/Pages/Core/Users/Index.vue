@@ -138,7 +138,9 @@ function openEdit(user: User): void {
     form.password = '';
     form.password_confirmation = '';
     form.status = user.status;
-    form.role_ids = user.roles.map((role) => role.id);
+    form.role_ids = canManageUserRoles()
+        ? user.roles.map((role) => role.id)
+        : [];
     form.custom_fields = { ...(props.customFieldValues[user.id] ?? {}) };
     form.avatar = null;
     form.transform((data) => data);
@@ -244,11 +246,21 @@ function submit(): void {
         onSuccess: () => closeForm(),
     };
 
-    if (editingUser.value) {
-        form.transform((data) => ({
+    form.transform((data) => {
+        const payload = {
             ...data,
-            _method: 'put',
-        })).post(
+            ...(editingUser.value ? { _method: 'put' } : {}),
+        };
+
+        if (!canManageUserRoles()) {
+            delete payload.role_ids;
+        }
+
+        return payload;
+    });
+
+    if (editingUser.value) {
+        form.post(
             route('users.update', editingUser.value.id),
             options,
         );
