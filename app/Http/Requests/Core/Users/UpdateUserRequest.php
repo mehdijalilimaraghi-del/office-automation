@@ -61,6 +61,7 @@ class UpdateUserRequest extends FormRequest
             'employee_code' => ['nullable', 'string', 'max:50', Rule::unique('user_profiles', 'employee_code')->ignore($user->profile?->id)],
             'national_id' => ['nullable', 'string', 'max:20', Rule::unique('user_profiles', 'national_id')->ignore($user->profile?->id)],
             'birth_date' => ['nullable', 'date'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
 
             'status' => [
                 'sometimes',
@@ -82,7 +83,7 @@ class UpdateUserRequest extends FormRequest
             'role_ids.*' => [
                 'integer',
                 'distinct',
-                'exists:roles,id',
+                Rule::exists('roles', 'id')->where(fn ($query) => $query->where('is_active', true)),
             ],
         ];
     }
