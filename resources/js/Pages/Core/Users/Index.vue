@@ -636,18 +636,21 @@ function currentUserId(): number | null {
                                 <label class="block text-sm font-semibold text-slate-700">نقش‌های کاربری</label>
                                 <p class="mt-1 text-xs leading-5 text-slate-500">نقش کاربری، مجموعه مجوزها و محدوده دسترسی این کاربر را مشخص می‌کند.</p>
                             </div>
-                            <div class="max-h-52 space-y-2 overflow-y-auto">
-                                <label v-for="role in props.roles.filter(role => role.is_active)" :key="role.id" class="flex cursor-pointer items-start gap-2 rounded-xl px-2 py-2.5 hover:bg-slate-50">
-                                    <input type="checkbox" :checked="form.role_ids.includes(role.id)" class="mt-0.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500" @change="toggleRole(role.id)" />
-                                    <span class="min-w-0">
-                                        <span class="block text-sm font-semibold text-slate-700">{{ role.name }}</span>
-                                        <span v-if="role.code" dir="ltr" class="mt-0.5 block text-[10px] text-slate-400 text-right">{{ role.code }}</span>
-                                    </span>
-                                </label>
-                                <p v-if="props.roles.filter(role => role.is_active).length === 0" class="text-xs text-slate-400">نقش کاربری فعالی برای تخصیص تعریف نشده است.</p>
-                            </div>
-                            <p v-if="form.errors.role_ids" class="mt-1 text-xs text-red-600">{{ form.errors.role_ids }}</p>
-                        </div>
+                            <div>
+                                 <select
+                                     v-model="selectedRoleId"
+                                     aria-label="نقش کاربری"
+                                     class="w-full rounded-xl border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 shadow-sm transition focus:border-teal-500 focus:ring-teal-500"
+                                 >
+                                     <option :value="null">کاربر عادی (بدون نقش کاربری)</option>
+                                     <option v-for="role in activeRoles" :key="role.id" :value="role.id">
+                                         {{ role.name }}{{ role.code ? ` — ${role.code}` : '' }}
+                                     </option>
+                                 </select>
+                                 <p v-if="activeRoles.length === 0" class="mt-2 text-xs text-slate-400">
+                                     نقش کاربری فعالی برای تخصیص تعریف نشده است؛ این کاربر به‌صورت عادی و بدون نقش ایجاد می‌شود.
+                                 </p>
+                             </div>
                         <div v-else class="rounded-xl border border-amber-100 bg-amber-50/60 p-4 text-sm leading-6 text-amber-800">
                             تخصیص و تغییر نقش‌های کاربری فقط برای مدیرانی که مجوز «مدیریت نقش‌های کاربر» دارند فعال است.
                         </div>
