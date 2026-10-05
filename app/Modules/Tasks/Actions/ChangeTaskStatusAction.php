@@ -11,7 +11,10 @@ use InvalidArgumentException;
 
 class ChangeTaskStatusAction
 {
-    public function __construct(private readonly TaskDependencyService $dependencyService) {}
+    public function __construct(
+        private readonly TaskDependencyService $dependencyService,
+        private readonly AuditServiceInterface $audit,
+    ) {}
 
     private const ALLOWED_STATUSES = [
         'todo',
@@ -73,10 +76,20 @@ class ChangeTaskStatusAction
             'changed_at' => now(),
         ]);
 
-        return $task->refresh()->load([
+        $task = $task->refresh()->load([
             'project',
             'assignee',
             'creator',
         ]);
+
+        $this->audit->record('task.status_changed', $task, ['status' => $fromStatus], ['status' => $task->status]);
+
+        return $task;
+
+        /* return $task->refresh()->load([
+            'project',
+            'assignee',
+            'creator',
+        ]); */
     }
 }
