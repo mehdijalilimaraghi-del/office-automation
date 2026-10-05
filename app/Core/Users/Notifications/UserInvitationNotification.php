@@ -28,6 +28,7 @@ class UserInvitationNotification extends Notification
             ->subject('دعوت به سامانه Office Automation')
             ->greeting('سلام '.$notifiable->name)
             ->line('حساب کاربری شما در سامانه Office Automation ایجاد شده است.')
+            ->line('نام کاربری شما: '.$notifiable->username)
             ->line('برای تعیین رمز عبور و فعال‌سازی حساب، از لینک زیر استفاده کنید.')
             ->action('فعال‌سازی حساب', route('users.invitation.accept', ['token' => $this->token]))
             ->line('این لینک به مدت 48 ساعت معتبر است.');
