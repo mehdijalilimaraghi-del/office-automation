@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Core;
 
-use App\Core\Roles\Models\Role;
 use App\Core\Permissions\Models\Permission;
+use App\Core\Roles\Models\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -11,56 +11,43 @@ class CoreRoleSeederTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_default_roles_are_seeded_with_expected_permissions(): void
+    public function test_only_system_admin_is_seeded_and_receives_all_active_permissions(): void
     {
         $this->seed();
 
-        $rolePermissions = [
-            'EMPLOYEE' => [
-                'tasks.view',
-                'tasks.update',
-                'tasks.comment',
-            ],
-            'PROJECT_MANAGER' => [
-                'projects.create',
-                'projects.manage_members',
-                'tasks.assign',
-            ],
-            'DEPARTMENT_SUPERVISOR' => [
-                'departments.view',
-                'tasks.view',
-                'tasks.update',
-            ],
-            'ORGANIZATION_MANAGER' => [
-                'users.manage_roles',
-                'departments.create',
-                'roles.view',
-            ],
-        ];
+        $systemAdmin = Role::query()
+            ->where('code', 'SYSTEM_ADMIN')
+            ->firstOrFail();
 
-        foreach ($rolePermissions as $roleCode => $permissionCodes) {
-            $role = Role::query()->where('code', $roleCode)->first();
+        $this->assertTrue($systemAdmin->is_system);
+        $this->assertTrue($systemAdmin->is_active);
 
-            $this->assertNotNull($role);
-            $this->assertFalse($role->is_system);
+        $activePermissionCount = Permission::query()
+            ->where('is_active', true)
+            ->count();
 
-            $actualCodes = $role->permissions()
-                ->whereIn('permissions.code', $permissionCodes)
-                ->pluck('permissions.code')
-                ->all();
+        $this->assertSame(
+            $activePermissionCount,
+            $systemAdmin->permissions()->count()
+        );
 
-            foreach ($permissionCodes as $permissionCode) {
-                $this->assertContains($permissionCode, $actualCodes, "{$roleCode} is missing {$permissionCode}");
-            }
-        }
+        $this->assertSame(
+            1,
+            Role::query()->count()
+        );
+
+        $this->assertDatabaseMissing('roles', ['code' => 'EMPLOYEE']);
+        $this->assertDatabaseMissing('roles', ['code' => 'PROJECT_MANAGER']);
+        $this->assertDatabaseMissing('roles', ['code' => 'DEPARTMENT_SUPERVISOR']);
+        $this->assertDatabaseMissing('roles', ['code' => 'ORGANIZATION_MANAGER']);
     }
 
-    public function test_rerunning_role_seeder_does_not_overwrite_existing_starter_role_permissions(): void
+    public function test_rerunning_role_seeder_keeps_system_admin_permissions_in_sync(): void
     {
         $this->seed();
 
         $role = Role::query()
-            ->where('code', 'EMPLOYEE')
+            ->where('code', 'SYSTEM_ADMIN')
             ->firstOrFail();
 
         $permission = Permission::query()
@@ -71,7 +58,7 @@ class CoreRoleSeederTest extends TestCase
 
         $this->seed();
 
-        $this->assertDatabaseMissing('permission_role', [
+        $this->assertDatabaseHas('permission_role', [
             'role_id' => $role->id,
             'permission_id' => $permission->id,
         ]);
