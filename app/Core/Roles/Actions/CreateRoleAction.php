@@ -7,6 +7,10 @@ use App\Core\Audit\Contracts\AuditServiceInterface;
 
 class CreateRoleAction
 {
+    public function __construct(private readonly AuditServiceInterface $audit)
+    {
+    }
+
     public function execute(array $data): Role
     {
         $role = Role::create([
