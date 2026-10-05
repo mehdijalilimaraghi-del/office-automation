@@ -23,7 +23,7 @@ class ExternalContact extends Model
             ->where('entity_type', self::class);
     }
 
-    protected $fillable = ['external_organization_id', 'external_department_id', 'name', 'position', 'mobile', 'phone', 'extension', 'email', 'notes', 'status'];
+    protected $fillable = ['code', 'external_organization_id', 'external_department_id', 'name', 'position', 'mobile', 'phone', 'extension', 'email', 'notes', 'status'];
 
     public function organization(): BelongsTo { return $this->belongsTo(ExternalOrganization::class, 'external_organization_id'); }
     public function department(): BelongsTo { return $this->belongsTo(ExternalDepartment::class, 'external_department_id'); }
