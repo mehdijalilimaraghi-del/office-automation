@@ -35,9 +35,7 @@ class ProfileController extends Controller
         $user = $request->user();
 
         $user->fill([
-            'name' => $data['first_name'] && $data['last_name']
-                ? trim($data['first_name'].' '.$data['last_name'])
-                : ($data['first_name'] ?? $data['last_name'] ?? $user->name),
+            'name' => $data['name'],
             'email' => $data['email'],
         ]);
 
