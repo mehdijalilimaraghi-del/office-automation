@@ -1,8 +1,8 @@
 <?php
 
-namespace AppModelsConcerns;
+namespace App\Models\Concerns;
 
-use IlluminateDatabaseEloquentModel;
+use Illuminate\Database\Eloquent\Model;
 
 trait HasSystemCode
 {
