@@ -98,6 +98,105 @@ class UserControllerTest extends TestCase
     }
 
 
+    public function test_user_can_be_created_with_avatar_when_actor_has_role_management_access(): void
+    {
+        Storage::fake('public');
+
+        $admin = User::factory()->create();
+
+        $this->grantPermissions($admin, [
+            'users.create',
+            'users.manage_roles',
+        ]);
+
+        $role = $this->role();
+
+        $response = $this->actingAs($admin)->post(route('users.store'), [
+            'name' => 'Avatar User',
+            'username' => 'avataruser',
+            'email' => 'avatar-user@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'status' => 'active',
+            'role_ids' => [$role->id],
+            'avatar' => UploadedFile::fake()->image('avatar.jpg'),
+        ]);
+
+        $response->assertRedirect()->assertSessionHasNoErrors();
+
+        $user = User::query()
+            ->where('username', 'avataruser')
+            ->firstOrFail();
+
+        $avatarPath = $user->profile?->avatar_path;
+
+        $this->assertNotNull($avatarPath);
+        Storage::disk('public')->assertExists($avatarPath);
+        $this->assertDatabaseHas('role_user', [
+            'user_id' => $user->id,
+            'role_id' => $role->id,
+        ]);
+    }
+
+    public function test_user_role_assignment_requires_manage_roles_permission(): void
+    {
+        $admin = User::factory()->create();
+
+        $this->grantPermissions($admin, ['users.edit']);
+
+        $user = User::factory()->create();
+        $role = $this->role();
+
+        $response = $this->actingAs($admin)->put(route('users.update', $user), [
+            'name' => $user->name,
+            'username' => $user->username,
+            'email' => $user->email,
+            'status' => 'active',
+            'role_ids' => [$role->id],
+        ]);
+
+        $response->assertForbidden();
+
+        $this->assertDatabaseMissing('role_user', [
+            'user_id' => $user->id,
+            'role_id' => $role->id,
+        ]);
+    }
+
+    public function test_user_avatar_can_be_replaced_when_editing_user(): void
+    {
+        Storage::fake('public');
+
+        $admin = User::factory()->create();
+        $this->grantPermissions($admin, ['users.edit']);
+
+        $user = User::factory()->create();
+        $oldAvatar = UploadedFile::fake()->image('old-avatar.jpg');
+        $oldPath = $oldAvatar->store('avatars', 'public');
+        $user->profile()->updateOrCreate([], [
+            'avatar_path' => $oldPath,
+        ]);
+
+        $response = $this->actingAs($admin)->put(route('users.update', $user), [
+            'name' => $user->name,
+            'username' => $user->username,
+            'email' => $user->email,
+            'status' => 'active',
+            'role_ids' => [],
+            'avatar' => UploadedFile::fake()->image('new-avatar.jpg'),
+        ]);
+
+        $response->assertRedirect()->assertSessionHasNoErrors();
+
+        $newPath = $user->refresh()->profile?->avatar_path;
+
+        $this->assertNotNull($newPath);
+        $this->assertNotSame($oldPath, $newPath);
+        Storage::disk('public')->assertExists($newPath);
+        Storage::disk('public')->assertMissing($oldPath);
+    }
+
+
     public function test_authenticated_user_can_manage_created_user_department_membership(): void
     {
         $admin = User::factory()->create();
