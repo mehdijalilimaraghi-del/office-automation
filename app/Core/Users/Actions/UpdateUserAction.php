@@ -4,7 +4,9 @@ namespace App\Core\Users\Actions;
 
 use App\Models\User;
 use App\Core\Audit\Contracts\AuditServiceInterface;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class UpdateUserAction
@@ -54,13 +56,22 @@ class UpdateUserAction
 
         $user->update($attributes);
 
-        $user->profile()->updateOrCreate([], [
+        $profile = $user->profile()->updateOrCreate([], [
             'first_name' => $data['first_name'] ?? null,
             'last_name' => $data['last_name'] ?? null,
             'employee_code' => $data['employee_code'] ?? null,
             'national_id' => $data['national_id'] ?? null,
             'birth_date' => $data['birth_date'] ?? null,
         ]);
+
+        if (($data['avatar'] ?? null) instanceof UploadedFile) {
+            if ($profile->avatar_path) {
+                Storage::disk('public')->delete($profile->avatar_path);
+            }
+
+            $profile->avatar_path = $data['avatar']->store('avatars', 'public');
+            $profile->save();
+        }
 
         $user->refresh();
 
