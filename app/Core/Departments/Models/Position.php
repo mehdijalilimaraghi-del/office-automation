@@ -9,8 +9,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Position extends Model$2
-    protected static function systemCodePrefix(): string
+class Position extends Model
+{
+    use HasSystemCode;
+
+protected static function systemCodePrefix(): string
     {
         return 'POS';
     }
