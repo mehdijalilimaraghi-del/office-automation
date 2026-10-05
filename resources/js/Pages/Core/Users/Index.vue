@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { onBeforeUnmount, ref } from 'vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import UserAvatar from '@/Components/UserAvatar.vue';
 
@@ -57,6 +57,9 @@ type CustomFieldError = string | undefined;
 
 const page = usePage();
 
+const avatarPreview = ref('/images/default-avatar.svg');
+let avatarPreviewObjectUrl: string | null = null;
+
 const props = defineProps<{
     users: User[];
     departments: Department[];
@@ -91,6 +94,7 @@ const form = useForm({
     national_id: '',
     birth_date: '',
     custom_fields: {} as Record<string, string|number|boolean|null>,
+    avatar: null as File | null,
 });
 
 function openCreate(): void {
@@ -107,6 +111,9 @@ function openCreate(): void {
     form.national_id = '';
     form.birth_date = '';
     form.custom_fields = {};
+    form.avatar = null;
+    form.transform((data) => data);
+    setAvatarPreview(null);
 
     showForm.value = true;
 }
@@ -132,6 +139,9 @@ function openEdit(user: User): void {
     form.status = user.status;
     form.role_ids = user.roles.map((role) => role.id);
     form.custom_fields = { ...(props.customFieldValues[user.id] ?? {}) };
+    form.avatar = null;
+    form.transform((data) => data);
+    setAvatarPreview(user);
 
     showForm.value = true;
 }
@@ -169,21 +179,75 @@ function submitMembership(): void {
     });
 }
 
+function revokeAvatarPreviewObjectUrl(): void {
+    if (avatarPreviewObjectUrl) {
+        URL.revokeObjectURL(avatarPreviewObjectUrl);
+        avatarPreviewObjectUrl = null;
+    }
+}
+
+function setAvatarPreview(user: User | null): void {
+    revokeAvatarPreviewObjectUrl();
+
+    avatarPreview.value = user?.profile?.avatar_path
+        ? `/storage/${user.profile.avatar_path}`
+        : '/images/default-avatar.svg';
+}
+
+function handleAvatarChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+
+    form.avatar = file;
+    revokeAvatarPreviewObjectUrl();
+
+    if (file) {
+        avatarPreviewObjectUrl = URL.createObjectURL(file);
+        avatarPreview.value = avatarPreviewObjectUrl;
+        return;
+    }
+
+    setAvatarPreview(editingUser.value);
+}
+
+function clearAvatarSelection(input: HTMLInputElement | null): void {
+    if (input) {
+        input.value = '';
+    }
+
+    form.avatar = null;
+    setAvatarPreview(editingUser.value);
+}
+
+function canManageUserRoles(): boolean {
+    return page.props.auth.abilities?.users_manage_roles === true;
+}
+
+onBeforeUnmount(() => {
+    revokeAvatarPreviewObjectUrl();
+});
+
 function closeForm(): void {
     showForm.value = false;
     editingUser.value = null;
+    form.transform((data) => data);
     form.reset();
     form.clearErrors();
+    setAvatarPreview(null);
 }
 
 function submit(): void {
     const options = {
         preserveScroll: true,
+        forceFormData: form.avatar instanceof File || !!editingUser.value,
         onSuccess: () => closeForm(),
     };
 
     if (editingUser.value) {
-        form.put(
+        form.transform((data) => ({
+            ...data,
+            _method: 'put',
+        })).post(
             route('users.update', editingUser.value.id),
             options,
         );
@@ -402,6 +466,37 @@ function currentUserId(): number | null {
                     <button type="button" class="rounded-lg p-2 text-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="closeForm">×</button>
                 </div>
                 <form class="space-y-5 p-6" @submit.prevent="submit">
+                    <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                        <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+                            <div class="flex items-center gap-3">
+                                <span class="inline-flex h-20 w-20 shrink-0 overflow-hidden rounded-full bg-white ring-1 ring-slate-200">
+                                    <img :src="avatarPreview" alt="پیش‌نمایش تصویر کاربر" class="h-full w-full object-cover" />
+                                </span>
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-700">تصویر پروفایل</p>
+                                    <p class="mt-1 text-xs leading-5 text-slate-500">JPG، PNG یا WEBP تا حجم ۲ مگابایت.</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 sm:mr-auto">
+                                <input
+                                    id="user-avatar"
+                                    type="file"
+                                    accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                                    class="block w-full max-w-xs cursor-pointer rounded-xl border border-slate-200 bg-white text-xs text-slate-600 file:mr-3 file:border-0 file:bg-slate-900 file:px-3 file:py-2.5 file:text-xs file:font-semibold file:text-white"
+                                    @change="handleAvatarChange"
+                                />
+                                <button
+                                    v-if="form.avatar"
+                                    type="button"
+                                    class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                                    @click="clearAvatarSelection($event.currentTarget.closest('div')?.querySelector('input[type=file]') as HTMLInputElement)"
+                                >
+                                    لغو انتخاب
+                                </button>
+                            </div>
+                        </div>
+                        <p v-if="form.errors.avatar" class="mt-1.5 text-xs text-red-600">{{ form.errors.avatar }}</p>
+                    </div>
                     <div class="grid gap-4 md:grid-cols-2">
                         <div>
                             <label class="mb-1.5 block text-sm font-semibold text-slate-700">نام</label>
@@ -459,15 +554,25 @@ function currentUserId(): number | null {
                         <div v-if="!editingUser" class="rounded-xl border border-slate-200 bg-slate-50/60 p-4 text-sm text-slate-600">
                             پس از ایجاد کاربر، عضویت او در واحدهای سازمانی را از بخش «مدیریت واحدها» تعیین کنید.
                         </div>
-                        <div class="rounded-xl border border-slate-200 p-4">
-                            <label class="mb-3 block text-sm font-semibold text-slate-700">نقش‌های دسترسی</label>
-                            <div class="max-h-44 space-y-2 overflow-y-auto">
-                                <label v-for="role in props.roles" :key="role.id" class="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 hover:bg-slate-50">
-                                    <input type="checkbox" :checked="form.role_ids.includes(role.id)" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" @change="toggleRole(role.id)" />
-                                    <span class="text-sm text-slate-700">{{ role.name }}</span>
+                        <div v-if="canManageUserRoles()" class="rounded-xl border border-slate-200 p-4">
+                            <div class="mb-3">
+                                <label class="block text-sm font-semibold text-slate-700">نقش‌های دسترسی</label>
+                                <p class="mt-1 text-xs leading-5 text-slate-500">نقش، مجموعه مجوزها و محدوده دسترسی این کاربر را مشخص می‌کند.</p>
+                            </div>
+                            <div class="max-h-52 space-y-2 overflow-y-auto">
+                                <label v-for="role in props.roles.filter(role => role.is_active)" :key="role.id" class="flex cursor-pointer items-start gap-2 rounded-xl px-2 py-2.5 hover:bg-slate-50">
+                                    <input type="checkbox" :checked="form.role_ids.includes(role.id)" class="mt-0.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500" @change="toggleRole(role.id)" />
+                                    <span class="min-w-0">
+                                        <span class="block text-sm font-semibold text-slate-700">{{ role.name }}</span>
+                                        <span v-if="role.code" dir="ltr" class="mt-0.5 block text-[10px] text-slate-400 text-right">{{ role.code }}</span>
+                                    </span>
                                 </label>
+                                <p v-if="props.roles.filter(role => role.is_active).length === 0" class="text-xs text-slate-400">نقش فعالی برای تخصیص تعریف نشده است.</p>
                             </div>
                             <p v-if="form.errors.role_ids" class="mt-1 text-xs text-red-600">{{ form.errors.role_ids }}</p>
+                        </div>
+                        <div v-else class="rounded-xl border border-amber-100 bg-amber-50/60 p-4 text-sm leading-6 text-amber-800">
+                            تخصیص و تغییر نقش‌های دسترسی فقط برای مدیرانی که مجوز «مدیریت نقش‌های کاربر» دارند فعال است.
                         </div>
                     </div>
                     <label class="flex items-center gap-2 text-sm font-medium text-slate-700"><input v-model="form.status" type="checkbox" :true-value="'active'" :false-value="'inactive'" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> کاربر فعال باشد</label>
