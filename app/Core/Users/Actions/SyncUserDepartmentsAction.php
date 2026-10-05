@@ -3,15 +3,22 @@
 namespace App\Core\Users\Actions;
 
 use App\Models\User;
+use App\Core\Audit\Contracts\AuditServiceInterface;
 use Illuminate\Validation\ValidationException;
 
 class SyncUserDepartmentsAction
 {
+    public function __construct(private readonly AuditServiceInterface $audit)
+    {
+    }
+
     public function execute(
         User $user,
         array $departmentIds,
         ?int $primaryDepartmentId = null
     ): void {
+        $oldDepartmentIds = $user->departmentMemberships()->pluck('department_id')->map(fn ($id) => (int) $id)->values()->all();
+
         $departmentIds = array_values(array_unique(array_map('intval', $departmentIds)));
 
         if ($primaryDepartmentId !== null && ! in_array($primaryDepartmentId, $departmentIds, true)) {
@@ -55,5 +62,7 @@ class SyncUserDepartmentsAction
         }
 
         $query->delete();
+
+        $this->audit->record('user.departments_synced', $user, ['department_ids' => $oldDepartmentIds], ['department_ids' => $departmentIds, 'primary_department_id' => $primaryDepartmentId]);
     }
 }
