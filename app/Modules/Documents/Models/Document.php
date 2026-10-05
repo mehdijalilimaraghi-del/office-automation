@@ -56,9 +56,9 @@ class Document extends Model
         return $this->morphMany(DocumentLink::class, 'linkable');
     }
 
-    public function latestVersion(): HasMany
+    public function latestVersion(): HasOne
     {
-        return $this->hasMany(DocumentVersion::class)
-            ->orderByDesc('version_number');
+        return $this->hasOne(DocumentVersion::class)
+            ->latestOfMany('version_number');
     }
 }
