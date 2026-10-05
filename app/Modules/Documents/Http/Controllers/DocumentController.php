@@ -10,7 +10,7 @@ use App\Modules\Documents\Models\Document;
 use App\Modules\Documents\Services\DocumentService;
 use App\Modules\Tasks\Models\Task;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 
@@ -39,7 +39,7 @@ class DocumentController extends Controller
         return back()->with('success', 'فایل با موفقیت به تسک پیوست شد.');
     }
 
-    public function download(Document $document): Response
+    public function download(Document $document): StreamedResponse
     {
         Gate::authorize('view', $document);
 
