@@ -3,6 +3,7 @@
 namespace App\Core\Roles\Actions;
 
 use App\Core\Roles\Models\Role;
+use App\Core\CustomFields\Services\CustomFieldService;
 use App\Core\Audit\Contracts\AuditServiceInterface;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -29,6 +30,7 @@ class UpdateRoleAction
             'is_active' => $data['is_active'] ?? true,
         ]);
 
+        $this->customFieldService->sync($role, $data['custom_fields'] ?? []);
         $role->refresh();
         $this->audit->record('role.updated', $role, $oldValues, ['name' => $role->name, 'code' => $role->code, 'is_active' => $role->is_active]);
         return $role;
