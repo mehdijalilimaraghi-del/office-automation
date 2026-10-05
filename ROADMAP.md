@@ -37,6 +37,8 @@ Projects and Tasks remain important, but they are not the architectural center o
 
 **Status: implemented / audited**
 
+Bootstrap protection regression coverage now verifies that an existing inactive user cannot be activated or assigned SYSTEM_ADMIN through the bootstrap environment settings.
+
 ### 2. Organizational Structure
 - Organizational positions
 - Position assignments
@@ -69,6 +71,8 @@ Projects and Tasks remain important, but they are not the architectural center o
 - Access scopes
 
 **Status: V1 implemented / UX refinement completed / lifecycle regression suite aligned**
+
+Timeline regression ordering is explicitly validated as newest-first.
 
 ---
 
