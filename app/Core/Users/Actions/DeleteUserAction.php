@@ -5,10 +5,15 @@ namespace App\Core\Users\Actions;
 use App\Core\Users\Models\UserInvitation;
 use App\Core\CustomFields\Models\CustomFieldValue;
 use App\Models\User;
+use App\Core\Audit\Contracts\AuditServiceInterface;
 use Illuminate\Validation\ValidationException;
 
 class DeleteUserAction
 {
+    public function __construct(private readonly AuditServiceInterface $audit)
+    {
+    }
+
     public function execute(User $user): void
     {
         if ($user->hasRole('SYSTEM_ADMIN')) {
@@ -39,6 +44,12 @@ class DeleteUserAction
             ->where('entity_type', User::class)
             ->where('entity_id', $user->id)
             ->delete();
+
+        $this->audit->record('user.deleted', $user, [
+            'name' => $user->name,
+            'email' => $user->email,
+            'status' => $user->status,
+        ]);
 
         $user->delete();
     }
