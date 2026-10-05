@@ -18,6 +18,7 @@ class Department extends Model
         'manager_id',
         'name',
         'code',
+        'icon',
         'description',
         'is_active',
     ];
@@ -26,6 +27,8 @@ class Department extends Model
     {
         return [
             'is_active' => 'boolean',
+            'parent_id' => 'integer',
+            'manager_id' => 'integer',
         ];
     }
 
