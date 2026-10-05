@@ -14,9 +14,30 @@ class ExternalPartyService implements ExternalPartyServiceInterface
         private readonly CustomFieldService $customFieldService,
     ) {}
 
-    public function organizations(): Collection { return ExternalOrganization::query()->withCount(['departments','contacts'])->orderBy('name')->get(); }
-    public function departments(): Collection { return ExternalDepartment::query()->with('organization:id,name')->orderBy('name')->get(); }
-    public function contacts(): Collection { return ExternalContact::query()->with(['organization:id,name','department:id,name'])->orderBy('name')->get(); }
+    public function organizations(): Collection
+    {
+        return ExternalOrganization::query()
+            ->with(['customFieldValues.field'])
+            ->withCount(['departments', 'contacts'])
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function departments(): Collection
+    {
+        return ExternalDepartment::query()
+            ->with(['organization:id,name', 'customFieldValues.field'])
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function contacts(): Collection
+    {
+        return ExternalContact::query()
+            ->with(['organization:id,name', 'department:id,name', 'customFieldValues.field'])
+            ->orderBy('name')
+            ->get();
+    }
 
     public function validateTaskContext(array $data): void
     {
@@ -52,16 +73,18 @@ class ExternalPartyService implements ExternalPartyServiceInterface
 
     public function createOrganization(array $data): ExternalOrganization
     {
-        unset($data['code']);
+        $customFields = $data['custom_fields'] ?? [];
+        unset($data['code'], $data['custom_fields']);
         $organization = ExternalOrganization::create($data);
-        $this->customFieldService->sync($organization, $data['custom_fields'] ?? []);
+        $this->customFieldService->sync($organization, $customFields);
         return $organization->refresh();
     }
     public function updateOrganization(ExternalOrganization $organization, array $data): ExternalOrganization
     {
-        unset($data['code']);
+        $customFields = $data['custom_fields'] ?? [];
+        unset($data['code'], $data['custom_fields']);
         $organization->update($data);
-        $this->customFieldService->sync($organization, $data['custom_fields'] ?? []);
+        $this->customFieldService->sync($organization, $customFields);
         return $organization->refresh();
     }
     public function deleteOrganization(ExternalOrganization $organization): void
@@ -77,17 +100,19 @@ class ExternalPartyService implements ExternalPartyServiceInterface
     public function createDepartment(array $data): ExternalDepartment
     {
         $this->validateDepartmentParent($data);
-        unset($data['code']);
+        $customFields = $data['custom_fields'] ?? [];
+        unset($data['code'], $data['custom_fields']);
         $department = ExternalDepartment::create($data);
-        $this->customFieldService->sync($department, $data['custom_fields'] ?? []);
+        $this->customFieldService->sync($department, $customFields);
         return $department->refresh();
     }
     public function updateDepartment(ExternalDepartment $department, array $data): ExternalDepartment
     {
         $this->validateDepartmentParent($data, $department->id);
-        unset($data['code']);
+        $customFields = $data['custom_fields'] ?? [];
+        unset($data['code'], $data['custom_fields']);
         $department->update($data);
-        $this->customFieldService->sync($department, $data['custom_fields'] ?? []);
+        $this->customFieldService->sync($department, $customFields);
         return $department->refresh();
     }
     public function deleteDepartment(ExternalDepartment $department): void
@@ -103,17 +128,19 @@ class ExternalPartyService implements ExternalPartyServiceInterface
     public function createContact(array $data): ExternalContact
     {
         $this->validateContactDepartment($data);
-        unset($data['code']);
+        $customFields = $data['custom_fields'] ?? [];
+        unset($data['code'], $data['custom_fields']);
         $contact = ExternalContact::create($data);
-        $this->customFieldService->sync($contact, $data['custom_fields'] ?? []);
+        $this->customFieldService->sync($contact, $customFields);
         return $contact->refresh();
     }
     public function updateContact(ExternalContact $contact, array $data): ExternalContact
     {
         $this->validateContactDepartment($data);
-        unset($data['code']);
+        $customFields = $data['custom_fields'] ?? [];
+        unset($data['code'], $data['custom_fields']);
         $contact->update($data);
-        $this->customFieldService->sync($contact, $data['custom_fields'] ?? []);
+        $this->customFieldService->sync($contact, $customFields);
         return $contact->refresh();
     }
     public function deleteContact(ExternalContact $contact): void { $contact->delete(); }
