@@ -49,10 +49,10 @@ class CoreRoleSeeder extends Seeder
 
         $user ??= new User([
             'email' => $email,
-            'username' => 'admin',
+            'username' => 'systemadmin',
         ]);
 
-        $user->username ??= 'admin';
+        $user->username ??= 'systemadmin';
         $user->name = (string) env('OFFICE_AUTOMATION_BOOTSTRAP_ADMIN_NAME', 'مدیر سیستم');
         $user->password = Hash::make($bootstrapPassword);
         $user->status = 'active';
