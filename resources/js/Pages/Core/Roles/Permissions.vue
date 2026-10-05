@@ -126,14 +126,14 @@ function submit(): void {
 </script>
 
 <template>
-    <Head :title="'مجوزهای نقش ' + props.role.name" />
+    <Head :title="'مجوزهای نقش کاربری ' + props.role.name" />
 
     <AuthenticatedLayout>
         <template #header>
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <p class="text-xs font-semibold text-slate-400">مدیریت سازمان / نقش‌ها</p>
-                    <h2 class="mt-1 text-xl font-bold text-slate-900">دسترسی‌های نقش</h2>
+                    <p class="text-xs font-semibold text-slate-400">مدیریت دسترسی / نقش‌های کاربری</p>
+                    <h2 class="mt-1 text-xl font-bold text-slate-900">دسترسی‌های نقش کاربری</h2>
                 </div>
                 <Link
                     :href="route('roles.index')"
@@ -151,11 +151,11 @@ function submit(): void {
                         <div class="max-w-3xl">
                             <div class="mb-4 flex flex-wrap items-center gap-2">
                                 <span class="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold text-teal-100">کنترل دسترسی</span>
-                                <span v-if="props.role.is_system" class="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-xs font-semibold text-amber-100">نقش سیستمی</span>
+                                <span v-if="props.role.is_system" class="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-xs font-semibold text-amber-100">نقش کاربری سیستمی</span>
                             </div>
                             <h1 class="text-2xl font-black tracking-tight sm:text-3xl">{{ props.role.name }}</h1>
                             <p class="mt-3 text-sm leading-7 text-slate-300">
-                                مجوزهای این نقش و محدوده دسترسی هر مجوز را مدیریت کنید.
+                                مجوزهای این نقش کاربری و محدوده دسترسی هر مجوز را مدیریت کنید.
                             </p>
                         </div>
                         <div class="grid grid-cols-2 gap-3 sm:min-w-[280px]">
@@ -175,7 +175,7 @@ function submit(): void {
                     v-if="props.role.is_system"
                     class="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium leading-7 text-amber-800"
                 >
-                    این نقش سیستمی است؛ مجوزهای آن برای حفظ یکپارچگی سیستم قابل تغییر نیستند.
+                    این نقش کاربری سیستمی است؛ مجوزهای آن برای حفظ یکپارچگی سیستم قابل تغییر نیستند.
                 </section>
 
                 <form @submit.prevent="submit">
