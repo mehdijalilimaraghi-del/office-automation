@@ -5,12 +5,17 @@ namespace App\Core\Users\Actions;
 use App\Core\Users\Models\UserInvitation;
 use App\Core\Users\Notifications\UserInvitationNotification;
 use App\Models\User;
+use App\Core\Audit\Contracts\AuditServiceInterface;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class InviteUserAction
 {
+    public function __construct(private readonly AuditServiceInterface $audit)
+    {
+    }
+
     public function execute(User $user): void
     {
         if ($user->hasRole('SYSTEM_ADMIN')) {
@@ -37,5 +42,9 @@ class InviteUserAction
         );
 
         $user->notify(new UserInvitationNotification($invitation, $token));
+
+        $this->audit->record('user.invited', $user, null, [
+            'expires_at' => $invitation->expires_at?->toIso8601String(),
+        ]);
     }
 }
