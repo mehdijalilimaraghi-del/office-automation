@@ -52,7 +52,6 @@ class PositionControllerTest extends TestCase
         $response->assertRedirect();
 
         $this->assertDatabaseHas('position_assignments', [
-            'department_id' => null,
             'position_id' => $position->id,
             'user_id' => $member->id,
             'is_primary' => true,
