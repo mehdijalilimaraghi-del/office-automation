@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 
 class AuditService implements AuditServiceInterface
 {
-    public function __construct(private readonly ?Request $request = null)
+    public function __construct()
     {
     }
 
@@ -22,7 +22,7 @@ class AuditService implements AuditServiceInterface
         ?array $newValues = null,
         array $metadata = [],
     ): void {
-        $request = $this->request;
+        $request = app()->bound('request') ? request() : null;
 
         AuditLog::create([
             'actor_id' => auth()->id(),
