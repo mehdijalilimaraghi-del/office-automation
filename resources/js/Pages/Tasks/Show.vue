@@ -82,6 +82,15 @@ const props = defineProps<{
     abilities: Abilities;
     assigneeOptions: User[];
     externalPartyOptions: ExternalPartyOptions;
+    customFields: Array<{
+        id: number;
+        key: string;
+        label: string;
+        type: 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select';
+        is_required: boolean;
+        options: string[] | null;
+    }>;
+    customFieldValues: Record<string, string | number | boolean | null>;
 }>();
 
 const commentForm = useForm({ body: '' });
