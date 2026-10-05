@@ -20,11 +20,19 @@ interface Referral {
     created_at?: string;
 }
 
+interface CorrespondenceReferral {
+    id: number;
+    instruction?: string | null;
+    correspondence?: { id: number; registration_number: string; subject: string } | null;
+    fromUser?: { id: number; name: string } | null;
+}
+
 interface CartableData {
-    summary: { my_tasks: number; pending_approvals: number; referrals: number };
+    summary: { my_tasks: number; pending_approvals: number; referrals: number; correspondence_referrals?: number };
     myTasks: TaskItem[];
     pendingApprovals: TaskItem[];
     referrals: Referral[];
+    correspondenceReferrals?: CorrespondenceReferral[];
 }
 
 const props = defineProps<{ cartable: CartableData }>();
@@ -165,6 +173,23 @@ function formatDate(value: string | null | undefined): string {
                                     <p class="mt-1 text-xs text-slate-500">از طرف {{ referral.fromUser?.name || 'کاربر سازمان' }}</p>
                                     <p v-if="referral.note" class="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{{ referral.note }}</p>
                                 </Link>
+                            </div>
+                        </section>
+
+                        <section class="overflow-hidden rounded-2xl border border-indigo-200 bg-white shadow-sm">
+                            <div class="border-b border-indigo-100 bg-indigo-50/70 px-5 py-4">
+                                <h3 class="font-bold text-slate-900">ارجاعات مکاتبات</h3>
+                                <p class="mt-1 text-xs text-slate-500">مکاتباتی که برای اقدام به شما ارجاع شده‌اند</p>
+                            </div>
+                            <div v-if="!props.cartable.correspondenceReferrals?.length" class="px-5 py-8 text-center">
+                                <p class="text-sm font-semibold text-slate-700">ارجاع مکاتبه‌ای ندارید.</p>
+                            </div>
+                            <div v-else class="divide-y divide-slate-100">
+                                <div v-for="item in props.cartable.correspondenceReferrals" :key="item.id" class="px-5 py-4">
+                                    <p class="font-semibold text-slate-800">{{ item.correspondence?.registration_number }} — {{ item.correspondence?.subject }}</p>
+                                    <p class="mt-1 text-xs text-slate-500">از طرف {{ item.fromUser?.name || 'کاربر سازمان' }}</p>
+                                    <p v-if="item.instruction" class="mt-2 text-xs leading-5 text-slate-500">{{ item.instruction }}</p>
+                                </div>
                             </div>
                         </section>
                     </div>
