@@ -3,13 +3,18 @@
 namespace App\Core\Departments\Models;
 
 use App\Models\User;
+use App\Models\Concerns\HasSystemCode;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Position extends Model
-{
+class Position extends Model$2
+    protected static function systemCodePrefix(): string
+    {
+        return 'POS';
+    }
+
     protected $fillable = ['department_id','name','code','description','is_active'];
 
     protected function casts(): array
