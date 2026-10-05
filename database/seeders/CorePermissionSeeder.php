@@ -225,23 +225,6 @@ class CorePermissionSeeder extends Seeder
             ],
 
             [
-                'name' => 'مشاهده مکاتبات',
-                'code' => 'correspondence.view',
-            ],
-            [
-                'name' => 'ایجاد مکاتبه',
-                'code' => 'correspondence.create',
-            ],
-            [
-                'name' => 'ثبت نهایی مکاتبه',
-                'code' => 'correspondence.register',
-            ],
-            [
-                'name' => 'ارجاع مکاتبه',
-                'code' => 'correspondence.refer',
-            ],
-
-            [
                 'name' => 'مشاهده اسناد',
                 'code' => 'documents.view',
             ],
