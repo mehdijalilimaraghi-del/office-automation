@@ -505,7 +505,7 @@ function currentUserId(): number | null {
                                     v-if="form.avatar"
                                     type="button"
                                     class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-                                    @click="clearAvatarSelection(avatarInput.value)"
+                                    @click="clearAvatarSelection(avatarInput)"
                                 >
                                     لغو انتخاب
                                 </button>
