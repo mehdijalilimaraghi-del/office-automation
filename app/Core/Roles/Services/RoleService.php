@@ -50,6 +50,7 @@ class RoleService implements RoleServiceInterface
     public function list(): Collection
     {
         return Role::query()
+            ->with('customFieldValues.field')
             ->orderBy('name')
             ->get();
     }
