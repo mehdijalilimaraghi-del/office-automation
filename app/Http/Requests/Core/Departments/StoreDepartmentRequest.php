@@ -38,6 +38,13 @@ class StoreDepartmentRequest extends FormRequest
                 'max:50',
             ],
 
+            'icon' => [
+                'required',
+                'string',
+                'max:50',
+                'in:building-2,landmark,briefcase,users,factory,calculator,scale,monitor,wrench,truck,shield-check,clipboard-list,megaphone,warehouse,settings,home',
+            ],
+
             'description' => [
                 'nullable',
                 'string',
@@ -57,6 +64,7 @@ class StoreDepartmentRequest extends FormRequest
             'manager_id' => 'مدیر دپارتمان',
             'name' => 'نام دپارتمان',
             'code' => 'کد دپارتمان',
+            'icon' => 'آیکون واحد',
             'description' => 'توضیحات',
             'is_active' => 'وضعیت فعال بودن',
         ];
