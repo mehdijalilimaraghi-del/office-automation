@@ -134,20 +134,14 @@ class CoreRoleSeeder extends Seeder
         );
 
         $this->createDefaultRole(
-            'DEPARTMENT_MANAGER',
-            'مدیر واحد',
-            'مدیریت اعضا، سمت‌ها و فعالیت‌های واحد و زیرواحدهای آن',
+            'DEPARTMENT_SUPERVISOR',
+            'سرپرست واحد',
+            'دسترسی عملیاتی به فعالیت‌های واحد و زیرواحدهای مرتبط بدون مدیریت سراسری کاربران و ساختار سازمان',
             [
                 'notifications.view' => PermissionScope::Organization,
                 'cartable.view' => PermissionScope::Organization,
-                'users.view' => PermissionScope::DepartmentTree,
-                'users.manage_departments' => PermissionScope::DepartmentTree,
-                'departments.view' => PermissionScope::DepartmentTree,
-                'departments.manage_positions' => PermissionScope::DepartmentTree,
-                'projects.view' => PermissionScope::DepartmentTree,
-                'projects.manage_members' => PermissionScope::DepartmentTree,
+                'departments.view' => PermissionScope::Organization,
                 'tasks.view' => PermissionScope::DepartmentTree,
-                'tasks.create' => PermissionScope::DepartmentTree,
                 'tasks.update' => PermissionScope::DepartmentTree,
                 'tasks.assign' => PermissionScope::DepartmentTree,
                 'tasks.refer' => PermissionScope::DepartmentTree,
