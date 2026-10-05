@@ -27,15 +27,7 @@ class UpdateRoleRequest extends FormRequest
                     ->ignore($role->id),
             ],
 
-            'code' => [
-                'nullable',
-                'string',
-                'max:50',
-                'alpha_dash',
-                Rule::unique('roles', 'code')
-                    ->ignore($role->id),
-            ],
-
+            
             'description' => [
                 'nullable',
                 'string',
