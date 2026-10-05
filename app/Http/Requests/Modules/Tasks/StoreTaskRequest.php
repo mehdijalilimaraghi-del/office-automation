@@ -28,6 +28,7 @@ class StoreTaskRequest extends FormRequest
             'assignment_note' => ['nullable', 'string', 'max:5000'],
             'start_date' => ['nullable', 'date'],
             'due_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+            'custom_fields' => ['nullable', 'array'],
             'is_active' => ['sometimes', 'boolean'],
         ];
     }
