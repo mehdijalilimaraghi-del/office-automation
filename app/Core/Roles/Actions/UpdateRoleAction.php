@@ -6,6 +6,7 @@ use App\Core\Roles\Models\Role;
 use App\Core\CustomFields\Services\CustomFieldService;
 use App\Core\Audit\Contracts\AuditServiceInterface;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Illuminate\Support\Facades\DB;
 
 class UpdateRoleAction
 {
@@ -24,6 +25,7 @@ class UpdateRoleAction
             );
         }
 
+        return DB::transaction(function () use ($role, $data): Role {
         $oldValues = $role->only(['name', 'code', 'description', 'is_active']);
 
         $role->update([
@@ -35,6 +37,7 @@ class UpdateRoleAction
         $this->customFieldService->sync($role, $data['custom_fields'] ?? []);
         $role->refresh();
         $this->audit->record('role.updated', $role, $oldValues, ['name' => $role->name, 'code' => $role->code, 'is_active' => $role->is_active]);
-        return $role;
+            return $role;
+        });
     }
 }
