@@ -30,7 +30,7 @@ class AuditLogTest extends TestCase
 
         $audit = AuditLog::query()->latest('id')->firstOrFail();
 
-        $this->assertSame($actor->id, $audit->actor_id);
+        $this->assertSame((int) $actor->id, (int) $audit->actor_id);
         $this->assertSame('user.updated', $audit->event);
         $this->assertSame(User::class, $audit->auditable_type);
         $this->assertSame($user->id, (int) $audit->auditable_id);
