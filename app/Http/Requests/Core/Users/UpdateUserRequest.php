@@ -25,6 +25,15 @@ class UpdateUserRequest extends FormRequest
                 'max:255',
             ],
 
+            'username' => [
+                'required',
+                'string',
+                'max:50',
+                'regex:/^[A-Za-z][A-Za-z0-9_.-]{2,49}$/',
+                Rule::unique('users', 'username')
+                    ->ignore($user->id),
+            ],
+
             'email' => [
                 'required',
                 'string',
