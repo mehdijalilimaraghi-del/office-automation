@@ -3,6 +3,7 @@
 namespace App\Core\Roles\Http\Controllers;
 
 use App\Core\Roles\Contracts\RoleServiceInterface;
+use App\Core\CustomFields\Services\CustomFieldService;
 use App\Core\Roles\Models\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Core\Roles\StoreRoleRequest;
@@ -15,6 +16,7 @@ class RoleController extends Controller
 {
     public function __construct(
         private readonly RoleServiceInterface $roleService,
+        private readonly CustomFieldService $customFieldService,
     ) {
     }
 
@@ -22,6 +24,7 @@ class RoleController extends Controller
     {
         return Inertia::render('Core/Roles/Index', [
             'roles' => $this->roleService->list(),
+            'customFields' => $this->customFieldService->definitions(Role::class),
         ]);
     }
 
