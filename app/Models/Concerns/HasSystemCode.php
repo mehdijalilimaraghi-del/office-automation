@@ -10,7 +10,10 @@ trait HasSystemCode
     protected static function bootHasSystemCode(): void
     {
         static::creating(function (Model $model): void {
-            if (! $model->shouldGenerateSystemCode()) {
+            if (
+                ! $model->shouldGenerateSystemCode()
+                || filled($model->getAttribute('code'))
+            ) {
                 return;
             }
 
@@ -21,7 +24,10 @@ trait HasSystemCode
         });
 
         static::created(function (Model $model): void {
-            if (! $model->shouldGenerateSystemCode()) {
+            if (
+                ! $model->shouldGenerateSystemCode()
+                || ! str_starts_with((string) $model->getAttribute('code'), '__SYS_')
+            ) {
                 return;
             }
 
