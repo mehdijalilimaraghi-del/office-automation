@@ -7,6 +7,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import UserAvatar from '@/Components/UserAvatar.vue';
 import DepartmentIcon from '@/Components/DepartmentIcon.vue';
+import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
 import { departmentIconOptions } from '@/Utils/departmentIcons';
 
 interface PositionUser {
@@ -28,6 +29,7 @@ interface Position {
     description: string | null;
     is_active: boolean;
     users?: PositionUser[];
+    customFieldValues?: Array<{ value: string; field: { key: string; type: string } }>;
 }
 
 interface DepartmentMember {
@@ -52,6 +54,7 @@ interface Department {
     positions?: Position[];
     children_count?: number;
     icon: string;
+    customFieldValues?: Array<{ value: string; field: { key: string; type: string } }>;
 }
 
 interface User {
@@ -62,6 +65,18 @@ interface User {
 const props = defineProps<{
     departments: Department[];
     users: User[];
+    customFields: {
+        department: Array<{
+            id: number; key: string; label: string;
+            type: 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select';
+            is_required: boolean; options: string[] | null;
+        }>;
+        position: Array<{
+            id: number; key: string; label: string;
+            type: 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select';
+            is_required: boolean; options: string[] | null;
+        }>;
+    };
 }>();
 
 const page = usePage();
@@ -78,12 +93,14 @@ const form = useForm({
     icon: 'building-2',
     description: '',
     is_active: true,
+    custom_fields: {} as Record<string, string | number | boolean | null>,
 });
 
 const positionForm = useForm({
     name: '',
     description: '',
     is_active: true,
+    custom_fields: {} as Record<string, string | number | boolean | null>,
 });
 
 const assignmentForm = useForm({
@@ -99,6 +116,20 @@ const selectedDepartment = computed(
             (department) => department.id === selectedDepartmentId.value,
         ) ?? null,
 );
+
+const customFieldValueMap = (
+    values?: Array<{ value: string; field: { key: string; type: string } }>,
+): Record<string, string | number | boolean | null> =>
+    Object.fromEntries(
+        (values ?? []).map((item) => [
+            item.field.key,
+            item.field.type === 'number'
+                ? Number(item.value)
+                : item.field.type === 'boolean'
+                    ? item.value === '1'
+                    : item.value,
+        ]),
+    );
 
 const parentIdOf = (department: Department): number | null =>
     department.parent_id === null ? null : Number(department.parent_id);
@@ -202,6 +233,7 @@ const resetDepartmentForm = () => {
     form.reset();
     form.is_active = true;
     form.icon = 'building-2';
+    form.custom_fields = {};
     form.clearErrors();
 };
 
@@ -221,6 +253,7 @@ const openEdit = (department: Department) => {
     form.icon = department.icon ?? 'building-2';
     form.description = department.description ?? '';
     form.is_active = department.is_active;
+    form.custom_fields = customFieldValueMap(department.customFieldValues);
     form.clearErrors();
     showDepartmentForm.value = true;
 };
@@ -278,6 +311,7 @@ const toggleStatus = (department: Department) => {
 const resetPositionForm = () => {
     positionForm.reset();
     positionForm.is_active = true;
+    positionForm.custom_fields = {};
     positionForm.clearErrors();
 };
 
@@ -984,6 +1018,15 @@ watch(
                         <InputError class="mt-1.5" :message="form.errors.description" />
                     </div>
 
+                    <CustomFieldsForm
+                        v-if="props.customFields.department.length"
+                        v-model="form.custom_fields"
+                        :fields="props.customFields.department"
+                        :errors="form.errors as Record<string, string>"
+                        title="اطلاعات تکمیلی واحد"
+                        description="اطلاعات اختصاصی تعریف‌شده برای این واحد را در این بخش ثبت کنید."
+                    />
+
                     <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
                         <input
                             v-model="form.is_active"
@@ -1054,6 +1097,15 @@ watch(
                         ></textarea>
                         <InputError class="mt-1.5" :message="positionForm.errors.description" />
                     </div>
+
+                    <CustomFieldsForm
+                        v-if="props.customFields.position.length"
+                        v-model="positionForm.custom_fields"
+                        :fields="props.customFields.position"
+                        :errors="positionForm.errors as Record<string, string>"
+                        title="اطلاعات تکمیلی سمت"
+                        description="اطلاعات اختصاصی تعریف‌شده برای این سمت را در این بخش ثبت کنید."
+                    />
 
                     <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
                         <input
