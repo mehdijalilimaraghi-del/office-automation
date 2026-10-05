@@ -66,6 +66,7 @@ class UserControllerTest extends TestCase
             ->actingAs($admin)
             ->post(route('users.store'), [
                 'name' => 'New User',
+                'username' => 'newuser',
                 'email' => 'new-user@example.com',
                 'password' => 'password123',
                 'password_confirmation' => 'password123',
@@ -138,6 +139,7 @@ class UserControllerTest extends TestCase
             route('users.update', $user),
             [
                 'name' => $user->name,
+                'username' => $user->username,
                 'email' => $user->email,
                 'status' => 'active',
                 'role_ids' => [],
@@ -213,6 +215,7 @@ class UserControllerTest extends TestCase
             ->actingAs($admin)
             ->put(route('users.update', $user), [
                 'name' => 'Updated Name',
+                'username' => 'updateduser',
                 'email' => 'updated@example.com',
                 'status' => 'active',
                 'role_ids' => [$role->id],
@@ -394,6 +397,7 @@ class UserControllerTest extends TestCase
             ->actingAs($admin)
             ->post(route('users.store'), [
                 'name' => 'Another User',
+                'username' => 'anotheruser',
                 'email' => 'existing@example.com',
                 'password' => 'password123',
                 'password_confirmation' => 'password123',
@@ -494,6 +498,7 @@ class UserControllerTest extends TestCase
     {
         $response = $this->post(route('users.store'), [
             'name' => 'Guest User',
+            'username' => 'guestuser',
             'email' => 'guest@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
@@ -514,6 +519,7 @@ class UserControllerTest extends TestCase
             route('users.update', $user),
             [
                 'name' => 'Updated',
+                'username' => 'updateduser2',
                 'email' => 'updated@example.com',
                 'department_ids' => [],
                 'primary_department_id' => null,
