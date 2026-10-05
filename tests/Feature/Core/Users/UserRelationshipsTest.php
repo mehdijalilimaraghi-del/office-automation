@@ -151,6 +151,35 @@ class UserRelationshipsTest extends TestCase
         $user->roles()->attach($role->id);
     }
 
+    public function test_operational_scope_excludes_active_system_admin_accounts(): void
+    {
+        $systemAdminRole = Role::create([
+            'name' => 'مدیر سیستم',
+            'code' => 'SYSTEM_ADMIN',
+            'is_active' => true,
+            'is_system' => true,
+        ]);
+
+        $systemAdmin = User::factory()->create([
+            'name' => 'مدیر اصلی سیستم',
+            'status' => 'active',
+        ]);
+        $systemAdmin->roles()->attach($systemAdminRole->id);
+
+        $operationalUser = User::factory()->create([
+            'name' => 'کاربر عملیاتی',
+            'status' => 'active',
+        ]);
+
+        $operationalUsers = User::query()
+            ->operational()
+            ->where('status', 'active')
+            ->get();
+
+        $this->assertTrue($operationalUsers->contains($operationalUser));
+        $this->assertFalse($operationalUsers->contains($systemAdmin));
+    }
+
     public function test_user_status_helpers_work(): void
     {
         $activeUser = User::factory()->create([
