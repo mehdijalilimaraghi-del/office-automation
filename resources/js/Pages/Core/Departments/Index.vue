@@ -536,7 +536,7 @@ watch(
                                     :class="selectedDepartmentId === row.department.id ? 'bg-white/10 text-teal-200' : 'bg-teal-50 text-teal-700'"
                                     :style="{ marginRight: (row.depth * 20) + 'px' }"
                                 >
-                                    {{ row.department.name.charAt(0) }}
+                                    <DepartmentIcon :icon="row.department.icon" :size="18" />
                                 </span>
 
                                 <span class="min-w-0 flex-1 pe-3">
