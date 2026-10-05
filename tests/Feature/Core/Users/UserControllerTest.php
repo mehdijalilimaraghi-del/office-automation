@@ -302,6 +302,7 @@ class UserControllerTest extends TestCase
 
         $this->grantPermissions($admin, [
             'users.edit',
+            'users.manage_roles',
         ]);
 
         $user = User::factory()->create([
