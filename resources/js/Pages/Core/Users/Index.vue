@@ -58,6 +58,7 @@ type CustomFieldError = string | undefined;
 const page = usePage();
 
 const avatarPreview = ref('/images/default-avatar.svg');
+const avatarInput = ref<HTMLInputElement | null>(null);
 let avatarPreviewObjectUrl: string | null = null;
 
 const props = defineProps<{
@@ -480,6 +481,7 @@ function currentUserId(): number | null {
                             <div class="flex flex-wrap items-center gap-2 sm:mr-auto">
                                 <input
                                     id="user-avatar"
+                                    ref="avatarInput"
                                     type="file"
                                     accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
                                     class="block w-full max-w-xs cursor-pointer rounded-xl border border-slate-200 bg-white text-xs text-slate-600 file:mr-3 file:border-0 file:bg-slate-900 file:px-3 file:py-2.5 file:text-xs file:font-semibold file:text-white"
@@ -489,7 +491,7 @@ function currentUserId(): number | null {
                                     v-if="form.avatar"
                                     type="button"
                                     class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-                                    @click="clearAvatarSelection($event.currentTarget.closest('div')?.querySelector('input[type=file]') as HTMLInputElement)"
+                                    @click="clearAvatarSelection(avatarInput.value)"
                                 >
                                     لغو انتخاب
                                 </button>
