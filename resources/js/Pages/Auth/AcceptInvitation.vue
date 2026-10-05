@@ -4,6 +4,7 @@ import { Head, useForm } from '@inertiajs/vue3';
 const props = defineProps<{
     token: string;
     email: string;
+    username: string;
     name: string;
 }>();
 
@@ -26,6 +27,7 @@ function submit(): void {
                 <p class="text-xs font-semibold text-teal-600">Office Automation</p>
                 <h1 class="mt-2 text-2xl font-black text-slate-900">فعال‌سازی حساب</h1>
                 <p class="mt-2 text-sm text-slate-500">{{ props.name }}</p>
+                <p dir="ltr" class="mt-1 text-xs text-teal-600">@{{ props.username }}</p>
                 <p dir="ltr" class="mt-1 text-xs text-slate-400">{{ props.email }}</p>
             </div>
 
