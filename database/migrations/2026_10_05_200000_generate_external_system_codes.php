@@ -2,11 +2,19 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
 
 return new class extends Migration
 {
     public function up(): void
     {
+        if (! Schema::hasColumn('external_contacts', 'code')) {
+            Schema::table('external_contacts', function (Blueprint $table): void {
+                $table->string('code', 100)->nullable();
+            });
+        }
+
         $this->backfill('external_organizations', 'EXTORG');
         $this->backfill('external_departments', 'EXTDPT');
         $this->backfill('external_contacts', 'EXTCNT');
