@@ -13,8 +13,7 @@ class StoreCustomFieldRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'entity_type' => ['required', 'string', 'max:255'],
-            'key' => ['required', 'string', 'max:100', 'regex:/^[a-z][a-z0-9_]*$/'],
+            'entity_type' => ['required', 'string', Rule::in(array_keys(CustomFieldService::supportedEntities()))],
             'label' => ['required', 'string', 'max:150'],
             'type' => ['required', Rule::in(CustomFieldService::supportedTypes())],
             'is_required' => ['boolean'],
