@@ -15,6 +15,10 @@ use InvalidArgumentException;
 
 class ReviewTaskAction
 {
+    public function __construct(private readonly AuditServiceInterface $audit)
+    {
+    }
+
     public function approve(Task $task, User $reviewer): Task
     {
         $this->authorizeReviewer($task, $reviewer);
@@ -44,6 +48,7 @@ class ReviewTaskAction
             $task = $task->refresh()->load(['project', 'department', 'assignee', 'creator', 'reviewedBy']);
 
             TaskApproved::dispatch($task);
+            $this->audit->record('task.approved', $task, ['status' => 'submitted', 'review_status' => 'pending'], ['status' => $task->status, 'review_status' => $task->review_status, 'review_note' => $task->review_note]);
 
             return $task;
         });
@@ -78,6 +83,7 @@ class ReviewTaskAction
             $task = $task->refresh()->load(['project', 'department', 'assignee', 'creator', 'reviewedBy']);
 
             TaskReturned::dispatch($task);
+            $this->audit->record('task.returned', $task, ['status' => 'submitted', 'review_status' => 'pending'], ['status' => $task->status, 'review_status' => $task->review_status, 'review_note' => $task->review_note]);
 
             return $task;
         });
