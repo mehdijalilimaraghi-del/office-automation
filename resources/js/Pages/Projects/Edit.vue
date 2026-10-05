@@ -31,7 +31,6 @@ const props = defineProps<{
 const form = useForm({
     department_id: props.project.department_id?.toString() ?? '',
     name: props.project.name,
-    code: props.project.code,
     description: props.project.description ?? '',
     status: props.project.status,
     start_date: props.project.start_date ?? '',
@@ -91,11 +90,7 @@ const submit = (): void => {
                         <p v-if="form.errors.name" class="text-sm text-destructive">{{ form.errors.name }}</p>
                     </div>
 
-                    <div class="space-y-2">
-                        <label for="code" class="text-sm font-medium">کد پروژه</label>
-                        <input id="code" v-model="form.code" type="text" class="w-full rounded-md border bg-background px-3 py-2 text-sm" />
-                        <p v-if="form.errors.code" class="text-sm text-destructive">{{ form.errors.code }}</p>
-                    </div>
+
 
                     <div class="space-y-2">
                         <label for="status" class="text-sm font-medium">وضعیت</label>
