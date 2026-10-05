@@ -20,6 +20,6 @@ class CorePermissionSeederTest extends TestCase
         $this->assertDatabaseHas('permissions', ['code' => 'roles.manage_permissions', 'is_system' => true]);
         $this->assertDatabaseHas('permissions', ['code' => 'external_parties.view', 'is_system' => true]);
 
-        $this->assertSame(42, Permission::count());
+        $this->assertSame(56, Permission::count());
     }
 }
