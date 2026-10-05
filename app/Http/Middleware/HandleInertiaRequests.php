@@ -39,6 +39,12 @@ class HandleInertiaRequests extends Middleware
                     'external_parties_view' => $request->user()?->hasPermission('external_parties.view') ?? false,
                     'notification_view' => $request->user()?->hasPermission('notifications.view') ?? false,
                     'settings_manage' => $request->user()?->hasPermission('settings.manage') ?? false,
+                    'departments_create' => $request->user()?->hasPermission('departments.create') ?? false,
+                    'departments_edit' => $request->user()?->hasPermission('departments.edit') ?? false,
+                    'departments_delete' => $request->user()?->hasPermission('departments.delete') ?? false,
+                    'departments_toggle_status' => $request->user()?->hasPermission('departments.toggle_status') ?? false,
+                    'departments_manage_positions' => $request->user()?->hasPermission('departments.manage_positions') ?? false,
+                    'users_manage_departments' => $request->user()?->hasPermission('users.manage_departments') ?? false,
                 ],
             ],
         ];
