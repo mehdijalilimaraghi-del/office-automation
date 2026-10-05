@@ -20,7 +20,6 @@ const editingRole = ref<Role | null>(null);
 
 const form = useForm({
     name: '',
-    code: '',
     description: '',
     is_active: true,
 });
@@ -56,7 +55,6 @@ const startEdit = (role: Role) => {
     editingRole.value = role;
 
     form.name = role.name;
-    form.code = role.code ?? '';
     form.description = role.description ?? '';
     form.is_active = role.is_active;
 
@@ -153,8 +151,7 @@ const toggleStatus = (role: Role) => {
                         </div>
                         <form class="space-y-5" @submit.prevent="submit">
                             <div><label for="role-name" class="mb-2 block text-sm font-semibold text-slate-700">نام نقش</label><input id="role-name" v-model="form.name" required maxlength="100" class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500" /><p v-if="form.errors.name" class="mt-1 text-xs text-red-600">{{ form.errors.name }}</p></div>
-                            <div><label for="role-code" class="mb-2 block text-sm font-semibold text-slate-700">کد نقش</label><input id="role-code" v-model="form.code" dir="ltr" maxlength="50" placeholder="PROJECT_MANAGER" class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm uppercase shadow-sm focus:border-teal-500 focus:ring-teal-500" /><p v-if="form.errors.code" class="mt-1 text-xs text-red-600">{{ form.errors.code }}</p></div>
-                            <div><label for="role-description" class="mb-2 block text-sm font-semibold text-slate-700">توضیحات</label><textarea id="role-description" v-model="form.description" rows="4" class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500"></textarea><p v-if="form.errors.description" class="mt-1 text-xs text-red-600">{{ form.errors.description }}</p></div>
+                                                        <div><label for="role-description" class="mb-2 block text-sm font-semibold text-slate-700">توضیحات</label><textarea id="role-description" v-model="form.description" rows="4" class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500"></textarea><p v-if="form.errors.description" class="mt-1 text-xs text-red-600">{{ form.errors.description }}</p></div>
                             <label class="flex items-center gap-3 rounded-2xl bg-slate-50 p-4"><input v-model="form.is_active" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500" /><span class="text-sm font-semibold text-slate-700">نقش فعال باشد</span></label>
                             <div class="flex gap-2"><button type="submit" :disabled="form.processing" class="flex-1 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50">{{ form.processing ? 'در حال ذخیره...' : editingRole ? 'ذخیره تغییرات' : 'ایجاد نقش' }}</button><button v-if="editingRole" type="button" :disabled="form.processing" class="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600" @click="cancelEdit">انصراف</button></div>
                         </form>
