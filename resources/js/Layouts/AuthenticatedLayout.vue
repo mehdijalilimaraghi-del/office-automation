@@ -99,6 +99,14 @@ const showingNavigationDropdown = ref(false);
                                 >
                                     نقش‌ها
                                 </NavLink>
+
+                                <NavLink
+                                    v-if="$page.props.auth.abilities?.settings_manage"
+                                    :href="route('settings.organization.edit')"
+                                    :active="route().current('settings.*')"
+                                >
+                                    تنظیمات سازمان
+                                </NavLink>
                             </div>
                         </div>
 
@@ -269,6 +277,14 @@ const showingNavigationDropdown = ref(false);
                             :active="route().current('roles.*')"
                         >
                             نقش‌ها
+                        </ResponsiveNavLink>
+
+                        <ResponsiveNavLink
+                            v-if="$page.props.auth.abilities?.settings_manage"
+                            :href="route('settings.organization.edit')"
+                            :active="route().current('settings.*')"
+                        >
+                            تنظیمات سازمان
                         </ResponsiveNavLink>
                     </div>
 
