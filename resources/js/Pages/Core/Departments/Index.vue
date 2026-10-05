@@ -577,7 +577,7 @@ watch(
                                                     dir="ltr"
                                                     class="rounded-full bg-white/10 px-2.5 py-1 text-[11px] text-slate-300"
                                                 >
-                                                    {{ selectedDepartment.code }}
+                                                    <span class="sr-only">کد سیستمی: </span>{{ selectedDepartment.code }}
                                                 </span>
                                             </div>
 
@@ -749,7 +749,7 @@ watch(
                                                     dir="ltr"
                                                     class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500"
                                                 >
-                                                    {{ position.code }}
+                                                    <span class="sr-only">کد سیستمی: </span>{{ position.code }}
                                                 </span>
 
                                                 <span
