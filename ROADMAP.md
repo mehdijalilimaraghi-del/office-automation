@@ -181,6 +181,10 @@ Unified operational inbox containing:
 - Task → Correspondence
 - Approval/signature workflow
 
+**Status: V1 foundation implemented / validation pending**
+
+Implemented foundation: correspondence types (incoming/outgoing/internal), registration numbering, draft/registered lifecycle, referrals, audit events, permissions, routes and initial RTL UI.
+
 **Priority: high**
 
 ### 13. Digital Archive
