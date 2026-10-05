@@ -53,6 +53,7 @@ class DepartmentService implements DepartmentServiceInterface
             ->with([
                 'parent',
                 'manager:id,name',
+                'members:id,name',
                 'positions.users:id,name',
             ])
             ->orderBy('name')
