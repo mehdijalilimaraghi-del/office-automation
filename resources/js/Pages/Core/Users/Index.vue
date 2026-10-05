@@ -485,11 +485,11 @@ function currentUserId(): number | null {
                         <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
                             <div class="flex items-center gap-3">
                                 <span class="inline-flex h-20 w-20 shrink-0 overflow-hidden rounded-full bg-white ring-1 ring-slate-200">
-                                    <img :src="avatarPreview" alt="پیش‌نمایش تصویر کاربر" class="h-full w-full object-cover" />
+                                    <img :src="avatarPreview" alt="تصویر پروفایل کاربر" class="h-full w-full object-cover" />
                                 </span>
                                 <div>
                                     <p class="text-sm font-semibold text-slate-700">تصویر پروفایل</p>
-                                    <p class="mt-1 text-xs leading-5 text-slate-500">JPG، PNG یا WEBP تا حجم ۲ مگابایت.</p>
+                                    <p class="mt-1 text-xs leading-5 text-slate-500">برای کاربر جدید تصویر پیش‌فرض نمایش داده می‌شود و در صورت داشتن تصویر قبلی، همان تصویر نمایش داده خواهد شد.</p>
                                 </div>
                             </div>
                             <div class="flex flex-wrap items-center gap-2 sm:mr-auto">
@@ -498,13 +498,25 @@ function currentUserId(): number | null {
                                     ref="avatarInput"
                                     type="file"
                                     accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                                    class="block w-full max-w-xs cursor-pointer rounded-xl border border-slate-200 bg-white text-xs text-slate-600 file:mr-3 file:border-0 file:bg-slate-900 file:px-3 file:py-2.5 file:text-xs file:font-semibold file:text-white"
+                                    class="sr-only"
                                     @change="handleAvatarChange"
                                 />
+                                <label
+                                    for="user-avatar"
+                                    class="inline-flex cursor-pointer items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-800 focus-within:ring-2 focus-within:ring-teal-500 focus-within:ring-offset-2"
+                                >
+                                    انتخاب تصویر
+                                </label>
+                                <span
+                                    class="max-w-[220px] truncate text-xs text-slate-500"
+                                    :title="form.avatar?.name || 'تصویری انتخاب نشده است'"
+                                >
+                                    {{ form.avatar?.name || 'تصویری انتخاب نشده است' }}
+                                </span>
                                 <button
                                     v-if="form.avatar"
                                     type="button"
-                                    class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                                    class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
                                     @click="clearAvatarSelection(avatarInput)"
                                 >
                                     لغو انتخاب
