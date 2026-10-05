@@ -41,6 +41,7 @@ interface Department {
     parent?: { id: number; name: string } | null;
     members?: DepartmentMember[];
     positions?: Position[];
+    children_count?: number;
 }
 
 interface User {
@@ -90,9 +91,11 @@ const selectedDepartment = computed(
         ) ?? null,
 );
 
-const childrenCount = (departmentId: number): number =>
-    props.departments.filter(
-        (department) => department.parent_id === departmentId,
+const childrenCount = (department: Department): number =>
+    department.children_count ?? props.departments.filter(
+        (child) =>
+            child.parent_id !== null &&
+            Number(child.parent_id) === department.id,
     ).length;
 
 const descendantIds = (id: number): number[] => {
@@ -141,7 +144,7 @@ const treeRows = computed(() => {
                 rows.push({
                     department,
                     depth,
-                    childCount: childrenCount(department.id),
+                    childCount: childrenCount(department),
                 });
 
                 visit(department.id, depth + 1);
@@ -232,7 +235,7 @@ const submitDepartment = () => {
 };
 
 const deleteDepartment = (department: Department) => {
-    const hasChildren = childrenCount(department.id) > 0;
+    const hasChildren = childrenCount(department) > 0;
     const warning = hasChildren
         ? '\nاین واحد دارای زیرواحد است و قوانین حذف ساختار سازمانی نیز اعمال می‌شود.'
         : '';
