@@ -146,5 +146,4 @@ class UserController extends Controller
 
         abort(403, 'برای تخصیص یا تغییر نقش کاربران، مجوز مدیریت نقش‌های کاربر لازم است.');
     }
-    }
 }
