@@ -2,245 +2,277 @@
 
 ## Product Direction
 
-The product is a Persian, RTL, modular enterprise office-automation platform.
+Office Automation is a Persian, RTL, modular enterprise office-automation platform for a single internal company.
 
-The long-term goal is to cover the company's operational processes through independent modules that share a stable backbone.
-
-The backbone is:
+The long-term product goal is to automate operational processes through independent business modules that share a stable backbone:
 
 **Identity & Organization → Cartable → Workflow → Work Items → Documents → Notifications/Audit**
 
-Projects and Tasks remain important, but they are not the architectural center of every future feature.
+Projects and Tasks are the first business capabilities, not the architectural center of every future module.
 
 ---
 
-## Phase 1 — Foundation Completion
+# Versioning Strategy
 
-### 1. Core
+The roadmap is now version-oriented.
+
+Each major version must have:
+
+1. A clear product goal.
+2. A defined feature boundary.
+3. Explicit dependencies on previous versions.
+4. Backend authorization and feature tests.
+5. Frontend build validation.
+6. Manual visual/functional acceptance.
+7. Documentation/status reconciliation before the next version starts.
+
+A later version must not silently expand the scope of an earlier version.
+
+Shared capabilities should be strengthened in the version where they are required, but their ownership must remain in Core/shared operational infrastructure rather than being duplicated inside business modules.
+
+---
+
+# V1 — Foundation & Work Management
+
+## Goal
+
+Deliver a usable internal company platform with a stable Core, organizational structure, projects, tasks, and the operational backbone required by those features.
+
+## Scope
+
+### Core / Identity
 - Authentication
-- Users
-- Profiles/contact information
-- Departments and hierarchy
-- Department memberships
+- Username-based login
+- User profiles and contact information
+- Invitation-based onboarding
+- User lifecycle and activation
 - Roles
 - Permissions
-- Authorization/scopes
-- Settings
+- Authorization and scopes
 - Custom Fields foundation
-- User onboarding lifecycle
-  - Admin-created users
-  - Department membership lifecycle
-  - Organizational position assignment
-  - Role assignment
-  - Invitation-based activation
-  - SYSTEM_ADMIN bootstrap protection
+- System bootstrap administrator
+- System administrator outside organizational membership
+- Organization settings
+- Configurable system-level settings foundation
 
-**Status: implemented / audited**
-
-Bootstrap protection regression coverage now verifies that an existing inactive user cannot be activated or assigned SYSTEM_ADMIN through the bootstrap environment settings.
-
-### 2. Organizational Structure
+### Internal Organization
+- Departments
+- Unlimited department hierarchy
+- Department memberships
+- Department managers
 - Organizational positions
 - Position assignments
 - Primary position
 - Department membership prerequisite for position assignment
+- User ↔ department management
 
-**Status: V1 implemented / audited**
-
-### 3. Projects
+### Projects
+- Project CRUD
 - Project lifecycle
-- Managers
-- Members
+- Project manager
+- Project members
 - Project roles
-- Department/default projects
-- Project permissions
+- Optional department association
+- Department-owned/default projects
+- Project access and authorization
+- Pagination
+- Project/task lifecycle boundaries
 
-**Status: implemented / audited**
-
-### 4. Tasks
+### Tasks / Work Items
 - CRUD
 - Assignment
 - Referral/history
-- Status/priority
+- Status and priority
+- Due dates
+- Project/department context
+- External follow-up context
 - Comments
 - Work logs
 - Reminders
-- Activity/history
-- Project/department context
-- External follow-up
+- Activity/timeline
+- Filtering/search
+- Pagination
 - Access scopes
+- Task lifecycle rules
+- Submit / review / approve / return / resubmit
+- Task dependencies
 
-**Status: V1 implemented / UX refinement completed / lifecycle regression suite aligned**
-
-Regression expectations are aligned with the enforced lifecycle rules: terminal tasks cannot be reopened, and the task timeline is validated newest-first.
-
-Timeline regression ordering is explicitly validated as newest-first.
-
----
-
-## Phase 2 — Operational Backbone
-
-### 5. Task Lifecycle & Review
-- Submitted state
-- Review state
-- Approve
-- Return/reject with reason
-- Resubmission
-- Separate assignment and approval concepts
-
-**Status: implemented / audited**
-
-### 6. Task Dependencies
-- Sequential dependencies
-- Completion-gated progression
-- Multiple predecessors
-- Dependency history
-- Future conditional branching
-
-**Status: implemented / audited**
-
-### 7. Documents
-- Document entity
-- Document versions
-- Document links
-- Document access
-- Metadata/type/category
-- Project documents
-- Task documents
-- Workflow documents
-- Document handoff between tasks
-- Storage abstraction
-
-**Status: implemented / audited**
-
-### 8. Workflow
-- Workflow definitions
-- Workflow instances
-- Workflow steps
-- Actor resolution
-- Sequential transitions
-- Task generation
-- Submit/approve/return
-- Transition history
-- Workflow audit
-
-**Status: V1 implemented / audited**
-
-Do not build a visual workflow designer in V1.
-
-### 9. Cartable
-Unified operational inbox containing:
-- My Tasks
-- My Approvals
-- My Referrals
-- Documents requiring action
-- Incoming correspondence
-- Future module actions
-
-**Status: V1 implemented / UX completed**
-
-### 10. Notifications
+### Operational Backbone
+- Controlled documents and task attachments
+- Document versions/links/access foundation
+- Workflow V1
+- Unified Cartable V1
 - In-app notifications
-- Task assignment notifications
-- Referral notifications
-- Approval/return notifications
-- Reminder notifications
-- Read/unread state
-- Queue-backed delivery when justified
+- Audit V1 core
+- Persian RTL/Jalali presentation foundations
 
-**Status: V1 implemented / audited**
+## Explicitly excluded from V1
+- Correspondence
+- Digital Archive as a full archive product
+- Forms & Requests engine
+- Meetings & Calendar
+- Gantt
+- Subtasks
+- Recurring tasks
+- Visual workflow designer
+- Internal Chat
+- CRM
+- Procurement
+- Inventory
+- HR
+- PBX
+- Production deployment/hardening
 
-### 11. Audit
-- Business audit trail
-- Workflow transitions
-- Document access/history
-- Administrative actions
-- Security-sensitive actions
-- Actor/IP/User-Agent capture
-- Auditable entity references
-- Before/after change payloads
-- Core User/Role/Task lifecycle coverage
+## V1 Status
 
-**Status: V1 core implemented / regression coverage aligned / expansion pending**
+**Implementation status: complete.**
+
+**Current acceptance status: manual UI/functional acceptance in progress.**
+
+Recent UI/core acceptance work includes:
+- Login UI refinement
+- Password visibility control
+- Independent username support
+- Jalali birth-date presentation
+- Standalone System Bootstrap Admin
+- Organization Settings
+- Core Settings permission
+- RTL/frontend type consistency
+
+Before V1 is formally closed, run:
+- full PHPUnit/Laravel test suite after the latest Core/Settings changes
+- frontend production build
+- final manual visual/functional acceptance
+
+No V2 implementation should begin until the V1 acceptance gate is closed.
 
 ---
 
-## Phase 3 — Office Automation
+# V2 — Office Automation
 
-### 12. Correspondence
+## Goal
+
+Turn the V1 operational backbone into a real office-automation workflow platform.
+
+## Scope
+
+### Correspondence
 - Incoming letters
 - Outgoing letters
 - Internal letters
-- Letter registration/numbering
+- Registration and numbering
+- Draft / registered lifecycle
 - Referrals
 - Instructions
 - Replies
-- Letter attachments
-- Letter archive
-- Letter → Task
-- Task → Correspondence
-- Approval/signature workflow
+- Attachments
+- Correspondence archive references
+- Correspondence ↔ Task
+- Correspondence ↔ Workflow
+- Approval/signature flow
+- Correspondence actions in Cartable
+- Correspondence notifications and audit
 
-**Status: V1 foundation implemented / validation pending**
-
-Implemented foundation: correspondence types (incoming/outgoing/internal), registration numbering, draft/registered lifecycle, referrals, audit events, permissions, routes, initial RTL UI, and Cartable integration for active correspondence referrals.
-
-**Priority: high**
-
-### 13. Digital Archive
+### Digital Archive
 - Central document archive
-- Categories
+- Document categories
 - Metadata
-- Versioning
-- Search
-- Retention
+- Version management
+- Searchable archive references
+- Retention metadata
 - Access control
-- Scan/upload
-- Archive references
+- Scan/upload integration
+- Archive links to business records
 
-**Priority: high**
+### Forms & Requests
+Generic request engine built on Workflow + Cartable + Documents:
+- Administrative requests
+- Leave requests
+- Purchase requests
+- Equipment requests
+- Approval requests
+- Request lifecycle/history
+- Request attachments
+- Approval routing
+- Notifications
 
-### 14. Forms & Requests
-Generic request engine for:
-- leave requests
-- purchase requests
-- equipment requests
-- administrative requests
-- approvals
+### Backbone hardening for V2
+- More complete document handoff
+- Better workflow actor resolution
+- Correspondence/document/task integration contracts
+- Expanded audit coverage
+- Queue-backed notification delivery where justified
 
-Built on Workflow + Cartable + Documents.
+## V2 Acceptance Gate
 
-**Priority: high**
+- Correspondence end-to-end workflow works.
+- Archive records are searchable and access-controlled.
+- Forms can use reusable workflow definitions.
+- Cartable can surface actionable correspondence/requests.
+- Existing V1 features remain regression-safe.
 
-### 15. Meetings & Calendar
+---
+
+# V3 — Collaboration & Planning
+
+## Goal
+
+Give users a complete daily workspace for planning, scheduling and collaboration around work.
+
+## Scope
+
+### Meetings & Calendar
 - Meetings
 - Invitations
 - Participants
 - Agenda
 - Minutes
 - Follow-up tasks
-- Calendar
+- Calendar views
 - Reminders
+- Calendar integration contracts
 
-**Priority: medium**
-
-### 16. My Work / Personal Workspace
-- Unified personal dashboard
+### My Work / Personal Workspace
 - My work
+- My tasks
 - My approvals
 - My referrals
 - My documents
-- Calendar
 - Recent activity
+- Calendar summary
+- Personal operational dashboard
 
-**Priority: medium**
+### Advanced Task Planning
+These were intentionally deferred from V1:
+- Board view
+- Calendar task view
+- Gantt view
+- Subtasks
+- Recurring tasks
+- Better dependency visualization
+
+### Search
+- Unified search foundation
+- Tasks
+- Projects
+- Documents
+- Correspondence
+- Requests
+- Employees
 
 ---
 
-## Phase 4 — Business Modules
+# V4 — Customer & Commercial Operations
 
-### 17. CRM
+## Goal
+
+Add customer-facing operational processes without coupling them to Core users/departments.
+
+## Scope
+
+### CRM
 - Customers
+- Customer organizations
 - Contacts
 - Leads
 - Activities
@@ -249,63 +281,138 @@ Built on Workflow + Cartable + Documents.
 - Customer tasks
 - Communication history
 
-**Priority: medium**
-
-### 18. Sales
+### Sales
 - Opportunities
-- Quotations
 - Sales pipeline
+- Quotations
 - Orders
 - Sales tasks
 - Customer approvals
+- Sales documents
+- CRM ↔ Task/Workflow integration
 
-**Priority: medium**
+## Architectural rule
 
-### 19. Procurement
+External organizations and external contacts remain separate from authenticated internal Users and internal Departments.
+
+---
+
+# V5 — Procurement, Inventory & Assets
+
+## Goal
+
+Automate material purchasing and resource ownership/maintenance.
+
+## Scope
+
+### Procurement
 - Purchase requests
 - Supplier management
 - RFQ
-- Quotations
+- Supplier quotations
 - Purchase orders
 - Approval workflow
 - Procurement documents
+- Procurement tasks
 
-**Priority: medium**
-
-### 20. Inventory & Assets
+### Inventory
 - Warehouses
 - Items
 - Stock movements
+- Inventory balances
+- Stock requests
+- Inventory documents
+
+### Assets
 - Asset registry
 - Asset assignment
 - Maintenance
-- Documents
+- Asset history
+- Asset documents
 - Approval workflows
 
-**Priority: medium**
+## Architectural rule
 
-### 21. HR
+Procurement and Inventory must use the existing Workflow, Documents, Cartable and Audit backbone rather than creating parallel approval/document systems.
+
+---
+
+# V6 — HR & Internal Collaboration
+
+## Goal
+
+Complete employee-oriented automation and internal communication.
+
+## Scope
+
+### HR
 - Employee records
-- Organizational positions
+- Employment information
+- Organizational positions integration
 - Employment documents
 - Leave
 - Attendance
 - Personnel requests
 - HR workflows
+- Employee history
 
-**Priority: medium**
-
-### 22. Internal Chat
+### Internal Chat
 - Private chat
 - Group chat
 - Department channels
 - File sharing
 - Task/document references
 - Realtime messaging
+- Notifications
 
-**Priority: later**
+---
 
-### 23. Telephony / PBX
+# V7 — Intelligence, Automation & Integrations
+
+## Goal
+
+Move from workflow digitization to cross-module intelligence and automation.
+
+## Scope
+
+### Reporting & Analytics
+- Operational reports
+- Task performance
+- Workflow bottlenecks
+- Department performance
+- SLA reports
+- Correspondence reports
+- CRM reports
+- Cross-module dashboards
+
+### SLA & Escalation
+- SLA policies
+- Due-date rules
+- Escalation
+- Manager notifications
+- Overdue escalation
+- Workflow timeout
+
+### Automation Rules
+Event-driven automation such as:
+- Task completed → create next task
+- Document approved → advance workflow
+- Letter registered → create task
+- Request approved → notify requester
+- SLA exceeded → escalate
+
+### Integrations
+Driver-based integrations for:
+- Email
+- SMS
+- Storage
+- Printer/scanner
+- Calendar
+- External APIs
+- SSO / identity providers
+- PBX / Asterisk
+
+### Telephony / PBX
 - Extensions
 - Call logs
 - Call history
@@ -316,92 +423,37 @@ Built on Workflow + Cartable + Documents.
 - Call-to-customer linking
 - Call-to-task linking
 
-**Priority: later**
-
 ---
 
-## Phase 5 — Platform Intelligence
+# V8 — Production & Enterprise Readiness
 
-### 24. Reporting & Analytics
-- Operational reports
-- Task performance
-- Workflow bottlenecks
-- Department performance
-- SLA reports
-- Correspondence reports
-- CRM reports
-- Cross-module dashboards
+## Goal
 
-**Priority: medium/later**
+Prepare the platform for serious production deployment and long-term operation.
 
-### 25. Search
-Unified search across:
-- Tasks
-- Projects
-- Documents
-- Correspondence
-- Customers
-- Employees
-- Requests
+## Scope
 
-**Priority: medium**
-
-### 26. SLA & Escalation
-- Due dates
-- SLA policies
-- Escalation rules
-- Manager notifications
-- Overdue escalation
-- Workflow timeout
-
-**Priority: later**
-
-### 27. Automation Rules
-Event-driven automation such as:
-- task completed → create next task
-- document approved → move workflow forward
-- letter registered → create task
-- request approved → notify requester
-- SLA exceeded → escalate
-
-**Priority: later**
-
-### 28. Integrations
-Driver-based integrations for:
-- Email
-- SMS
-- Storage
-- Printer/scanner
-- Calendar
-- PBX
-- external APIs
-- SSO/identity providers
-
-**Priority: later**
-
----
-
-## Phase 6 — Production & Enterprise Readiness
-
-### 29. Security
+### Security
 - Authorization review
 - File access review
-- Rate limiting
 - Session/security hardening
-- Audit review
+- Rate limiting review
+- Audit/security review
 - Dependency/security scanning
 
-### 30. Performance
+### Performance
 - SQL Server query optimization
-- indexes
-- caching
-- queues
-- large-file handling
-- large-list pagination
-- background processing
+- Index review
+- Caching
+- Queues
+- Large-file handling
+- Large-list pagination
+- Background processing
 
-### 31. Deployment & Operations
+### Deployment & Operations
 - Production configuration
+- LAN deployment
+- VPS/cloud deployment
 - Backup/restore
 - Logging
 - Monitoring
@@ -409,10 +461,10 @@ Driver-based integrations for:
 - Scheduler
 - Storage strategy
 - Deployment procedure
-- LAN/VPS/cloud deployment guides
+- Upgrade procedure
 
-### 32. Reliability
-- Integration tests
+### Reliability
+- Critical integration tests
 - Critical end-to-end tests
 - Failure/retry handling
 - Queue retry policies
@@ -421,67 +473,88 @@ Driver-based integrations for:
 
 ---
 
-## Modules We Intentionally Do Not Plan as Core
+# Cross-Version Architectural Rules
 
-The platform should not become a replacement for every specialized ERP.
+These rules apply to every version:
 
-The following are outside the current product boundary unless a concrete business requirement changes the decision:
+1. Core remains responsible for identity, internal organization, roles, permissions and shared settings.
+2. Business modules own their own data and rules.
+3. Internal users and departments must never be merged with external organizations and contacts.
+4. Workflow, Documents, Cartable, Notifications and Audit are shared capabilities and must not be duplicated per module.
+5. Cross-module communication uses explicit contracts/services/events where appropriate.
+6. Backend authorization is mandatory; frontend permissions are UX only.
+7. Modules must not directly manipulate another module's internal data.
+8. No major architectural change may be introduced silently.
+9. New dependencies require an explicit architectural reason.
+10. Every version must preserve regression coverage for previous versions.
 
-- Full accounting/GL
+---
+
+# Release Acceptance Model
+
+A version is not considered complete merely because its CRUD/UI exists.
+
+A version closes only when all of the following are true:
+
+- Domain and business rules are implemented.
+- Backend authorization is enforced.
+- Required feature/regression tests pass.
+- Frontend production build passes.
+- RTL/Persian/Jalali presentation is reviewed where applicable.
+- Main user journeys are manually accepted.
+- Documentation matches the repository.
+- Deferred items are explicitly recorded rather than silently left unfinished.
+
+---
+
+# Current Position — 2026-10-05
+
+**Current version: V1 — Foundation & Work Management**
+
+V1 implementation is complete.
+
+The project is currently in the **V1 manual acceptance / UI refinement checkpoint**.
+
+The next official product version is:
+
+**V2 — Office Automation**
+
+Its first module is **Correspondence**, but Correspondence must be implemented as a new V2 module on top of the already-built V1 backbone. No old/partial Correspondence implementation should be treated as V1 functionality.
+
+---
+
+# Implementation Order
+
+The implementation order is now version-based:
+
+1. **V1 — Foundation & Work Management**
+2. **V2 — Office Automation**
+3. **V3 — Collaboration & Planning**
+4. **V4 — Customer & Commercial Operations**
+5. **V5 — Procurement, Inventory & Assets**
+6. **V6 — HR & Internal Collaboration**
+7. **V7 — Intelligence, Automation & Integrations**
+8. **V8 — Production & Enterprise Readiness**
+
+Within each version, implementation remains incremental:
+
+**Inspect → Design/Boundary Review → Smallest Coherent Change → Test → Build → Manual Acceptance → Documentation → Next Item**
+
+Do not start a new module merely because it appears later in this document. Work proceeds from the current version's acceptance gate.
+
+---
+
+# Modules Intentionally Outside the Product Boundary
+
+The platform is not intended to replace every specialized ERP.
+
+Unless a concrete business requirement changes the decision, these remain outside Core/product scope:
+
+- Full accounting / GL
 - Payroll accounting
-- Manufacturing/MRP
-- Complex warehouse ERP
+- Manufacturing / MRP
+- Complex ERP warehouse accounting
 - Banking
 - Full legal practice management
 
-If required later, these should integrate with the platform rather than distort the Core/Workflow/Document architecture.
-
----
-
-## Repository Checkpoint — 2026-10-05
-
-The development branch was reviewed before starting Correspondence.
-
-Confirmed from the repository:
-- Audit V1 Core is implemented and its current Role integration coverage is in place.
-- Documents V1 foundation is implemented, including document/version/link/access models and filesystem storage abstraction.
-- Workflow V1 is implemented with definitions, steps, instances and task progression services.
-- Unified Cartable V1 is implemented as an aggregation surface and does not own module business records.
-- Notifications V1 is implemented.
-- The remaining historical Phase/Development notes have been reconciled with the current enterprise roadmap.
-- Correspondence is the next business module and must build on these shared capabilities rather than duplicate them.
-
-The next implementation work is therefore Correspondence V1 design and implementation, beginning with repository-level domain/boundary review before code changes.
-
----
-
-## Implementation Order
-
-The implementation sequence is currently:
-
-1. Core identity & organization foundation
-2. User onboarding lifecycle
-3. Custom Fields foundation and User integration
-4. Task lifecycle review/approval
-5. Task dependencies
-6. Document foundation
-7. Workflow V1
-8. Unified Cartable
-9. Notifications
-10. Audit V1 core
-11. Correspondence
-12. Digital Archive
-13. Forms & Requests
-14. Meetings & Calendar
-15. CRM
-16. Procurement
-17. Inventory & Assets
-18. HR
-19. Reporting/Search/SLA
-20. Internal Chat
-21. PBX and external integrations
-22. Production hardening
-
-Completed items remain documented in their respective phase; new work must update this roadmap in the same change set.
-
-The exact priority of business modules may change with company requirements, but the shared backbone must be implemented before adding many independent business modules.
+Such systems should integrate with Office Automation rather than distort the Core/Workflow/Documents architecture.
