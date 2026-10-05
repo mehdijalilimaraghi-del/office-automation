@@ -88,10 +88,10 @@ class TaskTimelineTest extends TestCase
 
         $this->assertCount(5, $timeline);
         $this->assertSame(
-            ['comment', 'reminder', 'work_log', 'status', 'assignment'],
+            ['reminder', 'comment', 'work_log', 'status', 'assignment'],
             array_column($timeline, 'type'),
         );
-        $this->assertSame('نظر', $timeline[0]['title']);
-        $this->assertSame('یادآور: پیگیری نهایی', $timeline[1]['title']);
+        $this->assertSame('یادآور: پیگیری نهایی', $timeline[0]['title']);
+        $this->assertSame('نظر', $timeline[1]['title']);
     }
 }
