@@ -47,7 +47,6 @@ class CreateProjectAction
                 $project = Project::query()->create([
                     'department_id' => $data['department_id'] ?? null,
                     'name' => $data['name'],
-                    'code' => $data['code'],
                     'description' => $data['description'] ?? null,
                     'status' => $data['status'] ?? 'planning',
                     'start_date' => $data['start_date'] ?? null,
