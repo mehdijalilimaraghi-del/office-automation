@@ -55,24 +55,28 @@ class TaskTimelineTest extends TestCase
             'changed_at' => $now->copy()->subMinutes(8),
         ]);
 
-        TaskWorkLog::query()->create([
+        $workLog = TaskWorkLog::query()->create([
             'task_id' => $task->id,
             'user_id' => $user->id,
             'title' => 'پیگیری فنی',
             'description' => 'بررسی انجام شد.',
+        ]);
+        $workLog->forceFill([
             'created_at' => $now->copy()->subMinutes(6),
             'updated_at' => $now->copy()->subMinutes(6),
-        ]);
+        ])->save();
 
-        TaskComment::query()->create([
+        $comment = TaskComment::query()->create([
             'task_id' => $task->id,
             'user_id' => $user->id,
             'body' => 'نیاز به بررسی بیشتر دارد.',
+        ]);
+        $comment->forceFill([
             'created_at' => $now->copy()->subMinutes(4),
             'updated_at' => $now->copy()->subMinutes(4),
-        ]);
+        ])->save();
 
-        TaskReminder::query()->create([
+        $reminder = TaskReminder::query()->create([
             'task_id' => $task->id,
             'user_id' => $user->id,
             'created_by' => $user->id,
@@ -80,9 +84,11 @@ class TaskTimelineTest extends TestCase
             'description' => 'فردا بررسی شود.',
             'remind_at' => $now->copy()->addHour(),
             'status' => 'pending',
+        ]);
+        $reminder->forceFill([
             'created_at' => $now->copy()->subMinutes(2),
             'updated_at' => $now->copy()->subMinutes(2),
-        ]);
+        ])->save();
 
         $timeline = app(TaskTimelineService::class)->build($task);
 
