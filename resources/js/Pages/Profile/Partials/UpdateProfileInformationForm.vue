@@ -3,6 +3,7 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
+import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import { Link, useForm, usePage } from '@inertiajs/vue3';
 
 defineProps<{
@@ -27,6 +28,7 @@ type ProfileUser = typeof page.props.auth.user & {
 const user = page.props.auth.user as ProfileUser;
 
 const form = useForm({
+    username: user.username,
     first_name: user.profile?.first_name ?? '',
     last_name: user.profile?.last_name ?? '',
     employee_code: user.profile?.employee_code ?? '',
@@ -78,7 +80,12 @@ function submit(): void {
                 </div>
             </div>
 
-            <div class="grid gap-4 sm:grid-cols-2">
+            <div class="grid gap-4 sm:grid-cols-3">
+                <div>
+                    <InputLabel for="username" value="نام کاربری" />
+                    <TextInput id="username" v-model="form.username" dir="ltr" class="mt-1 block w-full text-left" autocomplete="email" />
+                    <InputError class="mt-1" :message="form.errors.username" />
+                </div>
                 <div>
                     <InputLabel for="first_name" value="نام" />
                     <TextInput id="first_name" v-model="form.first_name" class="mt-1 block w-full" autocomplete="given-name" />
@@ -106,7 +113,7 @@ function submit(): void {
 
             <div>
                 <InputLabel for="birth_date" value="تاریخ تولد" />
-                <TextInput id="birth_date" v-model="form.birth_date" type="date" class="mt-1 block w-full" />
+                <JalaliDatePicker v-model="form.birth_date" placeholder="انتخاب تاریخ تولد" />
                 <InputError class="mt-1" :message="form.errors.birth_date" />
             </div>
 
