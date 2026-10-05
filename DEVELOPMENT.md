@@ -86,33 +86,32 @@ Planned work:
 
 ---
 
-### Phase 5  Dashboard
+### Phase 5  Operational Backbone
 
-Current phase.
+Completed in the current repository:
 
-Planned work:
+- Task lifecycle review/approval
+- Task dependencies
+- Document foundation
+- Workflow V1
+- Unified Cartable
+- Notifications
+- Audit V1 core
 
-- My Tasks
-- Today's Tasks
-- Overdue Tasks
-- Active Projects
-- Completed Tasks
-- Basic statistics
+The next planned business module is Correspondence, after the shared backbone has been verified and the repository/docs checkpoint is reconciled.
 
 ---
 
-### Phase 6  Stabilization
+### Phase 6  Office Automation
 
-Planned work:
+Current target:
 
-- Security review
-- Testing
-- Performance
-- RTL review
-- Persian UI review
-- Responsive UI
-- Error handling
-- Production readiness
+- Correspondence
+- Digital Archive
+- Forms & Requests
+- Meetings & Calendar
+
+Correspondence is the next business-module implementation. It must consume the existing Core, Documents, Workflow, Cartable, Notifications and Audit capabilities rather than recreate them.
 
 ---
 
