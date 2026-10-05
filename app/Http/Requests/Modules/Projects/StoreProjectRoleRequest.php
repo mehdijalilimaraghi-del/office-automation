@@ -15,8 +15,6 @@ class StoreProjectRoleRequest extends FormRequest
 
     public function rules(): array
     {
-        $project = $this->route('project');
-
         return [
             'name' => ['required', 'string', 'max:150'],
                         'description' => ['nullable', 'string'],
