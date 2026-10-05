@@ -101,6 +101,37 @@ class UserControllerTest extends TestCase
     }
 
 
+    public function test_user_can_have_at_most_one_user_role(): void
+    {
+        $admin = User::factory()->create();
+        $this->grantPermissions($admin, ['users.create', 'users.manage_roles']);
+
+        $firstRole = $this->role();
+        $secondRole = Role::create([
+            'name' => 'Second Test Role',
+            'code' => 'SECOND_TEST_ROLE',
+            'description' => null,
+            'is_active' => true,
+            'is_system' => false,
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('users.store'), [
+            'name' => 'Multi Role User',
+            'username' => 'multi-role-user',
+            'email' => 'multi-role-user@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'status' => 'active',
+            'role_ids' => [$firstRole->id, $secondRole->id],
+        ]);
+
+        $response->assertSessionHasErrors('role_ids');
+
+        $this->assertDatabaseMissing('users', [
+            'username' => 'multi-role-user',
+        ]);
+    }
+
     public function test_user_can_be_created_with_avatar_when_actor_has_role_management_access(): void
     {
         Storage::fake('public');
