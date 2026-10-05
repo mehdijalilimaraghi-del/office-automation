@@ -150,7 +150,7 @@ class DepartmentControllerTest extends TestCase
                 'name' => 'فناوری اطلاعات',
                 'code' => 'IT',
                 'description' => 'واحد فناوری اطلاعات',
-                'icon' => 'monitor',
+                'icon' => 'handshake',
                 'parent_id' => null,
                 'is_active' => true,
             ]
@@ -160,7 +160,7 @@ class DepartmentControllerTest extends TestCase
 
         $this->assertDatabaseHas('departments', [
             'name' => 'فناوری اطلاعات',
-            'icon' => 'monitor',
+            'icon' => 'handshake',
         ]);
     }
 
