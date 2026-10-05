@@ -14,8 +14,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
-class Project extends Model$2
-    use HasFactory;
+class Project extends Model
+{
+    use HasSystemCode;
+
+use HasFactory;
 
     protected static function systemCodePrefix(): string
     {
