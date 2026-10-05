@@ -2,6 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 
 interface Department {
     id: number;
@@ -37,6 +38,7 @@ interface CustomField {
 interface User {
     id: number;
     name: string;
+    username: string;
     email: string;
     profile: UserProfile | null;
     mobile: string | null;
@@ -73,6 +75,7 @@ const membershipForm = useForm({
 
 const form = useForm({
     name: '',
+    username: '',
     email: '',
     mobile: '',
     phone: '',
@@ -113,6 +116,7 @@ function openEdit(user: User): void {
     form.clearErrors();
 
     form.name = user.name;
+    form.username = user.username;
     form.email = user.email;
     form.first_name = user.profile?.first_name ?? '';
     form.last_name = user.profile?.last_name ?? '';
@@ -329,7 +333,8 @@ function currentUserId(): number | null {
                                             <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 font-bold text-teal-700">{{ user.name.charAt(0) }}</div>
                                             <div class="min-w-0">
                                                 <div class="font-semibold text-slate-900">{{ user.name }}</div>
-                                                <div dir="ltr" class="truncate text-xs text-slate-500 text-right">{{ user.email }}</div>
+                                                <div dir="ltr" class="truncate text-xs text-slate-500 text-right">@{{ user.username }}</div>
+                                                <div dir="ltr" class="truncate text-xs text-slate-400 text-right">{{ user.email }}</div>
                                             </div>
                                         </div>
                                     </td>
@@ -387,6 +392,11 @@ function currentUserId(): number | null {
                             <p v-if="form.errors.name" class="mt-1 text-xs text-red-600">{{ form.errors.name }}</p>
                         </div>
                         <div>
+                            <label class="mb-1.5 block text-sm font-semibold text-slate-700">نام کاربری</label>
+                            <input v-model="form.username" dir="ltr" type="text" maxlength="50" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" />
+                            <p v-if="form.errors.username" class="mt-1 text-xs text-red-600">{{ form.errors.username }}</p>
+                        </div>
+                        <div>
                             <label class="mb-1.5 block text-sm font-semibold text-slate-700">ایمیل</label>
                             <input v-model="form.email" dir="ltr" type="email" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" />
                             <p v-if="form.errors.email" class="mt-1 text-xs text-red-600">{{ form.errors.email }}</p>
@@ -399,7 +409,11 @@ function currentUserId(): number | null {
                     </div>
                     <div class="grid gap-4 md:grid-cols-3">
                         <div><label class="mb-1.5 block text-sm font-semibold text-slate-700">کد ملی</label><input v-model="form.national_id" dir="ltr" type="text" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" /><p v-if="form.errors.national_id" class="mt-1 text-xs text-red-600">{{ form.errors.national_id }}</p></div>
-                        <div><label class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ تولد</label><input v-model="form.birth_date" type="date" class="w-full rounded-xl border-slate-200 bg-slate-50/50 focus:border-teal-500 focus:ring-teal-500" /><p v-if="form.errors.birth_date" class="mt-1 text-xs text-red-600">{{ form.errors.birth_date }}</p></div>
+                        <div>
+                            <label class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ تولد</label>
+                            <JalaliDatePicker v-model="form.birth_date" placeholder="انتخاب تاریخ تولد" />
+                            <p v-if="form.errors.birth_date" class="mt-1 text-xs text-red-600">{{ form.errors.birth_date }}</p>
+                        </div>
                         <div></div>
                     </div>
                     <div class="grid gap-4 md:grid-cols-3">
