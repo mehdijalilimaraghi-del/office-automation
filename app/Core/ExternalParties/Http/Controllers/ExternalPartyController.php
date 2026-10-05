@@ -38,7 +38,7 @@ class ExternalPartyController extends Controller
 
     public function updateOrganization(Request $request, ExternalOrganization $organization): RedirectResponse
     {
-        $data = $request->validate(['name'=>['required','string','max:255'],'code'=>['nullable','string','max:100'],'phone'=>['nullable','string','max:50'],'email'=>['nullable','email','max:255'],'address'=>['nullable','string'],'status'=>['required','in:active,inactive']]);
+        $data = $request->validate(['name'=>['required','string','max:255'],'custom_fields'=>['nullable','array'],'phone'=>['nullable','string','max:50'],'email'=>['nullable','email','max:255'],'address'=>['nullable','string'],'status'=>['required','in:active,inactive']]);
         $this->service->updateOrganization($organization,$data); return back()->with('success','سازمان خارجی ویرایش شد.');
     }
 
@@ -46,7 +46,7 @@ class ExternalPartyController extends Controller
 
     public function storeDepartment(Request $request): RedirectResponse
     {
-        $data=$request->validate(['external_organization_id'=>['required','exists:external_organizations,id'],'parent_id'=>['nullable','exists:external_departments,id'],'name'=>['required','string','max:255'],'code'=>['nullable','string','max:100'],'phone'=>['nullable','string','max:50'],'extension'=>['nullable','string','max:20'],'email'=>['nullable','email','max:255'],'status'=>['required','in:active,inactive']]);
+        $data=$request->validate(['external_organization_id'=>['required','exists:external_organizations,id'],'parent_id'=>['nullable','exists:external_departments,id'],'name'=>['required','string','max:255'],'custom_fields'=>['nullable','array'],'phone'=>['nullable','string','max:50'],'extension'=>['nullable','string','max:20'],'email'=>['nullable','email','max:255'],'status'=>['required','in:active,inactive']]);
         $this->service->createDepartment($data); return back()->with('success','واحد خارجی ایجاد شد.');
     }
 
