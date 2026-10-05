@@ -4,7 +4,7 @@ import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import JalaliDateTimePicker from '@/Components/JalaliDateTimePicker.vue';
 import { formatPersianDate, formatPersianDateTime } from '@/Utils/date';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 interface User { id: number; name: string; }
 interface ExternalOrganizationOption { id: number; name: string; }
@@ -37,6 +37,7 @@ interface Task {
     externalContact: ExternalContactOption | null;
     project: { id: number; name: string } | null;
     reminders: Reminder[];
+    documents: TaskDocument[];
 }
 interface TimelineItem {
     type: string;
@@ -51,8 +52,26 @@ interface Abilities {
     log_work: boolean;
     create_reminder: boolean;
     change_status: boolean;
+    submit: boolean;
+    review: boolean;
     update: boolean;
     delete: boolean;
+    documents_create: boolean;
+}
+
+interface TaskDocument {
+    id: number;
+    purpose: string | null;
+    document: {
+        id: number;
+        title: string;
+        document_type: string | null;
+        latest_version: {
+            original_name: string;
+            mime_type: string | null;
+            size: number;
+        } | null;
+    } | null;
 }
 
 const props = defineProps<{
@@ -76,6 +95,12 @@ const referralForm = useForm({ assignee_id: '', note: '' });
 const statusForm = useForm({ status: props.task.status });
 const reminderStatusForm = useForm({ status: '' as 'completed' | 'cancelled' | '' });
 const deleteForm = useForm({});
+const documentForm = useForm({
+    title: '',
+    document_type: '',
+    file: null as File | null,
+});
+const documentFileInput = ref<HTMLInputElement | null>(null);
 const editForm = useForm({
     title: props.task.title,
     description: props.task.description ?? '',
@@ -151,6 +176,39 @@ const submitReminder = (): void => {
         onSuccess: () => reminderForm.reset('title', 'description', 'remind_at'),
     });
 };
+
+const handleDocumentFileChange = (event: Event): void => {
+    const input = event.target as HTMLInputElement;
+
+    documentForm.file = input.files?.[0] ?? null;
+
+    if (documentForm.file && documentForm.title === '') {
+        documentForm.title = documentForm.file.name;
+    }
+};
+
+const submitDocument = (): void => {
+    documentForm.post(route('tasks.documents.store', props.task.id), {
+        preserveScroll: true,
+        forceFormData: true,
+        onSuccess: () => {
+            documentForm.reset();
+            documentForm.clearErrors();
+
+            if (documentFileInput.value) {
+                documentFileInput.value.value = '';
+            }
+        },
+    });
+};
+
+const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return String(bytes) + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+};
+
 const submitEdit = (): void => {
     editForm.put(route('tasks.update', props.task.id), {
         preserveScroll: true,
@@ -460,6 +518,77 @@ const formatDateTime = formatPersianDateTime;
                             <button type="submit" :disabled="reminderForm.processing" class="h-10 rounded-lg bg-gray-900 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
                                 {{ reminderForm.processing ? 'در حال ایجاد...' : 'ایجاد یادآور' }}
                             </button>
+                        </form>
+                    </section>
+
+                    <section class="overflow-hidden rounded-xl border bg-card shadow-sm">
+                        <div class="border-b bg-gray-50/70 px-5 py-4 sm:px-6">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <h3 class="font-semibold text-gray-900">پیوست‌ها</h3>
+                                    <p class="mt-1 text-sm text-muted-foreground">فایل‌های مرتبط با این تسک</p>
+                                </div>
+                                <span class="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-200">
+                                    {{ task.documents.length }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div v-if="task.documents.length" class="divide-y">
+                            <div v-for="link in task.documents" :key="link.id" class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+                                <div class="min-w-0">
+                                    <p class="truncate font-medium text-gray-900">
+                                        {{ link.document?.title ?? 'سند' }}
+                                    </p>
+                                    <p v-if="link.document?.latest_version" class="mt-1 text-xs text-muted-foreground">
+                                        {{ link.document.latest_version.original_name }}
+                                        <span class="mx-1">·</span>
+                                        {{ formatFileSize(link.document.latest_version.size) }}
+                                    </p>
+                                </div>
+                                <a
+                                    v-if="link.document"
+                                    :href="route('documents.download', link.document.id)"
+                                    class="shrink-0 rounded-lg border bg-white px-3.5 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
+                                >
+                                    دریافت فایل
+                                </a>
+                            </div>
+                        </div>
+
+                        <div v-else class="px-5 py-8 text-center text-sm text-muted-foreground sm:px-6">
+                            هنوز فایلی برای این تسک پیوست نشده است.
+                        </div>
+
+                        <form v-if="abilities.documents_create" class="grid gap-4 border-t p-5 sm:p-6 md:grid-cols-2" @submit.prevent="submitDocument">
+                            <div>
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700">عنوان فایل</label>
+                                <input v-model="documentForm.title" type="text" required maxlength="255" class="h-10 w-full rounded-lg border bg-background px-3 text-sm shadow-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200" placeholder="عنوان پیوست" />
+                                <p v-if="documentForm.errors.title" class="mt-1.5 text-xs text-red-600">{{ documentForm.errors.title }}</p>
+                            </div>
+                            <div>
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700">نوع سند</label>
+                                <input v-model="documentForm.document_type" type="text" maxlength="100" class="h-10 w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200" placeholder="مثلاً گزارش، نقشه، قرارداد" />
+                                <p v-if="documentForm.errors.document_type" class="mt-1.5 text-xs text-red-600">{{ documentForm.errors.document_type }}</p>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700">فایل</label>
+                                <input
+                                    ref="documentFileInput"
+                                    type="file"
+                                    required
+                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip"
+                                    class="block w-full rounded-lg border bg-background px-3 py-2 text-sm"
+                                    @change="handleDocumentFileChange"
+                                />
+                                <p class="mt-1.5 text-xs text-muted-foreground">حداکثر ۲۰ مگابایت</p>
+                                <p v-if="documentForm.errors.file" class="mt-1.5 text-xs text-red-600">{{ documentForm.errors.file }}</p>
+                            </div>
+                            <div class="md:col-span-2">
+                                <button type="submit" :disabled="documentForm.processing" class="h-10 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
+                                    {{ documentForm.processing ? 'در حال بارگذاری...' : 'پیوست فایل' }}
+                                </button>
+                            </div>
                         </form>
                     </section>
 
