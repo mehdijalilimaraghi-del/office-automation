@@ -20,35 +20,13 @@ class UpdateProjectRoleAction
         }
 
         $name = trim((string) ($data['name'] ?? $role->name));
-        $code = trim((string) ($data['code'] ?? $role->code));
-
         if ($name === '') {
             throw new InvalidArgumentException(
                 'نام نقش پروژه الزامی است.'
             );
         }
-
-        if ($code === '') {
-            throw new InvalidArgumentException(
-                'کد نقش پروژه الزامی است.'
-            );
-        }
-
-        $exists = ProjectRole::query()
-            ->where('project_id', $role->project_id)
-            ->where('code', $code)
-            ->whereKeyNot($role->id)
-            ->exists();
-
-        if ($exists) {
-            throw new InvalidArgumentException(
-                'این کد نقش قبلاً در این پروژه استفاده شده است.'
-            );
-        }
-
         $role->update([
             'name' => $name,
-            'code' => $code,
             'description' => $data['description'] ?? $role->description,
         ]);
 
