@@ -3,6 +3,7 @@
 namespace App\Core\Roles\Models;
 
 use App\Core\Permissions\Models\Permission;
+use App\Core\CustomFields\Models\CustomFieldValue;
 use App\Models\Concerns\HasSystemCode;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -20,6 +21,12 @@ class Role extends Model
     protected function shouldGenerateSystemCode(): bool
     {
         return ! $this->is_system;
+    }
+
+    public function customFieldValues(): HasMany
+    {
+        return $this->hasMany(CustomFieldValue::class, 'entity_id')
+            ->where('entity_type', self::class);
     }
 
     protected $fillable = [
