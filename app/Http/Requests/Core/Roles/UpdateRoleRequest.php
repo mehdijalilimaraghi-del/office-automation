@@ -4,6 +4,7 @@ namespace App\Http\Requests\Core\Roles;
 
 use App\Core\Roles\Models\Role;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateRoleRequest extends FormRequest
 {
@@ -26,7 +27,6 @@ class UpdateRoleRequest extends FormRequest
                     ->ignore($role->id),
             ],
 
-            
             'description' => [
                 'nullable',
                 'string',
@@ -43,7 +43,7 @@ class UpdateRoleRequest extends FormRequest
     {
         return [
             'name' => 'نام نقش',
-                        'description' => 'توضیحات',
+            'description' => 'توضیحات',
             'is_active' => 'وضعیت فعال بودن',
         ];
     }
