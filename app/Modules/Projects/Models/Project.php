@@ -3,6 +3,7 @@
 namespace App\Modules\Projects\Models;
 
 use App\Core\Departments\Models\Department;
+use App\Models\Concerns\HasSystemCode;
 use App\Models\User;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Documents\Models\DocumentLink;
@@ -13,9 +14,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
-class Project extends Model
-{
+class Project extends Model$2
     use HasFactory;
+
+    protected static function systemCodePrefix(): string
+    {
+        return 'PRJ';
+    }
 
     protected $fillable = [
         'department_id',
