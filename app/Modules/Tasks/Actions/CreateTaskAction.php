@@ -3,6 +3,7 @@
 namespace App\Modules\Tasks\Actions;
 
 use App\Models\User;
+use App\Core\CustomFields\Services\CustomFieldService;
 use App\Core\ExternalParties\Contracts\ExternalPartyServiceInterface;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Tasks\Models\Task;
@@ -82,6 +83,8 @@ class CreateTaskAction
                 'completed_at' => ($data['status'] ?? 'todo') === 'completed' ? now() : null,
                 'is_active' => $data['is_active'] ?? true,
             ]);
+
+            $this->customFieldService->sync($task, $data['custom_fields'] ?? []);
 
             if ($assignee !== null) {
                 TaskAssignment::query()->create([
