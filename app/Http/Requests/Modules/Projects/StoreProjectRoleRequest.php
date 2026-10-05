@@ -20,14 +20,7 @@ class StoreProjectRoleRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:150'],
-            'code' => [
-                'required',
-                'string',
-                'max:50',
-                Rule::unique('project_roles', 'code')
-                    ->where('project_id', $project->id),
-            ],
-            'description' => ['nullable', 'string'],
+                        'description' => ['nullable', 'string'],
             'is_active' => ['sometimes', 'boolean'],
         ];
     }
