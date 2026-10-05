@@ -4,6 +4,7 @@ import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { onBeforeUnmount, ref } from 'vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import UserAvatar from '@/Components/UserAvatar.vue';
+import { Eye, EyeOff } from 'lucide-vue-next';
 
 interface Department {
     id: number;
@@ -59,6 +60,8 @@ const page = usePage();
 
 const avatarPreview = ref('/images/default-avatar.svg');
 const avatarInput = ref<HTMLInputElement | null>(null);
+const showPassword = ref(false);
+const showPasswordConfirmation = ref(false);
 let avatarPreviewObjectUrl: string | null = null;
 
 const props = defineProps<{
@@ -137,6 +140,8 @@ function openEdit(user: User): void {
     form.extension = user.extension ?? '';
     form.password = '';
     form.password_confirmation = '';
+    showPassword.value = false;
+    showPasswordConfirmation.value = false;
     form.status = user.status;
     form.role_ids = canManageUserRoles()
         ? user.roles.map((role) => role.id)
@@ -480,7 +485,7 @@ function currentUserId(): number | null {
                     </div>
                     <button type="button" class="rounded-lg p-2 text-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700" @click="closeForm">×</button>
                 </div>
-                <form class="space-y-5 p-6" @submit.prevent="submit">
+                <form class="space-y-5 p-6" autocomplete="off" @submit.prevent="submit">
                     <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
                         <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
                             <div class="flex items-center gap-3">
@@ -562,8 +567,56 @@ function currentUserId(): number | null {
                         <div><label class="mb-1.5 block text-sm font-semibold text-slate-700">داخلی</label><input v-model="form.extension" dir="ltr" type="text" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" /></div>
                     </div>
                     <div class="grid gap-4 md:grid-cols-2">
-                        <div><label class="mb-1.5 block text-sm font-semibold text-slate-700">{{ editingUser ? 'رمز عبور جدید' : 'رمز عبور (اختیاری برای دعوت)' }}</label><input v-model="form.password" dir="ltr" type="password" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" /><p v-if="form.errors.password" class="mt-1 text-xs text-red-600">{{ form.errors.password }}</p></div>
-                        <div><label class="mb-1.5 block text-sm font-semibold text-slate-700">تکرار رمز عبور</label><input v-model="form.password_confirmation" dir="ltr" type="password" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" /></div>
+                        <div>
+                            <label class="mb-1.5 block text-sm font-semibold text-slate-700">{{ editingUser ? 'رمز عبور جدید' : 'رمز عبور (اختیاری برای دعوت)' }}</label>
+                            <div class="relative">
+                                <input
+                                    v-model="form.password"
+                                    dir="ltr"
+                                    :type="showPassword ? 'text' : 'password'"
+                                    autocomplete="new-password"
+                                    placeholder="برای تغییر، رمز جدید را وارد کنید"
+                                    class="w-full rounded-xl border-slate-200 bg-slate-50/50 pl-3 pr-11 text-left focus:border-teal-500 focus:ring-teal-500"
+                                />
+                                <button
+                                    type="button"
+                                    tabindex="-1"
+                                    class="absolute inset-y-0 right-0 inline-flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-700"
+                                    :aria-label="showPassword ? 'مخفی کردن رمز عبور' : 'نمایش رمز عبور'"
+                                    :title="showPassword ? 'مخفی کردن رمز عبور' : 'نمایش رمز عبور'"
+                                    @click="showPassword = !showPassword"
+                                >
+                                    <EyeOff v-if="showPassword" class="h-4 w-4" />
+                                    <Eye v-else class="h-4 w-4" />
+                                </button>
+                            </div>
+                            <p v-if="form.errors.password" class="mt-1 text-xs text-red-600">{{ form.errors.password }}</p>
+                        </div>
+                        <div>
+                            <label class="mb-1.5 block text-sm font-semibold text-slate-700">تکرار رمز عبور</label>
+                            <div class="relative">
+                                <input
+                                    v-model="form.password_confirmation"
+                                    dir="ltr"
+                                    :type="showPasswordConfirmation ? 'text' : 'password'"
+                                    autocomplete="new-password"
+                                    placeholder="تکرار رمز جدید"
+                                    class="w-full rounded-xl border-slate-200 bg-slate-50/50 pl-3 pr-11 text-left focus:border-teal-500 focus:ring-teal-500"
+                                />
+                                <button
+                                    type="button"
+                                    tabindex="-1"
+                                    class="absolute inset-y-0 right-0 inline-flex w-10 items-center justify-center text-slate-400 transition hover:text-slate-700"
+                                    :aria-label="showPasswordConfirmation ? 'مخفی کردن رمز عبور' : 'نمایش رمز عبور'"
+                                    :title="showPasswordConfirmation ? 'مخفی کردن رمز عبور' : 'نمایش رمز عبور'"
+                                    @click="showPasswordConfirmation = !showPasswordConfirmation"
+                                >
+                                    <EyeOff v-if="showPasswordConfirmation" class="h-4 w-4" />
+                                    <Eye v-else class="h-4 w-4" />
+                                </button>
+                            </div>
+                            <p v-if="form.errors.password_confirmation" class="mt-1 text-xs text-red-600">{{ form.errors.password_confirmation }}</p>
+                        </div>
                     </div>
                     <div v-if="props.customFields.length" class="rounded-xl border border-teal-100 bg-teal-50/40 p-4">
                         <div class="mb-4"><h4 class="text-sm font-bold text-slate-800">اطلاعات تکمیلی سازمانی</h4><p class="mt-1 text-xs text-slate-500">فیلدهای سفارشی تعریف‌شده توسط مدیر سامانه</p></div>
