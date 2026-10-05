@@ -113,6 +113,9 @@ class CustomFieldService implements CustomFieldServiceInterface
             \App\Core\Roles\Models\Role::class => 'نقش کاربری',
             \App\Modules\Projects\Models\Project::class => 'پروژه',
             \App\Modules\Tasks\Models\Task::class => 'تسک',
+            \App\Core\ExternalParties\Models\ExternalOrganization::class => 'سازمان برون‌سازمانی',
+            \App\Core\ExternalParties\Models\ExternalDepartment::class => 'واحد برون‌سازمانی',
+            \App\Core\ExternalParties\Models\ExternalContact::class => 'مخاطب برون‌سازمانی',
         ];
     }
 
