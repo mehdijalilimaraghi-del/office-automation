@@ -3,6 +3,7 @@
 namespace App\Core\Departments\Models;
 
 use App\Models\User;
+use App\Core\CustomFields\Models\CustomFieldValue;
 use App\Models\Concerns\HasSystemCode;
 use App\Modules\Projects\Models\Project;
 use Illuminate\Database\Eloquent\Collection;
@@ -19,6 +20,12 @@ class Department extends Model
     protected static function systemCodePrefix(): string
     {
         return 'ORG';
+    }
+
+    public function customFieldValues(): HasMany
+    {
+        return $this->hasMany(CustomFieldValue::class, 'entity_id')
+            ->where('entity_type', self::class);
     }
 
     protected $fillable = [
