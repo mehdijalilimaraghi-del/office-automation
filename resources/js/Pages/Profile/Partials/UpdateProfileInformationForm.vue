@@ -83,7 +83,7 @@ function submit(): void {
             <div class="grid gap-4 sm:grid-cols-3">
                 <div>
                     <InputLabel for="username" value="نام کاربری" />
-                    <TextInput id="username" v-model="form.username" dir="ltr" class="mt-1 block w-full text-left" autocomplete="email" />
+                    <TextInput id="username" v-model="form.username" dir="ltr" class="mt-1 block w-full text-left" autocomplete="username" />
                     <InputError class="mt-1" :message="form.errors.username" />
                 </div>
                 <div>
