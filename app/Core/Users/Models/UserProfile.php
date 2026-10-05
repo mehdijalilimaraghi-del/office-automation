@@ -20,7 +20,7 @@ class UserProfile extends Model
 
     protected function casts(): array
     {
-        return ['birth_date' => 'date'];
+        return ['birth_date' => 'date:Y-m-d'];
     }
 
     public function user(): BelongsTo
