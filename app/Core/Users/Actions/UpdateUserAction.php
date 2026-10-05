@@ -64,7 +64,7 @@ class UpdateUserAction
 
         $user->refresh();
 
-        $this->audit->record('user.updated', $user, $oldValues, $user->only(['name', 'email', 'mobile', 'phone', 'extension', 'status']));
+        $this->audit->record('user.updated', $user, $oldValues, $user->only(['name', 'username', 'email', 'mobile', 'phone', 'extension', 'status']));
 
         return $user;
     }
