@@ -7,6 +7,8 @@ use App\Core\Permissions\Models\Permission;
 use App\Core\Roles\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\Feature\Core\Concerns\InteractsWithPermissions;
 use Tests\TestCase;
 
@@ -55,8 +57,9 @@ class UserControllerTest extends TestCase
     {
         $admin = User::factory()->create();
 
-        $this->grantPermissions($admin, [
+            $this->grantPermissions($admin, [
             'users.create',
+            'users.manage_roles',
         ]);
 
         $department = $this->department();
