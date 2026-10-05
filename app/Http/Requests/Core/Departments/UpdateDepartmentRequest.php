@@ -45,7 +45,7 @@ class UpdateDepartmentRequest extends FormRequest
             ],
 
             'icon' => [
-                'required',
+                'nullable',
                 'string',
                 'max:50',
                 'in:building-2,landmark,briefcase,users,factory,calculator,scale,monitor,wrench,truck,shield-check,clipboard-list,megaphone,warehouse,settings,home',
