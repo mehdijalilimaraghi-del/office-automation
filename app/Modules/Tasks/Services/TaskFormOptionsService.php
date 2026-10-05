@@ -72,6 +72,7 @@ class TaskFormOptionsService
         return $task->project
             ? $task->project->users()
                 ->where('users.status', 'active')
+                ->whereDoesntHave('roles', fn ($roleQuery) => $roleQuery->where('roles.code', 'SYSTEM_ADMIN')->where('roles.is_active', true))
                 ->orderBy('users.name')
                 ->get(['users.id', 'users.name'])
                 ->map(fn (User $user): array => [
@@ -89,6 +90,7 @@ class TaskFormOptionsService
     private function activeUsers(): array
     {
         return User::query()
+            ->operational()
             ->where('status', 'active')
             ->orderBy('name')
             ->get(['id', 'name'])
