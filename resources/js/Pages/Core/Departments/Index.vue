@@ -5,10 +5,16 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
+import UserAvatar from '@/Components/UserAvatar.vue';
+import DepartmentIcon from '@/Components/DepartmentIcon.vue';
+import { departmentIconOptions } from '@/Utils/departmentIcons';
 
 interface PositionUser {
     id: number;
     name: string;
+    profile?: {
+        avatar_path: string | null;
+    } | null;
     pivot?: {
         is_primary: boolean;
         is_active: boolean;
@@ -27,6 +33,9 @@ interface Position {
 interface DepartmentMember {
     id: number;
     name: string;
+    profile?: {
+        avatar_path: string | null;
+    } | null;
 }
 
 interface Department {
@@ -42,6 +51,7 @@ interface Department {
     members?: DepartmentMember[];
     positions?: Position[];
     children_count?: number;
+    icon: string;
 }
 
 interface User {
@@ -65,6 +75,7 @@ const form = useForm({
     parent_id: null as number | null,
     manager_id: null as number | null,
     name: '',
+    icon: 'building-2',
     code: '',
     description: '',
     is_active: true,
@@ -192,6 +203,7 @@ const stats = computed(() => {
 const resetDepartmentForm = () => {
     form.reset();
     form.is_active = true;
+    form.icon = 'building-2';
     form.clearErrors();
 };
 
@@ -208,6 +220,7 @@ const openEdit = (department: Department) => {
     form.parent_id = department.parent_id;
     form.manager_id = department.manager_id;
     form.name = department.name;
+    form.icon = department.icon ?? 'building-2';
     form.code = department.code ?? '';
     form.description = department.description ?? '';
     form.is_active = department.is_active;
@@ -554,7 +567,7 @@ watch(
                                 <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                                     <div class="flex items-start gap-4">
                                         <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-xl font-bold ring-1 ring-white/10">
-                                            {{ selectedDepartment.name.charAt(0) }}
+                                            <DepartmentIcon :icon="selectedDepartment.icon" :size="26" />
                                         </div>
 
                                         <div class="min-w-0">
@@ -661,9 +674,11 @@ watch(
                                             :key="member.id"
                                             class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700"
                                         >
-                                            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-white text-[10px] font-bold text-teal-700 ring-1 ring-slate-200">
-                                                {{ member.name.charAt(0) }}
-                                            </span>
+                                            <UserAvatar
+                                                :name="member.name"
+                                                :avatar-path="member.profile?.avatar_path"
+                                                size="xs"
+                                            />
                                             {{ member.name }}
                                         </span>
                                     </div>
@@ -786,6 +801,11 @@ watch(
                                                 :key="user.id"
                                                 class="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-slate-200"
                                             >
+                                                <UserAvatar
+                                                    :name="user.name"
+                                                    :avatar-path="user.profile?.avatar_path"
+                                                    size="xs"
+                                                />
                                                 {{ user.name }}
                                                 <span v-if="user.pivot?.is_primary" class="text-[10px] font-semibold text-teal-700">· اصلی</span>
                                                 <button
@@ -900,6 +920,38 @@ watch(
                             <label class="mb-2 block text-sm font-semibold text-slate-700">کد واحد</label>
                             <TextInput v-model="form.code" dir="ltr" class="block min-h-11 w-full rounded-xl text-left" maxlength="50" />
                             <InputError class="mt-1.5" :message="form.errors.code" />
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700">آیکون واحد</label>
+                                    <p class="mt-1 text-xs text-slate-400">یک آیکون متناسب با نوع یا کارکرد واحد انتخاب کنید.</p>
+                                </div>
+                                <div class="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
+                                    <DepartmentIcon :icon="form.icon" :size="18" />
+                                    {{ departmentIconOptions.find((option) => option.key === form.icon)?.label ?? 'ساختمان' }}
+                                </div>
+                            </div>
+
+                            <div class="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-8">
+                                <button
+                                    v-for="option in departmentIconOptions"
+                                    :key="option.key"
+                                    type="button"
+                                    class="group flex min-h-16 flex-col items-center justify-center gap-1.5 rounded-xl border px-2 py-2 text-slate-500 transition"
+                                    :class="form.icon === option.key
+                                        ? 'border-teal-500 bg-teal-50 text-teal-700 ring-2 ring-teal-100'
+                                        : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700'"
+                                    :aria-label="option.label"
+                                    :title="option.label"
+                                    @click="form.icon = option.key"
+                                >
+                                    <component :is="option.component" :size="21" :stroke-width="1.9" aria-hidden="true" />
+                                    <span class="truncate text-[10px] font-medium">{{ option.label }}</span>
+                                </button>
+                            </div>
+                            <InputError class="mt-1.5" :message="form.errors.icon" />
                         </div>
 
                         <div>
