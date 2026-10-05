@@ -16,6 +16,9 @@ export interface AuthAbilities {
     cartable_view?: boolean;
     notification_view?: boolean;
     settings_manage?: boolean;
+    users_view?: boolean;
+    departments_view?: boolean;
+    roles_view?: boolean;
     departments_create?: boolean;
     departments_edit?: boolean;
     departments_delete?: boolean;
