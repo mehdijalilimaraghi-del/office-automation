@@ -17,7 +17,6 @@ use App\Http\Controllers\ProfileController;
 use App\Modules\Dashboard\Http\Controllers\DashboardController;
 use App\Modules\Cartable\Http\Controllers\CartableController;
 use App\Modules\Notifications\Http\Controllers\NotificationController;
-use App\Modules\Correspondence\Http\Controllers\CorrespondenceController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -40,10 +39,6 @@ Route::get('/dashboard', DashboardController::class)
 
 Route::middleware('auth')->group(function () {
     Route::get('/cartable', [CartableController::class, 'index'])->middleware('permission:cartable.view')->name('cartable.index');
-    Route::get('/correspondence', [CorrespondenceController::class, 'index'])->middleware('permission:correspondence.view')->name('correspondence.index');
-    Route::post('/correspondence', [CorrespondenceController::class, 'store'])->middleware('permission:correspondence.create')->name('correspondence.store');
-    Route::patch('/correspondence/{correspondence}/register', [CorrespondenceController::class, 'register'])->middleware('permission:correspondence.register')->name('correspondence.register');
-    Route::post('/correspondence/{correspondence}/referrals', [CorrespondenceController::class, 'refer'])->middleware('permission:correspondence.refer')->name('correspondence.refer');
 
     Route::get('/notifications', [NotificationController::class, 'index'])->middleware('permission:notifications.view')->name('notifications.index');
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->middleware('permission:notifications.view')->name('notifications.read');
