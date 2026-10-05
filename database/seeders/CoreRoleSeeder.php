@@ -40,16 +40,20 @@ class CoreRoleSeeder extends Seeder
             return;
         }
 
-        $user = User::updateOrCreate(
-            ['email' => strtolower($bootstrapEmail)],
-            [
-                'name' => (string) env('OFFICE_AUTOMATION_BOOTSTRAP_ADMIN_NAME', 'مدیر سیستم'),
-                'password' => Hash::make($bootstrapPassword),
-                'status' => 'active',
-            ]
-        );
+        $email = strtolower($bootstrapEmail);
+        $user = User::query()->where('email', $email)->first();
+
+        if ($user?->status === 'inactive') {
+            return;
+        }
+
+        $user ??= new User(['email' => $email]);
+
+        $user->name = (string) env('OFFICE_AUTOMATION_BOOTSTRAP_ADMIN_NAME', 'مدیر سیستم');
+        $user->password = Hash::make($bootstrapPassword);
+        $user->status = 'active';
+        $user->save();
 
         $user->roles()->syncWithoutDetaching([$role->id]);
-
     }
 }
