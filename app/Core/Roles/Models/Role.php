@@ -3,12 +3,22 @@
 namespace App\Core\Roles\Models;
 
 use App\Core\Permissions\Models\Permission;
+use App\Models\Concerns\HasSystemCode;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-class Role extends Model
-{
+class Role extends Model$2
+    protected static function systemCodePrefix(): string
+    {
+        return 'ROLE';
+    }
+
+    protected function shouldGenerateSystemCode(): bool
+    {
+        return ! $this->is_system;
+    }
+
     protected $fillable = [
         'name',
         'code',
