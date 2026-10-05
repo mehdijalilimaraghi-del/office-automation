@@ -4,7 +4,6 @@ namespace App\Http\Requests\Core\Roles;
 
 use App\Core\Roles\Models\Role;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateRoleRequest extends FormRequest
 {
