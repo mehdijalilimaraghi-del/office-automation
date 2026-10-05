@@ -45,7 +45,9 @@ class UserController extends Controller
     ): RedirectResponse {
         $data = $request->validated();
 
-        $this->ensureRoleManagementAllowed($request->user(), $data['role_ids'] ?? []);
+        if (array_key_exists('role_ids', $data)) {
+            $this->ensureRoleManagementAllowed($request->user(), $data['role_ids']);
+        }
 
         $user = $this->userService->create($data);
 
@@ -92,7 +94,9 @@ class UserController extends Controller
     ): RedirectResponse {
         $data = $request->validated();
 
-        $this->ensureRoleManagementAllowed($request->user(), $data['role_ids'] ?? []);
+        if (array_key_exists('role_ids', $data)) {
+            $this->ensureRoleManagementAllowed($request->user(), $data['role_ids']);
+        }
 
         $this->userService->update($user, $data);
 
