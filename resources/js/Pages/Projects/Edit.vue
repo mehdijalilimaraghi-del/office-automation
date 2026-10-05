@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Button } from '@/Components/ui/button';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
+import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
 
 interface Project {
     id: number;
@@ -26,6 +27,12 @@ interface Department {
 const props = defineProps<{
     project: Project;
     departments: Department[];
+    customFields: Array<{
+        id: number; key: string; label: string;
+        type: 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select';
+        is_required: boolean; options: string[] | null;
+    }>;
+    customFieldValues: Record<string, string | number | boolean | null>;
 }>();
 
 const form = useForm({
@@ -36,6 +43,7 @@ const form = useForm({
     start_date: props.project.start_date ?? '',
     end_date: props.project.end_date ?? '',
     is_active: props.project.is_active,
+    custom_fields: props.customFieldValues ?? {},
 });
 
 const statusOptions = [
@@ -125,6 +133,15 @@ const submit = (): void => {
                     <textarea id="description" v-model="form.description" rows="5" class="w-full rounded-md border bg-background px-3 py-2 text-sm" />
                     <p v-if="form.errors.description" class="text-sm text-destructive">{{ form.errors.description }}</p>
                 </div>
+
+                <CustomFieldsForm
+                    v-if="props.customFields.length"
+                    v-model="form.custom_fields"
+                    :fields="props.customFields"
+                    :errors="form.errors as Record<string, string>"
+                    title="اطلاعات تکمیلی پروژه"
+                    description="اطلاعات تکمیلی اختصاصی این پروژه را مدیریت کنید."
+                />
 
                 <div class="flex justify-end gap-2">
                     <Button type="button" variant="outline" as-child>
