@@ -5,6 +5,7 @@ namespace App\Core\Departments\Actions;
 use App\Core\Departments\Models\Department;
 use App\Core\Departments\Models\Position;
 use App\Core\CustomFields\Services\CustomFieldService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class CreatePositionAction
@@ -16,6 +17,7 @@ class CreatePositionAction
 
     public function execute(Department $department, array $data): Position
     {
+        return DB::transaction(function () use ($department, $data): Position {
         if ($department->positions()->where('name', $data['name'])->exists()) {
             throw ValidationException::withMessages(['name' => 'این سمت در این واحد قبلاً تعریف شده است.']);
         }
@@ -27,5 +29,6 @@ class CreatePositionAction
         $this->customFieldService->sync($position, $data['custom_fields'] ?? []);
 
         return $position->refresh();
+        });
     }
 }
