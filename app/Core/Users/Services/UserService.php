@@ -125,6 +125,7 @@ class UserService implements UserServiceInterface
     public function activeList(): Collection
     {
         return User::query()
+            ->operational()
             ->where('status', 'active')
             ->orderBy('name')
             ->get(['id', 'name']);
