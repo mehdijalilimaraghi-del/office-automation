@@ -11,8 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class ProjectRole extends Model
 {
     use HasSystemCode;
-
-use HasFactory;
+    use HasFactory;
 
     protected static function systemCodePrefix(): string
     {
