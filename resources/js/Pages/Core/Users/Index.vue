@@ -82,7 +82,6 @@ const membershipForm = useForm({
 });
 
 const form = useForm({
-    name: '',
     username: '',
     email: '',
     mobile: '',
@@ -127,7 +126,6 @@ function openEdit(user: User): void {
 
     form.clearErrors();
 
-    form.name = user.name;
     form.username = user.username;
     form.email = user.email;
     form.first_name = user.profile?.first_name ?? '';
@@ -527,11 +525,6 @@ function currentUserId(): number | null {
                         <p v-if="form.errors.avatar" class="mt-1.5 text-xs text-red-600">{{ form.errors.avatar }}</p>
                     </div>
                     <div class="grid gap-4 md:grid-cols-2">
-                        <div>
-                            <label class="mb-1.5 block text-sm font-semibold text-slate-700">نام</label>
-                            <input v-model="form.name" type="text" class="w-full rounded-xl border-slate-200 bg-slate-50/50 focus:border-teal-500 focus:ring-teal-500" />
-                            <p v-if="form.errors.name" class="mt-1 text-xs text-red-600">{{ form.errors.name }}</p>
-                        </div>
                         <div>
                             <label class="mb-1.5 block text-sm font-semibold text-slate-700">نام کاربری</label>
                             <input v-model="form.username" dir="ltr" type="text" maxlength="50" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" />
