@@ -2,9 +2,11 @@
 
 ## 1. Project Overview
 
-Office Automation is a web-based internal company automation system.
+Office Automation is a web-based internal company office-automation platform.
 
-The initial release focuses on project and task management. The system is designed as a Modular Monolith so additional business modules can be introduced later without rewriting the application core.
+The product is designed as a production-oriented Modular Monolith. V1 delivers the Core, internal organization, Projects, Tasks and the shared operational backbone required by those capabilities. Later versions add Correspondence and other business modules on top of the stable V1 foundation.
+
+The authoritative version roadmap is ROADMAP.md.
 
 Initial deployment target:
 - Company LAN
@@ -83,36 +85,17 @@ Timezone must be configurable.
 
 ---
 
-## 4. Initial Roles
+## 4. Roles and Authorization
 
-The initial roles are:
+Roles are dynamic collections of permissions.
 
-- Administrator
-- Manager
-- Employee
+Current V1 rule:
+- SYSTEM_ADMIN is the protected system role/bootstrap administrator.
+- A normal user may have at most one application Role.
+- Contextual responsibilities such as Project Manager or Department Manager are assigned through their owning business object/organization context, not as generic global Roles.
+- Backend authorization is authoritative; frontend checks are UX only.
 
-Roles are not hard-coded into authorization logic.
-
-Permissions must be dynamic and extensible.
-
-Examples:
-
-projects.view
-projects.create
-projects.edit
-projects.delete
-
-tasks.view
-tasks.create
-tasks.edit
-tasks.delete
-tasks.assign
-tasks.complete
-
-users.view
-users.create
-users.edit
-users.delete
+Permissions are dynamic and extensible.
 
 ---
 
@@ -175,28 +158,25 @@ Initial dashboard capabilities:
 
 ---
 
-## 6. Future Modules
+## 6. Versioned Product Expansion
 
-The architecture must allow future modules such as:
+V1 already contains the operational backbone required by the implemented work-management system:
+- Workflow V1
+- Documents/attachments foundation
+- Unified Cartable V1
+- Notifications V1
+- Audit V1
 
-- Workflow
-- Documents
-- Correspondence
-- Internal Chat
-- Notifications
-- HR
-- Attendance
-- Leave
-- CRM
-- Customers
-- Sales
-- Purchasing
-- Inventory
-- Assets
-- Finance
-- Reports
+Post-V1 expansion is versioned in ROADMAP.md:
+- V2: Correspondence, Digital Archive, Forms & Requests
+- V3: Collaboration & Planning
+- V4: Customer & Commercial Operations
+- V5: Procurement, Inventory & Assets
+- V6: HR & Internal Collaboration
+- V7: Intelligence, Automation & Integrations
+- V8: Production & Enterprise Readiness
 
-These modules are not part of the initial implementation.
+No later-version scope should be pulled into V1 without an explicit product decision.
 
 ---
 
@@ -271,25 +251,14 @@ Troubleshooting should normally use one test or one change at a time.
 
 ## 10. Current Phase
 
-Current phase:
+**Current version: V1 — Foundation & Work Management**
 
-Phase 0  Architecture
+V1 implementation scope is complete. The repository is currently in the **V1 technical/debugging and manual UI/functional acceptance checkpoint**.
 
-Phase 0 must not implement business features.
+The current acceptance blockers are recorded in `CURRENT_STATUS.md` and `ROADMAP.md`.
 
-Phase 0 responsibilities:
+No V2 feature development starts until the V1 acceptance gate is closed.
 
-- Environment inspection
-- Starter project inspection
-- Modular Monolith design
-- Module boundaries
-- Database entity planning
-- Localization architecture
-- RTL strategy
-- Authentication/authorization architecture
-- Documentation
-
-After Phase 0 is completed, development stops for review/approval before Phase 1.
 
 ## Internal Organization Model
 
