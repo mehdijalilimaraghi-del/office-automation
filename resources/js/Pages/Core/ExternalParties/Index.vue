@@ -41,6 +41,30 @@ const contactForm=reactive<any>({id:null,external_organization_id:'',external_de
 
 const departmentsForContact=computed(()=>props.departments.filter(d=>String(d.external_organization_id)===String(contactForm.external_organization_id)));
 const departmentsForEdit=computed(()=>props.departments.filter(d=>String(d.external_organization_id)===String(depForm.external_organization_id) && d.id!==depForm.id));
+
+type DepartmentTreeRow = Department & { depth: number };
+
+function buildDepartmentTree(items: Department[], parentId: number | null = null, depth = 0): DepartmentTreeRow[] {
+    return items
+        .filter((department) => (department.parent_id ?? null) === parentId)
+        .sort((a, b) => a.name.localeCompare(b.name, 'fa'))
+        .flatMap((department) => [
+            { ...department, depth },
+            ...buildDepartmentTree(items, department.id, depth + 1),
+        ]);
+}
+
+const departmentTreeRows = computed<DepartmentTreeRow[]>(() => buildDepartmentTree(props.departments));
+
+const departmentParentOptions = computed<DepartmentTreeRow[]>(() =>
+    buildDepartmentTree(
+        props.departments.filter(
+            (department) =>
+                String(department.external_organization_id) === String(depForm.external_organization_id) &&
+                department.id !== depForm.id,
+        ),
+    ),
+);
 const activeOrgCount=computed(()=>props.organizations.filter(x=>x.status==='active').length);
 const activeContactCount=computed(()=>props.contacts.filter(x=>x.status==='active').length);
 const errors=computed(()=>page.props.errors as Record<string,string>);
@@ -167,7 +191,13 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
         <div class="space-y-3">
           <label class="block text-sm font-semibold text-slate-700">سازمان</label>
           <select v-model="depForm.external_organization_id" required class="w-full rounded-xl border border-slate-200 px-3 py-2.5"><option value="">سازمان *</option><option v-for="o in organizations" :key="o.id" :value="o.id">{{o.name}}</option></select>
-          <select v-model="depForm.parent_id" class="w-full rounded-xl border border-slate-200 px-3 py-2.5"><option value="">واحد بالادست</option><option v-for="d in departmentsForEdit" :key="d.id" :value="d.id">{{d.name}}</option></select>
+          <label class="block text-sm font-semibold text-slate-700">واحد بالادست</label>
+          <select v-model="depForm.parent_id" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
+            <option value="">بدون واحد بالادست (واحد اصلی)</option>
+            <option v-for="d in departmentParentOptions" :key="d.id" :value="d.id">
+              {{ '　'.repeat(d.depth) }}{{ d.depth ? '└─ ' : '' }}{{ d.name }}
+            </option>
+          </select>
           <label class="block text-sm font-semibold text-slate-700">نام واحد</label>
           <input v-model="depForm.name" required placeholder="نام واحد" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
           
@@ -188,7 +218,17 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
         <div class="border-b p-5"><h2 class="font-black">واحدهای ثبت‌شده</h2></div>
         <div v-if="!departments.length" class="p-12 text-center text-sm text-slate-400">هنوز واحدی ثبت نشده است.</div>
         <div v-else class="divide-y divide-slate-100">
-          <div v-for="d in departments" :key="d.id" class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"><div><h3 class="font-bold text-slate-900">{{d.name}}</h3><p class="mt-1 text-xs text-slate-500">{{d.organization?.name||'—'}} · {{d.phone||'بدون تلفن'}}<span v-if="d.extension"> · داخلی {{d.extension}}</span></p><p class="mt-1 font-mono text-[10px] text-slate-400" dir="ltr">کد سیستمی: {{d.code||'—'}}</p></div><div class="flex gap-2"><button @click="edit(depForm,d)" class="rounded-lg px-3 py-2 text-xs font-bold text-teal-700 hover:bg-teal-50">ویرایش</button><button @click="destroy('external-parties.departments.destroy',d.id)" class="rounded-lg px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">حذف</button></div></div>
+          <div v-for="d in departmentTreeRows" :key="d.id" class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between" :class="d.depth ? 'bg-slate-50/60' : 'bg-white'">
+            <div class="min-w-0" :style="{ paddingRight: `${d.depth * 24}px` }">
+              <div class="flex items-center gap-2">
+                <span v-if="d.depth" class="text-slate-300">└─</span>
+                <h3 class="font-bold text-slate-900">{{d.name}}</h3>
+              </div>
+              <p class="mt-1 text-xs text-slate-500">{{d.organization?.name||'—'}}<span v-if="d.parent_id"> · زیرمجموعه واحد بالادست</span> · {{d.phone||'بدون تلفن'}}<span v-if="d.extension"> · داخلی {{d.extension}}</span></p>
+              <p class="mt-1 font-mono text-[10px] text-slate-400" dir="ltr">کد سیستمی: {{d.code||'—'}}</p>
+            </div>
+            <div class="flex gap-2"><button @click="edit(depForm,d)" class="rounded-lg px-3 py-2 text-xs font-bold text-teal-700 hover:bg-teal-50">ویرایش</button><button @click="destroy('external-parties.departments.destroy',d.id)" class="rounded-lg px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">حذف</button></div>
+          </div>
         </div>
       </div>
     </section>
