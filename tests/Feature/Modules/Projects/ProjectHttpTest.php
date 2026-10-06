@@ -249,7 +249,7 @@ class ProjectHttpTest extends TestCase
         $this->assertDatabaseHas('project_roles', [
             'id' => $role->id,
             'name' => 'Senior Developer',
-            'code' => 'senior_developer',
+            'code' => 'developer',
             'description' => 'Senior project developer',
         ]);
     }
@@ -368,13 +368,13 @@ class ProjectHttpTest extends TestCase
         $response->assertRedirect();
 
         $this->assertDatabaseHas('projects', [
-            'code' => 'HTTP-PRJ-001',
+            'name' => 'HTTP Test Project',
             'manager_id' => $manager->id,
             'created_by' => $creator->id,
         ]);
 
         $project = Project::query()
-            ->where('code', 'HTTP-PRJ-001')
+            ->where('name', 'HTTP Test Project')
             ->firstOrFail();
 
         $this->assertDatabaseHas('project_user', [
