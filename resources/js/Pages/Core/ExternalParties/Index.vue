@@ -47,7 +47,7 @@ type DepartmentTreeRow = Department & { depth: number };
 function buildDepartmentTree(items: Department[], parentId: number | null = null, depth = 0): DepartmentTreeRow[] {
     return items
         .filter((department) => {
-            const departmentParentId = department.parent_id === null || department.parent_id === undefined || department.parent_id === ''
+            const departmentParentId = department.parent_id === null || department.parent_id === undefined
                 ? null
                 : Number(department.parent_id);
 
