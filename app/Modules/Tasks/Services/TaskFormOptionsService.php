@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Tasks\Services;
 
 use App\Core\Departments\Models\Department;
+use App\Core\Permissions\Enums\PermissionScope;
 use App\Core\ExternalParties\Models\{ExternalContact, ExternalDepartment, ExternalOrganization};
 use App\Models\User;
 use App\Modules\Projects\Models\Project;
@@ -30,20 +31,51 @@ class TaskFormOptionsService
             ->values()
             ->all();
 
-        $projects = Project::query()
-            ->where('projects.is_active', true)
-            ->where(function ($query) use ($user, $departmentIds): void {
-                $query->whereHas('users', fn ($userQuery) => $userQuery->where('users.id', $user->id));
+        $taskCreateScopes = $user->permissionScopes('tasks.create');
 
-                if ($departmentIds !== []) {
-                    $query->orWhere(function ($defaultQuery) use ($departmentIds): void {
-                        $defaultQuery
-                            ->where('projects.is_system_default', true)
-                            ->whereIn('projects.department_id', $departmentIds);
-                    });
+        $projectsQuery = Project::query()
+            ->where('projects.is_active', true)
+            ->with(['users:id', 'department.members:id']);
+
+        if (in_array(PermissionScope::Organization->value, $taskCreateScopes, true)) {
+            // Organization scope grants access to every active project.
+        } else {
+            $projectsQuery->where(function ($query) use ($user, $departmentIds, $taskCreateScopes): void {
+                if (in_array(PermissionScope::Self->value, $taskCreateScopes, true)) {
+                    $query
+                        ->where('projects.created_by', $user->id)
+                        ->orWhere('projects.manager_id', $user->id);
                 }
-            })
-            ->with(['users:id', 'department.members:id'])
+
+                if (in_array(PermissionScope::Department->value, $taskCreateScopes, true) && $departmentIds !== []) {
+                    $query->orWhereIn('projects.department_id', $departmentIds);
+                }
+
+                if (in_array(PermissionScope::DepartmentTree->value, $taskCreateScopes, true)) {
+                    $treeDepartmentIds = [];
+
+                    foreach ($user->departments()->get() as $department) {
+                        $treeDepartmentIds[] = (int) $department->id;
+                        $treeDepartmentIds = array_merge($treeDepartmentIds, array_map('intval', $department->descendantIds()));
+                    }
+
+                    if ($treeDepartmentIds !== []) {
+                        $query->orWhereIn('projects.department_id', array_values(array_unique($treeDepartmentIds)));
+                    }
+                }
+
+                if (in_array(PermissionScope::Project->value, $taskCreateScopes, true)) {
+                    $query
+                        ->orWhere('projects.manager_id', $user->id)
+                        ->orWhereHas('users', fn ($userQuery) => $userQuery->where('users.id', $user->id));
+                } else {
+                    // Direct project membership remains usable for task creation.
+                    $query->orWhereHas('users', fn ($userQuery) => $userQuery->where('users.id', $user->id));
+                }
+            });
+        }
+
+        $projects = $projectsQuery
             ->orderBy('projects.name')
             ->get()
             ->map(fn (Project $project): array => [
