@@ -82,7 +82,7 @@ class DepartmentControllerTest extends TestCase
 
         $response->assertRedirect();
 
-        $department = Department::where('code', 'IT')->firstOrFail();
+        $department = Department::where('name', 'فناوری اطلاعات')->firstOrFail();
 
         $this->assertDatabaseHas('projects', [
             'department_id' => $department->id,
