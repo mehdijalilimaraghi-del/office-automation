@@ -5,11 +5,21 @@ declare(strict_types=1);
 namespace App\Http\Requests\Modules\Tasks;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use App\Modules\Tasks\Models\Task;
 
 class StoreTaskRequest extends FormRequest
 {
-    public function authorize(): bool { return true; }
+    public function authorize(): bool
+    {
+        $projectId = $this->input('project_id');
+
+        return Gate::allows('create', [
+            Task::class,
+            $projectId !== null ? (int) $projectId : null,
+        ]);
+    }
 
     public function rules(): array
     {
