@@ -1,374 +1,122 @@
-﻿# Office Automation System  Development Guide
+# Office Automation System — Development Guide
 
-## 1. Development Phases
+## 1. Version-Oriented Development
 
-### Phase 0  Architecture
+The product roadmap is versioned in ROADMAP.md. That file is the authoritative source for product scope and version boundaries.
 
-Completed.
+Current state:
+- V1 — Foundation & Work Management: implementation scope complete.
+- Current checkpoint: V1 technical/debugging and manual UI/functional acceptance.
+- Next version: V2 — Office Automation.
+- V2 must not start until V1 acceptance is closed.
 
-Tasks:
+Version order:
+1. V1 — Foundation & Work Management
+2. V2 — Office Automation
+3. V3 — Collaboration & Planning
+4. V4 — Customer & Commercial Operations
+5. V5 — Procurement, Inventory & Assets
+6. V6 — HR & Internal Collaboration
+7. V7 — Intelligence, Automation & Integrations
+8. V8 — Production & Enterprise Readiness
 
-- Inspect environment
-- Inspect Laravel skeleton
-- Define architecture
-- Define module boundaries
-- Define database entities
-- Define localization strategy
-- Define authentication/authorization strategy
-- Create and maintain documentation
+Normal development loop:
+**Inspect → Root Cause / Boundary Review → Smallest Coherent Change → Test → Build → Manual Acceptance → Documentation/Status Update → Next Item**
 
-No major business feature is implemented in Phase 0.
+### Engineering Rules
+- Inspect the GitHub repository and persistent project documents first.
+- Make reasonable architectural decisions directly when user approval is not required.
+- Do not wait for confirmation for ordinary implementation/debugging work.
+- Keep Modular Monolith boundaries intact.
+- Use standard Laravel/PHP/Vue/TypeScript patterns and production-quality code.
+- Add or strengthen tests for meaningful behavior and regressions.
+- Fix root causes rather than masking symptoms.
+- Avoid unnecessary refactors, packages and architectural changes.
+- UI/UX should follow modern Google Material Design principles while respecting Persian RTL requirements.
+- Record meaningful implementation decisions and completed work in persistent documentation.
 
----
-
-### Phase 1  Bootstrap
-
-Planned work:
-
-- Laravel configuration
-- Vue 3
-- TypeScript
-- Inertia.js
-- Tailwind CSS
-- shadcn-vue
-- Vite
-- Persian locale
-- RTL
-- Base layout
-- Authentication
-- SQL Server connection
-- Git repository
-- Build and tests
-
----
-
-### Phase 2  Core
-
-Planned work:
-
-- Authentication
-- Users
-- User profile
-- Roles
-- Permissions
-- Departments
-- Settings
-
----
-
-### Phase 3  Projects
-
-Planned work:
-
-- Project CRUD
-- Project status
-- Project manager
-- Members
-- Dates
-- Project view
-
----
-
-### Phase 4  Tasks
-
-Planned work:
-
-- Task CRUD
-- Assignment
-- Status
-- Priority
-- Due date
-- Description
-- Comments
-- Attachments
-- Activity/history
-- Completion/report
-
----
-
-### Phase 5  Operational Backbone
-
-Completed in the current repository:
-
-- Task lifecycle review/approval
-- Task dependencies
-- Document foundation
-- Workflow V1
-- Unified Cartable
-- Notifications
-- Audit V1 core
-
-The next planned business module is Correspondence, after the shared backbone has been verified and the repository/docs checkpoint is reconciled.
-
----
-
-### Phase 6  Office Automation
-
-Current target:
-
-- Correspondence
-- Digital Archive
-- Forms & Requests
-- Meetings & Calendar
-
-Correspondence is the next business-module implementation. It must consume the existing Core, Documents, Workflow, Cartable, Notifications and Audit capabilities rather than recreate them.
-
----
+### V1 Completion Gate
+- Relevant backend/regression tests pass.
+- Frontend production build passes.
+- RTL/Persian/Jalali UI is reviewed where applicable.
+- Critical user journeys are manually accepted.
+- Known runtime defects are fixed at root cause.
+- Documentation matches repository reality.
+- No V2 implementation starts before this gate closes.
 
 ## 2. Git Workflow
 
 Git is part of the project from the beginning.
 
 Commits should be:
-
 - Small
 - Focused
 - Meaningful
 - Related to one logical change
 
-Examples:
+Active development branch: development
 
-chore: initialize laravel project
-chore: define project architecture
-feat: add core authentication
-feat: add users and roles
-feat: add projects module
-feat: add task management
+Stable branch: master
 
-Do not combine unrelated changes into one commit.
-
----
+Do not develop directly on master.
 
 ## 3. Change Workflow
 
 Before every meaningful change:
-
-1. Inspect the relevant existing files.
+1. Inspect the relevant existing implementation.
 2. Identify the root cause or requirement.
-3. Define the smallest required change.
-4. Make the change.
-5. Run the relevant test.
-6. Inspect the result.
-7. Update documentation if required.
-8. Stop before moving to the next feature.
+3. Make the smallest coherent change.
+4. Add/update relevant tests.
+5. Inspect the result.
+6. Update documentation/status when needed.
 
----
+For local validation, the user runs the project on their own computer. After code changes, provide the exact PowerShell validation command.
+
+Only include `git pull origin development` at the beginning of a validation command when code changes were made immediately before that validation. Do not include it when no code change was made.
+
+Prefer one validation step at a time.
 
 ## 4. Troubleshooting
 
-Troubleshooting should normally follow a one-change/one-test approach.
-
-Do not change multiple unrelated variables at once.
-
-Do not remove migrations, data, validation or security controls to hide an error.
-
-Fix the root cause.
-
-When environment behavior differs from expectations, inspect the environment before modifying the application.
-
----
+- Fix the root cause.
+- Do not change unrelated variables at the same time.
+- Do not weaken tests, remove security controls, or use destructive database changes to hide an error.
+- Inspect environment differences before changing application architecture.
 
 ## 5. Dependencies
 
-A new Composer or NPM package requires a concrete reason.
+A new Composer/NPM package requires a concrete architectural reason and compatibility review. Avoid unnecessary dependencies.
 
-Before adding a dependency, evaluate:
-
-- Whether Laravel already provides the required capability
-- Maintenance status
-- Compatibility with the current PHP/Laravel version
-- Security implications
-- Long-term architectural impact
-
-Avoid unnecessary packages.
-
----
-
-## 6. Database Rules
+## 6. Database and Security Rules
 
 - SQL Server is the target database.
-- Schema changes must use migrations.
-- Data must not be deleted to hide migration problems.
-- Existing migrations must not be rewritten merely to make development easier once they have become part of a shared environment.
-- Destructive database operations require explicit justification.
-- Foreign keys and indexes should be designed intentionally.
-- Date/time fields use standard database-compatible DateTime types.
+- Schema changes use migrations.
+- Existing shared migrations are not rewritten to hide development problems.
+- Backend authorization is mandatory.
+- File uploads require validation, safe generated names, controlled storage and authorization.
 
----
+## 7. Frontend Rules
 
-## 7. Security Rules
+- Vue 3 + TypeScript + Inertia.js is the frontend architecture.
+- Keep components focused.
+- Use reusable components only where reuse is meaningful.
+- Keep business authorization on the backend.
+- Respect Persian RTL and Jalali presentation requirements.
 
-Security-sensitive behavior must be enforced server-side.
+## 8. Documentation Authority
 
-Never rely solely on:
+- ROADMAP.md — product versions, scope and acceptance gates
+- CURRENT_STATUS.md — concise current checkpoint and immediate blockers
+- PROJECT_CONTEXT.md — persistent detailed context
+- ARCHITECTURE.md — architecture and module boundaries
+- PROJECT_SPEC.md — product/system specification
+- DEVELOPMENT.md — engineering workflow
 
-- Vue conditions
-- Hidden buttons
-- Client-side validation
-- Route visibility
+Meaningful requirements, architecture decisions, implementation status and blockers must be recorded in the appropriate project document.
 
-Authorization must be enforced on the backend.
+## 9. Definition of Done
 
-File uploads require:
+A change is complete only when intended behavior is implemented, relevant tests are added/passing, authorization and validation are correct, no known regression is introduced, and documentation is reconciled when the change affects project scope/status.
 
-- Type validation
-- Size validation
-- Safe generated names
-- Controlled storage
-- Authorization checks
+Current environment target: Windows + PHP 8.5.x + Composer 2.10.x + Node.js 24.x + NPM 11.x + Laravel 12.x + Microsoft SQL Server.
 
----
-
-## 8. Localization Rules
-
-All new user-facing text must support localization.
-
-Do not introduce Persian strings directly into business logic when a translation key is appropriate.
-
-Initial UI:
-
-- Persian
-- RTL
-
-Code:
-
-- English
-- English identifiers
-- English technical documentation
-
----
-
-## 9. Frontend Rules
-
-Vue components should remain focused.
-
-Prefer reusable components for genuinely reusable UI.
-
-Do not create abstractions solely because two components happen to look similar once.
-
-TypeScript should be used for frontend application code.
-
-Inertia should be used for normal application navigation and server-driven page data.
-
----
-
-## 10. Documentation
-
-The following documents are authoritative project documents:
-
-- PROJECT_SPEC.md
-- ARCHITECTURE.md
-- DEVELOPMENT.md
-
-When a significant requirement or architectural decision changes, update the relevant document in the same development phase.
-
----
-
-## 11. Definition of Done
-
-A change is not considered complete merely because the code was written.
-
-A development step is complete when:
-
-- The intended behavior is implemented.
-- Relevant tests pass.
-- No known regression was introduced.
-- Authorization is correct.
-- Validation is correct.
-- Localization requirements are satisfied.
-- RTL requirements are satisfied where applicable.
-- Documentation is updated when necessary.
-- Git state is clean enough to understand the change.
-
----
-
-## 12. Current Environment
-
-Current development environment:
-
-- Windows
-- PHP 8.5.x
-- Composer 2.10.x
-- Node.js 24.x
-- NPM 11.x
-- Laravel 12.x
-- Microsoft SQL Server target
-
-The actual installed versions should be verified rather than assumed when compatibility matters.
-
-## 12. Enterprise Development Roadmap
-
-The original bootstrap phases are substantially complete. From this point, development follows the enterprise roadmap in ROADMAP.md.
-
-The next architectural sequence is:
-
-1. Organizational positions and position assignments
-3. Task dependencies
-4. Document foundation
-5. Workflow V1
-6. Unified Cartable
-7. Notifications
-8. Audit expansion
-9. Correspondence
-10. Digital Archive
-11. Forms & Requests
-12. Meetings & Calendar
-13. CRM
-14. Procurement
-15. Inventory & Assets
-16. HR
-17. Reporting/Search/SLA
-18. Internal Chat
-18. PBX and integrations
-20. Production hardening
-
-### Important Rule
-
-Do not continue adding isolated Task/Project features that duplicate future Workflow, Document, Cartable or Notification concepts.
-
-Before implementing a feature, determine whether it belongs to:
-- Core
-- Workflow
-- Work Items/Tasks
-- Documents
-- Cartable
-- Notifications
-- Audit
-- a business module
-
-Shared infrastructure must be implemented once and reused by later modules.
-
-For the detailed module scope and priorities, see ROADMAP.md.
-
-
-## Current Architecture Sequence
-
-1. Organizational positions and position assignments
-2. Task lifecycle review/approval
-3. Task dependencies
-4. Document foundation
-5. Workflow V1
-6. Unified Cartable
-7. Notifications
-8. Audit expansion
-9. Correspondence
-10. Digital Archive
-11. Forms & Requests
-12. Meetings & Calendar
-13. CRM
-14. Procurement
-15. Inventory & Assets
-16. HR
-17. Reporting/Search/SLA
-18. Internal Chat
-19. PBX/integrations
-20. Production hardening
-
-
-## User Onboarding Rules
-
-- Public registration is disabled.
-- New users should normally be created as inactive and activated through the invitation flow.
-- The invitation is valid for 48 hours and the invited user sets their own password.
-- Department membership is managed separately from general user profile editing through `users.manage_departments`.
-- Use `office:bootstrap-admin` or the configured bootstrap environment variables for the initial `SYSTEM_ADMIN` account.
