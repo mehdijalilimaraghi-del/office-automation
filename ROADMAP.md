@@ -567,3 +567,7 @@ Unless a concrete business requirement changes the decision, these remain outsid
 - Full legal practice management
 
 Such systems should integrate with Office Automation rather than distort the Core/Workflow/Documents architecture.
+
+
+### 2026-10-06 — User identity regression fix
+A PHP syntax error introduced in `UpdateUserAction.php` during the display-name derivation change was corrected by simplifying the expression. Focused `UserControllerTest` validation is pending.
