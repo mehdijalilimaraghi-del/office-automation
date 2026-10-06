@@ -266,5 +266,6 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
       </div>
     </section>
   </div>
+</div>
     </AuthenticatedLayout>
 </template>
