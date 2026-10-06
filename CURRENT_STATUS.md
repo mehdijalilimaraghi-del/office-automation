@@ -175,3 +175,9 @@ The audit also identified remaining scope gaps in several task actions (`refer`,
 ## Permission scope normalization — 2026-10-06
 The V1 authorization audit continued beyond project listing. Project mutation policies now apply the configured permission scope in addition to the existing manager/context rule. Task create, refer, submit, review, and reminder completion/cancellation now also pass through scoped task access rather than checking permission existence alone. This closes several identified cases where a Role permission was technically present but its configured scope was ignored.
 **Status: implemented; full backend validation pending.**
+
+
+### Permission-scope test fixture normalization (2026-10-06)
+- tests/Feature/Modules/Tasks/TaskHttpTest.php now creates task permission fixtures with the same PermissionScope::defaultForPermission() semantics used by production role-permission synchronization.
+- This prevents the database default organization scope from masking project-scoped authorization in HTTP tests.
+- TaskHttpTest passes after this normalization.
