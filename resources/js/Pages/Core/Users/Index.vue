@@ -527,12 +527,12 @@ function currentUserId(): number | null {
                     <div class="grid gap-4 md:grid-cols-2">
                         <div>
                             <label class="mb-1.5 block text-sm font-semibold text-slate-700">نام کاربری</label>
-                            <input v-model="form.username" dir="ltr" type="text" maxlength="50" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" />
+                            <input v-model="form.username" dir="ltr" type="text" required maxlength="50" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" />
                             <p v-if="form.errors.username" class="mt-1 text-xs text-red-600">{{ form.errors.username }}</p>
                         </div>
                         <div>
                             <label class="mb-1.5 block text-sm font-semibold text-slate-700">ایمیل</label>
-                            <input v-model="form.email" dir="ltr" type="email" class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" />
+                            <input v-model="form.email" dir="ltr" type="email" required class="w-full rounded-xl border-slate-200 bg-slate-50/50 text-left focus:border-teal-500 focus:ring-teal-500" />
                             <p v-if="form.errors.email" class="mt-1 text-xs text-red-600">{{ form.errors.email }}</p>
                         </div>
                     </div>
