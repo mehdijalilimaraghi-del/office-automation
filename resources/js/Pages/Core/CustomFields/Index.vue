@@ -347,6 +347,7 @@ const remove = (field: Field): void => {
                                 </p>
                                 <select
                                     v-model="form.entity_type"
+                                    required
                                     class="w-full rounded-xl border-slate-200 bg-slate-50/50 px-3 py-3 text-sm focus:border-teal-500 focus:ring-teal-500"
                                 >
                                     <option
@@ -368,6 +369,7 @@ const remove = (field: Field): void => {
                                 <input
                                     v-model="form.label"
                                     type="text"
+                                    required
                                     maxlength="150"
                                     class="w-full rounded-xl border-slate-200 bg-slate-50/50 px-3 py-3 text-sm focus:border-teal-500 focus:ring-teal-500"
                                     placeholder="مثلاً کد پروژه قدیمی"
@@ -384,6 +386,7 @@ const remove = (field: Field): void => {
                                 </p>
                                 <select
                                     v-model="form.type"
+                                    required
                                     class="w-full rounded-xl border-slate-200 bg-slate-50/50 px-3 py-3 text-sm focus:border-teal-500 focus:ring-teal-500"
                                 >
                                     <option
