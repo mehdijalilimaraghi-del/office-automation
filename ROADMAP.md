@@ -513,20 +513,20 @@ A version closes only when all of the following are true:
 
 **V1 implementation status:** scope implemented.
 
-**V1 acceptance status:** technical/debugging + manual UI/functional acceptance in progress.
+**V1 acceptance status:** technical validation passed; manual UI/functional acceptance in progress.
 
-Current blockers found during recent local acceptance:
-- `app/Core/ExternalParties/Http/Controllers/ExternalPartyController.php` has a PHP syntax error around the recent `custom_fields` validation edits; this currently breaks `/login` through route discovery/Ziggy.
-- `app/Models/Concerns/HasSystemCode.php` performs an Eloquent `updateQuietly()` from the `created` event; on SQL Server this currently attempts to update the identity `id` column when creating a Position. The system-code generation must be corrected without weakening SQL Server identity semantics.
+Recent V1 manual acceptance found a user-password validation localization defect: passwords shorter than the enforced 8-character minimum displayed the Laravel translation key `validation.min.string`. This was fixed by adding the Persian validation dictionary at `lang/fa/validation.php`.
 
-Recent V1 work includes Core identity/organization, Projects, Tasks, Workflow V1, Documents/attachments foundation, Unified Cartable V1, Notifications, Audit V1, Custom Fields, system-generated business codes, external-party management, and Persian RTL/Jalali UI foundations.
+Technical validation completed:
+1. Dedicated system-code regression test — passed.
+2. Full PHPUnit/Laravel suite — passed.
+3. Frontend production build — passed.
 
 Before V1 closes:
-1. Fix the two current runtime defects at their root.
-2. Run the relevant regression tests.
-3. Run the frontend production build.
-4. Perform final manual UI/functional acceptance.
-5. Reconcile the roadmap and project status before any V2 work.
+1. Manually confirm the Persian password validation message after pulling the latest development change.
+2. Continue final manual UI/functional acceptance.
+3. Fix any newly discovered runtime defects at their root cause.
+4. Reconcile documentation and close the V1 acceptance gate.
 
 No V2 implementation should begin until the V1 acceptance gate is closed.
 
