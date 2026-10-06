@@ -166,7 +166,12 @@ class TaskAccessService
         }
 
         return $this->isProjectManager($user, $task)
-            || $task->project->users()->where('users.id', $user->id)->exists();
+            || $task->project->users()->where('users.id', $user->id)->exists()
+            || (
+                $task->project->is_system_default
+                && $task->project->department_id !== null
+                && $user->departments()->where('departments.id', $task->project->department_id)->exists()
+            );
     }
 
     private function isProjectManager(User $user, Task $task): bool
