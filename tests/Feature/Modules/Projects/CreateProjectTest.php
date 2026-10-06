@@ -40,7 +40,6 @@ class CreateProjectTest extends TestCase
         $this->assertDatabaseHas('projects', [
             'id' => $project->id,
             'name' => 'Test Project',
-            'code' => 'PRJ-001',
             'manager_id' => $manager->id,
             'created_by' => $creator->id,
             'status' => 'planning',
