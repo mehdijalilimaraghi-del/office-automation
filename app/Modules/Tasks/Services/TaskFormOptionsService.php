@@ -24,19 +24,42 @@ class TaskFormOptionsService
      */
     public function forCreate(User $user): array
     {
-        $projects = $user->projects()
+        $departmentIds = $user->departments()
+            ->pluck('departments.id')
+            ->map(fn ($id): int => (int) $id)
+            ->values()
+            ->all();
+
+        $projects = Project::query()
             ->where('projects.is_active', true)
-            ->with('users:id')
+            ->where(function ($query) use ($user, $departmentIds): void {
+                $query->whereHas('users', fn ($userQuery) => $userQuery->where('users.id', $user->id));
+
+                if ($departmentIds !== []) {
+                    $query->orWhere(function ($defaultQuery) use ($departmentIds): void {
+                        $defaultQuery
+                            ->where('projects.is_system_default', true)
+                            ->whereIn('projects.department_id', $departmentIds);
+                    });
+                }
+            })
+            ->with(['users:id', 'department.members:id'])
             ->orderBy('projects.name')
             ->get()
             ->map(fn (Project $project): array => [
                 'id' => (int) $project->id,
                 'name' => $project->name,
-                'member_ids' => $project->users
-                    ->pluck('id')
-                    ->map(fn ($id): int => (int) $id)
-                    ->values()
-                    ->all(),
+                'member_ids' => $project->is_system_default
+                    ? $project->department?->members
+                        ->pluck('id')
+                        ->map(fn ($id): int => (int) $id)
+                        ->values()
+                        ->all() ?? []
+                    : $project->users
+                        ->pluck('id')
+                        ->map(fn ($id): int => (int) $id)
+                        ->values()
+                        ->all(),
             ])
             ->values()
             ->all();
