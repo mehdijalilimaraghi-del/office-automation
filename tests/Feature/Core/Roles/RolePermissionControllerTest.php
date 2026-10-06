@@ -156,8 +156,8 @@ class RolePermissionControllerTest extends TestCase
         ]);
 
         $permission = Permission::create([
-            'name' => 'مشاهده پروژه‌های Scope',
-            'code' => 'projects.view',
+            'name' => 'مجوز پروژه Scope Test',
+            'code' => 'projects.scope_test',
             'description' => null,
             'is_active' => true,
             'is_system' => false,
