@@ -589,3 +589,9 @@ V1 form review found that required controls were not consistently marked visuall
 The external-parties page was aligned with the standard authenticated layout so the main navigation is preserved. A «بازگشت» action was added for returning to the previous page, with dashboard fallback.
 
 **Status:** implemented; frontend build validation pending.
+
+
+### 2026-10-06 — External parties hierarchy UI
+External departments now use hierarchical ordering and indentation in both the department list and the parent-department selector. The external-parties back action was also moved into a script handler to satisfy Vue/TypeScript template typing.
+
+**Status:** implemented; frontend build validation pending.
