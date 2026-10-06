@@ -170,3 +170,8 @@ A cross-check of the current role/permission implementation found that permissio
 The audit also identified remaining scope gaps in several task actions (`refer`, `submit`, `review`, reminder actions) and project mutation actions that currently check permission existence plus contextual ownership/manager rules without applying the configured permission scope. These must be normalized before V1 authorization can be considered fully consistent.
 
 **Status: audit in progress; task project-option defect fixed; broader scope normalization pending.**
+
+
+## Permission scope normalization — 2026-10-06
+The V1 authorization audit continued beyond project listing. Project mutation policies now apply the configured permission scope in addition to the existing manager/context rule. Task create, refer, submit, review, and reminder completion/cancellation now also pass through scoped task access rather than checking permission existence alone. This closes several identified cases where a Role permission was technically present but its configured scope was ignored.
+**Status: implemented; full backend validation pending.**
