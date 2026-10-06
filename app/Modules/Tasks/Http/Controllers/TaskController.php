@@ -65,10 +65,13 @@ class TaskController extends Controller
     {
         $data = $request->validated();
 
-        Gate::authorize('create', [
-            Task::class,
-            isset($data['project_id']) ? (int) $data['project_id'] : null,
-        ]);
+        abort_unless(
+            Gate::allows('create', [
+                Task::class,
+                isset($data['project_id']) ? (int) $data['project_id'] : null,
+            ]),
+            403
+        );
 
         try {
             $this->taskService->create(data: $data, creator: $request->user());
