@@ -148,3 +148,9 @@ During manual V1 UI acceptance, required fields were found to lack a consistent 
 The external-parties page now uses the standard authenticated layout so the main navigation remains available. A dedicated «بازگشت» action was also added to return to the previous page, with dashboard fallback when browser history is unavailable.
 
 **Status: implemented; frontend build validation pending.**
+
+
+## External parties hierarchy UI — 2026-10-06
+The external department screen now presents departments as a visible hierarchy. Parent-child indentation is shown in the department list, and the «واحد بالادست» selector uses the same hierarchical ordering so nested units are distinguishable during creation/editing. The external-parties back action was also moved into a typed handler to resolve the Vue/TypeScript build error.
+
+**Status: implemented; frontend build validation pending.**
