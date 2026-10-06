@@ -24,6 +24,7 @@ class ProfileUpdateTest extends TestCase
         $response = $this->actingAs($user)->post(route('profile.update'), [
             '_method' => 'patch',
             'name' => 'علی رضایی',
+            'username' => $user->username,
             'first_name' => 'علی',
             'last_name' => 'رضایی',
             'employee_code' => 'EMP-100',
