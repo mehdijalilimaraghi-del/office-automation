@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Tasks\Policies;
 
 use App\Models\User;
+use App\Modules\Projects\Models\Project;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskReminder;
 use App\Modules\Tasks\Services\TaskAccessService;
@@ -36,7 +37,16 @@ class TaskPolicy
             return true;
         }
 
-        return $user->projects()->where('projects.id', $projectId)->exists();
+        return $user->projects()->where('projects.id', $projectId)->exists()
+            || Project::query()
+                ->whereKey($projectId)
+                ->where('is_active', true)
+                ->where('is_system_default', true)
+                ->whereIn(
+                    'department_id',
+                    $user->departments()->pluck('departments.id')
+                )
+                ->exists();
     }
 
     public function update(User $user, Task $task): bool
