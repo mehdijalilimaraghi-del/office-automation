@@ -126,3 +126,7 @@ No V2 implementation is authorized before V1 acceptance is explicitly closed.
 
 ## New-Conversation Rule
 At the start of a new conversation, read `AI_CONTEXT.md` and `CURRENT_STATUS.md`, then inspect `ROADMAP.md` and the relevant implementation before making the next code change. Continue from the documented checkpoint; do not restart or redesign the project.
+
+
+## User Controller Regression Fix — 2026-10-06
+The user identity change exposed a PHP syntax error in `UpdateUserAction.php` caused by the display-name expression. The expression was simplified to explicit first-name/last-name variables and a direct concatenation. **Status: fixed; awaiting focused UserControllerTest validation.**
