@@ -595,3 +595,7 @@ The external-parties page was aligned with the standard authenticated layout so 
 External departments now use hierarchical ordering and indentation in both the department list and the parent-department selector. The external-parties back action was also moved into a script handler to satisfy Vue/TypeScript template typing.
 
 **Status:** implemented; frontend build validation pending.
+
+### 2026-10-06 — Task default-project visibility
+Fixed the gap between department default projects and task creation: system-default projects remain real database records and are now available to department members in task creation, with matching authorization and access rules.
+**Status:** implemented; validation pending.
