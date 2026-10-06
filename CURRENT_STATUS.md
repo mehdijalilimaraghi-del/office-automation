@@ -162,3 +162,11 @@ Department creation already persists a real system-default project in the databa
 ## Project view scope — 2026-10-06
 Project listing and individual project viewing now honor the `projects.view` permission scope. Users with unit scope can see projects belonging to their units, including unit default projects; department-tree, project, self, and organization scopes are also enforced consistently.
 **Status: implemented; backend validation pending.**
+
+
+## Permission scope audit — 2026-10-06
+A cross-check of the current role/permission implementation found that permission existence is enforced broadly, but permission **scope** is not yet enforced consistently across every action. The clearest current defect was task creation project options: organization-scoped users (including the bootstrap system administrator) could have `tasks.create` permission but still receive only explicitly related projects. Task project options now honor `tasks.create` scopes: organization sees all active projects; department/tree scopes include the corresponding department projects; project/self scopes are applied, while direct project membership remains available.
+
+The audit also identified remaining scope gaps in several task actions (`refer`, `submit`, `review`, reminder actions) and project mutation actions that currently check permission existence plus contextual ownership/manager rules without applying the configured permission scope. These must be normalized before V1 authorization can be considered fully consistent.
+
+**Status: audit in progress; task project-option defect fixed; broader scope normalization pending.**
