@@ -25,6 +25,7 @@ class UserInvitationTest extends TestCase
 
         $response = $this->actingAs($admin)->post(route('users.store'), [
             'name' => 'دعوت شده',
+            'username' => 'invited_user',
             'email' => 'invited@example.com',
             'status' => 'inactive',
             'role_ids' => [],
