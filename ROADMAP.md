@@ -622,3 +622,8 @@ Project mutation authorization and task workflow actions now enforce permission 
 - tests/Feature/Modules/Tasks/TaskHttpTest.php now creates task permission fixtures with the same PermissionScope::defaultForPermission() semantics used by production role-permission synchronization.
 - This prevents the database default organization scope from masking project-scoped authorization in HTTP tests.
 - TaskHttpTest passes after this normalization.
+
+
+### V1 Permission Scope Normalization — 2026-10-06
+- Completed the permission-scope capability audit for the remaining V1 areas. Scope is now explicitly meaningful only for Tasks and Projects; Users, Departments, Roles, External Parties, Cartable, Notifications and other organization-level permissions are not presented as scope-aware permissions.
+- Backend validation/action-layer enforcement prevents invalid scope combinations from being persisted. V1 remains in technical validation/manual acceptance; V2 is unchanged.
