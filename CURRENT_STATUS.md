@@ -142,3 +142,9 @@ The full `UserControllerTest` exposed that `UpdateUserAction` no longer honored 
 During manual V1 UI acceptance, required fields were found to lack a consistent visual indicator. The frontend now renders a red `*` beside labels whose associated control is required, with required attributes completed for the applicable V1 forms. External-party forms were also given visible labels for their required fields. Conditional user-password validation is reflected by a dynamic required attribute.
 
 **Status: implemented; frontend build validation pending.**
+
+
+## External parties navigation — 2026-10-06
+The external-parties page now uses the standard authenticated layout so the main navigation remains available. A dedicated «بازگشت» action was also added to return to the previous page, with dashboard fallback when browser history is unavailable.
+
+**Status: implemented; frontend build validation pending.**
