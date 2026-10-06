@@ -95,6 +95,95 @@ class RolePermissionControllerTest extends TestCase
         );
     }
 
+    public function test_non_scope_aware_permission_rejects_non_organization_scope(): void
+    {
+        $user = User::factory()->create();
+
+        $this->grantPermissions($user, [
+            'roles.manage_permissions',
+        ]);
+
+        $role = Role::create([
+            'name' => 'Manager',
+            'code' => 'MANAGER',
+            'description' => null,
+            'is_active' => true,
+            'is_system' => false,
+        ]);
+
+        $permission = Permission::create([
+            'name' => 'مشاهده کاربران',
+            'code' => 'users.view',
+            'description' => null,
+            'is_active' => true,
+            'is_system' => false,
+        ]);
+
+        $this->actingAs($user)
+            ->put(
+                route('roles.permissions.update', $role),
+                [
+                    'permissions' => [
+                        [
+                            'permission_id' => $permission->id,
+                            'scope' => PermissionScope::Department->value,
+                        ],
+                    ],
+                ]
+            )
+            ->assertSessionHasErrors('permissions.0.scope');
+
+        $this->assertDatabaseMissing('permission_role', [
+            'role_id' => $role->id,
+            'permission_id' => $permission->id,
+        ]);
+    }
+
+    public function test_project_permission_accepts_a_project_scope(): void
+    {
+        $user = User::factory()->create();
+
+        $this->grantPermissions($user, [
+            'roles.manage_permissions',
+        ]);
+
+        $role = Role::create([
+            'name' => 'Project Manager',
+            'code' => 'PROJECT_MANAGER',
+            'description' => null,
+            'is_active' => true,
+            'is_system' => false,
+        ]);
+
+        $permission = Permission::create([
+            'name' => 'مشاهده پروژه‌ها',
+            'code' => 'projects.view',
+            'description' => null,
+            'is_active' => true,
+            'is_system' => false,
+        ]);
+
+        $this->actingAs($user)
+            ->put(
+                route('roles.permissions.update', $role),
+                [
+                    'permissions' => [
+                        [
+                            'permission_id' => $permission->id,
+                            'scope' => PermissionScope::Project->value,
+                        ],
+                    ],
+                ]
+            )
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(
+            PermissionScope::Project->value,
+            $role->fresh()->permissions()->firstOrFail()->pivot->scope
+        );
+    }
+
     public function test_authenticated_user_can_replace_role_permissions(): void
     {
         $user = User::factory()->create();
