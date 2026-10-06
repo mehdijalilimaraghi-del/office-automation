@@ -94,7 +94,7 @@ const submit = (): void => {
 
                     <div class="space-y-2">
                         <label for="name" class="text-sm font-medium">نام پروژه</label>
-                        <input id="name" v-model="form.name" type="text" class="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+                        <input id="name" v-model="form.name" type="text" required class="w-full rounded-md border bg-background px-3 py-2 text-sm" />
                         <p v-if="form.errors.name" class="text-sm text-destructive">{{ form.errors.name }}</p>
                     </div>
 
@@ -102,7 +102,7 @@ const submit = (): void => {
 
                     <div class="space-y-2">
                         <label for="status" class="text-sm font-medium">وضعیت</label>
-                        <select id="status" v-model="form.status" class="w-full rounded-md border bg-background px-3 py-2 text-sm">
+                        <select id="status" v-model="form.status" required class="w-full rounded-md border bg-background px-3 py-2 text-sm">
                             <option v-for="option in statusOptions" :key="option.value" :value="option.value">
                                 {{ option.label }}
                             </option>
