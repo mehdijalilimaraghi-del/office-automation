@@ -34,7 +34,7 @@ function submit(): void {
             <form class="space-y-5" @submit.prevent="submit">
                 <div>
                     <label class="mb-1.5 block text-sm font-semibold text-slate-700">رمز عبور جدید</label>
-                    <input v-model="form.password" type="password" class="w-full rounded-xl border-slate-200 bg-slate-50/50" />
+                    <input v-model="form.password" type="password" required class="w-full rounded-xl border-slate-200 bg-slate-50/50" />
                     <p v-if="form.errors.password" class="mt-1 text-xs text-red-600">{{ form.errors.password }}</p>
                 </div>
                 <div>
