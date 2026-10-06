@@ -47,6 +47,7 @@ class AuditLogTest extends TestCase
 
         $user = app(\App\Core\Users\Actions\CreateUserAction::class)->execute([
             'name' => 'Audited User',
+            'username' => 'audited_user',
             'email' => 'audited@example.com',
             'status' => 'inactive',
         ]);
