@@ -35,8 +35,13 @@ class UpdateUserAction
 
         $oldValues = $user->only(['name', 'username', 'email', 'mobile', 'phone', 'extension', 'status']);
 
+        $name = trim(implode(' ', array_filter([
+            trim((string) ($data['first_name'] ?? '')),
+            trim((string) ($data['last_name'] ?? '')),
+        ]));
+
         $attributes = [
-            'name' => $data['name'],
+            'name' => $name !== '' ? $name : $user->name,
             'username' => $data['username'],
             'email' => $data['email'],
             'mobile' => $data['mobile'] ?? null,
