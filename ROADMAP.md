@@ -603,3 +603,11 @@ Fixed the gap between department default projects and task creation: system-defa
 ### 2026-10-06 — Project view scope
 Project visibility now respects the configured `projects.view` permission scope, including unit-level visibility for projects belonging to the user's departments and their default projects.
 **Status:** implemented; validation pending.
+
+
+### 2026-10-06 — Permission scope audit
+A review of role/permission enforcement found that permission existence is generally enforced, but scope is not yet consistent across all module actions. The task creation project selector was specifically corrected to honor `tasks.create` scopes, including organization scope for the system administrator.
+
+The audit identified remaining scope gaps in several task actions and project mutation actions. These require normalization before permission handling can be considered fully consistent across V1.
+
+**Status:** audit in progress; task project-option defect fixed; broader scope normalization pending.
