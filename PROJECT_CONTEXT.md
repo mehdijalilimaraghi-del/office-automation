@@ -6,9 +6,18 @@ This document is the persistent working context for the Office Automation projec
 
 Build a Persian-language company office-automation system as a **Modular Monolith** from the beginning.
 
-Version 1 focuses on:
-- Projects
-- Task management
+The product is versioned. ROADMAP.md is the authoritative product/version source.
+
+Current version:
+- V1 — Foundation & Work Management
+
+V1 includes Core, internal organization, Projects, Tasks, Custom Fields and the shared operational backbone required by them.
+
+Current checkpoint:
+- V1 technical/debugging and manual UI/functional acceptance.
+
+Next version:
+- V2 — Office Automation
 
 The architecture must allow future modules without rewriting the core.
 
@@ -81,15 +90,17 @@ Core modules/concepts:
 - Tasks
 - Dashboard
 
-Future modules may include:
-- Contacts / External Parties
-- Documents / Attachments
-- Notifications
-- Internal Chat
-- Asterisk integration
-- Settings
-- Audit / Activity
-- Other business modules
+Implemented/current capabilities also include:
+- Custom Fields
+- External organization / department / contact management
+- Documents / attachments foundation
+- Workflow V1
+- Unified Cartable V1
+- Notifications V1
+- Audit V1
+- Organization Settings
+
+Future modules and versions are defined in ROADMAP.md.
 
 Modules must avoid direct hard dependencies on unrelated modules.
 
@@ -867,3 +878,66 @@ The planned expansion includes:
 
 Accounting is intentionally outside the current product boundary.
 
+
+
+---
+
+# Persistent Current Checkpoint — 2026-10-06
+
+## Product Goal
+
+Build a Persian-language, RTL, production-oriented company office-automation platform as a Modular Monolith. The long-term product is broader than Projects/Tasks and is organized into explicit product versions. Shared operational capabilities must be reusable by later modules rather than duplicated.
+
+## Version State
+
+**Current version: V1 — Foundation & Work Management**
+
+V1 implementation scope is complete.
+
+**Current checkpoint:** V1 technical/debugging and manual UI/functional acceptance.
+
+**Next official version:** V2 — Office Automation.
+
+The full V1–V8 version boundaries are maintained in ROADMAP.md.
+
+## Current Runtime Blockers
+
+1. `ExternalPartyController.php` has a PHP parse error around the recent `custom_fields` validation changes and currently breaks `/login` through route discovery/Ziggy.
+2. `HasSystemCode.php` uses `updateQuietly()` from the `created` event; on SQL Server this attempts to update the identity `id` column when creating a Position. Fix the code generation at root cause.
+
+## Immediate Working Order
+
+1. Inspect and fix the two runtime defects.
+2. Add/adjust regression tests for both.
+3. Run one validation step at a time in the user's local environment.
+4. Run frontend build after frontend-affecting changes.
+5. Perform manual UI/functional acceptance.
+6. Update ROADMAP.md and CURRENT_STATUS.md after meaningful changes.
+7. Do not start V2 until V1 acceptance closes.
+
+## Working Rules for Future Conversations
+
+- Repository: `mehdijalilimaraghi-del/office-automation`
+- Development branch: `development`
+- Stable branch: `master`
+- Never develop directly on `master`.
+- Inspect repository and persistent project documents before changing code.
+- Make implementation/debugging changes directly when user approval is not required.
+- Assistant edits/creates code and tests in GitHub; user runs tests locally.
+- After every code change, provide the exact PowerShell validation command.
+- Add `git pull origin development` at the beginning of the validation command only when code changes were made immediately before that validation.
+- Prefer one validation step at a time.
+- Use standard, production-quality Laravel/PHP/Vue/TypeScript patterns.
+- Do not weaken tests or hide errors with destructive changes.
+- UI/UX should follow modern Google Material Design principles with Persian RTL constraints.
+- Act as a senior developer/architect and implement non-blocking decisions directly.
+- Record meaningful completed work, decisions and current blockers in persistent documentation.
+
+## Documentation Authority
+
+1. `ROADMAP.md` — product version and scope authority
+2. `CURRENT_STATUS.md` — current implementation/checkpoint authority
+3. `PROJECT_CONTEXT.md` — persistent detailed context
+4. `ARCHITECTURE.md` — architecture boundaries
+5. `PROJECT_SPEC.md` — system specification
+6. `DEVELOPMENT.md` — engineering workflow
