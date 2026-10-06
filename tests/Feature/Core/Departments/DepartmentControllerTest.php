@@ -87,7 +87,10 @@ class DepartmentControllerTest extends TestCase
         $this->assertDatabaseHas('projects', [
             'department_id' => $department->id,
             'name' => 'پروژه عمومی فناوری اطلاعات',
-            'code' => 'DEPT-'.$department->id.'-DEFAULT',
+            'code' => sprintf('PRJ-%06d', Project::query()
+                ->where('department_id', $department->id)
+                ->where('is_system_default', true)
+                ->value('id')),
             'is_system_default' => true,
         ]);
 
@@ -119,7 +122,7 @@ class DepartmentControllerTest extends TestCase
             ]
         )->assertRedirect();
 
-        $department = Department::where('code', 'IT')->firstOrFail();
+        $department = Department::where('name', 'فناوری اطلاعات')->firstOrFail();
 
         $this->assertDatabaseHas('projects', [
             'department_id' => $department->id,
