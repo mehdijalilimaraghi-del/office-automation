@@ -406,7 +406,6 @@ const handleProjectChange = (): void => {
                         پاک کردن
                     </button>
                 </div>
-                </div>
             </section>
 
             <section class="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
