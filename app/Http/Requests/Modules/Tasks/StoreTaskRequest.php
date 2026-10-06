@@ -15,10 +15,15 @@ class StoreTaskRequest extends FormRequest
     {
         $projectId = $this->input('project_id');
 
-        return Gate::allows('create', [
-            Task::class,
-            $projectId !== null ? (int) $projectId : null,
-        ]);
+        abort_unless(
+            Gate::allows('create', [
+                Task::class,
+                $projectId !== null ? (int) $projectId : null,
+            ]),
+            403
+        );
+
+        return true;
     }
 
     public function rules(): array
