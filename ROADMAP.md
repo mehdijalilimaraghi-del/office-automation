@@ -507,21 +507,28 @@ A version closes only when all of the following are true:
 
 ---
 
-# Current Position — 2026-10-05
+# Current Position — 2026-10-06
 
 **Current version: V1 — Foundation & Work Management**
 
-V1 implementation is complete.
+**V1 implementation status:** scope implemented.
 
-The project is currently in the **V1 manual acceptance / UI refinement checkpoint**.
+**V1 acceptance status:** technical/debugging + manual UI/functional acceptance in progress.
 
-The next official product version is:
+Current blockers found during recent local acceptance:
+- `app/Core/ExternalParties/Http/Controllers/ExternalPartyController.php` has a PHP syntax error around the recent `custom_fields` validation edits; this currently breaks `/login` through route discovery/Ziggy.
+- `app/Models/Concerns/HasSystemCode.php` performs an Eloquent `updateQuietly()` from the `created` event; on SQL Server this currently attempts to update the identity `id` column when creating a Position. The system-code generation must be corrected without weakening SQL Server identity semantics.
 
-**V2 — Office Automation**
+Recent V1 work includes Core identity/organization, Projects, Tasks, Workflow V1, Documents/attachments foundation, Unified Cartable V1, Notifications, Audit V1, Custom Fields, system-generated business codes, external-party management, and Persian RTL/Jalali UI foundations.
 
-Its first module is **Correspondence**, but Correspondence must be implemented as a new V2 module on top of the already-built V1 backbone. No old/partial Correspondence implementation should be treated as V1 functionality.
+Before V1 closes:
+1. Fix the two current runtime defects at their root.
+2. Run the relevant regression tests.
+3. Run the frontend production build.
+4. Perform final manual UI/functional acceptance.
+5. Reconcile the roadmap and project status before any V2 work.
 
----
+No V2 implementation should begin until the V1 acceptance gate is closed.
 
 # Implementation Order
 
