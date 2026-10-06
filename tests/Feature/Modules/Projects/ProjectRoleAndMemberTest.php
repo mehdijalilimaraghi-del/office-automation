@@ -33,30 +33,25 @@ class ProjectRoleAndMemberTest extends TestCase
             'id' => $role->id,
             'project_id' => $project->id,
             'name' => 'Developer',
-            'code' => 'developer',
             'is_active' => true,
         ]);
     }
 
-    public function test_duplicate_project_role_code_is_rejected(): void
+    public function test_project_role_codes_are_generated_automatically_and_are_unique(): void
     {
         $project = $this->createProject();
-
         $service = app(ProjectRoleServiceContract::class);
 
-        $service->create($project->id, [
+        $first = $service->create($project->id, [
             'name' => 'Developer',
-            'code' => 'developer',
         ]);
-
-        $this->expectException(
-            InvalidArgumentException::class
-        );
-
-        $service->create($project->id, [
+        $second = $service->create($project->id, [
             'name' => 'Another Developer',
-            'code' => 'developer',
         ]);
+
+        $this->assertMatchesRegularExpression('/^PRL-\\d{6}$/', $first->code);
+        $this->assertMatchesRegularExpression('/^PRL-\\d{6}$/', $second->code);
+        $this->assertNotSame($first->code, $second->code);
     }
 
     public function test_project_role_can_be_updated(): void
@@ -85,7 +80,7 @@ class ProjectRoleAndMemberTest extends TestCase
         );
 
         $this->assertSame(
-            'senior_developer',
+            'developer',
             $updated->code
         );
 
