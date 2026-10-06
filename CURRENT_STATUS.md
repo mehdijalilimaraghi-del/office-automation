@@ -158,3 +158,7 @@ The external department screen now presents departments as a visible hierarchy. 
 ## Task default-project visibility — 2026-10-06
 Department creation already persists a real system-default project in the database. The task creation options previously loaded only projects with explicit project membership, so a department's default project could exist in the database but remain absent from the task project selector. Task creation options, authorization, assignee validation, and task project access now recognize system-default projects through the user's department membership.
 **Status: implemented; backend/frontend validation pending.**
+
+## Project view scope — 2026-10-06
+Project listing and individual project viewing now honor the `projects.view` permission scope. Users with unit scope can see projects belonging to their units, including unit default projects; department-tree, project, self, and organization scopes are also enforced consistently.
+**Status: implemented; backend validation pending.**
