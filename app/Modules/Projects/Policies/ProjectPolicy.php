@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Projects\Policies;
 
 use App\Models\User;
+use App\Core\Permissions\Enums\PermissionScope;
 use App\Modules\Projects\Models\Project;
 
 class ProjectPolicy
@@ -17,8 +18,47 @@ class ProjectPolicy
 
     public function view(User $user, Project $project): bool
     {
-        return $user->isActive()
-            && $user->hasPermission('projects.view');
+        if (! $user->isActive()) {
+            return false;
+        }
+
+        $scopes = $user->permissionScopes('projects.view');
+
+        if (in_array(PermissionScope::Organization->value, $scopes, true)) {
+            return true;
+        }
+
+        if (
+            in_array(PermissionScope::Self->value, $scopes, true)
+            && (
+                (int) $project->created_by === (int) $user->id
+                || (int) $project->manager_id === (int) $user->id
+            )
+        ) {
+            return true;
+        }
+
+        if (
+            in_array(PermissionScope::Department->value, $scopes, true)
+            && $project->department_id !== null
+            && $user->departments()->whereKey($project->department_id)->exists()
+        ) {
+            return true;
+        }
+
+        if (in_array(PermissionScope::DepartmentTree->value, $scopes, true) && $project->department_id !== null) {
+            foreach ($user->departments()->get() as $department) {
+                if (in_array((int) $project->department_id, array_map('intval', array_merge([$department->id], $department->descendantIds())), true)) {
+                    return true;
+                }
+            }
+        }
+
+        return in_array(PermissionScope::Project->value, $scopes, true)
+            && (
+                (int) $project->manager_id === (int) $user->id
+                || $project->users()->whereKey($user->id)->exists()
+            );
     }
 
     public function create(User $user): bool
