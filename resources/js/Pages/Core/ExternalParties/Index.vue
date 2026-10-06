@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue';
-import { router, usePage } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
 
 type CustomField = {
@@ -82,6 +83,25 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
 </script>
 
 <template>
+    <Head title="سازمان‌های بیرونی" />
+
+    <AuthenticatedLayout>
+        <template #header>
+          <div class="flex items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-semibold">سازمان‌های بیرونی</h2>
+              <p class="mt-1 text-sm text-muted-foreground">مدیریت سازمان‌ها، واحدها و افراد طرف تعامل</p>
+            </div>
+            <button
+              type="button"
+              @click="window.history.length > 1 ? window.history.back() : router.visit(route('dashboard'))"
+              class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+            >
+              بازگشت
+            </button>
+          </div>
+        </template>
+
 <div class="min-h-screen bg-slate-50/70 p-4 sm:p-6 lg:p-8" dir="rtl">
   <div class="mx-auto max-w-7xl space-y-6">
     <section class="overflow-hidden rounded-3xl bg-gradient-to-l from-slate-950 via-slate-900 to-teal-950 p-6 text-white shadow-xl sm:p-8">
@@ -205,5 +225,5 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
       </div>
     </section>
   </div>
-</div>
+    </AuthenticatedLayout>
 </template>
