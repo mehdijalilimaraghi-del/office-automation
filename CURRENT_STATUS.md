@@ -181,3 +181,9 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - tests/Feature/Modules/Tasks/TaskHttpTest.php now creates task permission fixtures with the same PermissionScope::defaultForPermission() semantics used by production role-permission synchronization.
 - This prevents the database default organization scope from masking project-scoped authorization in HTTP tests.
 - TaskHttpTest passes after this normalization.
+
+
+### Permission Scope Capability Audit — 2026-10-06
+- V1 permission scopes are now capability-aware: only `tasks.*` and `projects.*` permissions accept contextual scopes (`self`, `department`, `department_tree`, `project`, `organization`). Other V1 permissions are organization-wide and are persisted only with `organization` scope.
+- Role permission validation and the synchronization action reject invalid scope combinations; the role-permission UI no longer presents misleading scope selectors for non-scope-aware permissions.
+- Regression coverage added for rejecting a non-organization scope on `users.view` and accepting project scope on `projects.view`.
