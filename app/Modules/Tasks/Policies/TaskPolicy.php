@@ -37,16 +37,62 @@ class TaskPolicy
             return true;
         }
 
-        return $user->projects()->where('projects.id', $projectId)->exists()
-            || Project::query()
-                ->whereKey($projectId)
-                ->where('is_active', true)
-                ->where('is_system_default', true)
-                ->whereIn(
-                    'department_id',
-                    $user->departments()->pluck('departments.id')
+        $scopes = $user->permissionScopes('tasks.create');
+
+        if (in_array(\App\Core\Permissions\Enums\PermissionScope::Organization->value, $scopes, true)) {
+            return true;
+        }
+
+        $project = Project::query()
+            ->with('department')
+            ->whereKey($projectId)
+            ->where('is_active', true)
+            ->first();
+
+        if ($project === null) {
+            return false;
+        }
+
+        if (
+            in_array(\App\Core\Permissions\Enums\PermissionScope::Department->value, $scopes, true)
+            && $project->department_id !== null
+            && $user->departments()->whereKey($project->department_id)->exists()
+        ) {
+            return true;
+        }
+
+        if (in_array(\App\Core\Permissions\Enums\PermissionScope::DepartmentTree->value, $scopes, true)) {
+            foreach ($user->departments()->get() as $department) {
+                if (in_array(
+                    (int) $project->department_id,
+                    array_map('intval', array_merge([$department->id], $department->descendantIds())),
+                    true
+                )) {
+                    return true;
+                }
+            }
+        }
+
+        if (
+            in_array(\App\Core\Permissions\Enums\PermissionScope::Project->value, $scopes, true)
+            && (
+                (int) $project->manager_id === (int) $user->id
+                || $project->users()->whereKey($user->id)->exists()
+                || (
+                    $project->is_system_default
+                    && $project->department_id !== null
+                    && $user->departments()->whereKey($project->department_id)->exists()
                 )
-                ->exists();
+            )
+        ) {
+            return true;
+        }
+
+        return in_array(\App\Core\Permissions\Enums\PermissionScope::Self->value, $scopes, true)
+            && (
+                (int) $project->created_by === (int) $user->id
+                || (int) $project->manager_id === (int) $user->id
+            );
     }
 
     public function update(User $user, Task $task): bool
