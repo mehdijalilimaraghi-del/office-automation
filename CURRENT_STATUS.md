@@ -136,3 +136,9 @@ The user identity change exposed a PHP syntax error in `UpdateUserAction.php` ca
 The full `UserControllerTest` exposed that `UpdateUserAction` no longer honored the documented legacy `name` compatibility fallback when an older caller submitted `name` without `first_name`/`last_name`. The update action now derives the display name from first/last name and falls back to the legacy `name` input when those fields are absent/blank.
 
 **Status: fixed; full `UserControllerTest` validation is pending.**
+
+
+## Required-field indicators — 2026-10-06
+During manual V1 UI acceptance, required fields were found to lack a consistent visual indicator. The frontend now renders a red `*` beside labels whose associated control is required, with required attributes completed for the applicable V1 forms. External-party forms were also given visible labels for their required fields. Conditional user-password validation is reflected by a dynamic required attribute.
+
+**Status: implemented; frontend build validation pending.**
