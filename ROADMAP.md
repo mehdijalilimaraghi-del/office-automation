@@ -571,3 +571,9 @@ Such systems should integrate with Office Automation rather than distort the Cor
 
 ### 2026-10-06 — User identity regression fix
 A PHP syntax error introduced in `UpdateUserAction.php` during the display-name derivation change was corrected by simplifying the expression. Focused `UserControllerTest` validation is pending.
+
+
+### 2026-10-06 — User update compatibility regression
+The full `UserControllerTest` exposed a compatibility regression: legacy update callers providing `name` without first/last name no longer updated `users.name`. `UpdateUserAction` now retains the documented fallback while continuing to derive the display name from first/last name for the current UI.
+
+**Status:** fixed; full `UserControllerTest` validation pending.
