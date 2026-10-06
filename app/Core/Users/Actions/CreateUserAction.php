@@ -8,6 +8,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class CreateUserAction
 {
@@ -17,8 +18,23 @@ class CreateUserAction
 
     public function execute(array $data): User
     {
+        $name = trim(implode(' ', array_filter([
+            trim((string) ($data['first_name'] ?? '')),
+            trim((string) ($data['last_name'] ?? '')),
+        ])));
+
+        if ($name === '') {
+            $name = trim((string) ($data['name'] ?? ''));
+        }
+
+        if ($name === '') {
+            throw ValidationException::withMessages([
+                'first_name' => 'نام و نام خانوادگی کاربر الزامی است.',
+            ]);
+        }
+
         $user = User::create([
-            'name' => $data['name'],
+            'name' => $name,
             'username' => $data['username'],
             'email' => $data['email'],
             'mobile' => $data['mobile'] ?? null,
