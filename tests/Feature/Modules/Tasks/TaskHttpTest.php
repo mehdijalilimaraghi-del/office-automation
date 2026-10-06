@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Modules\Tasks;
 
+use App\Core\Permissions\Enums\PermissionScope;
 use App\Core\Permissions\Models\Permission;
 use App\Core\Roles\Models\Role;
 use App\Models\User;
@@ -342,7 +343,9 @@ class TaskHttpTest extends TestCase
             'is_system' => false,
         ]);
 
-        $role->permissions()->attach($permission->id);
+        $role->permissions()->attach($permission->id, [
+            'scope' => PermissionScope::defaultForPermission($permission->code)->value,
+        ]);
 
         $user = User::factory()->create([
             'status' => 'active',
