@@ -81,6 +81,12 @@ During manual V1 acceptance, creating a user with a password shorter than the en
 - Full PHPUnit/Laravel test suite: passed
 - Frontend production build (`npm run build`): passed
 
+## User identity form consistency
+
+The user form no longer asks for a standalone display name in addition to first name and last name. `users.name` remains the system display field for compatibility, but it is now derived from `first_name` + `last_name` during user creation/update. Legacy backend `name` input remains accepted as a compatibility fallback.
+
+**Status: fixed.**
+
 ## Immediate Next Sequence
 1. Pull the latest `development` change and manually retry creating a user with a password shorter than 8 characters; verify the Persian message is shown.
 2. If that passes, continue final V1 manual UI/functional acceptance.
