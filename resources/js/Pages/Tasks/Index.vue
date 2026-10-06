@@ -5,6 +5,8 @@ import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
 import { computed, ref } from 'vue';
 
+const showCreateModal = ref(false);
+
 const isFiltering = ref(false);
 
 interface User {
@@ -185,7 +187,7 @@ const resetCreateForm = (): void => {
 const submitCreate = (): void => {
     createForm.post(route('tasks.store'), {
         preserveScroll: true,
-        onSuccess: () => resetCreateForm(),
+        onSuccess: () => { resetCreateForm(); showCreateModal = false; },
     });
 };
 
@@ -210,17 +212,26 @@ const handleProjectChange = (): void => {
 </script>
 
 <template>
-    <Head title="تسک‌ها" />
+    <Head title="وظایف" />
 
     <AuthenticatedLayout>
         <template #header>
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h2 class="text-xl font-bold tracking-tight text-gray-900">تسک‌ها</h2>
-                    <p class="mt-1 text-sm text-gray-500">مشاهده و پیگیری کارهای قابل دسترسی شما</p>
+                    <div>
+                        <h2 class="text-xl font-bold tracking-tight text-gray-900">وظایف</h2>
+                        <p class="mt-1 text-sm text-gray-500">مشاهده و پیگیری وظایف قابل دسترسی شما</p>
+                    </div>
                 </div>
-                <div class="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
-                    {{ props.tasks.total }} تسک
+                <div class="flex items-center gap-2">
+                    <div class="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
+                        {{ props.tasks.total }} وظیفه
+                    </div>
+                    <button v-if="canCreate && formOptions" type="button"
+                        class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800"
+                        @click="showCreateModal = true">
+                        ایجاد وظیفه
+                    </button>
                 </div>
             </div>
         </template>
@@ -228,21 +239,23 @@ const handleProjectChange = (): void => {
         <div class="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
             <section
                 v-if="canCreate && formOptions"
-                class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+                class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 sm:p-6"
             >
-                <div class="border-b border-gray-100 bg-gray-50/70 px-5 py-4 sm:px-6">
-                    <h3 class="font-bold text-gray-900">ایجاد تسک جدید</h3>
-                    <p class="mt-1 text-sm text-gray-500">
-                        اطلاعات اصلی تسک را ثبت کنید. وضعیت اولیه «انجام نشده» خواهد بود.
-                    </p>
+                <div class="my-4 w-full max-w-5xl overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl sm:my-8">
+                <div class="flex items-start justify-between gap-4 border-b border-gray-100 bg-gray-50/70 px-5 py-4 sm:px-6">
+                    <div>
+                        <h3 class="font-bold text-gray-900">ایجاد وظیفه جدید</h3>
+                        <p class="mt-1 text-sm text-gray-500">اطلاعات اصلی وظیفه را ثبت کنید. وضعیت اولیه «انجام نشده» خواهد بود.</p>
+                    </div>
+                    <button type="button" class="rounded-lg p-2 text-gray-500 hover:bg-gray-200 hover:text-gray-800" aria-label="بستن" @click="showCreateModal = false">×</button>
                 </div>
 
                 <form class="grid gap-4 p-5 sm:p-6 md:grid-cols-2" @submit.prevent="submitCreate">
                     <div class="md:col-span-2">
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700">عنوان تسک</label>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">عنوان وظیفه</label>
                         <input v-model="createForm.title" type="text" required maxlength="255"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-                            placeholder="عنوان کار را وارد کنید" />
+                            placeholder="عنوان وظیفه را وارد کنید" />
                         <p v-if="createForm.errors.title" class="mt-1.5 text-sm text-red-600">{{ createForm.errors.title }}</p>
                     </div>
 
@@ -265,7 +278,7 @@ const handleProjectChange = (): void => {
                     </div>
 
                     <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700">مسئول تسک</label>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">مسئول وظیفه</label>
                         <select v-model="createForm.assignee_id"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
                             <option :value="null">بدون مسئول</option>
@@ -308,7 +321,7 @@ const handleProjectChange = (): void => {
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">توضیحات</label>
                         <textarea v-model="createForm.description" rows="4"
                             class="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-                            placeholder="شرح کار، خروجی مورد انتظار یا اطلاعات تکمیلی" />
+                            placeholder="شرح وظیفه، خروجی مورد انتظار یا اطلاعات تکمیلی" />
                     </div>
 
                     <CustomFieldsForm
@@ -316,21 +329,21 @@ const handleProjectChange = (): void => {
                         v-model="createForm.custom_fields"
                         :fields="props.customFields"
                         :errors="createForm.errors as Record<string, string>"
-                        title="اطلاعات تکمیلی تسک"
+                        title="اطلاعات تکمیلی وظیفه"
                         description="اطلاعات اختصاصی تعریف‌شده برای تسک را در این بخش ثبت کنید."
                     />
 
                     <div v-if="createForm.assignee_id" class="md:col-span-2">
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700">توضیح تخصیص</label>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">توضیح تخصیص وظیفه</label>
                         <input v-model="createForm.assignment_note" type="text" maxlength="5000"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
-                            placeholder="در صورت نیاز، توضیحی برای مسئول تسک بنویسید" />
+                            placeholder="در صورت نیاز، توضیحی برای مسئول وظیفه بنویسید" />
                     </div>
 
                     <div class="flex flex-wrap gap-2 border-t border-gray-100 pt-4 md:col-span-2">
                         <button type="submit" :disabled="createForm.processing"
                             class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
-                            {{ createForm.processing ? 'در حال ذخیره...' : 'ایجاد تسک' }}
+                            {{ createForm.processing ? 'در حال ذخیره...' : 'ایجاد وظیفه' }}
                         </button>
                         <button type="button" :disabled="createForm.processing"
                             class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
@@ -392,12 +405,13 @@ const handleProjectChange = (): void => {
                         پاک کردن
                     </button>
                 </div>
+                </div>
             </section>
 
             <section class="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
                 <div class="flex items-center justify-between border-b border-gray-100 px-4 py-4 sm:px-5">
                     <div>
-                        <h3 class="font-bold text-gray-900">فهرست تسک‌ها</h3>
+                        <h3 class="font-bold text-gray-900">فهرست وظایف</h3>
                         <p class="mt-0.5 text-xs text-gray-500">مواردی که بر اساس سطح دسترسی شما قابل مشاهده هستند</p>
                     </div>
                     <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">{{ props.tasks.total }}</span>
@@ -411,7 +425,7 @@ const handleProjectChange = (): void => {
 
                 <div v-if="props.tasks.data.length === 0" class="px-6 py-14 text-center">
                     <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-500">—</div>
-                    <p class="mt-3 font-medium text-gray-800">{{ props.tasks.total === 0 ? 'تسکی با این مشخصات پیدا نشد.' : 'تسکی برای نمایش وجود ندارد.' }}</p>
+                    <p class="mt-3 font-medium text-gray-800">{{ props.tasks.total === 0 ? 'وظیفه‌ای با این مشخصات پیدا نشد.' : 'وظیفه‌ای برای نمایش وجود ندارد.' }}</p>
                     <p v-if="search" class="mt-1 text-sm text-gray-500">عبارت جست‌وجو را تغییر دهید و دوباره تلاش کنید.</p>
                 </div>
 
@@ -469,7 +483,7 @@ const handleProjectChange = (): void => {
             </section>
             <div v-if="props.tasks.last_page > 1" class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
                 <p class="text-xs text-gray-500">
-                    نمایش {{ props.tasks.from ?? 0 }} تا {{ props.tasks.to ?? 0 }} از {{ props.tasks.total }} تسک
+                    نمایش {{ props.tasks.from ?? 0 }} تا {{ props.tasks.to ?? 0 }} از {{ props.tasks.total }} وظیفه
                 </p>
                 <div class="flex flex-wrap items-center gap-1">
                     <Link v-for="link in paginationLinks" :key="link.label" :href="link.url!" preserve-scroll preserve-state
