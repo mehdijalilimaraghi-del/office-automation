@@ -187,7 +187,7 @@ const resetCreateForm = (): void => {
 const submitCreate = (): void => {
     createForm.post(route('tasks.store'), {
         preserveScroll: true,
-        onSuccess: () => { resetCreateForm(); showCreateModal = false; },
+        onSuccess: () => { resetCreateForm(); showCreateModal.value = false; },
     });
 };
 
