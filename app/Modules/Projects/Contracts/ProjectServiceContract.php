@@ -10,7 +10,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 interface ProjectServiceContract
 {
-    public function list(): LengthAwarePaginator;
+    public function list(User $user): LengthAwarePaginator;
 
     public function show(Project $project): Project;
 
