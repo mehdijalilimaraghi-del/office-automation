@@ -57,9 +57,15 @@ class CreateTaskAction
                     ->where('user_id', $assignee->id)
                     ->exists();
 
-                if (! $isProjectMember) {
+                $isDefaultProjectDepartmentMember = $project->is_system_default
+                    && $project->department_id !== null
+                    && $project->department()
+                        ->whereHas('members', fn ($memberQuery) => $memberQuery->where('users.id', $assignee->id))
+                        ->exists();
+
+                if (! $isProjectMember && ! $isDefaultProjectDepartmentMember) {
                     throw new InvalidArgumentException(
-                        'مسئول تسک باید عضو همان پروژه باشد.'
+                        'مسئول تسک باید عضو پروژه یا عضو واحد مربوط به پروژه باشد.'
                     );
                 }
             }
