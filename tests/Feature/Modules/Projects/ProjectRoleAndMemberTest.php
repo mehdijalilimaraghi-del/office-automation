@@ -87,7 +87,7 @@ class ProjectRoleAndMemberTest extends TestCase
         $this->assertDatabaseHas('project_roles', [
             'id' => $role->id,
             'name' => 'Senior Developer',
-            'code' => 'senior_developer',
+            'code' => 'developer',
         ]);
     }
 
