@@ -611,3 +611,8 @@ A review of role/permission enforcement found that permission existence is gener
 The audit identified remaining scope gaps in several task actions and project mutation actions. These require normalization before permission handling can be considered fully consistent across V1.
 
 **Status:** audit in progress; task project-option defect fixed; broader scope normalization pending.
+
+
+### 2026-10-06 — Permission scope normalization
+Project mutation authorization and task workflow actions now enforce permission scopes in addition to contextual rules. This covers project update/delete/member/role management and task create/refer/submit/review/reminder completion or cancellation.
+**Status:** implemented; full backend validation pending.
