@@ -341,6 +341,7 @@ const formatDate = (date: string | null): string => {
                         <select
                             id="member-user"
                             v-model="addMemberForm.user_id"
+                            required
                             class="h-10 w-full rounded-md border bg-background px-3 text-sm"
                             :disabled="addMemberForm.processing"
                         >
@@ -473,6 +474,7 @@ const formatDate = (date: string | null): string => {
                                 id="role-name"
                                 v-model="roleForm.name"
                                 type="text"
+                                required
                                 class="h-10 w-full rounded-md border bg-background px-3 text-sm"
                                 :disabled="roleForm.processing"
                             />
