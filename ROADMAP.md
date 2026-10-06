@@ -599,3 +599,7 @@ External departments now use hierarchical ordering and indentation in both the d
 ### 2026-10-06 — Task default-project visibility
 Fixed the gap between department default projects and task creation: system-default projects remain real database records and are now available to department members in task creation, with matching authorization and access rules.
 **Status:** implemented; validation pending.
+
+### 2026-10-06 — Project view scope
+Project visibility now respects the configured `projects.view` permission scope, including unit-level visibility for projects belonging to the user's departments and their default projects.
+**Status:** implemented; validation pending.
