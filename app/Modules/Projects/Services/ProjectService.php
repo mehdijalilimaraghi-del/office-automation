@@ -3,6 +3,7 @@
 namespace App\Modules\Projects\Services;
 
 use App\Models\User;
+use App\Core\Permissions\Enums\PermissionScope;
 use App\Modules\Projects\Actions\CreateProjectAction;
 use App\Modules\Projects\Actions\DeleteProjectAction;
 use App\Modules\Projects\Actions\UpdateProjectAction;
@@ -19,13 +20,53 @@ class ProjectService implements ProjectServiceContract
     ) {
     }
 
-    public function list(): LengthAwarePaginator
+    public function list(User $user): LengthAwarePaginator
     {
-        return Project::query()
-            ->with(['manager', 'creator'])
-            ->latest()
-            ->paginate(15)
-            ->withQueryString();
+        $query = Project::query()
+            ->with(['manager', 'creator']);
+
+        $scopes = $user->permissionScopes('projects.view');
+
+        if (in_array(PermissionScope::Organization->value, $scopes, true)) {
+            return $query->latest()->paginate(15)->withQueryString();
+        }
+
+        $query->where(function ($scopeQuery) use ($user, $scopes): void {
+            if (in_array(PermissionScope::Self->value, $scopes, true)) {
+                $scopeQuery
+                    ->where('projects.created_by', $user->id)
+                    ->orWhere('projects.manager_id', $user->id);
+            }
+
+            if (in_array(PermissionScope::Department->value, $scopes, true)) {
+                $departmentIds = $user->departments()->pluck('departments.id');
+
+                if ($departmentIds->isNotEmpty()) {
+                    $scopeQuery->orWhereIn('projects.department_id', $departmentIds);
+                }
+            }
+
+            if (in_array(PermissionScope::DepartmentTree->value, $scopes, true)) {
+                $departmentIds = [];
+
+                foreach ($user->departments()->get() as $department) {
+                    $departmentIds[] = (int) $department->id;
+                    $departmentIds = array_merge($departmentIds, $department->descendantIds());
+                }
+
+                if ($departmentIds !== []) {
+                    $scopeQuery->orWhereIn('projects.department_id', array_values(array_unique($departmentIds)));
+                }
+            }
+
+            if (in_array(PermissionScope::Project->value, $scopes, true)) {
+                $scopeQuery
+                    ->orWhere('projects.manager_id', $user->id)
+                    ->orWhereHas('users', fn ($userQuery) => $userQuery->where('users.id', $user->id));
+            }
+        });
+
+        return $query->latest()->paginate(15)->withQueryString();
     }
 
     public function show(Project $project): Project
