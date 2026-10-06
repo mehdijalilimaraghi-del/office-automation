@@ -577,3 +577,9 @@ A PHP syntax error introduced in `UpdateUserAction.php` during the display-name 
 The full `UserControllerTest` exposed a compatibility regression: legacy update callers providing `name` without first/last name no longer updated `users.name`. `UpdateUserAction` now retains the documented fallback while continuing to derive the display name from first/last name for the current UI.
 
 **Status:** fixed; full `UserControllerTest` validation pending.
+
+
+### 2026-10-06 — Required-field UI consistency
+V1 form review found that required controls were not consistently marked visually. A shared frontend indicator now displays a red `*` beside labels associated with required controls, required attributes were completed where missing, and external-party required fields now have visible labels.
+
+**Status:** implemented; frontend build validation pending.
