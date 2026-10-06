@@ -29,4 +29,35 @@ enum PermissionScope: string
             ? self::Project
             : self::Organization;
     }
+
+    /**
+     * Return the scopes that have a defined authorization meaning for a permission.
+     *
+     * Only task and project permissions are currently scope-aware in V1.
+     * Other permissions intentionally remain organization-wide.
+     *
+     * @return list<self>
+     */
+    public static function allowedForPermission(string $permissionCode): array
+    {
+        if (
+            str_starts_with($permissionCode, 'tasks.')
+            || str_starts_with($permissionCode, 'projects.')
+        ) {
+            return [
+                self::Self,
+                self::Department,
+                self::DepartmentTree,
+                self::Project,
+                self::Organization,
+            ];
+        }
+
+        return [self::Organization];
+    }
+
+    public static function allows(string $permissionCode, self $scope): bool
+    {
+        return in_array($scope, self::allowedForPermission($permissionCode), true);
+    }
 }
