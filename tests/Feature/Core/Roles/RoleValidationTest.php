@@ -40,22 +40,16 @@ class RoleValidationTest extends TestCase
         );
     }
 
-    public function test_code_cannot_contain_invalid_characters(): void
+    public function test_code_is_not_required_for_role_creation(): void
     {
         $validator = Validator::make(
             [
                 'name' => 'مدیر پروژه',
-                'code' => 'project manager',
             ],
             (new StoreRoleRequest())->rules()
         );
 
-        $this->assertTrue($validator->fails());
-
-        $this->assertArrayHasKey(
-            'code',
-            $validator->errors()->toArray()
-        );
+        $this->assertFalse($validator->fails());
     }
 
     public function test_valid_role_data_passes_validation(): void
@@ -63,7 +57,6 @@ class RoleValidationTest extends TestCase
         $validator = Validator::make(
             [
                 'name' => 'مدیر پروژه',
-                'code' => 'PROJECT_MANAGER',
                 'description' => 'مدیریت پروژه‌ها',
                 'is_active' => true,
             ],
