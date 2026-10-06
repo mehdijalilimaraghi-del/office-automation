@@ -229,7 +229,7 @@ const handleProjectChange = (): void => {
                     </div>
                     <button v-if="canCreate && formOptions" type="button"
                         class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800"
-                        @click="showCreateModal = true">
+                        @click="showCreateModal.value = true">
                         ایجاد وظیفه
                     </button>
                 </div>
@@ -247,7 +247,7 @@ const handleProjectChange = (): void => {
                         <h3 class="font-bold text-gray-900">ایجاد وظیفه جدید</h3>
                         <p class="mt-1 text-sm text-gray-500">اطلاعات اصلی وظیفه را ثبت کنید. وضعیت اولیه «انجام نشده» خواهد بود.</p>
                     </div>
-                    <button type="button" class="rounded-lg p-2 text-gray-500 hover:bg-gray-200 hover:text-gray-800" aria-label="بستن" @click="showCreateModal = false">×</button>
+                    <button type="button" class="rounded-lg p-2 text-gray-500 hover:bg-gray-200 hover:text-gray-800" aria-label="بستن" @click="showCreateModal.value = false">×</button>
                 </div>
 
                 <form class="grid gap-4 p-5 sm:p-6 md:grid-cols-2" @submit.prevent="submitCreate">
@@ -352,6 +352,7 @@ const handleProjectChange = (): void => {
                         </button>
                     </div>
                 </form>
+                </div>
             </section>
 
             <section class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
