@@ -528,6 +528,7 @@ const formatDate = (date: string | null): string => {
                                         <input
                                             v-model="roleForm.name"
                                             type="text"
+                                            required
                                             class="h-9 w-full min-w-36 rounded-md border bg-background px-2 text-sm"
                                             :disabled="roleForm.processing"
                                         />
