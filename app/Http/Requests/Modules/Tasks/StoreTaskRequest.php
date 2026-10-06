@@ -26,6 +26,11 @@ class StoreTaskRequest extends FormRequest
         return true;
     }
 
+    protected function failedAuthorization(): void
+    {
+        abort(403);
+    }
+
     public function rules(): array
     {
         return [
