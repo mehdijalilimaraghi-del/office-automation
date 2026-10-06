@@ -40,7 +40,6 @@ class RoleControllerTest extends TestCase
             ->actingAs($user)
             ->post(route('roles.store'), [
                 'name' => 'مدیر فروش',
-                'code' => 'SALES_MANAGER',
                 'description' => 'نقش مدیر فروش',
             ]);
 
@@ -74,7 +73,6 @@ class RoleControllerTest extends TestCase
             ->actingAs($user)
             ->put(route('roles.update', $role), [
                 'name' => 'نقش جدید',
-                'code' => 'NEW_ROLE',
                 'description' => 'توضیحات جدید',
             ]);
 
@@ -83,7 +81,6 @@ class RoleControllerTest extends TestCase
         $this->assertDatabaseHas('roles', [
             'id' => $role->id,
             'name' => 'نقش جدید',
-            'code' => 'NEW_ROLE',
             'description' => 'توضیحات جدید',
         ]);
     }
@@ -98,7 +95,6 @@ class RoleControllerTest extends TestCase
 
         $role = Role::create([
             'name' => 'نقش تست',
-            'code' => 'TEST_ROLE',
             'description' => null,
             'is_active' => true,
             'is_system' => false,
@@ -163,7 +159,6 @@ class RoleControllerTest extends TestCase
             ->actingAs($user)
             ->put(route('roles.update', $role), [
                 'name' => 'تغییر یافته',
-                'code' => 'CHANGED_ROLE',
                 'description' => null,
             ]);
 
@@ -235,7 +230,6 @@ class RoleControllerTest extends TestCase
     {
         $response = $this->post(route('roles.store'), [
             'name' => 'نقش تست',
-            'code' => 'TEST_ROLE',
             'description' => null,
         ]);
 
@@ -246,7 +240,6 @@ class RoleControllerTest extends TestCase
     {
         $role = Role::create([
             'name' => 'نقش تست',
-            'code' => 'TEST_ROLE',
             'description' => null,
             'is_active' => true,
             'is_system' => false,
@@ -254,7 +247,6 @@ class RoleControllerTest extends TestCase
 
         $response = $this->put(route('roles.update', $role), [
             'name' => 'نقش جدید',
-            'code' => 'NEW_ROLE',
             'description' => null,
         ]);
 
@@ -265,7 +257,6 @@ class RoleControllerTest extends TestCase
     {
         $role = Role::create([
             'name' => 'نقش تست',
-            'code' => 'TEST_ROLE',
             'description' => null,
             'is_active' => true,
             'is_system' => false,
