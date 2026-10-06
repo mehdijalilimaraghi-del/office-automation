@@ -187,3 +187,8 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - V1 permission scopes are now capability-aware: only `tasks.*` and `projects.*` permissions accept contextual scopes (`self`, `department`, `department_tree`, `project`, `organization`). Other V1 permissions are organization-wide and are persisted only with `organization` scope.
 - Role permission validation and the synchronization action reject invalid scope combinations; the role-permission UI no longer presents misleading scope selectors for non-scope-aware permissions.
 - Regression coverage added for rejecting a non-organization scope on `users.view` and accepting project scope on `projects.view`.
+
+
+### UI terminology and task page normalization — 2026-10-06
+- V1 UI terminology for `Task/Tasks` is standardized to Persian **وظیفه/وظایف** in the task list/create experience.
+- The Tasks page was redesigned so the **وظایف** list is the primary content; creation is opened through **ایجاد وظیفه** in a modal instead of occupying the top of the page.
