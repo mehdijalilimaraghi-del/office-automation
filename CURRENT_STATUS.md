@@ -154,3 +154,7 @@ The external-parties page now uses the standard authenticated layout so the main
 The external department screen now presents departments as a visible hierarchy. Parent-child indentation is shown in the department list, and the «واحد بالادست» selector uses the same hierarchical ordering so nested units are distinguishable during creation/editing. The external-parties back action was also moved into a typed handler to resolve the Vue/TypeScript build error.
 
 **Status: implemented; frontend build validation pending.**
+
+## Task default-project visibility — 2026-10-06
+Department creation already persists a real system-default project in the database. The task creation options previously loaded only projects with explicit project membership, so a department's default project could exist in the database but remain absent from the task project selector. Task creation options, authorization, assignee validation, and task project access now recognize system-default projects through the user's department membership.
+**Status: implemented; backend/frontend validation pending.**
