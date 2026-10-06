@@ -110,7 +110,8 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
       <form @submit.prevent="submit(orgForm,'external-parties.organizations')" class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
         <div class="mb-5"><h2 class="font-black text-slate-900">{{ orgForm.id?'ویرایش سازمان':'سازمان جدید' }}</h2><p class="mt-1 text-xs text-slate-500">اطلاعات پایه طرف خارجی</p></div>
         <div class="space-y-3">
-          <input v-model="orgForm.name" required placeholder="نام سازمان *" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500">
+          <label class="block text-sm font-semibold text-slate-700">نام سازمان</label>
+          <input v-model="orgForm.name" required placeholder="نام سازمان" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500">
           
           <input v-model="orgForm.phone" placeholder="تلفن" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500" dir="ltr">
           <input v-model="orgForm.email" type="email" placeholder="ایمیل" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:border-teal-500" dir="ltr">
@@ -143,9 +144,11 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
       <form @submit.prevent="submit(depForm,'external-parties.departments')" class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
         <div class="mb-5"><h2 class="font-black text-slate-900">{{depForm.id?'ویرایش واحد':'واحد جدید'}}</h2></div>
         <div class="space-y-3">
+          <label class="block text-sm font-semibold text-slate-700">سازمان</label>
           <select v-model="depForm.external_organization_id" required class="w-full rounded-xl border border-slate-200 px-3 py-2.5"><option value="">سازمان *</option><option v-for="o in organizations" :key="o.id" :value="o.id">{{o.name}}</option></select>
           <select v-model="depForm.parent_id" class="w-full rounded-xl border border-slate-200 px-3 py-2.5"><option value="">واحد بالادست</option><option v-for="d in departmentsForEdit" :key="d.id" :value="d.id">{{d.name}}</option></select>
-          <input v-model="depForm.name" required placeholder="نام واحد *" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
+          <label class="block text-sm font-semibold text-slate-700">نام واحد</label>
+          <input v-model="depForm.name" required placeholder="نام واحد" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
           
           <div class="grid grid-cols-2 gap-3"><input v-model="depForm.phone" placeholder="تلفن" class="rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr"><input v-model="depForm.extension" placeholder="داخلی" class="rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr"></div>
           <input v-model="depForm.email" type="email" placeholder="ایمیل" class="w-full rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr">
@@ -173,9 +176,11 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
       <form @submit.prevent="submit(contactForm,'external-parties.contacts')" class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
         <div class="mb-5"><h2 class="font-black text-slate-900">{{contactForm.id?'ویرایش فرد':'فرد جدید'}}</h2></div>
         <div class="space-y-3">
+          <label class="block text-sm font-semibold text-slate-700">سازمان</label>
           <select v-model="contactForm.external_organization_id" required class="w-full rounded-xl border border-slate-200 px-3 py-2.5"><option value="">سازمان *</option><option v-for="o in organizations" :key="o.id" :value="o.id">{{o.name}}</option></select>
           <select v-model="contactForm.external_department_id" class="w-full rounded-xl border border-slate-200 px-3 py-2.5"><option value="">واحد اختیاری</option><option v-for="d in departmentsForContact" :key="d.id" :value="d.id">{{d.name}}</option></select>
-          <input v-model="contactForm.name" required placeholder="نام و نام خانوادگی *" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
+          <label class="block text-sm font-semibold text-slate-700">نام و نام خانوادگی</label>
+          <input v-model="contactForm.name" required placeholder="نام و نام خانوادگی" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
           <input v-model="contactForm.position" placeholder="سمت" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
           <div class="grid grid-cols-2 gap-3"><input v-model="contactForm.mobile" placeholder="موبایل" class="rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr"><input v-model="contactForm.phone" placeholder="تلفن ثابت" class="rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr"></div>
           <input v-model="contactForm.email" type="email" placeholder="ایمیل" class="w-full rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr">
