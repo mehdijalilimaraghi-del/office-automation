@@ -60,6 +60,7 @@ const updatePassword = () => {
                     id="current_password"
                     ref="currentPasswordInput"
                     v-model="form.current_password"
+                    required
                     type="password"
                     class="mt-1 block w-full"
                     autocomplete="current-password"
@@ -79,6 +80,7 @@ const updatePassword = () => {
                     id="password"
                     ref="passwordInput"
                     v-model="form.password"
+                    required
                     type="password"
                     class="mt-1 block w-full"
                     autocomplete="new-password"
@@ -100,6 +102,7 @@ const updatePassword = () => {
                 <TextInput
                     id="password_confirmation"
                     v-model="form.password_confirmation"
+                    required
                     type="password"
                     class="mt-1 block w-full"
                     autocomplete="new-password"
