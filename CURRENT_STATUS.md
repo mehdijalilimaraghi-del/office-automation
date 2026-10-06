@@ -69,16 +69,24 @@ The previously documented two blockers were re-verified against the actual `deve
 
 A dedicated `tests/Feature/Core/SystemCodeGenerationTest.php` also exists and covers generated codes for Core, Projects and External Parties plus explicit system-role codes.
 
-**Status: root fix already present in current repository state; local SQL Server execution remains to be validated.**
+**Status: root fix already present in current repository state; dedicated regression test and full Laravel suite have passed locally.**
+
+### User validation messages
+During manual V1 acceptance, creating a user with a password shorter than the enforced 8-character minimum displayed the translation key `validation.min.string` instead of a Persian validation message. A Persian Laravel validation dictionary was added at `lang/fa/validation.php`, covering the relevant validation rules and user attributes.
+
+**Status: fixed in current repository state; local manual confirmation remains.**
+
+## Validation Completed
+- Dedicated system-code regression test: passed
+- Full PHPUnit/Laravel test suite: passed
+- Frontend production build (`npm run build`): passed
 
 ## Immediate Next Sequence
-1. Run the dedicated system-code regression test against the user's SQL Server environment.
-2. If that passes, run the full PHPUnit/Laravel suite.
-3. Run the frontend production build.
-4. Continue final V1 manual UI/functional acceptance.
-5. Record any newly discovered runtime defects and fix them at root cause.
-6. Close the V1 acceptance gate.
-7. Only then begin V2.
+1. Pull the latest `development` change and manually retry creating a user with a password shorter than 8 characters; verify the Persian message is shown.
+2. If that passes, continue final V1 manual UI/functional acceptance.
+3. Record any newly discovered runtime defects and fix them at root cause.
+4. Close the V1 acceptance gate.
+5. Only then begin V2.
 
 No V2 implementation is authorized before V1 acceptance is explicitly closed.
 
