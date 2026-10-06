@@ -39,6 +39,10 @@ class UpdateUserAction
         $lastName = trim((string) ($data['last_name'] ?? ''));
         $name = trim($firstName . ' ' . $lastName);
 
+        if ($name === '' && array_key_exists('name', $data)) {
+            $name = trim((string) $data['name']);
+        }
+
         $attributes = [
             'name' => $name !== '' ? $name : $user->name,
             'username' => $data['username'],
