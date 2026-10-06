@@ -9,6 +9,7 @@ use App\Core\Roles\Models\Role;
 use App\Models\User;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectMember;
+use App\Modules\Projects\Models\ProjectRole;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -200,10 +201,15 @@ class ProjectHttpTest extends TestCase
             ])
             ->assertRedirect();
 
+        $role = ProjectRole::query()
+            ->where('project_id', $project->id)
+            ->where('name', 'Developer')
+            ->firstOrFail();
+
+        $this->assertMatchesRegularExpression('/^PRL-\\d{6}$/', $role->code);
         $this->assertDatabaseHas('project_roles', [
             'project_id' => $project->id,
             'name' => 'Developer',
-            'code' => 'developer',
             'is_active' => true,
         ]);
     }
