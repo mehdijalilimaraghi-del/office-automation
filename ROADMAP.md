@@ -583,3 +583,9 @@ The full `UserControllerTest` exposed a compatibility regression: legacy update 
 V1 form review found that required controls were not consistently marked visually. A shared frontend indicator now displays a red `*` beside labels associated with required controls, required attributes were completed where missing, and external-party required fields now have visible labels.
 
 **Status:** implemented; frontend build validation pending.
+
+
+### 2026-10-06 — External parties navigation
+The external-parties page was aligned with the standard authenticated layout so the main navigation is preserved. A «بازگشت» action was added for returning to the previous page, with dashboard fallback.
+
+**Status:** implemented; frontend build validation pending.
