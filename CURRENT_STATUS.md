@@ -129,4 +129,10 @@ At the start of a new conversation, read `AI_CONTEXT.md` and `CURRENT_STATUS.md`
 
 
 ## User Controller Regression Fix — 2026-10-06
-The user identity change exposed a PHP syntax error in `UpdateUserAction.php` caused by the display-name expression. The expression was simplified to explicit first-name/last-name variables and a direct concatenation. **Status: fixed; awaiting focused UserControllerTest validation.**
+The user identity change exposed a PHP syntax error in `UpdateUserAction.php` caused by the display-name expression. The expression was simplified to explicit first-name/last-name variables and a direct concatenation. **Status: fixed; focused test passed; full UserControllerTest exposed a legacy-name compatibility regression in update, now fixed.**
+
+
+## User update compatibility regression — 2026-10-06
+The full `UserControllerTest` exposed that `UpdateUserAction` no longer honored the documented legacy `name` compatibility fallback when an older caller submitted `name` without `first_name`/`last_name`. The update action now derives the display name from first/last name and falls back to the legacy `name` input when those fields are absent/blank.
+
+**Status: fixed; full `UserControllerTest` validation is pending.**
