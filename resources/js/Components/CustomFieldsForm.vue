@@ -52,6 +52,10 @@ const onNumberInput = (key: string, event: Event): void => {
 const onCheckboxChange = (key: string, event: Event): void => {
     setValue(key, (event.target as HTMLInputElement).checked);
 };
+
+const onSelectChange = (key: string, event: Event): void => {
+    setValue(key, (event.target as HTMLSelectElement).value || null);
+};
 </script>
 
 <template>
@@ -98,7 +102,7 @@ const onCheckboxChange = (key: string, event: Event): void => {
                     v-else-if="field.type === 'select'"
                     :value="valueOf(field.key)"
                     class="w-full rounded-xl border-slate-200 bg-white text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500"
-                    @change="setValue(field.key, ($event.target as HTMLSelectElement).value || null)"
+                    @change="onSelectChange(field.key, $event)"
                 >
                     <option value="">انتخاب کنید</option>
                     <option
