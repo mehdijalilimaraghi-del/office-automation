@@ -6,6 +6,7 @@ use App\Core\Permissions\Enums\PermissionScope;
 use App\Core\Roles\Models\Role;
 use App\Core\Audit\Contracts\AuditServiceInterface;
 use Illuminate\Support\Arr;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class SyncRolePermissionsAction
@@ -50,8 +51,16 @@ class SyncRolePermissionsAction
                 $permissionModel->code
             )->value;
 
+            $scopeEnum = PermissionScope::tryFrom((string) $scope);
+
+            if ($scopeEnum === null || ! PermissionScope::allows($permissionModel->code, $scopeEnum)) {
+                throw ValidationException::withMessages([
+                    "permissions.{$permissionId}.scope" => 'محدوده دسترسی انتخاب‌شده برای این مجوز معتبر نیست.',
+                ]);
+            }
+
             $syncData[$permissionId] = [
-                'scope' => $scope,
+                'scope' => $scopeEnum->value,
             ];
         }
 
