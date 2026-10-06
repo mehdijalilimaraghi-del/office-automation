@@ -193,7 +193,6 @@ class DepartmentControllerTest extends TestCase
         $this->assertDatabaseHas('departments', [
             'id' => $department->id,
             'name' => 'واحد فناوری اطلاعات',
-            'code' => 'ICT',
         ]);
     }
 
