@@ -616,3 +616,9 @@ The audit identified remaining scope gaps in several task actions and project mu
 ### 2026-10-06 — Permission scope normalization
 Project mutation authorization and task workflow actions now enforce permission scopes in addition to contextual rules. This covers project update/delete/member/role management and task create/refer/submit/review/reminder completion or cancellation.
 **Status:** implemented; full backend validation pending.
+
+
+### Permission-scope test fixture normalization (2026-10-06)
+- tests/Feature/Modules/Tasks/TaskHttpTest.php now creates task permission fixtures with the same PermissionScope::defaultForPermission() semantics used by production role-permission synchronization.
+- This prevents the database default organization scope from masking project-scoped authorization in HTTP tests.
+- TaskHttpTest passes after this normalization.
