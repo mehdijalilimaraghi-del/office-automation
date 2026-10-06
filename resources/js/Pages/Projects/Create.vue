@@ -88,6 +88,7 @@ function submit(): void {
                             id="name"
                             v-model="form.name"
                             type="text"
+                            required
                             class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                             :disabled="form.processing"
                         />
@@ -139,6 +140,7 @@ function submit(): void {
                         <select
                             id="manager_id"
                             v-model="form.manager_id"
+                            required
                             class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                             :disabled="form.processing"
                         >
