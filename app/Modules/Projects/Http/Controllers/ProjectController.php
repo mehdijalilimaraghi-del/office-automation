@@ -37,7 +37,7 @@ class ProjectController extends Controller
         Gate::authorize('viewAny', Project::class);
 
         return Inertia::render('Projects/Index', [
-            'projects' => $this->projectService->list(),
+            'projects' => $this->projectService->list($request->user()),
             'canCreate' => Gate::allows('create', Project::class),
         ]);
     }
