@@ -44,6 +44,10 @@ function defaultScope(permission: Permission): string {
         : 'organization';
 }
 
+function supportsScopeSelection(permission: Permission): boolean {
+    return permission.code.startsWith('tasks.') || permission.code.startsWith('projects.');
+}
+
 function existingScope(permission: Permission): string {
     return permission.pivot?.scope ?? defaultScope(permission);
 }
@@ -236,7 +240,9 @@ function submit(): void {
                                         <div v-if="isAssigned(permission.id)" class="mt-4 rounded-xl bg-white/80 p-3 ring-1 ring-teal-100">
                                             <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                                 <label class="text-xs font-bold text-slate-600">محدوده دسترسی</label>
+
                                                 <select
+                                                    v-if="supportsScopeSelection(permission)"
                                                     class="rounded-xl border-slate-200 bg-white text-xs font-semibold shadow-sm focus:border-teal-500 focus:ring-teal-500"
                                                     :value="assignedPermission(permission.id)?.scope"
                                                     :disabled="props.role.is_system"
@@ -246,6 +252,13 @@ function submit(): void {
                                                         {{ scope.label }}
                                                     </option>
                                                 </select>
+
+                                                <span
+                                                    v-else
+                                                    class="rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-600"
+                                                >
+                                                    کل سازمان
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
