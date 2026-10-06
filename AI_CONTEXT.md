@@ -37,7 +37,7 @@ Read these before implementation when the task touches their scope:
 ## Current version
 **V1 — Foundation & Work Management**
 
-V1 implementation scope is considered implemented. The project is currently in technical debugging and manual UI/functional acceptance.
+V1 implementation scope is considered implemented. The project is currently in technical validation and manual UI/functional acceptance.
 
 **Do not start V2 until V1 acceptance is explicitly closed in the project documentation.**
 
@@ -76,35 +76,20 @@ V1 implementation scope is considered implemented. The project is currently in t
 - Custom-field technical keys are system-only data. The user enters a field label, not a technical key.
 - Preserve Modular Monolith boundaries. Do not introduce cross-module database coupling.
 
-## Current blockers at handoff
-### Blocker A — ExternalPartyController syntax error
-File:
-`app/Core/ExternalParties/Http/Controllers/ExternalPartyController.php`
+## Current repository checkpoint
+The two blockers previously recorded in the handoff were re-inspected on `development`:
 
-A recent `custom_fields` validation edit contains a PHP syntax error around line 53.
+- `app/Core/ExternalParties/Http/Controllers/ExternalPartyController.php`: the current file is syntactically complete and contains valid `custom_fields` validation for all create/update operations. The previously documented malformed edit is not present.
+- `app/Models/Concerns/HasSystemCode.php`: the current implementation performs a query-builder update of only `code` after creation, avoiding the prior Eloquent `updateQuietly()` path associated with the SQL Server identity-column error.
+- `tests/Feature/Core/SystemCodeGenerationTest.php` exists and covers generated system codes across Core, Projects and External Parties.
 
-Observed effect:
-- `GET /login` can fail with a 500 during route discovery/Ziggy.
-- The login controller itself is not the root cause.
-
-### Blocker B — HasSystemCode SQL Server identity update
-File:
-`app/Models/Concerns/HasSystemCode.php`
-
-The current implementation generates a temporary code during `creating`, then calls Eloquent `updateQuietly()` during `created`. On SQL Server, this currently produced an UPDATE that also tries to update the identity `id` column.
-
-Observed error:
-`Cannot update identity column 'id'.`
-
-Root fix is required. Do not weaken SQL Server identity behavior or hide the error.
+These are therefore not new implementation blockers on the current branch. The remaining requirement is local SQL Server validation.
 
 ## Working protocol — mandatory
 - The AI has repository access and is responsible for writing/editing the code and tests in GitHub.
 - The user does not manually edit project code.
 - After every code change, give the exact PowerShell command the user should run locally to pull the change and validate it.
-- Use:
-`git pull origin development`
-at the beginning of the PowerShell validation command **only when code changes were made immediately before that validation**.
+- Use `git pull origin development` at the beginning of the PowerShell validation command **only when code changes were made immediately before that validation**.
 - Do not include `git pull origin development` when no code change was made.
 - Prefer one validation step at a time.
 - Do not ask unnecessary confirmation questions.
@@ -127,11 +112,12 @@ Before making the first code change in a new conversation:
 2. Read `CURRENT_STATUS.md`.
 3. Read `ROADMAP.md`.
 4. Inspect the repository state and the relevant implementation.
-5. Continue from the documented blockers/current checkpoint; do not redesign or restart the project.
+5. Continue from the documented checkpoint; do not redesign or restart the project.
 
 ## Immediate next work
-1. Fix `ExternalPartyController.php` syntax error.
-2. Fix `HasSystemCode.php` SQL Server identity-column update defect.
-3. Add/adjust regression tests for both.
-4. Provide the PowerShell validation command after each code change.
-5. Continue V1 acceptance.
+1. Run the dedicated `SystemCodeGenerationTest` against SQL Server.
+2. If it passes, run the full PHPUnit/Laravel suite.
+3. Run the frontend production build.
+4. Continue final V1 manual UI/functional acceptance.
+5. Fix newly discovered V1 defects at root cause.
+6. Close V1 acceptance before starting V2.
