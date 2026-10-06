@@ -863,6 +863,7 @@ watch(
                                         >
                                             <select
                                                 v-model="assignmentForm.user_id"
+                                                required
                                                 class="min-w-0 flex-1 rounded-lg border-slate-200 bg-white text-xs text-slate-700 focus:border-teal-500 focus:ring-teal-500"
                                             >
                                                 <option :value="null">انتخاب عضو واحد برای تخصیص سمت...</option>
