@@ -101,12 +101,13 @@ Fix the system-code mechanism at the root cause without weakening SQL Server ide
 - Record meaningful implementation decisions, completed work and blockers in the project documentation.
 
 ## Documentation Authority
-1. `ROADMAP.md` — product versions, scope and acceptance gates
-2. `CURRENT_STATUS.md` — current state, blockers and immediate next steps
-3. `PROJECT_CONTEXT.md` — detailed persistent context
-4. `ARCHITECTURE.md` — architecture and module boundaries
-5. `PROJECT_SPEC.md` — system/product specification
-6. `DEVELOPMENT.md` — engineering workflow
+1. `AI_CONTEXT.md` — mandatory compact handoff and working protocol for any AI/engineer
+2. `ROADMAP.md` — product versions, scope and acceptance gates
+3. `CURRENT_STATUS.md` — current state, blockers and immediate next steps
+4. `PROJECT_CONTEXT.md` — detailed persistent context
+5. `ARCHITECTURE.md` — architecture and module boundaries
+6. `PROJECT_SPEC.md` — system/product specification
+7. `DEVELOPMENT.md` — engineering workflow
 
 ## New-Conversation Rule
-At the start of a new conversation, inspect the repository plus the six documents above and give a brief status report before making the next implementation change.
+At the start of a new conversation, read `AI_CONTEXT.md` and `CURRENT_STATUS.md`, then inspect `ROADMAP.md` and the relevant implementation before making the next code change. Continue from the documented checkpoint; do not restart or redesign the project.
