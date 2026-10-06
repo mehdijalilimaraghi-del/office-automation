@@ -227,7 +227,7 @@ const handleProjectChange = (): void => {
                     <div class="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
                         {{ props.tasks.total }} وظیفه
                     </div>
-                    <button v-if="showCreateModal && canCreate && formOptions" type="button"
+                    <button v-if="canCreate && formOptions" type="button"
                         class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800"
                         @click="showCreateModal = true">
                         ایجاد وظیفه
@@ -238,7 +238,7 @@ const handleProjectChange = (): void => {
 
         <div class="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
             <section
-                v-if="canCreate && formOptions"
+                v-if="showCreateModal && canCreate && formOptions"
                 class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 sm:p-6"
             >
                 <div class="my-4 w-full max-w-5xl overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl sm:my-8">
