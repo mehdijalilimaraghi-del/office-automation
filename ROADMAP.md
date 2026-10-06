@@ -517,6 +517,8 @@ A version closes only when all of the following are true:
 
 Recent V1 manual acceptance found a user-password validation localization defect: passwords shorter than the enforced 8-character minimum displayed the Laravel translation key `validation.min.string`. This was fixed by adding the Persian validation dictionary at `lang/fa/validation.php`.
 
+Recent V1 acceptance also found redundant user identity inputs. The standalone user `name` field was removed from the UI; first name and last name are now the user-facing identity inputs, while `users.name` is derived by the backend.
+
 Technical validation completed:
 1. Dedicated system-code regression test — passed.
 2. Full PHPUnit/Laravel suite — passed.
