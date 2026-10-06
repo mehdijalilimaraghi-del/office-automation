@@ -31,15 +31,19 @@ trait HasSystemCode
                 return;
             }
 
+            $generatedCode = sprintf(
+                '%s-%06d',
+                static::systemCodePrefix(),
+                (int) $model->getKey(),
+            );
+
             $model->newQuery()
                 ->whereKey($model->getKey())
                 ->update([
-                    'code' => sprintf(
-                        '%s-%06d',
-                        static::systemCodePrefix(),
-                        (int) $model->getKey(),
-                    ),
+                    'code' => $generatedCode,
                 ]);
+
+            $model->setAttribute('code', $generatedCode);
         });
     }
 
