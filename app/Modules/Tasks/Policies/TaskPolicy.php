@@ -61,9 +61,8 @@ class TaskPolicy
 
     public function refer(User $user, Task $task): bool
     {
-        return $user->isActive()
-            && $user->hasPermission('tasks.refer')
-            && (int) $task->assignee_id === (int) $user->id;
+        return (int) $task->assignee_id === (int) $user->id
+            && $this->taskAccessService->canAccess($user, $task, 'tasks.refer');
     }
 
     public function comment(User $user, Task $task): bool
@@ -83,31 +82,28 @@ class TaskPolicy
 
     public function completeReminder(User $user, Task $task, TaskReminder $reminder): bool
     {
-        return $user->isActive()
-            && $user->hasPermission('tasks.view')
-            && (int) $reminder->task_id === (int) $task->id
-            && (int) $reminder->user_id === (int) $user->id;
+        return (int) $reminder->task_id === (int) $task->id
+            && (int) $reminder->user_id === (int) $user->id
+            && $this->taskAccessService->canAccess($user, $task, 'tasks.view');
     }
 
     public function cancelReminder(User $user, Task $task, TaskReminder $reminder): bool
     {
-        return $user->isActive()
-            && $user->hasPermission('tasks.view')
-            && (int) $reminder->task_id === (int) $task->id
-            && in_array((int) $user->id, [(int) $reminder->user_id, (int) $reminder->created_by], true);
+        return (int) $reminder->task_id === (int) $task->id
+            && in_array((int) $user->id, [(int) $reminder->user_id, (int) $reminder->created_by], true)
+            && $this->taskAccessService->canAccess($user, $task, 'tasks.view');
     }
 
     public function submit(User $user, Task $task): bool
     {
-        return $user->isActive()
-            && $user->hasPermission('tasks.submit')
-            && (int) $task->assignee_id === (int) $user->id
-            && $task->review_required;
+        return (int) $task->assignee_id === (int) $user->id
+            && $task->review_required
+            && $this->taskAccessService->canAccess($user, $task, 'tasks.submit');
     }
 
     public function review(User $user, Task $task): bool
     {
-        if (! $user->isActive() || ! $user->hasPermission('tasks.review')) {
+        if (! $this->taskAccessService->canAccess($user, $task, 'tasks.review')) {
             return false;
         }
 
