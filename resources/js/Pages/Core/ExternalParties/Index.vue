@@ -79,6 +79,7 @@ function submit(f:any,base:string){
     router[id?'put':'post'](id?route(base+'.update',id):route(base+'.store'),payload,{preserveScroll:true,onFinish:()=>saving.value=false,onSuccess:()=>reset(f)});
 }
 function destroy(base:string,id:number){if(confirm('این مورد حذف شود؟')) router.delete(route(base,id),{preserveScroll:true})}
+function goBack(){if(window.history.length>1){window.history.back()}else{router.visit(route('dashboard'))}}
 const tabs=[['organizations','سازمان‌ها'],['departments','واحدها'],['contacts','افراد']] as const;
 </script>
 
@@ -94,7 +95,7 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
             </div>
             <button
               type="button"
-              @click="window.history.length > 1 ? window.history.back() : router.visit(route('dashboard'))"
+              @click="goBack"
               class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
             >
               بازگشت
