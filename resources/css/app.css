@@ -23,6 +23,16 @@
         font-family: inherit;
     }
 
+    /* Required-field indicators are rendered from the actual form controls, so labels stay consistent across all modules. */
+    label:has(+ :is(input, select, textarea):required)::after,
+    label:has(+ div :is(input, select, textarea):required)::after,
+    label:has(+ .jalali-date-picker[data-required])::after,
+    label:has(+ .jalali-date-time-picker[data-required])::after {
+        content: ' *';
+        color: #ef4444;
+        font-weight: 800;
+    }
+
     select {
         appearance: none;
         -webkit-appearance: none;
