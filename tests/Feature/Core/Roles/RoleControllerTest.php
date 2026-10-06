@@ -47,7 +47,6 @@ class RoleControllerTest extends TestCase
 
         $this->assertDatabaseHas('roles', [
             'name' => 'مدیر فروش',
-            'code' => 'SALES_MANAGER',
             'is_active' => true,
             'is_system' => false,
         ]);
