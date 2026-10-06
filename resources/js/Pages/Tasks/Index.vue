@@ -321,7 +321,7 @@ const handleProjectChange = (): void => {
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">توضیحات</label>
                         <textarea v-model="createForm.description" rows="4"
                             class="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-                            placeholder="شرح وظیفه، خروجی مورد انتظار یا اطلاعات تکمیلی" />
+                            placeholder="شرح وظیفه، خروجی مورد انتظار یا اطلاعات تکمیلی"></textarea>
                     </div>
 
                     <CustomFieldsForm
