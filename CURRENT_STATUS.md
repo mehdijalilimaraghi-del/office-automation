@@ -260,3 +260,12 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - با توجه به اینکه `CorePermissionSeeder` این مجوز را دارد اما دیتابیس‌های موجود ممکن است قبلاً migrate شده باشند، migration مستقل برای ایجاد/به‌روزرسانی `tasks.refer` اضافه شد.
 
 **Status:** code fix committed; focused TaskHttpTest validation pending.
+
+
+### 2026-10-07 — Task referral member selection and terminology correction
+- منوی «کار و عملیات» اکنون به‌جای «تسک‌ها» عنوان «وظایف» را نمایش می‌دهد.
+- فهرست مسئول جدید در ارجاع وظیفه برای پروژه‌های پیش‌فرض واحد، تمام اعضای همان واحد را نمایش می‌دهد و حساب `SYSTEM_ADMIN` از فهرست حذف می‌ماند.
+- اعتبارسنجی backend ارجاع نیز برای پروژه پیش‌فرض، عضویت در واحد مرتبط را به‌عنوان عضویت معتبر می‌پذیرد.
+- خطای `assignee_id` در پنجره ارجاع نمایش داده می‌شود تا خطاهای ذخیره‌سازی پنهان نمانند.
+
+**Status:** implementation complete; focused TaskHttpTest validation pending.
