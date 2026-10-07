@@ -741,3 +741,10 @@ Project mutation authorization and task workflow actions now enforce permission 
 - مقدار یادآوری با زمان محلی بدون تبدیل ضمنی timezone ارسال می‌شود تا اختلاف ساعت بین انتخاب و نمایش ایجاد نشود.
 
 **Status:** implementation complete; frontend build validation pending.
+
+### 2026-10-07 — Task comments/reminders edit-delete + time preservation
+- امکان ویرایش و حذف رکوردهای نظر و یادآوری در صفحه جزئیات وظیفه اضافه شد؛ مدل داده همچنان چندرکوردی است.
+- `TaskReminder.remind_at` با فرمت صریح `Y-m-d H:i:s` serialize می‌شود تا زمان انتخاب‌شده در رابط کاربری بدون تبدیل UTC نمایش داده شود.
+- تست HTTP برای زمان دقیق یادآوری و عملیات ویرایش/حذف اضافه شد.
+
+**Status:** implementation complete; focused task test pending.
