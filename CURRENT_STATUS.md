@@ -221,3 +221,12 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - «ارتباط و پیگیری بیرونی» از فرم ویرایش وظیفه جدا شد و از بخش مستقل خودش قابل ثبت، ویرایش و حذف است.
 
 **Status:** implemented; frontend build validation pending.
+
+
+### 2026-10-07 — Task referral and external follow-up UX correction
+- فاصله بالای محتوای جزئیات وظیفه اصلاح شد.
+- «خط زمانی» که برای این صفحه مفهوم مناسبی نداشت با «سوابق ارجاع وظیفه» جایگزین شد و مسیر ارجاع از شخص مبدأ به شخص مقصد و ثبت‌کننده ارجاع را به‌صورت واضح نمایش می‌دهد.
+- دکمه «ارجاع وظیفه» در بخش سوابق ارجاع نیز در دسترس است.
+- بخش «ارتباط و پیگیری بیرونی» اکنون دکمه ثبت/ویرایش و کنترل حذف ارتباط دارد.
+
+**Status:** implemented; frontend build validation pending.
