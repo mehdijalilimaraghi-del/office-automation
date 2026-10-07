@@ -195,6 +195,14 @@ class TaskHttpTest extends TestCase
             'mobile' => '09120000002',
             'is_active' => true,
         ]);
+        $thirdContact = \App\Core\ExternalParties\Models\ExternalContact::query()->create([
+            'external_organization_id' => $organization->id,
+            'external_department_id' => $department->id,
+            'name' => 'شخص سوم',
+            'position' => 'رئیس',
+            'mobile' => '09120000003',
+            'is_active' => true,
+        ]);
 
         $this->actingAs($user)
             ->put(route('tasks.external-parties.update', $task), [
@@ -226,12 +234,48 @@ class TaskHttpTest extends TestCase
             'external_contact_id' => $secondContact->id,
         ]);
 
+        $this->actingAs($user)
+            ->put(route('tasks.external-parties.update', $task), [
+                'external_organization_id' => $organization->id,
+                'external_department_id' => $department->id,
+                'external_contact_ids' => [$thirdContact->id],
+                'replace_external_contact_id' => $firstContact->id,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('task_external_contacts', [
+            'task_id' => $task->id,
+            'external_contact_id' => $firstContact->id,
+        ]);
+        $this->assertDatabaseHas('task_external_contacts', [
+            'task_id' => $task->id,
+            'external_contact_id' => $thirdContact->id,
+        ]);
+
+        $this->actingAs($user)
+            ->put(route('tasks.external-parties.update', $task), [
+                'external_organization_id' => $organization->id,
+                'external_department_id' => $department->id,
+                'external_contact_ids' => [],
+                'replace_external_contact_id' => $thirdContact->id,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('task_external_contacts', [
+            'task_id' => $task->id,
+            'external_contact_id' => $thirdContact->id,
+        ]);
+        $this->assertDatabaseHas('task_external_contacts', [
+            'task_id' => $task->id,
+            'external_contact_id' => $secondContact->id,
+        ]);
+
         $response = $this->actingAs($user)->get(route('tasks.show', $task));
 
         $response->assertInertia(
             fn ($page) => $page
                 ->component('Tasks/Show')
-                ->has('task.external_contacts', 2)
+                ->has('task.external_contacts', 1)
         );
     }
 
