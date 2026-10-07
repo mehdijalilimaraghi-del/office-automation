@@ -214,3 +214,10 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - «فعالیت‌های بعدی» به‌صورت فهرست مستقل نمایش داده می‌شود و هر مورد پس از انجام با تاریخ و زمان تکمیل ثبت می‌شود.
 - فعالیت بعدی مسئول جداگانه ندارد و مسئول آن همان مسئول اصلی وظیفه است.
 **Status:** implemented; frontend/build and focused backend validation pending.
+
+### 2026-10-07 — Task detail information layout correction
+- بخش «اقدام بعدی» از بالای صفحه حذف شد؛ فعالیت‌های برنامه‌ریزی‌شده فقط در بخش «فعالیت‌های بعدی» نمایش داده می‌شوند.
+- مسئول واحد، مسئول وظیفه، شروع و مهلت به «اطلاعات پروژه» منتقل شدند و توضیحات نیز زیر همان اطلاعات نمایش داده می‌شود.
+- «ارتباط و پیگیری بیرونی» از فرم ویرایش وظیفه جدا شد و از بخش مستقل خودش قابل ثبت، ویرایش و حذف است.
+
+**Status:** implemented; frontend build validation pending.
