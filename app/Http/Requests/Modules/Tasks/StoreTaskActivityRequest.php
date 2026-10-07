@@ -18,7 +18,6 @@ class StoreTaskActivityRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'assigned_to' => ['nullable', 'integer', 'exists:users,id'],
             'activity_type' => ['sometimes', 'in:planned,logged'],
         ];
     }
