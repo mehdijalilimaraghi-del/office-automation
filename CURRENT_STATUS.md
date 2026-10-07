@@ -327,3 +327,9 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - تست HTTP برای حفظ دقیق زمان یادآوری و عملیات ویرایش/حذف اضافه شد.
 
 **Status:** implementation complete; focused task test pending.
+
+### 2026-10-07 — تکمیل Routeهای ویرایش/حذف یادآوری وظیفه
+- Routeهای `tasks.reminders.update` و `tasks.reminders.destroy` که Controller و تست HTTP به آن‌ها وابسته بودند، به مسیرهای وظایف اضافه شدند.
+- Migration مستقل Permission `tasks.create_reminder` نیز در دیتابیس پروژه وجود دارد.
+
+**Status:** implementation complete; focused TaskHttpTest validation pending.
