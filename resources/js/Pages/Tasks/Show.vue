@@ -40,6 +40,7 @@ interface Task {
     reminders: Reminder[];
     documents: TaskDocument[];
     participants: Array<{ id: number; user: User }>;
+    comments: Array<{ id: number; body: string; user: User | null }>;
 }
 interface TimelineItem {
     type: string;
@@ -180,19 +181,19 @@ const timelineClasses: Record<string, string> = {
 const submitComment = (): void => {
     commentForm.post(route('tasks.comments.store', props.task.id), {
         preserveScroll: true,
-        onSuccess: () => commentForm.reset(),
+        onSuccess: () => { commentForm.reset(); showCommentModal.value = false; },
     });
 };
 const submitWorkLog = (): void => {
     workLogForm.post(route('tasks.work-logs.store', props.task.id), {
         preserveScroll: true,
-        onSuccess: () => workLogForm.reset(),
+        onSuccess: () => { workLogForm.reset(); showWorkLogModal.value = false; },
     });
 };
 const submitReminder = (): void => {
     reminderForm.post(route('tasks.reminders.store', props.task.id), {
         preserveScroll: true,
-        onSuccess: () => reminderForm.reset('title', 'description', 'remind_at'),
+        onSuccess: () => { reminderForm.reset('title', 'description', 'remind_at'); showReminderModal.value = false; },
     });
 };
 
@@ -231,6 +232,7 @@ const formatFileSize = (bytes: number): string => {
 const submitEdit = (): void => {
     editForm.put(route('tasks.update', props.task.id), {
         preserveScroll: true,
+        onSuccess: () => { showEditModal.value = false; },
     });
 };
 
@@ -247,7 +249,7 @@ const deleteTask = (): void => {
 const submitReferral = (): void => {
     referralForm.patch(route('tasks.refer', props.task.id), {
         preserveScroll: true,
-        onSuccess: () => referralForm.reset(),
+        onSuccess: () => { referralForm.reset(); showReferralModal.value = false; },
     });
 };
 const changeStatus = (): void => {
