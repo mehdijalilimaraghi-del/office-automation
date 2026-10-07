@@ -438,14 +438,26 @@ const pendingActivities = computed(() => props.task.activities?.filter(activity 
 
                     <div class="grid gap-6 md:grid-cols-2">
                         <section class="rounded-xl border bg-card p-5 shadow-sm">
-                            <h3 class="font-semibold">نظرات</h3>
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <h3 class="font-semibold">نظرات</h3>
+                                    <p class="mt-1 text-xs text-muted-foreground">{{ task.comments?.length ?? 0 }} نظر ثبت شده</p>
+                                </div>
+                                <button v-if="abilities.comment" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="showCommentModal = true">ثبت نظر</button>
+                            </div>
                             <div v-if="task.comments?.length" class="mt-4 space-y-3">
                                 <div v-for="comment in task.comments" :key="comment.id" class="rounded-lg bg-gray-50 p-3"><p class="text-sm leading-6">{{ comment.body }}</p><p class="mt-2 text-xs text-muted-foreground">{{ comment.user?.name ?? '—' }}</p></div>
                             </div>
                             <p v-else class="mt-4 text-sm text-muted-foreground">نظری ثبت نشده است.</p>
                         </section>
                         <section class="rounded-xl border bg-card p-5 shadow-sm">
-                            <h3 class="font-semibold">یادآوری‌ها</h3>
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <h3 class="font-semibold">یادآوری‌ها</h3>
+                                    <p class="mt-1 text-xs text-muted-foreground">{{ task.reminders?.length ?? 0 }} یادآوری ثبت شده</p>
+                                </div>
+                                <button v-if="abilities.create_reminder" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="showReminderModal = true">ثبت یادآوری</button>
+                            </div>
                             <div v-if="task.reminders.length" class="mt-4 space-y-3">
                                 <div v-for="reminder in task.reminders" :key="reminder.id" class="rounded-lg border p-3"><div class="flex justify-between gap-2"><p class="text-sm font-medium">{{ reminder.title }}</p><span class="text-xs text-muted-foreground">{{ formatDateTime(reminder.remind_at) }}</span></div><p v-if="reminder.description" class="mt-1 text-xs text-muted-foreground">{{ reminder.description }}</p></div>
                             </div>
