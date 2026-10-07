@@ -219,7 +219,14 @@ class TaskController extends Controller
             $task->externalContacts()->detach($replaceContactId);
         }
 
-        $task->externalContacts()->syncWithoutDetaching($contactIds);
+        foreach ($contactIds as $contactId) {
+            $task->externalContacts()->syncWithoutDetaching([
+                $contactId => [
+                    'external_organization_id' => $organizationId,
+                    'external_department_id' => $departmentId,
+                ],
+            ]);
+        }
 
         return back()->with('success', 'ارتباط و پیگیری بیرونی با موفقیت به‌روزرسانی شد.');
     }
