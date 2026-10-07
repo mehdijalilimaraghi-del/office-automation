@@ -37,9 +37,9 @@ interface Reminder {
 }
 interface TaskAssignment {
     id: number;
-    fromUser: User | null;
-    toUser: User | null;
-    assignedBy: User | null;
+    from_user: User | null;
+    to_user: User | null;
+    assigned_by: User | null;
     type: string;
     note: string | null;
     started_at: string | null;
@@ -57,9 +57,9 @@ interface Task {
     assignee: User | null;
     creator: User | null;
     department: { id: number; name: string; manager: User | null } | null;
-    externalOrganization: ExternalOrganizationOption | null;
-    externalDepartment: ExternalDepartmentOption | null;
-    externalContact: ExternalContactOption | null;
+    external_organization: ExternalOrganizationOption | null;
+    external_department: ExternalDepartmentOption | null;
+    external_contact: ExternalContactOption | null;
     project: { id: number; name: string } | null;
     reminders: Reminder[];
     documents: TaskDocument[];
@@ -155,9 +155,9 @@ const editForm = useForm({
     custom_fields: props.customFieldValues ?? {},
 });
 const externalForm = useForm({
-    external_organization_id: props.task.externalOrganization?.id ?? null,
-    external_department_id: props.task.externalDepartment?.id ?? null,
-    external_contact_id: props.task.externalContact?.id ?? null,
+    external_organization_id: props.task.external_organization?.id ?? null,
+    external_department_id: props.task.external_department?.id ?? null,
+    external_contact_id: props.task.external_contact?.id ?? null,
 });
 const showExternalModal = ref(false);
 
@@ -387,10 +387,10 @@ const pendingActivities = computed(() => props.task.activities?.filter(activity 
                                     <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-50 text-xs font-semibold text-violet-700">{{ index + 1 }}</div>
                                     <div class="min-w-0 flex-1">
                                         <div class="flex flex-wrap items-center justify-between gap-2">
-                                            <p class="font-medium text-gray-900">ارجاع از <span>{{ assignment.fromUser?.name ?? 'سیستم' }}</span> به <span>{{ assignment.toUser?.name ?? '—' }}</span></p>
+                                            <p class="font-medium text-gray-900">ارجاع از <span>{{ assignment.from_user?.name ?? 'سیستم' }}</span> به <span>{{ assignment.to_user?.name ?? '—' }}</span></p>
                                             <time class="text-xs text-muted-foreground">{{ formatDateTime(assignment.started_at) }}</time>
                                         </div>
-                                        <p class="mt-1 text-xs text-muted-foreground">ثبت‌کننده ارجاع: {{ assignment.assignedBy?.name ?? '—' }}</p>
+                                        <p class="mt-1 text-xs text-muted-foreground">ثبت‌کننده ارجاع: {{ assignment.assigned_by?.name ?? '—' }}</p>
                                         <p v-if="assignment.note" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ assignment.note }}</p>
                                     </div>
                                 </div>
@@ -453,13 +453,13 @@ const pendingActivities = computed(() => props.task.activities?.filter(activity 
                                 <p class="mt-1 text-xs text-muted-foreground">سازمان، واحد یا شخص خارج از شرکت مرتبط با این وظیفه.</p>
                             </div>
                             <button v-if="abilities.update" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="showExternalModal = true">
-                                {{ task.externalOrganization || task.externalDepartment || task.externalContact ? 'ویرایش ارتباط' : 'ثبت ارتباط' }}
+                                {{ task.external_organization || task.external_department || task.external_contact ? 'ویرایش ارتباط' : 'ثبت ارتباط' }}
                             </button>
                         </div>
-                        <div v-if="task.externalOrganization || task.externalContact || task.externalDepartment" class="mt-4 space-y-3 text-sm">
-                            <div v-if="task.externalOrganization"><p class="text-xs text-muted-foreground">سازمان</p><p class="mt-1 font-medium">{{ task.externalOrganization.name }}</p></div>
-                            <div v-if="task.externalDepartment"><p class="text-xs text-muted-foreground">واحد</p><p class="mt-1 font-medium">{{ task.externalDepartment.name }}</p></div>
-                            <div v-if="task.externalContact"><p class="text-xs text-muted-foreground">شخص</p><p class="mt-1 font-medium">{{ task.externalContact.name }}</p><p v-if="task.externalContact.mobile" class="mt-1 text-xs text-muted-foreground">موبایل: {{ task.externalContact.mobile }}</p></div>
+                        <div v-if="task.external_organization || task.external_contact || task.external_department" class="mt-4 space-y-3 text-sm">
+                            <div v-if="task.external_organization"><p class="text-xs text-muted-foreground">سازمان</p><p class="mt-1 font-medium">{{ task.external_organization.name }}</p></div>
+                            <div v-if="task.external_department"><p class="text-xs text-muted-foreground">واحد</p><p class="mt-1 font-medium">{{ task.external_department.name }}</p></div>
+                            <div v-if="task.external_contact"><p class="text-xs text-muted-foreground">شخص</p><p class="mt-1 font-medium">{{ task.external_contact.name }}</p><p v-if="task.external_contact.mobile" class="mt-1 text-xs text-muted-foreground">موبایل: {{ task.external_contact.mobile }}</p></div>
                         </div>
                         <p v-else class="mt-4 text-sm text-muted-foreground">پیگیری خارجی برای این وظیفه ثبت نشده است.</p>
                         <div v-if="externalForm.errors.external_organization_id || externalForm.errors.external_department_id || externalForm.errors.external_contact_id" class="mt-4 space-y-1 text-xs text-red-600">
@@ -467,7 +467,7 @@ const pendingActivities = computed(() => props.task.activities?.filter(activity 
                             <p v-if="externalForm.errors.external_department_id">{{ externalForm.errors.external_department_id }}</p>
                             <p v-if="externalForm.errors.external_contact_id">{{ externalForm.errors.external_contact_id }}</p>
                         </div>
-                        <div v-if="abilities.update && (task.externalOrganization || task.externalDepartment || task.externalContact)" class="mt-4 border-t pt-4">
+                        <div v-if="abilities.update && (task.external_organization || task.external_department || task.external_contact)" class="mt-4 border-t pt-4">
                             <button type="button" class="text-xs font-medium text-red-600 hover:underline" @click="removeExternal">حذف ارتباط</button>
                         </div>
                     </section>
