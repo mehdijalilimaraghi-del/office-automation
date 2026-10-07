@@ -121,6 +121,8 @@ const props = defineProps<{
 }>();
 
 const commentForm = useForm({ body: '' });
+const editCommentForm = useForm({ body: '' });
+const editingCommentId = ref<number | null>(null);
 const workLogForm = useForm({ title: '', description: '', started_at: '', completed_at: '' });
 const reminderForm = useForm({
     user_id: props.currentUserId,
@@ -131,6 +133,8 @@ const reminderForm = useForm({
 const referralForm = useForm({ assignee_id: '', note: '' });
 const statusForm = useForm({ status: props.task.status });
 const reminderStatusForm = useForm({ status: '' as 'completed' | 'cancelled' | '' });
+const editReminderForm = useForm({ title: '', description: '', remind_at: '' });
+const editingReminderId = ref<number | null>(null);
 const activityForm = useForm({ title: '', description: '', activity_type: 'planned' as 'planned' | 'logged' });
 const showActivityModal = ref(false);
 const showEditModal = ref(false);
@@ -138,6 +142,8 @@ const showReferralModal = ref(false);
 const showCommentModal = ref(false);
 const showWorkLogModal = ref(false);
 const showReminderModal = ref(false);
+const showEditCommentModal = ref(false);
+const showEditReminderModal = ref(false);
 const deleteForm = useForm({});
 const documentForm = useForm({
     title: '',
@@ -249,6 +255,64 @@ const submitComment = (): void => {
         onSuccess: () => { commentForm.reset(); showCommentModal.value = false; },
     });
 };
+const editComment = (comment: { id: number; body: string }): void => {
+    editingCommentId.value = comment.id;
+    editCommentForm.body = comment.body;
+    editCommentForm.clearErrors();
+    showEditCommentModal.value = true;
+};
+
+const submitCommentEdit = (): void => {
+    if (!editingCommentId.value) return;
+
+    editCommentForm.put(route('tasks.comments.update', [props.task.id, editingCommentId.value]), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showEditCommentModal.value = false;
+            editingCommentId.value = null;
+            editCommentForm.reset();
+        },
+    });
+};
+
+const deleteComment = (commentId: number): void => {
+    if (!window.confirm('آیا از حذف این نظر مطمئن هستید؟')) return;
+
+    editCommentForm.delete(route('tasks.comments.destroy', [props.task.id, commentId]), {
+        preserveScroll: true,
+    });
+};
+
+const editReminder = (reminder: Reminder): void => {
+    editingReminderId.value = reminder.id;
+    editReminderForm.title = reminder.title;
+    editReminderForm.description = reminder.description ?? '';
+    editReminderForm.remind_at = reminder.remind_at ? reminder.remind_at.replace('T', ' ').slice(0, 19).replace(' ', 'T') : '';
+    editReminderForm.clearErrors();
+    showEditReminderModal.value = true;
+};
+
+const submitReminderEdit = (): void => {
+    if (!editingReminderId.value) return;
+
+    editReminderForm.put(route('tasks.reminders.update', [props.task.id, editingReminderId.value]), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showEditReminderModal.value = false;
+            editingReminderId.value = null;
+            editReminderForm.reset();
+        },
+    });
+};
+
+const deleteReminder = (reminderId: number): void => {
+    if (!window.confirm('آیا از حذف این یادآوری مطمئن هستید؟')) return;
+
+    editReminderForm.delete(route('tasks.reminders.destroy', [props.task.id, reminderId]), {
+        preserveScroll: true,
+    });
+};
+
 const submitWorkLog = (): void => {
     workLogForm.post(route('tasks.work-logs.store', props.task.id), {
         preserveScroll: true,
@@ -446,7 +510,16 @@ const pendingActivities = computed(() => props.task.activities?.filter(activity 
                                 <button v-if="abilities.comment" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="showCommentModal = true">ثبت نظر</button>
                             </div>
                             <div v-if="task.comments?.length" class="mt-4 space-y-3">
-                                <div v-for="comment in task.comments" :key="comment.id" class="rounded-lg bg-gray-50 p-3"><p class="text-sm leading-6">{{ comment.body }}</p><p class="mt-2 text-xs text-muted-foreground">{{ comment.user?.name ?? '—' }}</p></div>
+                                <article v-for="comment in task.comments" :key="comment.id" class="rounded-lg bg-gray-50 p-3">
+                                    <p class="text-sm leading-6">{{ comment.body }}</p>
+                                    <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-2">
+                                        <p class="text-xs text-muted-foreground">{{ comment.user?.name ?? '—' }}</p>
+                                        <div v-if="abilities.update" class="flex gap-2">
+                                            <button type="button" class="text-xs font-medium text-gray-700 hover:underline" @click="editComment(comment)">ویرایش</button>
+                                            <button type="button" class="text-xs font-medium text-red-600 hover:underline" @click="deleteComment(comment.id)">حذف</button>
+                                        </div>
+                                    </div>
+                                </article>
                             </div>
                             <p v-else class="mt-4 text-sm text-muted-foreground">نظری ثبت نشده است.</p>
                         </section>
@@ -570,6 +643,30 @@ const pendingActivities = computed(() => props.task.activities?.filter(activity 
                 <form v-if="showCommentModal" class="space-y-4 p-5" @submit.prevent="submitComment"><textarea v-model="commentForm.body" rows="5" required class="w-full rounded-lg border p-3 text-sm" placeholder="نظر خود را وارد کنید..."></textarea><button type="submit" :disabled="commentForm.processing" class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">ثبت نظر</button></form>
                 <form v-else-if="showWorkLogModal" class="space-y-4 p-5" @submit.prevent="submitWorkLog"><input v-model="workLogForm.title" required class="h-10 w-full rounded-lg border px-3 text-sm" placeholder="عنوان فعالیت" /><textarea v-model="workLogForm.description" rows="4" class="w-full rounded-lg border p-3 text-sm" placeholder="شرح فعالیت"></textarea><div class="grid gap-3 sm:grid-cols-2"><JalaliDateTimePicker v-model="workLogForm.started_at" placeholder="شروع" /><JalaliDateTimePicker v-model="workLogForm.completed_at" placeholder="پایان" /></div><button type="submit" :disabled="workLogForm.processing" class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">ثبت گزارش فعالیت</button></form>
                 <form v-else class="space-y-4 p-5" @submit.prevent="submitReminder"><input v-model="reminderForm.title" required class="h-10 w-full rounded-lg border px-3 text-sm" placeholder="عنوان یادآوری" /><textarea v-model="reminderForm.description" rows="3" class="w-full rounded-lg border p-3 text-sm" placeholder="توضیحات"></textarea><JalaliDateTimePicker v-model="reminderForm.remind_at" placeholder="زمان یادآوری" /><button type="submit" :disabled="reminderForm.processing" class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">ایجاد یادآوری</button></form>
+            </div>
+        </div>
+
+        <div v-if="showEditCommentModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showEditCommentModal = false">
+            <div class="w-full max-w-xl rounded-2xl bg-white shadow-2xl">
+                <div class="flex items-center justify-between border-b p-5"><h3 class="font-semibold">ویرایش نظر</h3><button type="button" class="text-xl" @click="showEditCommentModal = false">×</button></div>
+                <form class="space-y-4 p-5" @submit.prevent="submitCommentEdit">
+                    <textarea v-model="editCommentForm.body" rows="5" required class="w-full rounded-lg border p-3 text-sm" placeholder="متن نظر"></textarea>
+                    <p v-if="editCommentForm.errors.body" class="text-sm text-red-600">{{ editCommentForm.errors.body }}</p>
+                    <div class="flex justify-end gap-2"><button type="button" class="rounded-lg border px-4 py-2 text-sm" @click="showEditCommentModal = false">انصراف</button><button type="submit" :disabled="editCommentForm.processing" class="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">ذخیره تغییرات</button></div>
+                </form>
+            </div>
+        </div>
+
+        <div v-if="showEditReminderModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showEditReminderModal = false">
+            <div class="w-full max-w-xl rounded-2xl bg-white shadow-2xl">
+                <div class="flex items-center justify-between border-b p-5"><div><h3 class="font-semibold">ویرایش یادآوری</h3><p class="mt-1 text-sm text-muted-foreground">عنوان، توضیحات و زمان یادآوری را تغییر دهید.</p></div><button type="button" class="text-xl" @click="showEditReminderModal = false">×</button></div>
+                <form class="space-y-4 p-5" @submit.prevent="submitReminderEdit">
+                    <input v-model="editReminderForm.title" required class="h-10 w-full rounded-lg border px-3 text-sm" placeholder="عنوان یادآوری" />
+                    <textarea v-model="editReminderForm.description" rows="3" class="w-full rounded-lg border p-3 text-sm" placeholder="توضیحات"></textarea>
+                    <JalaliDateTimePicker v-model="editReminderForm.remind_at" placeholder="زمان یادآوری" />
+                    <p v-if="editReminderForm.errors.remind_at" class="text-sm text-red-600">{{ editReminderForm.errors.remind_at }}</p>
+                    <div class="flex justify-end gap-2"><button type="button" class="rounded-lg border px-4 py-2 text-sm" @click="showEditReminderModal = false">انصراف</button><button type="submit" :disabled="editReminderForm.processing" class="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">ذخیره تغییرات</button></div>
+                </form>
             </div>
         </div>
 
