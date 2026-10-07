@@ -30,10 +30,15 @@ class AssignTaskAction
         }
 
         if ($task->project !== null) {
-            $isProjectMember = $task->project
-                ->members()
-                ->where('user_id', $assignee->id)
-                ->exists();
+            $isProjectMember = $task->project->is_system_default && $task->project->department_id !== null
+                ? $task->project->department
+                    ?->members()
+                    ->where('users.id', $assignee->id)
+                    ->exists()
+                : $task->project
+                    ->members()
+                    ->where('user_id', $assignee->id)
+                    ->exists();
 
             if (! $isProjectMember) {
                 throw new InvalidArgumentException('مسئول تسک باید عضو همان پروژه باشد.');
