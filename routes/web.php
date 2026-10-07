@@ -117,6 +117,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/tasks/{task}', [TaskController::class, 'update'])->middleware('permission:tasks.update')->name('tasks.update');
     Route::patch('/tasks/{task}/assign', [TaskController::class, 'assign'])->middleware('permission:tasks.assign')->name('tasks.assign');
     Route::patch('/tasks/{task}/refer', [TaskController::class, 'refer'])->middleware('permission:tasks.refer')->name('tasks.refer');
+    Route::put('/tasks/{task}/participants', [TaskController::class, 'updateParticipants'])->middleware('permission:tasks.update')->name('tasks.participants.update');
     Route::patch('/tasks/{task}/status', [TaskController::class, 'changeStatus'])->middleware('permission:tasks.change_status')->name('tasks.change-status');
 
     Route::get('/documents/{document}/download', [DocumentController::class, 'download'])
