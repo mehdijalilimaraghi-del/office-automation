@@ -193,7 +193,7 @@ const editExternalContact = (contactId: number): void => {
 };
 
 const removeExternalContact = (contactId: number): void => {
-    externalForm.external_contact_ids = [contactId];
+    externalForm.external_contact_ids = [];
     editingExternalContactId.value = contactId;
     submitExternal();
 };
