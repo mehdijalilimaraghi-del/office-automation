@@ -353,10 +353,10 @@ class TaskHttpTest extends TestCase
 
     public function test_task_reminder_preserves_selected_time_and_can_be_updated_and_deleted(): void
     {
-        $user = $this->userWithPermission('tasks.update');
+        $user = $this->userWithPermission('tasks.create_reminder');
         $user->roles()->first()->permissions()->syncWithoutDetaching(
-            Permission::query()->where('code', 'tasks.create_reminder')->get()
-                ->mapWithKeys(fn ($permission) => [$permission->id => ['scope' => 'organization']])
+            Permission::query()->where('code', 'tasks.update')->get()
+                ->mapWithKeys(fn ($permission) => [$permission->id => ['scope' => 'project']])
                 ->all()
         );
         $project = $this->createProject($user);
