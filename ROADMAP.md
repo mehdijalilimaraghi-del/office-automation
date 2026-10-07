@@ -748,3 +748,9 @@ Project mutation authorization and task workflow actions now enforce permission 
 - تست HTTP برای زمان دقیق یادآوری و عملیات ویرایش/حذف اضافه شد.
 
 **Status:** implementation complete; focused task test pending.
+
+### 2026-10-07 — تکمیل Routeهای ویرایش/حذف یادآوری وظیفه
+- Routeهای `tasks.reminders.update` و `tasks.reminders.destroy` که Controller و تست HTTP به آن‌ها وابسته بودند، به مسیرهای وظایف اضافه شدند.
+- Migration مستقل Permission `tasks.create_reminder` نیز در دیتابیس پروژه وجود دارد.
+
+**Status:** implementation complete; focused TaskHttpTest validation pending.
