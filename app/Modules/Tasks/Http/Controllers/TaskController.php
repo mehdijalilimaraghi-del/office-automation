@@ -230,7 +230,7 @@ class TaskController extends Controller
     public function completeActivity(Request $request, Task $task, TaskActivity $activity): RedirectResponse
     {
         Gate::authorize('update', $task);
-        abort_unless($activity->task_id === $task->id, 404);
+        abort_unless((int) $activity->task_id === (int) $task->id, 404);
 
         $activity->update([
             'status' => 'completed',
