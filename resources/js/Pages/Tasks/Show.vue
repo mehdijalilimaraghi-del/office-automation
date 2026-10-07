@@ -346,26 +346,15 @@ const pendingActivities = computed(() => props.task.activities?.filter(activity 
             <div class="grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.75fr)]">
                 <main class="min-w-0 space-y-6">
                     <section class="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
-                        <div class="flex flex-wrap items-center justify-between gap-3">
-                            <div><h3 class="font-semibold">مسئول وظیفه و افراد مرتبط</h3><p class="mt-1 text-sm text-muted-foreground">افرادی از واحدهای دیگر که در روند انجام این وظیفه با آن‌ها هماهنگی یا پیگیری دارید.</p></div>
-                            <button v-if="abilities.update" type="button" class="rounded-lg border bg-white px-3 py-2 text-sm font-medium hover:bg-gray-50" @click="showParticipantModal = true">+ افزودن / مدیریت</button>
+                        <div class="flex items-center justify-between gap-3">
+                            <div><h3 class="font-semibold">مسئول وظیفه</h3><p class="mt-1 text-sm text-muted-foreground">مسئول انجام این وظیفه فقط یک نفر است.</p></div>
                         </div>
-                        <div class="mt-5 grid gap-3 sm:grid-cols-2">
-                            <div class="rounded-lg border bg-gray-50/60 p-4">
-                                <p class="text-xs text-muted-foreground">مسئول وظیفه</p>
-                                <p class="mt-1 font-medium">{{ task.assignee?.name ?? 'بدون مسئول' }}</p>
-                                <div v-if="task.assignee && phoneLabel(task.assignee)" class="mt-2 text-xs text-muted-foreground">☎ {{ phoneLabel(task.assignee) }}</div>
-                                <div v-if="task.assignee?.email" class="mt-1 text-xs text-muted-foreground">✉ {{ task.assignee.email }}</div>
-                            </div>
-                            <div v-for="user in participantUsers" :key="user.id" class="rounded-lg border p-4">
-                                <p class="text-xs text-muted-foreground">فرد مرتبط</p>
-                                <p class="mt-1 font-medium">{{ user.name }}</p>
-                                <div v-if="phoneLabel(user)" class="mt-2 text-xs text-muted-foreground">☎ {{ phoneLabel(user) }}</div>
-                                <div v-if="user.extension" class="mt-1 text-xs text-muted-foreground">داخلی {{ user.extension }}</div>
-                                <div v-if="user.email" class="mt-1 truncate text-xs text-muted-foreground">✉ {{ user.email }}</div>
-                            </div>
+                        <div class="mt-5 rounded-lg border bg-gray-50/60 p-4">
+                            <p class="text-xs text-muted-foreground">مسئول وظیفه</p>
+                            <p class="mt-1 font-medium">{{ task.assignee?.name ?? 'بدون مسئول' }}</p>
+                            <div v-if="task.assignee && phoneLabel(task.assignee)" class="mt-2 text-xs text-muted-foreground">☎ {{ phoneLabel(task.assignee) }}</div>
+                            <div v-if="task.assignee?.email" class="mt-1 text-xs text-muted-foreground">✉ {{ task.assignee.email }}</div>
                         </div>
-                        <div v-if="participantUsers.length === 0" class="mt-4 rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">هنوز فرد دیگری به‌عنوان فرد درگیر ثبت نشده است.</div>
                     </section>
 
                     <section class="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
