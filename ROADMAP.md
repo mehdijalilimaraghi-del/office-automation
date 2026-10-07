@@ -754,3 +754,9 @@ Project mutation authorization and task workflow actions now enforce permission 
 - Migration مستقل Permission `tasks.create_reminder` نیز در دیتابیس پروژه وجود دارد.
 
 **Status:** implementation complete; focused TaskHttpTest validation pending.
+
+### 2026-10-07 — اصلاح UI یادآوری وظیفه
+- ترتیب انتخاب ساعت/دقیقه در پنجره زمان با RTL اصلاح شد تا «ساعت» در سمت چپ و «دقیقه» در سمت راست قرار بگیرد.
+- در کارت هر یادآوری، عملیات «ویرایش» و «حذف» به‌صورت مستقیم اضافه شد و از Routeهای اختصاصی ویرایش/حذف استفاده می‌کند.
+
+**Status:** implementation complete; focused TaskHttpTest validation pending.
