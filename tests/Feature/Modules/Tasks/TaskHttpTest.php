@@ -321,7 +321,7 @@ class TaskHttpTest extends TestCase
         $response->assertInertia(
             fn ($page) => $page
                 ->component('Tasks/Show')
-                ->has('task.external_contacts', 1)
+                ->has('task.external_contacts', 2)
         );
     }
 
