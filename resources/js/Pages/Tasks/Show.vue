@@ -59,7 +59,7 @@ interface Task {
     department: { id: number; name: string; manager: User | null } | null;
     external_organization: ExternalOrganizationOption | null;
     external_department: ExternalDepartmentOption | null;
-    external_contact: ExternalContactOption | null;
+    external_contacts: ExternalContactOption[];
     project: { id: number; name: string } | null;
     reminders: Reminder[];
     documents: TaskDocument[];
@@ -157,14 +157,20 @@ const editForm = useForm({
 const externalForm = useForm({
     external_organization_id: props.task.external_organization?.id ?? null,
     external_department_id: props.task.external_department?.id ?? null,
-    external_contact_id: props.task.external_contact?.id ?? null,
+    external_contact_ids: props.task.external_contacts?.map(item => item.id) ?? [],
 });
 const showExternalModal = ref(false);
 
 const externalDepartments = computed(() => props.externalPartyOptions.external_departments.filter(item => item.external_organization_id === externalForm.external_organization_id));
 const externalContacts = computed(() => props.externalPartyOptions.external_contacts.filter(item => item.external_organization_id === externalForm.external_organization_id && (externalForm.external_department_id === null || item.external_department_id === externalForm.external_department_id)));
-const handleExternalOrganizationChange = (): void => { externalForm.external_department_id = null; externalForm.external_contact_id = null; };
-const handleExternalDepartmentChange = (): void => { externalForm.external_contact_id = null; };
+const handleExternalOrganizationChange = (): void => {
+    externalForm.external_department_id = null;
+    externalForm.external_contact_ids = [];
+};
+const handleExternalDepartmentChange = (): void => {
+    const allowedIds = new Set(externalContacts.value.map(item => item.id));
+    externalForm.external_contact_ids = externalForm.external_contact_ids.filter(id => allowedIds.has(id));
+};
 
 const statusLabels: Record<string, string> = {
     todo: 'انجام نشده',
@@ -272,7 +278,7 @@ const submitExternal = (): void => {
 const removeExternal = (): void => {
     externalForm.external_organization_id = null;
     externalForm.external_department_id = null;
-    externalForm.external_contact_id = null;
+    externalForm.external_contact_ids = [];
     submitExternal();
 };
 
@@ -453,24 +459,37 @@ const pendingActivities = computed(() => props.task.activities?.filter(activity 
                                 <p class="mt-1 text-xs text-muted-foreground">سازمان، واحد یا شخص خارج از شرکت مرتبط با این وظیفه.</p>
                             </div>
                             <button v-if="abilities.update" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="showExternalModal = true">
-                                {{ task.external_organization || task.external_department || task.external_contact ? 'ویرایش ارتباط' : 'ثبت ارتباط' }}
+                                {{ task.external_organization || task.external_department || task.external_contacts?.length ? 'ویرایش ارتباط' : 'ثبت ارتباط' }}
                             </button>
                         </div>
-                        <div v-if="task.external_organization || task.external_contact || task.external_department" class="mt-4 space-y-3 text-sm">
+                        <div v-if="task.external_organization || task.external_department || task.external_contacts?.length" class="mt-4 space-y-4 text-sm">
                             <div v-if="task.external_organization"><p class="text-xs text-muted-foreground">سازمان</p><p class="mt-1 font-medium">{{ task.external_organization.name }}</p></div>
                             <div v-if="task.external_department"><p class="text-xs text-muted-foreground">واحد</p><p class="mt-1 font-medium">{{ task.external_department.name }}</p></div>
-                            <div v-if="task.external_contact"><p class="text-xs text-muted-foreground">شخص</p><p class="mt-1 font-medium">{{ task.external_contact.name }}</p><p v-if="task.external_contact.mobile" class="mt-1 text-xs text-muted-foreground">موبایل: {{ task.external_contact.mobile }}</p></div>
+                            <div v-if="task.external_contacts?.length">
+                                <p class="text-xs text-muted-foreground">اشخاص</p>
+                                <div class="mt-2 grid gap-3 sm:grid-cols-2">
+                                    <article v-for="contact in task.external_contacts" :key="contact.id" class="rounded-xl border bg-gray-50/70 p-4">
+                                        <div class="font-medium text-gray-900">{{ contact.name }}</div>
+                                        <p v-if="contact.position" class="mt-1 text-xs text-gray-600">{{ contact.position }}</p>
+                                        <div class="mt-3 space-y-1 text-xs text-muted-foreground">
+                                            <p v-if="contact.mobile">موبایل: {{ contact.mobile }}</p>
+                                            <p v-if="contact.phone">تلفن: {{ contact.phone }}<span v-if="contact.extension"> · داخلی {{ contact.extension }}</span></p>
+                                            <p v-if="contact.email">ایمیل: {{ contact.email }}</p>
+                                        </div>
+                                    </article>
+                                </div>
+                            </div>
                         </div>
                         <p v-else class="mt-4 text-sm text-muted-foreground">پیگیری خارجی برای این وظیفه ثبت نشده است.</p>
-                        <div v-if="externalForm.errors.external_organization_id || externalForm.errors.external_department_id || externalForm.errors.external_contact_id" class="mt-4 space-y-1 text-xs text-red-600">
+                        <div v-if="externalForm.errors.external_organization_id || externalForm.errors.external_department_id || externalForm.errors.external_contact_ids" class="mt-4 space-y-1 text-xs text-red-600">
                             <p v-if="externalForm.errors.external_organization_id">{{ externalForm.errors.external_organization_id }}</p>
                             <p v-if="externalForm.errors.external_department_id">{{ externalForm.errors.external_department_id }}</p>
-                            <p v-if="externalForm.errors.external_contact_id">{{ externalForm.errors.external_contact_id }}</p>
+                            <p v-if="externalForm.errors.external_contact_ids">{{ externalForm.errors.external_contact_ids }}</p>
                         </div>
-                        <div v-if="abilities.update && (task.external_organization || task.external_department || task.external_contact)" class="mt-4 border-t pt-4">
+                        <div v-if="abilities.update && (task.external_organization || task.external_department || task.external_contacts?.length)" class="mt-4 border-t pt-4">
                             <button type="button" class="text-xs font-medium text-red-600 hover:underline" @click="removeExternal">حذف ارتباط</button>
                         </div>
-                    </section>
+</section>
 
                     <section v-if="abilities.change_status" class="rounded-xl border bg-card p-5 shadow-sm">
                         <h3 class="font-semibold">وضعیت</h3>
@@ -526,7 +545,24 @@ const pendingActivities = computed(() => props.task.activities?.filter(activity 
                     <form class="mt-5 space-y-4" @submit.prevent="submitExternal">
                         <select v-model="externalForm.external_organization_id" @change="handleExternalOrganizationChange" class="h-10 w-full rounded-lg border px-3 text-sm"><option :value="null">بدون سازمان خارجی</option><option v-for="item in externalPartyOptions.external_organizations" :key="item.id" :value="item.id">{{ item.name }}</option></select>
                         <select v-model="externalForm.external_department_id" :disabled="externalForm.external_organization_id === null" @change="handleExternalDepartmentChange" class="h-10 w-full rounded-lg border px-3 text-sm"><option :value="null">بدون واحد خارجی</option><option v-for="item in externalDepartments" :key="item.id" :value="item.id">{{ item.name }}</option></select>
-                        <select v-model="externalForm.external_contact_id" :disabled="externalForm.external_organization_id === null" class="h-10 w-full rounded-lg border px-3 text-sm"><option :value="null">بدون شخص مشخص</option><option v-for="item in externalContacts" :key="item.id" :value="item.id">{{ item.name }}</option></select>
+                        <div>
+                            <div class="mb-2 flex items-center justify-between">
+                                <label class="text-sm font-medium text-gray-700">اشخاص خارجی</label>
+                                <span class="text-xs text-muted-foreground">{{ externalForm.external_contact_ids.length }} نفر انتخاب شده</span>
+                            </div>
+                            <div v-if="externalForm.external_organization_id === null" class="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">ابتدا سازمان خارجی را انتخاب کنید.</div>
+                            <div v-else-if="externalContacts.length === 0" class="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">برای این سازمان/واحد شخصی ثبت نشده است.</div>
+                            <div v-else class="max-h-64 space-y-2 overflow-y-auto rounded-lg border p-2">
+                                <label v-for="item in externalContacts" :key="item.id" class="flex cursor-pointer items-start gap-3 rounded-lg p-3 hover:bg-gray-50">
+                                    <input v-model="externalForm.external_contact_ids" type="checkbox" :value="item.id" class="mt-1 h-4 w-4 rounded border-gray-300" />
+                                    <span class="min-w-0">
+                                        <span class="block text-sm font-medium text-gray-900">{{ item.name }}</span>
+                                        <span v-if="item.position" class="mt-0.5 block text-xs text-muted-foreground">{{ item.position }}</span>
+                                        <span v-if="item.mobile || item.phone" class="mt-1 block text-xs text-muted-foreground">{{ item.mobile || item.phone }}</span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
                         <div class="flex justify-end gap-2 border-t pt-4"><button type="button" class="rounded-lg border px-4 py-2 text-sm" @click="showExternalModal = false">انصراف</button><button type="submit" :disabled="externalForm.processing" class="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">ذخیره ارتباط</button></div>
                     </form>
                 </section>
