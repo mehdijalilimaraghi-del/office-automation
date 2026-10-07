@@ -339,3 +339,9 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - در کارت هر یادآوری، عملیات «ویرایش» و «حذف» به‌صورت مستقیم اضافه شد و از Routeهای اختصاصی ویرایش/حذف استفاده می‌کند.
 
 **Status:** implementation complete; focused TaskHttpTest validation pending.
+
+
+### 2026-10-07 — Task work log action button
+- در بخش «گزارش فعالیت» صفحه جزئیات وظیفه، دکمه «ثبت فعالیت» اضافه شد و در صورت داشتن Ability مربوط به ثبت گزارش فعالیت، پنجره ثبت فعالیت را باز می‌کند.
+
+**Status:** implementation complete; focused TaskHttpTest validation pending.
