@@ -135,6 +135,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/tasks/{task}/comments/{comment}', [TaskController::class, 'destroyComment'])->middleware('permission:tasks.update')->name('tasks.comments.destroy');
     Route::post('/tasks/{task}/work-logs', [TaskController::class, 'workLog'])->middleware('permission:tasks.log_work')->name('tasks.work-logs.store');
     Route::post('/tasks/{task}/reminders', [TaskController::class, 'reminder'])->middleware('permission:tasks.create_reminder')->name('tasks.reminders.store');
+    Route::put('/tasks/{task}/reminders/{reminder}', [TaskController::class, 'updateReminder'])->middleware('permission:tasks.update')->name('tasks.reminders.update');
+    Route::delete('/tasks/{task}/reminders/{reminder}', [TaskController::class, 'destroyReminder'])->middleware('permission:tasks.update')->name('tasks.reminders.destroy');
 
     Route::scopeBindings()->group(function () {
         Route::patch('/tasks/{task}/reminders/{reminder}/status', [TaskController::class, 'updateReminderStatus'])
