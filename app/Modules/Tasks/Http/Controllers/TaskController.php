@@ -159,6 +159,7 @@ class TaskController extends Controller
             'external_department_id' => ['nullable', 'integer', 'exists:external_departments,id'],
             'external_contact_ids' => ['nullable', 'array'],
             'external_contact_ids.*' => ['integer', 'distinct', 'exists:external_contacts,id'],
+            'replace_external_contact_id' => ['nullable', 'integer', 'exists:external_contacts,id'],
         ]);
 
         $organizationId = $data['external_organization_id'] ?? null;
@@ -207,7 +208,18 @@ class TaskController extends Controller
             'external_department_id' => $departmentId,
         ]);
 
-        $task->externalContacts()->sync($contactIds);
+        if (isset($data['replace_external_contact_id'])) {
+            $replaceContactId = (int) $data['replace_external_contact_id'];
+
+            abort_unless(
+                $task->externalContacts()->whereKey($replaceContactId)->exists(),
+                404
+            );
+
+            $task->externalContacts()->detach($replaceContactId);
+        }
+
+        $task->externalContacts()->syncWithoutDetaching($contactIds);
 
         return back()->with('success', 'ارتباط و پیگیری بیرونی با موفقیت به‌روزرسانی شد.');
     }
