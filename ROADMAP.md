@@ -682,3 +682,11 @@ Project mutation authorization and task workflow actions now enforce permission 
 - مدل دسترسی ارجاع همچنان بر پایه مجوز اختصاصی `tasks.refer` و scope وظیفه باقی می‌ماند.
 
 **Status:** implementation complete; focused TaskHttpTest validation pending.
+
+
+### 2026-10-07 — Task referral member selection correction
+- در ارجاع وظایفِ پروژه‌های پیش‌فرض واحد، تمام اعضای واحد به‌عنوان مسئول جدید قابل انتخاب هستند؛ محدودیت backend نیز با همین مدل هم‌راستا شد.
+- عنوان کاربرپسند منوی «کار و عملیات» از «تسک‌ها» به «وظایف» اصلاح شد.
+- خطای مسئول جدید در پنجره ارجاع به‌صورت مستقیم نمایش داده می‌شود.
+
+**Status:** implementation complete; focused TaskHttpTest validation pending.
