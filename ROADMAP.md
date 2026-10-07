@@ -666,3 +666,8 @@ Project mutation authorization and task workflow actions now enforce permission 
 - بخش «ارتباط و پیگیری بیرونی» دکمه‌های «ثبت ارتباط / ویرایش ارتباط» و «حذف ارتباط» را مستقیماً در صفحه جزئیات نمایش می‌دهد.
 
 **Status:** implementation complete; frontend build and focused backend validation pending.
+
+
+### V1 validation correction — Task detail controls
+- Referral remains a contextual task action and is authorized through task update access plus assignee/department-manager/project-manager context.
+- External follow-up save/display is validated at the HTTP layer and the detail page refreshes its task data after save.
