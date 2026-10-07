@@ -92,6 +92,70 @@ class TaskHttpTest extends TestCase
         ]);
     }
 
+    public function test_task_assignee_can_refer_task_through_update_permission(): void
+    {
+        $assignee = $this->userWithPermission('tasks.update');
+        $project = $this->createProject($assignee);
+        $newAssignee = User::factory()->create(['status' => 'active']);
+        $this->addMember($project, $newAssignee);
+        $task = $this->createTask($project, $assignee);
+
+        $this->actingAs($assignee)
+            ->patch(route('tasks.refer', $task), [
+                'assignee_id' => $newAssignee->id,
+                'note' => 'ارجاع برای ادامه پیگیری',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('tasks', [
+            'id' => $task->id,
+            'assignee_id' => $newAssignee->id,
+        ]);
+        $this->assertDatabaseHas('task_assignments', [
+            'task_id' => $task->id,
+            'to_user_id' => $newAssignee->id,
+            'type' => 'handoff',
+        ]);
+    }
+
+    public function test_task_external_party_can_be_saved_and_loaded(): void
+    {
+        $user = $this->userWithPermission('tasks.update');
+        $project = $this->createProject($user);
+        $task = $this->createTask($project, $user);
+
+        $organization = \App\Core\ExternalParties\Models\ExternalOrganization::query()->create([
+            'name' => 'سازمان تست',
+            'is_active' => true,
+        ]);
+        $department = \App\Core\ExternalParties\Models\ExternalDepartment::query()->create([
+            'external_organization_id' => $organization->id,
+            'name' => 'واحد تست',
+            'is_active' => true,
+        ]);
+        $contact = \App\Core\ExternalParties\Models\ExternalContact::query()->create([
+            'external_organization_id' => $organization->id,
+            'external_department_id' => $department->id,
+            'name' => 'شخص تست',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->put(route('tasks.external-parties.update', $task), [
+                'external_organization_id' => $organization->id,
+                'external_department_id' => $department->id,
+                'external_contact_id' => $contact->id,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('tasks', [
+            'id' => $task->id,
+            'external_organization_id' => $organization->id,
+            'external_department_id' => $department->id,
+            'external_contact_id' => $contact->id,
+        ]);
+    }
+
     public function test_project_scope_filters_task_index_at_http_layer(): void
     {
         $user = $this->userWithPermissionScope('tasks.view', 'project');
