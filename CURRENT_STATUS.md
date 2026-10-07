@@ -230,3 +230,8 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - بخش «ارتباط و پیگیری بیرونی» اکنون دکمه ثبت/ویرایش و کنترل حذف ارتباط دارد.
 
 **Status:** implemented; frontend build validation pending.
+
+### 2026-10-07 — Task detail referral TypeScript fix
+- مدل TypeScript صفحه جزئیات وظیفه با داده `assignments` هماهنگ شد تا سوابق ارجاع وظیفه بدون خطای `vue-tsc` build شوند.
+
+**Status:** implementation complete; frontend build validation pending.
