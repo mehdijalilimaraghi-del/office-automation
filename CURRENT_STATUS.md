@@ -242,3 +242,9 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - بخش «ارتباط و پیگیری بیرونی» دکمه‌های «ثبت ارتباط / ویرایش ارتباط» و «حذف ارتباط» را مستقیماً در صفحه جزئیات نمایش می‌دهد.
 
 **Status:** implementation complete; frontend build and focused backend validation pending.
+
+
+### 2026-10-07 — Task detail referral/external follow-up fix
+- Task referral is available to users with `tasks.update` access when they are the current assignee, department manager, or project manager; route and policy are aligned with this authorization model.
+- External organization/department/contact saving now explicitly refreshes task data after a successful update, and validation errors are visible in the form.
+- HTTP coverage added for referral persistence and external-party persistence.
