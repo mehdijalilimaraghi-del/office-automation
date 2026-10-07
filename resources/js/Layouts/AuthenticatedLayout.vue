@@ -141,7 +141,7 @@ onMounted(() => {
                                             :active="route().current('tasks.*')"
                                             class="w-full justify-start rounded-lg border-0 px-3 py-2 text-right"
                                         >
-                                            تسک‌ها
+                                            وظایف
                                         </NavLink>
                                         <NavLink
                                             v-if="can('projects_view')"
