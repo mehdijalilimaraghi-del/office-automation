@@ -115,6 +115,7 @@ Route::middleware('auth')->group(function () {
         ->name('tasks.documents.store');
     Route::get('/tasks/{task}', [TaskController::class, 'show'])->middleware('permission:tasks.view')->name('tasks.show');
     Route::put('/tasks/{task}', [TaskController::class, 'update'])->middleware('permission:tasks.update')->name('tasks.update');
+    Route::put('/tasks/{task}/external-parties', [TaskController::class, 'updateExternalParties'])->middleware('permission:tasks.update')->name('tasks.external-parties.update');
     Route::patch('/tasks/{task}/assign', [TaskController::class, 'assign'])->middleware('permission:tasks.assign')->name('tasks.assign');
     Route::patch('/tasks/{task}/refer', [TaskController::class, 'refer'])->middleware('permission:tasks.refer')->name('tasks.refer');
     Route::put('/tasks/{task}/participants', [TaskController::class, 'updateParticipants'])->middleware('permission:tasks.update')->name('tasks.participants.update');
