@@ -276,3 +276,11 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - صفحه جزئیات وظیفه اصلاح شد تا «ارتباط و پیگیری بیرونی» بعد از ذخیره واقعاً نمایش داده شود و سوابق ارجاع نیز نام فرستنده، گیرنده و ثبت‌کننده را درست نشان دهند.
 
 **Status:** code fix committed; frontend build validation pending.
+
+
+### 2026-10-07 — Multiple external contacts on task detail
+- «ارتباط و پیگیری بیرونی» اکنون می‌تواند چند شخص خارجی را هم‌زمان به یک وظیفه متصل کند.
+- رابطه اشخاص خارجی از ستون تکی external_contact_id به جدول رابطه‌ای task_external_contacts منتقل شد و داده قبلی نیز هنگام migration حفظ می‌شود.
+- صفحه جزئیات، اطلاعات هر شخص خارجی را به‌صورت کارت مستقل نمایش می‌دهد و پنجره ثبت ارتباط امکان انتخاب چند شخص را دارد.
+
+**Status:** implementation complete; focused TaskHttpTest validation pending.
