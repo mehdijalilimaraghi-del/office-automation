@@ -83,6 +83,7 @@ const props = defineProps<{
     currentUserId: number;
     abilities: Abilities;
     assigneeOptions: User[];
+    participantOptions: User[];
     externalPartyOptions: ExternalPartyOptions;
     customFields: Array<{
         id: number;
