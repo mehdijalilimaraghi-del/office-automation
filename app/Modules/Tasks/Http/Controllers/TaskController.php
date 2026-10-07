@@ -150,6 +150,25 @@ class TaskController extends Controller
         return back()->with('success', 'تسک با موفقیت ویرایش شد.');
     }
 
+    public function updateExternalParties(Request $request, Task $task): RedirectResponse
+    {
+        Gate::authorize('update', $task);
+
+        $data = $request->validate([
+            'external_organization_id' => ['nullable', 'integer', 'exists:external_organizations,id'],
+            'external_department_id' => ['nullable', 'integer', 'exists:external_departments,id'],
+            'external_contact_id' => ['nullable', 'integer', 'exists:external_contacts,id'],
+        ]);
+
+        $task->update([
+            'external_organization_id' => $data['external_organization_id'] ?? null,
+            'external_department_id' => $data['external_department_id'] ?? null,
+            'external_contact_id' => $data['external_contact_id'] ?? null,
+        ]);
+
+        return back()->with('success', 'ارتباط و پیگیری بیرونی با موفقیت به‌روزرسانی شد.');
+    }
+
     public function assign(AssignTaskRequest $request, Task $task): RedirectResponse
     {
         Gate::authorize('assign', $task);
