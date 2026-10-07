@@ -132,19 +132,29 @@ class TaskFormOptionsService
             return $this->activeUsers();
         }
 
-        return $task->project
-            ? $task->project->users()
-                ->where('users.status', 'active')
-                ->whereDoesntHave('roles', fn ($roleQuery) => $roleQuery->where('roles.code', 'SYSTEM_ADMIN')->where('roles.is_active', true))
-                ->orderBy('users.name')
-                ->get(['users.id', 'users.name'])
-                ->map(fn (User $user): array => [
-                    'id' => (int) $user->id,
-                    'name' => $user->name,
-                ])
-                ->values()
-                ->all()
-            : [];
+        if ($task->project === null) {
+            return $this->activeUsers();
+        }
+
+        $usersQuery = $task->project->is_system_default && $task->project->department_id !== null
+            ? $task->project->department?->members()
+            : $task->project->users();
+
+        if ($usersQuery === null) {
+            return [];
+        }
+
+        return $usersQuery
+            ->where('users.status', 'active')
+            ->whereDoesntHave('roles', fn ($roleQuery) => $roleQuery->where('roles.code', 'SYSTEM_ADMIN')->where('roles.is_active', true))
+            ->orderBy('users.name')
+            ->get(['users.id', 'users.name'])
+            ->map(fn (User $user): array => [
+                'id' => (int) $user->id,
+                'name' => $user->name,
+            ])
+            ->values()
+            ->all();
     }
 
     /**
