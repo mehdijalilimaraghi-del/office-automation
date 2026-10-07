@@ -155,9 +155,9 @@ const editForm = useForm({
     custom_fields: props.customFieldValues ?? {},
 });
 const externalForm = useForm({
-    external_organization_id: props.task.external_organization?.id ?? null,
-    external_department_id: props.task.external_department?.id ?? null,
-    external_contact_ids: props.task.external_contacts?.map(item => item.id) ?? [],
+    external_organization_id: null as number | null,
+    external_department_id: null as number | null,
+    external_contact_ids: [] as number[],
 });
 const showExternalModal = ref(false);
 const editingExternalContactId = ref<number | null>(null);
@@ -182,13 +182,18 @@ const toggleExternalContact = (contactId: number): void => {
 
 const openExternalModal = (): void => {
     editingExternalContactId.value = null;
-    externalForm.external_contact_ids = props.task.external_contacts?.map(item => item.id) ?? [];
+    externalForm.reset();
+    externalForm.clearErrors();
     showExternalModal.value = true;
 };
 
 const editExternalContact = (contactId: number): void => {
+    const contact = props.task.external_contacts?.find(item => item.id === contactId);
     editingExternalContactId.value = contactId;
+    externalForm.external_organization_id = contact?.pivot?.external_organization_id ?? contact?.external_organization_id ?? null;
+    externalForm.external_department_id = contact?.pivot?.external_department_id ?? contact?.external_department_id ?? null;
     externalForm.external_contact_ids = [contactId];
+    externalForm.clearErrors();
     showExternalModal.value = true;
 };
 
@@ -500,8 +505,8 @@ const pendingActivities = computed(() => props.task.activities?.filter(activity 
                                             </div>
                                         </div>
                                         <div class="mt-3 grid gap-1.5 text-xs text-muted-foreground">
-                                            <p><span class="font-medium text-gray-700">سازمان:</span> {{ props.externalPartyOptions.external_organizations.find(item => item.id === contact.pivot?.external_organization_id)?.name ?? task.external_organization?.name ?? '—' }}</p>
-                                            <p><span class="font-medium text-gray-700">واحد:</span> {{ props.externalPartyOptions.external_departments.find(item => item.id === contact.pivot?.external_department_id)?.name ?? task.external_department?.name ?? '—' }}</p>
+                                            <p><span class="font-medium text-gray-700">سازمان:</span> {{ props.externalPartyOptions.external_organizations.find(item => item.id === contact.pivot?.external_organization_id)?.name ?? '—' }}</p>
+                                            <p><span class="font-medium text-gray-700">واحد:</span> {{ props.externalPartyOptions.external_departments.find(item => item.id === contact.pivot?.external_department_id)?.name ?? '—' }}</p>
                                             <p v-if="contact.mobile"><span class="font-medium text-gray-700">موبایل:</span> {{ contact.mobile }}</p>
                                             <p v-if="contact.phone"><span class="font-medium text-gray-700">تلفن:</span> {{ contact.phone }}<span v-if="contact.extension"> · داخلی {{ contact.extension }}</span></p>
                                             <p v-if="contact.email"><span class="font-medium text-gray-700">ایمیل:</span> {{ contact.email }}</p>
