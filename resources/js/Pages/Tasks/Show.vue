@@ -45,7 +45,7 @@ interface Task {
     due_date: string | null;
     assignee: User | null;
     creator: User | null;
-    department: { id: number; name: string } | null;
+    department: { id: number; name: string; manager: User | null } | null;
     externalOrganization: ExternalOrganizationOption | null;
     externalDepartment: ExternalDepartmentOption | null;
     externalContact: ExternalContactOption | null;
@@ -397,7 +397,7 @@ const pendingActivities = computed(() => props.task.activities?.filter(activity 
                         <h3 class="font-semibold">اطلاعات پروژه</h3>
                         <dl class="mt-4 space-y-3 text-sm">
                             <div class="flex justify-between gap-3"><dt class="text-muted-foreground">پروژه</dt><dd class="font-medium">{{ task.project?.name ?? 'بدون پروژه' }}</dd></div>
-                            <div class="flex justify-between gap-3"><dt class="text-muted-foreground">مسئول واحد</dt><dd class="font-medium">{{ task.department?.name ?? '—' }}</dd></div>
+                            <div class="flex justify-between gap-3"><dt class="text-muted-foreground">مسئول واحد</dt><dd class="font-medium">{{ task.department?.manager?.name ?? 'بدون مسئول واحد' }}</dd></div>
                             <div class="flex justify-between gap-3"><dt class="text-muted-foreground">مسئول وظیفه</dt><dd class="font-medium">{{ task.assignee?.name ?? 'بدون مسئول' }}</dd></div>
                             <div class="flex justify-between gap-3"><dt class="text-muted-foreground">شروع</dt><dd class="font-medium">{{ formatPersianDate(task.start_date) }}</dd></div>
                             <div class="flex justify-between gap-3"><dt class="text-muted-foreground">مهلت</dt><dd class="font-medium">{{ formatPersianDate(task.due_date) }}</dd></div>
