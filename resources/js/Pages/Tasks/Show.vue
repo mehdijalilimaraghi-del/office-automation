@@ -13,6 +13,19 @@ interface ExternalDepartmentOption { id: number; external_organization_id: numbe
 interface ExternalContactOption { id: number; external_organization_id: number; external_department_id: number | null; name: string; position: string | null; mobile: string | null; phone: string | null; extension: string | null; }
 interface ExternalPartyOptions { external_organizations: ExternalOrganizationOption[]; external_departments: ExternalDepartmentOption[]; external_contacts: ExternalContactOption[]; }
 
+interface TaskActivity {
+    id: number;
+    title: string;
+    description: string | null;
+    status: 'pending' | 'completed';
+    activity_type: 'planned' | 'logged';
+    sequence: number;
+    assignee: User | null;
+    creator: User | null;
+    completedBy: User | null;
+    completed_at: string | null;
+}
+
 interface Reminder {
     id: number;
     title: string;
@@ -40,6 +53,7 @@ interface Task {
     reminders: Reminder[];
     documents: TaskDocument[];
     participants: Array<{ id: number; user: User }>;
+    activities: TaskActivity[];
     comments: Array<{ id: number; body: string; user: User | null }>;
 }
 interface TimelineItem {
@@ -84,6 +98,7 @@ const props = defineProps<{
     abilities: Abilities;
     assigneeOptions: User[];
     participantOptions: User[];
+    activityAssigneeOptions: User[];
     externalPartyOptions: ExternalPartyOptions;
     customFields: Array<{
         id: number;
@@ -108,6 +123,8 @@ const referralForm = useForm({ assignee_id: '', note: '' });
 const statusForm = useForm({ status: props.task.status });
 const reminderStatusForm = useForm({ status: '' as 'completed' | 'cancelled' | '' });
 const participantForm = useForm<{ user_ids: number[] }>({ user_ids: props.task.participants?.map(item => item.user.id) ?? [] });
+const activityForm = useForm({ title: '', description: '', assigned_to: null as number | null, activity_type: 'planned' as 'planned' | 'logged' });
+const showActivityModal = ref(false);
 const showEditModal = ref(false);
 const showReferralModal = ref(false);
 const showCommentModal = ref(false);
@@ -277,6 +294,16 @@ const submitParticipants = (): void => {
     participantForm.put(route('tasks.participants.update', props.task.id), { preserveScroll: true, onSuccess: () => { showParticipantModal.value = false; } });
 };
 const participantUsers = computed(() => props.task.participants?.map(item => item.user) ?? []);
+const nextActivity = computed(() => props.task.activities?.find(activity => activity.status === 'pending' && activity.activity_type === 'planned') ?? null);
+const submitActivity = (): void => {
+    activityForm.post(route('tasks.activities.store', props.task.id), {
+        preserveScroll: true,
+        onSuccess: () => { activityForm.reset(); activityForm.activity_type = 'planned'; showActivityModal.value = false; },
+    });
+};
+const completeActivity = (activityId: number): void => {
+    activityForm.patch(route('tasks.activities.complete', [props.task.id, activityId]), { preserveScroll: true });
+};
 const phoneLabel = (user: User): string | null => user.mobile || user.phone || null;
 </script>
 
@@ -328,7 +355,7 @@ const phoneLabel = (user: User): string | null => user.mobile || user.phone || n
                 <main class="min-w-0 space-y-6">
                     <section class="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
                         <div class="flex flex-wrap items-center justify-between gap-3">
-                            <div><h3 class="font-semibold">مسئول و افراد درگیر</h3><p class="mt-1 text-sm text-muted-foreground">افرادی که در انجام یا پیگیری این وظیفه نقش دارند.</p></div>
+                            <div><h3 class="font-semibold">مسئول وظیفه و افراد مرتبط</h3><p class="mt-1 text-sm text-muted-foreground">افرادی از واحدهای دیگر که در روند انجام این وظیفه با آن‌ها هماهنگی یا پیگیری دارید.</p></div>
                             <button v-if="abilities.update" type="button" class="rounded-lg border bg-white px-3 py-2 text-sm font-medium hover:bg-gray-50" @click="showParticipantModal = true">+ افزودن / مدیریت</button>
                         </div>
                         <div class="mt-5 grid gap-3 sm:grid-cols-2">
@@ -339,7 +366,7 @@ const phoneLabel = (user: User): string | null => user.mobile || user.phone || n
                                 <div v-if="task.assignee?.email" class="mt-1 text-xs text-muted-foreground">✉ {{ task.assignee.email }}</div>
                             </div>
                             <div v-for="user in participantUsers" :key="user.id" class="rounded-lg border p-4">
-                                <p class="text-xs text-muted-foreground">فرد درگیر</p>
+                                <p class="text-xs text-muted-foreground">فرد مرتبط</p>
                                 <p class="mt-1 font-medium">{{ user.name }}</p>
                                 <div v-if="phoneLabel(user)" class="mt-2 text-xs text-muted-foreground">☎ {{ phoneLabel(user) }}</div>
                                 <div v-if="user.extension" class="mt-1 text-xs text-muted-foreground">داخلی {{ user.extension }}</div>
@@ -491,5 +518,18 @@ const phoneLabel = (user: User): string | null => user.mobile || user.phone || n
                 </form>
             </div>
         </div>
+    
+            <div v-if="showActivityModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showActivityModal = false">
+                <section class="w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl sm:p-6">
+                    <div class="flex items-center justify-between"><h3 class="font-semibold text-gray-900">ثبت فعالیت</h3><button type="button" class="text-gray-500 hover:text-gray-900" @click="showActivityModal = false">×</button></div>
+                    <form class="mt-5 space-y-4" @submit.prevent="submitActivity">
+                        <div><label class="mb-1.5 block text-sm font-medium text-gray-700">عنوان فعالیت</label><input v-model="activityForm.title" required class="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm" placeholder="مثلاً دریافت تأیید مالی" /></div>
+                        <div><label class="mb-1.5 block text-sm font-medium text-gray-700">توضیحات</label><textarea v-model="activityForm.description" rows="3" class="w-full rounded-lg border border-gray-300 p-3 text-sm" /></div>
+                        <div><label class="mb-1.5 block text-sm font-medium text-gray-700">انجام‌دهنده</label><select v-model="activityForm.assigned_to" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm"><option :value="null">مسئول اصلی وظیفه</option><option v-for="user in activityAssigneeOptions" :key="user.id" :value="user.id">{{ user.name }}</option></select></div>
+                        <div class="flex items-center justify-end gap-2 border-t pt-4"><button type="button" class="rounded-lg border px-4 py-2 text-sm" @click="showActivityModal = false">انصراف</button><button type="submit" :disabled="activityForm.processing" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">ثبت فعالیت</button></div>
+                    </form>
+                </section>
+            </div>
+
     </AuthenticatedLayout>
 </template>
