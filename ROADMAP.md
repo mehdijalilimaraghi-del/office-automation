@@ -697,3 +697,11 @@ Project mutation authorization and task workflow actions now enforce permission 
 - صفحه جزئیات وظیفه اصلاح شد تا «ارتباط و پیگیری بیرونی» بعد از ذخیره واقعاً نمایش داده شود و سوابق ارجاع نیز نام فرستنده، گیرنده و ثبت‌کننده را درست نشان دهند.
 
 **Status:** code fix committed; frontend build validation pending.
+
+
+### 2026-10-07 — Multiple external contacts for tasks
+- «ارتباط و پیگیری بیرونی» در V1 برای یک وظیفه از یک شخص خارجی به چند شخص خارجی توسعه یافت.
+- سازمان و واحد همچنان context وظیفه هستند؛ اشخاص خارجی از طریق رابطه مستقل task_external_contacts نگهداری می‌شوند.
+- در صفحه جزئیات، هر شخص خارجی با اطلاعات تماس خود در یک کارت مستقل نمایش داده می‌شود.
+
+**Status:** implementation complete; focused TaskHttpTest validation pending.
