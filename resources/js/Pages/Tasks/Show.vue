@@ -4,7 +4,7 @@ import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
 import JalaliDateTimePicker from '@/Components/JalaliDateTimePicker.vue';
 import { formatPersianDate, formatPersianDateTime } from '@/Utils/date';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
 interface User { id: number; name: string; email?: string | null; mobile?: string | null; phone?: string | null; extension?: string | null; }
@@ -266,7 +266,7 @@ const submitEdit = (): void => {
 const submitExternal = (): void => {
     externalForm.put(route('tasks.external-parties.update', props.task.id), {
         preserveScroll: true,
-        onSuccess: () => { showExternalModal.value = false; },
+        onSuccess: () => { showExternalModal.value = false; router.reload({ only: ['task'] }); },
     });
 };
 const removeExternal = (): void => {
@@ -462,6 +462,11 @@ const pendingActivities = computed(() => props.task.activities?.filter(activity 
                             <div v-if="task.externalContact"><p class="text-xs text-muted-foreground">شخص</p><p class="mt-1 font-medium">{{ task.externalContact.name }}</p><p v-if="task.externalContact.mobile" class="mt-1 text-xs text-muted-foreground">موبایل: {{ task.externalContact.mobile }}</p></div>
                         </div>
                         <p v-else class="mt-4 text-sm text-muted-foreground">پیگیری خارجی برای این وظیفه ثبت نشده است.</p>
+                        <div v-if="externalForm.errors.external_organization_id || externalForm.errors.external_department_id || externalForm.errors.external_contact_id" class="mt-4 space-y-1 text-xs text-red-600">
+                            <p v-if="externalForm.errors.external_organization_id">{{ externalForm.errors.external_organization_id }}</p>
+                            <p v-if="externalForm.errors.external_department_id">{{ externalForm.errors.external_department_id }}</p>
+                            <p v-if="externalForm.errors.external_contact_id">{{ externalForm.errors.external_contact_id }}</p>
+                        </div>
                         <div v-if="abilities.update && (task.externalOrganization || task.externalDepartment || task.externalContact)" class="mt-4 border-t pt-4">
                             <button type="button" class="text-xs font-medium text-red-600 hover:underline" @click="removeExternal">حذف ارتباط</button>
                         </div>
