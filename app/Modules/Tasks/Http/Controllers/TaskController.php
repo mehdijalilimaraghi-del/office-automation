@@ -327,6 +327,60 @@ class TaskController extends Controller
         return back()->with('success', 'نظر با موفقیت ثبت شد.');
     }
 
+    public function updateComment(Request $request, Task $task, \App\Modules\Tasks\Models\TaskComment $comment): RedirectResponse
+    {
+        Gate::authorize('update', $task);
+        abort_unless((int) $comment->task_id === (int) $task->id, 404);
+
+        $data = $request->validate([
+            'body' => ['required', 'string', 'max:10000'],
+        ]);
+
+        $comment->update(['body' => $data['body']]);
+
+        return back()->with('success', 'نظر با موفقیت ویرایش شد.');
+    }
+
+    public function destroyComment(Request $request, Task $task, \App\Modules\Tasks\Models\TaskComment $comment): RedirectResponse
+    {
+        Gate::authorize('update', $task);
+        abort_unless((int) $comment->task_id === (int) $task->id, 404);
+
+        $comment->delete();
+
+        return back()->with('success', 'نظر با موفقیت حذف شد.');
+    }
+
+    public function updateReminder(Request $request, Task $task, TaskReminder $reminder): RedirectResponse
+    {
+        Gate::authorize('update', $task);
+        abort_unless((int) $reminder->task_id === (int) $task->id, 404);
+
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:200'],
+            'description' => ['nullable', 'string', 'max:10000'],
+            'remind_at' => ['required', 'date'],
+        ]);
+
+        $reminder->update([
+            'title' => $data['title'],
+            'description' => $data['description'] ?? null,
+            'remind_at' => $data['remind_at'],
+        ]);
+
+        return back()->with('success', 'یادآوری با موفقیت ویرایش شد.');
+    }
+
+    public function destroyReminder(Request $request, Task $task, TaskReminder $reminder): RedirectResponse
+    {
+        Gate::authorize('update', $task);
+        abort_unless((int) $reminder->task_id === (int) $task->id, 404);
+
+        $reminder->delete();
+
+        return back()->with('success', 'یادآوری با موفقیت حذف شد.');
+    }
+
     public function workLog(StoreTaskWorkLogRequest $request, Task $task): RedirectResponse
     {
         Gate::authorize('logWork', $task);
