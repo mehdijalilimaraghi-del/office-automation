@@ -129,7 +129,7 @@ class TaskController extends Controller
                     && Gate::allows('create', \App\Modules\Documents\Models\Document::class),
             ],
             'assigneeOptions' => $this->taskFormOptionsService->assigneesFor($task),
-            'participantOptions' => $this->taskFormOptionsService->assigneesFor($task),
+            'participantOptions' => $this->taskFormOptionsService->relatedUsers(),
             'activityAssigneeOptions' => $this->taskFormOptionsService->assigneesFor($task),
             'externalPartyOptions' => $this->taskFormOptionsService->forCreate($request->user()),
             'customFields' => $this->customFieldService->definitions(Task::class),
@@ -234,7 +234,7 @@ class TaskController extends Controller
             $task->participants()->create(['user_id' => $userId]);
         }
 
-        return back()->with('success', 'افراد درگیر وظیفه با موفقیت به‌روزرسانی شدند.');
+        return back()->with('success', 'افراد مرتبط وظیفه با موفقیت به‌روزرسانی شدند.');
     }
 
     public function comment(StoreTaskCommentRequest $request, Task $task): RedirectResponse
