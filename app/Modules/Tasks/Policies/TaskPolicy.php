@@ -107,13 +107,7 @@ class TaskPolicy
 
     public function refer(User $user, Task $task): bool
     {
-        if (! $this->taskAccessService->canAccess($user, $task, 'tasks.update')) {
-            return false;
-        }
-
-        return (int) $task->assignee_id === (int) $user->id
-            || (int) $task->department?->manager_id === (int) $user->id
-            || (int) $task->project?->manager_id === (int) $user->id;
+        return $this->taskAccessService->canAccess($user, $task, 'tasks.refer');
     }
 
     public function comment(User $user, Task $task): bool
