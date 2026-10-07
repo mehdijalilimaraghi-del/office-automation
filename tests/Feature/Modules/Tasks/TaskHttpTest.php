@@ -195,6 +195,24 @@ class TaskHttpTest extends TestCase
             'mobile' => '09120000002',
             'is_active' => true,
         ]);
+
+        $secondOrganization = \App\Core\ExternalParties\Models\ExternalOrganization::query()->create([
+            'name' => 'سازمان دوم تست',
+            'is_active' => true,
+        ]);
+        $secondDepartment = \App\Core\ExternalParties\Models\ExternalDepartment::query()->create([
+            'external_organization_id' => $secondOrganization->id,
+            'name' => 'واحد دوم تست',
+            'is_active' => true,
+        ]);
+        $secondOrganizationContact = \App\Core\ExternalParties\Models\ExternalContact::query()->create([
+            'external_organization_id' => $secondOrganization->id,
+            'external_department_id' => $secondDepartment->id,
+            'name' => 'شخص سازمان دوم',
+            'position' => 'مدیر',
+            'mobile' => '09120000004',
+            'is_active' => true,
+        ]);
         $thirdContact = \App\Core\ExternalParties\Models\ExternalContact::query()->create([
             'external_organization_id' => $organization->id,
             'external_department_id' => $department->id,
@@ -232,6 +250,27 @@ class TaskHttpTest extends TestCase
         $this->assertDatabaseHas('task_external_contacts', [
             'task_id' => $task->id,
             'external_contact_id' => $secondContact->id,
+        ]);
+
+        $this->actingAs($user)
+            ->put(route('tasks.external-parties.update', $task), [
+                'external_organization_id' => $secondOrganization->id,
+                'external_department_id' => $secondDepartment->id,
+                'external_contact_ids' => [$secondOrganizationContact->id],
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('task_external_contacts', [
+            'task_id' => $task->id,
+            'external_contact_id' => $secondOrganizationContact->id,
+            'external_organization_id' => $secondOrganization->id,
+            'external_department_id' => $secondDepartment->id,
+        ]);
+        $this->assertDatabaseHas('task_external_contacts', [
+            'task_id' => $task->id,
+            'external_contact_id' => $secondContact->id,
+            'external_organization_id' => $organization->id,
+            'external_department_id' => $department->id,
         ]);
 
         $this->actingAs($user)
