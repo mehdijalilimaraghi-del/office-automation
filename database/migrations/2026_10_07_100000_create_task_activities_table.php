@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('activity_type', 30)->default('planned');
             $table->unsignedInteger('sequence')->default(1);
             $table->foreignId('assigned_to')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('created_by')->constrained('users')->restrictOnDelete();
+            $table->foreignId('created_by')->constrained('users');
             $table->foreignId('completed_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('completed_at')->nullable();
             $table->timestamps();
