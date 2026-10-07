@@ -101,6 +101,9 @@ const createForm = useForm({
     priority: 'normal',
     assignee_id: null as number | null,
     assignment_note: '',
+    next_activity_title: '',
+    next_activity_description: '',
+    next_activity_assigned_to: null as number | null,
     start_date: '',
     due_date: '',
     custom_fields: {} as Record<string, string | number | boolean | null>,
@@ -314,6 +317,30 @@ const handleProjectChange = (): void => {
                             <select v-model="createForm.external_organization_id" @change="handleExternalOrganizationChange" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm"><option :value="null">بدون پیگیری خارجی</option><option v-for="item in formOptions.external_organizations" :key="item.id" :value="item.id">{{ item.name }}</option></select>
                             <select v-model="createForm.external_department_id" :disabled="createForm.external_organization_id === null" @change="handleExternalDepartmentChange" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm"><option :value="null">بدون واحد خارجی</option><option v-for="item in externalDepartments" :key="item.id" :value="item.id">{{ item.name }}</option></select>
                             <select v-model="createForm.external_contact_id" :disabled="createForm.external_organization_id === null" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm"><option :value="null">بدون شخص مشخص</option><option v-for="item in externalContacts" :key="item.id" :value="item.id">{{ item.name }}{{ item.position ? ' — ' + item.position : '' }}</option></select>
+                        </div>
+                    </div>
+
+                    <div class="rounded-xl border border-blue-200 bg-blue-50/50 p-4 md:col-span-2">
+                        <div class="mb-3">
+                            <h4 class="text-sm font-semibold text-gray-900">فعالیت بعدی <span class="font-normal text-gray-500">(اختیاری)</span></h4>
+                            <p class="mt-1 text-xs text-gray-500">اولین اقدام عملی که باید بعد از ایجاد وظیفه انجام شود را مشخص کنید.</p>
+                        </div>
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div>
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700">عنوان فعالیت بعدی</label>
+                                <input v-model="createForm.next_activity_title" type="text" maxlength="255" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm" placeholder="مثلاً دریافت تأیید مالی" />
+                            </div>
+                            <div>
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700">انجام‌دهنده</label>
+                                <select v-model="createForm.next_activity_assigned_to" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                                    <option :value="null">مسئول اصلی وظیفه</option>
+                                    <option v-for="user in availableAssignees" :key="user.id" :value="user.id">{{ user.name }}</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700">توضیحات فعالیت</label>
+                                <textarea v-model="createForm.next_activity_description" rows="2" class="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm" placeholder="در صورت نیاز، نتیجه مورد انتظار یا توضیح اقدام را بنویسید"></textarea>
+                            </div>
                         </div>
                     </div>
 
