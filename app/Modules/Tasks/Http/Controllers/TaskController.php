@@ -16,6 +16,8 @@ use App\Http\Requests\Modules\Tasks\StoreTaskReminderRequest;
 use App\Http\Requests\Modules\Tasks\StoreTaskWorkLogRequest;
 use App\Http\Requests\Modules\Tasks\UpdateTaskReminderStatusRequest;
 use App\Http\Requests\Modules\Tasks\UpdateTaskRequest;
+use App\Http\Requests\Modules\Tasks\StoreTaskActivityRequest;
+use App\Modules\Tasks\Models\TaskActivity;
 use App\Http\Requests\Modules\Tasks\UpdateTaskParticipantsRequest;
 use App\Models\User;
 use App\Modules\Tasks\Contracts\TaskServiceContract;
@@ -107,6 +109,9 @@ class TaskController extends Controller
                 'statusHistory.changedBy',
                 'reviewedBy',
                 'participants.user',
+                'activities.assignee',
+                'activities.creator',
+                'activities.completedBy',
             ]),
             'timeline' => $this->taskService->timeline($task),
             'currentUserId' => (int) $request->user()->id,
@@ -125,6 +130,7 @@ class TaskController extends Controller
             ],
             'assigneeOptions' => $this->taskFormOptionsService->assigneesFor($task),
             'participantOptions' => $this->taskFormOptionsService->assigneesFor($task),
+            'activityAssigneeOptions' => $this->taskFormOptionsService->assigneesFor($task),
             'externalPartyOptions' => $this->taskFormOptionsService->forCreate($request->user()),
             'customFields' => $this->customFieldService->definitions(Task::class),
             'customFieldValues' => $this->customFieldService->values($task),
@@ -178,6 +184,42 @@ class TaskController extends Controller
         }
 
         return back()->with('success', 'تسک با موفقیت ارجاع شد.');
+    }
+
+    public function storeActivity(StoreTaskActivityRequest $request, Task $task): RedirectResponse
+    {
+        Gate::authorize('update', $task);
+
+        $data = $request->validated();
+        $lastSequence = (int) $task->activities()->max('sequence');
+
+        $task->activities()->create([
+            'title' => trim($data['title']),
+            'description' => $data['description'] ?? null,
+            'status' => ($data['activity_type'] ?? 'planned') === 'logged' ? 'completed' : 'pending',
+            'activity_type' => $data['activity_type'] ?? 'planned',
+            'sequence' => $lastSequence + 1,
+            'assigned_to' => $data['assigned_to'] ?? $task->assignee_id,
+            'created_by' => $request->user()->id,
+            'completed_by' => ($data['activity_type'] ?? 'planned') === 'logged' ? $request->user()->id : null,
+            'completed_at' => ($data['activity_type'] ?? 'planned') === 'logged' ? now() : null,
+        ]);
+
+        return back()->with('success', 'فعالیت با موفقیت ثبت شد.');
+    }
+
+    public function completeActivity(Request $request, Task $task, TaskActivity $activity): RedirectResponse
+    {
+        Gate::authorize('update', $task);
+        abort_unless($activity->task_id === $task->id, 404);
+
+        $activity->update([
+            'status' => 'completed',
+            'completed_by' => $request->user()->id,
+            'completed_at' => now(),
+        ]);
+
+        return back()->with('success', 'فعالیت انجام شد.');
     }
 
     public function updateParticipants(UpdateTaskParticipantsRequest $request, Task $task): RedirectResponse
