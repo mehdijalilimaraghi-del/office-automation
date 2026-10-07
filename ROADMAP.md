@@ -690,3 +690,10 @@ Project mutation authorization and task workflow actions now enforce permission 
 - خطای مسئول جدید در پنجره ارجاع به‌صورت مستقیم نمایش داده می‌شود.
 
 **Status:** implementation complete; focused TaskHttpTest validation pending.
+
+
+### 2026-10-07 — Task detail relation serialization fix
+- مشخص شد داده‌های رابطه‌ای Eloquent در پاسخ Inertia با کلیدهای snake_case (`external_organization`, `external_department`, `external_contact`, `from_user`, `to_user`, `assigned_by`) به Vue می‌رسند، در حالی که صفحه جزئیات با نام‌های camelCase آن‌ها را می‌خواند.
+- صفحه جزئیات وظیفه اصلاح شد تا «ارتباط و پیگیری بیرونی» بعد از ذخیره واقعاً نمایش داده شود و سوابق ارجاع نیز نام فرستنده، گیرنده و ثبت‌کننده را درست نشان دهند.
+
+**Status:** code fix committed; frontend build validation pending.
