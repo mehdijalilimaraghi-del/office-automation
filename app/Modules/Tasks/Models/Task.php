@@ -84,6 +84,8 @@ class Task extends Model
     public function reviewedBy(): BelongsTo { return $this->belongsTo(User::class, 'reviewed_by'); }
     public function assignments(): HasMany { return $this->hasMany(TaskAssignment::class); }
     public function participants(): HasMany { return $this->hasMany(TaskParticipant::class); }
+    public function activities(): HasMany { return $this->hasMany(TaskActivity::class)->orderBy('sequence')->orderBy('id'); }
+    public function nextActivity(): HasMany { return $this->hasMany(TaskActivity::class)->where('status', 'pending')->where('activity_type', 'planned')->orderBy('sequence')->orderBy('id')->limit(1); }
     public function comments(): HasMany { return $this->hasMany(TaskComment::class); }
     public function workLogs(): HasMany { return $this->hasMany(TaskWorkLog::class); }
     public function reminders(): HasMany { return $this->hasMany(TaskReminder::class); }
