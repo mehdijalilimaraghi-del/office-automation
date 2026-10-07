@@ -253,3 +253,10 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 ### 2026-10-07 — Referral permission correction
 - Task referral visibility/authorization now depends on the dedicated `tasks.refer` permission and its configured scope; it is not restricted by assignee, department-manager, or project-manager identity.
 - Task activity completion binding now compares foreign-key IDs by value, preventing false 404 responses.
+
+
+### 2026-10-07 — Task referral permission migration fix
+- تست HTTP ارجاع وظیفه در دیتابیس تست به‌دلیل نبودن رکورد `tasks.refer` با `ModelNotFoundException` متوقف می‌شد.
+- با توجه به اینکه `CorePermissionSeeder` این مجوز را دارد اما دیتابیس‌های موجود ممکن است قبلاً migrate شده باشند، migration مستقل برای ایجاد/به‌روزرسانی `tasks.refer` اضافه شد.
+
+**Status:** code fix committed; focused TaskHttpTest validation pending.
