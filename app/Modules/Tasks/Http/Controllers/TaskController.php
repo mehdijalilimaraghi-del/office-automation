@@ -16,6 +16,7 @@ use App\Http\Requests\Modules\Tasks\StoreTaskReminderRequest;
 use App\Http\Requests\Modules\Tasks\StoreTaskWorkLogRequest;
 use App\Http\Requests\Modules\Tasks\UpdateTaskReminderStatusRequest;
 use App\Http\Requests\Modules\Tasks\UpdateTaskRequest;
+use App\Http\Requests\Modules\Tasks\UpdateTaskParticipantsRequest;
 use App\Models\User;
 use App\Modules\Tasks\Contracts\TaskServiceContract;
 use App\Modules\Tasks\Models\Task;
@@ -105,6 +106,7 @@ class TaskController extends Controller
                 'reminders.creator',
                 'statusHistory.changedBy',
                 'reviewedBy',
+                'participants.user',
             ]),
             'timeline' => $this->taskService->timeline($task),
             'currentUserId' => (int) $request->user()->id,
@@ -122,6 +124,7 @@ class TaskController extends Controller
                     && Gate::allows('create', \App\Modules\Documents\Models\Document::class),
             ],
             'assigneeOptions' => $this->taskFormOptionsService->assigneesFor($task),
+            'participantOptions' => $this->taskFormOptionsService->assigneesFor($task),
             'externalPartyOptions' => $this->taskFormOptionsService->forCreate($request->user()),
             'customFields' => $this->customFieldService->definitions(Task::class),
             'customFieldValues' => $this->customFieldService->values($task),
@@ -175,6 +178,21 @@ class TaskController extends Controller
         }
 
         return back()->with('success', 'تسک با موفقیت ارجاع شد.');
+    }
+
+    public function updateParticipants(UpdateTaskParticipantsRequest $request, Task $task): RedirectResponse
+    {
+        Gate::authorize('update', $task);
+
+        $userIds = array_values(array_unique(array_map('intval', $request->validated()['user_ids'])));
+
+        $task->participants()->delete();
+
+        foreach ($userIds as $userId) {
+            $task->participants()->create(['user_id' => $userId]);
+        }
+
+        return back()->with('success', 'افراد درگیر وظیفه با موفقیت به‌روزرسانی شدند.');
     }
 
     public function comment(StoreTaskCommentRequest $request, Task $task): RedirectResponse
