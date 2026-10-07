@@ -20,7 +20,7 @@ return new class extends Migration
             $table->unsignedInteger('sequence')->default(1);
             $table->foreignId('assigned_to')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('created_by')->constrained('users');
-            $table->foreignId('completed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('completed_by')->nullable()->constrained('users')->noActionOnDelete();
             $table->timestamp('completed_at')->nullable();
             $table->timestamps();
 
