@@ -235,3 +235,10 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - مدل TypeScript صفحه جزئیات وظیفه با داده `assignments` هماهنگ شد تا سوابق ارجاع وظیفه بدون خطای `vue-tsc` build شوند.
 
 **Status:** implementation complete; frontend build validation pending.
+
+### 2026-10-07 — Task referral/external controls correction
+- دسترسی «ارجاع وظیفه» برای مسئول اصلی، مدیر واحد و مدیر پروژه در صورت داشتن مجوز و دسترسی وظیفه فعال شد.
+- دکمه «ارجاع وظیفه» در بخش «سوابق ارجاع وظیفه» نمایش داده می‌شود.
+- بخش «ارتباط و پیگیری بیرونی» دکمه‌های «ثبت ارتباط / ویرایش ارتباط» و «حذف ارتباط» را مستقیماً در صفحه جزئیات نمایش می‌دهد.
+
+**Status:** implementation complete; frontend build and focused backend validation pending.
