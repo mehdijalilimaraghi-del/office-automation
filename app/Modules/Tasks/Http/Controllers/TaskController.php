@@ -91,7 +91,7 @@ class TaskController extends Controller
 
         return Inertia::render('Tasks/Show', [
             'task' => $task->load([
-                'project',
+                'project.department',
                 'documents.document.latestVersion',
                 'assignee',
                 'creator',
