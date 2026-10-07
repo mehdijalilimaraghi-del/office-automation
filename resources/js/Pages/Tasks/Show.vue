@@ -471,10 +471,12 @@ const pendingActivities = computed(() => props.task.activities?.filter(activity 
                                     <article v-for="contact in task.external_contacts" :key="contact.id" class="rounded-xl border bg-gray-50/70 p-4">
                                         <div class="font-medium text-gray-900">{{ contact.name }}</div>
                                         <p v-if="contact.position" class="mt-1 text-xs text-gray-600">{{ contact.position }}</p>
-                                        <div class="mt-3 space-y-1 text-xs text-muted-foreground">
-                                            <p v-if="contact.mobile">موبایل: {{ contact.mobile }}</p>
-                                            <p v-if="contact.phone">تلفن: {{ contact.phone }}<span v-if="contact.extension"> · داخلی {{ contact.extension }}</span></p>
-                                            <p v-if="contact.email">ایمیل: {{ contact.email }}</p>
+                                        <div class="mt-3 grid gap-2 text-xs text-muted-foreground">
+                                            <p><span class="font-medium text-gray-700">سازمان:</span> {{ task.external_organization?.name ?? '—' }}</p>
+                                            <p><span class="font-medium text-gray-700">واحد:</span> {{ task.external_department?.name ?? '—' }}</p>
+                                            <p v-if="contact.mobile"><span class="font-medium text-gray-700">موبایل:</span> {{ contact.mobile }}</p>
+                                            <p v-if="contact.phone"><span class="font-medium text-gray-700">تلفن:</span> {{ contact.phone }}<span v-if="contact.extension"> · داخلی {{ contact.extension }}</span></p>
+                                            <p v-if="contact.email"><span class="font-medium text-gray-700">ایمیل:</span> {{ contact.email }}</p>
                                         </div>
                                     </article>
                                 </div>
@@ -552,13 +554,22 @@ const pendingActivities = computed(() => props.task.activities?.filter(activity 
                             </div>
                             <div v-if="externalForm.external_organization_id === null" class="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">ابتدا سازمان خارجی را انتخاب کنید.</div>
                             <div v-else-if="externalContacts.length === 0" class="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">برای این سازمان/واحد شخصی ثبت نشده است.</div>
-                            <div v-else class="max-h-64 space-y-2 overflow-y-auto rounded-lg border p-2">
-                                <label v-for="item in externalContacts" :key="item.id" class="flex cursor-pointer items-start gap-3 rounded-lg p-3 hover:bg-gray-50">
-                                    <input v-model="externalForm.external_contact_ids" type="checkbox" :value="item.id" class="mt-1 h-4 w-4 rounded border-gray-300" />
-                                    <span class="min-w-0">
-                                        <span class="block text-sm font-medium text-gray-900">{{ item.name }}</span>
+                            <div v-else class="max-h-72 space-y-2 overflow-y-auto rounded-lg border p-2">
+                                <label v-for="item in externalContacts" :key="item.id" class="flex cursor-pointer items-start gap-3 rounded-lg p-3 transition hover:bg-gray-50" :class="externalForm.external_contact_ids.includes(item.id) ? 'bg-gray-100 ring-1 ring-gray-300' : ''">
+                                    <input v-model="externalForm.external_contact_ids" type="checkbox" :value="item.id" class="mt-1 h-4 w-4 shrink-0 rounded border-gray-300" />
+                                    <span class="min-w-0 flex-1">
+                                        <span class="flex items-center justify-between gap-2">
+                                            <span class="block text-sm font-medium text-gray-900">{{ item.name }}</span>
+                                            <span v-if="externalForm.external_contact_ids.includes(item.id)" class="text-xs font-medium text-gray-700">انتخاب شده</span>
+                                        </span>
                                         <span v-if="item.position" class="mt-0.5 block text-xs text-muted-foreground">{{ item.position }}</span>
-                                        <span v-if="item.mobile || item.phone" class="mt-1 block text-xs text-muted-foreground">{{ item.mobile || item.phone }}</span>
+                                        <span class="mt-2 grid gap-1 text-xs text-muted-foreground">
+                                            <span>سازمان: {{ externalPartyOptions.external_organizations.find(org => org.id === item.external_organization_id)?.name ?? '—' }}</span>
+                                            <span>واحد: {{ externalPartyOptions.external_departments.find(dept => dept.id === item.external_department_id)?.name ?? '—' }}</span>
+                                            <span v-if="item.mobile">موبایل: {{ item.mobile }}</span>
+                                            <span v-if="item.phone">تلفن: {{ item.phone }}<span v-if="item.extension"> · داخلی {{ item.extension }}</span></span>
+                                            <span v-if="item.email">ایمیل: {{ item.email }}</span>
+                                        </span>
                                     </span>
                                 </label>
                             </div>
