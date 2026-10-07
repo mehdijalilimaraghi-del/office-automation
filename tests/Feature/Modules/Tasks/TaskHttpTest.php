@@ -325,6 +325,80 @@ class TaskHttpTest extends TestCase
         );
     }
 
+    public function test_task_comment_can_be_updated_and_deleted(): void
+    {
+        $user = $this->userWithPermission('tasks.update');
+        $project = $this->createProject($user);
+        $task = $this->createTask($project, $user);
+        $comment = $task->comments()->create([
+            'user_id' => $user->id,
+            'body' => 'نظر اولیه',
+        ]);
+
+        $this->actingAs($user)
+            ->put(route('tasks.comments.update', [$task, $comment]), ['body' => 'نظر ویرایش‌شده'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('task_comments', [
+            'id' => $comment->id,
+            'body' => 'نظر ویرایش‌شده',
+        ]);
+
+        $this->actingAs($user)
+            ->delete(route('tasks.comments.destroy', [$task, $comment]))
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('task_comments', ['id' => $comment->id]);
+    }
+
+    public function test_task_reminder_preserves_selected_time_and_can_be_updated_and_deleted(): void
+    {
+        $user = $this->userWithPermission('tasks.update');
+        $user->roles()->first()->permissions()->syncWithoutDetaching(
+            Permission::query()->where('code', 'tasks.create_reminder')->get()
+                ->mapWithKeys(fn ($permission) => [$permission->id => ['scope' => 'organization']])
+                ->all()
+        );
+        $project = $this->createProject($user);
+        $task = $this->createTask($project, $user);
+
+        $this->actingAs($user)
+            ->post(route('tasks.reminders.store', $task), [
+                'user_id' => $user->id,
+                'title' => 'یادآوری تست',
+                'description' => 'شرح تست',
+                'remind_at' => '2026-10-07T14:35:00',
+            ])
+            ->assertRedirect();
+
+        $reminder = $task->reminders()->latest('id')->firstOrFail();
+
+        $this->assertDatabaseHas('task_reminders', [
+            'id' => $reminder->id,
+            'remind_at' => '2026-10-07 14:35:00',
+        ]);
+
+        $this->actingAs($user)
+            ->put(route('tasks.reminders.update', [$task, $reminder]), [
+                'title' => 'یادآوری ویرایش‌شده',
+                'description' => 'شرح جدید',
+                'remind_at' => '2026-10-08T16:20:00',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('task_reminders', [
+            'id' => $reminder->id,
+            'title' => 'یادآوری ویرایش‌شده',
+            'remind_at' => '2026-10-08 16:20:00',
+        ]);
+
+        $this->actingAs($user)
+            ->delete(route('tasks.reminders.destroy', [$task, $reminder]))
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('task_reminders', ['id' => $reminder->id]);
+    }
+
     public function test_project_scope_filters_task_index_at_http_layer(): void
     {
         $user = $this->userWithPermissionScope('tasks.view', 'project');
