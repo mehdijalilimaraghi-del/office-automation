@@ -269,3 +269,10 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - خطای `assignee_id` در پنجره ارجاع نمایش داده می‌شود تا خطاهای ذخیره‌سازی پنهان نمانند.
 
 **Status:** implementation complete; focused TaskHttpTest validation pending.
+
+
+### 2026-10-07 — Task detail relation serialization fix
+- مشخص شد داده‌های رابطه‌ای Eloquent در پاسخ Inertia با کلیدهای snake_case (`external_organization`, `external_department`, `external_contact`, `from_user`, `to_user`, `assigned_by`) به Vue می‌رسند، در حالی که صفحه جزئیات با نام‌های camelCase آن‌ها را می‌خواند.
+- صفحه جزئیات وظیفه اصلاح شد تا «ارتباط و پیگیری بیرونی» بعد از ذخیره واقعاً نمایش داده شود و سوابق ارجاع نیز نام فرستنده، گیرنده و ثبت‌کننده را درست نشان دهند.
+
+**Status:** code fix committed; frontend build validation pending.
