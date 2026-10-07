@@ -8,6 +8,7 @@ use App\Core\ExternalParties\Contracts\ExternalPartyServiceInterface;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskAssignment;
+use App\Modules\Tasks\Models\TaskActivity;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -94,6 +95,19 @@ class CreateTaskAction
             ]);
 
             $this->customFieldService->sync($task, $data['custom_fields'] ?? []);
+
+            if (! empty($data['next_activity_title'])) {
+                TaskActivity::query()->create([
+                    'task_id' => $task->id,
+                    'title' => trim((string) $data['next_activity_title']),
+                    'description' => $data['next_activity_description'] ?? null,
+                    'status' => 'pending',
+                    'activity_type' => 'planned',
+                    'sequence' => 1,
+                    'assigned_to' => $data['next_activity_assigned_to'] ?? $assignee?->id,
+                    'created_by' => $creator->id,
+                ]);
+            }
 
             if ($assignee !== null) {
                 TaskAssignment::query()->create([
