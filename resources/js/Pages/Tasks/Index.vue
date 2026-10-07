@@ -103,7 +103,6 @@ const createForm = useForm({
     assignment_note: '',
     next_activity_title: '',
     next_activity_description: '',
-    next_activity_assigned_to: null as number | null,
     start_date: '',
     due_date: '',
     custom_fields: {} as Record<string, string | number | boolean | null>,
@@ -329,13 +328,6 @@ const handleProjectChange = (): void => {
                             <div>
                                 <label class="mb-1.5 block text-sm font-medium text-gray-700">عنوان فعالیت بعدی</label>
                                 <input v-model="createForm.next_activity_title" type="text" maxlength="255" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm" placeholder="مثلاً دریافت تأیید مالی" />
-                            </div>
-                            <div>
-                                <label class="mb-1.5 block text-sm font-medium text-gray-700">انجام‌دهنده</label>
-                                <select v-model="createForm.next_activity_assigned_to" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
-                                    <option :value="null">مسئول اصلی وظیفه</option>
-                                    <option v-for="user in availableAssignees" :key="user.id" :value="user.id">{{ user.name }}</option>
-                                </select>
                             </div>
                             <div class="md:col-span-2">
                                 <label class="mb-1.5 block text-sm font-medium text-gray-700">توضیحات فعالیت</label>
