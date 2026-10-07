@@ -107,7 +107,7 @@ class TaskPolicy
 
     public function refer(User $user, Task $task): bool
     {
-        if (! $this->taskAccessService->canAccess($user, $task, 'tasks.refer')) {
+        if (! $this->taskAccessService->canAccess($user, $task, 'tasks.update')) {
             return false;
         }
 
