@@ -705,3 +705,9 @@ Project mutation authorization and task workflow actions now enforce permission 
 - در صفحه جزئیات، هر شخص خارجی با اطلاعات تماس خود در یک کارت مستقل نمایش داده می‌شود.
 
 **Status:** implementation complete; focused TaskHttpTest validation pending.
+
+
+### 2026-10-07 — Task external relation UI correction
+- انتخاب چند شخص خارجی در صفحه وظیفه با toggle صریح اصلاح شد تا انتخاب شخص جدید، شخص قبلی را جایگزین نکند.
+- کارت‌های اشخاص در خود بخش «ارتباط و پیگیری بیرونی» صفحه وظیفه قرار گرفتند و اطلاعات سازمان، واحد و اطلاعات تماس نمایش داده می‌شود.
+- دکمه اصلی «افزودن ارتباط» است و هر کارت، در صورت دسترسی، عملیات «ویرایش ارتباط» و «حذف ارتباط» دارد.
