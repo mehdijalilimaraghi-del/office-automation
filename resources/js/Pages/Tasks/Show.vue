@@ -505,8 +505,8 @@ const pendingActivities = computed(() => props.task.activities?.filter(activity 
                                             </div>
                                         </div>
                                         <div class="mt-3 grid gap-1.5 text-xs text-muted-foreground">
-                                            <p><span class="font-medium text-gray-700">سازمان:</span> {{ props.externalPartyOptions.external_organizations.find(item => item.id === contact.pivot?.external_organization_id)?.name ?? '—' }}</p>
-                                            <p><span class="font-medium text-gray-700">واحد:</span> {{ props.externalPartyOptions.external_departments.find(item => item.id === contact.pivot?.external_department_id)?.name ?? '—' }}</p>
+                                            <p><span class="font-medium text-gray-700">سازمان:</span> {{ props.externalPartyOptions.external_organizations.find(item => item.id === contact.pivot?.external_organization_id)?.name ?? contact.organization?.name ?? '—' }}</p>
+                                            <p><span class="font-medium text-gray-700">واحد:</span> {{ props.externalPartyOptions.external_departments.find(item => item.id === contact.pivot?.external_department_id)?.name ?? contact.department?.name ?? '—' }}</p>
                                             <p v-if="contact.mobile"><span class="font-medium text-gray-700">موبایل:</span> {{ contact.mobile }}</p>
                                             <p v-if="contact.phone"><span class="font-medium text-gray-700">تلفن:</span> {{ contact.phone }}<span v-if="contact.extension"> · داخلی {{ contact.extension }}</span></p>
                                             <p v-if="contact.email"><span class="font-medium text-gray-700">ایمیل:</span> {{ contact.email }}</p>
