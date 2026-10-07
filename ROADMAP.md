@@ -671,3 +671,7 @@ Project mutation authorization and task workflow actions now enforce permission 
 ### V1 validation correction — Task detail controls
 - Referral remains a contextual task action and is authorized through task update access plus assignee/department-manager/project-manager context.
 - External follow-up save/display is validated at the HTTP layer and the detail page refreshes its task data after save.
+
+
+### V1 validation correction — Referral permission
+- Any user who has `tasks.refer` and has scoped access to the task can see and use task referral; contextual manager/assignee restrictions are not imposed by the policy.
