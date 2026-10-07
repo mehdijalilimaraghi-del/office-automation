@@ -532,7 +532,20 @@ const pendingActivities = computed(() => props.task.activities?.filter(activity 
                                 <button v-if="abilities.create_reminder" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="showReminderModal = true">ثبت یادآوری</button>
                             </div>
                             <div v-if="task.reminders.length" class="mt-4 space-y-3">
-                                <div v-for="reminder in task.reminders" :key="reminder.id" class="rounded-lg border p-3"><div class="flex justify-between gap-2"><p class="text-sm font-medium">{{ reminder.title }}</p><span class="text-xs text-muted-foreground">{{ formatDateTime(reminder.remind_at) }}</span></div><p v-if="reminder.description" class="mt-1 text-xs text-muted-foreground">{{ reminder.description }}</p></div>
+                                <article v-for="reminder in task.reminders" :key="reminder.id" class="rounded-lg border p-4">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <p class="text-sm font-semibold">{{ reminder.title }}</p>
+                                            <p class="mt-1 text-xs text-muted-foreground">{{ formatDateTime(reminder.remind_at) }}</p>
+                                        </div>
+                                        <div v-if="abilities.update" class="flex shrink-0 gap-3">
+                                            <button type="button" class="text-xs font-medium text-gray-700 hover:underline" @click="editReminder(reminder)">ویرایش</button>
+                                            <button type="button" class="text-xs font-medium text-red-600 hover:underline" @click="deleteReminder(reminder.id)">حذف</button>
+                                        </div>
+                                    </div>
+                                    <p v-if="reminder.user?.name" class="mt-2 text-xs text-muted-foreground">برای: {{ reminder.user.name }}</p>
+                                    <p v-if="reminder.description" class="mt-2 text-xs text-muted-foreground">{{ reminder.description }}</p>
+                                </article>
                             </div>
                             <p v-else class="mt-4 text-sm text-muted-foreground">یادآوری ثبت نشده است.</p>
                         </section>
