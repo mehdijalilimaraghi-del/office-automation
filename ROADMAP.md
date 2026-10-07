@@ -659,3 +659,10 @@ Project mutation authorization and task workflow actions now enforce permission 
 
 ### 2026-10-07 — Task referral history build fix
 - مدل TypeScript صفحه جزئیات وظیفه با `assignments` هماهنگ شد تا سوابق ارجاع وظیفه در build به‌درستی type-check شوند.
+
+### 2026-10-07 — Task referral/external controls correction
+- دسترسی «ارجاع وظیفه» برای مسئول اصلی، مدیر واحد و مدیر پروژه در صورت داشتن مجوز و دسترسی وظیفه فعال شد.
+- دکمه «ارجاع وظیفه» در بخش «سوابق ارجاع وظیفه» نمایش داده می‌شود.
+- بخش «ارتباط و پیگیری بیرونی» دکمه‌های «ثبت ارتباط / ویرایش ارتباط» و «حذف ارتباط» را مستقیماً در صفحه جزئیات نمایش می‌دهد.
+
+**Status:** implementation complete; frontend build and focused backend validation pending.
