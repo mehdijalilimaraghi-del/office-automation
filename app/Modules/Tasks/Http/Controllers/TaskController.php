@@ -199,7 +199,7 @@ class TaskController extends Controller
             'status' => ($data['activity_type'] ?? 'planned') === 'logged' ? 'completed' : 'pending',
             'activity_type' => $data['activity_type'] ?? 'planned',
             'sequence' => $lastSequence + 1,
-            'assigned_to' => $data['assigned_to'] ?? $task->assignee_id,
+            'assigned_to' => $task->assignee_id,
             'created_by' => $request->user()->id,
             'completed_by' => ($data['activity_type'] ?? 'planned') === 'logged' ? $request->user()->id : null,
             'completed_at' => ($data['activity_type'] ?? 'planned') === 'logged' ? now() : null,
