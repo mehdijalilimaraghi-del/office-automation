@@ -7,7 +7,7 @@ import { formatPersianDate, formatPersianDateTime } from '@/Utils/date';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
-interface User { id: number; name: string; }
+interface User { id: number; name: string; email?: string | null; mobile?: string | null; phone?: string | null; extension?: string | null; }
 interface ExternalOrganizationOption { id: number; name: string; }
 interface ExternalDepartmentOption { id: number; external_organization_id: number; name: string; }
 interface ExternalContactOption { id: number; external_organization_id: number; external_department_id: number | null; name: string; position: string | null; mobile: string | null; phone: string | null; extension: string | null; }
@@ -39,6 +39,7 @@ interface Task {
     project: { id: number; name: string } | null;
     reminders: Reminder[];
     documents: TaskDocument[];
+    participants: Array<{ id: number; user: User }>;
 }
 interface TimelineItem {
     type: string;
@@ -104,6 +105,13 @@ const reminderForm = useForm({
 const referralForm = useForm({ assignee_id: '', note: '' });
 const statusForm = useForm({ status: props.task.status });
 const reminderStatusForm = useForm({ status: '' as 'completed' | 'cancelled' | '' });
+const participantForm = useForm<{ user_ids: number[] }>({ user_ids: props.task.participants?.map(item => item.user.id) ?? [] });
+const showEditModal = ref(false);
+const showReferralModal = ref(false);
+const showCommentModal = ref(false);
+const showWorkLogModal = ref(false);
+const showReminderModal = ref(false);
+const showParticipantModal = ref(false);
 const deleteForm = useForm({});
 const documentForm = useForm({
     title: '',
@@ -227,7 +235,7 @@ const submitEdit = (): void => {
 };
 
 const deleteTask = (): void => {
-    if (!window.confirm(`آیا از حذف تسک «${props.task.title}» مطمئن هستید؟`)) {
+    if (!window.confirm(`آیا از حذف وظیفه «${props.task.title}» مطمئن هستید؟`)) {
         return;
     }
 
@@ -262,6 +270,11 @@ const updateReminderStatus = (reminderId: number, status: 'completed' | 'cancell
     );
 };
 const formatDateTime = formatPersianDateTime;
+const submitParticipants = (): void => {
+    participantForm.put(route('tasks.participants.update', props.task.id), { preserveScroll: true, onSuccess: () => { showParticipantModal.value = false; } });
+};
+const participantUsers = computed(() => props.task.participants?.map(item => item.user) ?? []);
+const phoneLabel = (user: User): string | null => user.mobile || user.phone || null;
 </script>
 
 <template>
@@ -271,471 +284,209 @@ const formatDateTime = formatPersianDateTime;
         <template #header>
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div class="min-w-0">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
-                            تسک #{{ task.id }}
-                        </span>
-                        <span
-                            class="rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset"
-                            :class="statusClasses[task.status] ?? 'bg-gray-100 text-gray-700 ring-gray-200'"
-                        >
-                            {{ statusLabels[task.status] ?? task.status }}
-                        </span>
-                        <span
-                            class="rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset"
-                            :class="priorityClasses[task.priority] ?? 'bg-gray-100 text-gray-700 ring-gray-200'"
-                        >
-                            اولویت {{ priorityLabels[task.priority] ?? task.priority }}
-                        </span>
-                        <span
-                            class="rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset"
-                            :class="task.is_active
-                                ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
-                                : 'bg-slate-100 text-slate-600 ring-slate-200'"
-                        >
-                            {{ task.is_active ? 'فعال' : 'غیرفعال' }}
-                        </span>
+                    <Link :href="route('tasks.index')" class="text-sm text-muted-foreground hover:text-gray-900">← بازگشت به وظایف</Link>
+                    <div class="mt-2 flex flex-wrap items-center gap-2">
+                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">وظیفه #{{ task.id }}</span>
+                        <span class="rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset" :class="statusClasses[task.status] ?? 'bg-gray-100 text-gray-700 ring-gray-200'">{{ statusLabels[task.status] ?? task.status }}</span>
+                        <span class="rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset" :class="priorityClasses[task.priority] ?? 'bg-gray-100 text-gray-700 ring-gray-200'">اولویت {{ priorityLabels[task.priority] ?? task.priority }}</span>
                     </div>
-                    <h2 class="mt-2 truncate text-xl font-semibold text-gray-900">{{ task.title }}</h2>
-                    <p class="mt-1 text-sm text-muted-foreground">جزئیات، سوابق و فعالیت‌های تسک</p>
+                    <h2 class="mt-2 text-xl font-semibold text-gray-900">{{ task.title }}</h2>
+                    <p class="mt-1 text-sm text-muted-foreground">مدیریت، پیگیری و ثبت سوابق وظیفه</p>
                 </div>
-
-                <Link
-                    :href="route('tasks.index')"
-                    class="inline-flex shrink-0 items-center rounded-lg border bg-white px-3.5 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
-                >
-                    بازگشت به تسک‌ها
-                </Link>
+                <div class="flex flex-wrap gap-2">
+                    <button v-if="abilities.update" type="button" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-800" @click="showEditModal = true">ویرایش</button>
+                    <button v-if="abilities.refer" type="button" class="rounded-lg border bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50" @click="showReferralModal = true">ارجاع وظیفه</button>
+                </div>
             </div>
         </template>
 
         <div class="mx-auto max-w-7xl space-y-6">
-            <section class="overflow-hidden rounded-xl border bg-card shadow-sm">
-                <div class="border-b bg-gray-50/70 px-5 py-4 sm:px-6">
-                    <div class="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                            <h3 class="font-semibold text-gray-900">خلاصه تسک</h3>
-                            <p class="mt-1 text-sm text-muted-foreground">اطلاعات اصلی و مسئولیت فعلی تسک</p>
-                        </div>
-                        <span v-if="task.assignee" class="text-sm text-muted-foreground">
-                            مسئول فعلی: <strong class="font-medium text-gray-900">{{ task.assignee.name }}</strong>
-                        </span>
+            <section class="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
+                <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <p class="text-xs font-medium text-muted-foreground">اقدام بعدی</p>
+                        <p class="mt-1 font-medium text-gray-900">{{ task.description ? 'ادامه پیگیری و ثبت آخرین فعالیت وظیفه' : 'برای این وظیفه اقدام بعدی را مشخص کنید.' }}</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button v-if="abilities.log_work" type="button" class="rounded-lg border bg-white px-3.5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50" @click="showWorkLogModal = true">ثبت فعالیت</button>
+                        <button v-if="abilities.comment" type="button" class="rounded-lg border bg-white px-3.5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50" @click="showCommentModal = true">ثبت نظر</button>
+                        <button v-if="abilities.create_reminder" type="button" class="rounded-lg border bg-white px-3.5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50" @click="showReminderModal = true">یادآوری</button>
                     </div>
                 </div>
-
-                <div class="grid gap-x-8 gap-y-5 p-5 sm:grid-cols-2 sm:p-6 lg:grid-cols-4">
-                    <div>
-                        <p class="text-xs font-medium text-muted-foreground">مسئول</p>
-                        <p class="mt-1.5 font-medium text-gray-900">{{ task.assignee?.name ?? 'بدون مسئول' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs font-medium text-muted-foreground">ایجادکننده</p>
-                        <p class="mt-1.5 font-medium text-gray-900">{{ task.creator?.name ?? '—' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs font-medium text-muted-foreground">پروژه</p>
-                        <p class="mt-1.5 font-medium text-gray-900">{{ task.project?.name ?? 'بدون پروژه' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs font-medium text-muted-foreground">واحد</p>
-                        <p class="mt-1.5 font-medium text-gray-900">{{ task.department?.name ?? 'بدون واحد' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs font-medium text-muted-foreground">تاریخ شروع</p>
-                        <p class="mt-1.5 font-medium text-gray-900">{{ formatPersianDate(task.start_date) }}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs font-medium text-muted-foreground">مهلت انجام</p>
-                        <p class="mt-1.5 font-medium text-gray-900">{{ formatPersianDate(task.due_date) }}</p>
-                    </div>
-                    <div class="sm:col-span-2 lg:col-span-2">
-                        <p class="text-xs font-medium text-muted-foreground">وضعیت و اولویت</p>
-                        <div class="mt-1.5 flex flex-wrap gap-2">
-                            <span
-                                class="rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset"
-                                :class="statusClasses[task.status] ?? 'bg-gray-100 text-gray-700 ring-gray-200'"
-                            >
-                                {{ statusLabels[task.status] ?? task.status }}
-                            </span>
-                            <span
-                                class="rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset"
-                                :class="priorityClasses[task.priority] ?? 'bg-gray-100 text-gray-700 ring-gray-200'"
-                            >
-                                {{ priorityLabels[task.priority] ?? task.priority }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <div v-if="task.description" class="border-t px-5 py-5 sm:px-6">
-                    <p class="text-xs font-medium text-muted-foreground">توضیحات</p>
-                    <p class="mt-2 whitespace-pre-line text-sm leading-7 text-gray-700">{{ task.description }}</p>
+                <div class="mt-5 grid gap-4 border-t pt-5 sm:grid-cols-4">
+                    <div><p class="text-xs text-muted-foreground">مسئول</p><p class="mt-1 font-medium">{{ task.assignee?.name ?? 'بدون مسئول' }}</p></div>
+                    <div><p class="text-xs text-muted-foreground">واحد</p><p class="mt-1 font-medium">{{ task.department?.name ?? 'بدون واحد' }}</p></div>
+                    <div><p class="text-xs text-muted-foreground">شروع</p><p class="mt-1 font-medium">{{ formatPersianDate(task.start_date) }}</p></div>
+                    <div><p class="text-xs text-muted-foreground">مهلت</p><p class="mt-1 font-medium">{{ formatPersianDate(task.due_date) }}</p></div>
                 </div>
             </section>
 
-            <section v-if="abilities.change_status" class="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                        <h3 class="font-semibold text-gray-900">تغییر وضعیت</h3>
-                        <p class="mt-1 text-sm text-muted-foreground">وضعیت فعلی تسک را به‌روزرسانی کنید.</p>
-                    </div>
-                    <span class="text-sm text-muted-foreground">
-                        وضعیت فعلی: <strong class="font-medium text-gray-900">{{ statusLabels[task.status] ?? task.status }}</strong>
-                    </span>
-                </div>
-                <form class="mt-4 flex flex-col gap-3 sm:flex-row" @submit.prevent="changeStatus">
-                    <select v-model="statusForm.status" class="h-10 rounded-lg border bg-background px-3 text-sm shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-200 sm:min-w-52">
-                        <option value="todo">انجام نشده</option>
-                        <option value="in_progress">در حال انجام</option>
-                        <option value="completed">تکمیل شده</option>
-                        <option value="cancelled">لغو شده</option>
-                    </select>
-                    <p v-if="statusForm.errors.status" class="text-sm text-red-600 sm:col-span-2">{{ statusForm.errors.status }}</p>
-                    <button type="submit" :disabled="statusForm.processing" class="h-10 rounded-lg bg-gray-900 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
-                        {{ statusForm.processing ? 'در حال ذخیره...' : 'ذخیره وضعیت' }}
-                    </button>
-                </form>
-            </section>
-
-            <div class="grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(320px,1fr)]">
-                <section class="min-w-0 overflow-hidden rounded-xl border bg-card shadow-sm">
-                    <div class="border-b bg-gray-50/70 px-5 py-4 sm:px-6">
-                        <div class="flex items-center justify-between gap-3">
-                            <div>
-                                <h3 class="font-semibold text-gray-900">خط زمانی تسک</h3>
-                                <p class="mt-1 text-sm text-muted-foreground">سوابق تخصیص، وضعیت و فعالیت‌های ثبت‌شده</p>
-                            </div>
-                            <span class="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-200">
-                                {{ timeline.length }} مورد
-                            </span>
+            <div class="grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.75fr)]">
+                <main class="min-w-0 space-y-6">
+                    <section class="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div><h3 class="font-semibold">مسئول و افراد درگیر</h3><p class="mt-1 text-sm text-muted-foreground">افرادی که در انجام یا پیگیری این وظیفه نقش دارند.</p></div>
+                            <button v-if="abilities.update" type="button" class="rounded-lg border bg-white px-3 py-2 text-sm font-medium hover:bg-gray-50" @click="showParticipantModal = true">+ افزودن / مدیریت</button>
                         </div>
-                    </div>
-
-                    <div v-if="timeline.length === 0" class="p-8 text-center">
-                        <div class="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-sm font-semibold text-gray-500">—</div>
-                        <p class="mt-3 text-sm font-medium text-gray-700">هنوز سابقه‌ای ثبت نشده است.</p>
-                        <p class="mt-1 text-xs text-muted-foreground">با انجام فعالیت روی تسک، سوابق در این بخش نمایش داده می‌شوند.</p>
-                    </div>
-
-                    <div v-else class="divide-y">
-                        <article v-for="(item, index) in timeline" :key="item.type + '-' + index" class="p-5 transition hover:bg-gray-50/60 sm:p-6">
-                            <div class="flex gap-3">
-                                <div
-                                    class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ring-1 ring-inset"
-                                    :class="timelineClasses[item.type] ?? 'bg-gray-100 text-gray-600 ring-gray-200'"
-                                >
-                                    {{ index + 1 }}
-                                </div>
-                                <div class="min-w-0 flex-1">
-                                    <div class="flex flex-wrap items-start justify-between gap-2">
-                                        <div>
-                                            <span class="text-xs font-medium text-muted-foreground">
-                                                {{ timelineLabels[item.type] ?? item.type }}
-                                            </span>
-                                            <h4 class="mt-1 font-medium text-gray-900">{{ item.title }}</h4>
-                                        </div>
-                                        <time class="shrink-0 text-xs text-muted-foreground">{{ formatDateTime(item.occurred_at) }}</time>
-                                    </div>
-                                    <p v-if="item.description" class="mt-3 whitespace-pre-line text-sm leading-6 text-gray-600">
-                                        {{ item.description }}
-                                    </p>
-                                    <p v-if="item.user" class="mt-3 text-xs text-muted-foreground">
-                                        ثبت توسط {{ item.user.name }}
-                                    </p>
-                                </div>
+                        <div class="mt-5 grid gap-3 sm:grid-cols-2">
+                            <div class="rounded-lg border bg-gray-50/60 p-4">
+                                <p class="text-xs text-muted-foreground">مسئول وظیفه</p>
+                                <p class="mt-1 font-medium">{{ task.assignee?.name ?? 'بدون مسئول' }}</p>
+                                <div v-if="task.assignee && phoneLabel(task.assignee)" class="mt-2 text-xs text-muted-foreground">☎ {{ phoneLabel(task.assignee) }}</div>
+                                <div v-if="task.assignee?.email" class="mt-1 text-xs text-muted-foreground">✉ {{ task.assignee.email }}</div>
                             </div>
-                        </article>
-                    </div>
-                </section>
-
-                <div class="space-y-6">
-                    <section v-if="abilities.refer" class="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
-                        <div>
-                            <h3 class="font-semibold text-gray-900">ارجاع تسک</h3>
-                            <p class="mt-1 text-sm text-muted-foreground">مسئول فعلی تسک را به کاربر دیگری واگذار کنید.</p>
+                            <div v-for="user in participantUsers" :key="user.id" class="rounded-lg border p-4">
+                                <p class="text-xs text-muted-foreground">فرد درگیر</p>
+                                <p class="mt-1 font-medium">{{ user.name }}</p>
+                                <div v-if="phoneLabel(user)" class="mt-2 text-xs text-muted-foreground">☎ {{ phoneLabel(user) }}</div>
+                                <div v-if="user.extension" class="mt-1 text-xs text-muted-foreground">داخلی {{ user.extension }}</div>
+                                <div v-if="user.email" class="mt-1 truncate text-xs text-muted-foreground">✉ {{ user.email }}</div>
+                            </div>
                         </div>
-                        <form class="mt-4 space-y-4" @submit.prevent="submitReferral">
-                            <div>
-                                <label class="mb-2 block text-sm font-medium text-gray-700">مسئول جدید</label>
-                                <select v-model="referralForm.assignee_id" required class="h-10 w-full rounded-lg border bg-background px-3 text-sm shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-200">
-                                    <option value="" disabled>انتخاب مسئول جدید</option>
-                                    <option v-for="user in assigneeOptions" :key="user.id" :value="String(user.id)">
-                                        {{ user.name }}
-                                    </option>
-                                </select>
-                                <p v-if="assigneeOptions.length === 0" class="mt-1.5 text-xs text-muted-foreground">
-                                    برای این تسک مسئول فعالی قابل انتخاب نیست.
-                                </p>
-                            </div>
-                            <div>
-                                <label class="mb-2 block text-sm font-medium text-gray-700">توضیح ارجاع</label>
-                                <input v-model="referralForm.note" type="text" class="h-10 w-full rounded-lg border bg-background px-3 text-sm shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-200" />
-                                <p v-if="referralForm.errors.note" class="mt-1.5 text-sm text-red-600">{{ referralForm.errors.note }}</p>
-                            </div>
-                            <button type="submit" :disabled="referralForm.processing || assigneeOptions.length === 0" class="h-10 w-full rounded-lg bg-gray-900 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
-                                {{ referralForm.processing ? 'در حال ارجاع...' : 'ارجاع تسک' }}
-                            </button>
-                        </form>
+                        <div v-if="participantUsers.length === 0" class="mt-4 rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">هنوز فرد دیگری به‌عنوان فرد درگیر ثبت نشده است.</div>
                     </section>
 
-                    <section v-if="abilities.comment" class="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
-                        <h3 class="font-semibold text-gray-900">ثبت نظر</h3>
-                        <p class="mt-1 text-sm text-muted-foreground">نظر یا توضیح مرتبط با تسک را ثبت کنید.</p>
-                        <form class="mt-4 space-y-3" @submit.prevent="submitComment">
-                            <textarea v-model="commentForm.body" rows="4" required class="w-full rounded-lg border bg-background p-3 text-sm leading-6 shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-200" placeholder="نظر یا توضیح خود را وارد کنید..." />
-                            <p v-if="commentForm.errors.body" class="text-sm text-red-600">{{ commentForm.errors.body }}</p>
-                            <button type="submit" :disabled="commentForm.processing" class="h-10 rounded-lg bg-gray-900 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
-                                {{ commentForm.processing ? 'در حال ثبت...' : 'ثبت نظر' }}
-                            </button>
-                        </form>
-                    </section>
-
-                    <section v-if="abilities.log_work" class="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
-                        <h3 class="font-semibold text-gray-900">ثبت گزارش فعالیت</h3>
-                        <p class="mt-1 text-sm text-muted-foreground">فعالیت انجام‌شده روی تسک را ثبت کنید.</p>
-                        <form class="mt-4 space-y-3" @submit.prevent="submitWorkLog">
-                            <input v-model="workLogForm.title" required class="h-10 w-full rounded-lg border bg-background px-3 text-sm shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-200" placeholder="عنوان فعالیت" />
-                            <textarea v-model="workLogForm.description" rows="3" class="w-full rounded-lg border bg-background p-3 text-sm leading-6 shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-200" placeholder="شرح فعالیت" />
-                            <p v-if="workLogForm.errors.title" class="text-sm text-red-600">{{ workLogForm.errors.title }}</p>
-                            <p v-if="workLogForm.errors.description" class="text-sm text-red-600">{{ workLogForm.errors.description }}</p>
-                            <div class="grid gap-3 sm:grid-cols-2">
-                                <div>
-                                    <label class="mb-1.5 block text-xs font-medium text-muted-foreground">شروع</label>
-                                    <JalaliDateTimePicker v-model="workLogForm.started_at" placeholder="انتخاب زمان شروع" />
-                                </div>
-                                <div>
-                                    <label class="mb-1.5 block text-xs font-medium text-muted-foreground">پایان</label>
-                                    <JalaliDateTimePicker v-model="workLogForm.completed_at" placeholder="انتخاب زمان پایان" />
-                                    <p v-if="workLogForm.errors.completed_at" class="mt-1.5 text-xs text-red-600">{{ workLogForm.errors.completed_at }}</p>
-                                </div>
-                            </div>
-                            <button type="submit" :disabled="workLogForm.processing" class="h-10 rounded-lg bg-gray-900 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
-                                {{ workLogForm.processing ? 'در حال ثبت...' : 'ثبت گزارش فعالیت' }}
-                            </button>
-                        </form>
-                    </section>
-
-                    <section v-if="abilities.create_reminder" class="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
-                        <h3 class="font-semibold text-gray-900">ایجاد یادآور</h3>
-                        <p class="mt-1 text-sm text-muted-foreground">یک یادآور برای خودتان روی این تسک ایجاد کنید.</p>
-                        <form class="mt-4 space-y-3" @submit.prevent="submitReminder">
-                            <input v-model="reminderForm.title" required class="h-10 w-full rounded-lg border bg-background px-3 text-sm shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-200" placeholder="عنوان یادآور" />
-                            <textarea v-model="reminderForm.description" rows="3" class="w-full rounded-lg border bg-background p-3 text-sm leading-6 shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-200" placeholder="توضیحات" />
-                            <div>
-                                <label class="mb-1.5 block text-xs font-medium text-muted-foreground">زمان یادآور</label>
-                                <JalaliDateTimePicker v-model="reminderForm.remind_at" placeholder="انتخاب زمان یادآوری" />
-                                <p v-if="reminderForm.errors.remind_at" class="mt-1.5 text-xs text-red-600">{{ reminderForm.errors.remind_at }}</p>
-                            </div>
-                            <button type="submit" :disabled="reminderForm.processing" class="h-10 rounded-lg bg-gray-900 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
-                                {{ reminderForm.processing ? 'در حال ایجاد...' : 'ایجاد یادآور' }}
-                            </button>
-                        </form>
+                    <section class="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
+                        <div><h3 class="font-semibold">شرح وظیفه</h3><p class="mt-1 text-sm text-muted-foreground">اطلاعات و توضیحات اصلی</p></div>
+                        <p class="mt-4 whitespace-pre-line text-sm leading-7 text-gray-700">{{ task.description || 'توضیحی برای این وظیفه ثبت نشده است.' }}</p>
                     </section>
 
                     <section class="overflow-hidden rounded-xl border bg-card shadow-sm">
                         <div class="border-b bg-gray-50/70 px-5 py-4 sm:px-6">
-                            <div class="flex items-center justify-between gap-3">
-                                <div>
-                                    <h3 class="font-semibold text-gray-900">پیوست‌ها</h3>
-                                    <p class="mt-1 text-sm text-muted-foreground">فایل‌های مرتبط با این تسک</p>
-                                </div>
-                                <span class="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-200">
-                                    {{ task.documents.length }}
-                                </span>
-                            </div>
+                            <div class="flex items-center justify-between"><div><h3 class="font-semibold">گزارش فعالیت</h3><p class="mt-1 text-sm text-muted-foreground">اقداماتی که روی وظیفه انجام شده است.</p></div><span class="text-xs text-muted-foreground">{{ timeline.filter(i => i.type === 'work_log').length }} فعالیت</span></div>
                         </div>
+                        <div v-if="timeline.filter(i => i.type === 'work_log').length === 0" class="p-8 text-center text-sm text-muted-foreground">هنوز گزارشی ثبت نشده است.</div>
+                        <div v-else class="divide-y">
+                            <article v-for="(item, index) in timeline.filter(i => i.type === 'work_log')" :key="'work-'+index" class="p-5 sm:p-6">
+                                <div class="flex gap-3"><div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-xs font-semibold text-emerald-700">{{ index + 1 }}</div><div class="min-w-0 flex-1"><div class="flex justify-between gap-3"><h4 class="font-medium">{{ item.title }}</h4><time class="text-xs text-muted-foreground">{{ formatDateTime(item.occurred_at) }}</time></div><p v-if="item.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ item.description }}</p><p v-if="item.user" class="mt-2 text-xs text-muted-foreground">ثبت توسط {{ item.user.name }}</p></div></div>
+                            </article>
+                        </div>
+                    </section>
 
+                    <section class="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
+                        <div class="flex items-center justify-between"><div><h3 class="font-semibold">خط زمانی</h3><p class="mt-1 text-sm text-muted-foreground">تمام تغییرات مهم وظیفه به ترتیب زمانی.</p></div><span class="text-xs text-muted-foreground">{{ timeline.length }} مورد</span></div>
+                        <div class="mt-5 space-y-4">
+                            <article v-for="(item, index) in timeline" :key="item.type + '-' + index" class="relative flex gap-3">
+                                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ring-1 ring-inset" :class="timelineClasses[item.type] ?? 'bg-gray-100 text-gray-600 ring-gray-200'">{{ index + 1 }}</div>
+                                <div class="min-w-0 flex-1 border-b pb-4 last:border-0"><div class="flex flex-wrap justify-between gap-2"><div><span class="text-xs text-muted-foreground">{{ timelineLabels[item.type] ?? item.type }}</span><h4 class="mt-1 text-sm font-medium">{{ item.title }}</h4></div><time class="text-xs text-muted-foreground">{{ formatDateTime(item.occurred_at) }}</time></div><p v-if="item.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ item.description }}</p><p v-if="item.user" class="mt-2 text-xs text-muted-foreground">ثبت توسط {{ item.user.name }}</p></div>
+                            </article>
+                            <p v-if="timeline.length === 0" class="text-center text-sm text-muted-foreground">هنوز سابقه‌ای ثبت نشده است.</p>
+                        </div>
+                    </section>
+
+                    <div class="grid gap-6 md:grid-cols-2">
+                        <section class="rounded-xl border bg-card p-5 shadow-sm">
+                            <h3 class="font-semibold">نظرات</h3>
+                            <div v-if="task.comments?.length" class="mt-4 space-y-3">
+                                <div v-for="comment in task.comments" :key="comment.id" class="rounded-lg bg-gray-50 p-3"><p class="text-sm leading-6">{{ comment.body }}</p><p class="mt-2 text-xs text-muted-foreground">{{ comment.user?.name ?? '—' }}</p></div>
+                            </div>
+                            <p v-else class="mt-4 text-sm text-muted-foreground">نظری ثبت نشده است.</p>
+                        </section>
+                        <section class="rounded-xl border bg-card p-5 shadow-sm">
+                            <h3 class="font-semibold">یادآوری‌ها</h3>
+                            <div v-if="task.reminders.length" class="mt-4 space-y-3">
+                                <div v-for="reminder in task.reminders" :key="reminder.id" class="rounded-lg border p-3"><div class="flex justify-between gap-2"><p class="text-sm font-medium">{{ reminder.title }}</p><span class="text-xs text-muted-foreground">{{ formatDateTime(reminder.remind_at) }}</span></div><p v-if="reminder.description" class="mt-1 text-xs text-muted-foreground">{{ reminder.description }}</p></div>
+                            </div>
+                            <p v-else class="mt-4 text-sm text-muted-foreground">یادآوری ثبت نشده است.</p>
+                        </section>
+                    </div>
+                </main>
+
+                <aside class="space-y-6">
+                    <section class="rounded-xl border bg-card p-5 shadow-sm">
+                        <h3 class="font-semibold">اطلاعات پروژه</h3>
+                        <dl class="mt-4 space-y-3 text-sm">
+                            <div class="flex justify-between gap-3"><dt class="text-muted-foreground">پروژه</dt><dd class="font-medium">{{ task.project?.name ?? 'بدون پروژه' }}</dd></div>
+                            <div class="flex justify-between gap-3"><dt class="text-muted-foreground">واحد</dt><dd class="font-medium">{{ task.department?.name ?? '—' }}</dd></div>
+                            <div class="flex justify-between gap-3"><dt class="text-muted-foreground">ایجادکننده</dt><dd class="font-medium">{{ task.creator?.name ?? '—' }}</dd></div>
+                        </dl>
+                    </section>
+
+                    <section class="rounded-xl border bg-card shadow-sm">
+                        <div class="border-b px-5 py-4"><h3 class="font-semibold">پیوست‌ها</h3><p class="mt-1 text-xs text-muted-foreground">{{ task.documents.length }} فایل</p></div>
                         <div v-if="task.documents.length" class="divide-y">
-                            <div v-for="link in task.documents" :key="link.id" class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-                                <div class="min-w-0">
-                                    <p class="truncate font-medium text-gray-900">
-                                        {{ link.document?.title ?? 'سند' }}
-                                    </p>
-                                    <p v-if="link.document?.latest_version" class="mt-1 text-xs text-muted-foreground">
-                                        {{ link.document.latest_version.original_name }}
-                                        <span class="mx-1">·</span>
-                                        {{ formatFileSize(link.document.latest_version.size) }}
-                                    </p>
-                                </div>
-                                <a
-                                    v-if="link.document"
-                                    :href="route('documents.download', link.document.id)"
-                                    class="shrink-0 rounded-lg border bg-white px-3.5 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
-                                >
-                                    دریافت فایل
-                                </a>
-                            </div>
+                            <div v-for="link in task.documents" :key="link.id" class="p-4"><p class="truncate text-sm font-medium">{{ link.document?.title ?? 'سند' }}</p><p v-if="link.document?.latest_version" class="mt-1 text-xs text-muted-foreground">{{ link.document.latest_version.original_name }} · {{ formatFileSize(link.document.latest_version.size) }}</p><a v-if="link.document" :href="route('documents.download', link.document.id)" class="mt-2 inline-block text-xs font-medium text-gray-700 hover:underline">دریافت فایل</a></div>
                         </div>
-
-                        <div v-else class="px-5 py-8 text-center text-sm text-muted-foreground sm:px-6">
-                            هنوز فایلی برای این تسک پیوست نشده است.
-                        </div>
-
-                        <form v-if="abilities.documents_create" class="grid gap-4 border-t p-5 sm:p-6 md:grid-cols-2" @submit.prevent="submitDocument">
-                            <div>
-                                <label class="mb-1.5 block text-sm font-medium text-gray-700">عنوان فایل</label>
-                                <input v-model="documentForm.title" type="text" required maxlength="255" class="h-10 w-full rounded-lg border bg-background px-3 text-sm shadow-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200" placeholder="عنوان پیوست" />
-                                <p v-if="documentForm.errors.title" class="mt-1.5 text-xs text-red-600">{{ documentForm.errors.title }}</p>
-                            </div>
-                            <div>
-                                <label class="mb-1.5 block text-sm font-medium text-gray-700">نوع سند</label>
-                                <input v-model="documentForm.document_type" type="text" maxlength="100" class="h-10 w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200" placeholder="مثلاً گزارش، نقشه، قرارداد" />
-                                <p v-if="documentForm.errors.document_type" class="mt-1.5 text-xs text-red-600">{{ documentForm.errors.document_type }}</p>
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="mb-1.5 block text-sm font-medium text-gray-700">فایل</label>
-                                <input
-                                    ref="documentFileInput"
-                                    type="file"
-                                    required
-                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip"
-                                    class="block w-full rounded-lg border bg-background px-3 py-2 text-sm"
-                                    @change="handleDocumentFileChange"
-                                />
-                                <p class="mt-1.5 text-xs text-muted-foreground">حداکثر ۲۰ مگابایت</p>
-                                <p v-if="documentForm.errors.file" class="mt-1.5 text-xs text-red-600">{{ documentForm.errors.file }}</p>
-                            </div>
-                            <div class="md:col-span-2">
-                                <button type="submit" :disabled="documentForm.processing" class="h-10 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
-                                    {{ documentForm.processing ? 'در حال بارگذاری...' : 'پیوست فایل' }}
-                                </button>
-                            </div>
+                        <div v-else class="p-5 text-center text-sm text-muted-foreground">پیوستی وجود ندارد.</div>
+                        <form v-if="abilities.documents_create" class="border-t p-4 space-y-3" @submit.prevent="submitDocument">
+                            <input v-model="documentForm.title" required maxlength="255" class="h-10 w-full rounded-lg border bg-background px-3 text-sm" placeholder="عنوان فایل" />
+                            <input ref="documentFileInput" type="file" required accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" class="block w-full rounded-lg border bg-background px-3 py-2 text-sm" @change="handleDocumentFileChange" />
+                            <button type="submit" :disabled="documentForm.processing" class="w-full rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50">{{ documentForm.processing ? 'در حال بارگذاری...' : 'پیوست فایل' }}</button>
                         </form>
                     </section>
 
-                    <section v-if="task.reminders.length" class="overflow-hidden rounded-xl border bg-card shadow-sm">
-                        <div class="border-b bg-gray-50/70 px-5 py-4 sm:px-6">
-                            <div class="flex items-center justify-between gap-3">
-                                <div>
-                                    <h3 class="font-semibold text-gray-900">یادآورها</h3>
-                                    <p class="mt-1 text-sm text-muted-foreground">یادآورهای ثبت‌شده برای این تسک</p>
-                                </div>
-                                <span class="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-200">
-                                    {{ task.reminders.length }}
-                                </span>
-                            </div>
+                    <section class="rounded-xl border bg-card p-5 shadow-sm">
+                        <h3 class="font-semibold">پیگیری خارجی</h3>
+                        <div v-if="task.externalOrganization || task.externalContact || task.externalDepartment" class="mt-4 space-y-3 text-sm">
+                            <div v-if="task.externalOrganization"><p class="text-xs text-muted-foreground">سازمان</p><p class="mt-1 font-medium">{{ task.externalOrganization.name }}</p></div>
+                            <div v-if="task.externalDepartment"><p class="text-xs text-muted-foreground">واحد</p><p class="mt-1 font-medium">{{ task.externalDepartment.name }}</p></div>
+                            <div v-if="task.externalContact"><p class="text-xs text-muted-foreground">شخص</p><p class="mt-1 font-medium">{{ task.externalContact.name }}</p><p v-if="task.externalContact.mobile" class="mt-1 text-xs text-muted-foreground">موبایل: {{ task.externalContact.mobile }}</p></div>
                         </div>
-
-                        <div class="divide-y">
-                            <div v-for="reminder in task.reminders" :key="reminder.id" class="p-5 sm:p-6">
-                                <div class="flex items-start justify-between gap-3">
-                                    <div class="min-w-0">
-                                        <p class="font-medium text-gray-900">{{ reminder.title }}</p>
-                                        <p class="mt-1 text-xs text-muted-foreground">
-                                            {{ reminder.user?.name ?? '—' }} · {{ formatDateTime(reminder.remind_at) }}
-                                        </p>
-                                    </div>
-                                    <span
-                                        class="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset"
-                                        :class="reminder.status === 'pending'
-                                            ? 'bg-amber-50 text-amber-700 ring-amber-200'
-                                            : reminder.status === 'completed'
-                                                ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
-                                                : 'bg-slate-100 text-slate-600 ring-slate-200'"
-                                    >
-                                        {{ reminder.status === 'pending' ? 'در انتظار' : reminder.status === 'completed' ? 'تکمیل شده' : 'لغو شده' }}
-                                    </span>
-                                </div>
-
-                                <p v-if="reminder.description" class="mt-3 text-sm leading-6 text-gray-600">
-                                    {{ reminder.description }}
-                                </p>
-
-                                <div v-if="reminder.status === 'pending' && reminder.user?.id === currentUserId" class="mt-4 flex flex-wrap gap-2">
-                                    <button type="button" :disabled="reminderStatusForm.processing" class="rounded-lg border bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50" @click="updateReminderStatus(reminder.id, 'completed')">
-                                        {{ reminderStatusForm.processing && reminderStatusForm.status === 'completed' ? 'در حال ثبت...' : 'تکمیل یادآور' }}
-                                    </button>
-                                    <button type="button" :disabled="reminderStatusForm.processing" class="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 shadow-sm transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50" @click="updateReminderStatus(reminder.id, 'cancelled')">
-                                        {{ reminderStatusForm.processing && reminderStatusForm.status === 'cancelled' ? 'در حال ثبت...' : 'لغو یادآور' }}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                        <p v-else class="mt-4 text-sm text-muted-foreground">پیگیری خارجی برای این وظیفه ثبت نشده است.</p>
                     </section>
-                </div>
+
+                    <section v-if="abilities.change_status" class="rounded-xl border bg-card p-5 shadow-sm">
+                        <h3 class="font-semibold">وضعیت</h3>
+                        <form class="mt-3 flex gap-2" @submit.prevent="changeStatus">
+                            <select v-model="statusForm.status" class="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm"><option value="todo">انجام نشده</option><option value="in_progress">در حال انجام</option><option value="completed">تکمیل شده</option><option value="cancelled">لغو شده</option></select>
+                            <button type="submit" :disabled="statusForm.processing" class="rounded-lg border bg-white px-3 text-sm font-medium">ذخیره</button>
+                        </form>
+                    </section>
+                </aside>
             </div>
+        </div>
 
-            <section v-if="abilities.update" class="overflow-hidden rounded-xl border bg-card shadow-sm">
-                <div class="flex flex-wrap items-center justify-between gap-3 border-b bg-gray-50/70 px-5 py-4 sm:px-6">
-                    <div>
-                        <h3 class="font-semibold text-gray-900">ویرایش اطلاعات تسک</h3>
-                        <p class="mt-1 text-sm text-muted-foreground">اطلاعات اصلی تسک را ویرایش کنید.</p>
+        <div v-if="showParticipantModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showParticipantModal = false">
+            <div class="max-h-[90vh] w-full max-w-xl overflow-auto rounded-2xl bg-white shadow-2xl">
+                <div class="flex items-center justify-between border-b p-5"><div><h3 class="font-semibold">مدیریت افراد درگیر</h3><p class="mt-1 text-sm text-muted-foreground">چند نفر را که در انجام این وظیفه نقش دارند انتخاب کنید.</p></div><button type="button" class="text-xl" @click="showParticipantModal = false">×</button></div>
+                <form class="space-y-4 p-5" @submit.prevent="submitParticipants">
+                    <div class="max-h-80 space-y-2 overflow-y-auto rounded-lg border p-3">
+                        <label v-for="user in participantOptions" :key="user.id" class="flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-gray-50">
+                            <input v-model="participantForm.user_ids" type="checkbox" :value="user.id" class="h-4 w-4 rounded" />
+                            <span class="flex-1"><span class="block text-sm font-medium">{{ user.name }}</span><span v-if="phoneLabel(user)" class="block text-xs text-muted-foreground">☎ {{ phoneLabel(user) }}</span></span>
+                        </label>
                     </div>
-                    <button
-                        v-if="abilities.delete"
-                        type="button"
-                        :disabled="deleteForm.processing"
-                        class="rounded-lg border border-red-200 bg-white px-3.5 py-2 text-sm font-medium text-red-600 shadow-sm transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                        @click="deleteTask"
-                    >
-                        حذف تسک
-                    </button>
-                </div>
-
-                <form class="grid gap-5 p-5 sm:p-6 md:grid-cols-2" @submit.prevent="submitEdit">
-                    <div class="md:col-span-2">
-                        <label class="mb-2 block text-sm font-medium text-gray-700">عنوان تسک</label>
-                        <input v-model="editForm.title" type="text" required maxlength="255" class="h-10 w-full rounded-lg border bg-background px-3 text-sm shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-200" />
-                        <p v-if="editForm.errors.title" class="mt-1.5 text-sm text-red-600">{{ editForm.errors.title }}</p>
-                    </div>
-
-                    <div>
-                        <label class="mb-2 block text-sm font-medium text-gray-700">اولویت</label>
-                        <select v-model="editForm.priority" class="h-10 w-full rounded-lg border bg-background px-3 text-sm shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-200">
-                            <option value="low">کم</option>
-                            <option value="normal">عادی</option>
-                            <option value="high">زیاد</option>
-                            <option value="urgent">فوری</option>
-                        </select>
-                    </div>
-
-                    <div class="flex items-center gap-2 pt-7">
-                        <input id="task-active" v-model="editForm.is_active" type="checkbox" class="h-4 w-4 rounded border-gray-300" />
-                        <label for="task-active" class="text-sm font-medium text-gray-700">تسک فعال باشد</label>
-                    </div>
-
-                    <div>
-                        <label class="mb-2 block text-sm font-medium text-gray-700">تاریخ شروع</label>
-                        <JalaliDatePicker v-model="editForm.start_date" />
-                    </div>
-
-                    <div>
-                        <label class="mb-2 block text-sm font-medium text-gray-700">مهلت انجام</label>
-                        <JalaliDatePicker v-model="editForm.due_date" />
-                        <p v-if="editForm.errors.due_date" class="mt-1.5 text-sm text-red-600">{{ editForm.errors.due_date }}</p>
-                    </div>
-
-                    <div class="rounded-xl border border-gray-200 bg-gray-50/60 p-4 md:col-span-2">
-                        <div class="mb-3"><h4 class="text-sm font-semibold text-gray-900">پیگیری خارجی <span class="font-normal text-gray-500">(اختیاری)</span></h4><p class="mt-1 text-xs text-gray-500">برای تسک‌هایی مثل «طراحی برد» می‌توانید این بخش را خالی بگذارید.</p></div>
-                        <div class="grid gap-4 md:grid-cols-3">
-                            <select v-model="editForm.external_organization_id" @change="handleExternalOrganizationChange" class="h-10 w-full rounded-lg border bg-background px-3 text-sm"><option :value="null">بدون پیگیری خارجی</option><option v-for="item in externalPartyOptions.external_organizations" :key="item.id" :value="item.id">{{ item.name }}</option></select>
-                            <select v-model="editForm.external_department_id" :disabled="editForm.external_organization_id === null" @change="handleExternalDepartmentChange" class="h-10 w-full rounded-lg border bg-background px-3 text-sm"><option :value="null">بدون واحد خارجی</option><option v-for="item in externalDepartments" :key="item.id" :value="item.id">{{ item.name }}</option></select>
-                            <select v-model="editForm.external_contact_id" :disabled="editForm.external_organization_id === null" class="h-10 w-full rounded-lg border bg-background px-3 text-sm"><option :value="null">بدون شخص مشخص</option><option v-for="item in externalContacts" :key="item.id" :value="item.id">{{ item.name }}{{ item.position ? ' — ' + item.position : '' }}</option></select>
-                        </div>
-                    </div>
-
-                    <div class="md:col-span-2">
-                        <label class="mb-2 block text-sm font-medium text-gray-700">توضیحات</label>
-                        <textarea v-model="editForm.description" rows="4" class="w-full rounded-lg border bg-background p-3 text-sm leading-6 shadow-sm outline-none transition focus:border-gray-400 focus:ring-2 focus:ring-gray-200" />
-                        <p v-if="editForm.errors.description" class="mt-1.5 text-sm text-red-600">{{ editForm.errors.description }}</p>
-                    </div>
-
-                    <CustomFieldsForm
-                        v-if="props.customFields.length"
-                        v-model="editForm.custom_fields"
-                        :fields="props.customFields"
-                        :errors="editForm.errors as Record<string, string>"
-                        title="اطلاعات تکمیلی تسک"
-                        description="اطلاعات اختصاصی این تسک را مدیریت کنید."
-                    />
-
-                    <div class="md:col-span-2">
-                        <button type="submit" :disabled="editForm.processing" class="h-10 rounded-lg bg-gray-900 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
-                            {{ editForm.processing ? 'در حال ذخیره...' : 'ذخیره تغییرات' }}
-                        </button>
-                    </div>
+                    <div class="flex justify-end gap-2"><button type="button" class="rounded-lg border px-4 py-2 text-sm" @click="showParticipantModal = false">انصراف</button><button type="submit" :disabled="participantForm.processing" class="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">{{ participantForm.processing ? 'در حال ذخیره...' : 'ذخیره افراد' }}</button></div>
                 </form>
-            </section>
+            </div>
+        </div>
+
+        <div v-if="showReferralModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showReferralModal = false">
+            <div class="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+                <div class="flex items-center justify-between border-b p-5"><div><h3 class="font-semibold">ارجاع وظیفه</h3><p class="mt-1 text-sm text-muted-foreground">مسئول فعلی وظیفه را به شخص دیگری واگذار کنید.</p></div><button type="button" class="text-xl" @click="showReferralModal = false">×</button></div>
+                <form class="space-y-4 p-5" @submit.prevent="submitReferral">
+                    <select v-model="referralForm.assignee_id" required class="h-10 w-full rounded-lg border bg-background px-3 text-sm"><option value="" disabled>انتخاب مسئول جدید</option><option v-for="user in assigneeOptions" :key="user.id" :value="String(user.id)">{{ user.name }}</option></select>
+                    <input v-model="referralForm.note" class="h-10 w-full rounded-lg border bg-background px-3 text-sm" placeholder="توضیح ارجاع (اختیاری)" />
+                    <p v-if="referralForm.errors.note" class="text-sm text-red-600">{{ referralForm.errors.note }}</p>
+                    <div class="flex justify-end gap-2"><button type="button" class="rounded-lg border px-4 py-2 text-sm" @click="showReferralModal = false">انصراف</button><button type="submit" :disabled="referralForm.processing" class="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">{{ referralForm.processing ? 'در حال ارجاع...' : 'ارجاع وظیفه' }}</button></div>
+                </form>
+            </div>
+        </div>
+
+        <div v-if="showCommentModal || showWorkLogModal || showReminderModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showCommentModal = showWorkLogModal = showReminderModal = false">
+            <div class="w-full max-w-xl rounded-2xl bg-white shadow-2xl">
+                <div class="flex items-center justify-between border-b p-5"><h3 class="font-semibold">{{ showCommentModal ? 'ثبت نظر' : showWorkLogModal ? 'ثبت گزارش فعالیت' : 'ایجاد یادآوری' }}</h3><button type="button" class="text-xl" @click="showCommentModal = showWorkLogModal = showReminderModal = false">×</button></div>
+                <form v-if="showCommentModal" class="space-y-4 p-5" @submit.prevent="submitComment"><textarea v-model="commentForm.body" rows="5" required class="w-full rounded-lg border p-3 text-sm" placeholder="نظر خود را وارد کنید..."></textarea><button type="submit" :disabled="commentForm.processing" class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">ثبت نظر</button></form>
+                <form v-else-if="showWorkLogModal" class="space-y-4 p-5" @submit.prevent="submitWorkLog"><input v-model="workLogForm.title" required class="h-10 w-full rounded-lg border px-3 text-sm" placeholder="عنوان فعالیت" /><textarea v-model="workLogForm.description" rows="4" class="w-full rounded-lg border p-3 text-sm" placeholder="شرح فعالیت"></textarea><div class="grid gap-3 sm:grid-cols-2"><JalaliDateTimePicker v-model="workLogForm.started_at" placeholder="شروع" /><JalaliDateTimePicker v-model="workLogForm.completed_at" placeholder="پایان" /></div><button type="submit" :disabled="workLogForm.processing" class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">ثبت گزارش فعالیت</button></form>
+                <form v-else class="space-y-4 p-5" @submit.prevent="submitReminder"><input v-model="reminderForm.title" required class="h-10 w-full rounded-lg border px-3 text-sm" placeholder="عنوان یادآوری" /><textarea v-model="reminderForm.description" rows="3" class="w-full rounded-lg border p-3 text-sm" placeholder="توضیحات"></textarea><JalaliDateTimePicker v-model="reminderForm.remind_at" placeholder="زمان یادآوری" /><button type="submit" :disabled="reminderForm.processing" class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">ایجاد یادآوری</button></form>
+            </div>
+        </div>
+
+        <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showEditModal = false">
+            <div class="max-h-[92vh] w-full max-w-4xl overflow-auto rounded-2xl bg-white shadow-2xl">
+                <div class="flex items-center justify-between border-b p-5"><div><h3 class="font-semibold">ویرایش وظیفه</h3><p class="mt-1 text-sm text-muted-foreground">اطلاعات اصلی وظیفه را ویرایش کنید.</p></div><button type="button" class="text-xl" @click="showEditModal = false">×</button></div>
+                <form class="grid gap-5 p-5 sm:grid-cols-2" @submit.prevent="submitEdit">
+                    <div class="sm:col-span-2"><label class="mb-2 block text-sm font-medium">عنوان وظیفه</label><input v-model="editForm.title" required maxlength="255" class="h-10 w-full rounded-lg border px-3 text-sm" /></div>
+                    <div><label class="mb-2 block text-sm font-medium">اولویت</label><select v-model="editForm.priority" class="h-10 w-full rounded-lg border px-3 text-sm"><option value="low">کم</option><option value="normal">عادی</option><option value="high">زیاد</option><option value="urgent">فوری</option></select></div>
+                    <div><label class="mb-2 block text-sm font-medium">تاریخ شروع</label><JalaliDatePicker v-model="editForm.start_date" /></div>
+                    <div><label class="mb-2 block text-sm font-medium">مهلت انجام</label><JalaliDatePicker v-model="editForm.due_date" /></div>
+                    <div class="flex items-center gap-2 pt-7"><input id="task-active" v-model="editForm.is_active" type="checkbox" /><label for="task-active" class="text-sm font-medium">وظیفه فعال باشد</label></div>
+                    <div class="sm:col-span-2 rounded-xl border bg-gray-50 p-4"><h4 class="text-sm font-semibold">پیگیری خارجی</h4><p class="mt-1 text-xs text-muted-foreground">سازمان، واحد و شخص خارجی مرتبط را ثبت کنید.</p><div class="mt-3 grid gap-3 md:grid-cols-3"><select v-model="editForm.external_organization_id" @change="handleExternalOrganizationChange" class="h-10 rounded-lg border bg-white px-3 text-sm"><option :value="null">بدون سازمان خارجی</option><option v-for="item in externalPartyOptions.external_organizations" :key="item.id" :value="item.id">{{ item.name }}</option></select><select v-model="editForm.external_department_id" :disabled="editForm.external_organization_id === null" @change="handleExternalDepartmentChange" class="h-10 rounded-lg border bg-white px-3 text-sm"><option :value="null">بدون واحد خارجی</option><option v-for="item in externalDepartments" :key="item.id" :value="item.id">{{ item.name }}</option></select><select v-model="editForm.external_contact_id" :disabled="editForm.external_organization_id === null" class="h-10 rounded-lg border bg-white px-3 text-sm"><option :value="null">بدون شخص مشخص</option><option v-for="item in externalContacts" :key="item.id" :value="item.id">{{ item.name }}</option></select></div></div>
+                    <div class="sm:col-span-2"><label class="mb-2 block text-sm font-medium">توضیحات</label><textarea v-model="editForm.description" rows="5" class="w-full rounded-lg border p-3 text-sm"></textarea></div>
+                    <CustomFieldsForm v-if="props.customFields.length" v-model="editForm.custom_fields" :fields="props.customFields" :errors="editForm.errors as Record<string, string>" title="اطلاعات تکمیلی وظیفه" description="اطلاعات اختصاصی این وظیفه را مدیریت کنید." />
+                    <div class="sm:col-span-2 flex justify-between gap-2"><button v-if="abilities.delete" type="button" class="rounded-lg border border-red-200 px-4 py-2 text-sm text-red-600" @click="deleteTask">حذف وظیفه</button><div class="flex gap-2"><button type="button" class="rounded-lg border px-4 py-2 text-sm" @click="showEditModal = false">انصراف</button><button type="submit" :disabled="editForm.processing" class="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">{{ editForm.processing ? 'در حال ذخیره...' : 'ذخیره تغییرات' }}</button></div></div>
+                </form>
+            </div>
         </div>
     </AuthenticatedLayout>
 </template>
