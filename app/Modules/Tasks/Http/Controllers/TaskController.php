@@ -203,11 +203,6 @@ class TaskController extends Controller
             }
         }
 
-        $task->update([
-            'external_organization_id' => $organizationId,
-            'external_department_id' => $departmentId,
-        ]);
-
         if (isset($data['replace_external_contact_id'])) {
             $replaceContactId = (int) $data['replace_external_contact_id'];
 
