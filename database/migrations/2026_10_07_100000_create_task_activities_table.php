@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('status', 30)->default('pending');
             $table->string('activity_type', 30)->default('planned');
             $table->unsignedInteger('sequence')->default(1);
-            $table->foreignId('assigned_to')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('assigned_to')->nullable()->constrained('users');
             $table->foreignId('created_by')->constrained('users');
             $table->foreignId('completed_by')->nullable()->constrained('users')->noActionOnDelete();
             $table->timestamp('completed_at')->nullable();
