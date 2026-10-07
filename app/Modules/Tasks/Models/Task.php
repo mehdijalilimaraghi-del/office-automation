@@ -42,7 +42,6 @@ class Task extends Model
         'department_id',
         'external_organization_id',
         'external_department_id',
-        'external_contact_id',
         'title',
         'description',
         'status',
@@ -79,7 +78,11 @@ class Task extends Model
     public function project(): BelongsTo { return $this->belongsTo(Project::class, 'project_id'); }
     public function externalOrganization(): BelongsTo { return $this->belongsTo(ExternalOrganization::class, 'external_organization_id'); }
     public function externalDepartment(): BelongsTo { return $this->belongsTo(ExternalDepartment::class, 'external_department_id'); }
-    public function externalContact(): BelongsTo { return $this->belongsTo(ExternalContact::class, 'external_contact_id'); }
+    public function externalContacts(): BelongsToMany
+    {
+        return $this->belongsToMany(ExternalContact::class, 'task_external_contacts')
+            ->withTimestamps();
+    }
     public function assignee(): BelongsTo { return $this->belongsTo(User::class, 'assignee_id'); }
     public function reviewedBy(): BelongsTo { return $this->belongsTo(User::class, 'reviewed_by'); }
     public function assignments(): HasMany { return $this->hasMany(TaskAssignment::class); }
