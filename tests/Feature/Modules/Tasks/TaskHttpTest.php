@@ -19,6 +19,79 @@ class TaskHttpTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_creating_task_can_create_first_planned_activity(): void
+    {
+        $creator = $this->userWithPermission('tasks.create');
+
+        $response = $this->actingAs($creator)->post(route('tasks.store'), [
+            'title' => 'Task With Next Activity',
+            'priority' => 'normal',
+            'next_activity_title' => 'دریافت تأیید مالی',
+            'next_activity_description' => 'تأیید بودجه دریافت شود.',
+            'next_activity_assigned_to' => $creator->id,
+        ]);
+
+        $response->assertRedirect();
+
+        $task = Task::query()->where('title', 'Task With Next Activity')->firstOrFail();
+
+        $this->assertDatabaseHas('task_activities', [
+            'task_id' => $task->id,
+            'title' => 'دریافت تأیید مالی',
+            'status' => 'pending',
+            'activity_type' => 'planned',
+            'sequence' => 1,
+            'assigned_to' => $creator->id,
+        ]);
+    }
+
+    public function test_planned_task_activity_can_be_completed(): void
+    {
+        $user = $this->userWithPermission('tasks.update');
+        $task = $this->createTask($this->createProject($user), $user);
+        $activity = $task->activities()->create([
+            'title' => 'پیگیری با واحد مالی',
+            'status' => 'pending',
+            'activity_type' => 'planned',
+            'sequence' => 1,
+            'assigned_to' => $user->id,
+            'created_by' => $user->id,
+        ]);
+
+        $this->actingAs($user)
+            ->patch(route('tasks.activities.complete', [$task, $activity]))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('task_activities', [
+            'id' => $activity->id,
+            'status' => 'completed',
+            'completed_by' => $user->id,
+        ]);
+    }
+
+    public function test_task_can_have_related_internal_users_without_changing_assignee(): void
+    {
+        $assignee = $this->userWithPermission('tasks.update');
+        $related = User::factory()->create(['status' => 'active']);
+        $task = $this->createTask($this->createProject($assignee), $assignee);
+
+        $this->actingAs($assignee)
+            ->put(route('tasks.participants.update', $task), [
+                'user_ids' => [$related->id],
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('task_participants', [
+            'task_id' => $task->id,
+            'user_id' => $related->id,
+        ]);
+
+        $this->assertDatabaseHas('tasks', [
+            'id' => $task->id,
+            'assignee_id' => $assignee->id,
+        ]);
+    }
+
     public function test_project_scope_filters_task_index_at_http_layer(): void
     {
         $user = $this->userWithPermissionScope('tasks.view', 'project');
