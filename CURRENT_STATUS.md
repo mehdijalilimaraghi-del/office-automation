@@ -248,3 +248,8 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - Task referral is available to users with `tasks.update` access when they are the current assignee, department manager, or project manager; route and policy are aligned with this authorization model.
 - External organization/department/contact saving now explicitly refreshes task data after a successful update, and validation errors are visible in the form.
 - HTTP coverage added for referral persistence and external-party persistence.
+
+
+### 2026-10-07 — Referral permission correction
+- Task referral visibility/authorization now depends on the dedicated `tasks.refer` permission and its configured scope; it is not restricted by assignee, department-manager, or project-manager identity.
+- Task activity completion binding now compares foreign-key IDs by value, preventing false 404 responses.
