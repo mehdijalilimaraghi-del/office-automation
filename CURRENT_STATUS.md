@@ -320,3 +320,10 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - مقدار نهایی به‌صورت زمان محلی بدون تبدیل ضمنی timezone ارسال می‌شود تا ساعت انتخاب‌شده با ساعت ذخیره و نمایش داده‌شده یکسان بماند.
 
 **Status:** implementation complete; frontend build validation pending.
+
+### 2026-10-07 — تکمیل ویرایش/حذف نظر و یادآوری وظیفه
+- برای نظرات و یادآوری‌های وظیفه، ویرایش و حذف در جزئیات وظیفه اضافه شد؛ هر دو همچنان چندرکوردی هستند.
+- نمایش `remind_at` برای یادآوری با فرمت صریح `Y-m-d H:i:s` اصلاح شد تا زمان انتخاب‌شده در UI هنگام serialization به UTC ISO تبدیل نشود و ساعت ثبت‌شده تغییر نکند.
+- تست HTTP برای حفظ دقیق زمان یادآوری و عملیات ویرایش/حذف اضافه شد.
+
+**Status:** implementation complete; focused task test pending.
