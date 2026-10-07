@@ -118,6 +118,14 @@ class TaskFormOptionsService
     /**
      * @return array<int, array{id:int,name:string}>
      */
+    public function relatedUsers(): array
+    {
+        return $this->activeUsers();
+    }
+
+    /**
+     * @return array<int, array{id:int,name:string}>
+     */
     public function assigneesFor(Task $task): array
     {
         if ($task->project_id === null) {
