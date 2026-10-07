@@ -238,8 +238,15 @@ class TaskHttpTest extends TestCase
             ])
             ->assertRedirect();
 
-        $this->assertDatabaseHas('tasks', [
-            'id' => $task->id,
+        $this->assertDatabaseHas('task_external_contacts', [
+            'task_id' => $task->id,
+            'external_contact_id' => $firstContact->id,
+            'external_organization_id' => $organization->id,
+            'external_department_id' => $department->id,
+        ]);
+        $this->assertDatabaseHas('task_external_contacts', [
+            'task_id' => $task->id,
+            'external_contact_id' => $secondContact->id,
             'external_organization_id' => $organization->id,
             'external_department_id' => $department->id,
         ]);
