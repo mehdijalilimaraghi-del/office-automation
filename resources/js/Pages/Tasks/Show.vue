@@ -22,6 +22,7 @@ interface TaskActivity {
     sequence: number;
     assignee: User | null;
     creator: User | null;
+    assignments: TaskAssignment[];
     completedBy: User | null;
     completed_at: string | null;
 }
@@ -33,6 +34,16 @@ interface Reminder {
     remind_at: string;
     status: string;
     user: User | null;
+}
+interface TaskAssignment {
+    id: number;
+    fromUser: User | null;
+    toUser: User | null;
+    assignedBy: User | null;
+    type: string;
+    note: string | null;
+    started_at: string | null;
+    ended_at: string | null;
 }
 interface Task {
     id: number;
@@ -338,7 +349,7 @@ const pendingActivities = computed(() => props.task.activities?.filter(activity 
         </template>
 
         <div class="mx-auto max-w-7xl space-y-6">
-            <div class="grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.75fr)]">
+            <div class="grid gap-6 pt-2 lg:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.75fr)]">
                 <main class="min-w-0 space-y-6">
                     <section class="overflow-hidden rounded-xl border bg-card shadow-sm">
                         <div class="flex items-center justify-between border-b bg-blue-50/60 px-5 py-4 sm:px-6"><div><h3 class="font-semibold">فعالیت‌های بعدی</h3><p class="mt-1 text-sm text-muted-foreground">اقداماتی که باید برای پیشبرد وظیفه انجام شوند.</p></div><button v-if="abilities.update" type="button" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showActivityModal = true">+ ثبت فعالیت بعدی</button></div>
@@ -364,13 +375,25 @@ const pendingActivities = computed(() => props.task.activities?.filter(activity 
                     </section>
 
                     <section class="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
-                        <div class="flex items-center justify-between"><div><h3 class="font-semibold">خط زمانی</h3><p class="mt-1 text-sm text-muted-foreground">تمام تغییرات مهم وظیفه به ترتیب زمانی.</p></div><span class="text-xs text-muted-foreground">{{ timeline.length }} مورد</span></div>
-                        <div class="mt-5 space-y-4">
-                            <article v-for="(item, index) in timeline" :key="item.type + '-' + index" class="relative flex gap-3">
-                                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ring-1 ring-inset" :class="timelineClasses[item.type] ?? 'bg-gray-100 text-gray-600 ring-gray-200'">{{ index + 1 }}</div>
-                                <div class="min-w-0 flex-1 border-b pb-4 last:border-0"><div class="flex flex-wrap justify-between gap-2"><div><span class="text-xs text-muted-foreground">{{ timelineLabels[item.type] ?? item.type }}</span><h4 class="mt-1 text-sm font-medium">{{ item.title }}</h4></div><time class="text-xs text-muted-foreground">{{ formatDateTime(item.occurred_at) }}</time></div><p v-if="item.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ item.description }}</p><p v-if="item.user" class="mt-2 text-xs text-muted-foreground">ثبت توسط {{ item.user.name }}</p></div>
+                        <div class="flex items-center justify-between">
+                            <div><h3 class="font-semibold">سوابق ارجاع وظیفه</h3><p class="mt-1 text-sm text-muted-foreground">مشخص می‌کند وظیفه از چه کسی به چه کسی ارجاع شده و چه کسی ارجاع را ثبت کرده است.</p></div>
+                            <button v-if="abilities.refer" type="button" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showReferralModal = true">ارجاع وظیفه</button>
+                        </div>
+                        <div v-if="task.assignments.length === 0" class="mt-5 rounded-lg bg-gray-50 p-6 text-center text-sm text-muted-foreground">هنوز سابقه ارجاعی برای این وظیفه ثبت نشده است.</div>
+                        <div v-else class="mt-5 divide-y">
+                            <article v-for="(assignment, index) in task.assignments" :key="assignment.id" class="py-4 first:pt-0 last:pb-0">
+                                <div class="flex gap-3">
+                                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-50 text-xs font-semibold text-violet-700">{{ index + 1 }}</div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex flex-wrap items-center justify-between gap-2">
+                                            <p class="font-medium text-gray-900">ارجاع از <span>{{ assignment.fromUser?.name ?? 'سیستم' }}</span> به <span>{{ assignment.toUser?.name ?? '—' }}</span></p>
+                                            <time class="text-xs text-muted-foreground">{{ formatDateTime(assignment.started_at) }}</time>
+                                        </div>
+                                        <p class="mt-1 text-xs text-muted-foreground">ثبت‌کننده ارجاع: {{ assignment.assignedBy?.name ?? '—' }}</p>
+                                        <p v-if="assignment.note" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ assignment.note }}</p>
+                                    </div>
+                                </div>
                             </article>
-                            <p v-if="timeline.length === 0" class="text-center text-sm text-muted-foreground">هنوز سابقه‌ای ثبت نشده است.</p>
                         </div>
                     </section>
 
