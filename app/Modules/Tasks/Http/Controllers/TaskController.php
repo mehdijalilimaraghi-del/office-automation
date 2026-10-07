@@ -98,7 +98,7 @@ class TaskController extends Controller
                 'department.manager',
                 'externalOrganization',
                 'externalDepartment',
-                'externalContact',
+                'externalContacts',
                 'assignments.fromUser',
                 'assignments.toUser',
                 'assignments.assignedBy',
@@ -157,14 +157,57 @@ class TaskController extends Controller
         $data = $request->validate([
             'external_organization_id' => ['nullable', 'integer', 'exists:external_organizations,id'],
             'external_department_id' => ['nullable', 'integer', 'exists:external_departments,id'],
-            'external_contact_id' => ['nullable', 'integer', 'exists:external_contacts,id'],
+            'external_contact_ids' => ['nullable', 'array'],
+            'external_contact_ids.*' => ['integer', 'distinct', 'exists:external_contacts,id'],
         ]);
 
+        $organizationId = $data['external_organization_id'] ?? null;
+        $departmentId = $data['external_department_id'] ?? null;
+        $contactIds = array_values(array_unique(array_map('intval', $data['external_contact_ids'] ?? [])));
+
+        if ($departmentId !== null) {
+            $departmentOrganizationId = (int) \App\Core\ExternalParties\Models\ExternalDepartment::query()
+                ->whereKey($departmentId)
+                ->value('external_organization_id');
+
+            if ($organizationId === null || $departmentOrganizationId !== (int) $organizationId) {
+                throw ValidationException::withMessages([
+                    'external_department_id' => 'واحد خارجی انتخاب‌شده متعلق به سازمان انتخاب‌شده نیست.',
+                ]);
+            }
+        }
+
+        if ($contactIds !== []) {
+            if ($organizationId === null) {
+                throw ValidationException::withMessages([
+                    'external_contact_ids' => 'برای انتخاب اشخاص خارجی، ابتدا سازمان خارجی را انتخاب کنید.',
+                ]);
+            }
+
+            $contactsQuery = \App\Core\ExternalParties\Models\ExternalContact::query()
+                ->whereIn('id', $contactIds)
+                ->where('external_organization_id', $organizationId);
+
+            if ($departmentId !== null) {
+                $contactsQuery->where(function ($query) use ($departmentId): void {
+                    $query->where('external_department_id', $departmentId)
+                        ->orWhereNull('external_department_id');
+                });
+            }
+
+            if ($contactsQuery->count() !== count($contactIds)) {
+                throw ValidationException::withMessages([
+                    'external_contact_ids' => 'یک یا چند شخص خارجی با سازمان یا واحد انتخاب‌شده مطابقت ندارند.',
+                ]);
+            }
+        }
+
         $task->update([
-            'external_organization_id' => $data['external_organization_id'] ?? null,
-            'external_department_id' => $data['external_department_id'] ?? null,
-            'external_contact_id' => $data['external_contact_id'] ?? null,
+            'external_organization_id' => $organizationId,
+            'external_department_id' => $departmentId,
         ]);
+
+        $task->externalContacts()->sync($contactIds);
 
         return back()->with('success', 'ارتباط و پیگیری بیرونی با موفقیت به‌روزرسانی شد.');
     }
