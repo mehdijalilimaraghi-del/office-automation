@@ -64,6 +64,7 @@ interface Task {
     reminders: Reminder[];
     documents: TaskDocument[];
     activities: TaskActivity[];
+    assignments: TaskAssignment[];
     comments: Array<{ id: number; body: string; user: User | null }>;
 }
 interface TimelineItem {
