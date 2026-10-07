@@ -200,7 +200,15 @@ class TaskHttpTest extends TestCase
             ->put(route('tasks.external-parties.update', $task), [
                 'external_organization_id' => $organization->id,
                 'external_department_id' => $department->id,
-                'external_contact_ids' => [$firstContact->id, $secondContact->id],
+                'external_contact_ids' => [$firstContact->id],
+            ])
+            ->assertRedirect();
+
+        $this->actingAs($user)
+            ->put(route('tasks.external-parties.update', $task), [
+                'external_organization_id' => $organization->id,
+                'external_department_id' => $department->id,
+                'external_contact_ids' => [$secondContact->id],
             ])
             ->assertRedirect();
 
