@@ -81,6 +81,7 @@ class Task extends Model
     public function externalContacts(): BelongsToMany
     {
         return $this->belongsToMany(ExternalContact::class, 'task_external_contacts')
+            ->withPivot(['external_organization_id', 'external_department_id'])
             ->withTimestamps();
     }
     public function assignee(): BelongsTo { return $this->belongsTo(User::class, 'assignee_id'); }
