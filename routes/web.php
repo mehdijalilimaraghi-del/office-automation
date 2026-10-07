@@ -118,6 +118,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/tasks/{task}/assign', [TaskController::class, 'assign'])->middleware('permission:tasks.assign')->name('tasks.assign');
     Route::patch('/tasks/{task}/refer', [TaskController::class, 'refer'])->middleware('permission:tasks.refer')->name('tasks.refer');
     Route::put('/tasks/{task}/participants', [TaskController::class, 'updateParticipants'])->middleware('permission:tasks.update')->name('tasks.participants.update');
+    Route::post('/tasks/{task}/activities', [TaskController::class, 'storeActivity'])->middleware('permission:tasks.update')->name('tasks.activities.store');
+    Route::patch('/tasks/{task}/activities/{activity}/complete', [TaskController::class, 'completeActivity'])->middleware('permission:tasks.update')->name('tasks.activities.complete');
     Route::patch('/tasks/{task}/status', [TaskController::class, 'changeStatus'])->middleware('permission:tasks.change_status')->name('tasks.change-status');
 
     Route::get('/documents/{document}/download', [DocumentController::class, 'download'])
