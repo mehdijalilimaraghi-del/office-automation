@@ -52,7 +52,6 @@ interface Task {
     project: { id: number; name: string } | null;
     reminders: Reminder[];
     documents: TaskDocument[];
-    participants: Array<{ id: number; user: User }>;
     activities: TaskActivity[];
     comments: Array<{ id: number; body: string; user: User | null }>;
 }
@@ -97,8 +96,6 @@ const props = defineProps<{
     currentUserId: number;
     abilities: Abilities;
     assigneeOptions: User[];
-    participantOptions: User[];
-    activityAssigneeOptions: User[];
     externalPartyOptions: ExternalPartyOptions;
     customFields: Array<{
         id: number;
@@ -122,15 +119,13 @@ const reminderForm = useForm({
 const referralForm = useForm({ assignee_id: '', note: '' });
 const statusForm = useForm({ status: props.task.status });
 const reminderStatusForm = useForm({ status: '' as 'completed' | 'cancelled' | '' });
-const participantForm = useForm<{ user_ids: number[] }>({ user_ids: props.task.participants?.map(item => item.user.id) ?? [] });
-const activityForm = useForm({ title: '', description: '', assigned_to: null as number | null, activity_type: 'planned' as 'planned' | 'logged' });
+const activityForm = useForm({ title: '', description: '', activity_type: 'planned' as 'planned' | 'logged' });
 const showActivityModal = ref(false);
 const showEditModal = ref(false);
 const showReferralModal = ref(false);
 const showCommentModal = ref(false);
 const showWorkLogModal = ref(false);
 const showReminderModal = ref(false);
-const showParticipantModal = ref(false);
 const deleteForm = useForm({});
 const documentForm = useForm({
     title: '',
@@ -290,10 +285,6 @@ const updateReminderStatus = (reminderId: number, status: 'completed' | 'cancell
     );
 };
 const formatDateTime = formatPersianDateTime;
-const submitParticipants = (): void => {
-    participantForm.put(route('tasks.participants.update', props.task.id), { preserveScroll: true, onSuccess: () => { showParticipantModal.value = false; } });
-};
-const participantUsers = computed(() => props.task.participants?.map(item => item.user) ?? []);
 const nextActivity = computed(() => props.task.activities?.find(activity => activity.status === 'pending' && activity.activity_type === 'planned') ?? null);
 const submitActivity = (): void => {
     activityForm.post(route('tasks.activities.store', props.task.id), {
@@ -305,6 +296,7 @@ const completeActivity = (activityId: number): void => {
     activityForm.patch(route('tasks.activities.complete', [props.task.id, activityId]), { preserveScroll: true });
 };
 const phoneLabel = (user: User): string | null => user.mobile || user.phone || null;
+const pendingActivities = computed(() => props.task.activities?.filter(activity => activity.activity_type === 'planned') ?? []);
 </script>
 
 <template>
@@ -382,6 +374,17 @@ const phoneLabel = (user: User): string | null => user.mobile || user.phone || n
                     </section>
 
                     <section class="overflow-hidden rounded-xl border bg-card shadow-sm">
+                        <div class="flex items-center justify-between border-b bg-blue-50/60 px-5 py-4 sm:px-6"><div><h3 class="font-semibold">فعالیت‌های بعدی</h3><p class="mt-1 text-sm text-muted-foreground">اقداماتی که باید برای پیشبرد وظیفه انجام شوند.</p></div><button v-if="abilities.update" type="button" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showActivityModal = true">+ ثبت فعالیت بعدی</button></div>
+                        <div v-if="pendingActivities.length === 0" class="p-6 text-center text-sm text-muted-foreground">هنوز فعالیت بعدی ثبت نشده است.</div>
+                        <div v-else class="divide-y">
+                            <article v-for="activity in pendingActivities" :key="activity.id" class="flex flex-wrap items-start justify-between gap-4 p-5">
+                                <div class="min-w-0"><div class="flex items-center gap-2"><span class="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">فعالیت</span><h4 class="font-medium text-gray-900">{{ activity.title }}</h4></div><p v-if="activity.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ activity.description }}</p><p v-if="activity.status === 'completed' && activity.completed_at" class="mt-2 text-xs text-muted-foreground">انجام شد در {{ formatDateTime(activity.completed_at) }}</p></div>
+                                <button v-if="activity.status === 'pending' && abilities.update" type="button" class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700" @click="completeActivity(activity.id)">انجام شد</button>
+                            </article>
+                        </div>
+                    </section>
+
+                    <section class="overflow-hidden rounded-xl border bg-card shadow-sm">
                         <div class="border-b bg-gray-50/70 px-5 py-4 sm:px-6">
                             <div class="flex items-center justify-between"><div><h3 class="font-semibold">گزارش فعالیت</h3><p class="mt-1 text-sm text-muted-foreground">اقداماتی که روی وظیفه انجام شده است.</p></div><span class="text-xs text-muted-foreground">{{ timeline.filter(i => i.type === 'work_log').length }} فعالیت</span></div>
                         </div>
@@ -446,7 +449,7 @@ const phoneLabel = (user: User): string | null => user.mobile || user.phone || n
                     </section>
 
                     <section class="rounded-xl border bg-card p-5 shadow-sm">
-                        <h3 class="font-semibold">پیگیری خارجی</h3>
+                        <h3 class="font-semibold">ارتباط و پیگیری بیرونی</h3>
                         <div v-if="task.externalOrganization || task.externalContact || task.externalDepartment" class="mt-4 space-y-3 text-sm">
                             <div v-if="task.externalOrganization"><p class="text-xs text-muted-foreground">سازمان</p><p class="mt-1 font-medium">{{ task.externalOrganization.name }}</p></div>
                             <div v-if="task.externalDepartment"><p class="text-xs text-muted-foreground">واحد</p><p class="mt-1 font-medium">{{ task.externalDepartment.name }}</p></div>
@@ -463,21 +466,6 @@ const phoneLabel = (user: User): string | null => user.mobile || user.phone || n
                         </form>
                     </section>
                 </aside>
-            </div>
-        </div>
-
-        <div v-if="showParticipantModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showParticipantModal = false">
-            <div class="max-h-[90vh] w-full max-w-xl overflow-auto rounded-2xl bg-white shadow-2xl">
-                <div class="flex items-center justify-between border-b p-5"><div><h3 class="font-semibold">مدیریت افراد درگیر</h3><p class="mt-1 text-sm text-muted-foreground">چند نفر را که در انجام این وظیفه نقش دارند انتخاب کنید.</p></div><button type="button" class="text-xl" @click="showParticipantModal = false">×</button></div>
-                <form class="space-y-4 p-5" @submit.prevent="submitParticipants">
-                    <div class="max-h-80 space-y-2 overflow-y-auto rounded-lg border p-3">
-                        <label v-for="user in participantOptions" :key="user.id" class="flex cursor-pointer items-center gap-3 rounded-lg p-3 hover:bg-gray-50">
-                            <input v-model="participantForm.user_ids" type="checkbox" :value="user.id" class="h-4 w-4 rounded" />
-                            <span class="flex-1"><span class="block text-sm font-medium">{{ user.name }}</span><span v-if="phoneLabel(user)" class="block text-xs text-muted-foreground">☎ {{ phoneLabel(user) }}</span></span>
-                        </label>
-                    </div>
-                    <div class="flex justify-end gap-2"><button type="button" class="rounded-lg border px-4 py-2 text-sm" @click="showParticipantModal = false">انصراف</button><button type="submit" :disabled="participantForm.processing" class="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">{{ participantForm.processing ? 'در حال ذخیره...' : 'ذخیره افراد' }}</button></div>
-                </form>
             </div>
         </div>
 
@@ -511,7 +499,7 @@ const phoneLabel = (user: User): string | null => user.mobile || user.phone || n
                     <div><label class="mb-2 block text-sm font-medium">تاریخ شروع</label><JalaliDatePicker v-model="editForm.start_date" /></div>
                     <div><label class="mb-2 block text-sm font-medium">مهلت انجام</label><JalaliDatePicker v-model="editForm.due_date" /></div>
                     <div class="flex items-center gap-2 pt-7"><input id="task-active" v-model="editForm.is_active" type="checkbox" /><label for="task-active" class="text-sm font-medium">وظیفه فعال باشد</label></div>
-                    <div class="sm:col-span-2 rounded-xl border bg-gray-50 p-4"><h4 class="text-sm font-semibold">پیگیری خارجی</h4><p class="mt-1 text-xs text-muted-foreground">سازمان، واحد و شخص خارجی مرتبط را ثبت کنید.</p><div class="mt-3 grid gap-3 md:grid-cols-3"><select v-model="editForm.external_organization_id" @change="handleExternalOrganizationChange" class="h-10 rounded-lg border bg-white px-3 text-sm"><option :value="null">بدون سازمان خارجی</option><option v-for="item in externalPartyOptions.external_organizations" :key="item.id" :value="item.id">{{ item.name }}</option></select><select v-model="editForm.external_department_id" :disabled="editForm.external_organization_id === null" @change="handleExternalDepartmentChange" class="h-10 rounded-lg border bg-white px-3 text-sm"><option :value="null">بدون واحد خارجی</option><option v-for="item in externalDepartments" :key="item.id" :value="item.id">{{ item.name }}</option></select><select v-model="editForm.external_contact_id" :disabled="editForm.external_organization_id === null" class="h-10 rounded-lg border bg-white px-3 text-sm"><option :value="null">بدون شخص مشخص</option><option v-for="item in externalContacts" :key="item.id" :value="item.id">{{ item.name }}</option></select></div></div>
+                    <div class="sm:col-span-2 rounded-xl border bg-gray-50 p-4"><h4 class="text-sm font-semibold">ارتباط و پیگیری بیرونی</h4><p class="mt-1 text-xs text-muted-foreground">سازمان، واحد و شخص خارجی مرتبط را ثبت کنید.</p><div class="mt-3 grid gap-3 md:grid-cols-3"><select v-model="editForm.external_organization_id" @change="handleExternalOrganizationChange" class="h-10 rounded-lg border bg-white px-3 text-sm"><option :value="null">بدون سازمان خارجی</option><option v-for="item in externalPartyOptions.external_organizations" :key="item.id" :value="item.id">{{ item.name }}</option></select><select v-model="editForm.external_department_id" :disabled="editForm.external_organization_id === null" @change="handleExternalDepartmentChange" class="h-10 rounded-lg border bg-white px-3 text-sm"><option :value="null">بدون واحد خارجی</option><option v-for="item in externalDepartments" :key="item.id" :value="item.id">{{ item.name }}</option></select><select v-model="editForm.external_contact_id" :disabled="editForm.external_organization_id === null" class="h-10 rounded-lg border bg-white px-3 text-sm"><option :value="null">بدون شخص مشخص</option><option v-for="item in externalContacts" :key="item.id" :value="item.id">{{ item.name }}</option></select></div></div>
                     <div class="sm:col-span-2"><label class="mb-2 block text-sm font-medium">توضیحات</label><textarea v-model="editForm.description" rows="5" class="w-full rounded-lg border p-3 text-sm"></textarea></div>
                     <CustomFieldsForm v-if="props.customFields.length" v-model="editForm.custom_fields" :fields="props.customFields" :errors="editForm.errors as Record<string, string>" title="اطلاعات تکمیلی وظیفه" description="اطلاعات اختصاصی این وظیفه را مدیریت کنید." />
                     <div class="sm:col-span-2 flex justify-between gap-2"><button v-if="abilities.delete" type="button" class="rounded-lg border border-red-200 px-4 py-2 text-sm text-red-600" @click="deleteTask">حذف وظیفه</button><div class="flex gap-2"><button type="button" class="rounded-lg border px-4 py-2 text-sm" @click="showEditModal = false">انصراف</button><button type="submit" :disabled="editForm.processing" class="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">{{ editForm.processing ? 'در حال ذخیره...' : 'ذخیره تغییرات' }}</button></div></div>
@@ -525,7 +513,7 @@ const phoneLabel = (user: User): string | null => user.mobile || user.phone || n
                     <form class="mt-5 space-y-4" @submit.prevent="submitActivity">
                         <div><label class="mb-1.5 block text-sm font-medium text-gray-700">عنوان فعالیت</label><input v-model="activityForm.title" required class="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm" placeholder="مثلاً دریافت تأیید مالی" /></div>
                         <div><label class="mb-1.5 block text-sm font-medium text-gray-700">توضیحات</label><textarea v-model="activityForm.description" rows="3" class="w-full rounded-lg border border-gray-300 p-3 text-sm"></textarea></div>
-                        <div><label class="mb-1.5 block text-sm font-medium text-gray-700">انجام‌دهنده</label><select v-model="activityForm.assigned_to" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm"><option :value="null">مسئول اصلی وظیفه</option><option v-for="user in activityAssigneeOptions" :key="user.id" :value="user.id">{{ user.name }}</option></select></div>
+                        <div class="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">مسئول این فعالیت همان مسئول اصلی وظیفه است: <span class="font-medium text-gray-900">{{ task.assignee?.name ?? 'بدون مسئول' }}</span></div>
                         <div class="flex items-center justify-end gap-2 border-t pt-4"><button type="button" class="rounded-lg border px-4 py-2 text-sm" @click="showActivityModal = false">انصراف</button><button type="submit" :disabled="activityForm.processing" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">ثبت فعالیت</button></div>
                     </form>
                 </section>
