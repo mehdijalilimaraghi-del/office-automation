@@ -760,3 +760,7 @@ Project mutation authorization and task workflow actions now enforce permission 
 - در کارت هر یادآوری، عملیات «ویرایش» و «حذف» به‌صورت مستقیم اضافه شد و از Routeهای اختصاصی ویرایش/حذف استفاده می‌کند.
 
 **Status:** implementation complete; focused TaskHttpTest validation pending.
+
+
+### 2026-10-07 — Task work log action button
+- در صفحه جزئیات وظیفه، بخش «گزارش فعالیت» به دکمه «ثبت فعالیت» مجهز شد تا ثبت Work Log از همان بخش قابل دسترسی باشد و نمایش آن بر اساس مجوز ثبت فعالیت انجام شود.
