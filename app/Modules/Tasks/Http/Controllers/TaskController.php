@@ -95,7 +95,7 @@ class TaskController extends Controller
                 'documents.document.latestVersion',
                 'assignee',
                 'creator',
-                'department',
+                'department.manager',
                 'externalOrganization',
                 'externalDepartment',
                 'externalContact',
