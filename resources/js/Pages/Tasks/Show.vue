@@ -10,7 +10,7 @@ import { computed, ref } from 'vue';
 interface User { id: number; name: string; email?: string | null; mobile?: string | null; phone?: string | null; extension?: string | null; }
 interface ExternalOrganizationOption { id: number; name: string; }
 interface ExternalDepartmentOption { id: number; external_organization_id: number; name: string; }
-interface ExternalContactOption { id: number; external_organization_id: number; external_department_id: number | null; name: string; position: string | null; mobile: string | null; phone: string | null; extension: string | null; }
+interface ExternalContactOption { id: number; external_organization_id: number; external_department_id: number | null; name: string; position: string | null; mobile: string | null; phone: string | null; extension: string | null; email: string | null; }
 interface ExternalPartyOptions { external_organizations: ExternalOrganizationOption[]; external_departments: ExternalDepartmentOption[]; external_contacts: ExternalContactOption[]; }
 
 interface TaskActivity {
