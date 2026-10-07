@@ -447,13 +447,24 @@ const pendingActivities = computed(() => props.task.activities?.filter(activity 
                     </section>
 
                     <section class="rounded-xl border bg-card p-5 shadow-sm">
-                        <h3 class="font-semibold">ارتباط و پیگیری بیرونی</h3>
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <h3 class="font-semibold">ارتباط و پیگیری بیرونی</h3>
+                                <p class="mt-1 text-xs text-muted-foreground">سازمان، واحد یا شخص خارج از شرکت مرتبط با این وظیفه.</p>
+                            </div>
+                            <button v-if="abilities.update" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="showExternalModal = true">
+                                {{ task.externalOrganization || task.externalDepartment || task.externalContact ? 'ویرایش ارتباط' : 'ثبت ارتباط' }}
+                            </button>
+                        </div>
                         <div v-if="task.externalOrganization || task.externalContact || task.externalDepartment" class="mt-4 space-y-3 text-sm">
                             <div v-if="task.externalOrganization"><p class="text-xs text-muted-foreground">سازمان</p><p class="mt-1 font-medium">{{ task.externalOrganization.name }}</p></div>
                             <div v-if="task.externalDepartment"><p class="text-xs text-muted-foreground">واحد</p><p class="mt-1 font-medium">{{ task.externalDepartment.name }}</p></div>
                             <div v-if="task.externalContact"><p class="text-xs text-muted-foreground">شخص</p><p class="mt-1 font-medium">{{ task.externalContact.name }}</p><p v-if="task.externalContact.mobile" class="mt-1 text-xs text-muted-foreground">موبایل: {{ task.externalContact.mobile }}</p></div>
                         </div>
                         <p v-else class="mt-4 text-sm text-muted-foreground">پیگیری خارجی برای این وظیفه ثبت نشده است.</p>
+                        <div v-if="abilities.update && (task.externalOrganization || task.externalDepartment || task.externalContact)" class="mt-4 border-t pt-4">
+                            <button type="button" class="text-xs font-medium text-red-600 hover:underline" @click="removeExternal">حذف ارتباط</button>
+                        </div>
                     </section>
 
                     <section v-if="abilities.change_status" class="rounded-xl border bg-card p-5 shadow-sm">
