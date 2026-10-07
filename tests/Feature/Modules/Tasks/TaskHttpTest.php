@@ -92,9 +92,9 @@ class TaskHttpTest extends TestCase
         ]);
     }
 
-    public function test_task_assignee_can_refer_task_through_update_permission(): void
+    public function test_user_with_referral_permission_can_refer_task(): void
     {
-        $assignee = $this->userWithPermission('tasks.update');
+        $assignee = $this->userWithPermission('tasks.refer');
         $project = $this->createProject($assignee);
         $newAssignee = User::factory()->create(['status' => 'active']);
         $this->addMember($project, $newAssignee);
