@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Modules\Tasks;
 
+use App\Core\Departments\Models\Department;
 use App\Core\Permissions\Enums\PermissionScope;
 use App\Core\Permissions\Models\Permission;
 use App\Core\Roles\Models\Role;
@@ -115,6 +116,46 @@ class TaskHttpTest extends TestCase
             'task_id' => $task->id,
             'to_user_id' => $newAssignee->id,
             'type' => 'handoff',
+        ]);
+    }
+
+    public function test_user_can_refer_default_department_task_to_any_department_member(): void
+    {
+        $assignee = $this->userWithPermission('tasks.refer');
+        $newAssignee = User::factory()->create(['status' => 'active']);
+
+        $department = Department::query()->create([
+            'name' => 'واحد تست ارجاع',
+            'is_active' => true,
+            'manager_id' => $assignee->id,
+        ]);
+
+        $department->members()->attach($assignee->id);
+        $department->members()->attach($newAssignee->id);
+
+        $project = Project::query()->create([
+            'department_id' => $department->id,
+            'name' => 'پروژه پیش‌فرض تست',
+            'code' => 'DEFAULT-TASK-'.Str::upper(Str::random(8)),
+            'status' => 'active',
+            'manager_id' => $assignee->id,
+            'created_by' => $assignee->id,
+            'is_active' => true,
+            'is_system_default' => true,
+        ]);
+
+        $task = $this->createTask($project, $assignee);
+
+        $this->actingAs($assignee)
+            ->patch(route('tasks.refer', $task), [
+                'assignee_id' => $newAssignee->id,
+                'note' => 'ارجاع به عضو واحد',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('tasks', [
+            'id' => $task->id,
+            'assignee_id' => $newAssignee->id,
         ]);
     }
 
