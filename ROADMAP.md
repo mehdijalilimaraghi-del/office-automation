@@ -675,3 +675,10 @@ Project mutation authorization and task workflow actions now enforce permission 
 
 ### V1 validation correction — Referral permission
 - Any user who has `tasks.refer` and has scoped access to the task can see and use task referral; contextual manager/assignee restrictions are not imposed by the policy.
+
+
+### 2026-10-07 — Task referral permission migration fix
+- برای اطمینان از وجود `tasks.refer` در دیتابیس‌های موجود و دیتابیس تست، migration مستقل ایجاد/به‌روزرسانی این مجوز اضافه شد.
+- مدل دسترسی ارجاع همچنان بر پایه مجوز اختصاصی `tasks.refer` و scope وظیفه باقی می‌ماند.
+
+**Status:** implementation complete; focused TaskHttpTest validation pending.
