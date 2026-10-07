@@ -425,7 +425,7 @@ const pendingActivities = computed(() => props.task.activities?.filter(activity 
                                     <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-50 text-xs font-semibold text-violet-700">{{ index + 1 }}</div>
                                     <div class="min-w-0 flex-1">
                                         <div class="flex flex-wrap items-center justify-between gap-2">
-                                            <p class="font-medium text-gray-900">ارجاع از <span>{{ assignment.from_user?.name ?? 'سیستم' }}</span> به <span>{{ assignment.to_user?.name ?? contact.organization?.name ?? contact.department?.name ?? '—' }}</span></p>
+                                            <p class="font-medium text-gray-900">ارجاع از <span>{{ assignment.from_user?.name ?? 'سیستم' }}</span> به <span>{{ assignment.to_user?.name ?? '—' }}</span></p>
                                             <time class="text-xs text-muted-foreground">{{ formatDateTime(assignment.started_at) }}</time>
                                         </div>
                                         <p class="mt-1 text-xs text-muted-foreground">ثبت‌کننده ارجاع: {{ assignment.assigned_by?.name ?? '—' }}</p>
