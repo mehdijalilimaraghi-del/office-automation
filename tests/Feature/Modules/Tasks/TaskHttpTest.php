@@ -161,7 +161,12 @@ class TaskHttpTest extends TestCase
 
     public function test_task_external_parties_can_save_multiple_contacts(): void
     {
-        $user = $this->userWithPermissions(['tasks.update', 'tasks.view']);
+        $user = $this->userWithPermission('tasks.update');
+        $user->roles()->first()->permissions()->attach(
+            Permission::query()->whereIn('code', ['tasks.update', 'tasks.view'])->get()
+                ->mapWithKeys(fn ($permission) => [$permission->id => ['scope' => 'organization']])
+                ->all()
+        );
         $project = $this->createProject($user);
         $task = $this->createTask($project, $user);
 
