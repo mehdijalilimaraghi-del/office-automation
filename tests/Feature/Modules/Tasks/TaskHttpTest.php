@@ -159,7 +159,7 @@ class TaskHttpTest extends TestCase
         ]);
     }
 
-    public function test_task_external_party_can_be_saved_and_loaded(): void
+    public function test_task_external_parties_can_save_multiple_contacts(): void
     {
         $user = $this->userWithPermission('tasks.update');
         $project = $this->createProject($user);
@@ -174,10 +174,20 @@ class TaskHttpTest extends TestCase
             'name' => 'واحد تست',
             'is_active' => true,
         ]);
-        $contact = \App\Core\ExternalParties\Models\ExternalContact::query()->create([
+        $firstContact = \App\Core\ExternalParties\Models\ExternalContact::query()->create([
             'external_organization_id' => $organization->id,
             'external_department_id' => $department->id,
-            'name' => 'شخص تست',
+            'name' => 'شخص اول',
+            'position' => 'کارشناس',
+            'mobile' => '09120000001',
+            'is_active' => true,
+        ]);
+        $secondContact = \App\Core\ExternalParties\Models\ExternalContact::query()->create([
+            'external_organization_id' => $organization->id,
+            'external_department_id' => $department->id,
+            'name' => 'شخص دوم',
+            'position' => 'مدیر',
+            'mobile' => '09120000002',
             'is_active' => true,
         ]);
 
@@ -185,7 +195,7 @@ class TaskHttpTest extends TestCase
             ->put(route('tasks.external-parties.update', $task), [
                 'external_organization_id' => $organization->id,
                 'external_department_id' => $department->id,
-                'external_contact_id' => $contact->id,
+                'external_contact_ids' => [$firstContact->id, $secondContact->id],
             ])
             ->assertRedirect();
 
@@ -193,8 +203,23 @@ class TaskHttpTest extends TestCase
             'id' => $task->id,
             'external_organization_id' => $organization->id,
             'external_department_id' => $department->id,
-            'external_contact_id' => $contact->id,
         ]);
+        $this->assertDatabaseHas('task_external_contacts', [
+            'task_id' => $task->id,
+            'external_contact_id' => $firstContact->id,
+        ]);
+        $this->assertDatabaseHas('task_external_contacts', [
+            'task_id' => $task->id,
+            'external_contact_id' => $secondContact->id,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('tasks.show', $task));
+
+        $response->assertInertia(
+            fn ($page) => $page
+                ->component('Tasks/Show')
+                ->has('task.external_contacts', 2)
+        );
     }
 
     public function test_project_scope_filters_task_index_at_http_layer(): void
