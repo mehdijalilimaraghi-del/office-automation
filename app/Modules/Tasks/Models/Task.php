@@ -83,6 +83,7 @@ class Task extends Model
     public function assignee(): BelongsTo { return $this->belongsTo(User::class, 'assignee_id'); }
     public function reviewedBy(): BelongsTo { return $this->belongsTo(User::class, 'reviewed_by'); }
     public function assignments(): HasMany { return $this->hasMany(TaskAssignment::class); }
+    public function participants(): HasMany { return $this->hasMany(TaskParticipant::class); }
     public function comments(): HasMany { return $this->hasMany(TaskComment::class); }
     public function workLogs(): HasMany { return $this->hasMany(TaskWorkLog::class); }
     public function reminders(): HasMany { return $this->hasMany(TaskReminder::class); }
