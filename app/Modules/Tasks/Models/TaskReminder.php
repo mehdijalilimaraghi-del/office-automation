@@ -14,7 +14,7 @@ class TaskReminder extends Model
 
     protected function casts(): array
     {
-        return ['remind_at' => 'datetime', 'completed_at' => 'datetime'];
+        return ['remind_at' => 'datetime:Y-m-d H:i:s', 'completed_at' => 'datetime'];
     }
 
     public function task(): BelongsTo { return $this->belongsTo(Task::class); }
