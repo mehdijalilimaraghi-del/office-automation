@@ -632,3 +632,9 @@ Project mutation authorization and task workflow actions now enforce permission 
 ### UI terminology and task page normalization — 2026-10-06
 - V1 UI terminology for `Task/Tasks` is standardized to Persian **وظیفه/وظایف** in the task list/create experience.
 - The Tasks page was redesigned so the **وظایف** list is the primary content; creation is opened through **ایجاد وظیفه** in a modal instead of occupying the top of the page.
+
+
+## V1 — Task Detail UX Refinement (2026-10-07)
+- صفحه جزئیات وظیفه به workspace عملیاتی بازطراحی شد؛ ایجاد/ثبت فعالیت، نظر و یادآوری به اقدام‌های سریع منتقل شدند و ویرایش/ارجاع در بالای صفحه قرار گرفتند.
+- «افراد درگیر» به‌عنوان رابطه چندنفره مستقل برای وظیفه اضافه شد.
+- اطلاعات پروژه، پیوست‌ها و پیگیری خارجی در ستون کناری و گزارش فعالیت، خط زمانی، نظرات و یادآوری‌ها در بخش اصلی سازمان‌دهی شدند.
