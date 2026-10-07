@@ -144,16 +144,16 @@ watch(() => props.modelValue, (value) => {
                         />
                     </div>
 
-                    <div class="grid gap-3 sm:grid-cols-2">
-                        <div>
+                    <div class="grid gap-3 sm:grid-cols-2" dir="ltr">
+                        <div dir="rtl">
                             <label class="mb-2 block text-sm font-medium text-gray-700">۲. ساعت</label>
-                            <select v-model="draftHour" :disabled="!draftDate" class="h-11 w-full rounded-lg border bg-background px-3 text-sm disabled:cursor-not-allowed disabled:bg-gray-100">
+                            <select v-model="draftHour" :disabled="!draftDate" class="h-11 w-full rounded-lg border bg-background px-3 text-right text-sm disabled:cursor-not-allowed disabled:bg-gray-100">
                                 <option v-for="hour in hours" :key="hour" :value="hour">{{ hour }}</option>
                             </select>
                         </div>
-                        <div>
+                        <div dir="rtl">
                             <label class="mb-2 block text-sm font-medium text-gray-700">۳. دقیقه</label>
-                            <select v-model="draftMinute" :disabled="!draftDate" class="h-11 w-full rounded-lg border bg-background px-3 text-sm disabled:cursor-not-allowed disabled:bg-gray-100">
+                            <select v-model="draftMinute" :disabled="!draftDate" class="h-11 w-full rounded-lg border bg-background px-3 text-right text-sm disabled:cursor-not-allowed disabled:bg-gray-100">
                                 <option v-for="minute in minutes" :key="minute" :value="minute">{{ minute }}</option>
                             </select>
                         </div>
