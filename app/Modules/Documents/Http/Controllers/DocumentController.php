@@ -41,6 +41,29 @@ class DocumentController extends Controller
         return redirect()->route('tasks.show', $task)->with('success', 'فایل با موفقیت به تسک پیوست شد.');
     }
 
+    public function storeForProject(StoreTaskDocumentRequest $request, \App\Modules\Projects\Models\Project $project): RedirectResponse
+    {
+        $user = $request->user();
+        $isProjectOwner = (int) $project->manager_id === (int) $user->id
+            || (int) $project->created_by === (int) $user->id;
+        $hasOrganizationScope = in_array(PermissionScope::Organization->value, $user->permissionScopes('projects.update'), true)
+            || in_array(PermissionScope::Organization->value, $user->permissionScopes('projects.create'), true);
+
+        abort_unless($isProjectOwner || $hasOrganizationScope, 403);
+        Gate::authorize('create', Document::class);
+
+        $this->documents->create(
+            data: $request->validated(),
+            file: $request->file('file'),
+            creator: $user,
+            linkable: $project,
+            purpose: 'project_reference',
+        );
+
+        return redirect()->route('projects.show', $project)
+            ->with('success', 'مدرک عمومی پروژه با موفقیت پیوست شد.');
+    }
+
     public function storeForSection(StoreTaskDocumentRequest $request, ProjectSection $section): RedirectResponse
     {
         $section->load(['project', 'department']);
