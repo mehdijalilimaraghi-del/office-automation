@@ -86,6 +86,7 @@ class ProjectService implements ProjectServiceContract
             'tasks.creator',
             'sections.department.manager',
             'sections.department.members',
+            'sections.documents.document.latestVersion',
             'sections.tasks.assignee',
             'sections.tasks.creator',
         ]);
