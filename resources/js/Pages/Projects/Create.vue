@@ -20,6 +20,7 @@ interface SectionForm {
     department_id: string;
     description: string;
     manager_can_create_tasks: boolean;
+    documents: File[];
 }
 
 const props = defineProps<{
@@ -46,11 +47,22 @@ const form = useForm({
     manager_id: '',
     is_active: true,
     custom_fields: {} as Record<string, string | number | boolean | null>,
+    project_documents: [] as File[],
     sections: [] as SectionForm[],
 });
 
 function addSection(): void {
-    form.sections.push({ name: '', department_id: '', description: '', manager_can_create_tasks: true });
+    form.sections.push({ name: '', department_id: '', description: '', manager_can_create_tasks: true, documents: [] });
+}
+
+function updateProjectDocuments(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    form.project_documents = Array.from(input.files ?? []);
+}
+
+function updateSectionDocuments(index: number, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    form.sections[index].documents = Array.from(input.files ?? []);
 }
 
 function removeSection(index: number): void {
@@ -281,6 +293,16 @@ function submit(): void {
                     </p>
                 </div>
 
+                <section class="space-y-3 rounded-xl border border-border p-4 sm:p-5">
+                    <div>
+                        <h3 class="font-semibold">مدارک عمومی پروژه</h3>
+                        <p class="mt-1 text-sm text-muted-foreground">فایل‌هایی که برای همه واحدهای درگیر در پروژه کاربرد دارند.</p>
+                    </div>
+                    <input type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" class="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm" @change="updateProjectDocuments" />
+                    <p v-if="form.project_documents.length" class="text-xs text-muted-foreground">{{ form.project_documents.length }} فایل برای پیوست انتخاب شده است.</p>
+                    <p v-if="form.errors.project_documents" class="text-xs text-destructive">{{ form.errors.project_documents }}</p>
+                </section>
+
                 <section class="space-y-4 rounded-xl border border-border p-4 sm:p-5">
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <div>
@@ -319,6 +341,12 @@ function submit(): void {
                         <div class="space-y-2">
                             <label :for="'section-description-' + index" class="text-sm font-medium">توضیحات و اطلاعات دریافتی برای واحد</label>
                             <textarea :id="'section-description-' + index" v-model="section.description" rows="3" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="شرح محدوده کار، خروجی مورد انتظار و نکات اجرایی" />
+                        </div>
+                        <div class="space-y-2">
+                            <label :for="'section-documents-' + index" class="text-sm font-medium">مدارک اختصاصی این واحد</label>
+                            <input :id="'section-documents-' + index" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" class="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm" @change="updateSectionDocuments(index, $event)" />
+                            <p v-if="section.documents.length" class="text-xs text-muted-foreground">{{ section.documents.length }} فایل انتخاب شده است.</p>
+                            <p v-if="form.errors['sections.' + index + '.documents']" class="text-xs text-destructive">{{ form.errors['sections.' + index + '.documents'] }}</p>
                         </div>
                         <label class="flex items-start gap-3 rounded-lg border bg-background p-3">
                             <input v-model="section.manager_can_create_tasks" type="checkbox" class="mt-1 h-4 w-4 rounded border-input" />
