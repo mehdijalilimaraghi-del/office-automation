@@ -173,19 +173,42 @@ function submit(): void {
                             >
                                 مدیر پروژه <span class="text-destructive">*</span>
                             </label>
-                            <button
-                                type="button"
-                                class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-muted-foreground/40 text-xs font-semibold text-muted-foreground transition hover:border-primary hover:text-primary"
-                                aria-label="راهنمای انتخاب مدیر پروژه"
-                                :aria-expanded="showManagerHelp"
-                                @click="showManagerHelp = !showManagerHelp"
-                            >
-                                ?
-                            </button>
+                            <div class="relative">
+                                <button
+                                    type="button"
+                                    class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-primary/30 bg-primary/5 text-xs font-bold text-primary transition hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                    aria-label="راهنمای انتخاب مدیر پروژه"
+                                    :aria-expanded="showManagerHelp"
+                                    aria-controls="manager-help-popover"
+                                    @click="showManagerHelp = !showManagerHelp"
+                                >
+                                    ?
+                                </button>
+                                <div
+                                    v-if="showManagerHelp"
+                                    id="manager-help-popover"
+                                    role="dialog"
+                                    aria-label="راهنمای مدیر پروژه"
+                                    class="absolute right-0 top-7 z-50 w-72 rounded-xl border border-border bg-popover p-4 text-popover-foreground shadow-xl ring-1 ring-black/5"
+                                >
+                                    <div class="mb-2 flex items-center justify-between gap-3">
+                                        <h4 class="text-sm font-semibold">راهنمای انتخاب مدیر پروژه</h4>
+                                        <button
+                                            type="button"
+                                            class="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                                            aria-label="بستن راهنما"
+                                            @click="showManagerHelp = false"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                    <p class="text-xs leading-6 text-muted-foreground">
+                                        برای نمایش کاربر در این فهرست، ابتدا باید او را عضو واحد «مدیریت پروژه» کنید.
+                                    </p>
+                                    <div class="absolute -top-1.5 right-2 h-3 w-3 rotate-45 border-l border-t border-border bg-popover"></div>
+                                </div>
+                            </div>
                         </div>
-                        <p v-if="showManagerHelp" class="mb-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs leading-6 text-muted-foreground">
-                            برای اضافه کردن کاربر به این لیست، آن کاربر باید عضو واحد مدیریت پروژه باشد.
-                        </p>
 
                         <select
                             id="manager_id"
