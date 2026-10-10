@@ -27,6 +27,7 @@ use App\Modules\Tasks\Models\TaskWorkLog;
 use App\Modules\Tasks\Services\TaskFormOptionsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -291,14 +292,28 @@ class TaskController extends Controller
         Gate::authorize('update', $task);
         abort_unless((int) $activity->task_id === (int) $task->id, 404);
 
-        $activity->update([
-            'status' => 'completed',
-            'activity_type' => 'logged',
-            'completed_by' => $request->user()->id,
-            'completed_at' => now(),
-        ]);
+        abort_unless($activity->activity_type === 'planned' && $activity->status === 'pending', 422);
 
-        return back()->with('success', 'فعالیت انجام شد.');
+        DB::transaction(function () use ($activity, $task, $request): void {
+            $completedAt = now();
+
+            $task->workLogs()->create([
+                'user_id' => $request->user()->id,
+                'title' => $activity->title,
+                'description' => $activity->description,
+                'completed_at' => $completedAt,
+            ]);
+
+            $activity->update([
+                'status' => 'completed',
+                'completed_by' => $request->user()->id,
+                'completed_at' => $completedAt,
+            ]);
+
+            $activity->delete();
+        });
+
+        return back()->with('success', 'فعالیت انجام شد و به گزارش فعالیت منتقل شد.');
     }
 
     public function updateActivity(Request $request, Task $task, TaskActivity $activity): RedirectResponse
