@@ -438,7 +438,7 @@ Implementation has started for the agreed cross-department project model:
 - Project creation accepts multiple sections.
 - Section tasks are created with the department manager as the initial assignee; an optional direct referral to an active member of that department records both assignment-history steps.
 - Project detail UI groups tasks by section and supports section-specific document uploads.
-- Department creation no longer creates a separate default project.
+- Department creation ensures a section in the shared default project instead of creating a separate project.
 - A migration consolidates existing department-default projects into one shared default project, creates a section per legacy department project, and preserves legacy project rows as inactive for historical references.
 
 **Validation status:** not yet run in a local Laravel environment. Migration, backend authorization, tests, and frontend build must be validated before this work is considered complete. Existing per-department default projects are hidden from ordinary project selection; the shared default project is created by `db:seed` on fresh installs.
