@@ -45,7 +45,12 @@ class ProjectService implements ProjectServiceContract
                 $departmentIds = $user->departments()->pluck('departments.id');
 
                 if ($departmentIds->isNotEmpty()) {
-                    $scopeQuery->orWhereIn('projects.department_id', $departmentIds);
+                    $scopeQuery->orWhereIn('projects.department_id', $departmentIds)
+                        ->orWhere(function ($sharedProjectQuery) use ($user): void {
+                            $sharedProjectQuery->where('projects.is_system_default', true)
+                                ->whereNull('projects.department_id')
+                                ->whereHas('sections.department.members', fn ($memberQuery) => $memberQuery->where('users.id', $user->id));
+                        });
                 }
             }
 
@@ -60,6 +65,12 @@ class ProjectService implements ProjectServiceContract
                 if ($departmentIds !== []) {
                     $scopeQuery->orWhereIn('projects.department_id', array_values(array_unique($departmentIds)));
                 }
+
+                $scopeQuery->orWhere(function ($sharedProjectQuery) use ($user): void {
+                    $sharedProjectQuery->where('projects.is_system_default', true)
+                        ->whereNull('projects.department_id')
+                        ->whereHas('sections.department.members', fn ($memberQuery) => $memberQuery->where('users.id', $user->id));
+                });
             }
 
             if (in_array(PermissionScope::Project->value, $scopes, true)) {
