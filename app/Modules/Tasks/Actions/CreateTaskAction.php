@@ -60,7 +60,7 @@ class CreateTaskAction
 
             if ($section !== null) {
                 $department = $section->department;
-                if ($department === null || $department->manager === null || ! $department->manager->isActive()) {
+                if ($department === null || ! $department->is_active || $department->manager === null || ! $department->manager->isActive()) {
                     throw new InvalidArgumentException('برای واحد این بخش، مدیر فعال تعریف نشده است.');
                 }
 
