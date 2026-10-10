@@ -98,6 +98,7 @@ class ProjectService implements ProjectServiceContract
             'roles',
             'members.user',
             'members.projectRole',
+            'documents.document.latestVersion',
             'tasks.assignee',
             'tasks.creator',
             'sections.department.manager',
