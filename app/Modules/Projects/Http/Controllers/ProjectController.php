@@ -116,7 +116,10 @@ class ProjectController extends Controller
                 ? $this->projectMemberService->availableUsers($project)
                 : [],
             'canUploadProjectDocuments' => $canUploadProjectDocuments,
-            'canUploadSectionDocuments' => $canUploadSectionDocuments,
+            'managerDocumentSectionIds' => Gate::allows('create', Document::class)
+                ? $project->sections()->whereHas('department', fn ($query) => $query->where('manager_id', $user->id))
+                    ->pluck('id')->map(fn ($id): int => (int) $id)->values()->all()
+                : [],
             'canCreateTasks' => Gate::allows('create', [Task::class, (int) $project->id]),
             'managerCreatableSectionIds' => $request->user()->hasPermission('tasks.create')
                 ? $project->sections()
