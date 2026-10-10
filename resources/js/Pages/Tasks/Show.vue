@@ -420,7 +420,7 @@ const openActivityForm = (activity?: TaskActivity): void => {
     editingActivityId.value = activity?.id ?? null;
     activityForm.title = activity?.title ?? '';
     activityForm.description = activity?.description ?? '';
-    activityForm.activity_type = 'planned';
+    activityForm.activity_type = activity?.activity_type ?? 'planned';
     activityForm.clearErrors();
     showActivityModal.value = true;
 };
@@ -452,7 +452,7 @@ const deleteActivity = (activityId: number): void => {
 };
 const phoneLabel = (user: User): string | null => user.mobile || user.phone || null;
 const pendingActivities = computed(() => props.task.activities?.filter(activity => activity.activity_type === 'planned' && activity.status === 'pending') ?? []);
-const completedActivities = computed(() => props.task.activities?.filter(activity => activity.activity_type === 'planned' && activity.status === 'completed') ?? []);
+const loggedActivities = computed(() => props.task.activities?.filter(activity => activity.activity_type === 'logged') ?? []);
 </script>
 
 <template>
@@ -482,22 +482,13 @@ const completedActivities = computed(() => props.task.activities?.filter(activit
             <div class="grid gap-6 pt-2 lg:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.75fr)]">
                 <main class="min-w-0 space-y-6">
                     <section class="overflow-hidden rounded-xl border bg-card shadow-sm">
-                        <div class="flex items-center justify-between gap-3 border-b bg-blue-50/60 px-5 py-4 sm:px-6"><div><h3 class="font-semibold">فعالیت‌های بعدی</h3><p class="mt-1 text-sm text-muted-foreground">فعالیت‌های برنامه‌ریزی‌شده و سوابق انجام آن‌ها.</p></div><button v-if="abilities.update" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="openActivityForm()">+ ثبت فعالیت بعدی</button></div>
-                        <div v-if="pendingActivities.length === 0 && completedActivities.length === 0" class="p-6 text-center text-sm text-muted-foreground">هنوز فعالیتی ثبت نشده است.</div>
+                        <div class="flex items-center justify-between gap-3 border-b bg-blue-50/60 px-5 py-4 sm:px-6"><div><h3 class="font-semibold">فعالیت‌های بعدی</h3><p class="mt-1 text-sm text-muted-foreground">فقط کارهایی که هنوز باید انجام شوند.</p></div><button v-if="abilities.update" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="openActivityForm()">+ ثبت فعالیت بعدی</button></div>
+                        <div v-if="pendingActivities.length === 0" class="p-6 text-center text-sm text-muted-foreground">هنوز فعالیتی ثبت نشده است.</div>
                         <div v-if="pendingActivities.length" class="divide-y">
                             <article v-for="activity in pendingActivities" :key="activity.id" class="flex flex-wrap items-start justify-between gap-4 p-5">
                                 <div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><span class="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">در انتظار انجام</span><h4 class="font-medium text-gray-900">{{ activity.title }}</h4></div><p v-if="activity.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ activity.description }}</p></div>
                                 <div v-if="abilities.update" class="flex shrink-0 flex-wrap gap-2"><button type="button" class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700" @click="completeActivity(activity.id)">انجام شد</button><button type="button" class="rounded-lg border px-3 py-2 text-sm" @click="openActivityForm(activity)">ویرایش</button><button type="button" class="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600" @click="deleteActivity(activity.id)">حذف</button></div>
                             </article>
-                        </div>
-                        <div v-if="completedActivities.length" class="border-t">
-                            <div class="bg-emerald-50/60 px-5 py-3 text-sm font-semibold text-emerald-800">فعالیت‌های انجام‌شده</div>
-                            <div class="divide-y">
-                                <article v-for="activity in completedActivities" :key="activity.id" class="flex flex-wrap items-start justify-between gap-4 p-5">
-                                    <div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">انجام شد</span><h4 class="font-medium text-gray-900">{{ activity.title }}</h4></div><p v-if="activity.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ activity.description }}</p><p v-if="activity.completed_at" class="mt-2 text-xs text-muted-foreground">زمان انجام: {{ formatDateTime(activity.completed_at) }}</p></div>
-                                    <div v-if="abilities.update" class="flex shrink-0 gap-2"><button type="button" class="rounded-lg border px-3 py-2 text-sm" @click="openActivityForm(activity)">ویرایش</button><button type="button" class="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600" @click="deleteActivity(activity.id)">حذف</button></div>
-                                </article>
-                            </div>
                         </div>
                     </section>
 
@@ -505,10 +496,16 @@ const completedActivities = computed(() => props.task.activities?.filter(activit
                         <div class="border-b bg-gray-50/70 px-5 py-4 sm:px-6">
                             <div class="flex items-center justify-between gap-3"><div><h3 class="font-semibold">گزارش فعالیت</h3><p class="mt-1 text-sm text-muted-foreground">اقداماتی که روی وظیفه انجام شده است.</p></div><div class="flex shrink-0 items-center gap-3"><span class="text-xs text-muted-foreground">{{ timeline.filter(i => i.type === 'work_log').length }} فعالیت</span><button v-if="abilities.log_work" type="button" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showWorkLogModal = true">+ ثبت فعالیت</button></div></div>
                         </div>
-                        <div v-if="timeline.filter(i => i.type === 'work_log').length === 0" class="p-8 text-center text-sm text-muted-foreground">هنوز گزارشی ثبت نشده است.</div>
-                        <div v-else class="divide-y">
+                        <div v-if="timeline.filter(i => i.type === 'work_log').length === 0 && loggedActivities.length === 0" class="p-8 text-center text-sm text-muted-foreground">هنوز گزارشی ثبت نشده است.</div>
+                        <div v-if="timeline.filter(i => i.type === 'work_log').length" class="divide-y">
                             <article v-for="(item, index) in timeline.filter(i => i.type === 'work_log')" :key="'work-'+index" class="p-5 sm:p-6">
                                 <div class="flex gap-3"><div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-xs font-semibold text-emerald-700">{{ index + 1 }}</div><div class="min-w-0 flex-1"><div class="flex justify-between gap-3"><h4 class="font-medium">{{ item.title }}</h4><time class="text-xs text-muted-foreground">{{ formatDateTime(item.occurred_at) }}</time></div><p v-if="item.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ item.description }}</p><p v-if="item.user" class="mt-2 text-xs text-muted-foreground">ثبت توسط {{ item.user.name }}</p></div></div>
+                            </article>
+                        </div>
+                        <div v-if="loggedActivities.length" class="divide-y border-t">
+                            <article v-for="activity in loggedActivities" :key="'activity-'+activity.id" class="flex flex-wrap items-start justify-between gap-4 p-5 sm:p-6">
+                                <div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">انجام‌شده</span><h4 class="font-medium text-gray-900">{{ activity.title }}</h4></div><p v-if="activity.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ activity.description }}</p><p v-if="activity.completed_at" class="mt-2 text-xs text-muted-foreground">زمان انجام: {{ formatDateTime(activity.completed_at) }}</p><p v-if="activity.completedBy" class="mt-1 text-xs text-muted-foreground">انجام توسط {{ activity.completedBy.name }}</p></div>
+                                <div v-if="abilities.update" class="flex shrink-0 gap-2"><button type="button" class="rounded-lg border px-3 py-2 text-sm" @click="openActivityForm(activity)">ویرایش</button><button type="button" class="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600" @click="deleteActivity(activity.id)">حذف</button></div>
                             </article>
                         </div>
                     </section>
