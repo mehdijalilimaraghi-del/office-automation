@@ -96,7 +96,7 @@ Expected concepts include:
 - Project membership
 - Project lifecycle
 - Optional department association
-- Department-owned system default project lifecycle
+- One shared organization-level default project with department-owned project sections
 
 Projects must expose stable application-level contracts when other modules need project information.
 
