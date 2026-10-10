@@ -136,8 +136,6 @@ Route::middleware('auth')->group(function () {
     Route::put('/tasks/{task}/comments/{comment}', [TaskController::class, 'updateComment'])->middleware('permission:tasks.update')->name('tasks.comments.update');
     Route::delete('/tasks/{task}/comments/{comment}', [TaskController::class, 'destroyComment'])->middleware('permission:tasks.update')->name('tasks.comments.destroy');
     Route::post('/tasks/{task}/work-logs', [TaskController::class, 'workLog'])->middleware('permission:tasks.log_work')->name('tasks.work-logs.store');
-    Route::put('/tasks/{task}/work-logs/{workLog}', [TaskController::class, 'updateWorkLog'])->middleware('permission:tasks.update')->name('tasks.work-logs.update');
-    Route::delete('/tasks/{task}/work-logs/{workLog}', [TaskController::class, 'destroyWorkLog'])->middleware('permission:tasks.update')->name('tasks.work-logs.destroy');
     Route::post('/tasks/{task}/reminders', [TaskController::class, 'reminder'])->middleware('permission:tasks.create_reminder')->name('tasks.reminders.store');
     Route::put('/tasks/{task}/reminders/{reminder}', [TaskController::class, 'updateReminder'])->middleware('permission:tasks.update')->name('tasks.reminders.update');
     Route::delete('/tasks/{task}/reminders/{reminder}', [TaskController::class, 'destroyReminder'])->middleware('permission:tasks.update')->name('tasks.reminders.destroy');
