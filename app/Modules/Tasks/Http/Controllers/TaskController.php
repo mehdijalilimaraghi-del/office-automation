@@ -299,6 +299,34 @@ class TaskController extends Controller
         return back()->with('success', 'فعالیت انجام شد.');
     }
 
+    public function updateActivity(Request $request, Task $task, TaskActivity $activity): RedirectResponse
+    {
+        Gate::authorize('update', $task);
+        abort_unless((int) $activity->task_id === (int) $task->id, 404);
+
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:10000'],
+        ]);
+
+        $activity->update([
+            'title' => trim($data['title']),
+            'description' => $data['description'] ?? null,
+        ]);
+
+        return back()->with('success', 'فعالیت با موفقیت ویرایش شد.');
+    }
+
+    public function destroyActivity(Request $request, Task $task, TaskActivity $activity): RedirectResponse
+    {
+        Gate::authorize('update', $task);
+        abort_unless((int) $activity->task_id === (int) $task->id, 404);
+
+        $activity->delete();
+
+        return back()->with('success', 'فعالیت با موفقیت حذف شد.');
+    }
+
     public function updateParticipants(UpdateTaskParticipantsRequest $request, Task $task): RedirectResponse
     {
         Gate::authorize('update', $task);
