@@ -91,7 +91,6 @@ class Task extends Model
     public function activities(): HasMany { return $this->hasMany(TaskActivity::class)->orderBy('sequence')->orderBy('id'); }
     public function nextActivity(): HasMany { return $this->hasMany(TaskActivity::class)->where('status', 'pending')->where('activity_type', 'planned')->orderBy('sequence')->orderBy('id')->limit(1); }
     public function comments(): HasMany { return $this->hasMany(TaskComment::class); }
-    public function workLogs(): HasMany { return $this->hasMany(TaskWorkLog::class); }
     public function reminders(): HasMany { return $this->hasMany(TaskReminder::class); }
     public function statusHistory(): HasMany { return $this->hasMany(TaskStatusHistory::class); }
     public function documents(): MorphMany { return $this->morphMany(DocumentLink::class, 'linkable'); }
