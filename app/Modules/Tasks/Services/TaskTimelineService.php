@@ -67,7 +67,7 @@ class TaskTimelineService
                 'title' => $item->title,
                 'description' => $item->description,
                 'occurred_at' => $item->completed_at ?? $item->created_at,
-                'user' => $item->completedBy ?? $item->creator,
+                'user' => $item->completedBy,
                 'meta' => [
                     'started_at' => $item->started_at,
                     'completed_at' => $item->completed_at,
