@@ -9,6 +9,7 @@ use App\Core\ExternalParties\Models\ExternalOrganization;
 use App\Core\ExternalParties\Models\ExternalDepartment;
 use App\Core\ExternalParties\Models\ExternalContact;
 use App\Modules\Projects\Models\Project;
+use App\Modules\Projects\Models\ProjectSection;
 use App\Modules\Documents\Models\DocumentLink;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -39,6 +40,7 @@ class Task extends Model
 
     protected $fillable = [
         'project_id',
+        'section_id',
         'department_id',
         'external_organization_id',
         'external_department_id',
@@ -76,6 +78,7 @@ class Task extends Model
 
     public function department(): BelongsTo { return $this->belongsTo(Department::class, 'department_id'); }
     public function project(): BelongsTo { return $this->belongsTo(Project::class, 'project_id'); }
+    public function section(): BelongsTo { return $this->belongsTo(ProjectSection::class, 'section_id'); }
     public function externalOrganization(): BelongsTo { return $this->belongsTo(ExternalOrganization::class, 'external_organization_id'); }
     public function externalDepartment(): BelongsTo { return $this->belongsTo(ExternalDepartment::class, 'external_department_id'); }
     public function externalContacts(): BelongsToMany
