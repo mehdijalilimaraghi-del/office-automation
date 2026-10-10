@@ -381,20 +381,40 @@ function submit(): void {
 
                     <div v-for="(section, index) in form.sections" :key="index" class="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
                         <div class="flex items-center gap-3 bg-muted/40 px-4 py-3 sm:px-5">
+                            <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border bg-background text-sm font-semibold text-foreground">{{ index + 1 }}</span>
+                            <div class="min-w-0 flex-1">
+                                <p class="truncate text-sm font-semibold">{{ section.name.trim() || ('بخش ' + (index + 1)) }}</p>
+                                <p class="mt-0.5 truncate text-xs text-muted-foreground">{{ props.departments.find((department) => String(department.id) === section.department_id)?.name || 'واحد انجام‌دهنده انتخاب نشده' }}</p>
+                            </div>
                             <button
                                 type="button"
-                                class="flex min-w-0 flex-1 items-center gap-3 text-right"
+                                class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                                 :aria-expanded="expandedSectionIndex === index"
+                                :aria-label="expandedSectionIndex === index ? 'جمع کردن بخش' : 'باز کردن بخش'"
+                                :title="expandedSectionIndex === index ? 'جمع کردن بخش' : 'باز کردن بخش'"
                                 @click="toggleSection(index)"
                             >
-                                <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border bg-background text-sm font-semibold text-foreground">{{ index + 1 }}</span>
-                                <span class="min-w-0 flex-1">
-                                    <span class="block truncate text-sm font-semibold">{{ section.name.trim() || ('بخش ' + (index + 1)) }}</span>
-                                    <span class="mt-0.5 block truncate text-xs text-muted-foreground">{{ props.departments.find((department) => String(department.id) === section.department_id)?.name || 'واحد انجام‌دهنده انتخاب نشده' }}</span>
-                                </span>
-                                <span class="shrink-0 text-muted-foreground transition-transform" :class="expandedSectionIndex === index ? 'rotate-180' : ''">⌄</span>
+                                <svg v-if="expandedSectionIndex === index" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+                                    <path d="m18 15-6-6-6 6" />
+                                </svg>
+                                <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+                                    <path d="m6 9 6 6 6-6" />
+                                </svg>
                             </button>
-                            <Button type="button" variant="outline" size="sm" class="shrink-0" @click="removeSection(index)">حذف بخش</Button>
+                            <button
+                                type="button"
+                                class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-destructive/30 bg-background text-destructive transition hover:bg-destructive/10 focus:outline-none focus:ring-2 focus:ring-destructive/30"
+                                aria-label="حذف بخش"
+                                title="حذف بخش"
+                                @click="removeSection(index)"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+                                    <path d="M3 6h18" />
+                                    <path d="M8 6V4h8v2" />
+                                    <path d="m19 6-1 14H6L5 6" />
+                                    <path d="M10 11v5M14 11v5" />
+                                </svg>
+                            </button>
                         </div>
                         <div v-if="expandedSectionIndex === index" class="space-y-4 border-t p-4 sm:p-5">
                             <div class="grid gap-4 md:grid-cols-2">
