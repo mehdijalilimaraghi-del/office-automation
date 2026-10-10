@@ -345,3 +345,11 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - در بخش «گزارش فعالیت» صفحه جزئیات وظیفه، دکمه «ثبت فعالیت» اضافه شد و در صورت داشتن Ability مربوط به ثبت گزارش فعالیت، پنجره ثبت فعالیت را باز می‌کند.
 
 **Status:** implementation complete; focused TaskHttpTest validation pending.
+
+
+### 2026-10-10 — Task activity lifecycle and edit/delete
+- فعالیت‌های برنامه‌ریزی‌شده پس از فشردن «انجام شد» در همان بخش و زیر عنوان «فعالیت‌های انجام‌شده» باقی می‌مانند؛ زمان تکمیل نیز نمایش داده می‌شود.
+- برای هر فعالیت برنامه‌ریزی‌شده، چه در انتظار انجام و چه تکمیل‌شده، دکمه‌های ویرایش و حذف اضافه شد.
+- Route و عملیات backend برای ویرایش/حذف فعالیت با بررسی تعلق رکورد به وظیفه و مجوز ویرایش وظیفه اضافه شدند.
+
+**Status:** implementation complete; TaskHttpTest and frontend build validation pending.
