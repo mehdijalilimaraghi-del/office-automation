@@ -3,6 +3,7 @@
 namespace App\Modules\Projects\Actions;
 
 use App\Models\User;
+use App\Core\Departments\Models\Department;
 use App\Core\CustomFields\Services\CustomFieldService;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectMember;
@@ -66,9 +67,19 @@ class CreateProjectAction
                 $this->customFieldService->sync($project, $data['custom_fields'] ?? []);
 
                 foreach (array_values($data['sections'] ?? []) as $index => $sectionData) {
+                    $department = Department::query()
+                        ->with('manager')
+                        ->whereKey($sectionData['department_id'])
+                        ->where('is_active', true)
+                        ->first();
+
+                    if ($department === null || $department->manager === null || ! $department->manager->isActive()) {
+                        throw new InvalidArgumentException('واحد مسئول هر بخش باید فعال و دارای مدیر فعال باشد.');
+                    }
+
                     ProjectSection::query()->create([
                         'project_id' => $project->id,
-                        'department_id' => $sectionData['department_id'],
+                        'department_id' => $department->id,
                         'name' => $sectionData['name'],
                         'description' => $sectionData['description'] ?? null,
                         'manager_can_create_tasks' => (bool) ($sectionData['manager_can_create_tasks'] ?? true),
