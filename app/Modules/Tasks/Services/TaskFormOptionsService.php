@@ -38,7 +38,7 @@ class TaskFormOptionsService
             ->where(function ($visibleProjects): void {
                 $visibleProjects->where('projects.is_system_default', false)->orWhereNull('projects.department_id');
             })
-            ->with(['users:id', 'department.members:id']);
+            ->with(['users:id', 'department.members:id', 'sections:id,project_id,name,department_id']);
 
         if (in_array(PermissionScope::Organization->value, $taskCreateScopes, true)) {
             // Organization scope grants access to every active project.
@@ -84,7 +84,12 @@ class TaskFormOptionsService
             ->map(fn (Project $project): array => [
                 'id' => (int) $project->id,
                 'name' => $project->name,
-                'member_ids' => $project->is_system_default
+                'sections' => $project->sections->map(fn ($section): array => [
+                    'id' => (int) $section->id,
+                    'name' => $section->name,
+                    'department_id' => $section->department_id !== null ? (int) $section->department_id : null,
+                ])->values()->all(),
+                'member_ids' => $project->is_system_default && $project->department_id !== null
                     ? $project->department?->members
                         ->pluck('id')
                         ->map(fn ($id): int => (int) $id)
