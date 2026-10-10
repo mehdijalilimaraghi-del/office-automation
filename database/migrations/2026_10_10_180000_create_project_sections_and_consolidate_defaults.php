@@ -37,6 +37,46 @@ return new class extends Migration
             ->get();
 
         if ($defaults->isEmpty()) {
+            $departments = DB::table('departments')->orderBy('id')->get();
+            if ($departments->isEmpty()) {
+                return;
+            }
+
+            $code = 'PRJ-GENERAL';
+            while (DB::table('projects')->where('code', $code)->exists()) {
+                $code .= '-SHARED';
+            }
+
+            $sharedId = (int) DB::table('projects')->insertGetId([
+                'department_id' => null,
+                'name' => 'پروژه عمومی سازمان',
+                'code' => $code,
+                'description' => 'پروژه عمومی مشترک سازمان برای کارهای بین‌واحدی',
+                'status' => 'active',
+                'start_date' => null,
+                'end_date' => null,
+                'manager_id' => null,
+                'created_by' => null,
+                'is_active' => true,
+                'is_system_default' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            foreach ($departments as $index => $department) {
+                DB::table('project_sections')->insert([
+                    'project_id' => $sharedId,
+                    'department_id' => $department->id,
+                    'legacy_project_id' => null,
+                    'name' => $department->name,
+                    'description' => 'بخش عمومی فعالیت‌های واحد '.$department->name,
+                    'manager_can_create_tasks' => true,
+                    'sort_order' => $index,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
             return;
         }
 
@@ -119,6 +159,31 @@ return new class extends Migration
                     'updated_at' => now(),
                 ]);
             }
+        }
+
+        $sortOrder = (int) DB::table('project_sections')->where('project_id', $sharedId)->max('sort_order');
+        foreach (DB::table('departments')->orderBy('id')->get() as $department) {
+            $exists = DB::table('project_sections')
+                ->where('project_id', $sharedId)
+                ->where('department_id', $department->id)
+                ->exists();
+
+            if ($exists) {
+                continue;
+            }
+
+            $sortOrder++;
+            DB::table('project_sections')->insert([
+                'project_id' => $sharedId,
+                'department_id' => $department->id,
+                'legacy_project_id' => null,
+                'name' => $department->name,
+                'description' => 'بخش عمومی فعالیت‌های واحد '.$department->name,
+                'manager_can_create_tasks' => true,
+                'sort_order' => $sortOrder,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
         }
 
         DB::table('project_user')->where('project_id', $sharedId)->update(['project_role_id' => null]);
