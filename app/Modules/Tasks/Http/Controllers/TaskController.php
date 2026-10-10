@@ -23,6 +23,7 @@ use App\Models\User;
 use App\Modules\Tasks\Contracts\TaskServiceContract;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskReminder;
+use App\Modules\Tasks\Models\TaskWorkLog;
 use App\Modules\Tasks\Services\TaskFormOptionsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -425,6 +426,38 @@ class TaskController extends Controller
         );
 
         return back()->with('success', 'گزارش فعالیت با موفقیت ثبت شد.');
+    }
+
+    public function updateWorkLog(Request $request, Task $task, TaskWorkLog $workLog): RedirectResponse
+    {
+        Gate::authorize('update', $task);
+        abort_unless((int) $workLog->task_id === (int) $task->id, 404);
+
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:10000'],
+            'started_at' => ['nullable', 'date'],
+            'completed_at' => ['nullable', 'date', 'after_or_equal:started_at'],
+        ]);
+
+        $workLog->update([
+            'title' => trim($data['title']),
+            'description' => $data['description'] ?? null,
+            'started_at' => $data['started_at'] ?? null,
+            'completed_at' => $data['completed_at'] ?? null,
+        ]);
+
+        return back()->with('success', 'گزارش فعالیت با موفقیت ویرایش شد.');
+    }
+
+    public function destroyWorkLog(Request $request, Task $task, TaskWorkLog $workLog): RedirectResponse
+    {
+        Gate::authorize('update', $task);
+        abort_unless((int) $workLog->task_id === (int) $task->id, 404);
+
+        $workLog->delete();
+
+        return back()->with('success', 'گزارش فعالیت با موفقیت حذف شد.');
     }
 
     public function reminder(StoreTaskReminderRequest $request, Task $task): RedirectResponse
