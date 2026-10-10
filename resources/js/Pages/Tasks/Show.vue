@@ -328,7 +328,7 @@ const submitWorkLog = (): void => {
     };
 
     if (editingWorkLogId.value) {
-        workLogForm.put(route('tasks.work-logs.update', [props.task.id, editingWorkLogId.value]), options);
+        workLogForm.put(route('tasks.activities.update', [props.task.id, editingWorkLogId.value]), options);
         return;
     }
 
@@ -350,7 +350,7 @@ const editWorkLog = (item: TimelineItem): void => {
 const deleteWorkLog = (workLogId: number): void => {
     if (!window.confirm('آیا از حذف این گزارش فعالیت مطمئن هستید؟')) return;
 
-    workLogForm.delete(route('tasks.work-logs.destroy', [props.task.id, workLogId]), {
+    workLogForm.delete(route('tasks.activities.destroy', [props.task.id, workLogId]), {
         preserveScroll: true,
     });
 };
@@ -486,7 +486,6 @@ const deleteActivity = (activityId: number): void => {
 };
 const phoneLabel = (user: User): string | null => user.mobile || user.phone || null;
 const pendingActivities = computed(() => props.task.activities?.filter(activity => activity.activity_type === 'planned' && activity.status === 'pending') ?? []);
-const loggedActivities = computed(() => props.task.activities?.filter(activity => activity.activity_type === 'logged') ?? []);
 </script>
 
 <template>
@@ -528,20 +527,16 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
 
                     <section class="overflow-hidden rounded-xl border bg-card shadow-sm">
                         <div class="border-b bg-gray-50/70 px-5 py-4 sm:px-6">
-                            <div class="flex items-center justify-between gap-3"><div><h3 class="font-semibold">گزارش فعالیت</h3><p class="mt-1 text-sm text-muted-foreground">اقداماتی که روی وظیفه انجام شده است.</p></div><div class="flex shrink-0 items-center gap-3"><span class="text-xs text-muted-foreground">{{ timeline.filter(i => i.type === 'work_log').length + loggedActivities.length }} فعالیت</span><button v-if="abilities.log_work" type="button" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showWorkLogModal = true">+ ثبت فعالیت</button></div></div>
+                            <div class="flex items-center justify-between gap-3"><div><h3 class="font-semibold">گزارش فعالیت</h3><p class="mt-1 text-sm text-muted-foreground">کارهایی که انجام شده‌اند؛ تکمیل فعالیت بعدی نیز به همین فهرست اضافه می‌شود.</p></div><div class="flex shrink-0 items-center gap-3"><span class="text-xs text-muted-foreground">{{ timeline.filter(i => i.type === 'work_log').length }} فعالیت</span><button v-if="abilities.log_work" type="button" title="برای ثبت کاری که قبلاً انجام شده است" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showWorkLogModal = true">+ ثبت فعالیت انجام‌شده</button></div></div>
+                            <p class="mt-3 rounded-lg border border-blue-100 bg-blue-50/70 px-3 py-2 text-xs leading-6 text-blue-900">راهنما: «فعالیت‌های بعدی» کارهایی هستند که هنوز باید انجام شوند. با زدن «انجام شد»، همان فعالیت در این گزارش ثبت می‌شود. اگر کاری را قبلاً انجام داده‌اید و در فهرست بعدی نبوده، از «ثبت فعالیت انجام‌شده» استفاده کنید.</p>
                         </div>
-                        <div v-if="timeline.filter(i => i.type === 'work_log').length === 0 && loggedActivities.length === 0" class="p-8 text-center text-sm text-muted-foreground">هنوز گزارشی ثبت نشده است.</div>
+                        <div v-if="timeline.filter(i => i.type === 'work_log').length === 0" class="p-8 text-center text-sm text-muted-foreground">هنوز فعالیت انجام‌شده‌ای ثبت نشده است. می‌توانید با دکمه «ثبت فعالیت انجام‌شده» یک مورد ثبت کنید.</div>
                         <div v-if="timeline.filter(i => i.type === 'work_log').length" class="divide-y">
                             <article v-for="(item, index) in timeline.filter(i => i.type === 'work_log')" :key="'work-'+index" class="p-5 sm:p-6">
                                 <div class="flex flex-wrap items-start justify-between gap-4"><div class="flex min-w-0 flex-1 gap-3"><div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-xs font-semibold text-emerald-700">{{ index + 1 }}</div><div class="min-w-0 flex-1"><div class="flex justify-between gap-3"><h4 class="font-medium">{{ item.title }}</h4><time class="text-xs text-muted-foreground">{{ formatDateTime(item.occurred_at) }}</time></div><p v-if="item.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ item.description }}</p><p v-if="item.user" class="mt-2 text-xs text-muted-foreground">ثبت توسط {{ item.user.name }}</p></div></div><div v-if="abilities.update && item.id" class="flex shrink-0 gap-2"><button type="button" class="rounded-lg border px-3 py-2 text-sm" @click="editWorkLog(item)">ویرایش</button><button type="button" class="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600" @click="deleteWorkLog(item.id)">حذف</button></div></div>
                             </article>
                         </div>
-                        <div v-if="loggedActivities.length" class="divide-y border-t">
-                            <article v-for="activity in loggedActivities" :key="'activity-'+activity.id" class="flex flex-wrap items-start justify-between gap-4 p-5 sm:p-6">
-                                <div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">انجام‌شده</span><h4 class="font-medium text-gray-900">{{ activity.title }}</h4></div><p v-if="activity.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ activity.description }}</p><p v-if="activity.completed_at" class="mt-2 text-xs text-muted-foreground">زمان انجام: {{ formatDateTime(activity.completed_at) }}</p><p v-if="activity.completedBy" class="mt-1 text-xs text-muted-foreground">انجام توسط {{ activity.completedBy.name }}</p></div>
-                                <div v-if="abilities.update" class="flex shrink-0 gap-2"><button type="button" class="rounded-lg border px-3 py-2 text-sm" @click="openActivityForm(activity)">ویرایش</button><button type="button" class="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600" @click="deleteActivity(activity.id)">حذف</button></div>
-                            </article>
-                        </div>
+
                     </section>
 
                     <section class="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
@@ -719,9 +714,9 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
 
         <div v-if="showCommentModal || showWorkLogModal || showReminderModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showCommentModal = showWorkLogModal = showReminderModal = false">
             <div class="w-full max-w-xl rounded-2xl bg-white shadow-2xl">
-                <div class="flex items-center justify-between border-b p-5"><h3 class="font-semibold">{{ showCommentModal ? 'ثبت نظر' : showWorkLogModal ? (editingWorkLogId ? 'ویرایش گزارش فعالیت' : 'ثبت گزارش فعالیت') : 'ایجاد یادآوری' }}</h3><button type="button" class="text-xl" @click="showCommentModal = showWorkLogModal = showReminderModal = false">×</button></div>
+                <div class="flex items-center justify-between border-b p-5"><h3 class="font-semibold">{{ showCommentModal ? 'ثبت نظر' : showWorkLogModal ? (editingWorkLogId ? 'ویرایش فعالیت انجام‌شده' : 'ثبت فعالیت انجام‌شده') : 'ایجاد یادآوری' }}</h3><button type="button" class="text-xl" @click="showCommentModal = showWorkLogModal = showReminderModal = false">×</button></div>
                 <form v-if="showCommentModal" class="space-y-4 p-5" @submit.prevent="submitComment"><textarea v-model="commentForm.body" rows="5" required class="w-full rounded-lg border p-3 text-sm" placeholder="نظر خود را وارد کنید..."></textarea><button type="submit" :disabled="commentForm.processing" class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">ثبت نظر</button></form>
-                <form v-else-if="showWorkLogModal" class="space-y-4 p-5" @submit.prevent="submitWorkLog"><input v-model="workLogForm.title" required class="h-10 w-full rounded-lg border px-3 text-sm" placeholder="عنوان فعالیت" /><textarea v-model="workLogForm.description" rows="4" class="w-full rounded-lg border p-3 text-sm" placeholder="شرح فعالیت"></textarea><div class="grid gap-3 sm:grid-cols-2"><JalaliDateTimePicker v-model="workLogForm.started_at" placeholder="شروع" /><JalaliDateTimePicker v-model="workLogForm.completed_at" placeholder="پایان" /></div><button type="submit" :disabled="workLogForm.processing" class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">{{ editingWorkLogId ? 'ذخیره تغییرات' : 'ثبت گزارش فعالیت' }}</button></form>
+                <form v-else-if="showWorkLogModal" class="space-y-4 p-5" @submit.prevent="submitWorkLog"><input v-model="workLogForm.title" required class="h-10 w-full rounded-lg border px-3 text-sm" placeholder="عنوان فعالیت" /><textarea v-model="workLogForm.description" rows="4" class="w-full rounded-lg border p-3 text-sm" placeholder="شرح فعالیت"></textarea><div class="grid gap-3 sm:grid-cols-2"><JalaliDateTimePicker v-model="workLogForm.started_at" placeholder="شروع" /><JalaliDateTimePicker v-model="workLogForm.completed_at" placeholder="پایان" /></div><button type="submit" :disabled="workLogForm.processing" class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">{{ editingWorkLogId ? 'ذخیره تغییرات' : 'ثبت فعالیت انجام‌شده' }}</button></form>
                 <form v-else class="space-y-4 p-5" @submit.prevent="submitReminder"><input v-model="reminderForm.title" required class="h-10 w-full rounded-lg border px-3 text-sm" placeholder="عنوان یادآوری" /><textarea v-model="reminderForm.description" rows="3" class="w-full rounded-lg border p-3 text-sm" placeholder="توضیحات"></textarea><JalaliDateTimePicker v-model="reminderForm.remind_at" placeholder="زمان یادآوری" /><button type="submit" :disabled="reminderForm.processing" class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">ایجاد یادآوری</button></form>
             </div>
         </div>
