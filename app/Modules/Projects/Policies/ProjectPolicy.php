@@ -114,13 +114,15 @@ class ProjectPolicy
             }
         }
 
-        if (
-            in_array(PermissionScope::DepartmentTree->value, $scopes, true)
-            && $project->is_system_default
-            && $project->department_id === null
-            && $project->sections()->whereHas('department.members', fn ($query) => $query->where('users.id', $user->id))->exists()
-        ) {
-            return true;
+        if (in_array(PermissionScope::DepartmentTree->value, $scopes, true) && $project->is_system_default && $project->department_id === null) {
+            $treeDepartmentIds = [];
+            foreach ($user->departments()->get() as $department) {
+                $treeDepartmentIds[] = (int) $department->id;
+                $treeDepartmentIds = array_merge($treeDepartmentIds, $department->descendantIds());
+            }
+            if ($treeDepartmentIds !== [] && $project->sections()->whereIn('department_id', array_values(array_unique($treeDepartmentIds)))->exists()) {
+                return true;
+            }
         }
 
         return in_array(PermissionScope::Project->value, $scopes, true)
