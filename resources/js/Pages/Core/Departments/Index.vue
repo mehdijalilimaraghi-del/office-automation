@@ -664,7 +664,7 @@ watch(
                                     </button>
 
                                     <button
-                                        v-if="abilities.departments_toggle_status && !selectedDepartment.is_system_default"
+                                        v-if="abilities.departments_toggle_status && (!selectedDepartment.is_system_default || selectedDepartment.code === 'ORG-000001')"
                                         type="button"
                                         class="rounded-xl bg-white/10 px-3.5 py-2 text-xs font-semibold text-white ring-1 ring-white/10 transition hover:bg-white/15"
                                         @click="toggleStatus(selectedDepartment)"
@@ -673,14 +673,14 @@ watch(
                                     </button>
 
                                     <button
-                                        v-if="abilities.departments_delete && !selectedDepartment.is_system_default"
+                                        v-if="abilities.departments_delete && (!selectedDepartment.is_system_default || selectedDepartment.code === 'ORG-000001')"
                                         type="button"
                                         class="rounded-xl bg-red-500/10 px-3.5 py-2 text-xs font-semibold text-red-200 ring-1 ring-red-300/10 transition hover:bg-red-500/15"
                                         @click="deleteDepartment(selectedDepartment)"
                                     >
                                         حذف واحد
                                     </button>
-                                    <span v-if="selectedDepartment.is_system_default" class="inline-flex items-center rounded-xl bg-teal-500/10 px-3.5 py-2 text-xs font-semibold text-teal-200 ring-1 ring-teal-300/10">
+                                    <span v-if="selectedDepartment.is_system_default && selectedDepartment.code !== 'ORG-000001'" class="inline-flex items-center rounded-xl bg-teal-500/10 px-3.5 py-2 text-xs font-semibold text-teal-200 ring-1 ring-teal-300/10">
                                         واحد پیش‌فرض؛ غیرقابل حذف
                                     </span>
                                 </div>
