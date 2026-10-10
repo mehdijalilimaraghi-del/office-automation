@@ -87,6 +87,11 @@ class Project extends Model
             ->withTimestamps();
     }
 
+    public function sections(): HasMany
+    {
+        return $this->hasMany(ProjectSection::class, 'project_id')->orderBy('sort_order')->orderBy('id');
+    }
+
     public function tasks(): HasMany
     {
         return $this->hasMany(Task::class, 'project_id');
