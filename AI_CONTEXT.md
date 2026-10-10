@@ -121,3 +121,11 @@ Before making the first code change in a new conversation:
 4. Continue final V1 manual UI/functional acceptance.
 5. Fix newly discovered V1 defects at root cause.
 6. Close V1 acceptance before starting V2.
+
+
+## Current task activity model — 2026-10-10
+- Use `task_activities` as the single storage table for planned next activities and completed activity reports.
+- `activity_type=planned,status=pending` appears under «فعالیت‌های بعدی»; completing it updates the same row to `activity_type=logged,status=completed` and records `completed_by/completed_at`.
+- Manual completed activity reports are also `logged/completed` rows. `started_at` and `completed_at` live on `task_activities`.
+- Migration `2026_10_10_120000_unify_task_activities_and_work_logs.php` moves historical `task_work_logs` into `task_activities` before dropping the old table. Validate migration and rollback behavior through the focused task tests.
+- Task detail UI uses «ثبت فعالیت انجام‌شده» and a persistent guide explaining the difference between planned and completed activities.
