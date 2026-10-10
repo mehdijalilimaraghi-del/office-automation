@@ -68,11 +68,13 @@ interface Task {
     comments: Array<{ id: number; body: string; user: User | null }>;
 }
 interface TimelineItem {
+    id?: number;
     type: string;
     title: string;
     description: string | null;
     occurred_at: string | null;
     user: User | null;
+    meta?: { started_at?: string | null; completed_at?: string | null };
 }
 interface Abilities {
     refer: boolean;
@@ -124,6 +126,7 @@ const commentForm = useForm({ body: '' });
 const editCommentForm = useForm({ body: '' });
 const editingCommentId = ref<number | null>(null);
 const workLogForm = useForm({ title: '', description: '', started_at: '', completed_at: '' });
+const editingWorkLogId = ref<number | null>(null);
 const reminderForm = useForm({
     user_id: props.currentUserId,
     title: '',
@@ -315,9 +318,40 @@ const deleteReminder = (reminderId: number): void => {
 };
 
 const submitWorkLog = (): void => {
-    workLogForm.post(route('tasks.work-logs.store', props.task.id), {
+    const options = {
         preserveScroll: true,
-        onSuccess: () => { workLogForm.reset(); showWorkLogModal.value = false; },
+        onSuccess: () => {
+            workLogForm.reset();
+            editingWorkLogId.value = null;
+            showWorkLogModal.value = false;
+        },
+    };
+
+    if (editingWorkLogId.value) {
+        workLogForm.put(route('tasks.work-logs.update', [props.task.id, editingWorkLogId.value]), options);
+        return;
+    }
+
+    workLogForm.post(route('tasks.work-logs.store', props.task.id), options);
+};
+
+const editWorkLog = (item: TimelineItem): void => {
+    if (!item.id) return;
+
+    editingWorkLogId.value = item.id;
+    workLogForm.title = item.title;
+    workLogForm.description = item.description ?? '';
+    workLogForm.started_at = item.meta?.started_at ? item.meta.started_at.replace(' ', 'T').slice(0, 19) : '';
+    workLogForm.completed_at = item.meta?.completed_at ? item.meta.completed_at.replace(' ', 'T').slice(0, 19) : '';
+    workLogForm.clearErrors();
+    showWorkLogModal.value = true;
+};
+
+const deleteWorkLog = (workLogId: number): void => {
+    if (!window.confirm('آیا از حذف این گزارش فعالیت مطمئن هستید؟')) return;
+
+    workLogForm.delete(route('tasks.work-logs.destroy', [props.task.id, workLogId]), {
+        preserveScroll: true,
     });
 };
 const submitReminder = (): void => {
@@ -499,7 +533,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                         <div v-if="timeline.filter(i => i.type === 'work_log').length === 0 && loggedActivities.length === 0" class="p-8 text-center text-sm text-muted-foreground">هنوز گزارشی ثبت نشده است.</div>
                         <div v-if="timeline.filter(i => i.type === 'work_log').length" class="divide-y">
                             <article v-for="(item, index) in timeline.filter(i => i.type === 'work_log')" :key="'work-'+index" class="p-5 sm:p-6">
-                                <div class="flex gap-3"><div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-xs font-semibold text-emerald-700">{{ index + 1 }}</div><div class="min-w-0 flex-1"><div class="flex justify-between gap-3"><h4 class="font-medium">{{ item.title }}</h4><time class="text-xs text-muted-foreground">{{ formatDateTime(item.occurred_at) }}</time></div><p v-if="item.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ item.description }}</p><p v-if="item.user" class="mt-2 text-xs text-muted-foreground">ثبت توسط {{ item.user.name }}</p></div></div>
+                                <div class="flex flex-wrap items-start justify-between gap-4"><div class="flex min-w-0 flex-1 gap-3"><div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-xs font-semibold text-emerald-700">{{ index + 1 }}</div><div class="min-w-0 flex-1"><div class="flex justify-between gap-3"><h4 class="font-medium">{{ item.title }}</h4><time class="text-xs text-muted-foreground">{{ formatDateTime(item.occurred_at) }}</time></div><p v-if="item.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ item.description }}</p><p v-if="item.user" class="mt-2 text-xs text-muted-foreground">ثبت توسط {{ item.user.name }}</p></div></div><div v-if="abilities.update && item.id" class="flex shrink-0 gap-2"><button type="button" class="rounded-lg border px-3 py-2 text-sm" @click="editWorkLog(item)">ویرایش</button><button type="button" class="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600" @click="deleteWorkLog(item.id)">حذف</button></div></div>
                             </article>
                         </div>
                         <div v-if="loggedActivities.length" class="divide-y border-t">
@@ -685,9 +719,9 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
 
         <div v-if="showCommentModal || showWorkLogModal || showReminderModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showCommentModal = showWorkLogModal = showReminderModal = false">
             <div class="w-full max-w-xl rounded-2xl bg-white shadow-2xl">
-                <div class="flex items-center justify-between border-b p-5"><h3 class="font-semibold">{{ showCommentModal ? 'ثبت نظر' : showWorkLogModal ? 'ثبت گزارش فعالیت' : 'ایجاد یادآوری' }}</h3><button type="button" class="text-xl" @click="showCommentModal = showWorkLogModal = showReminderModal = false">×</button></div>
+                <div class="flex items-center justify-between border-b p-5"><h3 class="font-semibold">{{ showCommentModal ? 'ثبت نظر' : showWorkLogModal ? (editingWorkLogId ? 'ویرایش گزارش فعالیت' : 'ثبت گزارش فعالیت') : 'ایجاد یادآوری' }}</h3><button type="button" class="text-xl" @click="showCommentModal = showWorkLogModal = showReminderModal = false">×</button></div>
                 <form v-if="showCommentModal" class="space-y-4 p-5" @submit.prevent="submitComment"><textarea v-model="commentForm.body" rows="5" required class="w-full rounded-lg border p-3 text-sm" placeholder="نظر خود را وارد کنید..."></textarea><button type="submit" :disabled="commentForm.processing" class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">ثبت نظر</button></form>
-                <form v-else-if="showWorkLogModal" class="space-y-4 p-5" @submit.prevent="submitWorkLog"><input v-model="workLogForm.title" required class="h-10 w-full rounded-lg border px-3 text-sm" placeholder="عنوان فعالیت" /><textarea v-model="workLogForm.description" rows="4" class="w-full rounded-lg border p-3 text-sm" placeholder="شرح فعالیت"></textarea><div class="grid gap-3 sm:grid-cols-2"><JalaliDateTimePicker v-model="workLogForm.started_at" placeholder="شروع" /><JalaliDateTimePicker v-model="workLogForm.completed_at" placeholder="پایان" /></div><button type="submit" :disabled="workLogForm.processing" class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">ثبت گزارش فعالیت</button></form>
+                <form v-else-if="showWorkLogModal" class="space-y-4 p-5" @submit.prevent="submitWorkLog"><input v-model="workLogForm.title" required class="h-10 w-full rounded-lg border px-3 text-sm" placeholder="عنوان فعالیت" /><textarea v-model="workLogForm.description" rows="4" class="w-full rounded-lg border p-3 text-sm" placeholder="شرح فعالیت"></textarea><div class="grid gap-3 sm:grid-cols-2"><JalaliDateTimePicker v-model="workLogForm.started_at" placeholder="شروع" /><JalaliDateTimePicker v-model="workLogForm.completed_at" placeholder="پایان" /></div><button type="submit" :disabled="workLogForm.processing" class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">{{ editingWorkLogId ? 'ذخیره تغییرات' : 'ثبت گزارش فعالیت' }}</button></form>
                 <form v-else class="space-y-4 p-5" @submit.prevent="submitReminder"><input v-model="reminderForm.title" required class="h-10 w-full rounded-lg border px-3 text-sm" placeholder="عنوان یادآوری" /><textarea v-model="reminderForm.description" rows="3" class="w-full rounded-lg border p-3 text-sm" placeholder="توضیحات"></textarea><JalaliDateTimePicker v-model="reminderForm.remind_at" placeholder="زمان یادآوری" /><button type="submit" :disabled="reminderForm.processing" class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">ایجاد یادآوری</button></form>
             </div>
         </div>
