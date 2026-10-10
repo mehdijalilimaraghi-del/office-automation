@@ -120,8 +120,12 @@ class ProjectController extends Controller
                 }
             });
         } catch (InvalidArgumentException $exception) {
+            $field = str_contains($exception->getMessage(), 'واحد مسئول')
+                ? 'sections'
+                : 'manager_id';
+
             throw ValidationException::withMessages([
-                'manager_id' => $exception->getMessage(),
+                $field => $exception->getMessage(),
             ]);
         }
 
