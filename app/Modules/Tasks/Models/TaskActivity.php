@@ -20,6 +20,7 @@ class TaskActivity extends Model
         'assigned_to',
         'created_by',
         'completed_by',
+        'started_at',
         'completed_at',
     ];
 
@@ -27,6 +28,7 @@ class TaskActivity extends Model
     {
         return [
             'sequence' => 'integer',
+            'started_at' => 'datetime',
             'completed_at' => 'datetime',
         ];
     }
