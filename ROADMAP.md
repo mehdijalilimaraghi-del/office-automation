@@ -799,3 +799,10 @@ Project mutation authorization and task workflow actions now enforce permission 
 - در صفحه جزئیات، عنوان دکمه «ثبت فعالیت انجام‌شده» است؛ راهنمای دائمی تفاوت دو بخش و راهنمای هاور روی ثبت/تکمیل فعالیت وجود دارد.
 
 **Status:** implementation committed; focused task HTTP test and frontend build pending. V1 remains in validation; V2 scope unchanged.
+
+
+### 2026-10-10 — Task activity report visibility correction
+- «گزارش فعالیت» مستقیماً از رکوردهای `task_activities` با نوع `logged` و وضعیت `completed` ساخته می‌شود؛ فهرست به timeline عمومی وابسته نیست.
+- راهنمای تفاوت دو نوع ثبت در بالای «فعالیت‌های بعدی» نمایش داده می‌شود.
+- تست صفحه جزئیات برای اطمینان از نمایش فعالیت انجام‌شده‌ی قبلاً ثبت‌شده اضافه شد.
+- مدل یکپارچه‌ی فعالیت‌ها و محدوده V1 تغییری نکرده‌اند.
