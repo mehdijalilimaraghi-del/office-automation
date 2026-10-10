@@ -383,3 +383,11 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - ویرایش/حذف گزارش‌ها از Routeهای یکپارچه فعالیت استفاده می‌کند. دکمه «ثبت فعالیت انجام‌شده» و راهنمای دائمی تفاوت دو بخش در صفحه جزئیات اضافه شده‌اند.
 
 **Status:** implementation committed; focused `TaskHttpTest` and frontend production build validation pending.
+
+
+## Task activity model — 2026-10-10
+- `task_activities` is the single source of truth for planned next activities and completed activity reports.
+- Planned activities use `activity_type=planned, status=pending`; completed/manual activity reports use `activity_type=logged, status=completed`.
+- Completing a planned activity updates the same record and preserves `completed_at`. The data migration adds `started_at`, transfers legacy `task_work_logs` records, and then removes the old table.
+- The task detail page labels the action `ثبت فعالیت انجام‌شده`, includes persistent guidance for both workflows, and adds hover hints to the next-activity controls.
+- Validation for the focused task HTTP tests is pending after this change; V1 remains in technical validation and manual acceptance. V2 is not started.
