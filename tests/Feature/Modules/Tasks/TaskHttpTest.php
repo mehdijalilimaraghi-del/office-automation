@@ -12,7 +12,6 @@ use App\Models\User;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectMember;
 use App\Modules\Tasks\Models\Task;
-use App\Modules\Tasks\Models\TaskWorkLog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -64,30 +63,34 @@ class TaskHttpTest extends TestCase
             ->patch(route('tasks.activities.complete', [$task, $activity]))
             ->assertRedirect();
 
-        $this->assertDatabaseMissing('task_activities', [
+        $this->assertDatabaseHas('task_activities', [
             'id' => $activity->id,
+            'task_id' => $task->id,
+            'title' => 'پیگیری با واحد مالی',
+            'status' => 'completed',
+            'activity_type' => 'logged',
+            'completed_by' => $user->id,
         ]);
 
-        $this->assertDatabaseHas('task_work_logs', [
-            'task_id' => $task->id,
-            'user_id' => $user->id,
-            'title' => 'پیگیری با واحد مالی',
-            'description' => null,
-        ]);
+        $this->assertNotNull($activity->refresh()->completed_at);
     }
 
     public function test_work_log_can_be_edited_and_deleted(): void
     {
         $user = $this->userWithPermission('tasks.update');
         $task = $this->createTask($this->createProject($user), $user);
-        $workLog = $task->workLogs()->create([
-            'user_id' => $user->id,
+        $workLog = $task->activities()->create([
             'title' => 'گزارش اولیه',
             'description' => 'شرح اولیه',
+            'status' => 'completed',
+            'activity_type' => 'logged',
+            'sequence' => 1,
+            'created_by' => $user->id,
+            'completed_by' => $user->id,
         ]);
 
         $this->actingAs($user)
-            ->put(route('tasks.work-logs.update', [$task, $workLog]), [
+            ->put(route('tasks.activities.update', [$task, $workLog]), [
                 'title' => 'گزارش اصلاح‌شده',
                 'description' => 'شرح اصلاح‌شده',
                 'started_at' => null,
@@ -95,18 +98,19 @@ class TaskHttpTest extends TestCase
             ])
             ->assertRedirect();
 
-        $this->assertDatabaseHas('task_work_logs', [
+        $this->assertDatabaseHas('task_activities', [
             'id' => $workLog->id,
             'task_id' => $task->id,
             'title' => 'گزارش اصلاح‌شده',
             'description' => 'شرح اصلاح‌شده',
+            'activity_type' => 'logged',
         ]);
 
         $this->actingAs($user)
-            ->delete(route('tasks.work-logs.destroy', [$task, $workLog]))
+            ->delete(route('tasks.activities.destroy', [$task, $workLog]))
             ->assertRedirect();
 
-        $this->assertDatabaseMissing('task_work_logs', ['id' => $workLog->id]);
+        $this->assertDatabaseMissing('task_activities', ['id' => $workLog->id]);
     }
 
     public function test_task_can_have_related_internal_users_without_changing_assignee(): void
