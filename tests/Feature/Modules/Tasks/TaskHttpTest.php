@@ -66,6 +66,7 @@ class TaskHttpTest extends TestCase
         $this->assertDatabaseHas('task_activities', [
             'id' => $activity->id,
             'status' => 'completed',
+            'activity_type' => 'logged',
             'completed_by' => $user->id,
         ]);
     }
