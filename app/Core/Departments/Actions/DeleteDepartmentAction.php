@@ -25,7 +25,7 @@ class DeleteDepartmentAction
             ]);
         }
 
-        if ($department->manager_id !== null) {
+        if ($department->manager_id !== null && ! $isLegacyManagement) {
             throw ValidationException::withMessages([
                 'department' => 'دپارتمان دارای مدیر است. ابتدا مدیر دپارتمان را حذف کنید.',
             ]);
