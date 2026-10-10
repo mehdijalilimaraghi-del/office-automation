@@ -3,6 +3,7 @@
 namespace Tests\Feature\Modules\Projects;
 
 use App\Models\User;
+use App\Core\Departments\Models\Department;
 use App\Modules\Projects\Contracts\ProjectServiceContract;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectMember;
@@ -232,7 +233,7 @@ class CreateProjectTest extends TestCase
     {
         $creator = User::factory()->create();
         $manager = User::factory()->create();
-        $department = \\App\\Core\\Departments\\Models\\Department::query()->create([
+        $department = Department::query()->create([
             'name' => 'واحد طراحی',
             'code' => 'DESIGN',
             'manager_id' => $manager->id,
