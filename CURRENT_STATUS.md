@@ -374,3 +374,12 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - تست HTTP به‌جای بررسی تغییر نوع رکورد، ایجاد گزارش فعالیت و حذف رکورد برنامه‌ریزی‌شده را بررسی می‌کند.
 
 **Status:** fix committed; focused task test pending.
+
+
+### 2026-10-10 — Unified task activity storage and guidance
+- جدول مرجع برای فعالیت‌های برنامه‌ریزی‌شده و گزارش‌های انجام‌شده، `task_activities` است؛ تفاوت با `activity_type` و `status` مشخص می‌شود.
+- با زدن «انجام شد»، همان رکورد به `logged/completed` تغییر می‌کند و دیگر بین دو جدول کپی یا حذف نمی‌شود.
+- Migration جدید سوابق `task_work_logs` را همراه با عنوان، شرح، زمان شروع/پایان و کاربر ثبت‌کننده به `task_activities` منتقل می‌کند و سپس جدول قدیمی را حذف می‌کند؛ مسیر rollback نیز داده‌های گزارش‌شده را بازسازی می‌کند.
+- ویرایش/حذف گزارش‌ها از Routeهای یکپارچه فعالیت استفاده می‌کند. دکمه «ثبت فعالیت انجام‌شده» و راهنمای دائمی تفاوت دو بخش در صفحه جزئیات اضافه شده‌اند.
+
+**Status:** implementation committed; focused `TaskHttpTest` and frontend production build validation pending.
