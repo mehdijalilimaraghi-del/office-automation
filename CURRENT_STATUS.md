@@ -368,3 +368,9 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - تست HTTP برای ویرایش و حذف گزارش فعالیت اضافه شد.
 
 **Status:** implementation committed; focused task test and frontend build validation pending.
+
+### 2026-10-10 — Fix completed activity transfer visibility
+- تکمیل «فعالیت بعدی» اکنون در یک تراکنش، گزارش واقعی در `task_work_logs` ایجاد می‌کند و سپس رکورد برنامه‌ریزی‌شده را حذف می‌کند؛ بنابراین فعالیت در همان فهرست «گزارش فعالیت» نمایش داده می‌شود و دکمه‌های ویرایش/حذف همان بخش را دارد.
+- تست HTTP به‌جای بررسی تغییر نوع رکورد، ایجاد گزارش فعالیت و حذف رکورد برنامه‌ریزی‌شده را بررسی می‌کند.
+
+**Status:** fix committed; focused task test pending.
