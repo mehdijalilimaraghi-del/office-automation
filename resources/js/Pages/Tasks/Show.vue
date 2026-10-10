@@ -706,10 +706,6 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                 </aside>
             </div>
 
-            <section class="rounded-xl border border-blue-100 bg-blue-50/60 px-5 py-4 shadow-sm sm:px-6" aria-label="راهنمای فعالیت‌ها">
-                <h3 class="text-sm font-semibold text-blue-950">راهنمای ثبت فعالیت</h3>
-                <p class="mt-2 text-sm leading-7 text-blue-900">«فعالیت‌های بعدی» برای کارهایی است که هنوز باید انجام شوند. بعد از انجام، «انجام شد» را بزنید تا همان فعالیت با زمان تکمیل در گزارش فعالیت نمایش داده شود. برای کاری که قبلاً انجام شده و از قبل در این فهرست نبوده، «ثبت فعالیت انجام‌شده» را انتخاب کنید.</p>
-            </section>
         </div>
 
         <div v-if="showReferralModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showReferralModal = false">
