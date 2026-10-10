@@ -108,11 +108,13 @@ class ProjectController extends Controller
                     || ($request->user()->hasPermission('tasks.create') && $project->sections()
                         ->whereHas('department', fn ($query) => $query->where('manager_id', $request->user()->id))
                         ->exists())),
-            'canCreateTasks' => Gate::allows('create', [Task::class, (int) $project->id])
-                || ($request->user()->hasPermission('tasks.create') && $project->sections()
+            'canCreateTasks' => Gate::allows('create', [Task::class, (int) $project->id]),
+            'managerCreatableSectionIds' => $request->user()->hasPermission('tasks.create')
+                ? $project->sections()
                     ->where('manager_can_create_tasks', true)
                     ->whereHas('department', fn ($query) => $query->where('manager_id', $request->user()->id))
-                    ->exists()),
+                    ->pluck('id')->map(fn ($id): int => (int) $id)->values()->all()
+                : [],
         ]);
     }
 
