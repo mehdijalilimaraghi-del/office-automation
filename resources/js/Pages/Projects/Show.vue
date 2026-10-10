@@ -60,6 +60,7 @@ interface Project {
     name: string;
     code: string;
     description: string | null;
+    documents: Array<{ id: number; document: { id: number; title: string; latest_version?: { original_name: string } | null } | null }>;
     status: 'planning' | 'active' | 'completed' | 'archived';
     start_date: string | null;
     end_date: string | null;
@@ -87,6 +88,7 @@ const props = defineProps<{
     canUpdate: boolean;
     memberOptions: MemberOption[];
     canCreateTasks: boolean;
+    canUploadProjectDocuments: boolean;
     managerCreatableSectionIds: number[];
     canUploadSectionDocuments: boolean;
 }>();
@@ -123,6 +125,26 @@ const openSectionTaskModal = (section: ProjectSection): void => {
     sectionTaskForm.delegate_assignee_id = null;
     sectionTaskForm.clearErrors();
     showSectionTaskModal.value = true;
+};
+
+const uploadProjectDocument = (event: Event): void => {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    uploadingSectionId.value = 0;
+    router.post(route('documents.projects.store', props.project.id), {
+        title: file.name,
+        document_type: 'project_reference',
+        file,
+    }, {
+        forceFormData: true,
+        preserveScroll: true,
+        onFinish: () => {
+            uploadingSectionId.value = null;
+            input.value = '';
+        },
+    });
 };
 
 const uploadSectionDocument = (section: ProjectSection, event: Event): void => {
@@ -706,6 +728,28 @@ const formatDate = (date: string | null): string => {
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </section>
+
+            <section class="rounded-xl border bg-card p-5">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h3 class="font-semibold">مدارک عمومی پروژه</h3>
+                        <p class="mt-1 text-sm text-muted-foreground">فایل‌هایی که برای همه بخش‌های پروژه کاربرد دارند.</p>
+                    </div>
+                    <label v-if="canUploadProjectDocuments" class="inline-flex cursor-pointer items-center rounded-md border px-3 py-2 text-xs font-medium transition hover:bg-muted" :class="{ 'pointer-events-none opacity-50': uploadingSectionId === 0 }">
+                        {{ uploadingSectionId === 0 ? 'در حال بارگذاری...' : 'افزودن مدرک' }}
+                        <input type="file" class="sr-only" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" :disabled="uploadingSectionId === 0" @change="uploadProjectDocument" />
+                    </label>
+                </div>
+                <div v-if="!project.documents?.length" class="mt-4 rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground">
+                    هنوز مدرک عمومی برای پروژه ثبت نشده است.
+                </div>
+                <div v-else class="mt-4 flex flex-wrap gap-2">
+                    <a v-for="link in project.documents" :key="link.id" :href="link.document ? route('documents.download', link.document.id) : '#'" class="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs transition hover:bg-muted">
+                        <span aria-hidden="true">📎</span>
+                        {{ link.document?.title ?? 'مدرک' }}
+                    </a>
                 </div>
             </section>
 
