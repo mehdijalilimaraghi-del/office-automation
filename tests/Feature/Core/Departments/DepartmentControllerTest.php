@@ -86,6 +86,11 @@ class DepartmentControllerTest extends TestCase
             'department_id' => $department->id,
             'is_system_default' => true,
         ]);
+
+        $this->assertDatabaseHas('project_sections', [
+            'department_id' => $department->id,
+            'name' => 'فناوری اطلاعات',
+        ]);
     }
 
     public function test_department_manager_is_not_added_to_a_per_department_default_project(): void
