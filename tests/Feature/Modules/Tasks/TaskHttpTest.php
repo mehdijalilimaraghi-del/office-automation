@@ -16,6 +16,7 @@ use App\Modules\Tasks\Models\TaskActivity;
 use Database\Seeders\CorePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class TaskHttpTest extends TestCase
@@ -82,6 +83,30 @@ class TaskHttpTest extends TestCase
         ]);
 
         $this->assertNotNull($activity->refresh()->completed_at);
+    }
+
+    public function test_task_detail_displays_previously_registered_completed_activities(): void
+    {
+        $user = $this->userWithPermission('tasks.view');
+        $task = $this->createTask($this->createProject($user), $user);
+        $task->activities()->create([
+            'title' => 'فعالیت ثبت‌شده قبلی',
+            'description' => 'شرح فعالیت قبلی',
+            'status' => 'completed',
+            'activity_type' => 'logged',
+            'sequence' => 1,
+            'created_by' => $user->id,
+            'completed_by' => $user->id,
+            'completed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('tasks.show', $task))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Tasks/Show')
+                ->where('task.activities.0.title', 'فعالیت ثبت‌شده قبلی')
+                ->where('task.activities.0.activity_type', 'logged'));
     }
 
     public function test_manual_completed_activity_is_saved_in_unified_activity_table(): void
