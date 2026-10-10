@@ -10,7 +10,7 @@ use App\Modules\Tasks\Models\TaskAssignment;
 use App\Modules\Tasks\Models\TaskComment;
 use App\Modules\Tasks\Models\TaskReminder;
 use App\Modules\Tasks\Models\TaskStatusHistory;
-use App\Modules\Tasks\Models\TaskWorkLog;
+use App\Modules\Tasks\Models\TaskActivity;
 use App\Modules\Tasks\Services\TaskTimelineService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -55,11 +55,16 @@ class TaskTimelineTest extends TestCase
             'changed_at' => $now->copy()->subMinutes(8),
         ]);
 
-        $workLog = TaskWorkLog::query()->create([
+        $workLog = TaskActivity::query()->create([
             'task_id' => $task->id,
-            'user_id' => $user->id,
+            'created_by' => $user->id,
+            'completed_by' => $user->id,
             'title' => 'پیگیری فنی',
             'description' => 'بررسی انجام شد.',
+            'status' => 'completed',
+            'activity_type' => 'logged',
+            'sequence' => 1,
+            'completed_at' => $now->copy()->subMinutes(6),
         ]);
         $workLog->forceFill([
             'created_at' => $now->copy()->subMinutes(6),
