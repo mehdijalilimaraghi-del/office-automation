@@ -13,6 +13,7 @@ use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectMember;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskActivity;
+use Database\Seeders\CorePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -20,6 +21,13 @@ use Tests\TestCase;
 class TaskHttpTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(CorePermissionSeeder::class);
+    }
 
     public function test_creating_task_can_create_first_planned_activity(): void
     {
