@@ -14,10 +14,21 @@ interface User {
     name: string;
 }
 
+interface SectionOption {
+    id: number;
+    name: string;
+    department_id: number | null;
+    manager_id: number | null;
+    manager_name: string | null;
+    manager_can_create_tasks: boolean;
+    member_ids: number[];
+}
+
 interface ProjectOption {
     id: number;
     name: string;
     member_ids: number[];
+    sections: SectionOption[];
 }
 
 interface DepartmentOption {
@@ -92,6 +103,7 @@ const projectFilter = ref(props.filters.project_id?.toString() ?? '');
 const departmentFilter = ref(props.filters.department_id?.toString() ?? '');
 const createForm = useForm({
     project_id: null as number | null,
+    section_id: null as number | null,
     department_id: null as number | null,
     external_organization_id: null as number | null,
     external_department_id: null as number | null,
@@ -100,6 +112,8 @@ const createForm = useForm({
     description: '',
     priority: 'normal',
     assignee_id: null as number | null,
+    delegate_to_employee: false,
+    delegate_assignee_id: null as number | null,
     assignment_note: '',
     next_activity_title: '',
     next_activity_description: '',
@@ -125,25 +139,28 @@ const priorityLabels: Record<string, string> = {
 const externalDepartments = computed(() => props.formOptions?.external_departments.filter(item => item.external_organization_id === createForm.external_organization_id) ?? []);
 const externalContacts = computed(() => props.formOptions?.external_contacts.filter(item => item.external_organization_id === createForm.external_organization_id && (createForm.external_department_id === null || item.external_department_id === createForm.external_department_id)) ?? []);
 
+const selectedProject = computed(() =>
+    props.formOptions?.projects.find((item) => item.id === createForm.project_id) ?? null,
+);
+
+const selectedSection = computed(() =>
+    selectedProject.value?.sections.find((item) => item.id === createForm.section_id) ?? null,
+);
+
 const availableAssignees = computed(() => {
-    if (!props.formOptions) {
-        return [];
+    if (!props.formOptions) return [];
+    if (selectedSection.value) {
+        return props.formOptions.users.filter((user) =>
+            selectedSection.value?.member_ids.includes(user.id)
+            && user.id !== selectedSection.value?.manager_id,
+        );
     }
 
-    if (createForm.project_id === null) {
-        return props.formOptions.users;
-    }
-
-    const project = props.formOptions.projects.find(
-        (item) => item.id === createForm.project_id,
-    );
-
-    if (!project) {
-        return [];
-    }
+    if (createForm.project_id === null) return props.formOptions.users;
+    if (!selectedProject.value) return [];
 
     return props.formOptions.users.filter((user) =>
-        project.member_ids.includes(user.id),
+        selectedProject.value?.member_ids.includes(user.id),
     );
 });
 
@@ -202,14 +219,18 @@ const handleExternalDepartmentChange = (): void => {
 };
 
 const handleProjectChange = (): void => {
-    if (
-        createForm.assignee_id !== null &&
-        !availableAssignees.value.some(
-            (user) => user.id === createForm.assignee_id,
-        )
-    ) {
-        createForm.assignee_id = null;
-    }
+    createForm.section_id = null;
+    createForm.department_id = null;
+    createForm.assignee_id = null;
+    createForm.delegate_assignee_id = null;
+    createForm.delegate_to_employee = false;
+};
+
+const handleSectionChange = (): void => {
+    createForm.department_id = selectedSection.value?.department_id ?? null;
+    createForm.assignee_id = null;
+    createForm.delegate_assignee_id = null;
+    createForm.delegate_to_employee = false;
 };
 </script>
 
@@ -270,23 +291,51 @@ const handleProjectChange = (): void => {
                         </select>
                     </div>
 
+                    <div v-if="selectedProject && selectedProject.sections.length">
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">بخش پروژه</label>
+                        <select v-model="createForm.section_id" required @change="handleSectionChange"
+                            class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
+                            <option :value="null">انتخاب بخش</option>
+                            <option v-for="section in selectedProject.sections" :key="section.id" :value="section.id">{{ section.name }}</option>
+                        </select>
+                    </div>
+
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">واحد مسئول</label>
-                        <select v-model="createForm.department_id"
+                        <select v-model="createForm.department_id" :disabled="createForm.section_id !== null"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
                             <option :value="null">بدون واحد</option>
                             <option v-for="department in formOptions.departments" :key="department.id" :value="department.id">{{ department.name }}</option>
                         </select>
                     </div>
 
-                    <div>
+                    <div v-if="createForm.section_id === null">
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">مسئول وظیفه</label>
                         <select v-model="createForm.assignee_id"
-                            class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
+                            class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
                             <option :value="null">بدون مسئول</option>
                             <option v-for="user in availableAssignees" :key="user.id" :value="user.id">{{ user.name }}</option>
                         </select>
-                        <p v-if="createForm.project_id !== null" class="mt-1 text-xs text-gray-500">فقط اعضای همان پروژه قابل انتخاب هستند.</p>
+                        <p v-if="createForm.project_id !== null" class="mt-1 text-xs text-gray-500">برای تسک‌های عمومی، مسئول را مستقیماً انتخاب کنید؛ تسک‌های بخش ابتدا به مدیر واحد ارجاع می‌شوند.</p>
+                    </div>
+
+                    <div v-else class="space-y-3 rounded-lg border border-gray-200 bg-gray-50/60 p-4">
+                        <div>
+                            <p class="text-xs text-gray-500">مسئول اولیه</p>
+                            <p class="mt-1 text-sm font-medium">{{ selectedSection?.manager_name ?? 'مدیر واحد تعیین نشده' }}</p>
+                        </div>
+                        <label class="flex items-start gap-2 text-sm">
+                            <input v-model="createForm.delegate_to_employee" type="checkbox" class="mt-0.5 h-4 w-4" />
+                            <span>ارجاع هم‌زمان از مدیر به کارمند</span>
+                        </label>
+                        <div v-if="createForm.delegate_to_employee">
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700">کارمند مقصد ارجاع</label>
+                            <select v-model="createForm.delegate_assignee_id" required
+                                class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
+                                <option :value="null">انتخاب کارمند</option>
+                                <option v-for="user in availableAssignees" :key="user.id" :value="user.id">{{ user.name }}</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div>
