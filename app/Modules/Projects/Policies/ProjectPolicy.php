@@ -17,7 +17,8 @@ class ProjectPolicy
 
     public function view(User $user, Project $project): bool
     {
-        return $this->hasScopedProjectAccess($user, $project, 'projects.view');
+        return ! ($project->is_system_default && $project->department_id !== null)
+            && $this->hasScopedProjectAccess($user, $project, 'projects.view');
     }
 
     public function create(User $user): bool
