@@ -75,6 +75,31 @@ class TaskHttpTest extends TestCase
         $this->assertNotNull($activity->refresh()->completed_at);
     }
 
+    public function test_manual_completed_activity_is_saved_in_unified_activity_table(): void
+    {
+        $user = $this->userWithPermission('tasks.log_work');
+        $task = $this->createTask($this->createProject($user), $user);
+
+        $this->actingAs($user)
+            ->post(route('tasks.work-logs.store', $task), [
+                'title' => 'تماس انجام‌شده با مشتری',
+                'description' => 'نتیجه تماس ثبت شد.',
+                'started_at' => null,
+                'completed_at' => null,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('task_activities', [
+            'task_id' => $task->id,
+            'title' => 'تماس انجام‌شده با مشتری',
+            'description' => 'نتیجه تماس ثبت شد.',
+            'status' => 'completed',
+            'activity_type' => 'logged',
+            'created_by' => $user->id,
+            'completed_by' => $user->id,
+        ]);
+    }
+
     public function test_work_log_can_be_edited_and_deleted(): void
     {
         $user = $this->userWithPermission('tasks.update');
