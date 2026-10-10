@@ -15,6 +15,8 @@ use App\Modules\Projects\Contracts\ProjectServiceContract;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Documents\Models\Document;
+use App\Modules\Documents\Services\DocumentService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -31,6 +33,7 @@ class ProjectController extends Controller
         private readonly UserServiceInterface $userService,
         private readonly DepartmentServiceInterface $departmentService,
         private readonly CustomFieldService $customFieldService,
+        private readonly DocumentService $documentService,
     ) {
     }
 
@@ -73,11 +76,43 @@ class ProjectController extends Controller
     {
         Gate::authorize('create', Project::class);
 
+        $data = $request->validated();
+
         try {
-            $this->projectService->create(
-                data: $request->validated(),
-                creator: $request->user(),
-            );
+            DB::transaction(function () use ($data, $request): void {
+                $project = $this->projectService->create(
+                    data: $data,
+                    creator: $request->user(),
+                );
+
+                foreach ($data['project_documents'] ?? [] as $file) {
+                    $this->documentService->create(
+                        data: ['title' => $file->getClientOriginalName(), 'document_type' => 'project_reference'],
+                        file: $file,
+                        creator: $request->user(),
+                        linkable: $project,
+                        purpose: 'project_reference',
+                    );
+                }
+
+                $sections = $project->sections()->orderBy('sort_order')->get();
+                foreach (array_values($data['sections'] ?? []) as $index => $sectionData) {
+                    $section = $sections->get($index);
+                    if ($section === null) {
+                        continue;
+                    }
+
+                    foreach ($sectionData['documents'] ?? [] as $file) {
+                        $this->documentService->create(
+                            data: ['title' => $file->getClientOriginalName(), 'document_type' => 'section_reference'],
+                            file: $file,
+                            creator: $request->user(),
+                            linkable: $section,
+                            purpose: 'section_reference',
+                        );
+                    }
+                }
+            });
         } catch (InvalidArgumentException $exception) {
             throw ValidationException::withMessages([
                 'manager_id' => $exception->getMessage(),
