@@ -55,6 +55,7 @@ class ProjectController extends Controller
             'managers' => $this->userService->activeList(),
             'departments' => $this->departmentService->list()->where('is_active', true)->values(),
             'customFields' => $this->customFieldService->definitions(Project::class),
+            'canUploadDocuments' => Gate::allows('create', Document::class),
         ]);
     }
 
@@ -77,6 +78,11 @@ class ProjectController extends Controller
         Gate::authorize('create', Project::class);
 
         $data = $request->validated();
+        $hasProjectFiles = ! empty($data['project_documents'])
+            || collect($data['sections'] ?? [])->contains(fn ($section) => ! empty($section['documents']));
+        if ($hasProjectFiles) {
+            Gate::authorize('create', Document::class);
+        }
 
         try {
             DB::transaction(function () use ($data, $request): void {
@@ -137,11 +143,6 @@ class ProjectController extends Controller
             || (int) $project->created_by === (int) $user->id;
         $canUploadProjectDocuments = Gate::allows('create', Document::class)
             && ($isProjectOwner || $hasOrganizationProjectScope);
-        $canUploadSectionDocuments = Gate::allows('create', Document::class)
-            && ($canUploadProjectDocuments || $project->sections()
-                ->whereHas('department', fn ($query) => $query->where('manager_id', $user->id))
-                ->exists());
-
         return Inertia::render('Projects/Show', [
             'project' => $this->projectService->show($project),
             'canUpdate' => Gate::allows('update', $project),
