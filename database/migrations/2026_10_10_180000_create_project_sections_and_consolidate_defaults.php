@@ -28,8 +28,9 @@ return new class extends Migration
         });
 
         Schema::table('tasks', function (Blueprint $table): void {
-            $table->foreignId('section_id')->nullable()->after('project_id')
-                ->constrained('project_sections')->nullOnDelete();
+            // Keep section_id indexed but without a database FK: SQL Server rejects
+            // the extra SET NULL cascade path through tasks.project_id -> projects.
+            $table->unsignedBigInteger('section_id')->nullable()->after('project_id');
             $table->index('section_id');
         });
 
@@ -213,7 +214,7 @@ return new class extends Migration
         }
 
         Schema::table('tasks', function (Blueprint $table): void {
-            $table->dropForeign(['section_id']);
+            // section_id intentionally has no foreign key on SQL Server.
             $table->dropIndex(['section_id']);
             $table->dropColumn('section_id');
         });
