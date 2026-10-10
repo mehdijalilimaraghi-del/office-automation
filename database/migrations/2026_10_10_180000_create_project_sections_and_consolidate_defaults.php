@@ -15,7 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('project_id')->constrained('projects')->cascadeOnDelete();
             $table->foreignId('department_id')->nullable()->constrained('departments')->nullOnDelete();
-            $table->foreignId('legacy_project_id')->nullable()->constrained('projects')->nullOnDelete();
+            // Historical mapping only: intentionally no FK to projects because SQL Server rejects
+            // the additional cascade path alongside project_id's cascading foreign key.
+            $table->unsignedBigInteger('legacy_project_id')->nullable()->index();
             $table->string('name', 150);
             $table->text('description')->nullable();
             $table->boolean('manager_can_create_tasks')->default(true);
