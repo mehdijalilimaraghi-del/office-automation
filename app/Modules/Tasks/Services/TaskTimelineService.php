@@ -16,7 +16,8 @@ class TaskTimelineService
             'assignments.toUser',
             'assignments.assignedBy',
             'comments.user',
-            'workLogs.user',
+            'activities.creator',
+            'activities.completedBy',
             'reminders.user',
             'reminders.creator',
             'statusHistory.changedBy',
@@ -59,14 +60,14 @@ class TaskTimelineService
             ]);
         }
 
-        foreach ($task->workLogs as $item) {
+        foreach ($task->activities->where('activity_type', 'logged') as $item) {
             $timeline->push([
                 'id' => $item->id,
                 'type' => 'work_log',
                 'title' => $item->title,
                 'description' => $item->description,
-                'occurred_at' => $item->created_at,
-                'user' => $item->user,
+                'occurred_at' => $item->completed_at ?? $item->created_at,
+                'user' => $item->completedBy ?? $item->creator,
                 'meta' => [
                     'started_at' => $item->started_at,
                     'completed_at' => $item->completed_at,
