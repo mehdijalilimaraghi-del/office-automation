@@ -9,6 +9,8 @@ use App\Http\Requests\Modules\Tasks\StoreTaskDocumentRequest;
 use App\Modules\Documents\Models\Document;
 use App\Modules\Documents\Services\DocumentService;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Projects\Models\ProjectSection;
+use App\Core\Permissions\Enums\PermissionScope;
 use Illuminate\Http\RedirectResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Facades\Gate;
@@ -37,6 +39,32 @@ class DocumentController extends Controller
         );
 
         return redirect()->route('tasks.show', $task)->with('success', 'فایل با موفقیت به تسک پیوست شد.');
+    }
+
+    public function storeForSection(StoreTaskDocumentRequest $request, ProjectSection $section): RedirectResponse
+    {
+        $section->load(['project', 'department']);
+        $user = $request->user();
+
+        $isProjectManager = (int) $section->project?->manager_id === (int) $user->id
+            || (int) $section->project?->created_by === (int) $user->id;
+        $hasOrganizationScope = in_array(PermissionScope::Organization->value, $user->permissionScopes('projects.update'), true)
+            || in_array(PermissionScope::Organization->value, $user->permissionScopes('projects.create'), true);
+        $isDepartmentManager = (int) $section->department?->manager_id === (int) $user->id;
+
+        abort_unless($isProjectManager || $hasOrganizationScope || $isDepartmentManager, 403);
+        Gate::authorize('create', Document::class);
+
+        $this->documents->create(
+            data: $request->validated(),
+            file: $request->file('file'),
+            creator: $user,
+            linkable: $section,
+            purpose: 'section_reference',
+        );
+
+        return redirect()->route('projects.show', $section->project_id)
+            ->with('success', 'مدرک با موفقیت به بخش پروژه پیوست شد.');
     }
 
     public function download(Document $document): StreamedResponse
