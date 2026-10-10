@@ -136,6 +136,7 @@ const reminderStatusForm = useForm({ status: '' as 'completed' | 'cancelled' | '
 const editReminderForm = useForm({ title: '', description: '', remind_at: '' });
 const editingReminderId = ref<number | null>(null);
 const activityForm = useForm({ title: '', description: '', activity_type: 'planned' as 'planned' | 'logged' });
+const editingActivityId = ref<number | null>(null);
 const showActivityModal = ref(false);
 const showEditModal = ref(false);
 const showReferralModal = ref(false);
@@ -415,17 +416,43 @@ const updateReminderStatus = (reminderId: number, status: 'completed' | 'cancell
 };
 const formatDateTime = formatPersianDateTime;
 const nextActivity = computed(() => props.task.activities?.find(activity => activity.status === 'pending' && activity.activity_type === 'planned') ?? null);
+const openActivityForm = (activity?: TaskActivity): void => {
+    editingActivityId.value = activity?.id ?? null;
+    activityForm.title = activity?.title ?? '';
+    activityForm.description = activity?.description ?? '';
+    activityForm.activity_type = 'planned';
+    activityForm.clearErrors();
+    showActivityModal.value = true;
+};
 const submitActivity = (): void => {
-    activityForm.post(route('tasks.activities.store', props.task.id), {
+    const options = {
         preserveScroll: true,
-        onSuccess: () => { activityForm.reset(); activityForm.activity_type = 'planned'; showActivityModal.value = false; },
-    });
+        onSuccess: () => {
+            activityForm.reset();
+            activityForm.activity_type = 'planned';
+            editingActivityId.value = null;
+            showActivityModal.value = false;
+        },
+    };
+
+    if (editingActivityId.value) {
+        activityForm.put(route('tasks.activities.update', [props.task.id, editingActivityId.value]), options);
+        return;
+    }
+
+    activityForm.post(route('tasks.activities.store', props.task.id), options);
 };
 const completeActivity = (activityId: number): void => {
     activityForm.patch(route('tasks.activities.complete', [props.task.id, activityId]), { preserveScroll: true });
 };
+const deleteActivity = (activityId: number): void => {
+    if (!window.confirm('آیا از حذف این فعالیت مطمئن هستید؟')) return;
+
+    activityForm.delete(route('tasks.activities.destroy', [props.task.id, activityId]), { preserveScroll: true });
+};
 const phoneLabel = (user: User): string | null => user.mobile || user.phone || null;
-const pendingActivities = computed(() => props.task.activities?.filter(activity => activity.activity_type === 'planned') ?? []);
+const pendingActivities = computed(() => props.task.activities?.filter(activity => activity.activity_type === 'planned' && activity.status === 'pending') ?? []);
+const completedActivities = computed(() => props.task.activities?.filter(activity => activity.activity_type === 'planned' && activity.status === 'completed') ?? []);
 </script>
 
 <template>
@@ -455,13 +482,22 @@ const pendingActivities = computed(() => props.task.activities?.filter(activity 
             <div class="grid gap-6 pt-2 lg:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.75fr)]">
                 <main class="min-w-0 space-y-6">
                     <section class="overflow-hidden rounded-xl border bg-card shadow-sm">
-                        <div class="flex items-center justify-between border-b bg-blue-50/60 px-5 py-4 sm:px-6"><div><h3 class="font-semibold">فعالیت‌های بعدی</h3><p class="mt-1 text-sm text-muted-foreground">اقداماتی که باید برای پیشبرد وظیفه انجام شوند.</p></div><button v-if="abilities.update" type="button" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showActivityModal = true">+ ثبت فعالیت بعدی</button></div>
-                        <div v-if="pendingActivities.length === 0" class="p-6 text-center text-sm text-muted-foreground">هنوز فعالیت بعدی ثبت نشده است.</div>
-                        <div v-else class="divide-y">
+                        <div class="flex items-center justify-between gap-3 border-b bg-blue-50/60 px-5 py-4 sm:px-6"><div><h3 class="font-semibold">فعالیت‌های بعدی</h3><p class="mt-1 text-sm text-muted-foreground">فعالیت‌های برنامه‌ریزی‌شده و سوابق انجام آن‌ها.</p></div><button v-if="abilities.update" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="openActivityForm()">+ ثبت فعالیت بعدی</button></div>
+                        <div v-if="pendingActivities.length === 0 && completedActivities.length === 0" class="p-6 text-center text-sm text-muted-foreground">هنوز فعالیتی ثبت نشده است.</div>
+                        <div v-if="pendingActivities.length" class="divide-y">
                             <article v-for="activity in pendingActivities" :key="activity.id" class="flex flex-wrap items-start justify-between gap-4 p-5">
-                                <div class="min-w-0"><div class="flex items-center gap-2"><span class="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">فعالیت</span><h4 class="font-medium text-gray-900">{{ activity.title }}</h4></div><p v-if="activity.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ activity.description }}</p><p v-if="activity.status === 'completed' && activity.completed_at" class="mt-2 text-xs text-muted-foreground">انجام شد در {{ formatDateTime(activity.completed_at) }}</p></div>
-                                <button v-if="activity.status === 'pending' && abilities.update" type="button" class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700" @click="completeActivity(activity.id)">انجام شد</button>
+                                <div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><span class="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">در انتظار انجام</span><h4 class="font-medium text-gray-900">{{ activity.title }}</h4></div><p v-if="activity.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ activity.description }}</p></div>
+                                <div v-if="abilities.update" class="flex shrink-0 flex-wrap gap-2"><button type="button" class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700" @click="completeActivity(activity.id)">انجام شد</button><button type="button" class="rounded-lg border px-3 py-2 text-sm" @click="openActivityForm(activity)">ویرایش</button><button type="button" class="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600" @click="deleteActivity(activity.id)">حذف</button></div>
                             </article>
+                        </div>
+                        <div v-if="completedActivities.length" class="border-t">
+                            <div class="bg-emerald-50/60 px-5 py-3 text-sm font-semibold text-emerald-800">فعالیت‌های انجام‌شده</div>
+                            <div class="divide-y">
+                                <article v-for="activity in completedActivities" :key="activity.id" class="flex flex-wrap items-start justify-between gap-4 p-5">
+                                    <div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">انجام شد</span><h4 class="font-medium text-gray-900">{{ activity.title }}</h4></div><p v-if="activity.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ activity.description }}</p><p v-if="activity.completed_at" class="mt-2 text-xs text-muted-foreground">زمان انجام: {{ formatDateTime(activity.completed_at) }}</p></div>
+                                    <div v-if="abilities.update" class="flex shrink-0 gap-2"><button type="button" class="rounded-lg border px-3 py-2 text-sm" @click="openActivityForm(activity)">ویرایش</button><button type="button" class="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600" @click="deleteActivity(activity.id)">حذف</button></div>
+                                </article>
+                            </div>
                         </div>
                     </section>
 
@@ -739,12 +775,12 @@ const pendingActivities = computed(() => props.task.activities?.filter(activity 
 
             <div v-if="showActivityModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showActivityModal = false">
                 <section class="w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl sm:p-6">
-                    <div class="flex items-center justify-between"><h3 class="font-semibold text-gray-900">ثبت فعالیت</h3><button type="button" class="text-gray-500 hover:text-gray-900" @click="showActivityModal = false">×</button></div>
+                    <div class="flex items-center justify-between"><h3 class="font-semibold text-gray-900">{{ editingActivityId ? 'ویرایش فعالیت بعدی' : 'ثبت فعالیت بعدی' }}</h3><button type="button" class="text-gray-500 hover:text-gray-900" @click="showActivityModal = false">×</button></div>
                     <form class="mt-5 space-y-4" @submit.prevent="submitActivity">
                         <div><label class="mb-1.5 block text-sm font-medium text-gray-700">عنوان فعالیت</label><input v-model="activityForm.title" required class="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm" placeholder="مثلاً دریافت تأیید مالی" /></div>
                         <div><label class="mb-1.5 block text-sm font-medium text-gray-700">توضیحات</label><textarea v-model="activityForm.description" rows="3" class="w-full rounded-lg border border-gray-300 p-3 text-sm"></textarea></div>
                         <div class="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">مسئول این فعالیت همان مسئول اصلی وظیفه است: <span class="font-medium text-gray-900">{{ task.assignee?.name ?? 'بدون مسئول' }}</span></div>
-                        <div class="flex items-center justify-end gap-2 border-t pt-4"><button type="button" class="rounded-lg border px-4 py-2 text-sm" @click="showActivityModal = false">انصراف</button><button type="submit" :disabled="activityForm.processing" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">ثبت فعالیت</button></div>
+                        <div class="flex items-center justify-end gap-2 border-t pt-4"><button type="button" class="rounded-lg border px-4 py-2 text-sm" @click="showActivityModal = false">انصراف</button><button type="submit" :disabled="activityForm.processing" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{{ editingActivityId ? 'ذخیره تغییرات' : 'ثبت فعالیت' }}</button></div>
                     </form>
                 </section>
             </div>
