@@ -49,7 +49,7 @@ class ProjectService implements ProjectServiceContract
                         ->orWhere(function ($sharedProjectQuery) use ($user): void {
                             $sharedProjectQuery->where('projects.is_system_default', true)
                                 ->whereNull('projects.department_id')
-                                ->whereHas('sections.department.members', fn ($memberQuery) => $memberQuery->where('users.id', $user->id));
+                                ->whereHas('sections.department.members' => fn ($query) => $query->where('users.status', 'active'), fn ($memberQuery) => $memberQuery->where('users.id', $user->id));
                         });
                 }
             }
