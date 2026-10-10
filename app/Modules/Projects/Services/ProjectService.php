@@ -49,7 +49,7 @@ class ProjectService implements ProjectServiceContract
                         ->orWhere(function ($sharedProjectQuery) use ($user): void {
                             $sharedProjectQuery->where('projects.is_system_default', true)
                                 ->whereNull('projects.department_id')
-                                ->whereHas('sections.department.members', fn ($memberQuery) => $memberQuery->where('users.id', $user->id));
+                                ->whereHas('sections', fn ($sectionQuery) => $sectionQuery->whereIn('department_id', $departmentIds));
                         });
                 }
             }
@@ -66,11 +66,13 @@ class ProjectService implements ProjectServiceContract
                     $scopeQuery->orWhereIn('projects.department_id', array_values(array_unique($departmentIds)));
                 }
 
-                $scopeQuery->orWhere(function ($sharedProjectQuery) use ($user): void {
-                    $sharedProjectQuery->where('projects.is_system_default', true)
-                        ->whereNull('projects.department_id')
-                        ->whereHas('sections.department.members', fn ($memberQuery) => $memberQuery->where('users.id', $user->id));
-                });
+                if ($departmentIds !== []) {
+                    $scopeQuery->orWhere(function ($sharedProjectQuery) use ($departmentIds): void {
+                        $sharedProjectQuery->where('projects.is_system_default', true)
+                            ->whereNull('projects.department_id')
+                            ->whereHas('sections', fn ($sectionQuery) => $sectionQuery->whereIn('department_id', array_values(array_unique($departmentIds))));
+                    });
+                }
             }
 
             if (in_array(PermissionScope::Project->value, $scopes, true)) {
