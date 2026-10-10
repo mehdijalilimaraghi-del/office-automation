@@ -103,6 +103,11 @@ class ProjectController extends Controller
             'memberOptions' => $canManageMembers
                 ? $this->projectMemberService->availableUsers($project)
                 : [],
+            'canUploadSectionDocuments' => Gate::allows('create', \App\Modules\Documents\Models\Document::class)
+                && (Gate::allows('update', $project) || Gate::allows('create', Project::class)
+                    || ($request->user()->hasPermission('tasks.create') && $project->sections()
+                        ->whereHas('department', fn ($query) => $query->where('manager_id', $request->user()->id))
+                        ->exists())),
             'canCreateTasks' => Gate::allows('create', [Task::class, (int) $project->id])
                 || ($request->user()->hasPermission('tasks.create') && $project->sections()
                     ->where('manager_can_create_tasks', true)
