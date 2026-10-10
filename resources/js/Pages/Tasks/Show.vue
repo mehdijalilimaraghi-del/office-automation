@@ -521,7 +521,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                             <div class="min-w-0">
                                 <h3 class="font-semibold">فعالیت‌های بعدی</h3>
                                 <p class="mt-1 text-sm text-muted-foreground">کارهایی که هنوز باید انجام شوند.</p>
-                                <p class="mt-3 rounded-lg border border-blue-100 bg-white/80 px-3 py-2 text-xs leading-6 text-blue-900">راهنما: «فعالیت‌های بعدی» برای کارهایی است که هنوز باید انجام شوند. بعد از انجام، «انجام شد» را بزنید تا همان فعالیت با زمان تکمیل در گزارش فعالیت نمایش داده شود. برای کاری که قبلاً انجام شده و از قبل در این فهرست نبوده، «ثبت فعالیت انجام‌شده» را انتخاب کنید.</p>
+                                
                             </div>
                             <button v-if="abilities.update" type="button" title="برای کاری که هنوز باید انجام شود؛ پس از انجام، دکمه «انجام شد» را بزنید." class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="openActivityForm()">+ ثبت فعالیت بعدی</button>
                         </div>
@@ -705,6 +705,11 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                     </section>
                 </aside>
             </div>
+
+            <section class="rounded-xl border border-blue-100 bg-blue-50/60 px-5 py-4 shadow-sm sm:px-6" aria-label="راهنمای فعالیت‌ها">
+                <h3 class="text-sm font-semibold text-blue-950">راهنمای ثبت فعالیت</h3>
+                <p class="mt-2 text-sm leading-7 text-blue-900">«فعالیت‌های بعدی» برای کارهایی است که هنوز باید انجام شوند. بعد از انجام، «انجام شد» را بزنید تا همان فعالیت با زمان تکمیل در گزارش فعالیت نمایش داده شود. برای کاری که قبلاً انجام شده و از قبل در این فهرست نبوده، «ثبت فعالیت انجام‌شده» را انتخاب کنید.</p>
+            </section>
         </div>
 
         <div v-if="showReferralModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showReferralModal = false">
