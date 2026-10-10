@@ -98,6 +98,14 @@ class TaskHttpTest extends TestCase
             'created_by' => $user->id,
             'completed_by' => $user->id,
         ]);
+
+        $activity = TaskActivity::query()
+            ->where('task_id', $task->id)
+            ->where('title', 'تماس انجام‌شده با مشتری')
+            ->firstOrFail();
+
+        $this->assertNotNull($activity->started_at);
+        $this->assertNotNull($activity->completed_at);
     }
 
     public function test_work_log_can_be_edited_and_deleted(): void
