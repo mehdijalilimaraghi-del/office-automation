@@ -822,3 +822,7 @@ Project mutation authorization and task workflow actions now enforce permission 
 ### 2026-10-10 — Task activity guide full-width placement
 - راهنمای فعالیت‌ها به سکشن مستقلِ تمام‌عرض زیر چیدمان دو‌ستونه جزئیات وظیفه منتقل شد تا متن راهنما در فضای جداگانه و خوانا نمایش داده شود.
 - این تغییر صرفاً چیدمان رابط کاربری است و محدوده V1/V2 یا مدل داده را تغییر نمی‌دهد.
+
+
+### Shared Project / Sections implementation checkpoint — 2026-10-10
+The development branch now contains the first implementation of project sections, shared-project migration/seeding, department-to-section provisioning, section-scoped task creation, manager-first referral history, and general/section document uploads. This extension is **pending local test-suite, migration, and frontend-build validation**; it is not yet accepted as complete.
