@@ -9,6 +9,7 @@ use App\Core\CustomFields\Services\CustomFieldService;
 use App\Http\Requests\Modules\Projects\StoreProjectRequest;
 use App\Http\Requests\Modules\Projects\UpdateProjectRequest;
 use App\Core\Departments\Contracts\DepartmentServiceInterface;
+use App\Core\Departments\Models\Department;
 use App\Core\Users\Contracts\UserServiceInterface;
 use App\Modules\Projects\Contracts\ProjectMemberServiceContract;
 use App\Modules\Projects\Contracts\ProjectServiceContract;
@@ -52,7 +53,14 @@ class ProjectController extends Controller
         Gate::authorize('create', Project::class);
 
         return Inertia::render('Projects/Create', [
-            'managers' => $this->userService->activeList(),
+            'managers' => Department::query()
+                ->where('name', 'مدیریت پروژه')
+                ->where('is_active', true)
+                ->first()
+                ?->members()
+                ->where('users.status', 'active')
+                ->orderBy('users.name')
+                ->get(['users.id', 'users.name']) ?? collect(),
             'departments' => $this->departmentService->list()
                 ->filter(fn ($department) => $department->is_active && $department->manager_id !== null)
                 ->values(),
