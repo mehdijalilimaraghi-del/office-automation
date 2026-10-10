@@ -70,6 +70,10 @@ function removeSection(index: number): void {
     form.sections.splice(index, 1);
 }
 
+function sectionError(key: string): string | undefined {
+    return (form.errors as Record<string, string | undefined>)[key];
+}
+
 const statusOptions = [
     { value: 'planning', label: 'در حال برنامه‌ریزی' },
     { value: 'active', label: 'فعال' },
@@ -330,7 +334,7 @@ function submit(): void {
                             <div class="space-y-2">
                                 <label :for="'section-name-' + index" class="text-sm font-medium">نام بخش</label>
                                 <input :id="'section-name-' + index" v-model="section.name" required maxlength="150" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="مثلاً طراحی محصول" />
-                                <p v-if="form.errors['sections.' + index + '.name']" class="text-xs text-destructive">{{ form.errors['sections.' + index + '.name'] }}</p>
+                                <p v-if="sectionError('sections.' + index + '.name')" class="text-xs text-destructive">{{ sectionError('sections.' + index + '.name') }}</p>
                             </div>
                             <div class="space-y-2">
                                 <label :for="'section-department-' + index" class="text-sm font-medium">واحد انجام‌دهنده</label>
@@ -338,7 +342,7 @@ function submit(): void {
                                     <option value="">انتخاب واحد مسئول</option>
                                     <option v-for="department in props.departments" :key="department.id" :value="String(department.id)">{{ department.name }}</option>
                                 </select>
-                                <p v-if="form.errors['sections.' + index + '.department_id']" class="text-xs text-destructive">{{ form.errors['sections.' + index + '.department_id'] }}</p>
+                                <p v-if="sectionError('sections.' + index + '.department_id')" class="text-xs text-destructive">{{ sectionError('sections.' + index + '.department_id') }}</p>
                             </div>
                         </div>
                         <div class="space-y-2">
@@ -349,7 +353,7 @@ function submit(): void {
                             <label :for="'section-documents-' + index" class="text-sm font-medium">مدارک اختصاصی این واحد</label>
                             <input :id="'section-documents-' + index" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" class="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm" @change="updateSectionDocuments(index, $event)" />
                             <p v-if="section.documents.length" class="text-xs text-muted-foreground">{{ section.documents.length }} فایل انتخاب شده است.</p>
-                            <p v-if="form.errors['sections.' + index + '.documents'] || form.errors['sections.' + index + '.documents.0']" class="text-xs text-destructive">{{ form.errors['sections.' + index + '.documents'] || form.errors['sections.' + index + '.documents.0'] }}</p>
+                            <p v-if="sectionError('sections.' + index + '.documents') || sectionError('sections.' + index + '.documents.0')" class="text-xs text-destructive">{{ sectionError('sections.' + index + '.documents') || sectionError('sections.' + index + '.documents.0') }}</p>
                         </div>
                         <label class="flex items-start gap-3 rounded-lg border bg-background p-3">
                             <input v-model="section.manager_can_create_tasks" type="checkbox" class="mt-1 h-4 w-4 rounded border-input" />
