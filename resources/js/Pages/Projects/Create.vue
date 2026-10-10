@@ -345,7 +345,7 @@ function submit(): void {
                     <div v-for="(section, index) in form.sections" :key="index" class="space-y-4 rounded-lg border bg-muted/20 p-4">
                         <div class="flex items-center justify-between gap-3">
                             <h4 class="font-medium">بخش {{ index + 1 }}</h4>
-                            <Button type="button" variant="outline" size="sm" :disabled="form.sections.length <= 1" @click="removeSection(index)">حذف بخش</Button>
+                            <Button type="button" variant="outline" size="sm" @click="removeSection(index)">حذف بخش</Button>
                         </div>
                         <div class="grid gap-4 md:grid-cols-2">
                             <div class="space-y-2">
