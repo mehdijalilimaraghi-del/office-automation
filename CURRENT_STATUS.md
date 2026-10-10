@@ -31,7 +31,8 @@ Version boundaries and acceptance gates are authoritative in `ROADMAP.md`.
 - Protected `SYSTEM_ADMIN` bootstrap account outside normal organizational membership
 - Internal departments, hierarchy, memberships, managers, positions and position assignments
 - Organization Settings
-- Projects, project managers, members, contextual project roles and default department projects
+- Projects, project managers, members and contextual project roles
+- Project sections linked to responsible departments, with section-level task-creation authority and section documents
 - Tasks, assignment, referral/history, status/priority, comments, work logs, reminders, timeline, filtering, pagination and access scopes
 - Task review/approval lifecycle and resubmission
 - Task dependencies
@@ -427,3 +428,17 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - راهنمای فعالیت‌ها در یک سکشن مستقل و تمام‌عرض، زیر چیدمان دو‌ستونه صفحه جزئیات وظیفه قرار گرفت؛ سکشن‌های «فعالیت‌های بعدی» و «گزارش فعالیت» بدون تغییر در جای خود باقی ماندند.
 - متن راهنما توضیح می‌دهد چه زمانی از «فعالیت‌های بعدی» و چه زمانی از «ثبت فعالیت انجام‌شده» استفاده شود.
 - **Validation:** فرانت‌اند هنوز باید در محیط محلی build شود.
+
+
+## Project Sections / Shared Project — 2026-10-10
+
+Implementation has started for the agreed cross-department project model:
+- New `project_sections` entity belongs to a project and a responsible internal department.
+- Each section stores its name, description, ordering, and whether its department manager may create tasks.
+- Project creation accepts multiple sections.
+- Section tasks are created with the department manager as the initial assignee; an optional direct referral to an active member of that department records both assignment-history steps.
+- Project detail UI groups tasks by section and supports section-specific document uploads.
+- Department creation no longer creates a separate default project.
+- A migration consolidates existing department-default projects into one shared default project, creates a section per legacy department project, and preserves legacy project rows as inactive for historical references.
+
+**Validation status:** not yet run in a local Laravel environment. Migration, backend authorization, tests, and frontend build must be validated before this work is considered complete. Existing per-department default projects are hidden from ordinary project selection; the shared default project is created by `db:seed` on fresh installs.
