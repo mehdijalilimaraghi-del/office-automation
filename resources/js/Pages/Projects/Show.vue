@@ -4,6 +4,7 @@ import { Button } from '@/Components/ui/button';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, reactive, ref } from 'vue';
 import { formatPersianDate } from '@/Utils/date';
+import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 
 interface ProjectRole {
     id: number;
@@ -863,11 +864,11 @@ const formatDate = (date: string | null): string => {
                     <div class="grid gap-3 sm:grid-cols-2">
                         <div class="space-y-1">
                             <label for="section-task-start" class="text-sm font-medium">تاریخ شروع</label>
-                            <input id="section-task-start" v-model="sectionTaskForm.start_date" type="date" class="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+                            <JalaliDatePicker v-model="sectionTaskForm.start_date" placeholder="انتخاب تاریخ شروع" />
                         </div>
                         <div class="space-y-1">
                             <label for="section-task-due" class="text-sm font-medium">مهلت تحویل</label>
-                            <input id="section-task-due" v-model="sectionTaskForm.due_date" type="date" class="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+                            <JalaliDatePicker v-model="sectionTaskForm.due_date" placeholder="انتخاب مهلت تحویل" />
                             <p v-if="sectionTaskForm.errors.due_date" class="text-xs text-destructive">{{ sectionTaskForm.errors.due_date }}</p>
                         </div>
                     </div>
