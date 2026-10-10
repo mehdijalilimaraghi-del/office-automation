@@ -23,6 +23,9 @@ class ProjectService implements ProjectServiceContract
     public function list(User $user): LengthAwarePaginator
     {
         $query = Project::query()
+            ->where(function ($visibleProjects): void {
+                $visibleProjects->where('is_system_default', false)->orWhereNull('department_id');
+            })
             ->with(['manager', 'creator']);
 
         $scopes = $user->permissionScopes('projects.view');
@@ -81,6 +84,10 @@ class ProjectService implements ProjectServiceContract
             'members.projectRole',
             'tasks.assignee',
             'tasks.creator',
+            'sections.department.manager',
+            'sections.department.members',
+            'sections.tasks.assignee',
+            'sections.tasks.creator',
         ]);
     }
 
