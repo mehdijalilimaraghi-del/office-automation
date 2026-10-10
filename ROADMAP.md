@@ -778,3 +778,10 @@ Project mutation authorization and task workflow actions now enforce permission 
 - تست HTTP تکمیل فعالیت برای تغییر نوع رکورد به `logged` به‌روزرسانی شد.
 
 **Status:** code committed; focused task test and frontend build validation pending.
+
+### 2026-10-10 — Activity report CRUD completion
+- گزارش‌های ثبت‌شده در بخش «گزارش فعالیت» اکنون شناسه رکورد را در timeline دارند و دکمه‌های ویرایش/حذف در همان کارت نمایش داده می‌شوند.
+- Route و عملیات backend برای ویرایش/حذف `TaskWorkLog` اضافه شد؛ کنترل تعلق گزارش به همان وظیفه و مجوز ویرایش بررسی می‌شود.
+- تست HTTP برای ویرایش و حذف گزارش فعالیت اضافه شد.
+
+**Status:** implementation committed; focused task test and frontend build validation pending.
