@@ -32,7 +32,8 @@ return new class extends Migration
                     ->max('sequence')) + 1;
             }
 
-            $userId = (int) $workLog->user_id;
+            $userId = $workLog->user_id !== null ? (int) $workLog->user_id : null;
+            $creatorId = $userId ?? (int) DB::table('tasks')->where('id', $taskId)->value('created_by');
 
             DB::table('task_activities')->insert([
                 'task_id' => $taskId,
@@ -42,7 +43,7 @@ return new class extends Migration
                 'activity_type' => 'logged',
                 'sequence' => $nextSequenceByTask[$taskId]++,
                 'assigned_to' => null,
-                'created_by' => $userId,
+                'created_by' => $creatorId,
                 'completed_by' => $userId,
                 'started_at' => $workLog->started_at,
                 'completed_at' => $workLog->completed_at,
@@ -60,19 +61,21 @@ return new class extends Migration
             Schema::create('task_work_logs', function (Blueprint $table): void {
                 $table->id();
                 $table->foreignId('task_id')->constrained('tasks')->cascadeOnDelete();
-                $table->foreignId('user_id')->constrained('users');
-                $table->string('title');
+                $table->foreignId('user_id')->nullable()->constrained('users');
+                $table->string('title', 200);
                 $table->text('description')->nullable();
                 $table->timestamp('started_at')->nullable();
                 $table->timestamp('completed_at')->nullable();
                 $table->timestamps();
+                $table->index(['task_id', 'created_at']);
+                $table->index('user_id');
             });
         }
 
         foreach (DB::table('task_activities')->where('activity_type', 'logged')->orderBy('id')->cursor() as $activity) {
             DB::table('task_work_logs')->insert([
                 'task_id' => $activity->task_id,
-                'user_id' => $activity->completed_by ?? $activity->created_by,
+                'user_id' => $activity->completed_by,
                 'title' => $activity->title,
                 'description' => $activity->description,
                 'started_at' => $activity->started_at ?? null,
