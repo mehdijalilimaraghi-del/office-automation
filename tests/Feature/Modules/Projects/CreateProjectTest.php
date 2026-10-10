@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Modules\Projects\Contracts\ProjectServiceContract;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectMember;
+use App\Modules\Projects\Models\ProjectSection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use InvalidArgumentException;
 use Tests\TestCase;
@@ -225,5 +226,42 @@ class CreateProjectTest extends TestCase
         $this->assertNull(
             $membership->project_role_id
         );
+    }
+
+    public function test_project_can_be_created_with_department_sections_and_manager_task_setting(): void
+    {
+        $creator = User::factory()->create();
+        $manager = User::factory()->create();
+        $department = \\App\\Core\\Departments\\Models\\Department::query()->create([
+            'name' => 'واحد طراحی',
+            'code' => 'DESIGN',
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+
+        $project = app(ProjectServiceContract::class)->create([
+            'name' => 'Product Delivery',
+            'manager_id' => $manager->id,
+            'sections' => [
+                [
+                    'department_id' => $department->id,
+                    'name' => 'طراحی محصول',
+                    'description' => 'طراحی قطعات محصول',
+                    'manager_can_create_tasks' => false,
+                ],
+            ],
+        ], $creator);
+
+        $section = ProjectSection::query()->where('project_id', $project->id)->firstOrFail();
+
+        $this->assertSame('طراحی محصول', $section->name);
+        $this->assertSame($department->id, $section->department_id);
+        $this->assertFalse($section->manager_can_create_tasks);
+        $this->assertDatabaseHas('project_sections', [
+            'project_id' => $project->id,
+            'department_id' => $department->id,
+            'name' => 'طراحی محصول',
+            'manager_can_create_tasks' => false,
+        ]);
     }
 }
