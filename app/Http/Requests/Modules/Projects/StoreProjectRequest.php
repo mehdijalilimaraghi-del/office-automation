@@ -6,6 +6,7 @@ namespace App\Http\Requests\Modules\Projects;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class StoreProjectRequest extends FormRequest
 {
@@ -38,11 +39,18 @@ class StoreProjectRequest extends FormRequest
             'manager_id' => [
                 'required',
                 'integer',
-                'exists:users,id',
+                Rule::exists('users', 'id')->where(fn ($query) => $query->whereIn(
+                    'id',
+                    DB::table('department_memberships')
+                        ->select('user_id')
+                        ->whereIn('department_id', DB::table('departments')
+                            ->select('id')
+                            ->where('name', 'مدیریت پروژه'))
+                )),
             ],
-            'sections' => ['nullable', 'array', 'max:50'],
-            'sections.*.department_id' => ['required_with:sections', 'integer', Rule::exists('departments', 'id')->where(fn ($query) => $query->where('is_active', true)->whereNotNull('manager_id'))],
-            'sections.*.name' => ['required_with:sections', 'string', 'max:150'],
+            'sections' => ['required', 'array', 'min:1', 'max:50'],
+            'sections.*.department_id' => ['required', 'integer', Rule::exists('departments', 'id')->where(fn ($query) => $query->where('is_active', true)->whereNotNull('manager_id'))],
+            'sections.*.name' => ['required', 'string', 'max:150'],
             'sections.*.description' => ['nullable', 'string', 'max:10000'],
             'sections.*.manager_can_create_tasks' => ['sometimes', 'boolean'],
             'sections.*.documents' => ['nullable', 'array', 'max:20'],
@@ -64,7 +72,7 @@ class StoreProjectRequest extends FormRequest
             'status' => 'وضعیت',
             'start_date' => 'تاریخ شروع',
             'end_date' => 'تاریخ پایان',
-            'manager_id' => 'مدیر پروژه',
+            'manager_id' => 'مدیر پروژه (عضو واحد مدیریت پروژه)',
             'sections' => 'بخش‌های پروژه',
             'sections.*.department_id' => 'واحد مسئول بخش (فعال و دارای مدیر فعال)',
             'sections.*.name' => 'نام بخش',
