@@ -33,7 +33,6 @@ const props = defineProps<{
 }>();
 
 const form = useForm({
-    department_id: '',
     name: '',
     description: '',
     status: 'planning' as
