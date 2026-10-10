@@ -17,7 +17,7 @@ class ProjectPolicy
 
     public function view(User $user, Project $project): bool
     {
-        return ! ($project->is_system_default && $project->department_id !== null)
+        return ! ($project->is_system_default && $project->department_id !== null && ! $project->is_active)
             && $this->hasScopedProjectAccess($user, $project, 'projects.view');
     }
 
