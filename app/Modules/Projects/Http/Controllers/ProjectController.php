@@ -13,6 +13,7 @@ use App\Core\Users\Contracts\UserServiceInterface;
 use App\Modules\Projects\Contracts\ProjectMemberServiceContract;
 use App\Modules\Projects\Contracts\ProjectServiceContract;
 use App\Modules\Projects\Models\Project;
+use App\Modules\Tasks\Models\Task;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -102,6 +103,7 @@ class ProjectController extends Controller
             'memberOptions' => $canManageMembers
                 ? $this->projectMemberService->availableUsers($project)
                 : [],
+            'canCreateTasks' => Gate::allows('create', [Task::class, (int) $project->id]),
         ]);
     }
 
