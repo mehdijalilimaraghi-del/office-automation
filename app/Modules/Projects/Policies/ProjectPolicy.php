@@ -113,10 +113,21 @@ class ProjectPolicy
             }
         }
 
+        if (
+            in_array(PermissionScope::DepartmentTree->value, $scopes, true)
+            && $project->is_system_default
+            && $project->department_id === null
+            && $project->sections()->whereHas('department.members', fn ($query) => $query->where('users.id', $user->id))->exists()
+        ) {
+            return true;
+        }
+
         return in_array(PermissionScope::Project->value, $scopes, true)
             && (
                 (int) $project->manager_id === (int) $user->id
                 || $project->users()->whereKey($user->id)->exists()
+                || ($project->is_system_default && $project->department_id === null
+                    && $project->sections()->whereHas('department.members', fn ($query) => $query->where('users.id', $user->id))->exists())
             );
     }
 }
