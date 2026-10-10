@@ -87,7 +87,7 @@ class ProjectController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($data, $request): void {
+            $project = DB::transaction(function () use ($data, $request) {
                 $project = $this->projectService->create(
                     data: $data,
                     creator: $request->user(),
@@ -120,6 +120,8 @@ class ProjectController extends Controller
                         );
                     }
                 }
+
+                return $project;
             });
         } catch (InvalidArgumentException $exception) {
             $field = str_contains($exception->getMessage(), 'واحد مسئول')
@@ -131,7 +133,7 @@ class ProjectController extends Controller
             ]);
         }
 
-        return back()->with(
+        return redirect()->route('projects.show', $project)->with(
             'success',
             'پروژه با موفقیت ایجاد شد.'
         );
