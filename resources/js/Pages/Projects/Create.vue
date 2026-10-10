@@ -15,6 +15,13 @@ interface Department {
     name: string;
 }
 
+interface SectionForm {
+    name: string;
+    department_id: string;
+    description: string;
+    manager_can_create_tasks: boolean;
+}
+
 const props = defineProps<{
     managers: Manager[];
     departments: Department[];
@@ -39,7 +46,16 @@ const form = useForm({
     manager_id: '',
     is_active: true,
     custom_fields: {} as Record<string, string | number | boolean | null>,
+    sections: [] as SectionForm[],
 });
+
+function addSection(): void {
+    form.sections.push({ name: '', department_id: '', description: '', manager_can_create_tasks: true });
+}
+
+function removeSection(index: number): void {
+    form.sections.splice(index, 1);
+}
 
 const statusOptions = [
     { value: 'planning', label: 'در حال برنامه‌ریزی' },
@@ -264,6 +280,55 @@ function submit(): void {
                         {{ form.errors.description }}
                     </p>
                 </div>
+
+                <section class="space-y-4 rounded-xl border border-border p-4 sm:p-5">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h3 class="font-semibold">بخش‌های پروژه</h3>
+                            <p class="mt-1 text-sm text-muted-foreground">برای هر واحد مسئول، یک بخش مستقل تعریف کنید.</p>
+                        </div>
+                        <Button type="button" variant="outline" @click="addSection">
+                            + افزودن بخش جدید
+                        </Button>
+                    </div>
+
+                    <div v-if="form.sections.length === 0" class="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                        هنوز بخشی اضافه نشده است. برای تعریف کارهای واحدها، بخش جدید ایجاد کنید.
+                    </div>
+
+                    <div v-for="(section, index) in form.sections" :key="index" class="space-y-4 rounded-lg border bg-muted/20 p-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <h4 class="font-medium">بخش {{ index + 1 }}</h4>
+                            <Button type="button" variant="outline" size="sm" @click="removeSection(index)">حذف بخش</Button>
+                        </div>
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div class="space-y-2">
+                                <label :for="'section-name-' + index" class="text-sm font-medium">نام بخش</label>
+                                <input :id="'section-name-' + index" v-model="section.name" required maxlength="150" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="مثلاً طراحی محصول" />
+                                <p v-if="form.errors['sections.' + index + '.name']" class="text-xs text-destructive">{{ form.errors['sections.' + index + '.name'] }}</p>
+                            </div>
+                            <div class="space-y-2">
+                                <label :for="'section-department-' + index" class="text-sm font-medium">واحد انجام‌دهنده</label>
+                                <select :id="'section-department-' + index" v-model="section.department_id" required class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                                    <option value="">انتخاب واحد مسئول</option>
+                                    <option v-for="department in props.departments" :key="department.id" :value="String(department.id)">{{ department.name }}</option>
+                                </select>
+                                <p v-if="form.errors['sections.' + index + '.department_id']" class="text-xs text-destructive">{{ form.errors['sections.' + index + '.department_id'] }}</p>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label :for="'section-description-' + index" class="text-sm font-medium">توضیحات و اطلاعات دریافتی برای واحد</label>
+                            <textarea :id="'section-description-' + index" v-model="section.description" rows="3" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="شرح محدوده کار، خروجی مورد انتظار و نکات اجرایی" />
+                        </div>
+                        <label class="flex items-start gap-3 rounded-lg border bg-background p-3">
+                            <input v-model="section.manager_can_create_tasks" type="checkbox" class="mt-1 h-4 w-4 rounded border-input" />
+                            <span class="space-y-1">
+                                <span class="block text-sm font-medium">مدیر واحد بتواند تسک تعریف کند</span>
+                                <span class="block text-xs text-muted-foreground">در صورت فعال بودن، مدیر همین واحد می‌تواند تسک‌های این بخش را تعریف و به کارکنان ارجاع دهد. ادمین پروژه در هر دو حالت امکان تعریف تسک دارد.</span>
+                            </span>
+                        </label>
+                    </div>
+                </section>
 
                 <label class="flex items-center gap-2">
                     <input
