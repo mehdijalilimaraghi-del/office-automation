@@ -21,6 +21,15 @@ class UpdateDepartmentAction
             ? (int) $data['manager_id']
             : null;
 
+        if (
+            $department->is_system_default
+            && (int) ($parentId ?? 0) !== (int) ($department->parent_id ?? 0)
+        ) {
+            throw ValidationException::withMessages([
+                'parent_id' => 'جایگاه واحدهای پیش‌فرض در ساختار سازمانی قابل تغییر نیست.',
+            ]);
+        }
+
         if ($parentId !== null) {
             if ((int) $parentId === $department->id) {
                 throw ValidationException::withMessages([
