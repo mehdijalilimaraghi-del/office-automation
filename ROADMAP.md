@@ -87,7 +87,7 @@ Deliver a usable internal company platform with a stable Core, organizational st
 - Project/department context
 - External follow-up context
 - Comments
-- Work logs
+- Work logs and planned/completed activity records share one `task_activities` table, distinguished by activity type and status
 - Reminders
 - Activity/timeline
 - Filtering/search
