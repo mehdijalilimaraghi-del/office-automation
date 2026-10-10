@@ -791,3 +791,11 @@ Project mutation authorization and task workflow actions now enforce permission 
 - تست HTTP به‌جای بررسی تغییر نوع رکورد، ایجاد گزارش فعالیت و حذف رکورد برنامه‌ریزی‌شده را بررسی می‌کند.
 
 **Status:** fix committed; focused task test pending.
+
+
+### 2026-10-10 — Unified task activity model and UI guidance
+- `task_activities` منبع واحد فعالیت‌های وظیفه است؛ `planned/pending` برای فعالیت‌های بعدی و `logged/completed` برای گزارش فعالیت انجام‌شده استفاده می‌شود.
+- تکمیل فعالیت برنامه‌ریزی‌شده همان رکورد را تغییر می‌دهد؛ داده‌های جدول قدیمی `task_work_logs` با migration داده‌محور منتقل می‌شوند.
+- در صفحه جزئیات، «ثبت فعالیت» به «ثبت فعالیت انجام‌شده» تغییر کرده و راهنمای دائمی برای تفاوت دو بخش اضافه شده است.
+
+**Status:** code committed; focused task tests and frontend build pending. V1 remains in validation; V2 scope unchanged.
