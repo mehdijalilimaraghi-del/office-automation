@@ -51,7 +51,12 @@ class TaskFormOptionsService
                 }
 
                 if (in_array(PermissionScope::Department->value, $taskCreateScopes, true) && $departmentIds !== []) {
-                    $query->orWhereIn('projects.department_id', $departmentIds);
+                    $query->orWhereIn('projects.department_id', $departmentIds)
+                        ->orWhere(function ($sharedProjectQuery) use ($departmentIds): void {
+                            $sharedProjectQuery->where('projects.is_system_default', true)
+                                ->whereNull('projects.department_id')
+                                ->whereHas('sections', fn ($sectionQuery) => $sectionQuery->whereIn('department_id', $departmentIds));
+                        });
                 }
 
                 if (in_array(PermissionScope::DepartmentTree->value, $taskCreateScopes, true)) {
@@ -63,7 +68,13 @@ class TaskFormOptionsService
                     }
 
                     if ($treeDepartmentIds !== []) {
-                        $query->orWhereIn('projects.department_id', array_values(array_unique($treeDepartmentIds)));
+                        $treeDepartmentIds = array_values(array_unique($treeDepartmentIds));
+                        $query->orWhereIn('projects.department_id', $treeDepartmentIds)
+                            ->orWhere(function ($sharedProjectQuery) use ($treeDepartmentIds): void {
+                                $sharedProjectQuery->where('projects.is_system_default', true)
+                                    ->whereNull('projects.department_id')
+                                    ->whereHas('sections', fn ($sectionQuery) => $sectionQuery->whereIn('department_id', $treeDepartmentIds));
+                            });
                     }
                 }
 
@@ -89,7 +100,9 @@ class TaskFormOptionsService
                     'name' => $section->name,
                     'department_id' => $section->department_id !== null ? (int) $section->department_id : null,
                 ])->values()->all(),
-                'member_ids' => $project->is_system_default && $project->department_id !== null
+                'member_ids' => $project->is_system_default && $project->department_id === null
+                    ? User::query()->operational()->where('status', 'active')->pluck('id')->map(fn ($id): int => (int) $id)->values()->all()
+                    : ($project->is_system_default && $project->department_id !== null
                     ? $project->department?->members
                         ->pluck('id')
                         ->map(fn ($id): int => (int) $id)
@@ -99,7 +112,7 @@ class TaskFormOptionsService
                         ->pluck('id')
                         ->map(fn ($id): int => (int) $id)
                         ->values()
-                        ->all(),
+                        ->all()),
             ])
             ->values()
             ->all();
@@ -140,7 +153,7 @@ class TaskFormOptionsService
             return $this->activeUsers();
         }
 
-        if ($task->project === null) {
+        if ($task->project === null || ($task->project->is_system_default && $task->project->department_id === null)) {
             return $this->activeUsers();
         }
 
