@@ -8,6 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Projects\Models\ProjectSection;
 
 class StoreTaskRequest extends FormRequest
 {
@@ -15,15 +16,25 @@ class StoreTaskRequest extends FormRequest
     {
         $projectId = $this->input('project_id');
 
-        abort_unless(
-            Gate::allows('create', [
-                Task::class,
-                $projectId !== null ? (int) $projectId : null,
-            ]),
-            403
-        );
+        if (Gate::allows('create', [
+            Task::class,
+            $projectId !== null ? (int) $projectId : null,
+        ])) {
+            return true;
+        }
 
-        return true;
+        $sectionId = $this->input('section_id');
+        $user = $this->user();
+        if ($sectionId === null || $user === null || ! $user->hasPermission('tasks.create')) {
+            return false;
+        }
+
+        $section = ProjectSection::query()->with('department')->find($sectionId);
+
+        return $section !== null
+            && (int) $section->project_id === (int) $projectId
+            && $section->manager_can_create_tasks
+            && (int) $section->department?->manager_id === (int) $user->id;
     }
 
     protected function failedAuthorization(): void
@@ -35,6 +46,7 @@ class StoreTaskRequest extends FormRequest
     {
         return [
             'project_id' => ['nullable', 'integer', 'exists:projects,id'],
+            'section_id' => ['nullable', 'integer', 'exists:project_sections,id'],
             'department_id' => ['nullable', 'integer', 'exists:departments,id'],
             'external_organization_id' => ['nullable', 'integer', 'exists:external_organizations,id'],
             'external_department_id' => ['nullable', 'integer', 'exists:external_departments,id'],
@@ -45,6 +57,8 @@ class StoreTaskRequest extends FormRequest
             'priority' => ['sometimes', Rule::in(['low', 'normal', 'high', 'urgent'])],
             'review_required' => ['sometimes', 'boolean'],
             'assignee_id' => ['nullable', 'integer', 'exists:users,id'],
+            'delegate_to_employee' => ['sometimes', 'boolean'],
+            'delegate_assignee_id' => ['required_if:delegate_to_employee,1', 'nullable', 'integer', 'exists:users,id'],
             'assignment_note' => ['nullable', 'string', 'max:5000'],
             'next_activity_title' => ['nullable', 'string', 'max:255'],
             'next_activity_description' => ['nullable', 'string'],
@@ -60,6 +74,7 @@ class StoreTaskRequest extends FormRequest
     {
         return [
             'project_id' => 'پروژه',
+            'section_id' => 'بخش پروژه',
             'department_id' => 'واحد',
             'external_organization_id' => 'سازمان خارجی',
             'external_department_id' => 'واحد خارجی',
@@ -72,6 +87,7 @@ class StoreTaskRequest extends FormRequest
             'status' => 'وضعیت',
             'priority' => 'اولویت',
             'assignee_id' => 'مسئول تسک',
+            'delegate_assignee_id' => 'کارمند مقصد ارجاع',
             'assignment_note' => 'توضیح ارجاع',
             'next_activity_title' => 'فعالیت بعدی',
             'next_activity_description' => 'توضیحات فعالیت بعدی',
