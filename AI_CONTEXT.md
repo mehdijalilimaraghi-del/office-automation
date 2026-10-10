@@ -129,3 +129,9 @@ Before making the first code change in a new conversation:
 - Manual completed activity reports are also `logged/completed` rows. `started_at` and `completed_at` live on `task_activities`.
 - Migration `2026_10_10_120000_unify_task_activities_and_work_logs.php` moves historical `task_work_logs` into `task_activities` before dropping the old table. Validate migration and rollback behavior through the focused task tests.
 - Task detail UI uses «ثبت فعالیت انجام‌شده» and a persistent guide explaining the difference between planned and completed activities.
+
+
+## Deferred UI acceptance item — task activity guide (2026-10-10)
+- Do not re-add or reposition the persistent task-activity guide during admin-account checks.
+- During V1 manual acceptance with a normal user account, review the task detail page and, if the guide is still needed, place it in a dedicated full-width section below the two-column layout containing «فعالیت‌های بعدی» and the «ثبت فعالیت بعدی» section/button. Do not place the paragraph inside either column.
+- The user explicitly deferred this UI decision until normal-user acceptance; leave it pending rather than making further changes now.
