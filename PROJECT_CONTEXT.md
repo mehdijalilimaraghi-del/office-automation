@@ -161,34 +161,27 @@ Constraints:
 
 Legacy users.department_id has been migrated into memberships.
 
-## 7. Default Department Project
+## 7. Shared Project and Project Sections
 
-Every department automatically receives a generic system/default project.
+The current model uses one shared organization-level default project rather than automatically creating one project per department. Departments are represented within projects through project sections.
 
-Purpose:
-- day-to-day department work
-- a fallback project for department-level work
+Each project section:
+- belongs to one project
+- identifies its responsible internal department
+- stores a name, description, sort order, and `manager_can_create_tasks` setting
+- may have section-specific documents
+- contains the tasks that belong to that department's workstream
 
-Important:
-- Project remains optional on Task.
-- A task is not required to have a project.
-- Real projects may involve multiple departments.
-- Do not enforce project.department_id == task.department_id as a universal rule.
+Project administration:
+- the project administrator can create tasks in any section
+- a department manager can create tasks only for their own section when `manager_can_create_tasks` is enabled
+- a section task is initially assigned to the department manager
+- optional direct delegation records both the initial manager assignment and the subsequent manager-to-employee referral
 
-Default project characteristics:
-- system default
-- active
-- named similar to «پروژه عمومی {department}»
-- code similar to DEPT-{id}-DEFAULT
-- manager follows department manager
-- manager is a member
+The shared default project is created by `SharedProjectSeeder` on fresh installations. Existing per-department default projects are consolidated into this shared project by migration; a section is created for each legacy department project, tasks and linked documents are associated with those sections, and legacy project records are retained as inactive historical records.
 
-Default projects:
-- can be viewed
-- cannot be deleted
-- cannot be edited as normal projects
-- cannot have normal role/member management changes
-
+Older notes in this file describing automatic per-department projects and their deletion lifecycle are historical and superseded by this section.
+ 
 ## 8. Task Domain
 
 Task is conceptually independent of Project.
