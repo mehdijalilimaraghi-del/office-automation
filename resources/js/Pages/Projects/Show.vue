@@ -169,6 +169,10 @@ const uploadSectionDocument = (section: ProjectSection, event: Event): void => {
     });
 };
 
+const sectionTaskError = (key: string): string | undefined => {
+    return (sectionTaskForm.errors as Record<string, string | undefined>)[key];
+};
+
 const submitSectionTask = (): void => {
     sectionTaskForm.post(route('tasks.store'), {
         preserveScroll: true,
@@ -939,7 +943,7 @@ const formatDate = (date: string | null): string => {
                         <label for="section-task-note" class="text-sm font-medium">توضیح ارجاع (اختیاری)</label>
                         <textarea id="section-task-note" v-model="sectionTaskForm.assignment_note" rows="2" class="w-full rounded-md border bg-background px-3 py-2 text-sm" />
                     </div>
-                    <p v-if="sectionTaskForm.errors.task" class="text-sm text-destructive">{{ sectionTaskForm.errors.task }}</p>
+                    <p v-if="sectionTaskError('task')" class="text-sm text-destructive">{{ sectionTaskError('task') }}</p>
                     <div class="flex justify-end gap-2 border-t pt-4">
                         <Button type="button" variant="outline" @click="showSectionTaskModal = false">انصراف</Button>
                         <Button type="submit" :disabled="sectionTaskForm.processing">{{ sectionTaskForm.processing ? 'در حال ثبت...' : 'ثبت تسک' }}</Button>
