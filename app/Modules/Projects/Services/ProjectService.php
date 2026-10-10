@@ -46,7 +46,7 @@ class ProjectService implements ProjectServiceContract
 
                 if ($departmentIds->isNotEmpty()) {
                     $scopeQuery->orWhereIn('projects.department_id', $departmentIds)
-                        ->orWhere(function ($sharedProjectQuery) use ($user): void {
+                        ->orWhere(function ($sharedProjectQuery) use ($departmentIds): void {
                             $sharedProjectQuery->where('projects.is_system_default', true)
                                 ->whereNull('projects.department_id')
                                 ->whereHas('sections', fn ($sectionQuery) => $sectionQuery->whereIn('department_id', $departmentIds));
