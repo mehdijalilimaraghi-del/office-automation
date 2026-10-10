@@ -437,7 +437,7 @@ Implementation has started for the agreed cross-department project model:
 - Each section stores its name, description, ordering, and whether its department manager may create tasks.
 - Project creation accepts multiple sections.
 - Section tasks are created with the department manager as the initial assignee; an optional direct referral to an active member of that department records both assignment-history steps.
-- Project detail UI groups tasks by section and supports section-specific document uploads.
+- Project detail UI groups tasks by section, shows the fixed project/section task modal, and supports general and section-specific document uploads.
 - Department creation ensures a section in the shared default project instead of creating a separate project.
 - A migration consolidates existing department-default projects into one shared default project, creates a section per legacy department project, and preserves legacy project rows as inactive for historical references.
 
