@@ -133,10 +133,14 @@ class ProjectController extends Controller
             ]);
         }
 
-        return redirect()->route('projects.show', $project)->with(
-            'success',
-            'پروژه با موفقیت ایجاد شد.'
-        );
+        if (Gate::allows('view', $project)) {
+            return redirect()->route('projects.show', $project)->with(
+                'success',
+                'پروژه با موفقیت ایجاد شد.'
+            );
+        }
+
+        return back()->with('success', 'پروژه با موفقیت ایجاد شد.');
     }
 
     public function show(Request $request, Project $project): Response
