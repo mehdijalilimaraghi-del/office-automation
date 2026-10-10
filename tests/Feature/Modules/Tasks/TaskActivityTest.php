@@ -7,8 +7,8 @@ namespace Tests\Feature\Modules\Tasks;
 use App\Models\User;
 use App\Modules\Tasks\Actions\CreateTaskCommentAction;
 use App\Modules\Tasks\Actions\CreateTaskReminderAction;
-use App\Modules\Tasks\Actions\CreateTaskWorkLogAction;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Tasks\Models\TaskActivity;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -49,32 +49,37 @@ class TaskActivityTest extends TestCase
         $this->assertTrue($comment->relationLoaded('user'));
     }
 
-    public function test_work_log_is_created_with_user_and_dates(): void
+    public function test_completed_activity_is_created_with_user_and_dates(): void
     {
         $user = User::factory()->create(['status' => 'active']);
         $task = $this->createTask($user);
         $startedAt = now()->subHour();
         $completedAt = now();
 
-        $log = app(CreateTaskWorkLogAction::class)->execute(
-            task: $task,
-            user: $user,
-            title: 'پیگیری مالی',
-            description: 'تماس و پیگیری با واحد مالی',
-            startedAt: $startedAt,
-            completedAt: $completedAt,
-        );
-
-        $this->assertDatabaseHas('task_work_logs', [
-            'id' => $log->id,
-            'task_id' => $task->id,
-            'user_id' => $user->id,
+        $activity = $task->activities()->create([
+            'created_by' => $user->id,
+            'completed_by' => $user->id,
             'title' => 'پیگیری مالی',
             'description' => 'تماس و پیگیری با واحد مالی',
+            'status' => 'completed',
+            'activity_type' => 'logged',
+            'sequence' => 1,
+            'started_at' => $startedAt,
+            'completed_at' => $completedAt,
         ]);
-        $this->assertTrue($log->relationLoaded('user'));
-        $this->assertNotNull($log->started_at);
-        $this->assertNotNull($log->completed_at);
+
+        $this->assertDatabaseHas('task_activities', [
+            'id' => $activity->id,
+            'task_id' => $task->id,
+            'created_by' => $user->id,
+            'completed_by' => $user->id,
+            'title' => 'پیگیری مالی',
+            'description' => 'تماس و پیگیری با واحد مالی',
+            'status' => 'completed',
+            'activity_type' => 'logged',
+        ]);
+        $this->assertNotNull($activity->started_at);
+        $this->assertNotNull($activity->completed_at);
     }
 
     public function test_reminder_is_created_for_recipient_and_creator(): void
