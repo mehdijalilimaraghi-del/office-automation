@@ -58,7 +58,7 @@ class StoreTaskRequest extends FormRequest
             'review_required' => ['sometimes', 'boolean'],
             'assignee_id' => ['nullable', 'integer', 'exists:users,id'],
             'delegate_to_employee' => ['sometimes', 'boolean'],
-            'delegate_assignee_id' => ['required_if:delegate_to_employee,1', 'nullable', 'integer', 'exists:users,id'],
+            'delegate_assignee_id' => ['required_if:delegate_to_employee,true', 'nullable', 'integer', 'exists:users,id'],
             'assignment_note' => ['nullable', 'string', 'max:5000'],
             'next_activity_title' => ['nullable', 'string', 'max:255'],
             'next_activity_description' => ['nullable', 'string'],
