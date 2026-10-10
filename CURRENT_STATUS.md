@@ -391,3 +391,12 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - Completing a planned activity updates the same record and preserves `completed_at`. The data migration adds `started_at`, transfers legacy `task_work_logs` records, and then removes the old table.
 - The task detail page labels the action `ثبت فعالیت انجام‌شده`, includes persistent guidance for both workflows, and adds hover hints to the next-activity controls.
 - Validation for the focused task HTTP tests is pending after this change; V1 remains in technical validation and manual acceptance. V2 is not started.
+
+
+## 2026-10-10 — Unified task activities and test fixture correction
+- `task_activities` is the single table for both planned activities and completed activity reports. Completing a planned activity updates that same record to `activity_type=logged`, `status=completed`, and stores the completion timestamp; manual completed activities are stored in the same table.
+- Historical rows from `task_work_logs` are migrated into `task_activities` by `2026_10_10_120000_unify_task_activities_and_work_logs.php` before the old table is removed.
+- Task detail UI labels the manual-entry action «ثبت فعالیت انجام‌شده» and includes a persistent guide explaining when to use «فعالیت‌های بعدی» versus «گزارش فعالیت»; button tooltips provide short contextual guidance.
+- The focused HTTP test failed before exercising the manual activity flow because the test database lacked the seeded `tasks.log_work` permission. `TaskHttpTest` now seeds `CorePermissionSeeder` during setup so the test fixture includes the canonical permission registry.
+
+**Validation status:** focused `TaskHttpTest` and frontend build are pending after this fixture correction.
