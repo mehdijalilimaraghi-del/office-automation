@@ -102,12 +102,14 @@ const sectionTaskForm = useForm({
     title: '',
     description: '',
     priority: 'normal',
-    start_date: '',
-    due_date: '',
+    start_date: null as string | null,
+    due_date: null as string | null,
     delegate_to_employee: false,
     delegate_assignee_id: null as number | null,
     assignment_note: '',
 });
+
+const unsectionedTasks = computed(() => props.project.tasks.filter((task) => !task.section_id));
 
 const sectionEmployees = computed(() => {
     const section = selectedSection.value;
@@ -830,7 +832,7 @@ const formatDate = (date: string | null): string => {
                     <h3 class="font-semibold">وظایف بدون بخش</h3>
                 </div>
 
-                <div v-if="project.tasks.filter((task) => !task.section_id).length === 0" class="p-6 text-sm text-muted-foreground">
+                <div v-if="unsectionedTasks.length === 0" class="p-6 text-sm text-muted-foreground">
                     هنوز وظیفه‌ای برای این پروژه ثبت نشده است.
                 </div>
 
@@ -845,7 +847,7 @@ const formatDate = (date: string | null): string => {
                             </tr>
                         </thead>
                         <tbody class="divide-y">
-                            <tr v-for="task in project.tasks.filter((item) => !item.section_id)" :key="task.id">
+                            <tr v-for="task in unsectionedTasks" :key="task.id">
                                 <td class="px-4 py-3 font-medium">{{ task.title }}</td>
                                 <td class="px-4 py-3">
                                     {{ taskStatusLabels[task.status] ?? task.status }}
