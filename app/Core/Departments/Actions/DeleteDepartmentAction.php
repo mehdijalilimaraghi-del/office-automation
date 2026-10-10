@@ -11,7 +11,9 @@ class DeleteDepartmentAction
 {
     public function execute(Department $department): void
     {
-        if ($department->is_system_default) {
+        $isLegacyManagement = $department->code === 'ORG-000001';
+
+        if ($department->is_system_default && ! $isLegacyManagement) {
             throw ValidationException::withMessages([
                 'department' => 'واحدهای پیش‌فرض سازمان قابل حذف نیستند.',
             ]);
