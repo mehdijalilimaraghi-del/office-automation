@@ -36,12 +36,14 @@ class Department extends Model
         'icon',
         'description',
         'is_active',
+        'is_system_default',
     ];
 
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
+            'is_system_default' => 'boolean',
             'parent_id' => 'integer',
             'manager_id' => 'integer',
         ];
