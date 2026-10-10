@@ -26,6 +26,7 @@ interface SectionForm {
 const props = defineProps<{
     managers: Manager[];
     departments: Department[];
+    canUploadDocuments: boolean;
     customFields: Array<{
         id: number; key: string; label: string;
         type: 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select';
@@ -293,7 +294,7 @@ function submit(): void {
                     </p>
                 </div>
 
-                <section class="space-y-3 rounded-xl border border-border p-4 sm:p-5">
+                <section v-if="canUploadDocuments" class="space-y-3 rounded-xl border border-border p-4 sm:p-5">
                     <div>
                         <h3 class="font-semibold">مدارک عمومی پروژه</h3>
                         <p class="mt-1 text-sm text-muted-foreground">فایل‌هایی که برای همه واحدهای درگیر در پروژه کاربرد دارند.</p>
@@ -342,7 +343,7 @@ function submit(): void {
                             <label :for="'section-description-' + index" class="text-sm font-medium">توضیحات و اطلاعات دریافتی برای واحد</label>
                             <textarea :id="'section-description-' + index" v-model="section.description" rows="3" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="شرح محدوده کار، خروجی مورد انتظار و نکات اجرایی" />
                         </div>
-                        <div class="space-y-2">
+                        <div v-if="canUploadDocuments" class="space-y-2">
                             <label :for="'section-documents-' + index" class="text-sm font-medium">مدارک اختصاصی این واحد</label>
                             <input :id="'section-documents-' + index" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" class="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm" @change="updateSectionDocuments(index, $event)" />
                             <p v-if="section.documents.length" class="text-xs text-muted-foreground">{{ section.documents.length }} فایل انتخاب شده است.</p>
