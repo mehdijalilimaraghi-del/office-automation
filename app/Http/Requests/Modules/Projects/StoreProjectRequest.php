@@ -45,6 +45,10 @@ class StoreProjectRequest extends FormRequest
             'sections.*.name' => ['required_with:sections', 'string', 'max:150'],
             'sections.*.description' => ['nullable', 'string', 'max:10000'],
             'sections.*.manager_can_create_tasks' => ['sometimes', 'boolean'],
+            'sections.*.documents' => ['nullable', 'array', 'max:20'],
+            'sections.*.documents.*' => ['file', 'max:20480', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,txt,csv,zip'],
+            'project_documents' => ['nullable', 'array', 'max:20'],
+            'project_documents.*' => ['file', 'max:20480', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,txt,csv,zip'],
             'custom_fields' => ['nullable', 'array'],
             'is_active' => ['sometimes', 'boolean'],
         ];
