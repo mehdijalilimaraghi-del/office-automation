@@ -17,6 +17,12 @@ return new class extends Migration
             });
         }
 
+        // Preserve already-completed planned activities in the unified completed-activity report.
+        DB::table('task_activities')
+            ->where('activity_type', 'planned')
+            ->where('status', 'completed')
+            ->update(['activity_type' => 'logged']);
+
         if (! Schema::hasTable('task_work_logs')) {
             return;
         }
