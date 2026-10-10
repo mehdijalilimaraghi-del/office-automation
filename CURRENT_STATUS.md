@@ -353,3 +353,11 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - Route و عملیات backend برای ویرایش/حذف فعالیت با بررسی تعلق رکورد به وظیفه و مجوز ویرایش وظیفه اضافه شدند.
 
 **Status:** implementation complete; TaskHttpTest and frontend build validation pending.
+
+### 2026-10-10 — Separate pending activities from completed activity log
+- «فعالیت‌های بعدی» فقط فعالیت‌های برنامه‌ریزی‌شده و در انتظار انجام را نشان می‌دهد.
+- با ثبت «انجام شد»، رکورد به نوع `logged` تغییر می‌کند و در بخش «گزارش فعالیت» نمایش داده می‌شود؛ دیگر در فهرست فعالیت‌های بعدی باقی نمی‌ماند.
+- فعالیت‌های منتقل‌شده به گزارش، دکمه‌های ویرایش و حذف را در همان بخش دارند و زمان تکمیل حفظ می‌شود.
+- تست HTTP تکمیل فعالیت برای تغییر نوع رکورد به `logged` به‌روزرسانی شد.
+
+**Status:** code committed; focused task test and frontend build validation pending.
