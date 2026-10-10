@@ -146,13 +146,20 @@ return new class extends Migration
                     ->get(['user_id', 'created_at', 'updated_at']);
 
                 foreach ($members as $member) {
-                    DB::table('project_user')->insertOrIgnore([
-                        'project_id' => $sharedId,
-                        'user_id' => $member->user_id,
-                        'project_role_id' => null,
-                        'created_at' => $member->created_at,
-                        'updated_at' => $member->updated_at,
-                    ]);
+                    $alreadyAttached = DB::table('project_user')
+                        ->where('project_id', $sharedId)
+                        ->where('user_id', $member->user_id)
+                        ->exists();
+
+                    if (! $alreadyAttached) {
+                        DB::table('project_user')->insert([
+                            'project_id' => $sharedId,
+                            'user_id' => $member->user_id,
+                            'project_role_id' => null,
+                            'created_at' => $member->created_at,
+                            'updated_at' => $member->updated_at,
+                        ]);
+                    }
                 }
 
                 // Preserve the old default project as inactive for historical references,
