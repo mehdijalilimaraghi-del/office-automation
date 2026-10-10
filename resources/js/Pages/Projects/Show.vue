@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Button } from '@/Components/ui/button';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, reactive, ref } from 'vue';
 import { formatPersianDate } from '@/Utils/date';
 
@@ -41,6 +41,7 @@ interface Task {
 
 interface ProjectSection {
     id: number;
+    documents: Array<{ id: number; document: { id: number; title: string; latest_version?: { original_name: string } | null } | null }>;
     name: string;
     description: string | null;
     manager_can_create_tasks: boolean;
@@ -88,6 +89,7 @@ const props = defineProps<{
 }>();
 
 const showSectionTaskModal = ref(false);
+const uploadingSectionId = ref<number | null>(null);
 const selectedSection = ref<ProjectSection | null>(null);
 const sectionTaskForm = useForm({
     project_id: props.project.id as number | null,
@@ -118,6 +120,26 @@ const openSectionTaskModal = (section: ProjectSection): void => {
     sectionTaskForm.delegate_assignee_id = null;
     sectionTaskForm.clearErrors();
     showSectionTaskModal.value = true;
+};
+
+const uploadSectionDocument = (section: ProjectSection, event: Event): void => {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    uploadingSectionId.value = section.id;
+    router.post(route('documents.sections.store', section.id), {
+        title: file.name,
+        document_type: 'section_reference',
+        file,
+    }, {
+        forceFormData: true,
+        preserveScroll: true,
+        onFinish: () => {
+            uploadingSectionId.value = null;
+            input.value = '';
+        },
+    });
 };
 
 const submitSectionTask = (): void => {
@@ -709,9 +731,25 @@ const formatDate = (date: string | null): string => {
                                 {{ section.manager_can_create_tasks ? 'تعریف تسک توسط مدیر واحد فعال است' : 'تعریف تسک توسط مدیر واحد غیرفعال است' }}
                             </p>
                         </div>
-                        <Button v-if="canCreateTasks" type="button" size="sm" @click="openSectionTaskModal(section)">
-                            + ایجاد تسک
-                        </Button>
+                        <div class="flex flex-wrap gap-2">
+                            <label v-if="canCreateTasks" class="inline-flex cursor-pointer items-center rounded-md border px-3 py-2 text-xs font-medium transition hover:bg-muted" :class="{ 'pointer-events-none opacity-50': uploadingSectionId === section.id }">
+                                {{ uploadingSectionId === section.id ? 'در حال بارگذاری...' : 'افزودن مدرک بخش' }}
+                                <input type="file" class="sr-only" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" :disabled="uploadingSectionId === section.id" @change="uploadSectionDocument(section, $event)" />
+                            </label>
+                            <Button v-if="canCreateTasks" type="button" size="sm" @click="openSectionTaskModal(section)">
+                                + ایجاد تسک
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div v-if="section.documents?.length" class="border-t px-4 py-3">
+                        <p class="mb-2 text-xs font-semibold text-muted-foreground">مدارک اختصاصی بخش</p>
+                        <div class="flex flex-wrap gap-2">
+                            <a v-for="link in section.documents" :key="link.id" :href="link.document ? route('documents.download', link.document.id) : '#'" class="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs transition hover:bg-muted">
+                                <span aria-hidden="true">📎</span>
+                                {{ link.document?.title ?? 'مدرک' }}
+                            </a>
+                        </div>
                     </div>
 
                     <div v-if="section.tasks.length === 0" class="p-4 text-sm text-muted-foreground">
