@@ -408,3 +408,6 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - تست HTTP نمایش فعالیت تکمیل‌شده‌ی از قبل ثبت‌شده در صفحه جزئیات اضافه شد.
 
 **Validation:** migration، تست HTTP وظایف و build فرانت‌اند باید در محیط محلی اجرا شوند.
+
+### 2026-10-10 — Task activity guide layout correction
+- راهنمای فعالیت‌ها از سربرگ «فعالیت‌های بعدی» خارج شد و به سکشن مستقلِ تمام‌عرض، زیر چیدمان دو‌ستونه صفحه جزئیات وظیفه منتقل شد؛ بنابراین متن دیگر فضای عنوان و دکمه ثبت فعالیت بعدی را فشرده نمی‌کند.
