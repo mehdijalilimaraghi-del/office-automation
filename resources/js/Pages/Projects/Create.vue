@@ -4,6 +4,7 @@ import { Button } from '@/Components/ui/button';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
+import { ref } from 'vue';
 
 interface Manager {
     id: number;
@@ -34,6 +35,8 @@ const props = defineProps<{
     }>;
 }>();
 
+const showManagerHelp = ref(false);
+
 const form = useForm({
     department_id: '',
     name: '',
@@ -49,7 +52,7 @@ const form = useForm({
     is_active: true,
     custom_fields: {} as Record<string, string | number | boolean | null>,
     project_documents: [] as File[],
-    sections: [] as SectionForm[],
+    sections: [{ name: '', department_id: '', description: '', manager_can_create_tasks: true, documents: [] }] as SectionForm[],
 });
 
 function addSection(): void {
@@ -163,12 +166,26 @@ function submit(): void {
                     </div>
 
                     <div>
-                        <label
-                            for="manager_id"
-                            class="mb-2 block text-sm font-medium"
-                        >
-                            مدیر پروژه
-                        </label>
+                        <div class="mb-2 flex items-center gap-2">
+                            <label
+                                for="manager_id"
+                                class="text-sm font-medium"
+                            >
+                                مدیر پروژه <span class="text-destructive">*</span>
+                            </label>
+                            <button
+                                type="button"
+                                class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-muted-foreground/40 text-xs font-semibold text-muted-foreground transition hover:border-primary hover:text-primary"
+                                aria-label="راهنمای انتخاب مدیر پروژه"
+                                :aria-expanded="showManagerHelp"
+                                @click="showManagerHelp = !showManagerHelp"
+                            >
+                                ?
+                            </button>
+                        </div>
+                        <p v-if="showManagerHelp" class="mb-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs leading-6 text-muted-foreground">
+                            برای اضافه کردن کاربر به این لیست، آن کاربر باید عضو واحد مدیریت پروژه باشد.
+                        </p>
 
                         <select
                             id="manager_id"
@@ -313,8 +330,8 @@ function submit(): void {
                     <p v-if="form.errors.sections" class="text-sm text-destructive">{{ form.errors.sections }}</p>
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <div>
-                            <h3 class="font-semibold">بخش‌های پروژه</h3>
-                            <p class="mt-1 text-sm text-muted-foreground">برای هر واحد مسئول، یک بخش مستقل تعریف کنید.</p>
+                            <h3 class="font-semibold">بخش‌های پروژه <span class="text-destructive">*</span></h3>
+                            <p class="mt-1 text-sm text-muted-foreground">هر پروژه باید حداقل یک بخش داشته باشد تا بتوان برای آن تسک تعریف کرد.</p>
                         </div>
                         <Button type="button" variant="outline" @click="addSection">
                             + افزودن بخش جدید
@@ -328,7 +345,7 @@ function submit(): void {
                     <div v-for="(section, index) in form.sections" :key="index" class="space-y-4 rounded-lg border bg-muted/20 p-4">
                         <div class="flex items-center justify-between gap-3">
                             <h4 class="font-medium">بخش {{ index + 1 }}</h4>
-                            <Button type="button" variant="outline" size="sm" @click="removeSection(index)">حذف بخش</Button>
+                            <Button type="button" variant="outline" size="sm" :disabled="form.sections.length <= 1" @click="removeSection(index)">حذف بخش</Button>
                         </div>
                         <div class="grid gap-4 md:grid-cols-2">
                             <div class="space-y-2">
