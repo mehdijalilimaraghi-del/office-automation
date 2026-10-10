@@ -8,6 +8,8 @@ use App\Modules\Projects\Contracts\ProjectServiceContract;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectMember;
 use App\Modules\Projects\Models\ProjectSection;
+use App\Modules\Tasks\Contracts\TaskServiceContract;
+use App\Modules\Tasks\Models\TaskAssignment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use InvalidArgumentException;
 use Tests\TestCase;
@@ -263,6 +265,59 @@ class CreateProjectTest extends TestCase
             'department_id' => $department->id,
             'name' => 'طراحی محصول',
             'manager_can_create_tasks' => false,
+        ]);
+    }
+
+    public function test_section_task_is_initially_assigned_to_unit_manager_then_referred_to_employee(): void
+    {
+        $projectAdmin = User::factory()->create();
+        $unitManager = User::factory()->create();
+        $employee = User::factory()->create();
+
+        $department = Department::query()->create([
+            'name' => 'واحد طراحی',
+            'code' => 'DESIGN',
+            'manager_id' => $unitManager->id,
+            'is_active' => true,
+        ]);
+        $department->members()->attach($employee->id, [
+            'is_primary' => false,
+            'joined_at' => now(),
+        ]);
+
+        $project = app(ProjectServiceContract::class)->create([
+            'name' => 'Product Delivery',
+            'manager_id' => $projectAdmin->id,
+            'sections' => [[
+                'department_id' => $department->id,
+                'name' => 'طراحی محصول',
+                'manager_can_create_tasks' => true,
+            ]],
+        ], $projectAdmin);
+        $section = ProjectSection::query()->where('project_id', $project->id)->firstOrFail();
+
+        $task = app(TaskServiceContract::class)->create([
+            'project_id' => $project->id,
+            'section_id' => $section->id,
+            'title' => 'طراحی قطعه A',
+            'delegate_to_employee' => true,
+            'delegate_assignee_id' => $employee->id,
+        ], $projectAdmin);
+
+        $this->assertSame($employee->id, $task->assignee_id);
+        $this->assertSame($department->id, $task->department_id);
+        $this->assertSame(2, TaskAssignment::query()->where('task_id', $task->id)->count());
+        $this->assertDatabaseHas('task_assignments', [
+            'task_id' => $task->id,
+            'to_user_id' => $unitManager->id,
+            'type' => 'assignment',
+        ]);
+        $this->assertDatabaseHas('task_assignments', [
+            'task_id' => $task->id,
+            'from_user_id' => $unitManager->id,
+            'to_user_id' => $employee->id,
+            'assigned_by' => $projectAdmin->id,
+            'type' => 'referral',
         ]);
     }
 }
