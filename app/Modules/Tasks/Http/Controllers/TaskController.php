@@ -292,6 +292,7 @@ class TaskController extends Controller
 
         $activity->update([
             'status' => 'completed',
+            'activity_type' => 'logged',
             'completed_by' => $request->user()->id,
             'completed_at' => now(),
         ]);
