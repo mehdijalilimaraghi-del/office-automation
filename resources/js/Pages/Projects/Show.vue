@@ -87,6 +87,7 @@ const props = defineProps<{
     canUpdate: boolean;
     memberOptions: MemberOption[];
     canCreateTasks: boolean;
+    canUploadSectionDocuments: boolean;
 }>();
 
 const showSectionTaskModal = ref(false);
@@ -733,7 +734,7 @@ const formatDate = (date: string | null): string => {
                             </p>
                         </div>
                         <div class="flex flex-wrap gap-2">
-                            <label v-if="canCreateTasks" class="inline-flex cursor-pointer items-center rounded-md border px-3 py-2 text-xs font-medium transition hover:bg-muted" :class="{ 'pointer-events-none opacity-50': uploadingSectionId === section.id }">
+                            <label v-if="canUploadSectionDocuments" class="inline-flex cursor-pointer items-center rounded-md border px-3 py-2 text-xs font-medium transition hover:bg-muted" :class="{ 'pointer-events-none opacity-50': uploadingSectionId === section.id }">
                                 {{ uploadingSectionId === section.id ? 'در حال بارگذاری...' : 'افزودن مدرک بخش' }}
                                 <input type="file" class="sr-only" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" :disabled="uploadingSectionId === section.id" @change="uploadSectionDocument(section, $event)" />
                             </label>
