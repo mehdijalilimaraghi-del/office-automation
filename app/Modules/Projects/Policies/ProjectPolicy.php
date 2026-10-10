@@ -91,8 +91,11 @@ class ProjectPolicy
 
         if (
             in_array(PermissionScope::Department->value, $scopes, true)
-            && $project->department_id !== null
-            && $user->departments()->whereKey($project->department_id)->exists()
+            && (
+                ($project->department_id !== null && $user->departments()->whereKey($project->department_id)->exists())
+                || ($project->is_system_default && $project->department_id === null
+                    && $project->sections()->whereHas('department.members', fn ($query) => $query->where('users.id', $user->id))->exists())
+            )
         ) {
             return true;
         }
