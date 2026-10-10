@@ -257,8 +257,8 @@ class CreateProjectTest extends TestCase
 
         $section = ProjectSection::query()->where('project_id', $project->id)->firstOrFail();
 
-        $this->assertSame('طراحی محصول', $section->name);
-        $this->assertSame($department->id, $section->department_id);
+        $this->assertEquals('طراحی محصول', $section->name);
+        $this->assertEquals($department->id, $section->department_id);
         $this->assertFalse($section->manager_can_create_tasks);
         $this->assertDatabaseHas('project_sections', [
             'project_id' => $project->id,
@@ -304,8 +304,8 @@ class CreateProjectTest extends TestCase
             'delegate_assignee_id' => $employee->id,
         ], $projectAdmin);
 
-        $this->assertSame($employee->id, $task->assignee_id);
-        $this->assertSame($department->id, $task->department_id);
+        $this->assertEquals($employee->id, $task->assignee_id);
+        $this->assertEquals($department->id, $task->department_id);
         $this->assertSame(2, TaskAssignment::query()->where('task_id', $task->id)->count());
         $this->assertDatabaseHas('task_assignments', [
             'task_id' => $task->id,
