@@ -35,9 +35,6 @@ class TaskFormOptionsService
 
         $projectsQuery = Project::query()
             ->where('projects.is_active', true)
-            ->where(function ($visibleProjects): void {
-                $visibleProjects->where('projects.is_system_default', false)->orWhereNull('projects.department_id');
-            })
             ->with(['users:id', 'department.members:id', 'sections:id,project_id,name,department_id,manager_can_create_tasks', 'sections.department.manager', 'sections.department.members:id']);
 
         if (in_array(PermissionScope::Organization->value, $taskCreateScopes, true)) {
