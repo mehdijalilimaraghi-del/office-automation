@@ -40,6 +40,11 @@ class StoreProjectRequest extends FormRequest
                 'integer',
                 'exists:users,id',
             ],
+            'sections' => ['nullable', 'array', 'max:50'],
+            'sections.*.department_id' => ['required_with:sections', 'integer', 'exists:departments,id'],
+            'sections.*.name' => ['required_with:sections', 'string', 'max:150'],
+            'sections.*.description' => ['nullable', 'string', 'max:10000'],
+            'sections.*.manager_can_create_tasks' => ['sometimes', 'boolean'],
             'custom_fields' => ['nullable', 'array'],
             'is_active' => ['sometimes', 'boolean'],
         ];
@@ -56,6 +61,9 @@ class StoreProjectRequest extends FormRequest
             'start_date' => 'تاریخ شروع',
             'end_date' => 'تاریخ پایان',
             'manager_id' => 'مدیر پروژه',
+            'sections' => 'بخش‌های پروژه',
+            'sections.*.department_id' => 'واحد مسئول بخش',
+            'sections.*.name' => 'نام بخش',
             'is_active' => 'وضعیت فعال بودن',
         ];
     }
