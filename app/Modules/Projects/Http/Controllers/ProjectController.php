@@ -103,7 +103,7 @@ class ProjectController extends Controller
                     );
                 }
 
-                $sections = $project->sections()->orderBy('sort_order')->get();
+                $sections = $project->sections()->get();
                 foreach (array_values($data['sections'] ?? []) as $index => $sectionData) {
                     $section = $sections->get($index);
                     if ($section === null) {
