@@ -29,6 +29,7 @@ interface ProjectMember {
 
 interface Task {
     id: number;
+    section_id: number | null;
     title: string;
     status: string;
     priority: string;
@@ -36,6 +37,20 @@ interface Task {
         id: number;
         name: string;
     } | null;
+}
+
+interface ProjectSection {
+    id: number;
+    name: string;
+    description: string | null;
+    manager_can_create_tasks: boolean;
+    department: {
+        id: number;
+        name: string;
+        manager: { id: number; name: string } | null;
+        members: Array<{ id: number; name: string }>;
+    } | null;
+    tasks: Task[];
 }
 
 interface Project {
@@ -58,6 +73,7 @@ interface Project {
     roles: ProjectRole[];
     members: ProjectMember[];
     tasks: Task[];
+    sections: ProjectSection[];
     is_system_default: boolean;
     department: { id: number; name: string } | null;
 }
@@ -68,7 +84,52 @@ const props = defineProps<{
     canManageRoles: boolean;
     canUpdate: boolean;
     memberOptions: MemberOption[];
+    canCreateTasks: boolean;
 }>();
+
+const showSectionTaskModal = ref(false);
+const selectedSection = ref<ProjectSection | null>(null);
+const sectionTaskForm = useForm({
+    project_id: props.project.id as number | null,
+    section_id: null as number | null,
+    title: '',
+    description: '',
+    priority: 'normal',
+    start_date: '',
+    due_date: '',
+    delegate_to_employee: false,
+    delegate_assignee_id: null as number | null,
+    assignment_note: '',
+});
+
+const sectionEmployees = computed(() => {
+    const section = selectedSection.value;
+    if (!section?.department) return [];
+    return section.department.members.filter((member) => member.id !== section.department?.manager?.id);
+});
+
+const openSectionTaskModal = (section: ProjectSection): void => {
+    selectedSection.value = section;
+    sectionTaskForm.reset();
+    sectionTaskForm.project_id = props.project.id;
+    sectionTaskForm.section_id = section.id;
+    sectionTaskForm.priority = 'normal';
+    sectionTaskForm.delegate_to_employee = false;
+    sectionTaskForm.delegate_assignee_id = null;
+    sectionTaskForm.clearErrors();
+    showSectionTaskModal.value = true;
+};
+
+const submitSectionTask = (): void => {
+    sectionTaskForm.post(route('tasks.store'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showSectionTaskModal.value = false;
+            selectedSection.value = null;
+            sectionTaskForm.reset();
+        },
+    });
+};
 
 const memberRoleSelections = reactive<Record<number, string>>(
     Object.fromEntries(
@@ -623,12 +684,68 @@ const formatDate = (date: string | null): string => {
                 </div>
             </section>
 
-            <section class="rounded-lg border bg-card">
-                <div class="border-b p-5">
-                    <h3 class="font-semibold">وظایف پروژه</h3>
+            <section class="space-y-4 rounded-xl border bg-card p-5">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h3 class="text-lg font-semibold">بخش‌های پروژه</h3>
+                        <p class="mt-1 text-sm text-muted-foreground">تسک‌ها بر اساس واحد مسئول و بخش کاری پروژه مرتب شده‌اند.</p>
+                    </div>
+                    <span class="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">{{ project.sections.length }} بخش</span>
                 </div>
 
-                <div v-if="project.tasks.length === 0" class="p-6 text-sm text-muted-foreground">
+                <div v-if="project.sections.length === 0" class="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                    برای این پروژه هنوز بخشی تعریف نشده است. بخش‌ها هنگام ایجاد پروژه ثبت می‌شوند.
+                </div>
+
+                <article v-for="section in project.sections" :key="section.id" class="overflow-hidden rounded-xl border">
+                    <div class="flex flex-wrap items-start justify-between gap-3 bg-muted/30 p-4">
+                        <div class="space-y-1">
+                            <h4 class="font-semibold">{{ section.name }}</h4>
+                            <p class="text-sm text-muted-foreground">واحد مسئول: {{ section.department?.name ?? 'واحد تعیین نشده' }}</p>
+                            <p v-if="section.description" class="whitespace-pre-line text-sm">{{ section.description }}</p>
+                            <p class="text-xs text-muted-foreground">
+                                مدیر واحد: {{ section.department?.manager?.name ?? 'مدیر واحد تعیین نشده' }}
+                                <span class="mx-1">·</span>
+                                {{ section.manager_can_create_tasks ? 'تعریف تسک توسط مدیر واحد فعال است' : 'تعریف تسک توسط مدیر واحد غیرفعال است' }}
+                            </p>
+                        </div>
+                        <Button v-if="canCreateTasks" type="button" size="sm" @click="openSectionTaskModal(section)">
+                            + ایجاد تسک
+                        </Button>
+                    </div>
+
+                    <div v-if="section.tasks.length === 0" class="p-4 text-sm text-muted-foreground">
+                        هنوز تسکی برای این بخش ثبت نشده است.
+                    </div>
+                    <div v-else class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="border-y bg-background">
+                                <tr>
+                                    <th class="px-4 py-3 text-right font-medium">عنوان تسک</th>
+                                    <th class="px-4 py-3 text-right font-medium">وضعیت</th>
+                                    <th class="px-4 py-3 text-right font-medium">اولویت</th>
+                                    <th class="px-4 py-3 text-right font-medium">مسئول فعلی</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y">
+                                <tr v-for="task in section.tasks" :key="task.id">
+                                    <td class="px-4 py-3 font-medium">{{ task.title }}</td>
+                                    <td class="px-4 py-3">{{ taskStatusLabels[task.status] ?? task.status }}</td>
+                                    <td class="px-4 py-3">{{ priorityLabels[task.priority] ?? task.priority }}</td>
+                                    <td class="px-4 py-3">{{ task.assignee?.name ?? section.department?.manager?.name ?? 'مدیر واحد' }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+            </section>
+
+            <section class="rounded-lg border bg-card">
+                <div class="border-b p-5">
+                    <h3 class="font-semibold">وظایف بدون بخش</h3>
+                </div>
+
+                <div v-if="project.tasks.filter((task) => !task.section_id).length === 0" class="p-6 text-sm text-muted-foreground">
                     هنوز وظیفه‌ای برای این پروژه ثبت نشده است.
                 </div>
 
@@ -643,7 +760,7 @@ const formatDate = (date: string | null): string => {
                             </tr>
                         </thead>
                         <tbody class="divide-y">
-                            <tr v-for="task in project.tasks" :key="task.id">
+                            <tr v-for="task in project.tasks.filter((item) => !item.section_id)" :key="task.id">
                                 <td class="px-4 py-3 font-medium">{{ task.title }}</td>
                                 <td class="px-4 py-3">
                                     {{ taskStatusLabels[task.status] ?? task.status }}
@@ -659,6 +776,89 @@ const formatDate = (date: string | null): string => {
                     </table>
                 </div>
             </section>
+        </div>
+
+        <div v-if="showSectionTaskModal && selectedSection" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 sm:p-6" @keydown.esc="showSectionTaskModal = false">
+            <div class="my-4 w-full max-w-2xl overflow-hidden rounded-xl border bg-card shadow-xl sm:my-8" role="dialog" aria-modal="true" aria-labelledby="section-task-modal-title">
+                <div class="flex items-start justify-between gap-4 border-b p-5">
+                    <div>
+                        <h3 id="section-task-modal-title" class="text-lg font-semibold">ایجاد تسک جدید</h3>
+                        <p class="mt-1 text-sm text-muted-foreground">تسک ابتدا به مدیر واحد ارجاع می‌شود.</p>
+                    </div>
+                    <Button type="button" variant="outline" size="sm" @click="showSectionTaskModal = false">بستن</Button>
+                </div>
+                <form class="space-y-4 p-5" @submit.prevent="submitSectionTask">
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <div class="space-y-1">
+                            <label class="text-sm font-medium">پروژه</label>
+                            <div class="rounded-md border bg-muted/30 px-3 py-2 text-sm">{{ project.name }}</div>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-sm font-medium">بخش</label>
+                            <div class="rounded-md border bg-muted/30 px-3 py-2 text-sm">{{ selectedSection.name }}</div>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <label for="section-task-title" class="text-sm font-medium">عنوان تسک</label>
+                        <input id="section-task-title" v-model="sectionTaskForm.title" required maxlength="255" class="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+                        <p v-if="sectionTaskForm.errors.title" class="text-xs text-destructive">{{ sectionTaskForm.errors.title }}</p>
+                    </div>
+                    <div class="space-y-1">
+                        <label for="section-task-description" class="text-sm font-medium">شرح و خروجی مورد انتظار</label>
+                        <textarea id="section-task-description" v-model="sectionTaskForm.description" rows="3" class="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+                    </div>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <div class="space-y-1">
+                            <label for="section-task-priority" class="text-sm font-medium">اولویت</label>
+                            <select id="section-task-priority" v-model="sectionTaskForm.priority" class="w-full rounded-md border bg-background px-3 py-2 text-sm">
+                                <option value="low">کم</option>
+                                <option value="normal">عادی</option>
+                                <option value="high">زیاد</option>
+                                <option value="urgent">فوری</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-sm font-medium">مدیر اولیه</label>
+                            <div class="rounded-md border bg-muted/30 px-3 py-2 text-sm">{{ selectedSection.department?.manager?.name ?? 'مدیر واحد تعیین نشده' }}</div>
+                        </div>
+                    </div>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <div class="space-y-1">
+                            <label for="section-task-start" class="text-sm font-medium">تاریخ شروع</label>
+                            <input id="section-task-start" v-model="sectionTaskForm.start_date" type="date" class="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+                        </div>
+                        <div class="space-y-1">
+                            <label for="section-task-due" class="text-sm font-medium">مهلت تحویل</label>
+                            <input id="section-task-due" v-model="sectionTaskForm.due_date" type="date" class="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+                            <p v-if="sectionTaskForm.errors.due_date" class="text-xs text-destructive">{{ sectionTaskForm.errors.due_date }}</p>
+                        </div>
+                    </div>
+                    <label class="flex items-start gap-3 rounded-lg border p-3">
+                        <input v-model="sectionTaskForm.delegate_to_employee" type="checkbox" class="mt-1 h-4 w-4 rounded border-input" />
+                        <span>
+                            <span class="block text-sm font-medium">ارجاع هم‌زمان از مدیر به کارمند</span>
+                            <span class="mt-1 block text-xs text-muted-foreground">در صورت فعال‌کردن، ابتدا ارجاع به مدیر ثبت می‌شود و سپس تسک به کارمند انتخاب‌شده واگذار می‌شود.</span>
+                        </span>
+                    </label>
+                    <div v-if="sectionTaskForm.delegate_to_employee" class="space-y-1">
+                        <label for="section-task-employee" class="text-sm font-medium">کارمند مقصد ارجاع</label>
+                        <select id="section-task-employee" v-model="sectionTaskForm.delegate_assignee_id" required class="w-full rounded-md border bg-background px-3 py-2 text-sm">
+                            <option :value="null">انتخاب کارمند</option>
+                            <option v-for="employee in sectionEmployees" :key="employee.id" :value="employee.id">{{ employee.name }}</option>
+                        </select>
+                        <p v-if="sectionTaskForm.errors.delegate_assignee_id" class="text-xs text-destructive">{{ sectionTaskForm.errors.delegate_assignee_id }}</p>
+                    </div>
+                    <div class="space-y-1">
+                        <label for="section-task-note" class="text-sm font-medium">توضیح ارجاع (اختیاری)</label>
+                        <textarea id="section-task-note" v-model="sectionTaskForm.assignment_note" rows="2" class="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+                    </div>
+                    <p v-if="sectionTaskForm.errors.task" class="text-sm text-destructive">{{ sectionTaskForm.errors.task }}</p>
+                    <div class="flex justify-end gap-2 border-t pt-4">
+                        <Button type="button" variant="outline" @click="showSectionTaskModal = false">انصراف</Button>
+                        <Button type="submit" :disabled="sectionTaskForm.processing">{{ sectionTaskForm.processing ? 'در حال ثبت...' : 'ثبت تسک' }}</Button>
+                    </div>
+                </form>
+            </div>
         </div>
     </AuthenticatedLayout>
 </template>
