@@ -47,6 +47,7 @@ interface Department {
     code: string | null;
     description: string | null;
     is_active: boolean;
+    is_system_default: boolean;
     manager_id: number | null;
     manager?: { id: number; name: string } | null;
     parent?: { id: number; name: string } | null;
@@ -576,7 +577,8 @@ watch(
                                     >
                                         {{ row.department.name }}
                                     </span>
-                                    <span class="mt-0.5 flex items-center gap-2 text-[11px]" :class="selectedDepartmentId === row.department.id ? 'text-slate-300' : 'text-slate-400'">
+                                    <span class="mt-0.5 flex flex-wrap items-center gap-2 text-[11px]" :class="selectedDepartmentId === row.department.id ? 'text-slate-300' : 'text-slate-400'">
+                                        <span v-if="row.department.is_system_default" class="rounded-full px-2 py-0.5 text-[10px] font-semibold" :class="selectedDepartmentId === row.department.id ? 'bg-white/10 text-teal-200' : 'bg-teal-50 text-teal-700'">پیش‌فرض</span>
                                         <span>{{ row.department.members?.length ?? 0 }} عضو</span>
                                         <span>·</span>
                                         <span>{{ row.childCount }} زیرواحد</span>
@@ -662,7 +664,7 @@ watch(
                                     </button>
 
                                     <button
-                                        v-if="abilities.departments_toggle_status"
+                                        v-if="abilities.departments_toggle_status && !selectedDepartment.is_system_default"
                                         type="button"
                                         class="rounded-xl bg-white/10 px-3.5 py-2 text-xs font-semibold text-white ring-1 ring-white/10 transition hover:bg-white/15"
                                         @click="toggleStatus(selectedDepartment)"
@@ -671,13 +673,16 @@ watch(
                                     </button>
 
                                     <button
-                                        v-if="abilities.departments_delete"
+                                        v-if="abilities.departments_delete && !selectedDepartment.is_system_default"
                                         type="button"
                                         class="rounded-xl bg-red-500/10 px-3.5 py-2 text-xs font-semibold text-red-200 ring-1 ring-red-300/10 transition hover:bg-red-500/15"
                                         @click="deleteDepartment(selectedDepartment)"
                                     >
                                         حذف واحد
                                     </button>
+                                    <span v-if="selectedDepartment.is_system_default" class="inline-flex items-center rounded-xl bg-teal-500/10 px-3.5 py-2 text-xs font-semibold text-teal-200 ring-1 ring-teal-300/10">
+                                        واحد پیش‌فرض؛ غیرقابل حذف
+                                    </span>
                                 </div>
                             </div>
 
