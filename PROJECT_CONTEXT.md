@@ -941,3 +941,7 @@ The full V1–V8 version boundaries are maintained in ROADMAP.md.
 4. `ARCHITECTURE.md` — architecture boundaries
 5. `PROJECT_SPEC.md` — system specification
 6. `DEVELOPMENT.md` — engineering workflow
+
+
+## Cross-department project structure (2026-10-10)
+A project may contain multiple project sections. Each section belongs to one responsible internal department and carries its own description, documents, sort order, and `manager_can_create_tasks` flag. The project administrator may create tasks in any section. A department manager may create tasks only in sections assigned to their department where that flag is enabled. Section tasks are initially assigned to the department manager; an optional employee destination creates a second referral-history entry from manager to employee. New departments must not auto-create separate default projects. Fresh installations receive one shared organizational default project from the database seeder; existing per-department defaults are consolidated by a data-preserving migration.
