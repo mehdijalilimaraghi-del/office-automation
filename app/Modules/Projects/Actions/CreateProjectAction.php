@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Core\CustomFields\Services\CustomFieldService;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectMember;
+use App\Modules\Projects\Models\ProjectSection;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -63,6 +64,17 @@ class CreateProjectAction
                 ]);
 
                 $this->customFieldService->sync($project, $data['custom_fields'] ?? []);
+
+                foreach (array_values($data['sections'] ?? []) as $index => $sectionData) {
+                    ProjectSection::query()->create([
+                        'project_id' => $project->id,
+                        'department_id' => $sectionData['department_id'],
+                        'name' => $sectionData['name'],
+                        'description' => $sectionData['description'] ?? null,
+                        'manager_can_create_tasks' => (bool) ($sectionData['manager_can_create_tasks'] ?? true),
+                        'sort_order' => $index,
+                    ]);
+                }
 
                 ProjectMember::query()->create([
                     'project_id' => $project->id,
