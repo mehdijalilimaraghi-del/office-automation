@@ -82,13 +82,18 @@ class TaskActivityHttpTest extends TestCase
                 'completed_at' => '2026-09-29 11:00:00',
             ])
             ->assertRedirect()
-            ->assertSessionHas('success', 'گزارش فعالیت با موفقیت ثبت شد.');
+            ->assertSessionHas('success', 'فعالیت انجام‌شده با موفقیت ثبت شد.');
 
-        $this->assertDatabaseHas('task_work_logs', [
+        $this->assertDatabaseHas('task_activities', [
             'task_id' => $task->id,
-            'user_id' => $user->id,
+            'created_by' => $user->id,
+            'completed_by' => $user->id,
             'title' => 'پیگیری مالی',
             'description' => 'تماس با واحد مالی',
+            'status' => 'completed',
+            'activity_type' => 'logged',
+            'started_at' => '2026-09-29 10:00:00',
+            'completed_at' => '2026-09-29 11:00:00',
         ]);
     }
 
