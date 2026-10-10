@@ -76,7 +76,12 @@ class ProjectService implements ProjectServiceContract
             if (in_array(PermissionScope::Project->value, $scopes, true)) {
                 $scopeQuery
                     ->orWhere('projects.manager_id', $user->id)
-                    ->orWhereHas('users', fn ($userQuery) => $userQuery->where('users.id', $user->id));
+                    ->orWhereHas('users', fn ($userQuery) => $userQuery->where('users.id', $user->id))
+                    ->orWhere(function ($sharedProjectQuery) use ($user): void {
+                        $sharedProjectQuery->where('projects.is_system_default', true)
+                            ->whereNull('projects.department_id')
+                            ->whereHas('sections.department.members', fn ($memberQuery) => $memberQuery->where('users.id', $user->id));
+                    });
             }
         });
 
