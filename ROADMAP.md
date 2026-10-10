@@ -73,7 +73,10 @@ Deliver a usable internal company platform with a stable Core, organizational st
 - Project members
 - Project roles
 - Optional department association
-- Department-owned/default projects
+- One shared organizational default project (not one project per department)
+- Project sections associated with responsible departments
+- Section-specific documents and manager-controlled task creation
+- Task creation from a section with manager-first assignment and optional employee referral/history
 - Project access and authorization
 - Pagination
 - Project/task lifecycle boundaries
