@@ -64,11 +64,15 @@ class TaskHttpTest extends TestCase
             ->patch(route('tasks.activities.complete', [$task, $activity]))
             ->assertRedirect();
 
-        $this->assertDatabaseHas('task_activities', [
+        $this->assertDatabaseMissing('task_activities', [
             'id' => $activity->id,
-            'status' => 'completed',
-            'activity_type' => 'logged',
-            'completed_by' => $user->id,
+        ]);
+
+        $this->assertDatabaseHas('task_work_logs', [
+            'task_id' => $task->id,
+            'user_id' => $user->id,
+            'title' => 'پیگیری با واحد مالی',
+            'description' => null,
         ]);
     }
 
