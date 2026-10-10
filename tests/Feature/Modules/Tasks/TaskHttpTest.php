@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectMember;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Tasks\Models\TaskActivity;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -84,8 +85,8 @@ class TaskHttpTest extends TestCase
             ->post(route('tasks.work-logs.store', $task), [
                 'title' => 'تماس انجام‌شده با مشتری',
                 'description' => 'نتیجه تماس ثبت شد.',
-                'started_at' => null,
-                'completed_at' => null,
+                'started_at' => '2026-10-10T09:00',
+                'completed_at' => '2026-10-10T09:30',
             ])
             ->assertRedirect();
 
