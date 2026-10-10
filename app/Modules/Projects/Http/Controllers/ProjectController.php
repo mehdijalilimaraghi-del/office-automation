@@ -53,7 +53,9 @@ class ProjectController extends Controller
 
         return Inertia::render('Projects/Create', [
             'managers' => $this->userService->activeList(),
-            'departments' => $this->departmentService->list()->where('is_active', true)->values(),
+            'departments' => $this->departmentService->list()
+                ->filter(fn ($department) => $department->is_active && $department->manager_id !== null)
+                ->values(),
             'customFields' => $this->customFieldService->definitions(Project::class),
             'canUploadDocuments' => Gate::allows('create', Document::class),
         ]);
