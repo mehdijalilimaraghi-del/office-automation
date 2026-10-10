@@ -61,6 +61,7 @@ class TaskTimelineService
 
         foreach ($task->workLogs as $item) {
             $timeline->push([
+                'id' => $item->id,
                 'type' => 'work_log',
                 'title' => $item->title,
                 'description' => $item->description,
