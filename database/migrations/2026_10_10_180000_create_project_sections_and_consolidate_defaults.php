@@ -36,21 +36,6 @@ return new class extends Migration
             ->get();
 
         if ($defaults->isEmpty()) {
-            DB::table('projects')->insert([
-                'department_id' => null,
-                'name' => 'پروژه عمومی سازمان',
-                'code' => 'PRJ-GENERAL',
-                'description' => 'پروژه عمومی مشترک سازمان برای کارهای بین‌واحدی',
-                'status' => 'active',
-                'start_date' => null,
-                'end_date' => null,
-                'manager_id' => null,
-                'created_by' => null,
-                'is_active' => true,
-                'is_system_default' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
             return;
         }
 
