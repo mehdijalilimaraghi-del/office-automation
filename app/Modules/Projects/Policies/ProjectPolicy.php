@@ -95,7 +95,7 @@ class ProjectPolicy
             && (
                 ($project->department_id !== null && $user->departments()->whereKey($project->department_id)->exists())
                 || ($project->is_system_default && $project->department_id === null
-                    && $project->sections()->whereHas('department.members', fn ($query) => $query->where('users.id', $user->id))->exists())
+                    && $project->sections()->whereIn('department_id', $user->departments()->pluck('departments.id'))->exists())
             )
         ) {
             return true;
