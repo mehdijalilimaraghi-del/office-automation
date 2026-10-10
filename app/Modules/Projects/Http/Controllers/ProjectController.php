@@ -89,7 +89,7 @@ class ProjectController extends Controller
         );
     }
 
-    public function show(Project $project): Response
+    public function show(Request $request, Project $project): Response
     {
         Gate::authorize('view', $project);
 
@@ -103,7 +103,11 @@ class ProjectController extends Controller
             'memberOptions' => $canManageMembers
                 ? $this->projectMemberService->availableUsers($project)
                 : [],
-            'canCreateTasks' => Gate::allows('create', [Task::class, (int) $project->id]),
+            'canCreateTasks' => Gate::allows('create', [Task::class, (int) $project->id])
+                || ($request->user()->hasPermission('tasks.create') && $project->sections()
+                    ->where('manager_can_create_tasks', true)
+                    ->whereHas('department', fn ($query) => $query->where('manager_id', $request->user()->id))
+                    ->exists()),
         ]);
     }
 
