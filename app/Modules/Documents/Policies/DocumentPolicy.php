@@ -7,6 +7,7 @@ namespace App\Modules\Documents\Policies;
 use App\Models\User;
 use App\Modules\Documents\Models\Document;
 use App\Modules\Projects\Models\Project;
+use App\Modules\Projects\Models\ProjectSection;
 use App\Modules\Tasks\Models\Task;
 use Illuminate\Support\Facades\Gate;
 
@@ -39,6 +40,10 @@ class DocumentPolicy
             }
 
             if ($target instanceof Project && Gate::forUser($user)->allows('view', $target)) {
+                return true;
+            }
+
+            if ($target instanceof ProjectSection && $target->project !== null && Gate::forUser($user)->allows('view', $target->project)) {
                 return true;
             }
         }
