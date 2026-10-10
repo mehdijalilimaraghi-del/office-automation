@@ -68,6 +68,10 @@ class StoreProjectRequest extends FormRequest
             'sections' => 'بخش‌های پروژه',
             'sections.*.department_id' => 'واحد مسئول بخش (فعال و دارای مدیر فعال)',
             'sections.*.name' => 'نام بخش',
+            'project_documents' => 'مدارک عمومی پروژه',
+            'project_documents.*' => 'مدرک عمومی پروژه',
+            'sections.*.documents' => 'مدارک اختصاصی بخش',
+            'sections.*.documents.*' => 'مدرک اختصاصی بخش',
             'is_active' => 'وضعیت فعال بودن',
         ];
     }
