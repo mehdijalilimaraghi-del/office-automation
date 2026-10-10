@@ -494,7 +494,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
 
                     <section class="overflow-hidden rounded-xl border bg-card shadow-sm">
                         <div class="border-b bg-gray-50/70 px-5 py-4 sm:px-6">
-                            <div class="flex items-center justify-between gap-3"><div><h3 class="font-semibold">گزارش فعالیت</h3><p class="mt-1 text-sm text-muted-foreground">اقداماتی که روی وظیفه انجام شده است.</p></div><div class="flex shrink-0 items-center gap-3"><span class="text-xs text-muted-foreground">{{ timeline.filter(i => i.type === 'work_log').length }} فعالیت</span><button v-if="abilities.log_work" type="button" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showWorkLogModal = true">+ ثبت فعالیت</button></div></div>
+                            <div class="flex items-center justify-between gap-3"><div><h3 class="font-semibold">گزارش فعالیت</h3><p class="mt-1 text-sm text-muted-foreground">اقداماتی که روی وظیفه انجام شده است.</p></div><div class="flex shrink-0 items-center gap-3"><span class="text-xs text-muted-foreground">{{ timeline.filter(i => i.type === 'work_log').length + loggedActivities.length }} فعالیت</span><button v-if="abilities.log_work" type="button" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showWorkLogModal = true">+ ثبت فعالیت</button></div></div>
                         </div>
                         <div v-if="timeline.filter(i => i.type === 'work_log').length === 0 && loggedActivities.length === 0" class="p-8 text-center text-sm text-muted-foreground">هنوز گزارشی ثبت نشده است.</div>
                         <div v-if="timeline.filter(i => i.type === 'work_log').length" class="divide-y">
