@@ -127,7 +127,7 @@ Responsible for:
 - End date
 - Project view
 - Optional department association
-- Department-owned system default projects that cannot be manually updated or deleted
+- One shared system default project; project sections are assigned to responsible departments and default projects cannot be manually updated or deleted
 
 ### Tasks
 
