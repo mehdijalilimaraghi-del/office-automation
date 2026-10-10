@@ -23,11 +23,9 @@ use App\Models\User;
 use App\Modules\Tasks\Contracts\TaskServiceContract;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskReminder;
-use App\Modules\Tasks\Models\TaskWorkLog;
 use App\Modules\Tasks\Services\TaskFormOptionsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -106,7 +104,8 @@ class TaskController extends Controller
                 'assignments.toUser',
                 'assignments.assignedBy',
                 'comments.user',
-                'workLogs.user',
+                'activities.creator',
+                'activities.completedBy',
                 'reminders.user',
                 'reminders.creator',
                 'statusHistory.changedBy',
@@ -294,26 +293,14 @@ class TaskController extends Controller
 
         abort_unless($activity->activity_type === 'planned' && $activity->status === 'pending', 422);
 
-        DB::transaction(function () use ($activity, $task, $request): void {
-            $completedAt = now();
+        $activity->update([
+            'activity_type' => 'logged',
+            'status' => 'completed',
+            'completed_by' => $request->user()->id,
+            'completed_at' => now(),
+        ]);
 
-            $task->workLogs()->create([
-                'user_id' => $request->user()->id,
-                'title' => $activity->title,
-                'description' => $activity->description,
-                'completed_at' => $completedAt,
-            ]);
-
-            $activity->update([
-                'status' => 'completed',
-                'completed_by' => $request->user()->id,
-                'completed_at' => $completedAt,
-            ]);
-
-            $activity->delete();
-        });
-
-        return back()->with('success', 'فعالیت انجام شد و به گزارش فعالیت منتقل شد.');
+        return back()->with('success', 'فعالیت انجام شد و در گزارش فعالیت ثبت شد.');
     }
 
     public function updateActivity(Request $request, Task $task, TaskActivity $activity): RedirectResponse
@@ -324,11 +311,15 @@ class TaskController extends Controller
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:10000'],
+            'started_at' => ['nullable', 'date'],
+            'completed_at' => ['nullable', 'date', 'after_or_equal:started_at'],
         ]);
 
         $activity->update([
             'title' => trim($data['title']),
             'description' => $data['description'] ?? null,
+            'started_at' => $data['started_at'] ?? $activity->started_at,
+            'completed_at' => $data['completed_at'] ?? $activity->completed_at,
         ]);
 
         return back()->with('success', 'فعالیت با موفقیت ویرایش شد.');
@@ -430,50 +421,24 @@ class TaskController extends Controller
     {
         Gate::authorize('logWork', $task);
         $data = $request->validated();
+        $sequence = ((int) $task->activities()->max('sequence')) + 1;
 
-        $this->taskService->addWorkLog(
-            task: $task,
-            user: $request->user(),
-            title: $data['title'],
-            description: $data['description'] ?? null,
-            startedAt: $data['started_at'] ?? null,
-            completedAt: $data['completed_at'] ?? null,
-        );
-
-        return back()->with('success', 'گزارش فعالیت با موفقیت ثبت شد.');
-    }
-
-    public function updateWorkLog(Request $request, Task $task, TaskWorkLog $workLog): RedirectResponse
-    {
-        Gate::authorize('update', $task);
-        abort_unless((int) $workLog->task_id === (int) $task->id, 404);
-
-        $data = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:10000'],
-            'started_at' => ['nullable', 'date'],
-            'completed_at' => ['nullable', 'date', 'after_or_equal:started_at'],
-        ]);
-
-        $workLog->update([
+        $task->activities()->create([
             'title' => trim($data['title']),
             'description' => $data['description'] ?? null,
+            'status' => 'completed',
+            'activity_type' => 'logged',
+            'sequence' => $sequence,
+            'assigned_to' => $task->assignee_id,
+            'created_by' => $request->user()->id,
+            'completed_by' => $request->user()->id,
             'started_at' => $data['started_at'] ?? null,
             'completed_at' => $data['completed_at'] ?? null,
         ]);
 
-        return back()->with('success', 'گزارش فعالیت با موفقیت ویرایش شد.');
+        return back()->with('success', 'فعالیت انجام‌شده با موفقیت ثبت شد.');
     }
 
-    public function destroyWorkLog(Request $request, Task $task, TaskWorkLog $workLog): RedirectResponse
-    {
-        Gate::authorize('update', $task);
-        abort_unless((int) $workLog->task_id === (int) $task->id, 404);
-
-        $workLog->delete();
-
-        return back()->with('success', 'گزارش فعالیت با موفقیت حذف شد.');
-    }
 
     public function reminder(StoreTaskReminderRequest $request, Task $task): RedirectResponse
     {
