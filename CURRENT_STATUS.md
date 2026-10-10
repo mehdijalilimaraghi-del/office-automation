@@ -400,3 +400,11 @@ The V1 authorization audit continued beyond project listing. Project mutation po
 - The focused HTTP test failed before exercising the manual activity flow because the test database lacked the seeded `tasks.log_work` permission. `TaskHttpTest` now seeds `CorePermissionSeeder` during setup so the test fixture includes the canonical permission registry.
 
 **Validation status:** focused `TaskHttpTest` and frontend build are pending after this fixture correction.
+
+
+### 2026-10-10 — Restore previous activity report entries and relocate guide
+- بخش «گزارش فعالیت» اکنون مستقیماً از رکوردهای تکمیل‌شده‌ی رابطه‌ی واحد `task.activities` نمایش داده می‌شود، نه از timeline عمومی؛ این بخش دیگر به شکل‌دهی timeline برای فهرست فعالیت‌ها وابسته نیست.
+- راهنمای کامل از «گزارش فعالیت» به بالای بخش «فعالیت‌های بعدی» منتقل شد تا قبل از ثبت، تفاوت فعالیت برنامه‌ریزی‌شده و فعالیت انجام‌شده روشن باشد.
+- تست HTTP نمایش فعالیت تکمیل‌شده‌ی از قبل ثبت‌شده در صفحه جزئیات اضافه شد.
+
+**Validation:** migration، تست HTTP وظایف و build فرانت‌اند باید در محیط محلی اجرا شوند.
