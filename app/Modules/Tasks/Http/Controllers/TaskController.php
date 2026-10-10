@@ -318,8 +318,8 @@ class TaskController extends Controller
         $activity->update([
             'title' => trim($data['title']),
             'description' => $data['description'] ?? null,
-            'started_at' => $data['started_at'] ?? $activity->started_at,
-            'completed_at' => $data['completed_at'] ?? $activity->completed_at,
+            'started_at' => array_key_exists('started_at', $data) ? $data['started_at'] : $activity->started_at,
+            'completed_at' => array_key_exists('completed_at', $data) ? $data['completed_at'] : $activity->completed_at,
         ]);
 
         return back()->with('success', 'فعالیت با موفقیت ویرایش شد.');
