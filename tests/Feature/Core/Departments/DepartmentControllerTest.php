@@ -63,13 +63,13 @@ class DepartmentControllerTest extends TestCase
         ]);
     }
 
-    public function test_creating_department_creates_default_project(): void
+    public function test_creating_department_does_not_create_a_separate_default_project(): void
     {
         $user = $this->user();
 
         $this->grant($user, 'departments.create');
 
-        $response = $this->actingAs($user)->post(
+        $this->actingAs($user)->post(
             route('departments.store'),
             [
                 'name' => 'فناوری اطلاعات',
@@ -78,32 +78,17 @@ class DepartmentControllerTest extends TestCase
                 'parent_id' => null,
                 'is_active' => true,
             ]
-        );
-
-        $response->assertRedirect();
+        )->assertRedirect();
 
         $department = Department::where('name', 'فناوری اطلاعات')->firstOrFail();
 
-        $this->assertDatabaseHas('projects', [
+        $this->assertDatabaseMissing('projects', [
             'department_id' => $department->id,
-            'name' => 'پروژه عمومی فناوری اطلاعات',
-            'code' => sprintf('PRJ-%06d', Project::query()
-                ->where('department_id', $department->id)
-                ->where('is_system_default', true)
-                ->value('id')),
             'is_system_default' => true,
         ]);
-
-        $this->assertEquals(
-            $department->id,
-            Project::query()
-                ->where('department_id', $department->id)
-                ->where('is_system_default', true)
-                ->value('department_id')
-        );
     }
 
-    public function test_default_project_uses_department_manager_when_created(): void
+    public function test_department_manager_is_not_added_to_a_per_department_default_project(): void
     {
         $user = $this->user();
         $manager = User::factory()->create();
@@ -124,18 +109,14 @@ class DepartmentControllerTest extends TestCase
 
         $department = Department::where('name', 'فناوری اطلاعات')->firstOrFail();
 
-        $this->assertDatabaseHas('projects', [
-            'department_id' => $department->id,
+        $this->assertDatabaseHas('departments', [
+            'id' => $department->id,
             'manager_id' => $manager->id,
-            'is_system_default' => true,
         ]);
 
-        $this->assertDatabaseHas('project_user', [
-            'project_id' => Project::query()
-                ->where('department_id', $department->id)
-                ->where('is_system_default', true)
-                ->value('id'),
-            'user_id' => $manager->id,
+        $this->assertDatabaseMissing('projects', [
+            'department_id' => $department->id,
+            'is_system_default' => true,
         ]);
     }
 
