@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('project_id')->constrained('projects')->cascadeOnDelete();
             $table->foreignId('department_id')->nullable()->constrained('departments')->nullOnDelete();
+            $table->foreignId('legacy_project_id')->nullable()->constrained('projects')->nullOnDelete();
             $table->string('name', 150);
             $table->text('description')->nullable();
             $table->boolean('manager_can_create_tasks')->default(true);
@@ -62,6 +63,7 @@ return new class extends Migration
             $sectionId = (int) DB::table('project_sections')->insertGetId([
                 'project_id' => $sharedId,
                 'department_id' => $legacyProject->department_id,
+                'legacy_project_id' => $legacyProject->id,
                 'name' => $sectionName,
                 'description' => $legacyProject->description,
                 'manager_can_create_tasks' => true,
@@ -124,6 +126,25 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (Schema::hasTable('project_sections')) {
+            foreach (DB::table('project_sections')->orderBy('id')->get() as $section) {
+                $restoreProjectId = $section->legacy_project_id ?: $section->project_id;
+
+                DB::table('tasks')->where('section_id', $section->id)->update([
+                    'project_id' => $restoreProjectId,
+                    'section_id' => null,
+                ]);
+
+                DB::table('document_links')
+                    ->where('linkable_type', ProjectSection::class)
+                    ->where('linkable_id', $section->id)
+                    ->update([
+                        'linkable_type' => Project::class,
+                        'linkable_id' => $restoreProjectId,
+                    ]);
+            }
+        }
+
         Schema::table('tasks', function (Blueprint $table): void {
             $table->dropForeign(['section_id']);
             $table->dropIndex(['section_id']);
@@ -131,6 +152,6 @@ return new class extends Migration
         });
 
         Schema::dropIfExists('project_sections');
-        // Existing project/task/document data is intentionally not rewritten on rollback.
+        // Legacy project rows are retained; workflow instances remain associated with the shared project.
     }
 };
