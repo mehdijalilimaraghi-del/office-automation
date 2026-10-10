@@ -6,7 +6,6 @@ use App\Models\User;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskComment;
 use App\Modules\Tasks\Models\TaskReminder;
-use App\Modules\Tasks\Models\TaskWorkLog;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 interface TaskServiceContract
@@ -17,7 +16,6 @@ interface TaskServiceContract
     public function assign(Task $task, User $assignee, ?User $actor = null, string $type = 'assignment', ?string $note = null): Task;
     public function changeStatus(Task $task, string $status, ?User $actor = null): Task;
     public function addComment(Task $task, User $author, string $body): TaskComment;
-    public function addWorkLog(Task $task, User $user, string $title, ?string $description = null, $startedAt = null, $completedAt = null): TaskWorkLog;
     public function addReminder(Task $task, User $recipient, User $creator, string $title, $remindAt, ?string $description = null): TaskReminder;
     public function updateReminderStatus(TaskReminder $reminder, string $status, User $actor): TaskReminder;
     public function timeline(Task $task): array;
