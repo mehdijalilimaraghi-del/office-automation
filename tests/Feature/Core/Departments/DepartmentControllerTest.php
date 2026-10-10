@@ -555,7 +555,7 @@ class DepartmentControllerTest extends TestCase
         ]);
     }
 
-    public function test_changing_department_manager_updates_default_project_manager(): void
+    public function test_changing_department_manager_does_not_change_legacy_project_manager(): void
     {
         $user = $this->user();
         $oldManager = User::factory()->create();
@@ -602,16 +602,16 @@ class DepartmentControllerTest extends TestCase
 
         $this->assertDatabaseHas('projects', [
             'id' => $project->id,
-            'manager_id' => $newManager->id,
+            'manager_id' => $oldManager->id,
         ]);
 
-        $this->assertDatabaseHas('project_user', [
+        $this->assertDatabaseMissing('project_user', [
             'project_id' => $project->id,
             'user_id' => $newManager->id,
         ]);
     }
 
-    public function test_removing_department_manager_clears_default_project_manager(): void
+    public function test_removing_department_manager_does_not_change_legacy_project_manager(): void
     {
         $user = $this->user();
         $manager = User::factory()->create();
@@ -657,7 +657,7 @@ class DepartmentControllerTest extends TestCase
 
         $this->assertDatabaseHas('projects', [
             'id' => $project->id,
-            'manager_id' => null,
+            'manager_id' => $manager->id,
         ]);
     }
 
