@@ -125,6 +125,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/tasks/{task}/activities/{activity}', [TaskController::class, 'destroyActivity'])->middleware('permission:tasks.update')->name('tasks.activities.destroy');
     Route::patch('/tasks/{task}/status', [TaskController::class, 'changeStatus'])->middleware('permission:tasks.change_status')->name('tasks.change-status');
 
+    Route::post('/project-sections/{section}/documents', [DocumentController::class, 'storeForSection'])
+        ->middleware('permission:documents.create')
+        ->name('documents.sections.store');
+
     Route::get('/documents/{document}/download', [DocumentController::class, 'download'])
         ->middleware('permission:documents.view')
         ->name('documents.download');
