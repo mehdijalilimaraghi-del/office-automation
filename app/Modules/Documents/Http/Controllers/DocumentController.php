@@ -43,6 +43,7 @@ class DocumentController extends Controller
 
     public function storeForProject(StoreTaskDocumentRequest $request, \App\Modules\Projects\Models\Project $project): RedirectResponse
     {
+        Gate::authorize('view', $project);
         $user = $request->user();
         $isProjectOwner = (int) $project->manager_id === (int) $user->id
             || (int) $project->created_by === (int) $user->id;
@@ -67,6 +68,8 @@ class DocumentController extends Controller
     public function storeForSection(StoreTaskDocumentRequest $request, ProjectSection $section): RedirectResponse
     {
         $section->load(['project', 'department']);
+        abort_if($section->project === null, 404);
+        Gate::authorize('view', $section->project);
         $user = $request->user();
 
         $isProjectManager = (int) $section->project?->manager_id === (int) $user->id
