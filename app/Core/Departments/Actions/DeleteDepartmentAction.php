@@ -11,6 +11,12 @@ class DeleteDepartmentAction
 {
     public function execute(Department $department): void
     {
+        if ($department->is_system_default) {
+            throw ValidationException::withMessages([
+                'department' => 'واحدهای پیش‌فرض سازمان قابل حذف نیستند.',
+            ]);
+        }
+
         if ($department->children()->exists()) {
             throw ValidationException::withMessages([
                 'department' => 'این دپارتمان دارای زیرمجموعه است و قابل حذف نیست.',
