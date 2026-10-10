@@ -41,7 +41,7 @@ class StoreProjectRequest extends FormRequest
                 'exists:users,id',
             ],
             'sections' => ['nullable', 'array', 'max:50'],
-            'sections.*.department_id' => ['required_with:sections', 'integer', 'exists:departments,id'],
+            'sections.*.department_id' => ['required_with:sections', 'integer', Rule::exists('departments', 'id')->where(fn ($query) => $query->where('is_active', true)->whereNotNull('manager_id'))],
             'sections.*.name' => ['required_with:sections', 'string', 'max:150'],
             'sections.*.description' => ['nullable', 'string', 'max:10000'],
             'sections.*.manager_can_create_tasks' => ['sometimes', 'boolean'],
@@ -66,7 +66,7 @@ class StoreProjectRequest extends FormRequest
             'end_date' => 'تاریخ پایان',
             'manager_id' => 'مدیر پروژه',
             'sections' => 'بخش‌های پروژه',
-            'sections.*.department_id' => 'واحد مسئول بخش',
+            'sections.*.department_id' => 'واحد مسئول بخش (فعال و دارای مدیر فعال)',
             'sections.*.name' => 'نام بخش',
             'is_active' => 'وضعیت فعال بودن',
         ];
