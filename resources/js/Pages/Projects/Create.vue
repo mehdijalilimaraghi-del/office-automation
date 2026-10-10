@@ -33,6 +33,7 @@ const props = defineProps<{
 }>();
 
 const form = useForm({
+    department_id: '',
     name: '',
     description: '',
     status: 'planning' as
@@ -120,7 +121,7 @@ function submit(): void {
                 </div>
 
                 <div class="grid gap-5 md:grid-cols-2">
-                    <div>
+                    <div class="hidden">
                         <label for="department_id" class="mb-2 block text-sm font-medium">
                             واحد
                         </label>
