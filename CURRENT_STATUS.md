@@ -16,7 +16,7 @@ Projects and Tasks are early business capabilities, not the architectural center
 ## Version
 **Current version: V1 — Foundation & Work Management**
 
-V1 implementation scope is complete.
+V1 core scope is implemented; the shared-project/project-sections extension is in progress and must pass technical validation before acceptance.
 
 **Current checkpoint:** technical validation + manual UI/functional acceptance.
 
