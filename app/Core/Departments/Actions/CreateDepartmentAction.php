@@ -4,12 +4,14 @@ namespace App\Core\Departments\Actions;
 
 use App\Core\Departments\Models\Department;
 use App\Core\CustomFields\Services\CustomFieldService;
+use App\Modules\Projects\Actions\EnsureDepartmentProjectSectionAction;
 use Illuminate\Support\Facades\DB;
 
 class CreateDepartmentAction
 {
     public function __construct(
         private readonly CustomFieldService $customFieldService,
+        private readonly EnsureDepartmentProjectSectionAction $ensureDepartmentProjectSectionAction,
     ) {
     }
 
@@ -38,6 +40,7 @@ class CreateDepartmentAction
             }
 
             $this->customFieldService->sync($department, $data['custom_fields'] ?? []);
+            $this->ensureDepartmentProjectSectionAction->execute($department);
 
             $department = $department->refresh();
 
