@@ -305,6 +305,7 @@ function submit(): void {
                 </section>
 
                 <section class="space-y-4 rounded-xl border border-border p-4 sm:p-5">
+                    <p v-if="form.errors.sections" class="text-sm text-destructive">{{ form.errors.sections }}</p>
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <div>
                             <h3 class="font-semibold">بخش‌های پروژه</h3>
