@@ -301,6 +301,7 @@ function submit(): void {
                     </div>
                     <input type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" class="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm" @change="updateProjectDocuments" />
                     <p v-if="form.project_documents.length" class="text-xs text-muted-foreground">{{ form.project_documents.length }} فایل برای پیوست انتخاب شده است.</p>
+                    <p v-if="form.errors['project_documents.0']" class="text-xs text-destructive">{{ form.errors['project_documents.0'] }}</p>
                     <p v-if="form.errors.project_documents" class="text-xs text-destructive">{{ form.errors.project_documents }}</p>
                 </section>
 
@@ -348,7 +349,7 @@ function submit(): void {
                             <label :for="'section-documents-' + index" class="text-sm font-medium">مدارک اختصاصی این واحد</label>
                             <input :id="'section-documents-' + index" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" class="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm" @change="updateSectionDocuments(index, $event)" />
                             <p v-if="section.documents.length" class="text-xs text-muted-foreground">{{ section.documents.length }} فایل انتخاب شده است.</p>
-                            <p v-if="form.errors['sections.' + index + '.documents']" class="text-xs text-destructive">{{ form.errors['sections.' + index + '.documents'] }}</p>
+                            <p v-if="form.errors['sections.' + index + '.documents'] || form.errors['sections.' + index + '.documents.0']" class="text-xs text-destructive">{{ form.errors['sections.' + index + '.documents'] || form.errors['sections.' + index + '.documents.0'] }}</p>
                         </div>
                         <label class="flex items-start gap-3 rounded-lg border bg-background p-3">
                             <input v-model="section.manager_can_create_tasks" type="checkbox" class="mt-1 h-4 w-4 rounded border-input" />
