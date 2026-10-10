@@ -14,6 +14,7 @@ use App\Modules\Projects\Contracts\ProjectMemberServiceContract;
 use App\Modules\Projects\Contracts\ProjectServiceContract;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Documents\Models\Document;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -94,6 +95,17 @@ class ProjectController extends Controller
         Gate::authorize('view', $project);
 
         $canManageMembers = Gate::allows('manageMembers', $project);
+        $user = $request->user();
+        $hasOrganizationProjectScope = in_array(\App\Core\Permissions\Enums\PermissionScope::Organization->value, $user->permissionScopes('projects.update'), true)
+            || in_array(\App\Core\Permissions\Enums\PermissionScope::Organization->value, $user->permissionScopes('projects.create'), true);
+        $isProjectOwner = (int) $project->manager_id === (int) $user->id
+            || (int) $project->created_by === (int) $user->id;
+        $canUploadProjectDocuments = Gate::allows('create', Document::class)
+            && ($isProjectOwner || $hasOrganizationProjectScope);
+        $canUploadSectionDocuments = Gate::allows('create', Document::class)
+            && ($canUploadProjectDocuments || $project->sections()
+                ->whereHas('department', fn ($query) => $query->where('manager_id', $user->id))
+                ->exists());
 
         return Inertia::render('Projects/Show', [
             'project' => $this->projectService->show($project),
@@ -103,11 +115,8 @@ class ProjectController extends Controller
             'memberOptions' => $canManageMembers
                 ? $this->projectMemberService->availableUsers($project)
                 : [],
-            'canUploadSectionDocuments' => Gate::allows('create', \App\Modules\Documents\Models\Document::class)
-                && (Gate::allows('update', $project) || Gate::allows('create', Project::class)
-                    || ($request->user()->hasPermission('tasks.create') && $project->sections()
-                        ->whereHas('department', fn ($query) => $query->where('manager_id', $request->user()->id))
-                        ->exists())),
+            'canUploadProjectDocuments' => $canUploadProjectDocuments,
+            'canUploadSectionDocuments' => $canUploadSectionDocuments,
             'canCreateTasks' => Gate::allows('create', [Task::class, (int) $project->id]),
             'managerCreatableSectionIds' => $request->user()->hasPermission('tasks.create')
                 ? $project->sections()
