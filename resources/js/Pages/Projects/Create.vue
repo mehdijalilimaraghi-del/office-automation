@@ -36,6 +36,7 @@ const props = defineProps<{
 }>();
 
 const showManagerHelp = ref(false);
+const expandedSectionIndex = ref<number | null>(0);
 
 const form = useForm({
     department_id: '',
@@ -57,6 +58,11 @@ const form = useForm({
 
 function addSection(): void {
     form.sections.push({ name: '', department_id: '', description: '', manager_can_create_tasks: true, documents: [] });
+    expandedSectionIndex.value = form.sections.length - 1;
+}
+
+function toggleSection(index: number): void {
+    expandedSectionIndex.value = expandedSectionIndex.value === index ? null : index;
 }
 
 function updateProjectDocuments(event: Event): void {
@@ -71,6 +77,14 @@ function updateSectionDocuments(index: number, event: Event): void {
 
 function removeSection(index: number): void {
     form.sections.splice(index, 1);
+
+    if (expandedSectionIndex.value === index) {
+        expandedSectionIndex.value = form.sections.length > 0
+            ? Math.min(index, form.sections.length - 1)
+            : null;
+    } else if (expandedSectionIndex.value !== null && expandedSectionIndex.value > index) {
+        expandedSectionIndex.value -= 1;
+    }
 }
 
 function sectionError(key: string): string | undefined {
@@ -106,7 +120,7 @@ function submit(): void {
             </div>
         </template>
 
-        <div class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <form
                 class="space-y-6 rounded-lg border bg-card p-6 shadow-sm"
                 @submit.prevent="submit"
@@ -189,7 +203,7 @@ function submit(): void {
                                     id="manager-help-popover"
                                     role="dialog"
                                     aria-label="راهنمای مدیر پروژه"
-                                    class="absolute right-0 top-7 z-50 w-72 rounded-xl border border-border bg-popover p-4 text-popover-foreground shadow-xl ring-1 ring-black/5"
+                                    class="absolute right-0 top-7 z-50 w-72 rounded-xl border border-slate-200 bg-white p-4 text-slate-900 shadow-2xl ring-1 ring-black/10 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                                 >
                                     <div class="mb-2 flex items-center justify-between gap-3">
                                         <h4 class="text-sm font-semibold">راهنمای انتخاب مدیر پروژه</h4>
@@ -205,7 +219,7 @@ function submit(): void {
                                     <p class="text-xs leading-6 text-muted-foreground">
                                         برای نمایش کاربر در این فهرست، ابتدا باید او را عضو واحد «مدیریت پروژه» کنید.
                                     </p>
-                                    <div class="absolute -top-1.5 right-2 h-3 w-3 rotate-45 border-l border-t border-border bg-popover"></div>
+                                    <div class="absolute -top-1.5 right-2 h-3 w-3 rotate-45 border-l border-t border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"></div>
                                 </div>
                             </div>
                         </div>
@@ -365,43 +379,57 @@ function submit(): void {
                         هنوز بخشی اضافه نشده است. برای تعریف کارهای واحدها، بخش جدید ایجاد کنید.
                     </div>
 
-                    <div v-for="(section, index) in form.sections" :key="index" class="space-y-4 rounded-lg border bg-muted/20 p-4">
-                        <div class="flex items-center justify-between gap-3">
-                            <h4 class="font-medium">بخش {{ index + 1 }}</h4>
-                            <Button type="button" variant="outline" size="sm" @click="removeSection(index)">حذف بخش</Button>
+                    <div v-for="(section, index) in form.sections" :key="index" class="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                        <div class="flex items-center gap-3 bg-muted/40 px-4 py-3 sm:px-5">
+                            <button
+                                type="button"
+                                class="flex min-w-0 flex-1 items-center gap-3 text-right"
+                                :aria-expanded="expandedSectionIndex === index"
+                                @click="toggleSection(index)"
+                            >
+                                <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border bg-background text-sm font-semibold text-foreground">{{ index + 1 }}</span>
+                                <span class="min-w-0 flex-1">
+                                    <span class="block truncate text-sm font-semibold">{{ section.name.trim() || ('بخش ' + (index + 1)) }}</span>
+                                    <span class="mt-0.5 block truncate text-xs text-muted-foreground">{{ props.departments.find((department) => String(department.id) === section.department_id)?.name || 'واحد انجام‌دهنده انتخاب نشده' }}</span>
+                                </span>
+                                <span class="shrink-0 text-muted-foreground transition-transform" :class="expandedSectionIndex === index ? 'rotate-180' : ''">⌄</span>
+                            </button>
+                            <Button type="button" variant="outline" size="sm" class="shrink-0" @click="removeSection(index)">حذف بخش</Button>
                         </div>
-                        <div class="grid gap-4 md:grid-cols-2">
-                            <div class="space-y-2">
-                                <label :for="'section-name-' + index" class="text-sm font-medium">نام بخش</label>
-                                <input :id="'section-name-' + index" v-model="section.name" required maxlength="150" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="مثلاً طراحی محصول" />
-                                <p v-if="sectionError('sections.' + index + '.name')" class="text-xs text-destructive">{{ sectionError('sections.' + index + '.name') }}</p>
+                        <div v-if="expandedSectionIndex === index" class="space-y-4 border-t p-4 sm:p-5">
+                            <div class="grid gap-4 md:grid-cols-2">
+                                <div class="space-y-2">
+                                    <label :for="'section-name-' + index" class="text-sm font-medium">نام بخش</label>
+                                    <input :id="'section-name-' + index" v-model="section.name" required maxlength="150" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="مثلاً طراحی محصول" />
+                                    <p v-if="sectionError('sections.' + index + '.name')" class="text-xs text-destructive">{{ sectionError('sections.' + index + '.name') }}</p>
+                                </div>
+                                <div class="space-y-2">
+                                    <label :for="'section-department-' + index" class="text-sm font-medium">واحد انجام‌دهنده</label>
+                                    <select :id="'section-department-' + index" v-model="section.department_id" required class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                                        <option value="">انتخاب واحد مسئول</option>
+                                        <option v-for="department in props.departments" :key="department.id" :value="String(department.id)">{{ department.name }}</option>
+                                    </select>
+                                    <p v-if="sectionError('sections.' + index + '.department_id')" class="text-xs text-destructive">{{ sectionError('sections.' + index + '.department_id') }}</p>
+                                </div>
                             </div>
                             <div class="space-y-2">
-                                <label :for="'section-department-' + index" class="text-sm font-medium">واحد انجام‌دهنده</label>
-                                <select :id="'section-department-' + index" v-model="section.department_id" required class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                                    <option value="">انتخاب واحد مسئول</option>
-                                    <option v-for="department in props.departments" :key="department.id" :value="String(department.id)">{{ department.name }}</option>
-                                </select>
-                                <p v-if="sectionError('sections.' + index + '.department_id')" class="text-xs text-destructive">{{ sectionError('sections.' + index + '.department_id') }}</p>
+                                <label :for="'section-description-' + index" class="text-sm font-medium">توضیحات و اطلاعات دریافتی برای واحد</label>
+                                <textarea :id="'section-description-' + index" v-model="section.description" rows="3" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="شرح محدوده کار، خروجی مورد انتظار و نکات اجرایی" />
                             </div>
+                            <div v-if="canUploadDocuments" class="space-y-2">
+                                <label :for="'section-documents-' + index" class="text-sm font-medium">مدارک اختصاصی این واحد</label>
+                                <input :id="'section-documents-' + index" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" class="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm" @change="updateSectionDocuments(index, $event)" />
+                                <p v-if="section.documents.length" class="text-xs text-muted-foreground">{{ section.documents.length }} فایل انتخاب شده است.</p>
+                                <p v-if="sectionError('sections.' + index + '.documents') || sectionError('sections.' + index + '.documents.0')" class="text-xs text-destructive">{{ sectionError('sections.' + index + '.documents') || sectionError('sections.' + index + '.documents.0') }}</p>
+                            </div>
+                            <label class="flex items-start gap-3 rounded-lg border bg-background p-3">
+                                <input v-model="section.manager_can_create_tasks" type="checkbox" class="mt-1 h-4 w-4 rounded border-input" />
+                                <span class="space-y-1">
+                                    <span class="block text-sm font-medium">مدیر واحد بتواند تسک تعریف کند</span>
+                                    <span class="block text-xs text-muted-foreground">در صورت فعال بودن، مدیر همین واحد می‌تواند تسک‌های این بخش را تعریف و به کارکنان ارجاع دهد. ادمین پروژه در هر دو حالت امکان تعریف تسک دارد.</span>
+                                </span>
+                            </label>
                         </div>
-                        <div class="space-y-2">
-                            <label :for="'section-description-' + index" class="text-sm font-medium">توضیحات و اطلاعات دریافتی برای واحد</label>
-                            <textarea :id="'section-description-' + index" v-model="section.description" rows="3" class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="شرح محدوده کار، خروجی مورد انتظار و نکات اجرایی" />
-                        </div>
-                        <div v-if="canUploadDocuments" class="space-y-2">
-                            <label :for="'section-documents-' + index" class="text-sm font-medium">مدارک اختصاصی این واحد</label>
-                            <input :id="'section-documents-' + index" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" class="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm" @change="updateSectionDocuments(index, $event)" />
-                            <p v-if="section.documents.length" class="text-xs text-muted-foreground">{{ section.documents.length }} فایل انتخاب شده است.</p>
-                            <p v-if="sectionError('sections.' + index + '.documents') || sectionError('sections.' + index + '.documents.0')" class="text-xs text-destructive">{{ sectionError('sections.' + index + '.documents') || sectionError('sections.' + index + '.documents.0') }}</p>
-                        </div>
-                        <label class="flex items-start gap-3 rounded-lg border bg-background p-3">
-                            <input v-model="section.manager_can_create_tasks" type="checkbox" class="mt-1 h-4 w-4 rounded border-input" />
-                            <span class="space-y-1">
-                                <span class="block text-sm font-medium">مدیر واحد بتواند تسک تعریف کند</span>
-                                <span class="block text-xs text-muted-foreground">در صورت فعال بودن، مدیر همین واحد می‌تواند تسک‌های این بخش را تعریف و به کارکنان ارجاع دهد. ادمین پروژه در هر دو حالت امکان تعریف تسک دارد.</span>
-                            </span>
-                        </label>
                     </div>
                 </section>
 
