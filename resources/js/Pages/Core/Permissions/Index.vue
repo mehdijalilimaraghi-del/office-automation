@@ -172,7 +172,7 @@ function toggleStatus(permission: Permission): void {
                     <div class="max-w-3xl"><div class="mb-4 inline-flex rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-medium text-cyan-100">مجوزها و سیاست دسترسی</div><h1 class="text-2xl font-black tracking-tight sm:text-3xl">دسترسی‌های سیستم را شفاف و قابل کنترل نگه دارید.</h1><p class="mt-3 text-sm leading-7 text-slate-300">مجوزها پایه سیاست‌های دسترسی هستند و از طریق نقش‌ها به کاربران سازمان اعمال می‌شوند.</p></div>
                 </section>
                 <section class="grid gap-4 sm:grid-cols-3">
-                    <div class="rounded-2xl bg-white p-5 ring-1 ring-slate-200"><p class="text-sm text-slate-500">کل مجوزها</p><p class="mt-2 text-3xl font-black text-slate-900">{{ activeCount }}</p></div>
+                    <div class="rounded-2xl bg-white p-5 ring-1 ring-slate-200"><p class="text-sm text-slate-500">کل رکوردها</p><p class="mt-2 text-3xl font-black text-slate-900">{{ props.permissions.length }}</p></div>
                     <div class="rounded-2xl bg-white p-5 ring-1 ring-slate-200"><p class="text-sm text-slate-500">فعال</p><p class="mt-2 text-3xl font-black text-emerald-600">{{ activeCount }}</p></div>
                     <div class="rounded-2xl bg-white p-5 ring-1 ring-slate-200"><p class="text-sm text-slate-500">سیستمی</p><p class="mt-2 text-3xl font-black text-cyan-700">{{ props.permissions.filter(p => p.is_system && p.is_active).length }}</p></div>
                 </section>
@@ -190,7 +190,7 @@ function toggleStatus(permission: Permission): void {
                     <div class="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 lg:col-span-2">
                         <div class="border-b border-slate-100 px-6 py-5">
                             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                                <div><h3 class="font-black text-slate-900">فهرست مجوزها بر اساس بخش</h3><p class="mt-1 text-xs leading-6 text-slate-500">مجوزهای بازنشسته به‌صورت پیش‌فرض پنهان‌اند؛ مجوزهای فعال و قابل اعطا را بررسی کنید.</p></div>
+                                <div><h3 class="font-black text-slate-900">فهرست مجوزها بر اساس بخش</h3><p class="mt-1 text-xs leading-6 text-slate-500">مجوزهای بازنشسته به‌صورت پیش‌فرض پنهان‌اند. این موارد دیگر در نقش‌ها قابل اعطا نیستند.</p></div>
                                 <input v-model="search" type="search" placeholder="جستجوی نام، کد یا بخش..." class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm lg:max-w-sm" />
                             </div>
                             <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
