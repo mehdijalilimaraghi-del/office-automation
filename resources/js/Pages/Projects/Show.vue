@@ -114,6 +114,7 @@ const sectionTaskForm = useForm({
 });
 
 const unsectionedTasks = computed(() => props.project.tasks.filter((task) => !task.section_id));
+const projectTaskStats = computed(() => ({ total: props.project.tasks.length, completed: props.project.tasks.filter((task) => task.status === 'completed').length, inProgress: props.project.tasks.filter((task) => task.status === 'in_progress').length, todo: props.project.tasks.filter((task) => task.status === 'todo').length, sections: props.project.sections.length }));
 
 const sectionEmployees = computed(() => {
     const section = selectedSection.value;
