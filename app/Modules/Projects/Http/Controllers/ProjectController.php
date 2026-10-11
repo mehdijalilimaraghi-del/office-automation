@@ -52,6 +52,30 @@ class ProjectController extends Controller
     {
         Gate::authorize('create', Project::class);
 
+        $allDepartments = collect($this->departmentService->list());
+        $departmentsByParent = $allDepartments->groupBy('parent_id');
+        $departmentOptions = collect();
+
+        $appendDepartmentOptions = function ($parentId, int $depth = 0) use (
+            &$appendDepartmentOptions,
+            $departmentsByParent,
+            $departmentOptions
+        ): void {
+            foreach ($departmentsByParent->get($parentId, collect()) as $department) {
+                if ($department->is_active && $department->manager_id !== null) {
+                    $department->setAttribute(
+                        'tree_label',
+                        str_repeat('　　', $depth) . ($depth > 0 ? '└─ ' : '') . $department->name
+                    );
+                    $departmentOptions->push($department);
+                }
+
+                $appendDepartmentOptions($department->id, $depth + 1);
+            }
+        };
+
+        $appendDepartmentOptions(null);
+
         return Inertia::render('Projects/Create', [
             'managers' => Department::query()
                 ->where('name', 'مدیریت پروژه')
@@ -61,9 +85,7 @@ class ProjectController extends Controller
                 ->where('users.status', 'active')
                 ->orderBy('users.name')
                 ->get(['users.id', 'users.name']) ?? collect(),
-            'departments' => $this->departmentService->list()
-                ->filter(fn ($department) => $department->is_active && $department->manager_id !== null)
-                ->values(),
+            'departments' => $departmentOptions->values(),
             'customFields' => $this->customFieldService->definitions(Project::class),
             'canUploadDocuments' => Gate::allows('create', Document::class),
         ]);
