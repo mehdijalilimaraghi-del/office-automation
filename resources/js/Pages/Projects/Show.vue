@@ -406,6 +406,18 @@ const formatDate = (date: string | null): string => {
         </template>
 
         <div class="mx-auto max-w-7xl space-y-6">
+            <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div v-for="item in [
+                    { label: 'بخش‌ها', value: projectTaskStats.sections },
+                    { label: 'کل تسک‌ها', value: projectTaskStats.total },
+                    { label: 'در حال انجام', value: projectTaskStats.inProgress },
+                    { label: 'تکمیل‌شده', value: projectTaskStats.completed },
+                ]" :key="item.label" class="rounded-xl border bg-card p-5 shadow-sm">
+                    <p class="text-sm text-muted-foreground">{{ item.label }}</p>
+                    <p class="mt-3 text-3xl font-bold tracking-tight">{{ item.value }}</p>
+                </div>
+            </section>
+
             <section class="rounded-lg border bg-card p-6">
                 <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                     <div>
