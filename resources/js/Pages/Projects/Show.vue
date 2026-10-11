@@ -374,569 +374,234 @@ const formatDate = (date: string | null): string => {
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                    <h2 class="text-xl font-semibold">{{ project.name }}</h2>
-                    <p class="mt-1 text-sm text-muted-foreground">
-                        جزئیات و وضعیت پروژه
-                    </p>
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <Link :href="route('projects.index')" class="flex h-10 w-10 items-center justify-center rounded-xl border bg-background text-muted-foreground transition hover:bg-muted" aria-label="بازگشت به پروژه‌ها">
+                        <span aria-hidden="true">→</span>
+                    </Link>
+                    <div>
+                        <p class="text-xs font-semibold tracking-wide text-primary">مرکز کنترل پروژه</p>
+                        <h2 class="mt-0.5 text-xl font-bold tracking-tight">{{ project.name }}</h2>
+                    </div>
                 </div>
-
-                <div class="flex gap-2">
-                    <Button variant="outline" as-child>
-                        <Link :href="route('projects.index')">
-                            بازگشت به پروژه‌ها
-                        </Link>
-                    </Button>
-
+                <div class="flex flex-wrap items-center gap-2">
                     <Button v-if="props.canUpdate" variant="outline" as-child>
-                        <Link :href="route('projects.edit', project.id)">
-                            ویرایش پروژه
-                        </Link>
+                        <Link :href="route('projects.edit', project.id)">ویرایش مشخصات</Link>
                     </Button>
-
-                    <Button
-                        v-if="props.canDeleteProject"
-                        type="button"
-                        variant="destructive"
-                        @click="deleteProject"
-                    >
-                        حذف پروژه
-                    </Button>
+                    <Button v-if="props.canDeleteProject" type="button" variant="destructive" @click="deleteProject">حذف پروژه</Button>
                 </div>
             </div>
         </template>
 
-        <div class="mx-auto max-w-7xl space-y-6">
-            <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <div v-for="item in [
-                    { label: 'بخش‌ها', value: projectTaskStats.sections },
-                    { label: 'کل تسک‌ها', value: projectTaskStats.total },
-                    { label: 'در حال انجام', value: projectTaskStats.inProgress },
-                    { label: 'تکمیل‌شده', value: projectTaskStats.completed },
-                    { label: 'عقب‌افتاده', value: projectTaskStats.overdue },
-                ]" :key="item.label" class="rounded-xl border bg-card p-5 shadow-sm">
-                    <p class="text-sm text-muted-foreground">{{ item.label }}</p>
-                    <p class="mt-3 text-3xl font-bold tracking-tight">{{ item.value }}</p>
-                </div>
-            </section>
-
-            <section class="rounded-xl border bg-card p-5">
-                <div class="flex items-center justify-between gap-3"><div><h3 class="font-semibold">پیشرفت کلی پروژه</h3><p class="mt-1 text-sm text-muted-foreground">بر اساس تسک‌های تکمیل‌شده</p></div><span class="text-xl font-bold">{{ projectTaskStats.progress }}٪</span></div>
-                <div class="mt-4 h-2.5 overflow-hidden rounded-full bg-muted"><div class="h-full rounded-full bg-primary" :style="{ width: projectTaskStats.progress + '%' }"></div></div>
-                <p class="mt-2 text-xs text-muted-foreground">{{ projectTaskStats.completed }} از {{ projectTaskStats.total }} تسک تکمیل شده است.</p>
-            </section>
-
-            <section class="rounded-lg border bg-card p-6">
-                <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                    <div>
-                        <p class="text-sm text-muted-foreground">کد پروژه</p>
-                        <p class="mt-1 font-medium">{{ project.code }}</p>
-                    </div>
-
-                    <div>
-                        <p class="text-sm text-muted-foreground">مدیر پروژه</p>
-                        <p class="mt-1 font-medium">
-                            {{ project.manager?.name ?? '—' }}
-                        </p>
-                    </div>
-
-                    <div>
-                        <p class="text-sm text-muted-foreground">وضعیت</p>
-                        <p class="mt-1 font-medium">
-                            {{ statusLabels[project.status] }}
-                        </p>
-                    </div>
-
-                    <div>
-                        <p class="text-sm text-muted-foreground">فعال</p>
-                        <p class="mt-1 font-medium">
-                            {{ project.is_active ? 'بله' : 'خیر' }}
-                        </p>
-                    </div>
-
-                    <div>
-                        <p class="text-sm text-muted-foreground">تاریخ شروع</p>
-                        <p class="mt-1 font-medium">
-                            {{ formatDate(project.start_date) }}
-                        </p>
-                    </div>
-
-                    <div>
-                        <p class="text-sm text-muted-foreground">تاریخ پایان</p>
-                        <p class="mt-1 font-medium">
-                            {{ formatDate(project.end_date) }}
-                        </p>
-                    </div>
-
-                    <div>
-                        <p class="text-sm text-muted-foreground">ایجادکننده</p>
-                        <p class="mt-1 font-medium">
-                            {{ project.creator?.name ?? '—' }}
-                        </p>
-                    </div>
-                </div>
-
-                <div v-if="project.description" class="mt-6 border-t pt-6">
-                    <p class="text-sm text-muted-foreground">توضیحات</p>
-                    <p class="mt-2 whitespace-pre-line text-sm">
-                        {{ project.description }}
-                    </p>
-                </div>
-            </section>
-
-            <section v-if="canManageMembers && memberOptions.length > 0" class="rounded-lg border bg-card">
-                <div class="border-b p-5">
-                    <h3 class="font-semibold">افزودن عضو</h3>
-                </div>
-
-                <form class="grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-end" @submit.prevent="submitAddMember">
-                    <div>
-                        <label for="member-user" class="mb-2 block text-sm font-medium">کاربر</label>
-                        <select
-                            id="member-user"
-                            v-model="addMemberForm.user_id"
-                            required
-                            class="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                            :disabled="addMemberForm.processing"
-                        >
-                            <option value="">انتخاب کاربر</option>
-                            <option
-                                v-for="member in availableMembers"
-                                :key="member.id"
-                                :value="member.id.toString()"
-                            >
-                                {{ member.name }}
-                            </option>
-                        </select>
-                        <p v-if="addMemberForm.errors.user_id" class="mt-1 text-sm text-destructive">
-                            {{ addMemberForm.errors.user_id }}
-                        </p>
-                    </div>
-
-                    <div v-if="false">
-                        <label for="member-role" class="mb-2 block text-sm font-medium">نقش پروژه</label>
-                        <select
-                            id="member-role"
-                            v-model="addMemberForm.project_role_id"
-                            class="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                            :disabled="addMemberForm.processing"
-                        >
-                            <option value="">بدون نقش</option>
-                            <option
-                                v-for="role in activeProjectRoles"
-                                :key="role.id"
-                                :value="role.id.toString()"
-                            >
-                                {{ role.name }}
-                            </option>
-                        </select>
-                        <p v-if="addMemberForm.errors.project_role_id" class="mt-1 text-sm text-destructive">
-                            {{ addMemberForm.errors.project_role_id }}
-                        </p>
-                    </div>
-
-                    <Button type="submit" :disabled="addMemberForm.processing || !addMemberForm.user_id">
-                        افزودن عضو
-                    </Button>
-                </form>
-            </section>
-
-            <section class="rounded-lg border bg-card">
-                <div class="border-b p-5">
-                    <h3 class="font-semibold">اعضای پروژه</h3>
-                </div>
-
-                <div v-if="project.members.length === 0" class="p-6 text-sm text-muted-foreground">
-                    عضوی برای این پروژه ثبت نشده است.
-                </div>
-
-                <div v-else class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead class="border-b bg-muted/40">
-                            <tr>
-                                <th class="px-4 py-3 text-right font-medium">کاربر</th>
-                                <th v-if="false" class="px-4 py-3 text-right font-medium">نقش پروژه</th>
-                                <th v-if="canManageMembers" class="px-4 py-3 text-right font-medium">عملیات</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y">
-                            <tr v-for="member in project.members" :key="member.id">
-                                <td class="px-4 py-3 font-medium">
-                                    {{ member.user?.name ?? '—' }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    <select
-                                        v-if="canManageMembers"
-                                        v-model="memberRoleSelections[member.id]"
-                                        class="h-9 min-w-40 rounded-md border bg-background px-2 text-sm"
-                                        :disabled="memberRoleForm.processing"
-                                    >
-                                        <option value="">بدون نقش</option>
-                                        <option
-                                            v-for="role in activeProjectRoles"
-                                            :key="role.id"
-                                            :value="role.id.toString()"
-                                        >
-                                            {{ role.name }}
-                                        </option>
-                                    </select>
-                                    <span v-else>
-                                        {{ member.project_role?.name ?? 'بدون نقش' }}
-                                    </span>
-                                </td>
-                                <td v-if="canManageMembers" class="px-4 py-3">
-                                    <div class="flex flex-wrap gap-2">
-                                        <Button
-                                            v-if="false"
-                                            type="button"
-                                            size="sm"
-                                            :disabled="memberRoleForm.processing"
-                                            @click="submitMemberRole(member)"
-                                        >
-                                            ذخیره نقش
-                                        </Button>
-                                        <Button
-                                            v-if="member.user?.id !== project.manager?.id"
-                                            type="button"
-                                            size="sm"
-                                            variant="destructive"
-                                            :disabled="deletingMemberId === member.id"
-                                            @click="removeMember(member)"
-                                        >
-                                            حذف
-                                        </Button>
-                                    </div>
-                                    <p v-if="memberRoleForm.errors.project_role_id" class="mt-1 text-sm text-destructive">
-                                        {{ memberRoleForm.errors.project_role_id }}
-                                    </p>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section v-if="false" class="rounded-lg border bg-card">
-                <div class="border-b p-5">
-                    <h3 class="font-semibold">نقش‌های پروژه</h3>
-                </div>
-
-                <div v-if="canManageRoles" class="border-b p-5">
-                    <form class="grid gap-4 md:grid-cols-[1fr_1.5fr_auto] md:items-end" @submit.prevent="submitCreateRole">
-                        <div>
-                            <label for="role-name" class="mb-2 block text-sm font-medium">نام نقش</label>
-                            <input
-                                id="role-name"
-                                v-model="roleForm.name"
-                                type="text"
-                                required
-                                class="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                                :disabled="roleForm.processing"
-                            />
-                            <p v-if="roleForm.errors.name" class="mt-1 text-sm text-destructive">
-                                {{ roleForm.errors.name }}
-                            </p>
+        <main class="space-y-6 pb-8">
+            <section class="relative isolate overflow-hidden rounded-2xl border bg-card">
+                <div class="absolute inset-y-0 right-0 w-2 bg-primary"></div>
+                <div class="absolute -left-16 -top-20 -z-10 h-64 w-64 rounded-full bg-primary/10 blur-3xl"></div>
+                <div class="grid gap-6 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="rounded-full border px-3 py-1 text-xs font-semibold" :class="{
+                                'border-blue-200 bg-blue-50 text-blue-700': project.status === 'planning',
+                                'border-emerald-200 bg-emerald-50 text-emerald-700': project.status === 'active',
+                                'border-violet-200 bg-violet-50 text-violet-700': project.status === 'completed',
+                                'border-slate-200 bg-slate-100 text-slate-700': project.status === 'archived',
+                            }">{{ statusLabels[project.status] }}</span>
+                            <span v-if="project.is_system_default" class="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">پروژه عمومی سازمان</span>
+                            <span class="font-mono text-xs text-muted-foreground" dir="ltr">{{ project.code }}</span>
                         </div>
-
-                        <div>
-                            <label for="role-description" class="mb-2 block text-sm font-medium">توضیحات</label>
-                            <input
-                                id="role-description"
-                                v-model="roleForm.description"
-                                type="text"
-                                class="h-10 w-full rounded-md border bg-background px-3 text-sm"
-                                :disabled="roleForm.processing"
-                            />
-                            <p v-if="roleForm.errors.description" class="mt-1 text-sm text-destructive">
-                                {{ roleForm.errors.description }}
-                            </p>
-                        </div>
-
-                        <Button type="submit" :disabled="roleForm.processing || !roleForm.name">
-                            افزودن نقش
-                        </Button>
-                    </form>
-                </div>
-
-                <div v-if="project.roles.length === 0" class="p-6 text-sm text-muted-foreground">
-                    هنوز نقشی برای این پروژه تعریف نشده است.
-                </div>
-
-                <div v-else class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead class="border-b bg-muted/40">
-                            <tr>
-                                <th class="px-4 py-3 text-right font-medium">نام نقش</th>
-                                <th class="px-4 py-3 text-right font-medium">کد سیستمی</th>
-                                <th class="px-4 py-3 text-right font-medium">توضیحات</th>
-                                <th class="px-4 py-3 text-right font-medium">وضعیت</th>
-                                <th v-if="canManageRoles" class="px-4 py-3 text-right font-medium">عملیات</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y">
-                            <tr v-for="role in project.roles" :key="role.id">
-                                <template v-if="editingRoleId === role.id">
-                                    <td class="px-4 py-3 font-mono text-xs text-slate-500" dir="ltr">
-                                        {{ role.code }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <input
-                                            v-model="roleForm.name"
-                                            type="text"
-                                            required
-                                            class="h-9 w-full min-w-36 rounded-md border bg-background px-2 text-sm"
-                                            :disabled="roleForm.processing"
-                                        />
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <input
-                                            v-model="roleForm.description"
-                                            type="text"
-                                            class="h-9 w-full min-w-48 rounded-md border bg-background px-2 text-sm"
-                                            :disabled="roleForm.processing"
-                                        />
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        {{ role.is_active ? 'فعال' : 'غیرفعال' }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="flex flex-wrap gap-2">
-                                            <Button
-                                                type="button"
-                                                size="sm"
-                                                :disabled="roleForm.processing || !roleForm.name"
-                                                @click="submitEditRole(role)"
-                                            >
-                                                ذخیره
-                                            </Button>
-                                            <Button
-                                                type="button"
-                                                size="sm"
-                                                variant="outline"
-                                                :disabled="roleForm.processing"
-                                                @click="cancelEditRole"
-                                            >
-                                                انصراف
-                                            </Button>
-                                        </div>
-                                        <p v-if="roleForm.errors.name" class="mt-1 text-sm text-destructive">
-                                            {{ roleForm.errors.name }}
-                                        </p>
-                                        <p v-else-if="roleForm.errors.description" class="mt-1 text-sm text-destructive">
-                                            {{ roleForm.errors.description }}
-                                        </p>
-                                    </td>
-                                </template>
-
-                                <template v-else>
-                                    <td class="px-4 py-3 font-medium">{{ role.name }}</td>
-                                    <td class="px-4 py-3 text-muted-foreground">{{ role.code }}</td>
-                                    <td class="px-4 py-3 text-muted-foreground">
-                                        {{ role.description || '—' }}
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        {{ role.is_active ? 'فعال' : 'غیرفعال' }}
-                                    </td>
-                                    <td v-if="canManageRoles" class="px-4 py-3">
-                                        <div class="flex flex-wrap gap-2">
-                                            <Button
-                                                type="button"
-                                                size="sm"
-                                                variant="outline"
-                                                :disabled="roleActionForm.processing || roleForm.processing"
-                                                @click="startEditRole(role)"
-                                            >
-                                                ویرایش
-                                            </Button>
-                                            <Button
-                                                type="button"
-                                                size="sm"
-                                                variant="outline"
-                                                :disabled="roleActionForm.processing"
-                                                @click="toggleRoleStatus(role)"
-                                            >
-                                                {{ role.is_active ? 'غیرفعال کردن' : 'فعال کردن' }}
-                                            </Button>
-                                            <Button
-                                                type="button"
-                                                size="sm"
-                                                variant="destructive"
-                                                :disabled="roleActionForm.processing"
-                                                @click="deleteRole(role)"
-                                            >
-                                                حذف
-                                            </Button>
-                                        </div>
-                                        <p v-if="roleActionForm.errors.role" class="mt-1 text-sm text-destructive">
-                                            {{ roleActionForm.errors.role }}
-                                        </p>
-                                    </td>
-                                </template>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section class="rounded-xl border bg-card p-5">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                        <h3 class="font-semibold">مدارک عمومی پروژه</h3>
-                        <p class="mt-1 text-sm text-muted-foreground">فایل‌هایی که برای همه بخش‌های پروژه کاربرد دارند.</p>
-                    </div>
-                    <label v-if="canUploadProjectDocuments" class="inline-flex cursor-pointer items-center rounded-md border px-3 py-2 text-xs font-medium transition hover:bg-muted" :class="{ 'pointer-events-none opacity-50': uploadingSectionId === 0 }">
-                        {{ uploadingSectionId === 0 ? 'در حال بارگذاری...' : 'افزودن مدرک' }}
-                        <input type="file" class="sr-only" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" :disabled="uploadingSectionId === 0" @change="uploadProjectDocument" />
-                    </label>
-                </div>
-                <div v-if="!project.documents?.length" class="mt-4 rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground">
-                    هنوز مدرک عمومی برای پروژه ثبت نشده است.
-                </div>
-                <div v-else class="mt-4 flex flex-wrap gap-2">
-                    <div v-for="link in project.documents" :key="link.id" class="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs">
-                        <a :href="link.document ? route('documents.download', link.document.id) : '#'" class="inline-flex items-center gap-2 hover:text-primary">
-                            <span aria-hidden="true">📎</span>
-                            {{ link.document?.title ?? 'مدرک' }}
-                        </a>
-                        <button
-                            v-if="canDeleteDocuments && link.document?.created_by === currentUserId"
-                            type="button"
-                            class="text-destructive transition hover:opacity-70"
-                            title="حذف فایل"
-                            aria-label="حذف فایل"
-                            @click="link.document && deleteDocument(link.document.id)"
-                        >حذف</button>
-                    </div>
-                </div>
-            </section>
-
-            <section class="space-y-4 rounded-xl border bg-card p-5">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                        <h3 class="text-lg font-semibold">بخش‌های پروژه</h3>
-                        <p class="mt-1 text-sm text-muted-foreground">تسک‌ها بر اساس واحد مسئول و بخش کاری پروژه مرتب شده‌اند.</p>
-                    </div>
-                    <span class="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">{{ project.sections.length }} بخش</span>
-                </div>
-
-                <div v-if="project.sections.length === 0" class="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                    برای این پروژه هنوز بخشی تعریف نشده است. بخش‌ها هنگام ایجاد پروژه ثبت می‌شوند.
-                </div>
-
-                <article v-for="section in project.sections" :key="section.id" class="overflow-hidden rounded-xl border">
-                    <div class="flex flex-wrap items-start justify-between gap-3 bg-muted/30 p-4">
-                        <div class="space-y-1">
-                            <h4 class="font-semibold">{{ section.name }}</h4>
-                            <p class="text-sm text-muted-foreground">واحد مسئول: {{ section.department?.name ?? 'واحد تعیین نشده' }}</p>
-                            <p v-if="section.description" class="whitespace-pre-line text-sm">{{ section.description }}</p>
-                            <div class="mt-3 max-w-md">
-                                <div class="mb-1 flex items-center justify-between text-xs">
-                                    <span class="text-muted-foreground">پیشرفت بخش</span>
-                                    <span class="font-semibold">{{ sectionProgress(section) }}٪ · {{ section.tasks.filter((task) => task.status === 'completed').length }}/{{ section.tasks.length }} تسک</span>
-                                </div>
-                                <div class="h-1.5 overflow-hidden rounded-full bg-muted"><div class="h-full rounded-full bg-primary" :style="{ width: sectionProgress(section) + '%' }"></div></div>
-                            </div>
-                            <p class="text-xs text-muted-foreground">
-                                مدیر واحد: {{ section.department?.manager?.name ?? 'مدیر واحد تعیین نشده' }}
-                                <span class="mx-1">·</span>
-                                {{ section.manager_can_create_tasks ? 'تعریف تسک توسط مدیر واحد فعال است' : 'تعریف تسک توسط مدیر واحد غیرفعال است' }}
-                            </p>
-                        </div>
-                        <div class="flex flex-wrap gap-2">
-                            <label v-if="canUploadProjectDocuments || managerDocumentSectionIds.includes(section.id)" class="inline-flex cursor-pointer items-center rounded-md border px-3 py-2 text-xs font-medium transition hover:bg-muted" :class="{ 'pointer-events-none opacity-50': uploadingSectionId === section.id }">
-                                {{ uploadingSectionId === section.id ? 'در حال بارگذاری...' : 'افزودن مدرک بخش' }}
-                                <input type="file" class="sr-only" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" :disabled="uploadingSectionId === section.id" @change="uploadSectionDocument(section, $event)" />
-                            </label>
-                            <Button v-if="canCreateTasks || managerCreatableSectionIds.includes(section.id)" type="button" size="sm" @click="openSectionTaskModal(section)">
-                                + ایجاد تسک
-                            </Button>
+                        <h1 class="mt-4 text-2xl font-bold tracking-tight sm:text-3xl">{{ project.name }}</h1>
+                        <p class="mt-2 max-w-3xl whitespace-pre-line text-sm leading-7 text-muted-foreground">
+                            {{ project.description || 'برای این پروژه توضیحی ثبت نشده است. وضعیت اجرا، بخش‌های مسئول و تسک‌ها را از همین صفحه پیگیری کنید.' }}
+                        </p>
+                        <div class="mt-5 flex flex-wrap gap-x-6 gap-y-3 text-sm">
+                            <div class="flex items-center gap-2 text-muted-foreground"><span class="h-2 w-2 rounded-full bg-primary"></span><span>مدیر پروژه</span><strong class="text-foreground">{{ project.manager?.name ?? 'تعیین نشده' }}</strong></div>
+                            <div class="flex items-center gap-2 text-muted-foreground"><span class="h-2 w-2 rounded-full bg-slate-400"></span><span>واحد اصلی</span><strong class="text-foreground">{{ project.department?.name ?? 'چندواحدی / عمومی' }}</strong></div>
+                            <div class="flex items-center gap-2 text-muted-foreground"><span class="h-2 w-2 rounded-full" :class="project.is_active ? 'bg-emerald-500' : 'bg-rose-500'"></span><span>{{ project.is_active ? 'پروژه فعال است' : 'پروژه غیرفعال است' }}</span></div>
                         </div>
                     </div>
-
-                    <div v-if="section.documents?.length" class="border-t px-4 py-3">
-                        <p class="mb-2 text-xs font-semibold text-muted-foreground">مدارک اختصاصی بخش</p>
-                        <div class="flex flex-wrap gap-2">
-                            <div v-for="link in section.documents" :key="link.id" class="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs">
-                                <a :href="link.document ? route('documents.download', link.document.id) : '#'" class="inline-flex items-center gap-2 hover:text-primary">
-                                    <span aria-hidden="true">📎</span>
-                                    {{ link.document?.title ?? 'مدرک' }}
-                                </a>
-                                <button
-                                    v-if="canDeleteDocuments && link.document?.created_by === currentUserId"
-                                    type="button"
-                                    class="text-destructive transition hover:opacity-70"
-                                    title="حذف فایل"
-                                    aria-label="حذف فایل"
-                                    @click="link.document && deleteDocument(link.document.id)"
-                                >حذف</button>
+                    <div class="flex items-center gap-5 rounded-2xl bg-muted/40 p-4 sm:p-5 lg:min-w-64 lg:flex-col lg:text-center">
+                        <div class="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-full" :style="{ background: 'conic-gradient(hsl(var(--primary)) ' + projectTaskStats.progress + '%, hsl(var(--muted)) 0)' }">
+                            <div class="flex h-[5.25rem] w-[5.25rem] flex-col items-center justify-center rounded-full bg-card">
+                                <span class="text-2xl font-bold tabular-nums">{{ projectTaskStats.progress }}٪</span>
+                                <span class="text-[10px] text-muted-foreground">پیشرفت</span>
                             </div>
                         </div>
+                        <div>
+                            <p class="font-semibold">پیشرفت اجرایی</p>
+                            <p class="mt-1 text-xs leading-5 text-muted-foreground">{{ projectTaskStats.completed }} تکمیل‌شده از {{ projectTaskStats.total }} تسک</p>
+                            <p class="mt-2 text-xs text-muted-foreground">{{ project.start_date ? formatDate(project.start_date) : 'بدون تاریخ شروع' }} <span class="mx-1">تا</span> {{ project.end_date ? formatDate(project.end_date) : 'بدون مهلت نهایی' }}</p>
+                        </div>
                     </div>
+                </div>
+            </section>
 
-                    <div v-if="section.tasks.length === 0" class="p-4 text-sm text-muted-foreground">
-                        هنوز تسکی برای این بخش ثبت نشده است.
-                    </div>
-                    <div v-else class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead class="border-y bg-background">
-                                <tr>
-                                    <th class="px-4 py-3 text-right font-medium">عنوان تسک</th>
-                                    <th class="px-4 py-3 text-right font-medium">وضعیت</th>
-                                    <th class="px-4 py-3 text-right font-medium">اولویت</th>
-                                    <th class="px-4 py-3 text-right font-medium">مسئول فعلی</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y">
-                                <tr v-for="task in section.tasks" :key="task.id">
-                                    <td class="px-4 py-3 font-medium">{{ task.title }}</td>
-                                    <td class="px-4 py-3">{{ taskStatusLabels[task.status] ?? task.status }}</td>
-                                    <td class="px-4 py-3">{{ priorityLabels[task.priority] ?? task.priority }}</td>
-                                    <td class="px-4 py-3">{{ task.assignee?.name ?? section.department?.manager?.name ?? 'مدیر واحد' }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
+            <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                <article v-for="item in [
+                    { label: 'بخش‌های کاری', value: projectTaskStats.sections, note: 'واحدهای مسئول', tone: 'border-r-sky-500', icon: '▦' },
+                    { label: 'کل تسک‌ها', value: projectTaskStats.total, note: 'تسک‌های ثبت‌شده', tone: 'border-r-slate-400', icon: '≡' },
+                    { label: 'در حال انجام', value: projectTaskStats.inProgress, note: 'در جریان اجرا', tone: 'border-r-blue-500', icon: '↗' },
+                    { label: 'تکمیل‌شده', value: projectTaskStats.completed, note: 'خروجی‌های نهایی', tone: 'border-r-emerald-500', icon: '✓' },
+                    { label: 'عقب‌افتاده', value: projectTaskStats.overdue, note: 'نیازمند پیگیری', tone: 'border-r-rose-500', icon: '!' },
+                ]" :key="item.label" class="rounded-xl border border-r-4 bg-card p-4 shadow-sm" :class="item.tone">
+                    <div class="flex items-start justify-between gap-3">
+                        <div><p class="text-sm text-muted-foreground">{{ item.label }}</p><p class="mt-3 text-3xl font-bold tracking-tight tabular-nums">{{ item.value }}</p><p class="mt-1 text-xs text-muted-foreground">{{ item.note }}</p></div>
+                        <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-lg font-semibold text-foreground">{{ item.icon }}</span>
                     </div>
                 </article>
             </section>
 
-            <section v-if="false" class="rounded-lg border bg-card">
-                <div class="border-b p-5">
-                    <h3 class="font-semibold">وظایف بدون بخش</h3>
+            <section class="grid items-start gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(18rem,.8fr)]">
+                <div class="min-w-0 space-y-4">
+                    <div class="flex flex-wrap items-end justify-between gap-3">
+                        <div>
+                            <p class="text-xs font-semibold text-primary">برنامه اجرا</p>
+                            <h3 class="mt-1 text-xl font-bold">بخش‌های پروژه</h3>
+                            <p class="mt-1 text-sm text-muted-foreground">مسئولیت، پیشرفت و تسک‌های هر بخش به‌صورت مستقل نمایش داده می‌شود.</p>
+                        </div>
+                        <span class="rounded-full bg-muted px-3 py-1.5 text-xs font-semibold">{{ project.sections.length }} بخش تعریف‌شده</span>
+                    </div>
+
+                    <div v-if="project.sections.length === 0" class="rounded-2xl border border-dashed bg-card px-6 py-12 text-center">
+                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-xl">▦</div>
+                        <h4 class="mt-4 font-semibold">هنوز بخشی تعریف نشده است</h4>
+                        <p class="mt-1 text-sm text-muted-foreground">برای ثبت تسک در این پروژه، ابتدا باید بخش و واحد مسئول مشخص شود.</p>
+                        <Button v-if="props.canUpdate" class="mt-4" as-child><Link :href="route('projects.edit', project.id)">تعریف بخش‌ها</Link></Button>
+                    </div>
+
+                    <article v-for="section in project.sections" :key="section.id" class="overflow-hidden rounded-2xl border bg-card shadow-sm">
+                        <div class="border-b bg-muted/20 p-4 sm:p-5">
+                            <div class="flex flex-wrap items-start justify-between gap-4">
+                                <div class="flex min-w-0 items-start gap-3">
+                                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border bg-background text-lg font-bold text-primary">{{ section.name.slice(0, 1) }}</div>
+                                    <div class="min-w-0">
+                                        <h4 class="font-bold">{{ section.name }}</h4>
+                                        <p class="mt-1 text-sm text-muted-foreground">{{ section.department?.name ?? 'واحد مسئول تعیین نشده' }}</p>
+                                        <p v-if="section.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-muted-foreground">{{ section.description }}</p>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap gap-2">
+                                    <label v-if="canUploadProjectDocuments || managerDocumentSectionIds.includes(section.id)" class="inline-flex cursor-pointer items-center rounded-lg border bg-background px-3 py-2 text-xs font-semibold transition hover:bg-muted" :class="{ 'pointer-events-none opacity-50': uploadingSectionId === section.id }">
+                                        {{ uploadingSectionId === section.id ? 'در حال بارگذاری...' : '＋ مدرک' }}
+                                        <input type="file" class="sr-only" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" :disabled="uploadingSectionId === section.id" @change="uploadSectionDocument(section, $event)" />
+                                    </label>
+                                    <Button v-if="canCreateTasks || managerCreatableSectionIds.includes(section.id)" type="button" size="sm" @click="openSectionTaskModal(section)">＋ ایجاد تسک</Button>
+                                </div>
+                            </div>
+                            <div class="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                                <div>
+                                    <div class="mb-2 flex items-center justify-between gap-3 text-xs"><span class="text-muted-foreground">پیشرفت بخش</span><span class="font-bold tabular-nums">{{ sectionProgress(section) }}٪</span></div>
+                                    <div class="h-2 overflow-hidden rounded-full bg-muted"><div class="h-full rounded-full transition-all" :class="sectionProgress(section) === 100 ? 'bg-emerald-500' : 'bg-primary'" :style="{ width: sectionProgress(section) + '%' }"></div></div>
+                                </div>
+                                <div class="flex gap-4 text-xs text-muted-foreground">
+                                    <span><strong class="text-foreground">{{ section.tasks.filter((task) => task.status === 'completed').length }}</strong> تکمیل</span>
+                                    <span><strong class="text-foreground">{{ section.tasks.filter((task) => task.status === 'in_progress').length }}</strong> در جریان</span>
+                                    <span><strong class="text-foreground">{{ section.tasks.length }}</strong> کل</span>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
+                                <span>مدیر واحد: <strong class="text-foreground">{{ section.department?.manager?.name ?? 'تعیین نشده' }}</strong></span>
+                                <span>{{ section.manager_can_create_tasks ? 'ایجاد تسک توسط مدیر واحد فعال است' : 'ایجاد تسک توسط مدیر واحد غیرفعال است' }}</span>
+                            </div>
+                        </div>
+
+                        <div v-if="section.documents?.length" class="border-b px-4 py-3 sm:px-5">
+                            <p class="mb-2 text-xs font-semibold text-muted-foreground">مدارک بخش</p>
+                            <div class="flex flex-wrap gap-2">
+                                <div v-for="link in section.documents" :key="link.id" class="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs">
+                                    <a :href="link.document ? route('documents.download', link.document.id) : '#'" class="hover:text-primary">{{ link.document?.title ?? 'مدرک' }}</a>
+                                    <button v-if="canDeleteDocuments && link.document?.created_by === currentUserId" type="button" class="text-destructive hover:opacity-70" @click="link.document && deleteDocument(link.document.id)">حذف</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-if="section.tasks.length === 0" class="p-5 text-sm text-muted-foreground">برای این بخش هنوز تسکی ثبت نشده است.</div>
+                        <div v-else class="divide-y">
+                            <Link v-for="task in section.tasks" :key="task.id" :href="route('tasks.show', task.id)" class="flex flex-col gap-3 px-4 py-4 transition hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                                <div class="min-w-0">
+                                    <p class="truncate text-sm font-semibold">{{ task.title }}</p>
+                                    <p class="mt-1 text-xs text-muted-foreground">مسئول: {{ task.assignee?.name ?? section.department?.manager?.name ?? 'مدیر واحد' }}<span v-if="task.due_date"> · مهلت: {{ formatDate(task.due_date) }}</span></p>
+                                </div>
+                                <div class="flex shrink-0 items-center gap-2">
+                                    <span class="rounded-full px-2.5 py-1 text-xs font-medium" :class="{
+                                        'bg-slate-100 text-slate-700': task.status === 'todo' || task.status === 'pending',
+                                        'bg-blue-50 text-blue-700': task.status === 'in_progress',
+                                        'bg-emerald-50 text-emerald-700': task.status === 'completed',
+                                        'bg-rose-50 text-rose-700': task.status === 'cancelled',
+                                    }">{{ taskStatusLabels[task.status] ?? task.status }}</span>
+                                    <span class="text-xs font-semibold" :class="priorityLabels[task.priority] === 'فوری' ? 'text-rose-600' : task.priority === 'high' ? 'text-amber-600' : 'text-muted-foreground'">{{ priorityLabels[task.priority] ?? task.priority }}</span>
+                                    <span aria-hidden="true" class="text-muted-foreground">←</span>
+                                </div>
+                            </Link>
+                        </div>
+                    </article>
                 </div>
 
-                <div v-if="unsectionedTasks.length === 0" class="p-6 text-sm text-muted-foreground">
-                    هنوز وظیفه‌ای برای این پروژه ثبت نشده است.
-                </div>
+                <aside class="space-y-6">
+                    <section class="rounded-2xl border bg-card p-5 shadow-sm">
+                        <div class="flex items-center justify-between gap-3">
+                            <div><p class="text-xs font-semibold text-primary">اطلاعات پایه</p><h3 class="mt-1 font-bold">شناسنامه پروژه</h3></div>
+                            <span class="text-lg">◈</span>
+                        </div>
+                        <dl class="mt-5 space-y-4">
+                            <div class="flex items-start justify-between gap-3"><dt class="text-sm text-muted-foreground">کد پروژه</dt><dd class="font-mono text-sm font-semibold" dir="ltr">{{ project.code }}</dd></div>
+                            <div class="flex items-start justify-between gap-3"><dt class="text-sm text-muted-foreground">ایجادکننده</dt><dd class="text-left text-sm font-medium">{{ project.creator?.name ?? '—' }}</dd></div>
+                            <div class="flex items-start justify-between gap-3"><dt class="text-sm text-muted-foreground">تاریخ شروع</dt><dd class="text-sm font-medium">{{ formatDate(project.start_date) }}</dd></div>
+                            <div class="flex items-start justify-between gap-3"><dt class="text-sm text-muted-foreground">تاریخ پایان</dt><dd class="text-sm font-medium">{{ formatDate(project.end_date) }}</dd></div>
+                            <div class="flex items-start justify-between gap-3"><dt class="text-sm text-muted-foreground">وضعیت رکورد</dt><dd class="text-sm font-medium">{{ project.is_active ? 'فعال' : 'غیرفعال' }}</dd></div>
+                        </dl>
+                    </section>
 
-                <div v-else class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead class="border-b bg-muted/40">
-                            <tr>
-                                <th class="px-4 py-3 text-right font-medium">عنوان</th>
-                                <th class="px-4 py-3 text-right font-medium">وضعیت</th>
-                                <th class="px-4 py-3 text-right font-medium">اولویت</th>
-                                <th class="px-4 py-3 text-right font-medium">مسئول</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y">
-                            <tr v-for="task in unsectionedTasks" :key="task.id">
-                                <td class="px-4 py-3 font-medium">{{ task.title }}</td>
-                                <td class="px-4 py-3">
-                                    {{ taskStatusLabels[task.status] ?? task.status }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    {{ priorityLabels[task.priority] ?? task.priority }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    {{ task.assignee?.name ?? 'بدون مسئول' }}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                    <section class="rounded-2xl border bg-card p-5 shadow-sm">
+                        <div class="flex items-start justify-between gap-3">
+                            <div><p class="text-xs font-semibold text-primary">مستندات</p><h3 class="mt-1 font-bold">مدارک عمومی پروژه</h3><p class="mt-1 text-xs leading-5 text-muted-foreground">اسناد مشترک مورد استفاده همه بخش‌ها</p></div>
+                            <label v-if="canUploadProjectDocuments" class="inline-flex cursor-pointer items-center rounded-lg border px-3 py-2 text-xs font-semibold hover:bg-muted" :class="{ 'pointer-events-none opacity-50': uploadingSectionId === 0 }">
+                                {{ uploadingSectionId === 0 ? 'در حال بارگذاری' : '＋ افزودن' }}
+                                <input type="file" class="sr-only" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" :disabled="uploadingSectionId === 0" @change="uploadProjectDocument" />
+                            </label>
+                        </div>
+                        <div v-if="!project.documents?.length" class="mt-4 rounded-xl border border-dashed p-5 text-center text-xs leading-5 text-muted-foreground">هنوز مدرک عمومی ثبت نشده است.</div>
+                        <div v-else class="mt-4 space-y-2">
+                            <div v-for="link in project.documents" :key="link.id" class="flex items-center justify-between gap-2 rounded-xl border p-3">
+                                <a :href="link.document ? route('documents.download', link.document.id) : '#'" class="min-w-0 truncate text-sm font-medium hover:text-primary">{{ link.document?.title ?? 'مدرک' }}</a>
+                                <button v-if="canDeleteDocuments && link.document?.created_by === currentUserId" type="button" class="shrink-0 text-xs text-destructive hover:underline" @click="link.document && deleteDocument(link.document.id)">حذف</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="overflow-hidden rounded-2xl border bg-card shadow-sm">
+                        <div class="border-b p-5">
+                            <div class="flex items-center justify-between gap-3"><div><p class="text-xs font-semibold text-primary">همکاری</p><h3 class="mt-1 font-bold">اعضای پروژه</h3></div><span class="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold">{{ project.members.length }} نفر</span></div>
+                        </div>
+                        <form v-if="canManageMembers && memberOptions.length > 0" class="space-y-3 border-b p-5" @submit.prevent="submitAddMember">
+                            <label for="member-user" class="block text-sm font-medium">افزودن عضو جدید</label>
+                            <div class="flex gap-2">
+                                <select id="member-user" v-model="addMemberForm.user_id" required class="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm" :disabled="addMemberForm.processing">
+                                    <option value="">انتخاب کاربر</option>
+                                    <option v-for="member in availableMembers" :key="member.id" :value="member.id.toString()">{{ member.name }}</option>
+                                </select>
+                                <Button type="submit" :disabled="addMemberForm.processing || !addMemberForm.user_id">افزودن</Button>
+                            </div>
+                            <p v-if="addMemberForm.errors.user_id" class="text-xs text-destructive">{{ addMemberForm.errors.user_id }}</p>
+                        </form>
+                        <div v-if="project.members.length === 0" class="p-5 text-sm text-muted-foreground">عضوی برای این پروژه ثبت نشده است.</div>
+                        <div v-else class="divide-y">
+                            <div v-for="member in project.members" :key="member.id" class="flex items-center justify-between gap-3 px-5 py-3">
+                                <div class="flex min-w-0 items-center gap-3">
+                                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-bold">{{ (member.user?.name ?? '؟').slice(0, 1) }}</div>
+                                    <div class="min-w-0"><p class="truncate text-sm font-semibold">{{ member.user?.name ?? 'کاربر حذف‌شده' }}</p><p class="mt-0.5 text-xs text-muted-foreground">{{ member.user?.id === project.manager?.id ? 'مدیر پروژه' : 'عضو پروژه' }}</p></div>
+                                </div>
+                                <Button v-if="canManageMembers && member.user?.id !== project.manager?.id" type="button" size="sm" variant="ghost" class="text-destructive hover:text-destructive" :disabled="deletingMemberId === member.id" @click="removeMember(member)">حذف</Button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="rounded-2xl border bg-muted/30 p-5">
+                        <h3 class="font-semibold">راهنمای وضعیت</h3>
+                        <p class="mt-2 text-sm leading-6 text-muted-foreground">پیشرفت هر بخش از تعداد تسک‌های تکمیل‌شده محاسبه می‌شود. برای ثبت کار جدید، از دکمه «ایجاد تسک» در بخش مربوطه استفاده کنید تا تسک به واحد مسئول متصل بماند.</p>
+                    </section>
+                </aside>
             </section>
-        </div>
+        </main>
 
         <div v-if="showSectionTaskModal && selectedSection" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 sm:p-6" @keydown.esc="showSectionTaskModal = false">
             <div class="my-4 w-full max-w-2xl overflow-hidden rounded-xl border bg-card shadow-xl sm:my-8" role="dialog" aria-modal="true" aria-labelledby="section-task-modal-title">
