@@ -374,74 +374,47 @@ const formatDate = (date: string | null): string => {
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex flex-wrap items-center justify-between gap-3">
-                <div class="flex items-center gap-3">
-                    <Link :href="route('projects.index')" class="flex h-10 w-10 items-center justify-center rounded-xl border bg-background text-muted-foreground transition hover:bg-muted" aria-label="بازگشت به پروژه‌ها">
-                        <span aria-hidden="true">→</span>
-                    </Link>
-                    <div>
-                        <p class="text-xs font-semibold tracking-wide text-primary">مرکز کنترل پروژه</p>
-                        <h2 class="mt-0.5 text-xl font-bold tracking-tight">{{ project.name }}</h2>
-                    </div>
+            <div dir="ltr" class="flex flex-wrap items-center justify-between gap-3">
+                <Link :href="route('projects.index')" dir="rtl" class="inline-flex h-9 items-center gap-2 rounded-lg border bg-background px-3 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground" aria-label="بازگشت به پروژه‌ها">
+                    <span aria-hidden="true">←</span>
+                    <span>بازگشت</span>
+                </Link>
+                <div dir="rtl" class="flex min-w-0 flex-1 items-center justify-center gap-2 text-center sm:justify-start sm:text-right">
+                    <span class="shrink-0 rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">پروژه</span>
+                    <h2 class="truncate text-lg font-bold tracking-tight">{{ project.name }}</h2>
+                    <span class="hidden rounded-md border px-2 py-1 font-mono text-[11px] text-muted-foreground sm:inline-flex" dir="ltr">{{ project.code }}</span>
                 </div>
-                <div class="flex flex-wrap items-center gap-2">
-                    <Button v-if="props.canUpdate" variant="outline" as-child>
-                        <Link :href="route('projects.edit', project.id)">ویرایش مشخصات</Link>
+                <div dir="rtl" class="flex shrink-0 flex-wrap items-center gap-2">
+                    <Button v-if="props.canUpdate" variant="outline" size="sm" as-child>
+                        <Link :href="route('projects.edit', project.id)">ویرایش</Link>
                     </Button>
-                    <Button v-if="props.canDeleteProject" type="button" variant="destructive" @click="deleteProject">حذف پروژه</Button>
+                    <Button v-if="props.canDeleteProject" type="button" size="sm" variant="destructive" @click="deleteProject">حذف پروژه</Button>
                 </div>
             </div>
         </template>
 
-        <main class="space-y-6 pb-8">
-            <section class="relative isolate overflow-hidden rounded-2xl border bg-card">
-                <div class="absolute inset-y-0 right-0 w-2 bg-primary"></div>
-                <div class="absolute -left-16 -top-20 -z-10 h-64 w-64 rounded-full bg-primary/10 blur-3xl"></div>
-                <div class="grid gap-6 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-                    <div class="min-w-0">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="rounded-full border px-3 py-1 text-xs font-semibold" :class="{
-                                'border-blue-200 bg-blue-50 text-blue-700': project.status === 'planning',
-                                'border-emerald-200 bg-emerald-50 text-emerald-700': project.status === 'active',
-                                'border-violet-200 bg-violet-50 text-violet-700': project.status === 'completed',
-                                'border-slate-200 bg-slate-100 text-slate-700': project.status === 'archived',
-                            }">{{ statusLabels[project.status] }}</span>
-                            <span v-if="project.is_system_default" class="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">پروژه عمومی سازمان</span>
-                            <span class="font-mono text-xs text-muted-foreground" dir="ltr">{{ project.code }}</span>
-                        </div>
-                        <h1 class="mt-4 text-2xl font-bold tracking-tight sm:text-3xl">{{ project.name }}</h1>
-                        <p class="mt-2 max-w-3xl whitespace-pre-line text-sm leading-7 text-muted-foreground">
-                            {{ project.description || 'برای این پروژه توضیحی ثبت نشده است. وضعیت اجرا، بخش‌های مسئول و تسک‌ها را از همین صفحه پیگیری کنید.' }}
-                        </p>
-                        <div class="mt-5 flex flex-wrap gap-x-6 gap-y-3 text-sm">
-                            <div class="flex items-center gap-2 text-muted-foreground"><span class="h-2 w-2 rounded-full bg-primary"></span><span>مدیر پروژه</span><strong class="text-foreground">{{ project.manager?.name ?? 'تعیین نشده' }}</strong></div>
-                            <div class="flex items-center gap-2 text-muted-foreground"><span class="h-2 w-2 rounded-full bg-slate-400"></span><span>واحد اصلی</span><strong class="text-foreground">{{ project.department?.name ?? 'چندواحدی / عمومی' }}</strong></div>
-                            <div class="flex items-center gap-2 text-muted-foreground"><span class="h-2 w-2 rounded-full" :class="project.is_active ? 'bg-emerald-500' : 'bg-rose-500'"></span><span>{{ project.is_active ? 'پروژه فعال است' : 'پروژه غیرفعال است' }}</span></div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-5 rounded-2xl bg-muted/40 p-4 sm:p-5 lg:min-w-64 lg:flex-col lg:text-center">
-                        <div class="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-full" :style="{ background: 'conic-gradient(hsl(var(--primary)) ' + projectTaskStats.progress + '%, hsl(var(--muted)) 0)' }">
-                            <div class="flex h-[5.25rem] w-[5.25rem] flex-col items-center justify-center rounded-full bg-card">
-                                <span class="text-2xl font-bold tabular-nums">{{ projectTaskStats.progress }}٪</span>
-                                <span class="text-[10px] text-muted-foreground">پیشرفت</span>
-                            </div>
-                        </div>
-                        <div>
-                            <p class="font-semibold">پیشرفت اجرایی</p>
-                            <p class="mt-1 text-xs leading-5 text-muted-foreground">{{ projectTaskStats.completed }} تکمیل‌شده از {{ projectTaskStats.total }} تسک</p>
-                            <p class="mt-2 text-xs text-muted-foreground">{{ project.start_date ? formatDate(project.start_date) : 'بدون تاریخ شروع' }} <span class="mx-1">تا</span> {{ project.end_date ? formatDate(project.end_date) : 'بدون مهلت نهایی' }}</p>
-                        </div>
-                    </div>
+        <main class="mx-auto w-full max-w-[1600px] space-y-6 px-4 pb-8 sm:px-6 lg:px-8">
+            <section v-if="project.description || project.is_system_default" class="flex flex-wrap items-start justify-between gap-4 rounded-xl border bg-card px-5 py-4 shadow-sm">
+                <p v-if="project.description" class="min-w-0 flex-1 whitespace-pre-line text-sm leading-7 text-muted-foreground">{{ project.description }}</p>
+                <div class="flex shrink-0 flex-wrap items-center gap-2">
+                    <span class="rounded-full border px-3 py-1 text-xs font-semibold" :class="{
+                        'border-blue-200 bg-blue-50 text-blue-700': project.status === 'planning',
+                        'border-emerald-200 bg-emerald-50 text-emerald-700': project.status === 'active',
+                        'border-violet-200 bg-violet-50 text-violet-700': project.status === 'completed',
+                        'border-slate-200 bg-slate-100 text-slate-700': project.status === 'archived',
+                    }">{{ statusLabels[project.status] }}</span>
+                    <span v-if="project.is_system_default" class="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">پروژه عمومی سازمان</span>
                 </div>
             </section>
 
-            <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
                 <article v-for="item in [
                     { label: 'بخش‌های کاری', value: projectTaskStats.sections, note: 'واحدهای مسئول', tone: 'border-r-sky-500', icon: '▦' },
-                    { label: 'کل تسک‌ها', value: projectTaskStats.total, note: 'تسک‌های ثبت‌شده', tone: 'border-r-slate-400', icon: '≡' },
+                    { label: 'کل دستورکارها', value: projectTaskStats.total, note: 'دستورکارهای ثبت‌شده', tone: 'border-r-slate-400', icon: '≡' },
                     { label: 'در حال انجام', value: projectTaskStats.inProgress, note: 'در جریان اجرا', tone: 'border-r-blue-500', icon: '↗' },
                     { label: 'تکمیل‌شده', value: projectTaskStats.completed, note: 'خروجی‌های نهایی', tone: 'border-r-emerald-500', icon: '✓' },
                     { label: 'عقب‌افتاده', value: projectTaskStats.overdue, note: 'نیازمند پیگیری', tone: 'border-r-rose-500', icon: '!' },
+                    { label: 'پیشرفت پروژه', value: projectTaskStats.progress + '٪', note: projectTaskStats.completed + ' از ' + projectTaskStats.total + ' دستورکار تکمیل‌شده', tone: 'border-r-primary', icon: '◔' },
                 ]" :key="item.label" class="rounded-xl border border-r-4 bg-card p-4 shadow-sm" :class="item.tone">
                     <div class="flex items-start justify-between gap-3">
                         <div><p class="text-sm text-muted-foreground">{{ item.label }}</p><p class="mt-3 text-3xl font-bold tracking-tight tabular-nums">{{ item.value }}</p><p class="mt-1 text-xs text-muted-foreground">{{ item.note }}</p></div>
@@ -450,13 +423,13 @@ const formatDate = (date: string | null): string => {
                 </article>
             </section>
 
-            <section class="grid items-start gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(18rem,.8fr)]">
+            <section class="grid items-start gap-6 xl:grid-cols-[minmax(0,1.65fr)_minmax(18rem,.85fr)]">
                 <div class="min-w-0 space-y-4">
                     <div class="flex flex-wrap items-end justify-between gap-3">
                         <div>
                             <p class="text-xs font-semibold text-primary">برنامه اجرا</p>
                             <h3 class="mt-1 text-xl font-bold">بخش‌های پروژه</h3>
-                            <p class="mt-1 text-sm text-muted-foreground">مسئولیت، پیشرفت و تسک‌های هر بخش به‌صورت مستقل نمایش داده می‌شود.</p>
+                            <p class="mt-1 text-sm text-muted-foreground">مسئولیت و پیشرفت هر بخش را ببینید؛ برای جزئیات و ثبت دستورکار، بخش را باز کنید.</p>
                         </div>
                         <span class="rounded-full bg-muted px-3 py-1.5 text-xs font-semibold">{{ project.sections.length }} بخش تعریف‌شده</span>
                     </div>
@@ -464,11 +437,29 @@ const formatDate = (date: string | null): string => {
                     <div v-if="project.sections.length === 0" class="rounded-2xl border border-dashed bg-card px-6 py-12 text-center">
                         <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-xl">▦</div>
                         <h4 class="mt-4 font-semibold">هنوز بخشی تعریف نشده است</h4>
-                        <p class="mt-1 text-sm text-muted-foreground">برای ثبت تسک در این پروژه، ابتدا باید بخش و واحد مسئول مشخص شود.</p>
+                        <p class="mt-1 text-sm text-muted-foreground">برای ثبت دستورکار در این پروژه، ابتدا باید بخش و واحد مسئول مشخص شود.</p>
                         <Button v-if="props.canUpdate" class="mt-4" as-child><Link :href="route('projects.edit', project.id)">تعریف بخش‌ها</Link></Button>
                     </div>
 
-                    <article v-for="section in project.sections" :key="section.id" class="overflow-hidden rounded-2xl border bg-card shadow-sm">
+                    <details v-for="(section, sectionIndex) in project.sections" :key="section.id" class="group overflow-hidden rounded-xl border bg-card shadow-sm transition-shadow open:shadow-md">
+                        <summary class="cursor-pointer list-none border-b-0 bg-card p-4 transition hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:p-5 [&::-webkit-details-marker]:hidden">
+                            <div class="flex flex-wrap items-center gap-4">
+                                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-sm font-bold text-primary">{{ String(sectionIndex + 1).padStart(2, '0') }}</span>
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <h4 class="font-bold">{{ section.name }}</h4>
+                                        <span class="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">{{ section.tasks.length }} دستورکار</span>
+                                    </div>
+                                    <p class="mt-1 text-sm text-muted-foreground">{{ section.department?.name ?? 'واحد مسئول تعیین نشده' }}<span v-if="section.department?.manager?.name"> · مدیر: {{ section.department.manager.name }}</span></p>
+                                </div>
+                                <div class="hidden w-32 shrink-0 sm:block">
+                                    <div class="mb-1 flex justify-between text-[11px] text-muted-foreground"><span>پیشرفت</span><span>{{ sectionProgress(section) }}٪</span></div>
+                                    <div class="h-1.5 overflow-hidden rounded-full bg-muted"><div class="h-full rounded-full bg-primary" :style="{ width: sectionProgress(section) + '%' }"></div></div>
+                                </div>
+                                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-muted-foreground transition group-open:rotate-180 group-open:bg-muted" aria-hidden="true">⌄</span>
+                            </div>
+                        </summary>
+                        <div class="border-t bg-muted/10">
                         <div class="border-b bg-muted/20 p-4 sm:p-5">
                             <div class="flex flex-wrap items-start justify-between gap-4">
                                 <div class="flex min-w-0 items-start gap-3">
@@ -484,7 +475,7 @@ const formatDate = (date: string | null): string => {
                                         {{ uploadingSectionId === section.id ? 'در حال بارگذاری...' : '＋ مدرک' }}
                                         <input type="file" class="sr-only" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" :disabled="uploadingSectionId === section.id" @change="uploadSectionDocument(section, $event)" />
                                     </label>
-                                    <Button v-if="canCreateTasks || managerCreatableSectionIds.includes(section.id)" type="button" size="sm" @click="openSectionTaskModal(section)">＋ ایجاد تسک</Button>
+                                    <Button v-if="canCreateTasks || managerCreatableSectionIds.includes(section.id)" type="button" size="sm" @click="openSectionTaskModal(section)">＋ ایجاد دستورکار</Button>
                                 </div>
                             </div>
                             <div class="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
@@ -500,7 +491,7 @@ const formatDate = (date: string | null): string => {
                             </div>
                             <div class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
                                 <span>مدیر واحد: <strong class="text-foreground">{{ section.department?.manager?.name ?? 'تعیین نشده' }}</strong></span>
-                                <span>{{ section.manager_can_create_tasks ? 'ایجاد تسک توسط مدیر واحد فعال است' : 'ایجاد تسک توسط مدیر واحد غیرفعال است' }}</span>
+                                <span>{{ section.manager_can_create_tasks ? 'ایجاد دستورکار توسط مدیر واحد فعال است' : 'ایجاد دستورکار توسط مدیر واحد غیرفعال است' }}</span>
                             </div>
                         </div>
 
@@ -514,7 +505,7 @@ const formatDate = (date: string | null): string => {
                             </div>
                         </div>
 
-                        <div v-if="section.tasks.length === 0" class="p-5 text-sm text-muted-foreground">برای این بخش هنوز تسکی ثبت نشده است.</div>
+                        <div v-if="section.tasks.length === 0" class="p-5 text-sm text-muted-foreground">برای این بخش هنوز دستورکاری ثبت نشده است.</div>
                         <div v-else class="divide-y">
                             <Link v-for="task in section.tasks" :key="task.id" :href="route('tasks.show', task.id)" class="flex flex-col gap-3 px-4 py-4 transition hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                                 <div class="min-w-0">
@@ -533,17 +524,20 @@ const formatDate = (date: string | null): string => {
                                 </div>
                             </Link>
                         </div>
-                    </article>
+                        </div>
+                    </details>
                 </div>
 
                 <aside class="space-y-6">
                     <section class="rounded-2xl border bg-card p-5 shadow-sm">
                         <div class="flex items-center justify-between gap-3">
                             <div><p class="text-xs font-semibold text-primary">اطلاعات پایه</p><h3 class="mt-1 font-bold">شناسنامه پروژه</h3></div>
-                            <span class="text-lg">◈</span>
+                            <span class="text-lg text-muted-foreground">◈</span>
                         </div>
                         <dl class="mt-5 space-y-4">
                             <div class="flex items-start justify-between gap-3"><dt class="text-sm text-muted-foreground">کد پروژه</dt><dd class="font-mono text-sm font-semibold" dir="ltr">{{ project.code }}</dd></div>
+                            <div class="flex items-start justify-between gap-3"><dt class="text-sm text-muted-foreground">مدیر پروژه</dt><dd class="text-left text-sm font-medium">{{ project.manager?.name ?? 'تعیین نشده' }}</dd></div>
+                            <div class="flex items-start justify-between gap-3"><dt class="text-sm text-muted-foreground">واحد اصلی</dt><dd class="text-left text-sm font-medium">{{ project.department?.name ?? 'چندواحدی / عمومی' }}</dd></div>
                             <div class="flex items-start justify-between gap-3"><dt class="text-sm text-muted-foreground">ایجادکننده</dt><dd class="text-left text-sm font-medium">{{ project.creator?.name ?? '—' }}</dd></div>
                             <div class="flex items-start justify-between gap-3"><dt class="text-sm text-muted-foreground">تاریخ شروع</dt><dd class="text-sm font-medium">{{ formatDate(project.start_date) }}</dd></div>
                             <div class="flex items-start justify-between gap-3"><dt class="text-sm text-muted-foreground">تاریخ پایان</dt><dd class="text-sm font-medium">{{ formatDate(project.end_date) }}</dd></div>
@@ -597,7 +591,7 @@ const formatDate = (date: string | null): string => {
 
                     <section class="rounded-2xl border bg-muted/30 p-5">
                         <h3 class="font-semibold">راهنمای وضعیت</h3>
-                        <p class="mt-2 text-sm leading-6 text-muted-foreground">پیشرفت هر بخش از تعداد تسک‌های تکمیل‌شده محاسبه می‌شود. برای ثبت کار جدید، از دکمه «ایجاد تسک» در بخش مربوطه استفاده کنید تا تسک به واحد مسئول متصل بماند.</p>
+                        <p class="mt-2 text-sm leading-6 text-muted-foreground">پیشرفت هر بخش از تعداد دستورکارهای تکمیل‌شده محاسبه می‌شود. برای ثبت کار جدید، از دکمه «ایجاد دستورکار» در بخش مربوطه استفاده کنید تا دستورکار به واحد مسئول متصل بماند.</p>
                     </section>
                 </aside>
             </section>
@@ -608,23 +602,17 @@ const formatDate = (date: string | null): string => {
                 <div class="flex items-start justify-between gap-4 border-b p-5">
                     <div>
                         <h3 id="section-task-modal-title" class="text-lg font-semibold">ایجاد تسک جدید</h3>
-                        <p class="mt-1 text-sm text-muted-foreground">تسک ابتدا به مدیر واحد ارجاع می‌شود.</p>
+                        <p class="mt-1 text-sm text-muted-foreground">دستورکار ابتدا به مدیر واحد ارجاع می‌شود.</p>
                     </div>
                     <Button type="button" variant="outline" size="sm" @click="showSectionTaskModal = false">بستن</Button>
                 </div>
                 <form class="space-y-4 p-5" @submit.prevent="submitSectionTask">
-                    <div class="grid gap-3 sm:grid-cols-2">
-                        <div class="space-y-1">
-                            <label class="text-sm font-medium">پروژه</label>
-                            <div class="rounded-md border bg-muted/30 px-3 py-2 text-sm">{{ project.name }}</div>
-                        </div>
-                        <div class="space-y-1">
-                            <label class="text-sm font-medium">بخش</label>
-                            <div class="rounded-md border bg-muted/30 px-3 py-2 text-sm">{{ selectedSection.name }}</div>
-                        </div>
+                    <div class="space-y-1">
+                        <label class="text-sm font-medium">بخش پروژه</label>
+                        <div class="rounded-md border bg-muted/30 px-3 py-2 text-sm">{{ selectedSection.name }}</div>
                     </div>
                     <div class="space-y-1">
-                        <label for="section-task-title" class="text-sm font-medium">عنوان تسک</label>
+                        <label for="section-task-title" class="text-sm font-medium">عنوان دستورکار</label>
                         <input id="section-task-title" v-model="sectionTaskForm.title" required maxlength="255" class="w-full rounded-md border bg-background px-3 py-2 text-sm" />
                         <p v-if="sectionTaskForm.errors.title" class="text-xs text-destructive">{{ sectionTaskForm.errors.title }}</p>
                     </div>
@@ -662,7 +650,7 @@ const formatDate = (date: string | null): string => {
                         <input v-model="sectionTaskForm.delegate_to_employee" type="checkbox" class="mt-1 h-4 w-4 rounded border-input" />
                         <span>
                             <span class="block text-sm font-medium">ارجاع هم‌زمان از مدیر به کارمند</span>
-                            <span class="mt-1 block text-xs text-muted-foreground">در صورت فعال‌کردن، ابتدا ارجاع به مدیر ثبت می‌شود و سپس تسک به کارمند انتخاب‌شده واگذار می‌شود.</span>
+                            <span class="mt-1 block text-xs text-muted-foreground">در صورت فعال‌کردن، ابتدا ارجاع به مدیر ثبت می‌شود و سپس دستورکار به کارمند انتخاب‌شده واگذار می‌شود.</span>
                         </span>
                     </label>
                     <div v-if="sectionTaskForm.delegate_to_employee" class="space-y-1">
