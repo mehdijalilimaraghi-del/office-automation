@@ -441,10 +441,10 @@ const formatDate = (date: string | null): string => {
                         <Button v-if="props.canUpdate" class="mt-4" as-child><Link :href="route('projects.edit', project.id)">تعریف بخش‌ها</Link></Button>
                     </div>
 
-                    <details v-for="(section, sectionIndex) in project.sections" :key="section.id" class="group overflow-hidden rounded-xl border bg-card shadow-sm transition-shadow open:shadow-md">
-                        <summary class="cursor-pointer list-none border-b-0 bg-card p-4 transition hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:p-5 [&::-webkit-details-marker]:hidden">
+                    <details v-for="(section, sectionIndex) in project.sections" :key="section.id" class="group overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm transition-all open:border-primary/30 open:shadow-md">
+                        <summary class="cursor-pointer list-none bg-gradient-to-l from-muted/30 to-card p-4 transition-colors hover:from-primary/5 hover:to-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary sm:p-5 [&::-webkit-details-marker]:hidden">
                             <div class="flex flex-wrap items-center gap-4">
-                                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-sm font-bold text-primary">{{ String(sectionIndex + 1).padStart(2, '0') }}</span>
+                                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/15 bg-primary/10 text-sm font-bold text-primary">{{ String(sectionIndex + 1).padStart(2, '0') }}</span>
                                 <div class="min-w-0 flex-1">
                                     <div class="flex flex-wrap items-center gap-2">
                                         <h4 class="font-bold">{{ section.name }}</h4>
@@ -456,7 +456,13 @@ const formatDate = (date: string | null): string => {
                                     <div class="mb-1 flex justify-between text-[11px] text-muted-foreground"><span>پیشرفت</span><span>{{ sectionProgress(section) }}٪</span></div>
                                     <div class="h-1.5 overflow-hidden rounded-full bg-muted"><div class="h-full rounded-full bg-primary" :style="{ width: sectionProgress(section) + '%' }"></div></div>
                                 </div>
-                                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-muted-foreground transition group-open:rotate-180 group-open:bg-muted" aria-hidden="true">⌄</span>
+                                <span class="inline-flex shrink-0 items-center gap-2 rounded-lg border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors group-hover:border-primary/30 group-hover:text-foreground group-open:bg-muted">
+                                    <span class="hidden group-open:inline">بستن جزئیات</span>
+                                    <span class="group-open:hidden">مشاهده جزئیات</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 transition-transform duration-200 group-open:rotate-180" aria-hidden="true">
+                                        <path d="m6 9 6 6 6-6" />
+                                    </svg>
+                                </span>
                             </div>
                         </summary>
                         <div class="border-t bg-muted/10">
@@ -589,10 +595,6 @@ const formatDate = (date: string | null): string => {
                         </div>
                     </section>
 
-                    <section class="rounded-2xl border bg-muted/30 p-5">
-                        <h3 class="font-semibold">راهنمای وضعیت</h3>
-                        <p class="mt-2 text-sm leading-6 text-muted-foreground">پیشرفت هر بخش از تعداد دستورکارهای تکمیل‌شده محاسبه می‌شود. برای ثبت کار جدید، از دکمه «ایجاد دستورکار» در بخش مربوطه استفاده کنید تا دستورکار به واحد مسئول متصل بماند.</p>
-                    </section>
                 </aside>
             </section>
         </main>
