@@ -101,7 +101,13 @@ class TaskAccessService
 
     private function applyDepartmentScope(Builder $query, User $user): void
     {
-        $departmentIds = $user->departments()->pluck('departments.id')->map(fn ($id) => (int) $id)->all();
+        $departmentIds = $user->departments()
+            ->pluck('departments.id')
+            ->merge($user->managedDepartments()->pluck('departments.id'))
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
 
         if ($departmentIds !== []) {
             $query->orWhereIn('tasks.department_id', $departmentIds);
@@ -138,7 +144,10 @@ class TaskAccessService
     private function belongsToUserDepartment(User $user, Task $task): bool
     {
         return $task->department_id !== null
-            && $user->departments()->where('departments.id', $task->department_id)->exists();
+            && (
+                $user->departments()->where('departments.id', $task->department_id)->exists()
+                || $user->managedDepartments()->whereKey($task->department_id)->exists()
+            );
     }
 
     private function belongsToUserDepartmentTree(User $user, Task $task): bool
@@ -151,7 +160,12 @@ class TaskAccessService
     {
         $ids = [];
 
-        foreach ($user->departments()->get() as $department) {
+        $departments = $user->departments()
+            ->get()
+            ->merge($user->managedDepartments()->get())
+            ->unique('id');
+
+        foreach ($departments as $department) {
             $ids[] = (int) $department->id;
             $ids = array_merge($ids, array_map('intval', $department->descendantIds()));
         }
