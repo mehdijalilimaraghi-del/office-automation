@@ -40,7 +40,6 @@ const showManagerHelp = ref(false);
 const expandedSectionIndex = ref<number | null>(0);
 
 const form = useForm({
-    department_id: '',
     name: '',
     description: '',
     status: 'planning' as
