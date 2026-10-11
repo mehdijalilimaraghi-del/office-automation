@@ -100,7 +100,7 @@ class ProjectPolicy
             return true;
         }
 
-        if (in_array(PermissionScope::DepartmentTree->value, $scopes, true) && $project->department_id !== null) {
+        if (in_array(PermissionScope::DepartmentTree->value, $scopes, true)) {
             foreach ($user->departments()->get() as $department) {
                 $ids = array_map(
                     'intval',
