@@ -490,7 +490,7 @@ const formatDate = (date: string | null): string => {
                     <h3 class="font-semibold">افزودن عضو</h3>
                 </div>
 
-                <form class="grid gap-4 p-5 md:grid-cols-[1fr_1fr_auto] md:items-end" @submit.prevent="submitAddMember">
+                <form class="grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-end" @submit.prevent="submitAddMember">
                     <div>
                         <label for="member-user" class="mb-2 block text-sm font-medium">کاربر</label>
                         <select
