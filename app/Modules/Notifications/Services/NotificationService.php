@@ -14,7 +14,7 @@ final class NotificationService
     {
         $recipient->notify(new TaskNotification(
             notificationType: $type,
-            title: $type === 'task_referred' ? 'تسک به شما ارجاع شد' : 'تسک جدید به شما تخصیص یافت',
+            title: $type === 'task_referred' ? 'دستورکار به شما ارجاع شد' : 'دستورکار جدید به شما تخصیص یافت',
             message: $task->title,
             task: $task,
         ));
@@ -24,7 +24,7 @@ final class NotificationService
     {
         $recipient->notify(new TaskNotification(
             notificationType: 'task_submitted',
-            title: 'تسک در انتظار تأیید شماست',
+            title: 'دستورکار در انتظار تأیید شماست',
             message: $task->title,
             task: $task,
         ));
@@ -34,7 +34,7 @@ final class NotificationService
     {
         $recipient->notify(new TaskNotification(
             notificationType: 'task_returned',
-            title: 'تسک برای اصلاح بازگردانده شد',
+            title: 'دستورکار برای اصلاح بازگردانده شد',
             message: $task->review_note ?: $task->title,
             task: $task,
         ));
@@ -44,7 +44,7 @@ final class NotificationService
     {
         $recipient->notify(new TaskNotification(
             notificationType: 'task_approved',
-            title: 'تسک تأیید و تکمیل شد',
+            title: 'دستورکار تأیید و تکمیل شد',
             message: $task->title,
             task: $task,
         ));
