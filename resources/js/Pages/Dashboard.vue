@@ -15,6 +15,8 @@ interface DashboardStats {
     tasks_total: number;
     tasks_todo: number;
     tasks_in_progress: number;
+    tasks_completed: number;
+    tasks_overdue: number;
     tasks_review: number;
 }
 
@@ -168,8 +170,8 @@ const quickActions = [
                                 { label: 'در انتظار انجام', value: props.stats.tasks_todo, tone: 'bg-slate-400' },
                                 { label: 'در حال انجام', value: props.stats.tasks_in_progress, tone: 'bg-blue-500' },
                                 { label: 'در انتظار بررسی', value: props.stats.tasks_review, tone: 'bg-amber-500' },
-                                { label: 'تکمیل‌شده', value: props.stats.completed_tasks, tone: 'bg-emerald-500' },
-                                { label: 'عقب‌افتاده', value: props.stats.overdue_tasks, tone: 'bg-rose-500' },
+                                { label: 'تکمیل‌شده', value: props.stats.tasks_completed, tone: 'bg-emerald-500' },
+                                { label: 'عقب‌افتاده', value: props.stats.tasks_overdue, tone: 'bg-rose-500' },
                             ]" :key="item.label">
                                 <div class="mb-1.5 flex items-center justify-between text-sm"><span class="text-slate-600">{{ item.label }}</span><span class="font-semibold tabular-nums text-slate-900">{{ item.value }}</span></div>
                                 <div class="h-2 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full" :class="item.tone" :style="{ width: (props.stats.tasks_total ? Math.min(100, item.value / props.stats.tasks_total * 100) : 0) + '%' }"></div></div>
