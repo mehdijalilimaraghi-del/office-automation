@@ -42,7 +42,7 @@ interface Task {
 
 interface ProjectSection {
     id: number;
-    documents: Array<{ id: number; document: { id: number; title: string; latest_version?: { original_name: string } | null } | null }>;
+    documents: Array<{ id: number; document: { id: number; title: string; created_by: number; latest_version?: { original_name: string } | null } | null }>;
     name: string;
     description: string | null;
     manager_can_create_tasks: boolean;
@@ -60,7 +60,7 @@ interface Project {
     name: string;
     code: string;
     description: string | null;
-    documents: Array<{ id: number; document: { id: number; title: string; latest_version?: { original_name: string } | null } | null }>;
+    documents: Array<{ id: number; document: { id: number; title: string; created_by: number; latest_version?: { original_name: string } | null } | null }>;
     status: 'planning' | 'active' | 'completed' | 'archived';
     start_date: string | null;
     end_date: string | null;
@@ -89,6 +89,7 @@ const props = defineProps<{
     memberOptions: MemberOption[];
     canCreateTasks: boolean;
     canUploadProjectDocuments: boolean;
+    canDeleteDocuments: boolean;
     managerCreatableSectionIds: number[];
     managerDocumentSectionIds: number[];
 }>();
@@ -146,6 +147,14 @@ const uploadProjectDocument = (event: Event): void => {
             uploadingSectionId.value = null;
             input.value = '';
         },
+    });
+};
+
+const deleteDocument = (documentId: number): void => {
+    if (!window.confirm('آیا از حذف این فایل مطمئن هستید؟')) return;
+
+    router.delete(route('documents.destroy', documentId), {
+        preserveScroll: true,
     });
 };
 
@@ -752,10 +761,20 @@ const formatDate = (date: string | null): string => {
                     هنوز مدرک عمومی برای پروژه ثبت نشده است.
                 </div>
                 <div v-else class="mt-4 flex flex-wrap gap-2">
-                    <a v-for="link in project.documents" :key="link.id" :href="link.document ? route('documents.download', link.document.id) : '#'" class="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs transition hover:bg-muted">
-                        <span aria-hidden="true">📎</span>
-                        {{ link.document?.title ?? 'مدرک' }}
-                    </a>
+                    <div v-for="link in project.documents" :key="link.id" class="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs">
+                        <a :href="link.document ? route('documents.download', link.document.id) : '#'" class="inline-flex items-center gap-2 hover:text-primary">
+                            <span aria-hidden="true">📎</span>
+                            {{ link.document?.title ?? 'مدرک' }}
+                        </a>
+                        <button
+                            v-if="canDeleteDocuments && link.document?.created_by === $page.props.auth.user.id"
+                            type="button"
+                            class="text-destructive transition hover:opacity-70"
+                            title="حذف فایل"
+                            aria-label="حذف فایل"
+                            @click="link.document && deleteDocument(link.document.id)"
+                        >حذف</button>
+                    </div>
                 </div>
             </section>
 
@@ -798,10 +817,20 @@ const formatDate = (date: string | null): string => {
                     <div v-if="section.documents?.length" class="border-t px-4 py-3">
                         <p class="mb-2 text-xs font-semibold text-muted-foreground">مدارک اختصاصی بخش</p>
                         <div class="flex flex-wrap gap-2">
-                            <a v-for="link in section.documents" :key="link.id" :href="link.document ? route('documents.download', link.document.id) : '#'" class="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs transition hover:bg-muted">
-                                <span aria-hidden="true">📎</span>
-                                {{ link.document?.title ?? 'مدرک' }}
-                            </a>
+                            <div v-for="link in section.documents" :key="link.id" class="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs">
+                                <a :href="link.document ? route('documents.download', link.document.id) : '#'" class="inline-flex items-center gap-2 hover:text-primary">
+                                    <span aria-hidden="true">📎</span>
+                                    {{ link.document?.title ?? 'مدرک' }}
+                                </a>
+                                <button
+                                    v-if="canDeleteDocuments && link.document?.created_by === $page.props.auth.user.id"
+                                    type="button"
+                                    class="text-destructive transition hover:opacity-70"
+                                    title="حذف فایل"
+                                    aria-label="حذف فایل"
+                                    @click="link.document && deleteDocument(link.document.id)"
+                                >حذف</button>
+                            </div>
                         </div>
                     </div>
 
