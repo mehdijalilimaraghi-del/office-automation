@@ -63,7 +63,11 @@ class ProjectService implements ProjectServiceContract
                 }
 
                 if ($departmentIds !== []) {
-                    $scopeQuery->orWhereHas('sections', fn ($sectionQuery) => $sectionQuery->whereIn('department_id', array_values(array_unique($departmentIds))));
+                    $scopeQuery->orWhere(function ($sharedProjectQuery) use ($departmentIds): void {
+                        $sharedProjectQuery->where('projects.is_system_default', true)
+                            ->whereNull('projects.department_id')
+                            ->whereHas('sections', fn ($sectionQuery) => $sectionQuery->whereIn('department_id', array_values(array_unique($departmentIds))));
+                    });
                 }
             }
 
