@@ -8,6 +8,14 @@ interface DashboardStats {
     overdue_tasks: number;
     active_projects: number;
     completed_tasks: number;
+    projects_total: number;
+    projects_planning: number;
+    projects_completed: number;
+    sections_total: number;
+    tasks_total: number;
+    tasks_todo: number;
+    tasks_in_progress: number;
+    tasks_review: number;
 }
 
 interface DashboardTask {
@@ -18,11 +26,17 @@ interface DashboardTask {
     due_date: string | null;
     project: string | null;
     assignee: string | null;
+    section?: string | null;
 }
+
+interface ProjectOverview { id: number; name: string; code: string; status: string; sections_count: number; tasks_count: number; }
+interface SectionOverview { id: number; name: string; project_id: number; project_name: string | null; project_code: string | null; department: string | null; tasks_count: number; completed_tasks: number; progress: number; }
 
 const props = defineProps<{
     stats: DashboardStats;
     recentTasks: DashboardTask[];
+    projectsOverview: ProjectOverview[];
+    sectionsOverview: SectionOverview[];
 }>();
 
 const statusLabels: Record<string, string> = {
@@ -126,6 +140,79 @@ const quickActions = [
                         <div class="mt-3 text-3xl font-bold tracking-tight text-slate-900">{{ item.value }}</div>
                         <div class="mt-2 text-xs font-medium text-slate-400 transition group-hover:text-slate-600">مشاهده جزئیات ←</div>
                     </Link>
+                </section>
+
+                <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <div v-for="item in [
+                        { label: 'کل پروژه‌ها', value: props.stats.projects_total, detail: 'پروژه‌های قابل مشاهده' },
+                        { label: 'در حال برنامه‌ریزی', value: props.stats.projects_planning, detail: 'پروژه‌های پیش از اجرا' },
+                        { label: 'کل بخش‌ها', value: props.stats.sections_total, detail: 'بخش‌های تعریف‌شده در پروژه‌ها' },
+                        { label: 'کل تسک‌ها', value: props.stats.tasks_total, detail: 'تسک‌های قابل مشاهده در پروژه‌ها' },
+                    ]" :key="item.label" class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
+                        <p class="text-sm font-medium text-slate-500">{{ item.label }}</p>
+                        <p class="mt-3 text-3xl font-bold tracking-tight text-slate-900">{{ item.value }}</p>
+                        <p class="mt-2 text-xs text-slate-400">{{ item.detail }}</p>
+                    </div>
+                </section>
+
+                <div class="grid gap-6 xl:grid-cols-2">
+                    <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+                        <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                            <div><h3 class="font-bold text-slate-900">وضعیت تسک‌ها</h3><p class="mt-1 text-xs text-slate-500">نمای کلی کارهای پروژه‌ها</p></div>
+                            <Link href="/tasks" class="text-sm font-semibold text-teal-700">همه تسک‌ها</Link>
+                        </div>
+                        <div class="space-y-4 p-5">
+                            <div v-for="item in [
+                                { label: 'در انتظار انجام', value: props.stats.tasks_todo, tone: 'bg-slate-400' },
+                                { label: 'در حال انجام', value: props.stats.tasks_in_progress, tone: 'bg-blue-500' },
+                                { label: 'در انتظار بررسی', value: props.stats.tasks_review, tone: 'bg-amber-500' },
+                                { label: 'تکمیل‌شده', value: props.stats.completed_tasks, tone: 'bg-emerald-500' },
+                                { label: 'عقب‌افتاده', value: props.stats.overdue_tasks, tone: 'bg-rose-500' },
+                            ]" :key="item.label">
+                                <div class="mb-1.5 flex items-center justify-between text-sm"><span class="text-slate-600">{{ item.label }}</span><span class="font-semibold tabular-nums text-slate-900">{{ item.value }}</span></div>
+                                <div class="h-2 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full" :class="item.tone" :style="{ width: (props.stats.tasks_total ? Math.min(100, item.value / props.stats.tasks_total * 100) : 0) + '%' }"></div></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+                        <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                            <div><h3 class="font-bold text-slate-900">بخش‌های نیازمند پیگیری</h3><p class="mt-1 text-xs text-slate-500">پیشرفت بخش‌ها بر اساس تسک‌های قابل مشاهده</p></div>
+                            <span class="text-xs text-slate-400">{{ props.sectionsOverview.length }} بخش</span>
+                        </div>
+                        <div v-if="props.sectionsOverview.length === 0" class="p-8 text-center text-sm text-slate-500">بخشی برای نمایش وجود ندارد.</div>
+                        <div v-else class="divide-y divide-slate-100">
+                            <div v-for="section in props.sectionsOverview" :key="section.id" class="px-5 py-4">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="min-w-0"><p class="truncate text-sm font-semibold text-slate-800">{{ section.name }}</p><p class="mt-1 truncate text-xs text-slate-500">{{ section.project_name || 'پروژه' }} · {{ section.department || 'بدون واحد مسئول' }}</p></div>
+                                    <span class="shrink-0 text-sm font-bold text-slate-700">{{ section.progress }}٪</span>
+                                </div>
+                                <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-teal-500" :style="{ width: section.progress + '%' }"></div></div>
+                                <p class="mt-2 text-xs text-slate-400">{{ section.completed_tasks }} از {{ section.tasks_count }} تسک تکمیل شده</p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <section class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+                    <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
+                        <div><h3 class="font-bold text-slate-900">پروژه‌ها</h3><p class="mt-1 text-xs text-slate-500">وضعیت و پیشرفت پروژه‌های قابل دسترس</p></div>
+                        <Link href="/projects" class="text-sm font-semibold text-teal-700">مشاهده همه پروژه‌ها</Link>
+                    </div>
+                    <div v-if="props.projectsOverview.length === 0" class="p-8 text-center text-sm text-slate-500">پروژه‌ای برای نمایش وجود ندارد.</div>
+                    <div v-else class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-slate-50 text-xs text-slate-500"><tr><th class="px-5 py-3 text-right font-medium">پروژه</th><th class="px-5 py-3 text-right font-medium">وضعیت</th><th class="px-5 py-3 text-right font-medium">بخش‌ها</th><th class="px-5 py-3 text-right font-medium">تسک‌ها</th></tr></thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr v-for="project in props.projectsOverview" :key="project.id" class="hover:bg-slate-50">
+                                    <td class="px-5 py-3"><Link :href="'/projects/' + project.id" class="font-semibold text-slate-800 hover:text-teal-700">{{ project.name }}</Link><p class="mt-1 text-xs text-slate-400">{{ project.code }}</p></td>
+                                    <td class="px-5 py-3"><span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600">{{ ({ planning: 'برنامه‌ریزی', active: 'فعال', completed: 'تکمیل‌شده', archived: 'بایگانی‌شده' } as Record<string, string>)[project.status] || project.status }}</span></td>
+                                    <td class="px-5 py-3 tabular-nums text-slate-600">{{ project.sections_count }}</td>
+                                    <td class="px-5 py-3 tabular-nums text-slate-600">{{ project.tasks_count }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </section>
 
                 <div class="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(300px,.8fr)]">
