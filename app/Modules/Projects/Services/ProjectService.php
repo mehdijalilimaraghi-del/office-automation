@@ -43,7 +43,11 @@ class ProjectService implements ProjectServiceContract
             }
 
             if (in_array(PermissionScope::Department->value, $scopes, true)) {
-                $departmentIds = $user->departments()->pluck('departments.id');
+                $departmentIds = $user->departments()
+                    ->pluck('departments.id')
+                    ->merge($user->managedDepartments()->pluck('departments.id'))
+                    ->unique()
+                    ->values();
 
                 if ($departmentIds->isNotEmpty()) {
                     $scopeQuery->orWhereIn('projects.department_id', $departmentIds)
