@@ -14,6 +14,7 @@ interface Manager {
 interface Department {
     id: number;
     name: string;
+    tree_label: string;
 }
 
 interface SectionForm {
@@ -198,7 +199,7 @@ function submit(): void {
                                 :key="department.id"
                                 :value="String(department.id)"
                             >
-                                {{ department.name }}
+                                {{ department.tree_label || department.name }}
                             </option>
                         </select>
                         <p v-if="form.errors.department_id" class="mt-1 text-xs text-destructive">
@@ -465,7 +466,7 @@ function submit(): void {
                                     <label :for="'section-department-' + index" class="text-sm font-medium">واحد انجام‌دهنده</label>
                                     <select :id="'section-department-' + index" v-model="section.department_id" required class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                                         <option value="">انتخاب واحد مسئول</option>
-                                        <option v-for="department in props.departments" :key="department.id" :value="String(department.id)">{{ department.name }}</option>
+                                        <option v-for="department in props.departments" :key="department.id" :value="String(department.id)">{{ department.tree_label || department.name }}</option>
                                     </select>
                                     <p v-if="sectionError('sections.' + index + '.department_id')" class="text-xs text-destructive">{{ sectionError('sections.' + index + '.department_id') }}</p>
                                 </div>
