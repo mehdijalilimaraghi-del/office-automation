@@ -36,6 +36,12 @@ class DashboardService
             ? Project::query()->where('is_active', true)->count()
             : 0;
 
+        $visibleProjects = $user->hasPermission('projects.view') ? Project::query()->withCount(['sections', 'tasks'])->latest('updated_at')->limit(100)->get() : collect();
+        $visibleProjects = $visibleProjects->filter(fn (Project $project): bool => \\Illuminate\\Support\\Facades\\Gate::forUser($user)->allows('view', $project));
+        $projectIds = $visibleProjects->pluck('id');
+        $visibleSections = \\App\\Modules\\Projects\\Models\\ProjectSection::query()->whereIn('project_id', $projectIds)->with(['project:id,name,code', 'department:id,name'])->withCount('tasks')->get();
+        $sectionTaskCounts = (clone $taskQuery)->whereIn('tasks.project_id', $projectIds)->whereNotNull('tasks.section_id')->selectRaw('section_id, COUNT(*) as total, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as completed', ['completed'])->groupBy('section_id')->get()->keyBy('section_id');
+
         return [
             'stats' => [
                 'my_tasks' => $myTasks->count(),
@@ -43,7 +49,28 @@ class DashboardService
                 'overdue_tasks' => $overdueTasks->count(),
                 'active_projects' => $activeProjects,
                 'completed_tasks' => $completedTasks->count(),
+                'projects_total' => $visibleProjects->count(),
+                'projects_planning' => $visibleProjects->where('status', 'planning')->count(),
+                'projects_completed' => $visibleProjects->where('status', 'completed')->count(),
+                'sections_total' => $visibleSections->count(),
+                'tasks_total' => (clone $taskQuery)->whereIn('tasks.project_id', $projectIds)->count(),
+                'tasks_todo' => (clone $taskQuery)->whereIn('tasks.project_id', $projectIds)->where('tasks.status', 'todo')->count(),
+                'tasks_in_progress' => (clone $taskQuery)->whereIn('tasks.project_id', $projectIds)->where('tasks.status', 'in_progress')->count(),
+                'tasks_review' => (clone $taskQuery)->whereIn('tasks.project_id', $projectIds)->where('tasks.review_status', 'pending')->count(),
             ],
+            'projectsOverview' => $visibleProjects->map(fn (Project $project): array => [
+                'id' => $project->id, 'name' => $project->name, 'code' => $project->code, 'status' => $project->status,
+                'sections_count' => $project->sections_count, 'tasks_count' => $project->tasks_count,
+            ])->values()->all(),
+            'sectionsOverview' => $visibleSections->map(function ($section) use ($sectionTaskCounts): array {
+                $counts = $sectionTaskCounts->get($section->id);
+                $total = (int) ($counts->total ?? 0);
+                $completed = (int) ($counts->completed ?? 0);
+                return ['id' => $section->id, 'name' => $section->name, 'project_id' => $section->project_id,
+                    'project_name' => $section->project?->name, 'project_code' => $section->project?->code,
+                    'department' => $section->department?->name, 'tasks_count' => $total,
+                    'completed_tasks' => $completed, 'progress' => $total > 0 ? (int) round($completed * 100 / $total) : 0];
+            })->sortByDesc('tasks_count')->take(8)->values()->all(),
             'recentTasks' => (clone $taskQuery)
                 ->with(['project', 'assignee'])
                 ->latest('updated_at')
