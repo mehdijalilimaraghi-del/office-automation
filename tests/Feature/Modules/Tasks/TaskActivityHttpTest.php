@@ -45,7 +45,8 @@ class TaskActivityHttpTest extends TestCase
     public function test_user_without_comment_permission_is_forbidden(): void
     {
         $user = User::factory()->create(['status' => 'active']);
-        $task = $this->createTask($user);
+        $owner = User::factory()->create(['status' => 'active']);
+        $task = $this->createTask($owner);
 
         $this->actingAs($user)
             ->post(route('tasks.comments.store', $task), [
