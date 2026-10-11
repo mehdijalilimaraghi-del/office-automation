@@ -241,7 +241,7 @@ class User extends Authenticatable
 
         return array_values(array_unique([
             ...$scopes,
-            ...$this->managerDerivedScopes($permissionCode),
+            ...$this->responsibilityDerivedScopes($permissionCode),
         ]));
     }
 
@@ -263,7 +263,7 @@ class User extends Authenticatable
             )
             ->exists();
 
-        return $hasAssignedPermission || $this->managerDerivedScopes($permissionCode) !== [];
+        return $hasAssignedPermission || $this->responsibilityDerivedScopes($permissionCode) !== [];
     }
 
     /**
@@ -273,7 +273,7 @@ class User extends Authenticatable
      *
      * @return array<int, string>
      */
-    private function managerDerivedScopes(string $permissionCode): array
+    private function responsibilityDerivedScopes(string $permissionCode): array
     {
         $operationalPermissions = [
             'projects.view',
