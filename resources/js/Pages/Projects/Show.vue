@@ -374,7 +374,7 @@ const formatDate = (date: string | null): string => {
 
     <AuthenticatedLayout>
         <template #header>
-            <div dir="ltr" class="flex flex-wrap items-center justify-between gap-3">
+            <div dir="ltr" class="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-4">
                 <Link :href="route('projects.index')" dir="rtl" class="inline-flex h-9 items-center gap-2 rounded-lg border bg-background px-3 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground" aria-label="بازگشت به پروژه‌ها">
                     <span aria-hidden="true">←</span>
                     <span>بازگشت</span>
@@ -393,7 +393,7 @@ const formatDate = (date: string | null): string => {
             </div>
         </template>
 
-        <main class="mx-auto w-full max-w-[1600px] space-y-6 px-4 pb-8 sm:px-6 lg:px-8">
+        <main class="mx-auto w-full max-w-[1600px] space-y-6 px-4 pb-8 pt-2 sm:px-6 lg:px-8">
             <section v-if="project.description || project.is_system_default" class="flex flex-wrap items-start justify-between gap-4 rounded-xl border bg-card px-5 py-4 shadow-sm">
                 <p v-if="project.description" class="min-w-0 flex-1 whitespace-pre-line text-sm leading-7 text-muted-foreground">{{ project.description }}</p>
                 <div class="flex shrink-0 flex-wrap items-center gap-2">
@@ -538,7 +538,7 @@ const formatDate = (date: string | null): string => {
                     <section class="rounded-2xl border bg-card p-5 shadow-sm">
                         <div class="flex items-center justify-between gap-3">
                             <div><p class="text-xs font-semibold text-primary">اطلاعات پایه</p><h3 class="mt-1 font-bold">شناسنامه پروژه</h3></div>
-                            <span class="text-lg text-muted-foreground">◈</span>
+                            <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M8 7h8M8 11h6"/></svg></span>
                         </div>
                         <dl class="mt-5 space-y-4">
                             <div class="flex items-start justify-between gap-3"><dt class="text-sm text-muted-foreground">کد پروژه</dt><dd class="font-mono text-sm font-semibold" dir="ltr">{{ project.code }}</dd></div>
