@@ -102,11 +102,18 @@ class ProjectPolicy
             return true;
         }
 
+        $departmentIds = $user->departments()
+            ->pluck('departments.id')
+            ->merge($user->managedDepartments()->pluck('departments.id'))
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->values();
+
         if (
             in_array(PermissionScope::Department->value, $scopes, true)
             && (
-                ($project->department_id !== null && $user->departments()->whereKey($project->department_id)->exists())
-                || $project->sections()->whereIn('department_id', $user->departments()->pluck('departments.id'))->exists()
+                ($project->department_id !== null && $departmentIds->contains((int) $project->department_id))
+                || $project->sections()->whereIn('department_id', $departmentIds)->exists()
             )
         ) {
             return true;
