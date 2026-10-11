@@ -36,7 +36,7 @@ class DashboardService
             ? Project::query()->where('is_active', true)->get()->filter(fn (Project $project): bool => \Illuminate\Support\Facades\Gate::forUser($user)->allows('view', $project))->count()
             : 0;
 
-        $visibleProjects = $user->hasPermission('projects.view') ? Project::query()->withCount(['sections'])->latest('updated_at')->limit(100)->get() : collect();
+        $visibleProjects = $user->hasPermission('projects.view') ? Project::query()->where(fn ($query) => $query->where('is_system_default', false)->orWhere('is_active', true))->withCount(['sections'])->latest('updated_at')->get() : collect();
         $visibleProjects = $visibleProjects->filter(fn (Project $project): bool => \Illuminate\Support\Facades\Gate::forUser($user)->allows('view', $project));
         $projectIds = $visibleProjects->pluck('id');
         $visibleSections = \App\Modules\Projects\Models\ProjectSection::query()->whereIn('project_id', $projectIds)->with(['project:id,name,code', 'department:id,name'])->withCount('tasks')->get();
