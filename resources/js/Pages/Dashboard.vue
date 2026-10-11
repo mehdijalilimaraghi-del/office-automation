@@ -39,6 +39,8 @@ const props = defineProps<{
     sectionsOverview: SectionOverview[];
 }>();
 
+const projectStatusLabels: Record<string, string> = { planning: 'برنامه‌ریزی', active: 'فعال', completed: 'تکمیل‌شده', archived: 'بایگانی‌شده' };
+
 const statusLabels: Record<string, string> = {
     todo: 'در انتظار انجام',
     in_progress: 'در حال انجام',
@@ -206,7 +208,7 @@ const quickActions = [
                             <tbody class="divide-y divide-slate-100">
                                 <tr v-for="project in props.projectsOverview" :key="project.id" class="hover:bg-slate-50">
                                     <td class="px-5 py-3"><Link :href="'/projects/' + project.id" class="font-semibold text-slate-800 hover:text-teal-700">{{ project.name }}</Link><p class="mt-1 text-xs text-slate-400">{{ project.code }}</p></td>
-                                    <td class="px-5 py-3"><span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600">{{ ({ planning: 'برنامه‌ریزی', active: 'فعال', completed: 'تکمیل‌شده', archived: 'بایگانی‌شده' } as Record<string, string>)[project.status] || project.status }}</span></td>
+                                    <td class="px-5 py-3"><span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600">{{ projectStatusLabels[project.status] || project.status }}</span></td>
                                     <td class="px-5 py-3 tabular-nums text-slate-600">{{ project.sections_count }}</td>
                                     <td class="px-5 py-3 tabular-nums text-slate-600">{{ project.tasks_count }}</td><td class="min-w-40 px-5 py-3"><div class="flex items-center gap-3"><div class="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-teal-500" :style="{ width: project.progress + '%' }"></div></div><span class="text-xs font-semibold text-slate-600">{{ project.progress }}٪</span></div></td>
                                 </tr>
