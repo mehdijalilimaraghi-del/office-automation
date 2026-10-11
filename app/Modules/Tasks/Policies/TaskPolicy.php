@@ -53,16 +53,28 @@ class TaskPolicy
             return false;
         }
 
+        $responsibleDepartmentIds = $user->departments()
+            ->pluck('departments.id')
+            ->merge($user->managedDepartments()->pluck('departments.id'))
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->values();
+
         if (
             in_array(\App\Core\Permissions\Enums\PermissionScope::Department->value, $scopes, true)
             && $project->department_id !== null
-            && $user->departments()->whereKey($project->department_id)->exists()
+            && $responsibleDepartmentIds->contains((int) $project->department_id)
         ) {
             return true;
         }
 
         if (in_array(\App\Core\Permissions\Enums\PermissionScope::DepartmentTree->value, $scopes, true)) {
-            foreach ($user->departments()->get() as $department) {
+            $departments = $user->departments()
+                ->get()
+                ->merge($user->managedDepartments()->get())
+                ->unique('id');
+
+            foreach ($departments as $department) {
                 if (in_array(
                     (int) $project->department_id,
                     array_map('intval', array_merge([$department->id], $department->descendantIds())),
