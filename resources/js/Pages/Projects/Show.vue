@@ -512,7 +512,7 @@ const formatDate = (date: string | null): string => {
                         </p>
                     </div>
 
-                    <div>
+                    <div v-if="false">
                         <label for="member-role" class="mb-2 block text-sm font-medium">نقش پروژه</label>
                         <select
                             id="member-role"
@@ -554,7 +554,7 @@ const formatDate = (date: string | null): string => {
                         <thead class="border-b bg-muted/40">
                             <tr>
                                 <th class="px-4 py-3 text-right font-medium">کاربر</th>
-                                <th class="px-4 py-3 text-right font-medium">نقش پروژه</th>
+                                <th v-if="false" class="px-4 py-3 text-right font-medium">نقش پروژه</th>
                                 <th v-if="canManageMembers" class="px-4 py-3 text-right font-medium">عملیات</th>
                             </tr>
                         </thead>
@@ -586,6 +586,7 @@ const formatDate = (date: string | null): string => {
                                 <td v-if="canManageMembers" class="px-4 py-3">
                                     <div class="flex flex-wrap gap-2">
                                         <Button
+                                            v-if="false"
                                             type="button"
                                             size="sm"
                                             :disabled="memberRoleForm.processing"
