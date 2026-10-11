@@ -57,6 +57,8 @@ class DashboardService
                 'tasks_total' => (clone $taskQuery)->whereIn('tasks.project_id', $projectIds)->count(),
                 'tasks_todo' => (clone $taskQuery)->whereIn('tasks.project_id', $projectIds)->where('tasks.status', 'todo')->count(),
                 'tasks_in_progress' => (clone $taskQuery)->whereIn('tasks.project_id', $projectIds)->where('tasks.status', 'in_progress')->count(),
+                'tasks_completed' => (clone $taskQuery)->whereIn('tasks.project_id', $projectIds)->where('tasks.status', 'completed')->count(),
+                'tasks_overdue' => (clone $taskQuery)->whereIn('tasks.project_id', $projectIds)->whereNotNull('tasks.due_date')->whereDate('tasks.due_date', '<', $today)->whereNotIn('tasks.status', ['completed', 'cancelled'])->count(),
                 'tasks_review' => (clone $taskQuery)->whereIn('tasks.project_id', $projectIds)->where('tasks.review_status', 'pending')->count(),
             ],
             'projectsOverview' => $visibleProjects->map(fn (Project $project): array => [
