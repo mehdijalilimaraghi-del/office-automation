@@ -33,11 +33,13 @@ class TaskPolicy
             return false;
         }
 
-        if ($projectId === null) {
-            return true;
-        }
-
         $scopes = $user->permissionScopes('tasks.create');
+
+        if ($projectId === null) {
+            // Unlinked work orders are organization-level records. A project or
+            // department manager must choose a resource within their scope.
+            return in_array(\App\Core\Permissions\Enums\PermissionScope::Organization->value, $scopes, true);
+        }
 
         if (in_array(\App\Core\Permissions\Enums\PermissionScope::Organization->value, $scopes, true)) {
             return true;
