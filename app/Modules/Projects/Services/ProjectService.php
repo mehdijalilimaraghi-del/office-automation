@@ -24,8 +24,8 @@ class ProjectService implements ProjectServiceContract
     {
         $query = Project::query()
             ->where(function ($visibleProjects): void {
-                $visibleProjects->whereNull('is_system_default')
-                    ->orWhere('is_system_default', false);
+                $visibleProjects->where('is_system_default', false)
+                    ->orWhere('is_active', true);
             })
             ->with(['manager', 'creator']);
 
