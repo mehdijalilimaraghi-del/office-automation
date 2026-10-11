@@ -77,14 +77,10 @@ class ProjectController extends Controller
         $appendDepartmentOptions(null);
 
         return Inertia::render('Projects/Create', [
-            'managers' => Department::query()
-                ->where('name', 'مدیریت پروژه')
-                ->where('is_active', true)
-                ->first()
-                ?->members()
-                ->where('users.status', 'active')
-                ->orderBy('users.name')
-                ->get(['users.id', 'users.name']) ?? collect(),
+            'managers' => \App\Models\User::query()
+                ->where('status', 'active')
+                ->orderBy('name')
+                ->get(['id', 'name']),
             'departments' => $departmentOptions->values(),
             'customFields' => $this->customFieldService->definitions(Project::class),
             'canUploadDocuments' => Gate::allows('create', Document::class),
