@@ -33,7 +33,7 @@ class DashboardService
         $completedTasks = (clone $taskQuery)->where('tasks.status', 'completed');
 
         $activeProjects = $user->hasPermission('projects.view')
-            ? Project::query()->where('is_active', true)->count()
+            ? Project::query()->where('is_active', true)->get()->filter(fn (Project $project): bool => Gate::forUser($user)->allows('view', $project))->count()
             : 0;
 
         $visibleProjects = $user->hasPermission('projects.view') ? Project::query()->withCount(['sections', 'tasks'])->latest('updated_at')->limit(100)->get() : collect();
