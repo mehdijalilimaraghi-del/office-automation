@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\Departments\Models\Department;
+use App\Core\Permissions\Enums\PermissionScope;
 use App\Core\Departments\Models\Position;
 use App\Core\Departments\Models\PositionAssignment;
 use App\Core\Roles\Models\Role;
@@ -237,6 +238,11 @@ class User extends Authenticatable
             ->unique()
             ->values()
             ->all();
+
+        return array_values(array_unique([
+            ...$scopes,
+            ...$this->managerDerivedScopes($permissionCode),
+        ]));
     }
 
     public function hasPermission(string $permissionCode): bool
@@ -245,7 +251,7 @@ class User extends Authenticatable
             return false;
         }
 
-        return $this->roles()
+        $hasAssignedPermission = $this->roles()
             ->where('roles.is_active', true)
             ->whereHas(
                 'permissions',
@@ -256,6 +262,38 @@ class User extends Authenticatable
                 }
             )
             ->exists();
+
+        return $hasAssignedPermission || $this->managerDerivedScopes($permissionCode) !== [];
+    }
+
+    /**
+     * Managers receive read-only visibility within their actual responsibility
+     * even when their role does not explicitly include the list-view permission.
+     *
+     * @return array<int, string>
+     */
+    private function managerDerivedScopes(string $permissionCode): array
+    {
+        if (! in_array($permissionCode, ['projects.view', 'tasks.view'], true)) {
+            return [];
+        }
+
+        $scopes = [];
+
+        if ($this->managedProjects()->exists()) {
+            $scopes[] = PermissionScope::Project->value;
+        }
+
+        if ($this->managedDepartments()->exists()) {
+            $scopes[] = PermissionScope::Department->value;
+        }
+
+        if ($permissionCode === 'tasks.view'
+            && ($this->assignedTasks()->exists() || $this->createdTasks()->exists())) {
+            $scopes[] = PermissionScope::Self->value;
+        }
+
+        return $scopes;
     }
 
     public function hasAnyPermission(array $permissionCodes): bool
