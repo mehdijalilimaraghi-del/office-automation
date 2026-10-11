@@ -172,10 +172,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/external-parties/contacts/{contact}', [ExternalPartyController::class, 'destroyContact'])->middleware('permission:external_parties.delete')->name('external-parties.contacts.destroy');
 
     Route::get('/permissions', [PermissionController::class, 'index'])->middleware('permission:permissions.view')->name('permissions.index');
-    Route::post('/permissions', [PermissionController::class, 'store'])->middleware('permission:permissions.create')->name('permissions.store');
-    Route::put('/permissions/{permission}', [PermissionController::class, 'update'])->middleware('permission:permissions.edit')->name('permissions.update');
-    Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy'])->middleware('permission:permissions.delete')->name('permissions.destroy');
-    Route::patch('/permissions/{permission}/toggle-status', [PermissionController::class, 'toggleStatus'])->middleware('permission:permissions.toggle_status')->name('permissions.toggle-status');
 });
 
 require __DIR__.'/auth.php';
