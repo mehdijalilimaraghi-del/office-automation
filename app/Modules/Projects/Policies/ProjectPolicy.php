@@ -139,7 +139,12 @@ class ProjectPolicy
 
         if (in_array(PermissionScope::DepartmentTree->value, $scopes, true) && $project->is_system_default && $project->department_id === null) {
             $treeDepartmentIds = [];
-            foreach ($user->departments()->get() as $department) {
+            $responsibleDepartments = $user->departments()
+                ->get()
+                ->merge($user->managedDepartments()->get())
+                ->unique('id');
+
+            foreach ($responsibleDepartments as $department) {
                 $treeDepartmentIds[] = (int) $department->id;
                 $treeDepartmentIds = array_merge($treeDepartmentIds, $department->descendantIds());
             }
