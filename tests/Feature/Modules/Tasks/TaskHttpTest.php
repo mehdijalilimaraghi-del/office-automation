@@ -11,6 +11,8 @@ use App\Core\Roles\Models\Role;
 use App\Models\User;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectMember;
+use App\Core\Departments\Models\Department;
+use App\Modules\Projects\Models\ProjectSection;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskActivity;
 use Database\Seeders\CorePermissionSeeder;
@@ -679,6 +681,9 @@ class TaskHttpTest extends TestCase
                 'description' => 'Created through HTTP layer.',
                 'assignee_id' => $assignee->id,
                 'priority' => 'high',
+                'section_id' => $project->sections()->value('id'),
+                'delegate_to_employee' => true,
+                'delegate_assignee_id' => $assignee->id,
             ]
         );
 
@@ -886,6 +891,21 @@ class TaskHttpTest extends TestCase
 
         $this->addMember($project, $manager);
 
+        $department = Department::query()->create([
+            'name' => 'واحد آزمون '.uniqid(),
+            'code' => 'TU-'.uniqid(),
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+
+        ProjectSection::query()->create([
+            'project_id' => $project->id,
+            'department_id' => $department->id,
+            'name' => 'بخش آزمون',
+            'manager_can_create_tasks' => true,
+            'sort_order' => 0,
+        ]);
+
         return $project;
     }
 
@@ -896,6 +916,11 @@ class TaskHttpTest extends TestCase
             'user_id' => $user->id,
             'project_role_id' => null,
         ]);
+
+        $department = $project->sections()->first()?->department;
+        if ($department !== null && ! $department->members()->where('users.id', $user->id)->exists()) {
+            $department->members()->attach($user->id, ['is_primary' => false, 'joined_at' => now()]);
+        }
     }
 
     private function createTask(Project $project, User $creator): Task
