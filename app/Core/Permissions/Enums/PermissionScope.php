@@ -25,6 +25,10 @@ enum PermissionScope: string
 
     public static function defaultForPermission(string $permissionCode): self
     {
+        if ($permissionCode === 'projects.create') {
+            return self::Department;
+        }
+
         return str_starts_with($permissionCode, 'tasks.')
             || str_starts_with($permissionCode, 'projects.')
             ? self::Project
