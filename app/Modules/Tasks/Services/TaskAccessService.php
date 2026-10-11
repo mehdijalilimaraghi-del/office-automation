@@ -120,7 +120,8 @@ class TaskAccessService
         $departmentIds = $this->userDepartmentTreeIds($user);
 
         if ($departmentIds !== []) {
-            $query->orWhereIn('tasks.department_id', $departmentIds);
+            $query->orWhereIn('tasks.department_id', $departmentIds)
+                ->orWhereHas('section', fn (Builder $sectionQuery) => $sectionQuery->whereIn('department_id', $departmentIds));
         }
     }
 
