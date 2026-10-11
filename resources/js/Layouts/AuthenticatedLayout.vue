@@ -141,7 +141,7 @@ onMounted(() => {
                                             :active="route().current('tasks.*')"
                                             class="w-full justify-start rounded-lg border-0 px-3 py-2 text-right"
                                         >
-                                            وظایف
+                                            دستورکارها
                                         </NavLink>
                                         <NavLink
                                             v-if="can('projects_view')"
@@ -420,7 +420,7 @@ onMounted(() => {
                                     :active="route().current('tasks.*')"
                                     @click="closeMobileNavigation"
                                 >
-                                    تسک‌ها
+                                    دستورکارها
                                 </ResponsiveNavLink>
                                 <ResponsiveNavLink
                                     v-if="can('projects_view')"
