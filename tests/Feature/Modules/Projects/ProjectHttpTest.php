@@ -359,6 +359,13 @@ class ProjectHttpTest extends TestCase
     {
         $creator = $this->userWithPermission('projects.create');
         $manager = User::factory()->create();
+        $unitManager = User::factory()->create();
+        $department = \App\Core\Departments\Models\Department::query()->create([
+            'name' => 'واحد آزمون ایجاد پروژه',
+            'code' => 'HTTP-UNIT-001',
+            'manager_id' => $unitManager->id,
+            'is_active' => true,
+        ]);
 
         $response = $this->actingAs($creator)->post(
             route('projects.store'),
@@ -368,6 +375,11 @@ class ProjectHttpTest extends TestCase
                 'description' => 'Created through HTTP layer.',
                 'status' => 'planning',
                 'manager_id' => $manager->id,
+                'sections' => [[
+                    'name' => 'بخش آزمون',
+                    'department_id' => $department->id,
+                    'manager_can_create_tasks' => true,
+                ]],
             ]
         );
 
