@@ -126,7 +126,8 @@ class TaskActivityHttpTest extends TestCase
     {
         $user = User::factory()->create(['status' => 'active']);
         $recipient = User::factory()->create(['status' => 'active']);
-        $task = $this->createTask($user);
+        $owner = User::factory()->create(['status' => 'active']);
+        $task = $this->createTask($owner);
 
         $this->actingAs($user)
             ->post(route('tasks.reminders.store', $task), [
