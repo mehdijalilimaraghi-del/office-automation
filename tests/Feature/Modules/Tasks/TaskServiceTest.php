@@ -58,6 +58,21 @@ class TaskServiceTest extends TestCase
         ]);
     }
 
+    public function test_project_task_requires_a_section(): void
+    {
+        $creator = User::factory()->create();
+        $project = $this->createProject([], $creator);
+        $project->sections()->delete();
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('برای ایجاد تسک در پروژه، انتخاب بخش الزامی است.');
+
+        app(TaskServiceContract::class)->create([
+            'project_id' => $project->id,
+            'title' => 'Task without section',
+        ], $creator);
+    }
+
     public function test_task_can_be_created_without_a_project(): void
     {
         $creator = User::factory()->create();
@@ -78,7 +93,7 @@ class TaskServiceTest extends TestCase
         ]);
     }
 
-    public function test_task_assignee_must_be_project_member(): void
+    public function test_task_delegate_must_be_member_of_section_department(): void
     {
         $creator = User::factory()->create();
         $project = $this->createProject([], $creator);
