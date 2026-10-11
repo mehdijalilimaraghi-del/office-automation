@@ -267,8 +267,9 @@ class User extends Authenticatable
     }
 
     /**
-     * Managers receive read-only visibility within their actual responsibility
-     * even when their role does not explicitly include the list-view permission.
+     * Operational capabilities are derived from actual project, department,
+     * assignment, and creator relationships. Administrative capabilities remain
+     * explicit role grants.
      *
      * @return array<int, string>
      */
