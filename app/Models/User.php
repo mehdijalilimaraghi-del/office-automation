@@ -283,6 +283,7 @@ class User extends Authenticatable
         if (
             $this->managedProjects()->exists()
             || $this->projectMemberships()->exists()
+            || $this->projects()->exists()
         ) {
             $scopes[] = PermissionScope::Project->value;
         }
