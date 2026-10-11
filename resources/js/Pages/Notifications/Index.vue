@@ -47,7 +47,7 @@ const markAllAsRead = () => {
                             <p class="text-sm font-medium text-teal-300">مرکز اطلاع‌رسانی</p>
                             <h1 class="mt-2 text-3xl font-black tracking-tight sm:text-4xl">اعلان‌های من</h1>
                             <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
-                                رویدادهای مهم کارها، ارجاعات و فرایند تأیید را از اینجا دنبال کنید.
+                                رویدادهای مهم دستورکارها، ارجاعات و فرایند تأیید را از اینجا دنبال کنید.
                             </p>
                         </div>
                         <button
