@@ -182,30 +182,6 @@ function submit(): void {
                 </div>
 
                 <div class="grid gap-5 md:grid-cols-2">
-                    <div class="hidden">
-                        <label for="department_id" class="mb-2 block text-sm font-medium">
-                            واحد
-                        </label>
-                        <select
-                            id="department_id"
-                            v-model="form.department_id"
-                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                            :disabled="form.processing"
-                        >
-                            <option value="">بدون واحد</option>
-                            <option
-                                v-for="department in props.departments"
-                                :key="department.id"
-                                :value="String(department.id)"
-                            >
-                                {{ department.tree_label || department.name }}
-                            </option>
-                        </select>
-                        <p v-if="form.errors.department_id" class="mt-1 text-xs text-destructive">
-                            {{ form.errors.department_id }}
-                        </p>
-                    </div>
-
                     <div>
                         <div class="mb-2 flex items-center gap-2">
                             <label
