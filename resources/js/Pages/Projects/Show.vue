@@ -412,13 +412,6 @@ const formatDate = (date: string | null): string => {
                     </div>
 
                     <div>
-                        <p class="text-sm text-muted-foreground">واحد</p>
-                        <p class="mt-1 font-medium">
-                            {{ project.department?.name ?? 'بدون واحد' }}
-                        </p>
-                    </div>
-
-                    <div>
                         <p class="text-sm text-muted-foreground">مدیر پروژه</p>
                         <p class="mt-1 font-medium">
                             {{ project.manager?.name ?? '—' }}
@@ -600,7 +593,7 @@ const formatDate = (date: string | null): string => {
                 </div>
             </section>
 
-            <section class="rounded-lg border bg-card">
+            <section v-if="false" class="rounded-lg border bg-card">
                 <div class="border-b p-5">
                     <h3 class="font-semibold">نقش‌های پروژه</h3>
                 </div>
@@ -876,7 +869,7 @@ const formatDate = (date: string | null): string => {
                 </article>
             </section>
 
-            <section class="rounded-lg border bg-card">
+            <section v-if="false" class="rounded-lg border bg-card">
                 <div class="border-b p-5">
                     <h3 class="font-semibold">وظایف بدون بخش</h3>
                 </div>
