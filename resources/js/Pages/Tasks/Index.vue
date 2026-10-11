@@ -235,25 +235,25 @@ const handleSectionChange = (): void => {
 </script>
 
 <template>
-    <Head title="وظایف" />
+    <Head title="دستورکارها" />
 
     <AuthenticatedLayout>
         <template #header>
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <div>
-                        <h2 class="text-xl font-bold tracking-tight text-gray-900">وظایف</h2>
-                        <p class="mt-1 text-sm text-gray-500">مشاهده و پیگیری وظایف قابل دسترسی شما</p>
+                        <h2 class="text-xl font-bold tracking-tight text-gray-900">دستورکارها</h2>
+                        <p class="mt-1 text-sm text-gray-500">مشاهده و پیگیری دستورکارها قابل دسترسی شما</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
                     <div class="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">
-                        {{ props.tasks.total }} وظیفه
+                        {{ props.tasks.total }} دستورکار
                     </div>
                     <button v-if="canCreate && formOptions" type="button"
                         class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800"
                         @click="showCreateModal = true">
-                        ایجاد وظیفه
+                        ایجاد دستورکار
                     </button>
                 </div>
             </div>
@@ -267,18 +267,18 @@ const handleSectionChange = (): void => {
                 <div class="my-4 w-full max-w-5xl overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl sm:my-8">
                 <div class="flex items-start justify-between gap-4 border-b border-gray-100 bg-gray-50/70 px-5 py-4 sm:px-6">
                     <div>
-                        <h3 class="font-bold text-gray-900">ایجاد وظیفه جدید</h3>
-                        <p class="mt-1 text-sm text-gray-500">اطلاعات اصلی وظیفه را ثبت کنید. وضعیت اولیه «انجام نشده» خواهد بود.</p>
+                        <h3 class="font-bold text-gray-900">ایجاد دستورکار جدید</h3>
+                        <p class="mt-1 text-sm text-gray-500">اطلاعات اصلی دستورکار را ثبت کنید. وضعیت اولیه «انجام نشده» خواهد بود.</p>
                     </div>
                     <button type="button" class="rounded-lg p-2 text-gray-500 hover:bg-gray-200 hover:text-gray-800" aria-label="بستن" @click="showCreateModal = false">×</button>
                 </div>
 
                 <form class="grid gap-4 p-5 sm:p-6 md:grid-cols-2" @submit.prevent="submitCreate">
                     <div class="md:col-span-2">
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700">عنوان وظیفه</label>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">عنوان دستورکار</label>
                         <input v-model="createForm.title" type="text" required maxlength="255"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-                            placeholder="عنوان وظیفه را وارد کنید" />
+                            placeholder="عنوان دستورکار را وارد کنید" />
                         <p v-if="createForm.errors.title" class="mt-1.5 text-sm text-red-600">{{ createForm.errors.title }}</p>
                     </div>
 
@@ -310,13 +310,13 @@ const handleSectionChange = (): void => {
                     </div>
 
                     <div v-if="createForm.section_id === null">
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700">مسئول وظیفه</label>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">مسئول دستورکار</label>
                         <select v-model="createForm.assignee_id"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
                             <option :value="null">بدون مسئول</option>
                             <option v-for="user in availableAssignees" :key="user.id" :value="user.id">{{ user.name }}</option>
                         </select>
-                        <p v-if="createForm.project_id !== null" class="mt-1 text-xs text-gray-500">برای تسک‌های عمومی، مسئول را مستقیماً انتخاب کنید؛ تسک‌های بخش ابتدا به مدیر واحد ارجاع می‌شوند.</p>
+                        <p v-if="createForm.project_id !== null" class="mt-1 text-xs text-gray-500">برای دستورکارهای عمومی، مسئول را مستقیماً انتخاب کنید؛ دستورکارهای بخش ابتدا به مدیر واحد ارجاع می‌شوند.</p>
                     </div>
 
                     <div v-else class="space-y-3 rounded-lg border border-gray-200 bg-gray-50/60 p-4">
@@ -359,7 +359,7 @@ const handleSectionChange = (): void => {
                     <div class="rounded-xl border border-gray-200 bg-gray-50/60 p-4 md:col-span-2">
                         <div class="mb-3">
                             <h4 class="text-sm font-semibold text-gray-900">پیگیری خارجی <span class="font-normal text-gray-500">(اختیاری)</span></h4>
-                            <p class="mt-1 text-xs text-gray-500">اگر این تسک نیاز به پیگیری با سازمان یا شخص خارج از شرکت دارد، اطلاعات آن را انتخاب کنید.</p>
+                            <p class="mt-1 text-xs text-gray-500">اگر این دستورکار نیاز به پیگیری با سازمان یا شخص خارج از شرکت دارد، اطلاعات آن را انتخاب کنید.</p>
                         </div>
                         <div class="grid gap-4 md:grid-cols-3">
                             <select v-model="createForm.external_organization_id" @change="handleExternalOrganizationChange" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm"><option :value="null">بدون پیگیری خارجی</option><option v-for="item in formOptions.external_organizations" :key="item.id" :value="item.id">{{ item.name }}</option></select>
@@ -371,7 +371,7 @@ const handleSectionChange = (): void => {
                     <div class="rounded-xl border border-blue-200 bg-blue-50/50 p-4 md:col-span-2">
                         <div class="mb-3">
                             <h4 class="text-sm font-semibold text-gray-900">فعالیت بعدی <span class="font-normal text-gray-500">(اختیاری)</span></h4>
-                            <p class="mt-1 text-xs text-gray-500">اولین اقدام عملی که باید بعد از ایجاد وظیفه انجام شود را مشخص کنید.</p>
+                            <p class="mt-1 text-xs text-gray-500">اولین اقدام عملی که باید بعد از ایجاد دستورکار انجام شود را مشخص کنید.</p>
                         </div>
                         <div class="grid gap-4 md:grid-cols-2">
                             <div>
@@ -389,7 +389,7 @@ const handleSectionChange = (): void => {
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">توضیحات</label>
                         <textarea v-model="createForm.description" rows="4"
                             class="w-full rounded-lg border border-gray-300 bg-white p-3 text-sm shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-                            placeholder="شرح وظیفه، خروجی مورد انتظار یا اطلاعات تکمیلی"></textarea>
+                            placeholder="شرح دستورکار، خروجی مورد انتظار یا اطلاعات تکمیلی"></textarea>
                     </div>
 
                     <CustomFieldsForm
@@ -397,21 +397,21 @@ const handleSectionChange = (): void => {
                         v-model="createForm.custom_fields"
                         :fields="props.customFields"
                         :errors="createForm.errors as Record<string, string>"
-                        title="اطلاعات تکمیلی وظیفه"
-                        description="اطلاعات اختصاصی تعریف‌شده برای تسک را در این بخش ثبت کنید."
+                        title="اطلاعات تکمیلی دستورکار"
+                        description="اطلاعات اختصاصی تعریف‌شده برای دستورکار را در این بخش ثبت کنید."
                     />
 
                     <div v-if="createForm.assignee_id" class="md:col-span-2">
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700">توضیح تخصیص وظیفه</label>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">توضیح تخصیص دستورکار</label>
                         <input v-model="createForm.assignment_note" type="text" maxlength="5000"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
-                            placeholder="در صورت نیاز، توضیحی برای مسئول وظیفه بنویسید" />
+                            placeholder="در صورت نیاز، توضیحی برای مسئول دستورکار بنویسید" />
                     </div>
 
                     <div class="flex flex-wrap gap-2 border-t border-gray-100 pt-4 md:col-span-2">
                         <button type="submit" :disabled="createForm.processing"
                             class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
-                            {{ createForm.processing ? 'در حال ذخیره...' : 'ایجاد وظیفه' }}
+                            {{ createForm.processing ? 'در حال ذخیره...' : 'ایجاد دستورکار' }}
                         </button>
                         <button type="button" :disabled="createForm.processing"
                             class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
@@ -479,7 +479,7 @@ const handleSectionChange = (): void => {
             <section class="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
                 <div class="flex items-center justify-between border-b border-gray-100 px-4 py-4 sm:px-5">
                     <div>
-                        <h3 class="font-bold text-gray-900">فهرست وظایف</h3>
+                        <h3 class="font-bold text-gray-900">فهرست دستورکارها</h3>
                         <p class="mt-0.5 text-xs text-gray-500">مواردی که بر اساس سطح دسترسی شما قابل مشاهده هستند</p>
                     </div>
                     <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">{{ props.tasks.total }}</span>
@@ -493,7 +493,7 @@ const handleSectionChange = (): void => {
 
                 <div v-if="props.tasks.data.length === 0" class="px-6 py-14 text-center">
                     <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-500">—</div>
-                    <p class="mt-3 font-medium text-gray-800">{{ props.tasks.total === 0 ? 'وظیفه‌ای با این مشخصات پیدا نشد.' : 'وظیفه‌ای برای نمایش وجود ندارد.' }}</p>
+                    <p class="mt-3 font-medium text-gray-800">{{ props.tasks.total === 0 ? 'دستورکاری با این مشخصات پیدا نشد.' : 'دستورکاری برای نمایش وجود ندارد.' }}</p>
                     <p v-if="search" class="mt-1 text-sm text-gray-500">عبارت جست‌وجو را تغییر دهید و دوباره تلاش کنید.</p>
                 </div>
 
@@ -551,7 +551,7 @@ const handleSectionChange = (): void => {
             </section>
             <div v-if="props.tasks.last_page > 1" class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
                 <p class="text-xs text-gray-500">
-                    نمایش {{ props.tasks.from ?? 0 }} تا {{ props.tasks.to ?? 0 }} از {{ props.tasks.total }} وظیفه
+                    نمایش {{ props.tasks.from ?? 0 }} تا {{ props.tasks.to ?? 0 }} از {{ props.tasks.total }} دستورکار
                 </p>
                 <div class="flex flex-wrap items-center gap-1">
                     <Link v-for="link in paginationLinks" :key="link.label" :href="link.url!" preserve-scroll preserve-state
