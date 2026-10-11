@@ -53,7 +53,7 @@ class CreateProjectAction
                 }
 
                 $project = Project::query()->create([
-                    'department_id' => null,
+                    'department_id' => $data['department_id'] ?? null,
                     'name' => $data['name'],
                     'description' => $data['description'] ?? null,
                     'status' => $data['status'] ?? 'planning',
