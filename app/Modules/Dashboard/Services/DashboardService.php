@@ -37,9 +37,9 @@ class DashboardService
             : 0;
 
         $visibleProjects = $user->hasPermission('projects.view') ? Project::query()->withCount(['sections', 'tasks'])->latest('updated_at')->limit(100)->get() : collect();
-        $visibleProjects = $visibleProjects->filter(fn (Project $project): bool => \\Illuminate\\Support\\Facades\\Gate::forUser($user)->allows('view', $project));
+        $visibleProjects = $visibleProjects->filter(fn (Project $project): bool => \Illuminate\Support\Facades\Gate::forUser($user)->allows('view', $project));
         $projectIds = $visibleProjects->pluck('id');
-        $visibleSections = \\App\\Modules\\Projects\\Models\\ProjectSection::query()->whereIn('project_id', $projectIds)->with(['project:id,name,code', 'department:id,name'])->withCount('tasks')->get();
+        $visibleSections = \App\Modules\Projects\Models\ProjectSection::query()->whereIn('project_id', $projectIds)->with(['project:id,name,code', 'department:id,name'])->withCount('tasks')->get();
         $sectionTaskCounts = (clone $taskQuery)->whereIn('tasks.project_id', $projectIds)->whereNotNull('tasks.section_id')->selectRaw('section_id, COUNT(*) as total, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as completed', ['completed'])->groupBy('section_id')->get()->keyBy('section_id');
 
         return [
