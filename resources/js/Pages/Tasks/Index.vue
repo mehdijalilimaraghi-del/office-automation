@@ -243,7 +243,7 @@ const handleSectionChange = (): void => {
                 <div>
                     <div>
                         <h2 class="text-xl font-bold tracking-tight text-gray-900">دستورکارها</h2>
-                        <p class="mt-1 text-sm text-gray-500">مشاهده و پیگیری دستورکارها قابل دسترسی شما</p>
+                        <p class="mt-1 text-sm text-gray-500">مشاهده و پیگیری دستورکارهایی که به آن‌ها دسترسی دارید</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
