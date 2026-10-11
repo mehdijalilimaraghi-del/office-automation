@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\\Modules\\Projects\\Models\\Project;
-use Illuminate\\Database\\Migrations\\Migration;
+use App\Modules\Projects\Models\Project;
+use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
 {
