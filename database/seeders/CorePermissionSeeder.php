@@ -278,5 +278,17 @@ class CorePermissionSeeder extends Seeder
                 $permission->roles()->detach();
                 $permission->update(['is_active' => false]);
             });
+
+        // Operational visibility is derived from actual responsibility, not
+        // assigned as an organization-wide role grant. The system role is
+        // reseeded with its full active permissions by CoreRoleSeeder.
+        Permission::query()
+            ->whereIn('code', ['projects.view', 'tasks.view'])
+            ->get()
+            ->each(function (Permission $permission): void {
+                $permission->roles()
+                    ->where('roles.is_system', false)
+                    ->detach();
+            });
     }
 }
