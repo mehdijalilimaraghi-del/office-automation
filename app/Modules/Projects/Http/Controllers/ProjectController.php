@@ -173,6 +173,7 @@ class ProjectController extends Controller
                 : [],
             'canUploadProjectDocuments' => $canUploadProjectDocuments,
             'canDeleteDocuments' => $user->hasPermission('documents.delete'),
+            'currentUserId' => (int) $user->id,
             'managerDocumentSectionIds' => Gate::allows('create', Document::class)
                 ? $project->sections()->whereHas('department', fn ($query) => $query->where('manager_id', $user->id))
                     ->pluck('id')->map(fn ($id): int => (int) $id)->values()->all()
