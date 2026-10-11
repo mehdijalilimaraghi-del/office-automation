@@ -386,7 +386,7 @@ const formatDate = (date: string | null): string => {
                 </div>
                 <div dir="rtl" class="flex shrink-0 flex-wrap items-center gap-2">
                     <Button v-if="props.canUpdate" variant="outline" size="sm" as-child>
-                        <Link :href="route('projects.edit', project.id)">ویرایش</Link>
+                        <Link :href="route('projects.edit', project.id)">ویرایش پروژه</Link>
                     </Button>
                     <Button v-if="props.canDeleteProject" type="button" size="sm" variant="destructive" @click="deleteProject">حذف پروژه</Button>
                 </div>
