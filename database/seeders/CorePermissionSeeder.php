@@ -263,5 +263,20 @@ class CorePermissionSeeder extends Seeder
                 ]
             );
         }
+
+        // Retire permissions that have no active route or UI action. Keep the
+        // records for audit/history, but prevent them from being granted.
+        $retiredCodes = [
+            'notifications.manage',
+            'documents.manage_access',
+        ];
+
+        Permission::query()
+            ->whereIn('code', $retiredCodes)
+            ->get()
+            ->each(function (Permission $permission): void {
+                $permission->roles()->detach();
+                $permission->update(['is_active' => false]);
+            });
     }
 }
