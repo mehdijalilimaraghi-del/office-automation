@@ -37,15 +37,27 @@ class ProjectPolicy
     public function update(User $user, Project $project): bool
     {
         return ! $project->is_system_default
-            && $this->isProjectManager($user, $project)
-            && $this->hasScopedProjectAccess($user, $project, 'projects.update');
+            && $user->isActive()
+            && (
+                $user->isSystemAdmin()
+                || (
+                    $this->isProjectManager($user, $project)
+                    && $this->hasScopedProjectAccess($user, $project, 'projects.update')
+                )
+            );
     }
 
     public function delete(User $user, Project $project): bool
     {
         return ! $project->is_system_default
-            && $this->isProjectManager($user, $project)
-            && $this->hasScopedProjectAccess($user, $project, 'projects.delete');
+            && $user->isActive()
+            && (
+                $user->isSystemAdmin()
+                || (
+                    $this->isProjectManager($user, $project)
+                    && $this->hasScopedProjectAccess($user, $project, 'projects.delete')
+                )
+            );
     }
 
     public function manageRoles(User $user, Project $project): bool
