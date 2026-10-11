@@ -47,6 +47,10 @@ class NotificationTest extends TestCase
         ]);
 
         $this->assertSame(1, $assignee->fresh()->unreadNotifications()->count());
+        $this->assertSame(
+            'دستورکار جدید به شما تخصیص یافت',
+            $assignee->fresh()->unreadNotifications()->firstOrFail()->data['title'],
+        );
     }
 
     public function test_submission_notifies_department_manager(): void
@@ -75,6 +79,10 @@ class NotificationTest extends TestCase
         app(SubmitTaskAction::class)->execute($task, $assignee);
 
         $this->assertSame(1, $manager->fresh()->unreadNotifications()->count());
+        $this->assertSame(
+            'دستورکار در انتظار تأیید شماست',
+            $manager->fresh()->unreadNotifications()->firstOrFail()->data['title'],
+        );
     }
 
     public function test_return_notifies_assignee_and_approval_notifies_creator(): void
@@ -105,6 +113,10 @@ class NotificationTest extends TestCase
         app(ReviewTaskAction::class)->returnTask($task, $manager, 'نیاز به اصلاح دارد.');
 
         $this->assertSame(1, $assignee->fresh()->unreadNotifications()->count());
+        $this->assertSame(
+            'دستورکار برای اصلاح بازگردانده شد',
+            $assignee->fresh()->unreadNotifications()->firstOrFail()->data['title'],
+        );
 
         $task->update([
             'status' => 'submitted',
@@ -115,6 +127,10 @@ class NotificationTest extends TestCase
         app(ReviewTaskAction::class)->approve($task, $manager);
 
         $this->assertSame(1, $creator->fresh()->unreadNotifications()->count());
+        $this->assertSame(
+            'دستورکار تأیید و تکمیل شد',
+            $creator->fresh()->unreadNotifications()->firstOrFail()->data['title'],
+        );
     }
 
     public function test_user_can_mark_notification_as_read(): void
