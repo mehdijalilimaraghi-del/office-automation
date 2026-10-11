@@ -3,6 +3,8 @@
 namespace Tests\Feature\Modules\Tasks;
 
 use App\Models\User;
+use App\Core\Departments\Models\Department;
+use App\Modules\Projects\Models\ProjectSection;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectMember;
 use App\Modules\Tasks\Contracts\TaskServiceContract;
@@ -18,7 +20,7 @@ class TaskServiceTest extends TestCase
     public function test_task_can_be_created_for_project_member(): void
     {
         $creator = User::factory()->create();
-        $project = $this->createProject();
+        $project = $this->createProject([], $creator);
         $assignee = User::factory()->create();
 
         $this->addMember($project, $assignee);
@@ -26,7 +28,10 @@ class TaskServiceTest extends TestCase
         $task = app(TaskServiceContract::class)->create(
             [
                 'project_id' => $project->id,
+                'section_id' => $project->sections()->value('id'),
                 'title' => 'Design database',
+                'delegate_to_employee' => true,
+                'delegate_assignee_id' => $assignee->id,
                 'description' => 'Prepare database design',
                 'assignee_id' => $assignee->id,
                 'priority' => 'high',
@@ -87,6 +92,8 @@ class TaskServiceTest extends TestCase
             [
                 'project_id' => $project->id,
                 'title' => 'Invalid assignment',
+                'delegate_to_employee' => true,
+                'delegate_assignee_id' => $assignee->id,
                 'assignee_id' => $assignee->id,
             ],
             $creator
@@ -114,6 +121,8 @@ class TaskServiceTest extends TestCase
             [
                 'project_id' => $project->id,
                 'title' => 'Inactive user task',
+                'delegate_to_employee' => true,
+                'delegate_assignee_id' => $assignee->id,
                 'assignee_id' => $assignee->id,
             ],
             $creator
@@ -124,9 +133,7 @@ class TaskServiceTest extends TestCase
     {
         $creator = User::factory()->create();
 
-        $project = $this->createProject([
-            'is_active' => false,
-        ]);
+        $project = $this->createProject(['is_active' => false], $creator);
 
         $assignee = User::factory()->create();
 
@@ -248,7 +255,7 @@ class TaskServiceTest extends TestCase
     {
         $creator = User::factory()->create();
         $project = $this->createProject();
-        $otherProject = $this->createProject();
+        $otherProject = $this->createProject([], $creator);
 
         $firstUser = User::factory()->create();
         $otherUser = User::factory()->create();
@@ -369,7 +376,8 @@ class TaskServiceTest extends TestCase
     }
 
     private function createProject(
-        array $overrides = []
+        array $overrides = [],
+        ?User $creator = null,
     ): Project {
         $manager = User::factory()->create();
 
@@ -380,7 +388,7 @@ class TaskServiceTest extends TestCase
                     'code' => 'PRJ-'.uniqid(),
                     'status' => 'active',
                     'manager_id' => $manager->id,
-                    'created_by' => $manager->id,
+                    'created_by' => ($creator ?? $manager)->id,
                     'is_active' => true,
                 ],
                 $overrides
@@ -393,6 +401,21 @@ class TaskServiceTest extends TestCase
             'project_role_id' => null,
         ]);
 
+        $department = Department::query()->create([
+            'name' => 'واحد آزمون '.uniqid(),
+            'code' => 'TU-'.uniqid(),
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+
+        ProjectSection::query()->create([
+            'project_id' => $project->id,
+            'department_id' => $department->id,
+            'name' => 'بخش آزمون',
+            'manager_can_create_tasks' => true,
+            'sort_order' => 0,
+        ]);
+
         return $project;
     }
 
@@ -400,10 +423,17 @@ class TaskServiceTest extends TestCase
         Project $project,
         User $user
     ): ProjectMember {
-        return ProjectMember::query()->create([
+        $membership = ProjectMember::query()->create([
             'project_id' => $project->id,
             'user_id' => $user->id,
             'project_role_id' => null,
         ]);
+
+        $department = $project->sections()->first()?->department;
+        if ($department !== null && ! $department->members()->where('users.id', $user->id)->exists()) {
+            $department->members()->attach($user->id, ['is_primary' => false, 'joined_at' => now()]);
+        }
+
+        return $membership;
     }
 }
