@@ -36,7 +36,7 @@ class TaskAccessService
             return $query;
         }
 
-        return $query->where(function (Builder $scopeQuery) use ($user, $scopes): void {
+        return $query->where(function (Builder $scopeQuery) use ($user, $scopes, $permission): void {
             if ($this->hasScope($scopes, PermissionScope::Self)) {
                 $this->applySelfScope($scopeQuery, $user);
             }
@@ -125,17 +125,15 @@ class TaskAccessService
 
     private function applyProjectScope(Builder $query, User $user, string $permission): void
     {
-        $query->orWhere('tasks.assignee_id', $user->id)
-            ->orWhere('tasks.created_by', $user->id)
-            ->orWhereHas('project', function (Builder $projectQuery) use ($user, $permission): void {
-                $projectQuery->where('projects.manager_id', $user->id);
+        $query->orWhereHas('project', function (Builder $projectQuery) use ($user, $permission): void {
+            $projectQuery->where('projects.manager_id', $user->id);
 
-                if ($permission === 'tasks.view') {
-                    $projectQuery->orWhereHas('users', function (Builder $userQuery) use ($user): void {
-                        $userQuery->where('users.id', $user->id);
-                    });
-                }
-            });
+            if ($permission === 'tasks.view') {
+                $projectQuery->orWhereHas('users', function (Builder $userQuery) use ($user): void {
+                    $userQuery->where('users.id', $user->id);
+                });
+            }
+        });
     }
 
     private function isSelfTask(User $user, Task $task): bool
