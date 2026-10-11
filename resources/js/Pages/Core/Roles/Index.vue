@@ -167,6 +167,18 @@ const toggleStatus = (role: Role) => {
                             <p class="text-xs font-bold text-teal-600">{{ editingRole ? 'ویرایش نقش' : 'نقش کاربری جدید' }}</p>
                             <h3 class="mt-1 text-xl font-black text-slate-900">{{ editingRole ? 'به‌روزرسانی اطلاعات' : 'تعریف نقش کاربری' }}</h3>
                         </div>
+
+                        <div class="mb-5 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm leading-7 text-sky-950">
+                            <div class="flex items-start gap-3">
+                                <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sky-100 font-black text-sky-700">i</span>
+                                <div>
+                                    <p class="font-extrabold">نقش برای مجوزهای تکمیلی و مدیریتی است</p>
+                                    <p class="mt-1 text-sky-900">دسترسی عملیاتی کاربر باید از مسئولیت واقعی او به دست بیاید؛ مثلاً مدیر واحد از واحد تحت مدیریتش و مدیر یا عضو پروژه از پروژه‌های مرتبط. برای این دسترسی‌ها نقش جداگانه نسازید. از نقش زمانی استفاده کنید که لازم است مجوز مشخصی مثل ایجاد واحد، مدیریت کاربران یا تنظیمات سامانه را به فرد بدهید.</p>
+                                    <p class="mt-2 font-semibold text-sky-800">پس از ایجاد نقش، دکمهٔ «مجوزها» را باز کنید و فقط مجوزهای موردنیاز را انتخاب کنید؛ محدوده را تا حد امکان محدود نگه دارید.</p>
+                                </div>
+                            </div>
+                        </div>
+
                         <form class="space-y-5" @submit.prevent="submit">
                             <div><label for="role-name" class="mb-2 block text-sm font-semibold text-slate-700">نام نقش</label><input id="role-name" v-model="form.name" required maxlength="100" class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500" /><p v-if="form.errors.name" class="mt-1 text-xs text-red-600">{{ form.errors.name }}</p></div>
                                                         <div><label for="role-description" class="mb-2 block text-sm font-semibold text-slate-700">توضیحات</label><textarea id="role-description" v-model="form.description" rows="4" class="w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500"></textarea><p v-if="form.errors.description" class="mt-1 text-xs text-red-600">{{ form.errors.description }}</p></div>
