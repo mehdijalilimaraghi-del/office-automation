@@ -38,7 +38,7 @@ class ProjectHttpTest extends TestCase
                 ->where('projects.current_page', 1)
                 ->where('projects.per_page', 15)
                 ->where('projects.last_page', 2)
-                ->where('projects.total', 16)
+                ->where('projects.total', 17)
                 ->has('projects.data', 15)
         );
     }
