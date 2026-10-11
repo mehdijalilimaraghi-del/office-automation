@@ -2,130 +2,115 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { computed, ref } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+
 interface Permission {
-    id: number;
-    name: string;
-    code: string;
-    description: string | null;
-    is_active: boolean;
-    is_system: boolean;
-    pivot?: { scope: string };
+    id: number; name: string; code: string; description: string | null;
+    is_active: boolean; is_system: boolean; pivot?: { scope: string };
 }
-
 interface Role {
-    id: number;
-    name: string;
-    code: string | null;
-    description: string | null;
-    is_active: boolean;
-    is_system: boolean;
-    permissions: Permission[];
+    id: number; name: string; code: string | null; description: string | null;
+    is_active: boolean; is_system: boolean; permissions: Permission[];
+}
+interface ScopeOption { value: string; label: string; }
+interface AssignedPermission { permission_id: number; scope: string; }
+interface PermissionGroup {
+    key: string; label: string; description: string; permissions: Permission[];
 }
 
-interface ScopeOption {
-    value: string;
-    label: string;
+const props = defineProps<{ role: Role; permissions: Permission[]; scopes: ScopeOption[] }>();
+const responsibilityCodes = new Set(['projects.view', 'tasks.view']);
+
+function isResponsibilityDerived(permission: Permission): boolean {
+    return responsibilityCodes.has(permission.code);
 }
-
-interface AssignedPermission {
-    permission_id: number;
-    scope: string;
-}
-
-const props = defineProps<{
-    role: Role;
-    permissions: Permission[];
-    scopes: ScopeOption[];
-}>();
-
 function defaultScope(permission: Permission): string {
-    return permission.code.startsWith('tasks.')
-        ? 'project'
-        : 'organization';
+    if (permission.code === 'projects.create') return 'department';
+    return permission.code.startsWith('tasks.') || permission.code.startsWith('projects.')
+        ? 'project' : 'organization';
 }
-
 function supportsScopeSelection(permission: Permission): boolean {
     return permission.code.startsWith('tasks.') || permission.code.startsWith('projects.');
 }
-
-function existingScope(permission: Permission): string {
-    return permission.pivot?.scope ?? defaultScope(permission);
+function scopeOptions(permission: Permission): ScopeOption[] {
+    if (permission.code === 'projects.create') {
+        return props.scopes.filter((scope) => ['department', 'department_tree', 'organization'].includes(scope.value));
+    }
+    return props.scopes;
 }
-
+function existingScope(permission: Permission): string {
+    const scope = permission.pivot?.scope ?? defaultScope(permission);
+    return scopeOptions(permission).some((option) => option.value === scope) ? scope : defaultScope(permission);
+}
+const activeAssignablePermissions = computed(() => props.permissions.filter(
+    (permission) => permission.is_active && !isResponsibilityDerived(permission),
+));
+const derivedVisibilityPermissions = computed(() => props.permissions.filter(isResponsibilityDerived));
 const form = useForm({
-    permissions: props.role.permissions.map((permission) => ({
-        permission_id: permission.id,
-        scope: existingScope(permission),
-    })),
+    permissions: props.role.permissions
+        .filter((permission) => permission.is_active && !isResponsibilityDerived(permission))
+        .map((permission) => ({ permission_id: permission.id, scope: existingScope(permission) })),
 });
-
 const search = ref('');
-
+function permissionGroup(code: string): string {
+    if (code.startsWith('users.')) return 'کاربران و حساب‌ها';
+    if (code.startsWith('departments.')) return 'ساختار سازمانی';
+    if (code.startsWith('roles.') || code.startsWith('permissions.') || code === 'custom_fields.manage') return 'نقش‌ها و کنترل دسترسی';
+    if (code.startsWith('projects.') || code.startsWith('tasks.') || code === 'cartable.view' || code.startsWith('notifications.')) return 'پروژه و دستورکار';
+    if (code.startsWith('documents.')) return 'اسناد';
+    if (code.startsWith('external_parties.')) return 'طرف‌های خارجی';
+    if (code.startsWith('settings.')) return 'تنظیمات سامانه';
+    return 'سایر امکانات';
+}
+const groupDescriptions: Record<string, string> = {
+    'کاربران و حساب‌ها': 'مدیریت حساب‌ها، دعوت کاربران و تعیین نقش‌های تکمیلی.',
+    'ساختار سازمانی': 'ایجاد و نگهداری واحدها و سمت‌های سازمانی؛ این مجوزها با مدیر بودن در یک واحد فرق دارند.',
+    'نقش‌ها و کنترل دسترسی': 'تعریف نقش‌ها و مدیریت مجوزهایی که به کاربران اعطا می‌شوند.',
+    'پروژه و دستورکار': 'اقدامات عملیاتی تکمیلی. دسترسی پایه برای مشاهده پروژه‌ها و دستورکارهای مرتبط از مسئولیت واقعی کاربر استخراج می‌شود.',
+    'اسناد': 'عملیات بارگذاری، مشاهده، ویرایش و حذف اسناد.',
+    'طرف‌های خارجی': 'مدیریت سازمان‌ها، واحدها و اشخاص بیرونی.',
+    'تنظیمات سامانه': 'تغییر تنظیمات سراسری سامانه.',
+    'سایر امکانات': 'امکانات تکمیلی که در گروه‌های دیگر قرار نمی‌گیرند.',
+};
 const filteredPermissions = computed(() => {
     const query = search.value.trim().toLowerCase();
-
-    if (!query) {
-        return props.permissions;
-    }
-
-    return props.permissions.filter((permission) =>
-        [permission.name, permission.code, permission.description ?? '']
-            .join(' ')
-            .toLowerCase()
-            .includes(query),
+    if (!query) return activeAssignablePermissions.value;
+    return activeAssignablePermissions.value.filter((permission) =>
+        [permission.name, permission.code, permission.description ?? '', permissionGroup(permission.code)]
+            .join(' ').toLowerCase().includes(query),
     );
 });
-
+const groupedPermissions = computed<PermissionGroup[]>(() => {
+    const groups = new Map<string, Permission[]>();
+    for (const permission of filteredPermissions.value) {
+        const label = permissionGroup(permission.code);
+        if (!groups.has(label)) groups.set(label, []);
+        groups.get(label)!.push(permission);
+    }
+    return [...groups.entries()].map(([label, permissions]) => ({
+        key: label, label, description: groupDescriptions[label] ?? '', permissions,
+    }));
+});
 const assignedCount = computed(() => form.permissions.length);
-const activeCount = computed(() => props.permissions.filter((permission) => permission.is_active).length);
-
+const activeCount = computed(() => activeAssignablePermissions.value.length);
 function assignedPermission(permissionId: number): AssignedPermission | undefined {
-    return form.permissions.find(
-        (permission) => permission.permission_id === permissionId,
-    );
+    return form.permissions.find((permission) => permission.permission_id === permissionId);
 }
-
 function isAssigned(permissionId: number): boolean {
-    return form.permissions.some(
-        (permission) => permission.permission_id === permissionId,
-    );
+    return form.permissions.some((permission) => permission.permission_id === permissionId);
 }
-
 function togglePermission(permission: Permission): void {
-    if (props.role.is_system) {
-        return;
-    }
-
-    const index = form.permissions.findIndex(
-        (item) => item.permission_id === permission.id,
-    );
-
-    if (index === -1) {
-        form.permissions.push({
-            permission_id: permission.id,
-            scope: defaultScope(permission),
-        });
-    } else {
-        form.permissions.splice(index, 1);
-    }
+    if (props.role.is_system || !permission.is_active || isResponsibilityDerived(permission)) return;
+    const index = form.permissions.findIndex((item) => item.permission_id === permission.id);
+    if (index === -1) form.permissions.push({ permission_id: permission.id, scope: defaultScope(permission) });
+    else form.permissions.splice(index, 1);
 }
-
 function updateScope(permissionId: number, scope: string): void {
     const assigned = assignedPermission(permissionId);
-
-    if (assigned) {
-        assigned.scope = scope;
-    }
+    if (assigned) assigned.scope = scope;
 }
-
 function submit(): void {
-    if (props.role.is_system) {
-        return;
-    }
-
-    form.put(route('roles.permissions.update', props.role.id), {
-        preserveScroll: true,
-    });
+    if (props.role.is_system) return;
+    form.put(route('roles.permissions.update', props.role.id), { preserveScroll: true });
 }
 </script>
 
@@ -182,6 +167,12 @@ function submit(): void {
                     این نقش کاربری سیستمی است؛ مجوزهای آن برای حفظ یکپارچگی سیستم قابل تغییر نیستند.
                 </section>
 
+                <section class="rounded-2xl border border-sky-200 bg-sky-50 p-5 text-sm leading-7 text-sky-950">
+                    <h3 class="font-extrabold">دو نوع دسترسی را از هم جدا نگه دارید</h3>
+                    <p class="mt-1">مشاهدهٔ پروژه‌ها و دستورکارهای مرتبط، دسترسی پایهٔ عملیاتی است و بر اساس مدیر واحد، مدیر/عضو پروژه، مجری یا ایجادکنندهٔ دستورکار تعیین می‌شود؛ این دو مورد در نقش قابل اعطا نیستند.</p>
+                    <p class="mt-2">گزینه‌های زیر مجوزهای تکمیلی‌اند؛ مثل ایجاد واحد، مدیریت کاربران یا عملیات خاص روی دستورکار. فقط مجوز لازم را انتخاب کنید و محدودهٔ آن را به کوچک‌ترین سطح موردنیاز محدود کنید.</p>
+                </section>
+
                 <form @submit.prevent="submit">
                     <section class="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
                         <div class="border-b border-slate-100 p-5 sm:p-6">
@@ -203,72 +194,58 @@ function submit(): void {
                             </div>
                         </div>
 
-                        <div
-                            v-if="filteredPermissions.length"
-                            class="grid gap-3 p-4 sm:p-6 lg:grid-cols-2"
-                        >
-                            <div
-                                v-for="permission in filteredPermissions"
-                                :key="permission.id"
-                                class="rounded-2xl border p-4 transition"
-                                :class="isAssigned(permission.id)
-                                    ? 'border-teal-200 bg-teal-50/50 shadow-sm'
-                                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/70'"
-                            >
-                                <div class="flex items-start gap-3">
-                                    <input
-                                        type="checkbox"
-                                        :checked="isAssigned(permission.id)"
-                                        :disabled="props.role.is_system || !permission.is_active"
-                                        class="mt-1 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 disabled:opacity-50"
-                                        @change="togglePermission(permission)"
-                                    />
+<div v-if="derivedVisibilityPermissions.length" class="border-b border-slate-100 bg-sky-50/50 px-5 py-4 sm:px-6">
+                            <p class="text-sm font-extrabold text-sky-950">دسترسی پایه بر اساس مسئولیت</p>
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                <span v-for="permission in derivedVisibilityPermissions" :key="permission.code" class="rounded-full border border-sky-200 bg-white px-3 py-1.5 text-xs font-bold text-sky-800">
+                                    {{ permission.name }} · خودکار
+                                </span>
+                            </div>
+                            <p class="mt-2 text-xs leading-6 text-sky-900">این موارد از نقش حذف شده‌اند تا اعطای یک نقش، ناخواسته دسترسی سراسری به اطلاعات عملیاتی ایجاد نکند.</p>
+                        </div>
 
-                                    <div class="min-w-0 flex-1">
-                                        <div class="flex flex-wrap items-center gap-2">
-                                            <span class="font-bold text-slate-900">{{ permission.name }}</span>
-                                            <span v-if="permission.is_system" class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">سیستمی</span>
-                                            <span v-if="!permission.is_active" class="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">غیرفعال</span>
-                                        </div>
-
-                                        <p class="mt-1 font-mono text-xs text-slate-500" dir="ltr">{{ permission.code }}</p>
-
-                                        <p v-if="permission.description" class="mt-2 text-xs leading-6 text-slate-500">
-                                            {{ permission.description }}
-                                        </p>
-
-                                        <div v-if="isAssigned(permission.id)" class="mt-4 rounded-xl bg-white/80 p-3 ring-1 ring-teal-100">
-                                            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                                <label class="text-xs font-bold text-slate-600">محدوده دسترسی</label>
-
-                                                <select
-                                                    v-if="supportsScopeSelection(permission)"
-                                                    class="rounded-xl border-slate-200 bg-white text-xs font-semibold shadow-sm focus:border-teal-500 focus:ring-teal-500"
-                                                    :value="assignedPermission(permission.id)?.scope"
-                                                    :disabled="props.role.is_system"
-                                                    @change="updateScope(permission.id, ($event.target as HTMLSelectElement).value)"
-                                                >
-                                                    <option v-for="scope in props.scopes" :key="scope.value" :value="scope.value">
-                                                        {{ scope.label }}
-                                                    </option>
-                                                </select>
-
-                                                <span
-                                                    v-else
-                                                    class="rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-600"
-                                                >
-                                                    کل سازمان
-                                                </span>
+                        <div v-if="groupedPermissions.length" class="space-y-7 p-4 sm:p-6">
+                            <section v-for="group in groupedPermissions" :key="group.key" class="space-y-3">
+                                <div class="border-b border-slate-100 pb-3">
+                                    <h4 class="font-black text-slate-900">{{ group.label }}</h4>
+                                    <p class="mt-1 text-xs leading-6 text-slate-500">{{ group.description }}</p>
+                                </div>
+                                <div class="grid gap-3 lg:grid-cols-2">
+                                    <div v-for="permission in group.permissions" :key="permission.id" class="rounded-2xl border p-4 transition"
+                                        :class="isAssigned(permission.id) ? 'border-teal-200 bg-teal-50/50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/70'">
+                                        <div class="flex items-start gap-3">
+                                            <input type="checkbox" :checked="isAssigned(permission.id)"
+                                                :disabled="props.role.is_system || !permission.is_active"
+                                                class="mt-1 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 disabled:opacity-50"
+                                                @change="togglePermission(permission)" />
+                                            <div class="min-w-0 flex-1">
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <span class="font-bold text-slate-900">{{ permission.name }}</span>
+                                                    <span v-if="permission.is_system" class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">سیستمی</span>
+                                                </div>
+                                                <p class="mt-1 font-mono text-xs text-slate-500" dir="ltr">{{ permission.code }}</p>
+                                                <p v-if="permission.description" class="mt-2 text-xs leading-6 text-slate-500">{{ permission.description }}</p>
+                                                <div v-if="isAssigned(permission.id)" class="mt-4 rounded-xl bg-white/80 p-3 ring-1 ring-teal-100">
+                                                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                                        <label class="text-xs font-bold text-slate-600">محدوده دسترسی</label>
+                                                        <select v-if="supportsScopeSelection(permission)" class="rounded-xl border-slate-200 bg-white text-xs font-semibold shadow-sm focus:border-teal-500 focus:ring-teal-500"
+                                                            :value="assignedPermission(permission.id)?.scope" :disabled="props.role.is_system"
+                                                            @change="updateScope(permission.id, ($event.target as HTMLSelectElement).value)">
+                                                            <option v-for="scope in scopeOptions(permission)" :key="scope.value" :value="scope.value">{{ scope.label }}</option>
+                                                        </select>
+                                                        <span v-else class="rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-600">کل سازمان</span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </section>
                         </div>
 
                         <div v-else class="px-6 py-16 text-center">
                             <p class="font-bold text-slate-700">{{ search ? 'مجوزی با این عبارت پیدا نشد.' : 'هنوز هیچ مجوزی تعریف نشده است.' }}</p>
-                            <p class="mt-1 text-sm text-slate-400">{{ search ? 'عبارت جستجو را تغییر دهید.' : 'ابتدا مجوزهای سیستم را تعریف کنید.' }}</p>
+                            <p class="mt-1 text-sm text-slate-400">{{ search ? 'عبارت جستجو را تغییر دهید.' : 'مجوز فعالی برای اعطا وجود ندارد.' }}</p>
                         </div>
 
                         <div class="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/60 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
