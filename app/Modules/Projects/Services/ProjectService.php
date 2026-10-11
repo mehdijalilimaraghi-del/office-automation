@@ -58,7 +58,12 @@ class ProjectService implements ProjectServiceContract
             if (in_array(PermissionScope::DepartmentTree->value, $scopes, true)) {
                 $departmentIds = [];
 
-                foreach ($user->departments()->get() as $department) {
+                $responsibleDepartments = $user->departments()
+                    ->get()
+                    ->merge($user->managedDepartments()->get())
+                    ->unique('id');
+
+                foreach ($responsibleDepartments as $department) {
                     $departmentIds[] = (int) $department->id;
                     $departmentIds = array_merge($departmentIds, $department->descendantIds());
                 }
