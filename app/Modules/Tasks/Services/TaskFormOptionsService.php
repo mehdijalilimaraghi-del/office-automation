@@ -27,7 +27,9 @@ class TaskFormOptionsService
     {
         $departmentIds = $user->departments()
             ->pluck('departments.id')
+            ->merge($user->managedDepartments()->pluck('departments.id'))
             ->map(fn ($id): int => (int) $id)
+            ->unique()
             ->values()
             ->all();
 
@@ -59,7 +61,12 @@ class TaskFormOptionsService
                 if (in_array(PermissionScope::DepartmentTree->value, $taskCreateScopes, true)) {
                     $treeDepartmentIds = [];
 
-                    foreach ($user->departments()->get() as $department) {
+                    $responsibleDepartments = $user->departments()
+                        ->get()
+                        ->merge($user->managedDepartments()->get())
+                        ->unique('id');
+
+                    foreach ($responsibleDepartments as $department) {
                         $treeDepartmentIds[] = (int) $department->id;
                         $treeDepartmentIds = array_merge($treeDepartmentIds, array_map('intval', $department->descendantIds()));
                     }
