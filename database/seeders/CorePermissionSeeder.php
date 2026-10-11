@@ -212,22 +212,6 @@ class CorePermissionSeeder extends Seeder
                 'name' => 'مشاهده مجوزها',
                 'code' => 'permissions.view',
             ],
-            [
-                'name' => 'ایجاد مجوز',
-                'code' => 'permissions.create',
-            ],
-            [
-                'name' => 'ویرایش مجوز',
-                'code' => 'permissions.edit',
-            ],
-            [
-                'name' => 'حذف مجوز',
-                'code' => 'permissions.delete',
-            ],
-            [
-                'name' => 'تغییر وضعیت مجوز',
-                'code' => 'permissions.toggle_status',
-            ],
 
             [
                 'name' => 'مشاهده اسناد',
@@ -269,6 +253,10 @@ class CorePermissionSeeder extends Seeder
         $retiredCodes = [
             'notifications.manage',
             'documents.manage_access',
+            'permissions.create',
+            'permissions.edit',
+            'permissions.delete',
+            'permissions.toggle_status',
         ];
 
         Permission::query()
