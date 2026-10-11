@@ -12,7 +12,59 @@ class StoreProjectRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $user = $this->user();
+
+        if ($user === null || ! $user->isActive() || ! $user->hasPermission('projects.create')) {
+            return false;
+        }
+
+        $scopes = $user->permissionScopes('projects.create');
+
+        if (in_array(\App\Core\Permissions\Enums\PermissionScope::Organization->value, $scopes, true)) {
+            return true;
+        }
+
+        $requestedDepartmentIds = collect([
+            $this->input('department_id'),
+            ...collect($this->input('sections', []))
+                ->pluck('department_id')
+                ->all(),
+        ])->filter(fn ($id) => $id !== null && $id !== '')
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($requestedDepartmentIds->isEmpty()) {
+            return false;
+        }
+
+        $responsibleDepartments = $user->departments()
+            ->get()
+            ->merge($user->managedDepartments()->get())
+            ->unique('id');
+
+        $allowedDepartmentIds = collect();
+
+        if (in_array(\App\Core\Permissions\Enums\PermissionScope::Department->value, $scopes, true)) {
+            $allowedDepartmentIds = $allowedDepartmentIds->merge(
+                $responsibleDepartments->pluck('id')->map(fn ($id): int => (int) $id)
+            );
+        }
+
+        if (in_array(\App\Core\Permissions\Enums\PermissionScope::DepartmentTree->value, $scopes, true)) {
+            foreach ($responsibleDepartments as $department) {
+                $allowedDepartmentIds->push((int) $department->id);
+                $allowedDepartmentIds = $allowedDepartmentIds->merge(
+                    array_map('intval', $department->descendantIds())
+                );
+            }
+        }
+
+        $allowedDepartmentIds = $allowedDepartmentIds->unique()->values();
+
+        return $requestedDepartmentIds->every(
+            fn (int $departmentId): bool => $allowedDepartmentIds->contains($departmentId)
+        );
     }
 
     public function rules(): array
