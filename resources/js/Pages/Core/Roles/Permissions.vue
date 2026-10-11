@@ -206,7 +206,7 @@ function submit(): void {
                                     {{ permission.name }} · خودکار
                                 </span>
                             </div>
-                            <p class="mt-2 text-xs leading-6 text-sky-900">این مجوزها از نقش حذف شده‌اند؛ سامانه آن‌ها را از مسئولیت و ارتباط واقعی کاربر با واحد، پروژه و دستورکار محاسبه می‌کند.</p>
+                            <p class="mt-2 text-xs leading-6 text-sky-900">برای نقش‌های عادی این مجوزها از نقش حذف شده‌اند؛ سامانه آن‌ها را از مسئولیت و ارتباط واقعی کاربر با واحد، پروژه و دستورکار محاسبه می‌کند. نقش سیستمی مدیر سامانه استثناست.</p>
                         </div>
 
                         <div v-if="groupedPermissions.length" class="space-y-7 p-4 sm:p-6">
