@@ -110,7 +110,8 @@ class TaskAccessService
             ->all();
 
         if ($departmentIds !== []) {
-            $query->orWhereIn('tasks.department_id', $departmentIds);
+            $query->orWhereIn('tasks.department_id', $departmentIds)
+                ->orWhereHas('section', fn (Builder $sectionQuery) => $sectionQuery->whereIn('department_id', $departmentIds));
         }
     }
 
@@ -144,17 +145,24 @@ class TaskAccessService
 
     private function belongsToUserDepartment(User $user, Task $task): bool
     {
-        return $task->department_id !== null
-            && (
-                $user->departments()->where('departments.id', $task->department_id)->exists()
-                || $user->managedDepartments()->whereKey($task->department_id)->exists()
-            );
+        $departmentIds = $user->departments()
+            ->pluck('departments.id')
+            ->merge($user->managedDepartments()->pluck('departments.id'))
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        return ($task->department_id !== null && in_array((int) $task->department_id, $departmentIds, true))
+            || ($departmentIds !== [] && $task->section()->whereIn('department_id', $departmentIds)->exists());
     }
 
     private function belongsToUserDepartmentTree(User $user, Task $task): bool
     {
-        return $task->department_id !== null
-            && in_array((int) $task->department_id, $this->userDepartmentTreeIds($user), true);
+        $departmentIds = $this->userDepartmentTreeIds($user);
+
+        return ($task->department_id !== null && in_array((int) $task->department_id, $departmentIds, true))
+            || ($departmentIds !== [] && $task->section()->whereIn('department_id', $departmentIds)->exists());
     }
 
     private function userDepartmentTreeIds(User $user): array
