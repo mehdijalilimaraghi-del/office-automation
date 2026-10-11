@@ -50,7 +50,7 @@ class TaskAccessService
             }
 
             if ($this->hasScope($scopes, PermissionScope::Project)) {
-                $this->applyProjectScope($scopeQuery, $user);
+                $this->applyProjectScope($scopeQuery, $user, $permission);
             }
         });
     }
@@ -81,7 +81,7 @@ class TaskAccessService
             }
 
             if ($scope === PermissionScope::Project->value && (
-                $this->isSelfTask($user, $task) || $this->hasProjectAccess($user, $task)
+                $this->isSelfTask($user, $task) || $this->hasProjectAccess($user, $task, $permission)
             )) {
                 return true;
             }
@@ -123,15 +123,18 @@ class TaskAccessService
         }
     }
 
-    private function applyProjectScope(Builder $query, User $user): void
+    private function applyProjectScope(Builder $query, User $user, string $permission): void
     {
         $query->orWhere('tasks.assignee_id', $user->id)
             ->orWhere('tasks.created_by', $user->id)
-            ->orWhereHas('project', function (Builder $projectQuery) use ($user): void {
-                $projectQuery->where('projects.manager_id', $user->id)
-                    ->orWhereHas('users', function (Builder $userQuery) use ($user): void {
+            ->orWhereHas('project', function (Builder $projectQuery) use ($user, $permission): void {
+                $projectQuery->where('projects.manager_id', $user->id);
+
+                if ($permission === 'tasks.view') {
+                    $projectQuery->orWhereHas('users', function (Builder $userQuery) use ($user): void {
                         $userQuery->where('users.id', $user->id);
                     });
+                }
             });
     }
 
@@ -173,18 +176,28 @@ class TaskAccessService
         return array_values(array_unique($ids));
     }
 
-    private function hasProjectAccess(User $user, Task $task): bool
+    private function hasProjectAccess(User $user, Task $task, string $permission): bool
     {
         if ($task->project === null) {
             return false;
         }
 
-        return $this->isProjectManager($user, $task)
-            || $task->project->users()->where('users.id', $user->id)->exists()
+        if ($this->isProjectManager($user, $task)) {
+            return true;
+        }
+
+        if ($permission !== 'tasks.view') {
+            return false;
+        }
+
+        return $task->project->users()->where('users.id', $user->id)->exists()
             || (
                 $task->project->is_system_default
                 && $task->project->department_id !== null
-                && $user->departments()->where('departments.id', $task->project->department_id)->exists()
+                && (
+                    $user->departments()->where('departments.id', $task->project->department_id)->exists()
+                    || $user->managedDepartments()->whereKey($task->project->department_id)->exists()
+                )
             );
     }
 
