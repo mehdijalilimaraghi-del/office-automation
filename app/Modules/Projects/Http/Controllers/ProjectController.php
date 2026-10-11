@@ -10,6 +10,7 @@ use App\Http\Requests\Modules\Projects\StoreProjectRequest;
 use App\Http\Requests\Modules\Projects\UpdateProjectRequest;
 use App\Core\Departments\Contracts\DepartmentServiceInterface;
 use App\Core\Departments\Models\Department;
+use App\Core\Permissions\Enums\PermissionScope;
 use App\Core\Users\Contracts\UserServiceInterface;
 use App\Modules\Projects\Contracts\ProjectMemberServiceContract;
 use App\Modules\Projects\Contracts\ProjectServiceContract;
@@ -48,7 +49,7 @@ class ProjectController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
         Gate::authorize('create', Project::class);
 
@@ -75,6 +76,39 @@ class ProjectController extends Controller
         };
 
         $appendDepartmentOptions(null);
+
+        $creator = $request->user();
+        $createScopes = $creator->permissionScopes('projects.create');
+
+        if (! in_array(PermissionScope::Organization->value, $createScopes, true)) {
+            $responsibleDepartments = $creator->departments()
+                ->get()
+                ->merge($creator->managedDepartments()->get())
+                ->unique('id');
+
+            $allowedDepartmentIds = collect();
+
+            if (in_array(PermissionScope::Department->value, $createScopes, true)) {
+                $allowedDepartmentIds = $allowedDepartmentIds->merge(
+                    $responsibleDepartments->pluck('id')->map(fn ($id): int => (int) $id)
+                );
+            }
+
+            if (in_array(PermissionScope::DepartmentTree->value, $createScopes, true)) {
+                foreach ($responsibleDepartments as $department) {
+                    $allowedDepartmentIds->push((int) $department->id);
+                    $allowedDepartmentIds = $allowedDepartmentIds->merge(
+                        array_map('intval', $department->descendantIds())
+                    );
+                }
+            }
+
+            $allowedDepartmentIds = $allowedDepartmentIds->unique()->values();
+
+            $departmentOptions = $departmentOptions
+                ->filter(fn (Department $department): bool => $allowedDepartmentIds->contains((int) $department->id))
+                ->values();
+        }
 
         return Inertia::render('Projects/Create', [
             'managers' => \App\Models\User::query()
