@@ -18,7 +18,12 @@ interface PermissionGroup {
 }
 
 const props = defineProps<{ role: Role; permissions: Permission[]; scopes: ScopeOption[] }>();
-const responsibilityCodes = new Set(['projects.view', 'tasks.view']);
+const responsibilityCodes = new Set([
+    'projects.view', 'projects.update', 'projects.manage_roles', 'projects.manage_members',
+    'tasks.view', 'tasks.create', 'tasks.update', 'tasks.assign', 'tasks.refer',
+    'tasks.change_status', 'tasks.submit', 'tasks.review', 'tasks.comment',
+    'tasks.log_work', 'tasks.create_reminder',
+]);
 
 function isResponsibilityDerived(permission: Permission): boolean {
     return responsibilityCodes.has(permission.code);
@@ -44,7 +49,7 @@ function existingScope(permission: Permission): string {
 const activeAssignablePermissions = computed(() => props.permissions.filter(
     (permission) => permission.is_active && !isResponsibilityDerived(permission),
 ));
-const derivedVisibilityPermissions = computed(() => props.permissions.filter(isResponsibilityDerived));
+const responsibilityPermissions = computed(() => props.permissions.filter(isResponsibilityDerived));
 const form = useForm({
     permissions: props.role.permissions
         .filter((permission) => permission.is_active && !isResponsibilityDerived(permission))
@@ -169,8 +174,8 @@ function submit(): void {
 
                 <section class="rounded-2xl border border-sky-200 bg-sky-50 p-5 text-sm leading-7 text-sky-950">
                     <h3 class="font-extrabold">دو نوع دسترسی را از هم جدا نگه دارید</h3>
-                    <p class="mt-1">مشاهدهٔ پروژه‌ها و دستورکارهای مرتبط، دسترسی پایهٔ عملیاتی است و بر اساس مدیر واحد، مدیر/عضو پروژه، مجری یا ایجادکنندهٔ دستورکار تعیین می‌شود؛ این دو مورد در نقش قابل اعطا نیستند.</p>
-                    <p class="mt-2">گزینه‌های زیر مجوزهای تکمیلی‌اند؛ مثل ایجاد واحد، مدیریت کاربران یا عملیات خاص روی دستورکار. فقط مجوز لازم را انتخاب کنید و محدودهٔ آن را به کوچک‌ترین سطح موردنیاز محدود کنید.</p>
+                    <p class="mt-1">دسترسی‌های عملیاتی پروژه و دستورکار بر اساس مسئولیت واقعی تعیین می‌شوند: مدیر واحد، مدیر پروژه، عضو پروژه، مجری یا ایجادکنندهٔ دستورکار. این دسترسی‌ها در نقش قابل اعطا نیستند.</p>
+                    <p class="mt-2">گزینه‌های زیر برای دسترسی‌های مدیریتی یا استثنایی‌اند؛ مثل ایجاد واحد، مدیریت کاربران، ایجاد/حذف پروژه یا حذف دستورکار. فقط مجوز لازم را انتخاب کنید و محدودهٔ آن را به کوچک‌ترین سطح موردنیاز محدود کنید.</p>
                 </section>
 
                 <form @submit.prevent="submit">
@@ -194,14 +199,14 @@ function submit(): void {
                             </div>
                         </div>
 
-<div v-if="derivedVisibilityPermissions.length" class="border-b border-slate-100 bg-sky-50/50 px-5 py-4 sm:px-6">
-                            <p class="text-sm font-extrabold text-sky-950">دسترسی پایه بر اساس مسئولیت</p>
+<div v-if="responsibilityPermissions.length" class="border-b border-slate-100 bg-sky-50/50 px-5 py-4 sm:px-6">
+                            <p class="text-sm font-extrabold text-sky-950">دسترسی‌های عملیاتی بر اساس مسئولیت</p>
                             <div class="mt-2 flex flex-wrap gap-2">
-                                <span v-for="permission in derivedVisibilityPermissions" :key="permission.code" class="rounded-full border border-sky-200 bg-white px-3 py-1.5 text-xs font-bold text-sky-800">
+                                <span v-for="permission in responsibilityPermissions" :key="permission.code" class="rounded-full border border-sky-200 bg-white px-3 py-1.5 text-xs font-bold text-sky-800">
                                     {{ permission.name }} · خودکار
                                 </span>
                             </div>
-                            <p class="mt-2 text-xs leading-6 text-sky-900">این موارد از نقش حذف شده‌اند تا اعطای یک نقش، ناخواسته دسترسی سراسری به اطلاعات عملیاتی ایجاد نکند.</p>
+                            <p class="mt-2 text-xs leading-6 text-sky-900">این مجوزها از نقش حذف شده‌اند؛ سامانه آن‌ها را از مسئولیت و ارتباط واقعی کاربر با واحد، پروژه و دستورکار محاسبه می‌کند.</p>
                         </div>
 
                         <div v-if="groupedPermissions.length" class="space-y-7 p-4 sm:p-6">
