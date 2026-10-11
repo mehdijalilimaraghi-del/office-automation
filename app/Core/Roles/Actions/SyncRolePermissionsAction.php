@@ -43,6 +43,18 @@ class SyncRolePermissionsAction
                 ->newQuery()
                 ->findOrFail($permissionId);
 
+            if (! $permissionModel->is_active) {
+                throw ValidationException::withMessages([
+                    "permissions.{$permissionId}" => 'مجوز غیرفعال قابل اعطا نیست.',
+                ]);
+            }
+
+            if (in_array($permissionModel->code, ['projects.view', 'tasks.view'], true)) {
+                throw ValidationException::withMessages([
+                    "permissions.{$permissionId}" => 'دسترسی مشاهدهٔ پروژه‌ها و دستورکارها از مسئولیت عملیاتی کاربر تعیین می‌شود و در نقش قابل اعطا نیست.',
+                ]);
+            }
+
             $scope = is_array($permission)
                 ? ($permission['scope'] ?? null)
                 : null;
