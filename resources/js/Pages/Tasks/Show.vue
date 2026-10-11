@@ -415,7 +415,7 @@ const submitExternal = (): void => {
 };
 
 const deleteTask = (): void => {
-    if (!window.confirm(`آیا از حذف وظیفه «${props.task.title}» مطمئن هستید؟`)) {
+    if (!window.confirm(`آیا از حذف دستورکار «${props.task.title}» مطمئن هستید؟`)) {
         return;
     }
 
@@ -497,18 +497,18 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
         <template #header>
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div class="min-w-0">
-                    <Link :href="route('tasks.index')" class="text-sm text-muted-foreground hover:text-gray-900">← بازگشت به وظایف</Link>
+                    <Link :href="route('tasks.index')" class="text-sm text-muted-foreground hover:text-gray-900">← بازگشت به دستورکارها</Link>
                     <div class="mt-2 flex flex-wrap items-center gap-2">
-                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">وظیفه #{{ task.id }}</span>
+                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">دستورکار #{{ task.id }}</span>
                         <span class="rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset" :class="statusClasses[task.status] ?? 'bg-gray-100 text-gray-700 ring-gray-200'">{{ statusLabels[task.status] ?? task.status }}</span>
                         <span class="rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset" :class="priorityClasses[task.priority] ?? 'bg-gray-100 text-gray-700 ring-gray-200'">اولویت {{ priorityLabels[task.priority] ?? task.priority }}</span>
                     </div>
                     <h2 class="mt-2 text-xl font-semibold text-gray-900">{{ task.title }}</h2>
-                    <p class="mt-1 text-sm text-muted-foreground">مدیریت، پیگیری و ثبت سوابق وظیفه</p>
+                    <p class="mt-1 text-sm text-muted-foreground">مدیریت، پیگیری و ثبت سوابق دستورکار</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <button v-if="abilities.update" type="button" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-800" @click="showEditModal = true">ویرایش</button>
-                    <button v-if="abilities.refer" type="button" class="rounded-lg border bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50" @click="showReferralModal = true">ارجاع وظیفه</button>
+                    <button v-if="abilities.refer" type="button" class="rounded-lg border bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50" @click="showReferralModal = true">ارجاع دستورکار</button>
                 </div>
             </div>
         </template>
@@ -548,10 +548,10 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
 
                     <section class="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
                         <div class="flex items-center justify-between">
-                            <div><h3 class="font-semibold">سوابق ارجاع وظیفه</h3><p class="mt-1 text-sm text-muted-foreground">مشخص می‌کند وظیفه از چه کسی به چه کسی ارجاع شده و چه کسی ارجاع را ثبت کرده است.</p></div>
-                            <button v-if="abilities.refer" type="button" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showReferralModal = true">ارجاع وظیفه</button>
+                            <div><h3 class="font-semibold">سوابق ارجاع دستورکار</h3><p class="mt-1 text-sm text-muted-foreground">مشخص می‌کند دستورکار از چه کسی به چه کسی ارجاع شده و چه کسی ارجاع را ثبت کرده است.</p></div>
+                            <button v-if="abilities.refer" type="button" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showReferralModal = true">ارجاع دستورکار</button>
                         </div>
-                        <div v-if="task.assignments.length === 0" class="mt-5 rounded-lg bg-gray-50 p-6 text-center text-sm text-muted-foreground">هنوز سابقه ارجاعی برای این وظیفه ثبت نشده است.</div>
+                        <div v-if="task.assignments.length === 0" class="mt-5 rounded-lg bg-gray-50 p-6 text-center text-sm text-muted-foreground">هنوز سابقه ارجاعی برای این دستورکار ثبت نشده است.</div>
                         <div v-else class="mt-5 divide-y">
                             <article v-for="(assignment, index) in task.assignments" :key="assignment.id" class="py-4 first:pt-0 last:pb-0">
                                 <div class="flex gap-3">
@@ -627,14 +627,14 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                         <dl class="mt-4 space-y-3 text-sm">
                             <div class="flex justify-between gap-3"><dt class="text-muted-foreground">پروژه</dt><dd class="font-medium">{{ task.project?.name ?? 'بدون پروژه' }}</dd></div>
                             <div class="flex justify-between gap-3"><dt class="text-muted-foreground">مسئول واحد</dt><dd class="font-medium">{{ task.department?.manager?.name ?? 'بدون مسئول واحد' }}</dd></div>
-                            <div class="flex justify-between gap-3"><dt class="text-muted-foreground">مسئول وظیفه</dt><dd class="font-medium">{{ task.assignee?.name ?? 'بدون مسئول' }}</dd></div>
+                            <div class="flex justify-between gap-3"><dt class="text-muted-foreground">مسئول دستورکار</dt><dd class="font-medium">{{ task.assignee?.name ?? 'بدون مسئول' }}</dd></div>
                             <div class="flex justify-between gap-3"><dt class="text-muted-foreground">شروع</dt><dd class="font-medium">{{ formatPersianDate(task.start_date) }}</dd></div>
                             <div class="flex justify-between gap-3"><dt class="text-muted-foreground">مهلت</dt><dd class="font-medium">{{ formatPersianDate(task.due_date) }}</dd></div>
                             <div class="flex justify-between gap-3"><dt class="text-muted-foreground">ایجادکننده</dt><dd class="font-medium">{{ task.creator?.name ?? '—' }}</dd></div>
                         </dl>
                         <div class="mt-5 border-t pt-4">
                             <p class="text-xs text-muted-foreground">توضیحات</p>
-                            <p class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-700">{{ task.description || 'توضیحی برای این وظیفه ثبت نشده است.' }}</p>
+                            <p class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-700">{{ task.description || 'توضیحی برای این دستورکار ثبت نشده است.' }}</p>
                         </div>
                     </section>
 
@@ -655,7 +655,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                         <div class="flex items-start justify-between gap-3">
                             <div>
                                 <h3 class="font-semibold">ارتباط و پیگیری بیرونی</h3>
-                                <p class="mt-1 text-xs text-muted-foreground">سازمان، واحد یا شخص خارج از شرکت مرتبط با این وظیفه.</p>
+                                <p class="mt-1 text-xs text-muted-foreground">سازمان، واحد یا شخص خارج از شرکت مرتبط با این دستورکار.</p>
                             </div>
                             <button v-if="abilities.update" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="openExternalModal">
                                 افزودن ارتباط
@@ -687,7 +687,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                             </div>
                         </div>
                         <div v-else class="mt-4">
-                            <p class="text-sm text-muted-foreground">پیگیری خارجی برای این وظیفه ثبت نشده است.</p>
+                            <p class="text-sm text-muted-foreground">پیگیری خارجی برای این دستورکار ثبت نشده است.</p>
                         </div>
                         <div v-if="externalForm.errors.external_organization_id || externalForm.errors.external_department_id || externalForm.errors.external_contact_ids" class="mt-4 space-y-1 text-xs text-red-600">
                             <p v-if="externalForm.errors.external_organization_id">{{ externalForm.errors.external_organization_id }}</p>
@@ -719,12 +719,12 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
 
         <div v-if="showReferralModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showReferralModal = false">
             <div class="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
-                <div class="flex items-center justify-between border-b p-5"><div><h3 class="font-semibold">ارجاع وظیفه</h3><p class="mt-1 text-sm text-muted-foreground">مسئول فعلی وظیفه را به شخص دیگری واگذار کنید.</p></div><button type="button" class="text-xl" @click="showReferralModal = false">×</button></div>
+                <div class="flex items-center justify-between border-b p-5"><div><h3 class="font-semibold">ارجاع دستورکار</h3><p class="mt-1 text-sm text-muted-foreground">مسئول فعلی دستورکار را به شخص دیگری واگذار کنید.</p></div><button type="button" class="text-xl" @click="showReferralModal = false">×</button></div>
                 <form class="space-y-4 p-5" @submit.prevent="submitReferral">
                     <select v-model="referralForm.assignee_id" required class="h-10 w-full rounded-lg border bg-background px-3 text-sm"><option value="" disabled>انتخاب مسئول جدید</option><option v-for="user in assigneeOptions" :key="user.id" :value="String(user.id)">{{ user.name }}</option></select>
                     <input v-model="referralForm.note" class="h-10 w-full rounded-lg border bg-background px-3 text-sm" placeholder="توضیح ارجاع (اختیاری)" />
                     <p v-if="referralForm.errors.assignee_id" class="text-sm text-red-600">{{ referralForm.errors.assignee_id }}</p><p v-if="referralForm.errors.note" class="text-sm text-red-600">{{ referralForm.errors.note }}</p>
-                    <div class="flex justify-end gap-2"><button type="button" class="rounded-lg border px-4 py-2 text-sm" @click="showReferralModal = false">انصراف</button><button type="submit" :disabled="referralForm.processing" class="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">{{ referralForm.processing ? 'در حال ارجاع...' : 'ارجاع وظیفه' }}</button></div>
+                    <div class="flex justify-end gap-2"><button type="button" class="rounded-lg border px-4 py-2 text-sm" @click="showReferralModal = false">انصراف</button><button type="submit" :disabled="referralForm.processing" class="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">{{ referralForm.processing ? 'در حال ارجاع...' : 'ارجاع دستورکار' }}</button></div>
                 </form>
             </div>
         </div>
@@ -764,16 +764,16 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
 
         <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showEditModal = false">
             <div class="max-h-[92vh] w-full max-w-4xl overflow-auto rounded-2xl bg-white shadow-2xl">
-                <div class="flex items-center justify-between border-b p-5"><div><h3 class="font-semibold">ویرایش وظیفه</h3><p class="mt-1 text-sm text-muted-foreground">اطلاعات اصلی وظیفه را ویرایش کنید.</p></div><button type="button" class="text-xl" @click="showEditModal = false">×</button></div>
+                <div class="flex items-center justify-between border-b p-5"><div><h3 class="font-semibold">ویرایش دستورکار</h3><p class="mt-1 text-sm text-muted-foreground">اطلاعات اصلی دستورکار را ویرایش کنید.</p></div><button type="button" class="text-xl" @click="showEditModal = false">×</button></div>
                 <form class="grid gap-5 p-5 sm:grid-cols-2" @submit.prevent="submitEdit">
-                    <div class="sm:col-span-2"><label class="mb-2 block text-sm font-medium">عنوان وظیفه</label><input v-model="editForm.title" required maxlength="255" class="h-10 w-full rounded-lg border px-3 text-sm" /></div>
+                    <div class="sm:col-span-2"><label class="mb-2 block text-sm font-medium">عنوان دستورکار</label><input v-model="editForm.title" required maxlength="255" class="h-10 w-full rounded-lg border px-3 text-sm" /></div>
                     <div><label class="mb-2 block text-sm font-medium">اولویت</label><select v-model="editForm.priority" class="h-10 w-full rounded-lg border px-3 text-sm"><option value="low">کم</option><option value="normal">عادی</option><option value="high">زیاد</option><option value="urgent">فوری</option></select></div>
                     <div><label class="mb-2 block text-sm font-medium">تاریخ شروع</label><JalaliDatePicker v-model="editForm.start_date" /></div>
                     <div><label class="mb-2 block text-sm font-medium">مهلت انجام</label><JalaliDatePicker v-model="editForm.due_date" /></div>
-                    <div class="flex items-center gap-2 pt-7"><input id="task-active" v-model="editForm.is_active" type="checkbox" /><label for="task-active" class="text-sm font-medium">وظیفه فعال باشد</label></div>
+                    <div class="flex items-center gap-2 pt-7"><input id="task-active" v-model="editForm.is_active" type="checkbox" /><label for="task-active" class="text-sm font-medium">دستورکار فعال باشد</label></div>
                     <div class="sm:col-span-2"><label class="mb-2 block text-sm font-medium">توضیحات</label><textarea v-model="editForm.description" rows="5" class="w-full rounded-lg border p-3 text-sm"></textarea></div>
-                    <CustomFieldsForm v-if="props.customFields.length" v-model="editForm.custom_fields" :fields="props.customFields" :errors="editForm.errors as Record<string, string>" title="اطلاعات تکمیلی وظیفه" description="اطلاعات اختصاصی این وظیفه را مدیریت کنید." />
-                    <div class="sm:col-span-2 flex justify-between gap-2"><button v-if="abilities.delete" type="button" class="rounded-lg border border-red-200 px-4 py-2 text-sm text-red-600" @click="deleteTask">حذف وظیفه</button><div class="flex gap-2"><button type="button" class="rounded-lg border px-4 py-2 text-sm" @click="showEditModal = false">انصراف</button><button type="submit" :disabled="editForm.processing" class="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">{{ editForm.processing ? 'در حال ذخیره...' : 'ذخیره تغییرات' }}</button></div></div>
+                    <CustomFieldsForm v-if="props.customFields.length" v-model="editForm.custom_fields" :fields="props.customFields" :errors="editForm.errors as Record<string, string>" title="اطلاعات تکمیلی دستورکار" description="اطلاعات اختصاصی این دستورکار را مدیریت کنید." />
+                    <div class="sm:col-span-2 flex justify-between gap-2"><button v-if="abilities.delete" type="button" class="rounded-lg border border-red-200 px-4 py-2 text-sm text-red-600" @click="deleteTask">حذف دستورکار</button><div class="flex gap-2"><button type="button" class="rounded-lg border px-4 py-2 text-sm" @click="showEditModal = false">انصراف</button><button type="submit" :disabled="editForm.processing" class="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">{{ editForm.processing ? 'در حال ذخیره...' : 'ذخیره تغییرات' }}</button></div></div>
                 </form>
             </div>
         </div>
@@ -822,7 +822,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                     <form class="mt-5 space-y-4" @submit.prevent="submitActivity">
                         <div><label class="mb-1.5 block text-sm font-medium text-gray-700">عنوان فعالیت</label><input v-model="activityForm.title" required class="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm" placeholder="مثلاً دریافت تأیید مالی" /></div>
                         <div><label class="mb-1.5 block text-sm font-medium text-gray-700">توضیحات</label><textarea v-model="activityForm.description" rows="3" class="w-full rounded-lg border border-gray-300 p-3 text-sm"></textarea></div>
-                        <div class="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">مسئول این فعالیت همان مسئول اصلی وظیفه است: <span class="font-medium text-gray-900">{{ task.assignee?.name ?? 'بدون مسئول' }}</span></div>
+                        <div class="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">مسئول این فعالیت همان مسئول اصلی دستورکار است: <span class="font-medium text-gray-900">{{ task.assignee?.name ?? 'بدون مسئول' }}</span></div>
                         <div class="flex items-center justify-end gap-2 border-t pt-4"><button type="button" class="rounded-lg border px-4 py-2 text-sm" @click="showActivityModal = false">انصراف</button><button type="submit" :disabled="activityForm.processing" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{{ editingActivityId ? 'ذخیره تغییرات' : 'ثبت فعالیت بعدی' }}</button></div>
                     </form>
                 </section>
