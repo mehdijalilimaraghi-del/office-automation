@@ -90,6 +90,7 @@ const props = defineProps<{
     canCreateTasks: boolean;
     canUploadProjectDocuments: boolean;
     canDeleteDocuments: boolean;
+    currentUserId: number;
     managerCreatableSectionIds: number[];
     managerDocumentSectionIds: number[];
 }>();
@@ -767,7 +768,7 @@ const formatDate = (date: string | null): string => {
                             {{ link.document?.title ?? 'مدرک' }}
                         </a>
                         <button
-                            v-if="canDeleteDocuments && link.document?.created_by === $page.props.auth.user.id"
+                            v-if="canDeleteDocuments && link.document?.created_by === currentUserId"
                             type="button"
                             class="text-destructive transition hover:opacity-70"
                             title="حذف فایل"
@@ -823,7 +824,7 @@ const formatDate = (date: string | null): string => {
                                     {{ link.document?.title ?? 'مدرک' }}
                                 </a>
                                 <button
-                                    v-if="canDeleteDocuments && link.document?.created_by === $page.props.auth.user.id"
+                                    v-if="canDeleteDocuments && link.document?.created_by === currentUserId"
                                     type="button"
                                     class="text-destructive transition hover:opacity-70"
                                     title="حذف فایل"
