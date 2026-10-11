@@ -601,7 +601,7 @@ const formatDate = (date: string | null): string => {
             <div class="my-4 w-full max-w-2xl overflow-hidden rounded-xl border bg-card shadow-xl sm:my-8" role="dialog" aria-modal="true" aria-labelledby="section-task-modal-title">
                 <div class="flex items-start justify-between gap-4 border-b p-5">
                     <div>
-                        <h3 id="section-task-modal-title" class="text-lg font-semibold">ایجاد تسک جدید</h3>
+                        <h3 id="section-task-modal-title" class="text-lg font-semibold">ایجاد دستورکار جدید</h3>
                         <p class="mt-1 text-sm text-muted-foreground">دستورکار ابتدا به مدیر واحد ارجاع می‌شود.</p>
                     </div>
                     <Button type="button" variant="outline" size="sm" @click="showSectionTaskModal = false">بستن</Button>
