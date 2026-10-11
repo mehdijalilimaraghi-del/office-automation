@@ -274,27 +274,104 @@ class User extends Authenticatable
      */
     private function managerDerivedScopes(string $permissionCode): array
     {
-        if (! in_array($permissionCode, ['projects.view', 'tasks.view'], true)) {
+        $operationalPermissions = [
+            'projects.view',
+            'projects.update',
+            'projects.manage_roles',
+            'projects.manage_members',
+            'tasks.view',
+            'tasks.create',
+            'tasks.update',
+            'tasks.assign',
+            'tasks.refer',
+            'tasks.change_status',
+            'tasks.submit',
+            'tasks.review',
+            'tasks.comment',
+            'tasks.log_work',
+            'tasks.create_reminder',
+        ];
+
+        if (! in_array($permissionCode, $operationalPermissions, true)) {
             return [];
         }
 
         $scopes = [];
+        $managesProject = $this->managedProjects()->exists();
+        $managesDepartment = $this->managedDepartments()->exists();
+        $isProjectMember = $this->projectMemberships()->exists()
+            || $this->projects()->exists();
+        $hasOwnTasks = $this->assignedTasks()->exists()
+            || $this->createdTasks()->exists();
 
-        if (
-            $this->managedProjects()->exists()
-            || $this->projectMemberships()->exists()
-            || $this->projects()->exists()
-        ) {
-            $scopes[] = PermissionScope::Project->value;
+        if ($permissionCode === 'projects.view') {
+            if ($managesProject || $isProjectMember) {
+                $scopes[] = PermissionScope::Project->value;
+            }
+
+            if ($managesDepartment) {
+                $scopes[] = PermissionScope::Department->value;
+            }
+
+            return $scopes;
         }
 
-        if ($this->managedDepartments()->exists()) {
-            $scopes[] = PermissionScope::Department->value;
+        if (str_starts_with($permissionCode, 'projects.')) {
+            if ($managesProject) {
+                $scopes[] = PermissionScope::Project->value;
+            }
+
+            return $scopes;
         }
 
-        if ($permissionCode === 'tasks.view'
-            && ($this->assignedTasks()->exists() || $this->createdTasks()->exists())) {
-            $scopes[] = PermissionScope::Self->value;
+        if ($permissionCode === 'tasks.view') {
+            if ($managesProject || $isProjectMember) {
+                $scopes[] = PermissionScope::Project->value;
+            }
+
+            if ($managesDepartment) {
+                $scopes[] = PermissionScope::Department->value;
+            }
+
+            if ($hasOwnTasks) {
+                $scopes[] = PermissionScope::Self->value;
+            }
+
+            return $scopes;
+        }
+
+        if (in_array($permissionCode, ['tasks.create', 'tasks.assign', 'tasks.review'], true)) {
+            if ($managesProject) {
+                $scopes[] = PermissionScope::Project->value;
+            }
+
+            if ($managesDepartment) {
+                $scopes[] = PermissionScope::Department->value;
+            }
+
+            return $scopes;
+        }
+
+        if (in_array($permissionCode, [
+            'tasks.update',
+            'tasks.refer',
+            'tasks.change_status',
+            'tasks.submit',
+            'tasks.comment',
+            'tasks.log_work',
+            'tasks.create_reminder',
+        ], true)) {
+            if ($hasOwnTasks) {
+                $scopes[] = PermissionScope::Self->value;
+            }
+
+            if ($managesProject) {
+                $scopes[] = PermissionScope::Project->value;
+            }
+
+            if ($managesDepartment) {
+                $scopes[] = PermissionScope::Department->value;
+            }
         }
 
         return $scopes;
