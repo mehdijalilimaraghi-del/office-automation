@@ -10,6 +10,7 @@ use App\Modules\Documents\Models\Document;
 use App\Modules\Documents\Services\DocumentService;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Projects\Models\ProjectSection;
+use App\Modules\Projects\Models\Project;
 use App\Core\Permissions\Enums\PermissionScope;
 use Illuminate\Http\RedirectResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -91,6 +92,40 @@ class DocumentController extends Controller
 
         return redirect()->route('projects.show', $section->project_id)
             ->with('success', 'مدرک با موفقیت به بخش پروژه پیوست شد.');
+    }
+
+    public function destroy(Document $document): RedirectResponse
+    {
+        $document->load('links.linkable');
+
+        $target = $document->links
+            ->map(fn ($link) => $link->linkable)
+            ->first(fn ($linkable) => $linkable instanceof Project || $linkable instanceof ProjectSection);
+
+        abort_unless($target !== null, 404);
+
+        $project = $target instanceof ProjectSection
+            ? $target->load('project', 'department')->project
+            : $target;
+
+        abort_if($project === null, 404);
+        Gate::authorize('view', $project);
+
+        $user = request()->user();
+        $hasOrganizationScope = in_array(PermissionScope::Organization->value, $user->permissionScopes('projects.update'), true)
+            || in_array(PermissionScope::Organization->value, $user->permissionScopes('projects.create'), true);
+        $isProjectOwner = (int) $project->manager_id === (int) $user->id
+            || (int) $project->created_by === (int) $user->id;
+        $isDepartmentManager = $target instanceof ProjectSection
+            && (int) $target->department?->manager_id === (int) $user->id;
+
+        abort_unless($isProjectOwner || $hasOrganizationScope || $isDepartmentManager, 403);
+        Gate::authorize('delete', $document);
+
+        $this->documents->delete($document);
+
+        return redirect()->route('projects.show', $project)
+            ->with('success', 'مدرک با موفقیت حذف شد.');
     }
 
     public function download(Document $document): StreamedResponse
