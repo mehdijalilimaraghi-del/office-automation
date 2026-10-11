@@ -40,7 +40,7 @@ class DashboardService
         $visibleProjects = $visibleProjects->filter(fn (Project $project): bool => \Illuminate\Support\Facades\Gate::forUser($user)->allows('view', $project));
         $projectIds = $visibleProjects->pluck('id');
         $visibleSections = \App\Modules\Projects\Models\ProjectSection::query()->whereIn('project_id', $projectIds)->with(['project:id,name,code', 'department:id,name'])->withCount('tasks')->get();
-        $projectTaskCounts = (clone $taskQuery)->whereIn('tasks.project_id', $projectIds)->selectRaw('project_id, COUNT(*) as total')->groupBy('project_id')->get()->keyBy('project_id');
+        $projectTaskCounts = (clone $taskQuery)->whereIn('tasks.project_id', $projectIds)->selectRaw('project_id, COUNT(*) as total, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as completed', ['completed'])->groupBy('project_id')->get()->keyBy('project_id');
         $sectionTaskCounts = (clone $taskQuery)->whereIn('tasks.project_id', $projectIds)->whereNotNull('tasks.section_id')->selectRaw('section_id, COUNT(*) as total, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as completed', ['completed'])->groupBy('section_id')->get()->keyBy('section_id');
 
         return [
@@ -61,7 +61,7 @@ class DashboardService
             ],
             'projectsOverview' => $visibleProjects->map(fn (Project $project): array => [
                 'id' => $project->id, 'name' => $project->name, 'code' => $project->code, 'status' => $project->status,
-                'sections_count' => $project->sections_count, 'tasks_count' => (int) ($projectTaskCounts->get($project->id)->total ?? 0),
+                'sections_count' => $project->sections_count, 'tasks_count' => (int) ($projectTaskCounts->get($project->id)->total ?? 0), 'progress' => (int) (($projectTaskCounts->get($project->id)->total ?? 0) > 0 ? round(($projectTaskCounts->get($project->id)->completed ?? 0) * 100 / $projectTaskCounts->get($project->id)->total) : 0),
             ])->values()->all(),
             'sectionsOverview' => $visibleSections->map(function ($section) use ($sectionTaskCounts): array {
                 $counts = $sectionTaskCounts->get($section->id);
