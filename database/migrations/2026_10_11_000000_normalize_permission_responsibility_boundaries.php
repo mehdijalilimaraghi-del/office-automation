@@ -10,7 +10,7 @@ return new class extends Migration
     public function up(): void
     {
         $retiredPermissionIds = DB::table('permissions')
-            ->whereIn('code', ['notifications.manage', 'documents.manage_access'])
+            ->whereIn('code', ['notifications.manage', 'documents.manage_access', 'permissions.create', 'permissions.edit', 'permissions.delete', 'permissions.toggle_status'])
             ->pluck('id');
 
         if ($retiredPermissionIds->isNotEmpty()) {
