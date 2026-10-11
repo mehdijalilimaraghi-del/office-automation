@@ -120,7 +120,12 @@ class ProjectPolicy
         }
 
         if (in_array(PermissionScope::DepartmentTree->value, $scopes, true)) {
-            foreach ($user->departments()->get() as $department) {
+            $responsibleDepartments = $user->departments()
+                ->get()
+                ->merge($user->managedDepartments()->get())
+                ->unique('id');
+
+            foreach ($responsibleDepartments as $department) {
                 $ids = array_map(
                     'intval',
                     array_merge([$department->id], $department->descendantIds())
