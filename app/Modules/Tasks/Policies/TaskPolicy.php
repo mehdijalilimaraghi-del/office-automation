@@ -89,15 +89,7 @@ class TaskPolicy
 
         if (
             in_array(\App\Core\Permissions\Enums\PermissionScope::Project->value, $scopes, true)
-            && (
-                (int) $project->manager_id === (int) $user->id
-                || $project->users()->whereKey($user->id)->exists()
-                || (
-                    $project->is_system_default
-                    && $project->department_id !== null
-                    && $user->departments()->whereKey($project->department_id)->exists()
-                )
-            )
+            && (int) $project->manager_id === (int) $user->id
         ) {
             return true;
         }
