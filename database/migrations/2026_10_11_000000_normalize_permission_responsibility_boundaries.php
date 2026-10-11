@@ -23,8 +23,26 @@ return new class extends Migration
                 ->update(['is_active' => false]);
         }
 
+        $responsibilityCodes = [
+            'projects.view',
+            'projects.update',
+            'projects.manage_roles',
+            'projects.manage_members',
+            'tasks.view',
+            'tasks.create',
+            'tasks.update',
+            'tasks.assign',
+            'tasks.refer',
+            'tasks.change_status',
+            'tasks.submit',
+            'tasks.review',
+            'tasks.comment',
+            'tasks.log_work',
+            'tasks.create_reminder',
+        ];
+
         $visibilityPermissionIds = DB::table('permissions')
-            ->whereIn('code', ['projects.view', 'tasks.view'])
+            ->whereIn('code', $responsibilityCodes)
             ->pluck('id');
 
         if ($visibilityPermissionIds->isNotEmpty()) {
