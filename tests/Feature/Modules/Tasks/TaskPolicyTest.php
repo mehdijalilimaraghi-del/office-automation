@@ -92,7 +92,7 @@ class TaskPolicyTest extends TestCase
         );
     }
 
-    public function test_project_member_with_assign_permission_can_assign_task(): void
+    public function test_project_member_cannot_assign_task_with_project_scoped_grant(): void
     {
         $manager = User::factory()->create([
             'status' => 'active',
@@ -103,7 +103,7 @@ class TaskPolicyTest extends TestCase
         $project = $this->createProject($manager, $member);
         $task = $this->createTask($project, $manager);
 
-        $this->assertTrue(
+        $this->assertFalse(
             $member->can('assign', $task)
         );
     }
@@ -150,14 +150,14 @@ class TaskPolicyTest extends TestCase
         );
     }
 
-    public function test_user_without_refer_permission_cannot_refer_task(): void
+    public function test_assignee_can_refer_task_from_operational_responsibility_without_role_grant(): void
     {
         $assignee = User::factory()->create(['status' => 'active']);
 
         $project = $this->createProject($assignee);
         $task = $this->createTask($project, $assignee, $assignee);
 
-        $this->assertFalse(
+        $this->assertTrue(
             $assignee->can('refer', $task)
         );
     }
@@ -178,7 +178,7 @@ class TaskPolicyTest extends TestCase
         );
     }
 
-    public function test_project_member_with_change_status_permission_can_change_task_status(): void
+    public function test_non_assignee_project_member_cannot_change_task_status(): void
     {
         $manager = User::factory()->create([
             'status' => 'active',
@@ -194,7 +194,7 @@ class TaskPolicyTest extends TestCase
 
         $task = $this->createTask($project, $manager, $assignee);
 
-        $this->assertTrue(
+        $this->assertFalse(
             $member->can('changeStatus', $task)
         );
     }
@@ -211,7 +211,7 @@ class TaskPolicyTest extends TestCase
         );
     }
 
-    public function test_user_without_permission_cannot_update_task(): void
+    public function test_task_creator_can_update_task_from_operational_responsibility_without_role_grant(): void
     {
         $creator = User::factory()->create([
             'status' => 'active',
@@ -220,12 +220,12 @@ class TaskPolicyTest extends TestCase
         $project = $this->createProject($creator);
         $task = $this->createTask($project, $creator);
 
-        $this->assertFalse(
+        $this->assertTrue(
             $creator->can('update', $task)
         );
     }
 
-    public function test_project_member_with_update_permission_can_update_task(): void
+    public function test_non_manager_project_member_cannot_update_task_with_project_scoped_grant(): void
     {
         $manager = User::factory()->create([
             'status' => 'active',
@@ -236,12 +236,12 @@ class TaskPolicyTest extends TestCase
         $project = $this->createProject($manager, $member);
         $task = $this->createTask($project, $manager);
 
-        $this->assertTrue(
+        $this->assertFalse(
             $member->can('update', $task)
         );
     }
 
-    public function test_project_member_with_delete_permission_can_delete_task(): void
+    public function test_non_manager_project_member_cannot_delete_task_with_project_scoped_grant(): void
     {
         $manager = User::factory()->create([
             'status' => 'active',
@@ -252,7 +252,7 @@ class TaskPolicyTest extends TestCase
         $project = $this->createProject($manager, $member);
         $task = $this->createTask($project, $manager);
 
-        $this->assertTrue(
+        $this->assertFalse(
             $member->can('delete', $task)
         );
     }
@@ -282,13 +282,13 @@ class TaskPolicyTest extends TestCase
         $this->assertTrue($user->can('comment', $task));
     }
 
-    public function test_user_without_comment_permission_cannot_comment_task(): void
+    public function test_task_responsible_user_can_comment_without_role_grant(): void
     {
         $user = User::factory()->create(['status' => 'active']);
         $project = $this->createProject($user);
         $task = $this->createTask($project, $user);
 
-        $this->assertFalse($user->can('comment', $task));
+        $this->assertTrue($user->can('comment', $task));
     }
 
     public function test_user_with_work_log_permission_can_log_accessible_task(): void
@@ -300,13 +300,13 @@ class TaskPolicyTest extends TestCase
         $this->assertTrue($user->can('logWork', $task));
     }
 
-    public function test_user_without_work_log_permission_cannot_log_task(): void
+    public function test_task_responsible_user_can_log_work_without_role_grant(): void
     {
         $user = User::factory()->create(['status' => 'active']);
         $project = $this->createProject($user);
         $task = $this->createTask($project, $user);
 
-        $this->assertFalse($user->can('logWork', $task));
+        $this->assertTrue($user->can('logWork', $task));
     }
 
     public function test_user_with_reminder_permission_can_create_reminder_for_accessible_task(): void
@@ -318,13 +318,13 @@ class TaskPolicyTest extends TestCase
         $this->assertTrue($user->can('createReminder', $task));
     }
 
-    public function test_user_without_reminder_permission_cannot_create_reminder(): void
+    public function test_task_responsible_user_can_create_reminder_without_role_grant(): void
     {
         $user = User::factory()->create(['status' => 'active']);
         $project = $this->createProject($user);
         $task = $this->createTask($project, $user);
 
-        $this->assertFalse($user->can('createReminder', $task));
+        $this->assertTrue($user->can('createReminder', $task));
     }
 
     public function test_inactive_user_cannot_access_task(): void
