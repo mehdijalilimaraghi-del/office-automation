@@ -668,7 +668,7 @@ const formatDate = (date: string | null): string => {
                     <p v-if="sectionTaskError('task')" class="text-sm text-destructive">{{ sectionTaskError('task') }}</p>
                     <div class="flex justify-end gap-2 border-t pt-4">
                         <Button type="button" variant="outline" @click="showSectionTaskModal = false">انصراف</Button>
-                        <Button type="submit" :disabled="sectionTaskForm.processing">{{ sectionTaskForm.processing ? 'در حال ثبت...' : 'ثبت تسک' }}</Button>
+                        <Button type="submit" :disabled="sectionTaskForm.processing">{{ sectionTaskForm.processing ? 'در حال ثبت...' : 'ثبت دستورکار' }}</Button>
                     </div>
                 </form>
             </div>
