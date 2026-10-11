@@ -86,6 +86,7 @@ const props = defineProps<{
     canManageMembers: boolean;
     canManageRoles: boolean;
     canUpdate: boolean;
+    canDeleteProject: boolean;
     memberOptions: MemberOption[];
     canCreateTasks: boolean;
     canUploadProjectDocuments: boolean;
@@ -157,6 +158,12 @@ const deleteDocument = (documentId: number): void => {
     router.delete(route('documents.destroy', documentId), {
         preserveScroll: true,
     });
+};
+
+const deleteProject = (): void => {
+    if (!window.confirm('آیا از حذف این پروژه و اطلاعات وابسته به آن مطمئن هستید؟ این عملیات قابل بازگشت نیست.')) return;
+
+    router.delete(route('projects.destroy', props.project.id));
 };
 
 const uploadSectionDocument = (section: ProjectSection, event: Event): void => {
@@ -384,6 +391,14 @@ const formatDate = (date: string | null): string => {
                         </Link>
                     </Button>
 
+                    <Button
+                        v-if="props.canDeleteProject"
+                        type="button"
+                        variant="destructive"
+                        @click="deleteProject"
+                    >
+                        حذف پروژه
+                    </Button>
                 </div>
             </div>
         </template>
