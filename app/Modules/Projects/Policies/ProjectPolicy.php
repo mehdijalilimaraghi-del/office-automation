@@ -107,7 +107,7 @@ class ProjectPolicy
                     array_merge([$department->id], $department->descendantIds())
                 );
 
-                if (in_array((int) $project->department_id, $ids, true)) {
+                if (($project->department_id !== null && in_array((int) $project->department_id, $ids, true)) || $project->sections()->whereIn('department_id', $ids)->exists()) {
                     return true;
                 }
             }
