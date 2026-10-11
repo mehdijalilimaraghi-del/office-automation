@@ -188,6 +188,7 @@ class ProjectController extends Controller
         return Inertia::render('Projects/Show', [
             'project' => $this->projectService->show($project),
             'canUpdate' => Gate::allows('update', $project),
+            'canDeleteProject' => Gate::allows('delete', $project),
             'canManageMembers' => $canManageMembers,
             'canManageRoles' => Gate::allows('manageRoles', $project),
             'memberOptions' => $canManageMembers
