@@ -26,6 +26,7 @@ enum PermissionScope: string
     public static function defaultForPermission(string $permissionCode): self
     {
         return str_starts_with($permissionCode, 'tasks.')
+            || str_starts_with($permissionCode, 'projects.')
             ? self::Project
             : self::Organization;
     }
@@ -40,10 +41,35 @@ enum PermissionScope: string
      */
     public static function allowedForPermission(string $permissionCode): array
     {
-        if (
-            str_starts_with($permissionCode, 'tasks.')
-            || str_starts_with($permissionCode, 'projects.')
-        ) {
+        if (str_starts_with($permissionCode, 'tasks.')) {
+            return [
+                self::Self,
+                self::Department,
+                self::DepartmentTree,
+                self::Project,
+                self::Organization,
+            ];
+        }
+
+        if ($permissionCode === 'projects.view') {
+            return [
+                self::Self,
+                self::Department,
+                self::DepartmentTree,
+                self::Project,
+                self::Organization,
+            ];
+        }
+
+        if ($permissionCode === 'projects.create') {
+            return [
+                self::Department,
+                self::DepartmentTree,
+                self::Organization,
+            ];
+        }
+
+        if (str_starts_with($permissionCode, 'projects.')) {
             return [
                 self::Self,
                 self::Department,
