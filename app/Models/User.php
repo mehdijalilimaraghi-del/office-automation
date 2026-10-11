@@ -302,20 +302,13 @@ class User extends Authenticatable
             return false;
         }
 
-        return $this->roles()
-            ->where('roles.is_active', true)
-            ->whereHas(
-                'permissions',
-                function ($query) use ($permissionCodes): void {
-                    $query
-                        ->whereIn(
-                            'permissions.code',
-                            $permissionCodes
-                        )
-                        ->where('permissions.is_active', true);
-                }
-            )
-            ->exists();
+        foreach ($permissionCodes as $permissionCode) {
+            if ($this->hasPermission($permissionCode)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function hasAllPermissions(array $permissionCodes): bool
