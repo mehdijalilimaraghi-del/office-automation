@@ -7,7 +7,6 @@ import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
 
 interface Project {
     id: number;
-    department_id: number | null;
     name: string;
     code: string;
     description: string | null;
@@ -16,7 +15,6 @@ interface Project {
     end_date: string | null;
     is_active: boolean;
     is_system_default: boolean;
-    department: { id: number; name: string } | null;
 }
 
 interface Department {
@@ -26,7 +24,6 @@ interface Department {
 
 const props = defineProps<{
     project: Project;
-    departments: Department[];
     customFields: Array<{
         id: number; key: string; label: string;
         type: 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select';
@@ -36,7 +33,6 @@ const props = defineProps<{
 }>();
 
 const form = useForm({
-    department_id: props.project.department_id?.toString() ?? '',
     name: props.project.name,
     description: props.project.description ?? '',
     status: props.project.status,
@@ -72,26 +68,6 @@ const submit = (): void => {
         <div class="mx-auto max-w-3xl">
             <form class="space-y-6 rounded-lg border bg-card p-6" @submit.prevent="submit">
                 <div class="grid gap-6 md:grid-cols-2">
-                    <div class="space-y-2">
-                        <label for="department_id" class="text-sm font-medium">واحد</label>
-                        <select
-                            id="department_id"
-                            v-model="form.department_id"
-                            class="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                            :disabled="form.processing"
-                        >
-                            <option value="">بدون واحد</option>
-                            <option
-                                v-for="department in props.departments"
-                                :key="department.id"
-                                :value="String(department.id)"
-                            >
-                                {{ department.name }}
-                            </option>
-                        </select>
-                        <p v-if="form.errors.department_id" class="text-sm text-destructive">{{ form.errors.department_id }}</p>
-                    </div>
-
                     <div class="space-y-2">
                         <label for="name" class="text-sm font-medium">نام پروژه</label>
                         <input id="name" v-model="form.name" type="text" required class="w-full rounded-md border bg-background px-3 py-2 text-sm" />
