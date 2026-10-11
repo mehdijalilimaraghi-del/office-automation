@@ -143,51 +143,51 @@ class CorePermissionSeeder extends Seeder
             ],
 
             [
-                'name' => 'مشاهده تسک‌ها',
+                'name' => 'مشاهده دستورکارها',
                 'code' => 'tasks.view',
             ],
             [
-                'name' => 'ایجاد تسک',
+                'name' => 'ایجاد دستورکار',
                 'code' => 'tasks.create',
             ],
             [
-                'name' => 'ویرایش تسک',
+                'name' => 'ویرایش دستورکار',
                 'code' => 'tasks.update',
             ],
             [
-                'name' => 'حذف تسک',
+                'name' => 'حذف دستورکار',
                 'code' => 'tasks.delete',
             ],
             [
-                'name' => 'تخصیص تسک',
+                'name' => 'تخصیص دستورکار',
                 'code' => 'tasks.assign',
             ],
             [
-                'name' => 'ارجاع تسک',
+                'name' => 'ارجاع دستورکار',
                 'code' => 'tasks.refer',
             ],
             [
-                'name' => 'تغییر وضعیت تسک',
+                'name' => 'تغییر وضعیت دستورکار',
                 'code' => 'tasks.change_status',
             ],
             [
-                'name' => 'ارسال تسک برای بررسی',
+                'name' => 'ارسال دستورکار برای بررسی',
                 'code' => 'tasks.submit',
             ],
             [
-                'name' => 'بررسی و تأیید تسک',
+                'name' => 'بررسی و تأیید دستورکار',
                 'code' => 'tasks.review',
             ],
             [
-                'name' => 'ثبت کامنت تسک',
+                'name' => 'ثبت دیدگاه برای دستورکار',
                 'code' => 'tasks.comment',
             ],
             [
-                'name' => 'ثبت گزارش فعالیت تسک',
+                'name' => 'ثبت گزارش فعالیت دستورکار',
                 'code' => 'tasks.log_work',
             ],
             [
-                'name' => 'ایجاد یادآور تسک',
+                'name' => 'ایجاد یادآور دستورکار',
                 'code' => 'tasks.create_reminder',
             ],
 
