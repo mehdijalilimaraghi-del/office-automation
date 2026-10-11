@@ -29,7 +29,7 @@ interface DashboardTask {
     section?: string | null;
 }
 
-interface ProjectOverview { id: number; name: string; code: string; status: string; sections_count: number; tasks_count: number; }
+interface ProjectOverview { id: number; name: string; code: string; status: string; sections_count: number; tasks_count: number; progress: number; }
 interface SectionOverview { id: number; name: string; project_id: number; project_name: string | null; project_code: string | null; department: string | null; tasks_count: number; completed_tasks: number; progress: number; }
 
 const props = defineProps<{
@@ -202,13 +202,13 @@ const quickActions = [
                     <div v-if="props.projectsOverview.length === 0" class="p-8 text-center text-sm text-slate-500">پروژه‌ای برای نمایش وجود ندارد.</div>
                     <div v-else class="overflow-x-auto">
                         <table class="w-full text-sm">
-                            <thead class="bg-slate-50 text-xs text-slate-500"><tr><th class="px-5 py-3 text-right font-medium">پروژه</th><th class="px-5 py-3 text-right font-medium">وضعیت</th><th class="px-5 py-3 text-right font-medium">بخش‌ها</th><th class="px-5 py-3 text-right font-medium">تسک‌ها</th></tr></thead>
+                            <thead class="bg-slate-50 text-xs text-slate-500"><tr><th class="px-5 py-3 text-right font-medium">پروژه</th><th class="px-5 py-3 text-right font-medium">وضعیت</th><th class="px-5 py-3 text-right font-medium">بخش‌ها</th><th class="px-5 py-3 text-right font-medium">تسک‌ها</th><th class="px-5 py-3 text-right font-medium">پیشرفت</th></tr></thead>
                             <tbody class="divide-y divide-slate-100">
                                 <tr v-for="project in props.projectsOverview" :key="project.id" class="hover:bg-slate-50">
                                     <td class="px-5 py-3"><Link :href="'/projects/' + project.id" class="font-semibold text-slate-800 hover:text-teal-700">{{ project.name }}</Link><p class="mt-1 text-xs text-slate-400">{{ project.code }}</p></td>
                                     <td class="px-5 py-3"><span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600">{{ ({ planning: 'برنامه‌ریزی', active: 'فعال', completed: 'تکمیل‌شده', archived: 'بایگانی‌شده' } as Record<string, string>)[project.status] || project.status }}</span></td>
                                     <td class="px-5 py-3 tabular-nums text-slate-600">{{ project.sections_count }}</td>
-                                    <td class="px-5 py-3 tabular-nums text-slate-600">{{ project.tasks_count }}</td>
+                                    <td class="px-5 py-3 tabular-nums text-slate-600">{{ project.tasks_count }}</td><td class="min-w-40 px-5 py-3"><div class="flex items-center gap-3"><div class="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-teal-500" :style="{ width: project.progress + '%' }"></div></div><span class="text-xs font-semibold text-slate-600">{{ project.progress }}٪</span></div></td>
                                 </tr>
                             </tbody>
                         </table>
