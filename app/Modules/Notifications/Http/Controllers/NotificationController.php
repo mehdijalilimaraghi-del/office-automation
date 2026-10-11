@@ -18,6 +18,7 @@ final class NotificationController extends Controller
 
         return Inertia::render('Notifications/Index', [
             'notifications' => $user->notifications()
+                ->reorder()
                 ->latest()
                 ->limit(50)
                 ->get()
