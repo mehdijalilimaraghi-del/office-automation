@@ -114,6 +114,8 @@ const sectionTaskForm = useForm({
 });
 
 const unsectionedTasks = computed(() => props.project.tasks.filter((task) => !task.section_id));
+const sectionProgress = (section: ProjectSection): number => section.tasks.length ? Math.round(section.tasks.filter((task) => task.status === 'completed').length * 100 / section.tasks.length) : 0;
+
 const projectTaskStats = computed(() => { const tasks = props.project.tasks; const completed = tasks.filter((task) => task.status === 'completed').length; return { total: tasks.length, completed, inProgress: tasks.filter((task) => task.status === 'in_progress').length, todo: tasks.filter((task) => task.status === 'todo').length, sections: props.project.sections.length, progress: tasks.length ? Math.round(completed * 100 / tasks.length) : 0, overdue: tasks.filter((task) => task.due_date && new Date(task.due_date) < new Date() && !['completed', 'cancelled'].includes(task.status)).length }; });
 
 const sectionEmployees = computed(() => {
@@ -828,6 +830,13 @@ const formatDate = (date: string | null): string => {
                             <h4 class="font-semibold">{{ section.name }}</h4>
                             <p class="text-sm text-muted-foreground">واحد مسئول: {{ section.department?.name ?? 'واحد تعیین نشده' }}</p>
                             <p v-if="section.description" class="whitespace-pre-line text-sm">{{ section.description }}</p>
+                            <div class="mt-3 max-w-md">
+                                <div class="mb-1 flex items-center justify-between text-xs">
+                                    <span class="text-muted-foreground">پیشرفت بخش</span>
+                                    <span class="font-semibold">{{ sectionProgress(section) }}٪ · {{ section.tasks.filter((task) => task.status === 'completed').length }}/{{ section.tasks.length }} تسک</span>
+                                </div>
+                                <div class="h-1.5 overflow-hidden rounded-full bg-muted"><div class="h-full rounded-full bg-primary" :style="{ width: sectionProgress(section) + '%' }"></div></div>
+                            </div>
                             <p class="text-xs text-muted-foreground">
                                 مدیر واحد: {{ section.department?.manager?.name ?? 'مدیر واحد تعیین نشده' }}
                                 <span class="mx-1">·</span>
