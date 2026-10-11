@@ -38,8 +38,8 @@ class CreateTaskAction
                 throw new InvalidArgumentException('امکان ایجاد تسک در پروژه غیرفعال وجود ندارد.');
             }
 
-            if ($project !== null && ! isset($data['section_id']) && $project->sections()->exists()) {
-                throw new InvalidArgumentException('برای ایجاد تسک در این پروژه، انتخاب بخش الزامی است.');
+            if ($project !== null && ! isset($data['section_id'])) {
+                throw new InvalidArgumentException('برای ایجاد تسک در پروژه، انتخاب بخش الزامی است.');
             }
 
             $section = isset($data['section_id'])
