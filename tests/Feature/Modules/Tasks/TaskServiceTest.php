@@ -81,7 +81,7 @@ class TaskServiceTest extends TestCase
     public function test_task_assignee_must_be_project_member(): void
     {
         $creator = User::factory()->create();
-        $project = $this->createProject();
+        $project = $this->createProject([], $creator);
         $assignee = User::factory()->create();
 
         $this->expectException(
@@ -91,6 +91,7 @@ class TaskServiceTest extends TestCase
         app(TaskServiceContract::class)->create(
             [
                 'project_id' => $project->id,
+                'section_id' => $project->sections()->value('id'),
                 'title' => 'Invalid assignment',
                 'delegate_to_employee' => true,
                 'delegate_assignee_id' => $assignee->id,
@@ -105,7 +106,7 @@ class TaskServiceTest extends TestCase
     public function test_inactive_assignee_cannot_receive_task(): void
     {
         $creator = User::factory()->create();
-        $project = $this->createProject();
+        $project = $this->createProject([], $creator);
 
         $assignee = User::factory()->create([
             'status' => 'inactive',
@@ -120,6 +121,7 @@ class TaskServiceTest extends TestCase
         app(TaskServiceContract::class)->create(
             [
                 'project_id' => $project->id,
+                'section_id' => $project->sections()->value('id'),
                 'title' => 'Inactive user task',
                 'delegate_to_employee' => true,
                 'delegate_assignee_id' => $assignee->id,
@@ -146,6 +148,7 @@ class TaskServiceTest extends TestCase
         app(TaskServiceContract::class)->create(
             [
                 'project_id' => $project->id,
+                'section_id' => $project->sections()->value('id'),
                 'title' => 'Inactive project task',
                 'assignee_id' => $assignee->id,
             ],
@@ -156,7 +159,7 @@ class TaskServiceTest extends TestCase
     public function test_task_due_date_cannot_be_before_start_date(): void
     {
         $creator = User::factory()->create();
-        $project = $this->createProject();
+        $project = $this->createProject([], $creator);
         $assignee = User::factory()->create();
 
         $this->addMember($project, $assignee);
@@ -168,6 +171,7 @@ class TaskServiceTest extends TestCase
         app(TaskServiceContract::class)->create(
             [
                 'project_id' => $project->id,
+                'section_id' => $project->sections()->value('id'),
                 'title' => 'Invalid dates',
                 'assignee_id' => $assignee->id,
                 'start_date' => '2026-12-31',
@@ -180,7 +184,7 @@ class TaskServiceTest extends TestCase
     public function test_task_can_be_updated(): void
     {
         $creator = User::factory()->create();
-        $project = $this->createProject();
+        $project = $this->createProject([], $creator);
         $assignee = User::factory()->create();
 
         $this->addMember($project, $assignee);
@@ -188,6 +192,7 @@ class TaskServiceTest extends TestCase
         $task = app(TaskServiceContract::class)->create(
             [
                 'project_id' => $project->id,
+                'section_id' => $project->sections()->value('id'),
                 'title' => 'Old title',
                 'assignee_id' => $assignee->id,
             ],
@@ -223,7 +228,7 @@ class TaskServiceTest extends TestCase
     public function test_task_can_be_reassigned_to_another_project_member(): void
     {
         $creator = User::factory()->create();
-        $project = $this->createProject();
+        $project = $this->createProject([], $creator);
 
         $firstUser = User::factory()->create();
         $secondUser = User::factory()->create();
@@ -234,6 +239,7 @@ class TaskServiceTest extends TestCase
         $task = app(TaskServiceContract::class)->create(
             [
                 'project_id' => $project->id,
+                'section_id' => $project->sections()->value('id'),
                 'title' => 'Reassign task',
                 'assignee_id' => $firstUser->id,
             ],
@@ -254,7 +260,7 @@ class TaskServiceTest extends TestCase
     public function test_task_cannot_be_assigned_to_user_from_another_project(): void
     {
         $creator = User::factory()->create();
-        $project = $this->createProject();
+        $project = $this->createProject([], $creator);
         $otherProject = $this->createProject([], $creator);
 
         $firstUser = User::factory()->create();
@@ -266,6 +272,7 @@ class TaskServiceTest extends TestCase
         $task = app(TaskServiceContract::class)->create(
             [
                 'project_id' => $project->id,
+                'section_id' => $project->sections()->value('id'),
                 'title' => 'Reassign task',
                 'assignee_id' => $firstUser->id,
             ],
@@ -285,7 +292,7 @@ class TaskServiceTest extends TestCase
     public function test_task_status_can_be_changed_to_completed(): void
     {
         $creator = User::factory()->create();
-        $project = $this->createProject();
+        $project = $this->createProject([], $creator);
         $assignee = User::factory()->create();
 
         $this->addMember($project, $assignee);
@@ -293,6 +300,7 @@ class TaskServiceTest extends TestCase
         $task = app(TaskServiceContract::class)->create(
             [
                 'project_id' => $project->id,
+                'section_id' => $project->sections()->value('id'),
                 'title' => 'Complete task',
                 'assignee_id' => $assignee->id,
             ],
@@ -318,7 +326,7 @@ class TaskServiceTest extends TestCase
     public function test_completed_task_cannot_return_to_in_progress(): void
     {
         $creator = User::factory()->create();
-        $project = $this->createProject();
+        $project = $this->createProject([], $creator);
         $assignee = User::factory()->create();
 
         $this->addMember($project, $assignee);
@@ -326,6 +334,7 @@ class TaskServiceTest extends TestCase
         $task = app(TaskServiceContract::class)->create(
             [
                 'project_id' => $project->id,
+                'section_id' => $project->sections()->value('id'),
                 'title' => 'Task',
                 'assignee_id' => $assignee->id,
             ],
@@ -351,7 +360,7 @@ class TaskServiceTest extends TestCase
     public function test_invalid_task_status_is_rejected(): void
     {
         $creator = User::factory()->create();
-        $project = $this->createProject();
+        $project = $this->createProject([], $creator);
         $assignee = User::factory()->create();
 
         $this->addMember($project, $assignee);
@@ -359,6 +368,7 @@ class TaskServiceTest extends TestCase
         $task = app(TaskServiceContract::class)->create(
             [
                 'project_id' => $project->id,
+                'section_id' => $project->sections()->value('id'),
                 'title' => 'Task',
                 'assignee_id' => $assignee->id,
             ],
