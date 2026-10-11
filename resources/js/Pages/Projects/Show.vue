@@ -114,7 +114,7 @@ const sectionTaskForm = useForm({
 });
 
 const unsectionedTasks = computed(() => props.project.tasks.filter((task) => !task.section_id));
-const projectTaskStats = computed(() => ({ total: props.project.tasks.length, completed: props.project.tasks.filter((task) => task.status === 'completed').length, inProgress: props.project.tasks.filter((task) => task.status === 'in_progress').length, todo: props.project.tasks.filter((task) => task.status === 'todo').length, sections: props.project.sections.length }));
+const projectTaskStats = computed(() => { const tasks = props.project.tasks; const completed = tasks.filter((task) => task.status === 'completed').length; return { total: tasks.length, completed, inProgress: tasks.filter((task) => task.status === 'in_progress').length, todo: tasks.filter((task) => task.status === 'todo').length, sections: props.project.sections.length, progress: tasks.length ? Math.round(completed * 100 / tasks.length) : 0, overdue: tasks.filter((task) => task.due_date && new Date(task.due_date) < new Date() && !['completed', 'cancelled'].includes(task.status)).length }; });
 
 const sectionEmployees = computed(() => {
     const section = selectedSection.value;
@@ -412,10 +412,17 @@ const formatDate = (date: string | null): string => {
                     { label: 'کل تسک‌ها', value: projectTaskStats.total },
                     { label: 'در حال انجام', value: projectTaskStats.inProgress },
                     { label: 'تکمیل‌شده', value: projectTaskStats.completed },
+                    { label: 'عقب‌افتاده', value: projectTaskStats.overdue },
                 ]" :key="item.label" class="rounded-xl border bg-card p-5 shadow-sm">
                     <p class="text-sm text-muted-foreground">{{ item.label }}</p>
                     <p class="mt-3 text-3xl font-bold tracking-tight">{{ item.value }}</p>
                 </div>
+            </section>
+
+            <section class="rounded-xl border bg-card p-5">
+                <div class="flex items-center justify-between gap-3"><div><h3 class="font-semibold">پیشرفت کلی پروژه</h3><p class="mt-1 text-sm text-muted-foreground">بر اساس تسک‌های تکمیل‌شده</p></div><span class="text-xl font-bold">{{ projectTaskStats.progress }}٪</span></div>
+                <div class="mt-4 h-2.5 overflow-hidden rounded-full bg-muted"><div class="h-full rounded-full bg-primary" :style="{ width: projectTaskStats.progress + '%' }"></div></div>
+                <p class="mt-2 text-xs text-muted-foreground">{{ projectTaskStats.completed }} از {{ projectTaskStats.total }} تسک تکمیل شده است.</p>
             </section>
 
             <section class="rounded-lg border bg-card p-6">
