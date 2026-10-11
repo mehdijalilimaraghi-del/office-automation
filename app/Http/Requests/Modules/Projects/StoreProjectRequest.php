@@ -39,14 +39,7 @@ class StoreProjectRequest extends FormRequest
             'manager_id' => [
                 'required',
                 'integer',
-                Rule::exists('users', 'id')->where(fn ($query) => $query->whereIn(
-                    'id',
-                    DB::table('department_memberships')
-                        ->select('user_id')
-                        ->whereIn('department_id', DB::table('departments')
-                            ->select('id')
-                            ->where('name', 'مدیریت پروژه'))
-                )),
+                Rule::exists('users', 'id')->where(fn ($query) => $query->where('status', 'active')),
             ],
             'sections' => ['required', 'array', 'min:1', 'max:50'],
             'sections.*.department_id' => ['required', 'integer', Rule::exists('departments', 'id')->where(fn ($query) => $query->where('is_active', true)->whereNotNull('manager_id'))],
