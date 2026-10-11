@@ -33,7 +33,7 @@ class TaskHttpTest extends TestCase
 
     public function test_creating_task_can_create_first_planned_activity(): void
     {
-        $creator = $this->userWithPermission('tasks.create');
+        $creator = $this->userWithPermissionScope('tasks.create', 'organization');
 
         $response = $this->actingAs($creator)->post(route('tasks.store'), [
             'title' => 'Task With Next Activity',
@@ -721,7 +721,7 @@ class TaskHttpTest extends TestCase
 
     public function test_creating_completed_task_sets_completed_at(): void
     {
-        $creator = $this->userWithPermission('tasks.create');
+        $creator = $this->userWithPermissionScope('tasks.create', 'organization');
 
         $this->actingAs($creator)->post(route('tasks.store'), [
             'title' => 'Completed Task',
