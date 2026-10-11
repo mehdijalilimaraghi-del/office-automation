@@ -22,16 +22,29 @@ final class NotificationController extends Controller
                 ->latest()
                 ->limit(50)
                 ->get()
-                ->map(fn ($notification) => [
-                    'id' => $notification->id,
-                    'type' => $notification->data['type'] ?? 'general',
-                    'title' => $notification->data['title'] ?? 'اعلان',
-                    'message' => $notification->data['message'] ?? '',
-                    'task_id' => $notification->data['task_id'] ?? null,
-                    'url' => $notification->data['url'] ?? null,
-                    'read_at' => $notification->read_at?->toIso8601String(),
-                    'created_at' => $notification->created_at?->toIso8601String(),
-                ]),
+                ->map(function ($notification) {
+                    $type = $notification->data['type'] ?? 'general';
+
+                    $title = match ($type) {
+                        'task_assigned' => 'دستورکار جدید به شما تخصیص یافت',
+                        'task_referred' => 'دستورکار به شما ارجاع شد',
+                        'task_submitted' => 'دستورکار در انتظار تأیید شماست',
+                        'task_returned' => 'دستورکار برای اصلاح بازگردانده شد',
+                        'task_approved' => 'دستورکار تأیید و تکمیل شد',
+                        default => $notification->data['title'] ?? 'اعلان',
+                    };
+
+                    return [
+                        'id' => $notification->id,
+                        'type' => $type,
+                        'title' => $title,
+                        'message' => $notification->data['message'] ?? '',
+                        'task_id' => $notification->data['task_id'] ?? null,
+                        'url' => $notification->data['url'] ?? null,
+                        'read_at' => $notification->read_at?->toIso8601String(),
+                        'created_at' => $notification->created_at?->toIso8601String(),
+                    ];
+                }),
             'unreadCount' => $user->unreadNotifications()->count(),
         ]);
     }
