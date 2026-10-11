@@ -49,9 +49,27 @@ class SyncRolePermissionsAction
                 ]);
             }
 
-            if (in_array($permissionModel->code, ['projects.view', 'tasks.view'], true)) {
+            $responsibilityPermissions = [
+                'projects.view',
+                'projects.update',
+                'projects.manage_roles',
+                'projects.manage_members',
+                'tasks.view',
+                'tasks.create',
+                'tasks.update',
+                'tasks.assign',
+                'tasks.refer',
+                'tasks.change_status',
+                'tasks.submit',
+                'tasks.review',
+                'tasks.comment',
+                'tasks.log_work',
+                'tasks.create_reminder',
+            ];
+
+            if (in_array($permissionModel->code, $responsibilityPermissions, true)) {
                 throw ValidationException::withMessages([
-                    "permissions.{$permissionId}" => 'دسترسی مشاهدهٔ پروژه‌ها و دستورکارها از مسئولیت عملیاتی کاربر تعیین می‌شود و در نقش قابل اعطا نیست.',
+                    "permissions.{$permissionId}" => 'این مجوز عملیاتی از مسئولیت واقعی کاربر در واحد، پروژه یا دستورکار تعیین می‌شود و در نقش مدیریتی قابل اعطا نیست.',
                 ]);
             }
 
