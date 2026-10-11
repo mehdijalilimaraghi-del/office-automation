@@ -34,6 +34,7 @@ interface Task {
     title: string;
     status: string;
     priority: string;
+    due_date?: string | null;
     assignee: {
         id: number;
         name: string;
