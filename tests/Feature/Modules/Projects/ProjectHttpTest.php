@@ -151,7 +151,8 @@ class ProjectHttpTest extends TestCase
         $manager = User::factory()->create([
             'status' => 'active',
         ]);
-        $project = $this->createProject($manager);
+        $projectOwner = User::factory()->create(['status' => 'active']);
+        $project = $this->createProject($projectOwner);
         $member = User::factory()->create([
             'status' => 'active',
         ]);
@@ -219,7 +220,8 @@ class ProjectHttpTest extends TestCase
         $manager = User::factory()->create([
             'status' => 'active',
         ]);
-        $project = $this->createProject($manager);
+        $projectOwner = User::factory()->create(['status' => 'active']);
+        $project = $this->createProject($projectOwner);
 
         $this->actingAs($manager)
             ->post(route('projects.roles.store', $project), [
