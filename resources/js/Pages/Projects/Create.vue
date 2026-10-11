@@ -382,7 +382,7 @@ function submit(): void {
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <div>
                             <h3 class="font-semibold">بخش‌های پروژه <span class="text-destructive">*</span></h3>
-                            <p class="mt-1 text-sm text-muted-foreground">هر پروژه باید حداقل یک بخش داشته باشد تا بتوان برای آن تسک تعریف کرد.</p>
+                            <p class="mt-1 text-sm text-muted-foreground">هر پروژه باید حداقل یک بخش داشته باشد تا بتوان برای آن دستورکار تعریف کرد.</p>
                         </div>
                         <Button type="button" variant="outline" @click="addSection">
                             + افزودن بخش جدید
@@ -470,8 +470,8 @@ function submit(): void {
                             <label class="flex items-start gap-3 rounded-lg border bg-background p-3">
                                 <input v-model="section.manager_can_create_tasks" type="checkbox" class="mt-1 h-4 w-4 rounded border-input" />
                                 <span class="space-y-1">
-                                    <span class="block text-sm font-medium">مدیر واحد بتواند تسک تعریف کند</span>
-                                    <span class="block text-xs text-muted-foreground">در صورت فعال بودن، مدیر همین واحد می‌تواند تسک‌های این بخش را تعریف و به کارکنان ارجاع دهد. ادمین پروژه در هر دو حالت امکان تعریف تسک دارد.</span>
+                                    <span class="block text-sm font-medium">مدیر واحد بتواند دستورکار تعریف کند</span>
+                                    <span class="block text-xs text-muted-foreground">در صورت فعال بودن، مدیر همین واحد می‌تواند دستورکارهای این بخش را تعریف و به کارکنان ارجاع دهد. ادمین پروژه در هر دو حالت امکان تعریف دستورکار دارد.</span>
                                 </span>
                             </label>
                         </div>
