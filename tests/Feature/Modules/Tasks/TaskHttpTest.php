@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Modules\Tasks;
 
-use App\Core\Departments\Models\Department;
 use App\Core\Permissions\Enums\PermissionScope;
 use App\Core\Permissions\Models\Permission;
 use App\Core\Roles\Models\Role;
