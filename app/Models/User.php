@@ -212,7 +212,7 @@ class User extends Authenticatable
             return [];
         }
 
-        return $this->roles()
+        $scopes = $this->roles()
             ->where('roles.is_active', true)
             ->whereHas(
                 'permissions',
