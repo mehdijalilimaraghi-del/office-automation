@@ -153,13 +153,15 @@ class RolePermissionControllerTest extends TestCase
             'is_system' => false,
         ]);
 
-        $permission = Permission::create([
-            'name' => 'مشاهده دستورکارها',
-            'code' => 'tasks.view',
-            'description' => null,
-            'is_active' => true,
-            'is_system' => true,
-        ]);
+        $permission = Permission::query()->firstOrCreate(
+            ['code' => 'tasks.view'],
+            [
+                'name' => 'مشاهده دستورکارها',
+                'description' => null,
+                'is_active' => true,
+                'is_system' => true,
+            ]
+        );
 
         $this->actingAs($user)
             ->put(route('roles.permissions.update', $role), [
