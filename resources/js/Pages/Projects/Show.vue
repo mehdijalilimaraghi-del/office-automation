@@ -3,7 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Button } from '@/Components/ui/button';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
-import { formatPersianDate } from '@/Utils/date';
+import { formatPersianDate, formatPersianDateTime } from '@/Utils/date';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 
 interface Task {
@@ -13,6 +13,9 @@ interface Task {
     status: string;
     priority: string;
     due_date?: string | null;
+    created_at: string;
+    creator: { id: number; name: string } | null;
+    activities?: Array<{ id: number; title: string; created_at: string; completed_at?: string | null }>;
     assignee: {
         id: number;
         name: string;
@@ -349,7 +352,13 @@ const formatDate = (date: string | null): string => {
                             </div>
                         </summary>
                         <div class="border-t border-border/70 bg-muted/[0.12]">
-                        <div v-if="canUpdate" class="flex justify-end gap-2 border-b px-4 py-3"><Button type="button" size="sm" variant="outline" @click="openEditSection(section)">ویرایش بخش</Button><Button type="button" size="sm" variant="destructive" @click="deleteSection(section)">حذف بخش</Button></div>
+                        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 bg-white px-4 py-3 sm:px-5">
+                            <div class="flex items-center gap-2 text-xs text-muted-foreground"><span class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 font-bold text-primary">{{ section.tasks.length }}</span><span>دستورکار در این بخش</span></div>
+                            <div v-if="canUpdate" class="flex items-center gap-2">
+                                <Button type="button" size="sm" variant="outline" class="h-9 gap-1.5" @click="openEditSection(section)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>ویرایش</Button>
+                                <button type="button" class="inline-flex h-9 items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2" @click="deleteSection(section)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>حذف بخش</button>
+                            </div>
+                        </div>
                         <div class="border-b bg-muted/20 p-4 sm:p-5">
                             <div class="flex flex-wrap items-start justify-between gap-4">
                                 <div class="flex min-w-0 items-start gap-3">
@@ -365,7 +374,7 @@ const formatDate = (date: string | null): string => {
                                         {{ uploadingSectionId === section.id ? 'در حال بارگذاری...' : '＋ مدرک' }}
                                         <input type="file" class="sr-only" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" :disabled="uploadingSectionId === section.id" @change="uploadSectionDocument(section, $event)" />
                                     </label>
-                                    <Button v-if="canCreateTasks || managerCreatableSectionIds.includes(section.id)" type="button" size="sm" @click="openSectionTaskModal(section)">＋ ایجاد دستورکار</Button>
+                                    
                                 </div>
                             </div>
                             <div class="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
@@ -396,28 +405,39 @@ const formatDate = (date: string | null): string => {
                         </div>
 
                         <section class="border-t border-border/70">
-                            <div class="flex flex-wrap items-center justify-between gap-3 bg-primary/[0.035] px-4 py-3 sm:px-5">
-                                <div><h5 class="font-semibold">دستورکارهای این بخش</h5><p class="mt-1 text-xs text-muted-foreground">وضعیت، مسئول و مهلت هر دستورکار</p></div>
-                                <span class="rounded-full border bg-card px-3 py-1 text-xs font-semibold tabular-nums">{{ section.tasks.length }} مورد</span>
+                            <div class="flex flex-wrap items-center justify-between gap-3 bg-white px-4 py-4 sm:px-5">
+                                <div><h5 class="font-bold">دستورکارهای این بخش</h5><p class="mt-1 text-xs text-muted-foreground">وضعیت، مسئول، مهلت و آخرین فعالیت هر مورد</p></div>
+                                <div class="flex items-center gap-2"><span class="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 tabular-nums">{{ section.tasks.length }} مورد</span><Button v-if="canCreateTasks || managerCreatableSectionIds.includes(section.id)" type="button" size="sm" class="h-9 gap-1.5" @click="openSectionTaskModal(section)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M12 5v14M5 12h14"/></svg>ایجاد دستورکار</Button></div>
                             </div>
                             <div v-if="section.tasks.length === 0" class="m-4 rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">برای این بخش هنوز دستورکاری ثبت نشده است.</div>
-                            <div v-else class="divide-y">
-                            <Link v-for="task in section.tasks" :key="task.id" :href="route('tasks.show', task.id)" class="group/task flex flex-col gap-3 border-r-2 border-transparent px-4 py-4 transition duration-150 hover:border-primary/50 hover:bg-primary/[0.035] sm:flex-row sm:items-center sm:justify-between sm:px-5">
-                                <div class="min-w-0">
-                                    <p class="truncate text-sm font-semibold transition-colors group-hover/task:text-primary">{{ task.title }}</p>
-                                    <p class="mt-1 text-xs text-muted-foreground">مسئول: {{ task.assignee?.name ?? section.department?.manager?.name ?? 'مدیر واحد' }}<span v-if="task.due_date"> · مهلت: {{ formatDate(task.due_date) }}</span></p>
-                                </div>
-                                <div class="flex shrink-0 items-center gap-2">
-                                    <span class="rounded-full px-2.5 py-1 text-xs font-medium" :class="{
+                            <div v-else class="grid gap-3 p-4 sm:p-5 xl:grid-cols-2">
+                            <article v-for="task in section.tasks" :key="task.id" class="group/task min-w-0 rounded-2xl border border-slate-200/80 bg-white p-4 transition duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg hover:shadow-slate-200/50">
+                                <div class="flex items-start justify-between gap-3">
+                                    <Link :href="route('tasks.show', task.id)" class="min-w-0 flex-1">
+                                        <p class="line-clamp-2 text-sm font-bold leading-6 text-slate-900 transition-colors group-hover/task:text-primary">{{ task.title }}</p>
+                                        <p class="mt-1.5 line-clamp-2 text-xs leading-5 text-slate-500">{{ task.description || 'برای این دستورکار توضیحی ثبت نشده است.' }}</p>
+                                    </Link>
+                                    <span class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset" :class="{
                                         'bg-slate-100 text-slate-700': task.status === 'todo' || task.status === 'pending',
                                         'bg-blue-50 text-blue-700': task.status === 'in_progress',
                                         'bg-emerald-50 text-emerald-700': task.status === 'completed',
                                         'bg-rose-50 text-rose-700': task.status === 'cancelled',
                                     }">{{ taskStatusLabels[task.status] ?? task.status }}</span>
-                                    <span class="text-xs font-semibold" :class="priorityLabels[task.priority] === 'فوری' ? 'text-rose-600' : task.priority === 'high' ? 'text-amber-600' : 'text-muted-foreground'">{{ priorityLabels[task.priority] ?? task.priority }}</span>
-                                    <span aria-hidden="true" class="text-muted-foreground transition-transform group-hover/task:-translate-x-0.5 group-hover/task:text-primary">←</span>
                                 </div>
-                            </Link>
+                                <div class="mt-4 flex flex-wrap items-center gap-2 border-b border-slate-100 pb-3">
+                                    <span class="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-600"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>{{ task.assignee?.name ?? section.department?.manager?.name ?? 'مدیر واحد' }}</span>
+                                    <span class="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs font-semibold" :class="task.priority === 'urgent' ? 'text-rose-700' : task.priority === 'high' ? 'text-amber-700' : 'text-slate-600'"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>{{ priorityLabels[task.priority] ?? task.priority }}</span>
+                                </div>
+                                <div class="mt-3 grid grid-cols-2 gap-3 text-xs">
+                                    <div><p class="text-slate-400">تاریخ ایجاد</p><p class="mt-1 font-medium text-slate-700">{{ task.created_at ? formatDate(task.created_at) : '—' }}</p></div>
+                                    <div><p class="text-slate-400">مهلت انجام</p><p class="mt-1 font-medium" :class="task.due_date ? 'text-slate-700' : 'text-slate-400'">{{ task.due_date ? formatDate(task.due_date) : 'تعیین نشده' }}</p></div>
+                                </div>
+                                <div class="mt-3 flex items-start gap-2 rounded-xl bg-slate-50 px-3 py-2.5">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 h-4 w-4 shrink-0 text-primary"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>
+                                    <div class="min-w-0"><p class="text-[11px] font-semibold text-slate-500">آخرین اقدام</p><p class="mt-0.5 truncate text-xs font-medium text-slate-800">{{ [...(task.activities ?? [])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]?.title ?? 'هنوز اقدامی ثبت نشده' }}</p><p v-if="task.activities?.length" class="mt-1 text-[11px] text-slate-500">{{ formatDateTime([...task.activities].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0].created_at) }}</p></div>
+                                </div>
+                                <div class="mt-4 flex justify-end"><Link :href="route('tasks.show', task.id)" class="inline-flex items-center gap-1.5 text-xs font-bold text-primary transition hover:gap-2.5">جزئیات دستورکار <span aria-hidden="true">←</span></Link></div>
+                            </article>
                             </div>
                         </section>
                         </div>
