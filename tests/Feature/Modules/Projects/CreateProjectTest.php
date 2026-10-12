@@ -154,6 +154,7 @@ class CreateProjectTest extends TestCase
     {
         $creator = User::factory()->create();
         $manager = User::factory()->create();
+        $this->addProjectManagementMembership($manager);
 
         $this->expectException(
             InvalidArgumentException::class
