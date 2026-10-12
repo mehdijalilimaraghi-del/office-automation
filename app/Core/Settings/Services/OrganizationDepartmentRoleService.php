@@ -42,10 +42,27 @@ class OrganizationDepartmentRoleService
             return null;
         }
 
-        return Department::query()
+        $department = Department::query()
             ->whereKey($id)
             ->where('is_active', true)
-            ->value('id');
+            ->first(['id', 'parent_id']);
+
+        if ($department === null) {
+            return null;
+        }
+
+        if ($role === self::PROJECT_MANAGEMENT) {
+            $managementDepartmentId = $this->activeDepartmentId(self::MANAGEMENT);
+
+            if (
+                $managementDepartmentId !== null
+                && (int) $department->parent_id !== $managementDepartmentId
+            ) {
+                return null;
+            }
+        }
+
+        return (int) $department->id;
     }
 
     public function isAssigned(Department $department, string $role): bool
