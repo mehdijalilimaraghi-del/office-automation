@@ -43,6 +43,43 @@ class StoreTaskRequest extends FormRequest
         abort(403);
     }
 
+    public function withValidator(\Illuminate\Contracts\Validation\Validator $validator): void
+    {
+        $validator->after(function ($validator): void {
+            $sectionId = $this->input('section_id');
+            if (! $sectionId) {
+                return;
+            }
+
+            $section = ProjectSection::query()->with('department')->find($sectionId);
+            if ($section === null || $section->department === null) {
+                return;
+            }
+
+            $department = $section->department;
+            foreach (['assignee_id', 'delegate_assignee_id', 'next_activity_assigned_to'] as $field) {
+                $userId = $this->input($field);
+                if (! $userId) {
+                    continue;
+                }
+
+                $eligible = (int) $department->manager_id === (int) $userId
+                    || $department->members()
+                        ->where('users.id', $userId)
+                        ->where('users.status', 'active')
+                        ->exists();
+
+                if (! $eligible) {
+                    $validator->errors()->add(
+                        $field,
+                        'مسئول دستورکار باید از افراد فعال واحد مسئول این بخش انتخاب شود.'
+                    );
+                }
+            }
+        });
+    }
+
+
     public function rules(): array
     {
         return [
@@ -57,13 +94,13 @@ class StoreTaskRequest extends FormRequest
             'status' => ['sometimes', Rule::in(['todo', 'in_progress', 'completed', 'cancelled'])],
             'priority' => ['sometimes', Rule::in(['low', 'normal', 'high', 'urgent'])],
             'review_required' => ['sometimes', 'boolean'],
-            'assignee_id' => ['nullable', 'integer', 'exists:users,id'],
+            'assignee_id' => ['nullable', 'integer', Rule::exists('users', 'id')->where(fn ($query) => $query->where('status', 'active'))],
             'delegate_to_employee' => ['sometimes', 'boolean'],
-            'delegate_assignee_id' => [Rule::requiredIf(fn (): bool => $this->boolean('delegate_to_employee')), 'nullable', 'integer', 'exists:users,id'],
+            'delegate_assignee_id' => [Rule::requiredIf(fn (): bool => $this->boolean('delegate_to_employee')), 'nullable', 'integer', Rule::exists('users', 'id')->where(fn ($query) => $query->where('status', 'active'))],
             'assignment_note' => ['nullable', 'string', 'max:5000'],
             'next_activity_title' => ['nullable', 'string', 'max:255'],
             'next_activity_description' => ['nullable', 'string'],
-            'next_activity_assigned_to' => ['nullable', 'integer', 'exists:users,id'],
+            'next_activity_assigned_to' => ['nullable', 'integer', Rule::exists('users', 'id')->where(fn ($query) => $query->where('status', 'active'))],
             'start_date' => ['nullable', 'date'],
             'due_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'custom_fields' => ['nullable', 'array'],
