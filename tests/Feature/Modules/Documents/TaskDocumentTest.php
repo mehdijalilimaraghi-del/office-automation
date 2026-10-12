@@ -93,12 +93,6 @@ class TaskDocumentTest extends TestCase
             'is_active' => true,
         ]);
 
-        $user->roles()->firstOrFail()->permissions()->detach(
-            \App\Core\Permissions\Models\Permission::query()
-                ->where('code', 'documents.create')
-                ->value('id'),
-        );
-
         $this->actingAs($user)
             ->post(route('tasks.documents.store', $task), [
                 'title' => 'بدون مجوز',
