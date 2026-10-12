@@ -18,12 +18,22 @@ class StoreProjectRequest extends FormRequest
             return false;
         }
 
-        if (! $user->isSystemAdmin() && ! $user->departments()
-            ->where('departments.name', 'مدیریت پروژه')
-            ->whereHas('parent', fn ($query) => $query->where('name', 'مدیریت'))
-            ->where('departments.is_active', true)
-            ->exists()) {
-            return false;
+        if (! $user->isSystemAdmin()) {
+            $isDepartmentMember = $user->departments()
+                ->where('departments.name', 'مدیریت پروژه')
+                ->whereHas('parent', fn ($query) => $query->where('name', 'مدیریت'))
+                ->where('departments.is_active', true)
+                ->exists();
+
+            $managesDepartment = $user->managedDepartments()
+                ->where('departments.name', 'مدیریت پروژه')
+                ->whereHas('parent', fn ($query) => $query->where('name', 'مدیریت'))
+                ->where('departments.is_active', true)
+                ->exists();
+
+            if (! $isDepartmentMember && ! $managesDepartment) {
+                return false;
+            }
         }
 
         return $user->permissionScopes('projects.create') !== [];
