@@ -212,6 +212,12 @@ class User extends Authenticatable
             return [];
         }
 
+        // System administration is independent of business responsibilities and
+        // explicit grants: every permission is available organization-wide.
+        if ($this->isSystemAdmin()) {
+            return [PermissionScope::Organization->value];
+        }
+
         $scopes = $this->roles()
             ->where('roles.is_active', true)
             ->whereHas(
@@ -249,6 +255,12 @@ class User extends Authenticatable
     {
         if (! $this->isActive()) {
             return false;
+        }
+
+        // New permissions must not accidentally restrict the bootstrap admin
+        // simply because a role seeder has not yet been rerun.
+        if ($this->isSystemAdmin()) {
+            return true;
         }
 
         $hasAssignedPermission = $this->roles()
