@@ -83,9 +83,7 @@ class ProjectService implements ProjectServiceContract
             }
 
             if (in_array(PermissionScope::Project->value, $scopes, true)) {
-                $scopeQuery
-                    ->orWhere('projects.manager_id', $user->id)
-                    ;
+                $scopeQuery->orWhere('projects.manager_id', $user->id);
             }
         });
 
