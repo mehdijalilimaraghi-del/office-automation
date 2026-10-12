@@ -260,7 +260,7 @@ const formatDate = (date: string | null): string => {
                     <Button v-if="props.canUpdate" variant="outline" size="sm" as-child>
                         <Link :href="route('projects.edit', project.id)">ویرایش پروژه</Link>
                     </Button>
-                    <Button v-if="props.canDeleteProject" type="button" size="sm" variant="destructive" @click="deleteProject">حذف پروژه</Button>
+                    <Button v-if="props.canDeleteProject" type="button" size="sm" variant="destructive" class="bg-red-600 text-white hover:bg-red-700" @click="deleteProject">حذف پروژه</Button>
                 </div>
             </div>
         </template>
