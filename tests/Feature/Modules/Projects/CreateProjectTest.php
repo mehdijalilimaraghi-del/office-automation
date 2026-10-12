@@ -38,10 +38,11 @@ class CreateProjectTest extends TestCase
         ]);
     }
 
-    public function test_project_can_be_created_and_manager_is_added_as_member(): void
+    public function test_project_can_be_created_without_legacy_project_membership(): void
     {
         $creator = User::factory()->create();
         $manager = User::factory()->create();
+        $this->addProjectManagementMembership($manager);
 
         $project = app(ProjectServiceContract::class)->create(
             [
@@ -70,10 +71,9 @@ class CreateProjectTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->assertDatabaseHas('project_user', [
+        $this->assertDatabaseMissing('project_user', [
             'project_id' => $project->id,
             'user_id' => $manager->id,
-            'project_role_id' => null,
         ]);
     }
 
@@ -81,6 +81,7 @@ class CreateProjectTest extends TestCase
     {
         $creator = User::factory()->create();
         $manager = User::factory()->create();
+        $this->addProjectManagementMembership($manager);
         $department = \App\Core\Departments\Models\Department::query()->create([
             'name' => 'فناوری اطلاعات',
             'code' => 'IT',
@@ -176,6 +177,7 @@ class CreateProjectTest extends TestCase
     {
         $creator = User::factory()->create();
         $manager = User::factory()->create();
+        $this->addProjectManagementMembership($manager);
 
         $project = app(ProjectServiceContract::class)->create(
             [
@@ -201,6 +203,7 @@ class CreateProjectTest extends TestCase
     {
         $creator = User::factory()->create();
         $manager = User::factory()->create();
+        $this->addProjectManagementMembership($manager);
         $replacement = User::factory()->create();
 
         $project = app(ProjectServiceContract::class)->create(
@@ -225,10 +228,11 @@ class CreateProjectTest extends TestCase
         );
     }
 
-    public function test_manager_membership_does_not_require_a_project_role(): void
+    public function test_project_creation_does_not_create_legacy_project_membership(): void
     {
         $creator = User::factory()->create();
         $manager = User::factory()->create();
+        $this->addProjectManagementMembership($manager);
 
         $project = app(ProjectServiceContract::class)->create(
             [
@@ -239,15 +243,11 @@ class CreateProjectTest extends TestCase
             $creator
         );
 
-        $membership = ProjectMember::query()
-            ->where('project_id', $project->id)
-            ->where('user_id', $manager->id)
-            ->first();
-
-        $this->assertNotNull($membership);
-
-        $this->assertNull(
-            $membership->project_role_id
+        $this->assertFalse(
+            ProjectMember::query()
+                ->where('project_id', $project->id)
+                ->where('user_id', $manager->id)
+                ->exists()
         );
     }
 
