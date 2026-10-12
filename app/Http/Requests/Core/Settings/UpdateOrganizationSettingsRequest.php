@@ -38,10 +38,10 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             $managementId = $this->input('management_department_id');
             $projectManagementId = $this->input('project_management_department_id');
 
-            if (blank($managementId) !== blank($projectManagementId)) {
+            if (filled($projectManagementId) && blank($managementId)) {
                 $validator->errors()->add(
-                    'project_management_department_id',
-                    'برای تعیین واحد مدیریت پروژه‌ها، واحد مدیریتی را نیز انتخاب کنید.'
+                    'management_department_id',
+                    'برای تعیین واحد مدیریت پروژه‌ها، ابتدا واحد مدیریتی را انتخاب کنید.'
                 );
 
                 return;
