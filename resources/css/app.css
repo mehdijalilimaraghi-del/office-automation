@@ -146,3 +146,132 @@
     max-width: 1440px;
     padding: 0;
 }
+
+
+/* Shared Zaga-inspired components: rounded surfaces, quiet borders and lavender emphasis. */
+[data-slot="button"] {
+    border-radius: 0.8rem;
+    font-weight: 600;
+    transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+[data-slot="button"][data-variant="default"] {
+    box-shadow: 0 3px 10px rgb(111 92 197 / 16%);
+}
+
+[data-slot="button"][data-variant="outline"] {
+    border-color: #e5e2eb;
+    background: #fff;
+}
+
+[data-slot="button"][data-variant="outline"]:hover {
+    border-color: #c6b7ff;
+    background: #f8f6ff;
+    color: #6f5cc5;
+}
+
+.app-page-header h1,
+.app-page-header h2 {
+    color: #121212;
+    letter-spacing: -0.025em;
+}
+
+.app-page-header p {
+    color: #77727e;
+}
+
+.projects-index table th,
+.task-index table th {
+    white-space: nowrap;
+    color: #77727e;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.projects-index table tbody tr,
+.task-index table tbody tr {
+    transition: background-color 150ms ease;
+}
+
+.projects-index table tbody tr:hover,
+.task-index table tbody tr:hover {
+    background: #f8f6ff;
+}
+
+.projects-index table td,
+.task-index table td {
+    vertical-align: middle;
+}
+
+.task-index > section:not(.fixed) {
+    border-color: #e5e2eb;
+    border-radius: 1.2rem;
+    box-shadow: 0 4px 20px rgb(18 18 18 / 3%);
+}
+
+.task-index .bg-gray-900 {
+    background-color: #6f5cc5;
+}
+
+.task-index .hover\\:bg-gray-800:hover {
+    background-color: #5e4cb0;
+}
+
+.task-index label {
+    color: #58565c;
+    font-weight: 500;
+}
+
+.task-index input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.task-index select,
+.task-index textarea {
+    border-color: #e5e2eb;
+    border-radius: 0.75rem;
+    box-shadow: none;
+}
+
+.task-index input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+.task-index select:focus,
+.task-index textarea:focus {
+    border-color: #b0b1db;
+    box-shadow: 0 0 0 3px rgb(198 183 255 / 28%);
+}
+
+.project-show > section,
+.project-show article {
+    scroll-margin-top: 1rem;
+}
+
+.project-show .rounded-2xl.border.bg-card,
+.project-show .rounded-xl.border.bg-card {
+    border-color: #e5e2eb;
+    box-shadow: 0 4px 20px rgb(18 18 18 / 3%);
+}
+
+.project-show details > summary {
+    transition: background-color 160ms ease;
+}
+
+.project-show details > summary:hover {
+    background: #f8f6ff;
+}
+
+.project-show a:hover {
+    text-decoration-color: #b0b1db;
+}
+
+@media (max-width: 640px) {
+    .projects-index,
+    .task-index {
+        font-size: 0.9rem;
+    }
+
+    .projects-index table {
+        min-width: 720px;
+    }
+
+    .task-index table {
+        min-width: 760px;
+    }
+}
