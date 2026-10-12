@@ -8,6 +8,8 @@ use App\Core\Permissions\Models\Permission;
 use App\Core\Departments\Models\Department;
 use App\Core\Settings\Models\SystemSetting;
 use App\Core\Settings\Services\OrganizationDepartmentRoleService;
+use App\Core\Settings\Models\SystemSetting;
+use App\Core\Settings\Services\OrganizationDepartmentRoleService;
 use App\Core\Roles\Models\Role;
 use App\Models\User;
 use App\Modules\Projects\Models\Project;
@@ -562,6 +564,15 @@ class ProjectHttpTest extends TestCase
         $unit = Department::query()->firstOrCreate(
             ['name' => 'مدیریت پروژه', 'parent_id' => $parent->id],
             ['is_active' => true]
+        );
+
+        SystemSetting::query()->updateOrCreate(
+            ['key' => OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::MANAGEMENT)],
+            ['value' => (string) $parent->id],
+        );
+        SystemSetting::query()->updateOrCreate(
+            ['key' => OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::PROJECT_MANAGEMENT)],
+            ['value' => (string) $unit->id],
         );
 
         SystemSetting::query()->updateOrCreate(
