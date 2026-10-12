@@ -355,7 +355,7 @@ function submit(): void {
                     </p>
                 </div>
 
-                <section v-if="canUploadDocuments" class="space-y-3 rounded-xl border border-border p-4 sm:p-5">
+                <section v-if="canUploadDocuments" class="project-form-section space-y-3 rounded-2xl border border-border bg-background/70 p-4 sm:p-5">
                     <div>
                         <h3 class="font-semibold">مدارک عمومی پروژه</h3>
                         <p class="mt-1 text-sm text-muted-foreground">فایل‌هایی که برای همه واحدهای درگیر در پروژه کاربرد دارند.</p>
@@ -377,7 +377,7 @@ function submit(): void {
                     <p v-if="form.errors.project_documents" class="text-xs text-destructive">{{ form.errors.project_documents }}</p>
                 </section>
 
-                <section class="space-y-4 rounded-xl border border-border p-4 sm:p-5">
+                <section class="project-form-section space-y-4 rounded-2xl border border-border bg-background/70 p-4 sm:p-5">
                     <p v-if="form.errors.sections" class="text-sm text-destructive">{{ form.errors.sections }}</p>
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <div>
@@ -393,7 +393,7 @@ function submit(): void {
                         هنوز بخشی اضافه نشده است. برای تعریف کارهای واحدها، بخش جدید ایجاد کنید.
                     </div>
 
-                    <div v-for="(section, index) in form.sections" :key="index" class="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                    <div v-for="(section, index) in form.sections" :key="index" class="project-form-section overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md">
                         <div class="flex items-center gap-3 bg-muted/40 px-4 py-3 sm:px-5">
                             <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border bg-background text-sm font-semibold text-foreground">{{ index + 1 }}</span>
                             <div class="min-w-0 flex-1">
