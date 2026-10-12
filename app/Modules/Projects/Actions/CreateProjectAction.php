@@ -40,6 +40,16 @@ class CreateProjectAction
                     );
                 }
 
+                if (! $manager->isSystemAdmin() && ! $manager->departments()
+                    ->where('departments.name', 'مدیریت پروژه')
+                    ->whereHas('parent', fn ($query) => $query->where('name', 'مدیریت'))
+                    ->where('departments.is_active', true)
+                    ->exists()) {
+                    throw new InvalidArgumentException(
+                        'مدیر پروژه باید عضو فعال واحد «مدیریت پروژه» باشد.'
+                    );
+                }
+
                 if (
                     isset($data['start_date']) &&
                     isset($data['end_date']) &&
