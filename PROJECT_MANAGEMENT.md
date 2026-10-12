@@ -16,6 +16,14 @@
 - Historical project membership records must not be destructively removed as part of the transition; they may be retained for audit/history while being excluded from authorization and current workflows.
 - New project creation must not create legacy `project_user` membership rows; project managers are defined by `projects.manager_id` and eligible organizational membership.
 
+## Project detail UI
+
+- The project detail page presents section cards with a clear hierarchy, section ownership, and explicit section actions.
+- Project-wide progress is displayed once in a dedicated summary; duplicate progress indicators were removed from section headings, leaving the detailed progress indicator inside each expanded section.
+- Each section's task list has its own heading and count, with a dedicated empty state when no tasks exist.
+- Summary and empty-state glyphs were replaced with consistent inline SVG icons, and the section title is not repeated in its expanded details.
+- Keep the page free of temporary TODO copy and preserve the permission-driven visibility of project and section actions.
+
 ## Compatibility and rollout
 
 - V1 remains the active product version.
