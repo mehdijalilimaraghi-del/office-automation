@@ -6,7 +6,6 @@ use App\Models\User;
 use App\Core\Departments\Models\Department;
 use App\Core\CustomFields\Services\CustomFieldService;
 use App\Modules\Projects\Models\Project;
-use App\Modules\Projects\Models\ProjectMember;
 use App\Modules\Projects\Models\ProjectSection;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -97,17 +96,10 @@ class CreateProjectAction
                     ]);
                 }
 
-                ProjectMember::query()->create([
-                    'project_id' => $project->id,
-                    'user_id' => $manager->id,
-                    'project_role_id' => null,
-                ]);
-
                 return $project->load([
                     'manager',
                     'creator',
                     'department',
-                    'members',
                 ]);
             }
         );
