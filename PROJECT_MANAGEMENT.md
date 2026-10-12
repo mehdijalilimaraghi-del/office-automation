@@ -2,11 +2,12 @@
 
 ## Project administration boundary
 
-- Project creation and administration require an active user with the relevant project permission and membership in the active **مدیریت پروژه** department whose parent department is **مدیریت**.
+- Project creation and administration require an active user with the relevant project permission and either membership in, or management of, the active **مدیریت پروژه** department whose parent department is **مدیریت**.
 - Active system administrators retain the existing administrative bypass; inactive accounts are always denied.
-- The project manager selected during creation must be an active member of the same project-management department (or an active system administrator).
-- Project manager choices in the creation page are restricted to eligible active users.
-- Permission grants do not replace department membership. Leaving the project-management department immediately removes effective project-administration access even if a role still grants project permissions.
+- Authorized Project Management staff administer non-default project records centrally; edit/delete controls do not depend on being the selected operational project manager.
+- The project manager selected during creation must be an active member of, or manager of, the project-management department (or an active system administrator).
+- Project manager choices in the creation page include eligible active members and the department manager.
+- Permission grants do not replace department responsibility. Leaving and no longer managing the project-management department removes effective project-administration access even if a role still grants project permissions.
 
 ## Project sections and task assignment
 
