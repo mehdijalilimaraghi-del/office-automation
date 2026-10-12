@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Projects\Policies;
 
 use App\Core\Permissions\Enums\PermissionScope;
+use App\Core\Settings\Services\OrganizationDepartmentRoleService;
 use App\Models\User;
 use App\Modules\Projects\Models\Project;
 
@@ -94,19 +95,8 @@ class ProjectPolicy
             return true;
         }
 
-        $isDepartmentMember = $user->departments()
-            ->where('departments.name', 'مدیریت پروژه')
-            ->whereHas('parent', fn ($query) => $query->where('name', 'واحد مدیریت'))
-            ->where('departments.is_active', true)
-            ->exists();
-
-        $managesDepartment = $user->managedDepartments()
-            ->where('departments.name', 'مدیریت پروژه')
-            ->whereHas('parent', fn ($query) => $query->where('name', 'واحد مدیریت'))
-            ->where('departments.is_active', true)
-            ->exists();
-
-        return $isDepartmentMember || $managesDepartment;
+        return app(OrganizationDepartmentRoleService::class)
+            ->userBelongsTo($user, OrganizationDepartmentRoleService::PROJECT_MANAGEMENT);
     }
 
     private function isProjectManager(User $user, Project $project): bool
