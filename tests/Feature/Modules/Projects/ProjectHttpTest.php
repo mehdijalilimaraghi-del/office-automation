@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Modules\Projects;
 
 use App\Core\Permissions\Models\Permission;
+use App\Core\Departments\Models\Department;
 use App\Core\Roles\Models\Role;
 use App\Models\User;
 use App\Modules\Projects\Models\Project;
@@ -67,6 +68,7 @@ class ProjectHttpTest extends TestCase
             'name' => 'Active Manager',
             'status' => 'active',
         ]);
+        $this->addProjectManagementMembership($activeManager);
 
         $inactiveManager = User::factory()->create([
             'name' => 'Inactive Manager',
@@ -360,8 +362,9 @@ class ProjectHttpTest extends TestCase
     public function test_authorized_user_can_create_project(): void
     {
         $creator = $this->userWithPermission('projects.create');
-        $manager = User::factory()->create();
-        $unitManager = User::factory()->create();
+        $manager = User::factory()->create(['status' => 'active']);
+        $this->addProjectManagementMembership($manager);
+        $unitManager = User::factory()->create(['status' => 'active']);
         $department = \App\Core\Departments\Models\Department::query()->create([
             'name' => 'واحد آزمون ایجاد پروژه',
             'code' => 'HTTP-UNIT-001',
@@ -397,7 +400,7 @@ class ProjectHttpTest extends TestCase
             ->where('name', 'HTTP Test Project')
             ->firstOrFail();
 
-        $this->assertDatabaseHas('project_user', [
+        $this->assertDatabaseMissing('project_user', [
             'project_id' => $project->id,
             'user_id' => $manager->id,
         ]);
@@ -542,8 +545,24 @@ class ProjectHttpTest extends TestCase
         ]);
 
         $user->roles()->attach($role->id);
+        $this->addProjectManagementMembership($user);
 
         return $user->fresh();
+    }
+
+    private function addProjectManagementMembership(User $user): void
+    {
+        $parent = Department::query()->firstOrCreate(
+            ['name' => 'مدیریت'],
+            ['is_active' => true]
+        );
+
+        $unit = Department::query()->firstOrCreate(
+            ['name' => 'مدیریت پروژه', 'parent_id' => $parent->id],
+            ['is_active' => true]
+        );
+
+        $unit->members()->syncWithoutDetaching([$user->id]);
     }
 
     private function createProject(?User $manager = null): Project
@@ -551,6 +570,7 @@ class ProjectHttpTest extends TestCase
         $manager ??= User::factory()->create([
             'status' => 'active',
         ]);
+        $this->addProjectManagementMembership($manager);
 
         $project = Project::query()->create([
             'name' => 'HTTP Project',
