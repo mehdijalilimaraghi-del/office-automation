@@ -10,6 +10,7 @@ use App\Http\Requests\Modules\Projects\StoreProjectRequest;
 use App\Http\Requests\Modules\Projects\UpdateProjectRequest;
 use App\Core\Departments\Contracts\DepartmentServiceInterface;
 use App\Core\Departments\Models\Department;
+use App\Core\Settings\Services\OrganizationDepartmentRoleService;
 use App\Core\Permissions\Enums\PermissionScope;
 use App\Core\Users\Contracts\UserServiceInterface;
 use App\Modules\Projects\Contracts\ProjectMemberServiceContract;
@@ -77,22 +78,25 @@ class ProjectController extends Controller
 
         $appendDepartmentOptions(null);
 
+        $projectManagementDepartmentId = app(OrganizationDepartmentRoleService::class)
+            ->activeDepartmentId(OrganizationDepartmentRoleService::PROJECT_MANAGEMENT);
 
         return Inertia::render('Projects/Create', [
             'managers' => \App\Models\User::query()
                 ->where('status', 'active')
-                ->where(function ($query): void {
-                    $query->whereHas('departments', fn ($departmentQuery) => $departmentQuery
-                        ->where('departments.name', 'مدیریت پروژه')
-                        ->whereHas('parent', fn ($parentQuery) => $parentQuery->where('name', 'واحد مدیریت'))
-                        ->where('departments.is_active', true))
-                        ->orWhereHas('managedDepartments', fn ($departmentQuery) => $departmentQuery
-                            ->where('departments.name', 'مدیریت پروژه')
-                            ->whereHas('parent', fn ($parentQuery) => $parentQuery->where('name', 'واحد مدیریت'))
+                ->where(function ($query) use ($projectManagementDepartmentId): void {
+                    if ($projectManagementDepartmentId !== null) {
+                        $query->whereHas('departments', fn ($departmentQuery) => $departmentQuery
+                            ->whereKey($projectManagementDepartmentId)
                             ->where('departments.is_active', true))
-                        ->orWhereHas('roles', fn ($roleQuery) => $roleQuery
-                            ->where('roles.code', 'SYSTEM_ADMIN')
-                            ->where('roles.is_active', true));
+                            ->orWhereHas('managedDepartments', fn ($departmentQuery) => $departmentQuery
+                                ->whereKey($projectManagementDepartmentId)
+                                ->where('departments.is_active', true));
+                    }
+
+                    $query->orWhereHas('roles', fn ($roleQuery) => $roleQuery
+                        ->where('roles.code', 'SYSTEM_ADMIN')
+                        ->where('roles.is_active', true));
                 })
                 ->orderBy('name')
                 ->get(['id', 'name']),
