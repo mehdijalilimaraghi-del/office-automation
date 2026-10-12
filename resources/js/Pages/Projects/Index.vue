@@ -74,8 +74,8 @@ const statusLabels: Record<Project['status'], string> = {
             </div>
         </template>
 
-        <div class="mx-auto max-w-7xl">
-            <div class="overflow-hidden rounded-lg border bg-card">
+        <div class="projects-index mx-auto w-full max-w-[1440px]">
+            <div class="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
                 <div
                     v-if="projects.data.length === 0"
                     class="p-8 text-center text-sm text-muted-foreground"
@@ -85,7 +85,7 @@ const statusLabels: Record<Project['status'], string> = {
 
                 <div v-else class="overflow-x-auto">
                     <table class="w-full text-sm">
-                        <thead class="border-b bg-muted/40">
+                        <thead class="border-b border-border bg-muted/50">
                             <tr>
                                 <th class="px-4 py-3 text-right font-medium">
                                     نام پروژه
@@ -108,11 +108,11 @@ const statusLabels: Record<Project['status'], string> = {
                             </tr>
                         </thead>
 
-                        <tbody class="divide-y">
+                        <tbody class="divide-y divide-border">
                             <tr
                                 v-for="project in projects.data"
                                 :key="project.id"
-                                class="transition-colors hover:bg-muted/30"
+                                class="transition-colors hover:bg-accent/30"
                             >
                                 <td class="px-4 py-3 font-medium">
                                     {{ project.name }}
@@ -124,10 +124,21 @@ const statusLabels: Record<Project['status'], string> = {
                                     {{ project.manager?.name ?? '—' }}
                                 </td>
                                 <td class="px-4 py-3">
-                                    {{ statusLabels[project.status] }}
+                                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold"
+                                        :class="{
+                                            'bg-violet-50 text-violet-700': project.status === 'planning',
+                                            'bg-primary/10 text-primary': project.status === 'active',
+                                            'bg-emerald-50 text-emerald-700': project.status === 'completed',
+                                            'bg-slate-100 text-slate-600': project.status === 'archived',
+                                        }">
+                                        {{ statusLabels[project.status] }}
+                                    </span>
                                 </td>
                                 <td class="px-4 py-3">
-                                    {{ project.is_active ? 'بله' : 'خیر' }}
+                                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
+                                        :class="project.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'">
+                                        {{ project.is_active ? 'فعال' : 'غیرفعال' }}
+                                    </span>
                                 </td>
                                 <td class="px-4 py-3 text-left">
                                     <Button variant="outline" size="sm" as-child>
