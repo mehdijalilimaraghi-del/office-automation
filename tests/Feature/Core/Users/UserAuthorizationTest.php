@@ -220,4 +220,39 @@ class UserAuthorizationTest extends TestCase
             ])
         );
     }
+    public function test_active_system_admin_has_every_permission_without_explicit_grants(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $role = Role::create([
+            'name' => 'مدیر سیستم',
+            'code' => 'SYSTEM_ADMIN',
+            'is_active' => true,
+            'is_system' => true,
+        ]);
+        $user->roles()->attach($role->id);
+
+        $this->assertTrue($user->hasPermission('projects.create'));
+        $this->assertTrue($user->hasPermission('tasks.review'));
+        $this->assertTrue($user->hasPermission('users.delete'));
+        $this->assertSame(
+            ['organization'],
+            $user->permissionScopes('tasks.review')
+        );
+    }
+
+    public function test_inactive_system_admin_still_has_no_permissions(): void
+    {
+        $user = User::factory()->inactive()->create();
+        $role = Role::create([
+            'name' => 'مدیر سیستم',
+            'code' => 'SYSTEM_ADMIN',
+            'is_active' => true,
+            'is_system' => true,
+        ]);
+        $user->roles()->attach($role->id);
+
+        $this->assertFalse($user->hasPermission('users.view'));
+        $this->assertSame([], $user->permissionScopes('tasks.view'));
+    }
+
 }
