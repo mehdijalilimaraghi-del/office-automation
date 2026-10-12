@@ -77,38 +77,6 @@ class ProjectController extends Controller
 
         $appendDepartmentOptions(null);
 
-        $creator = $request->user();
-        $createScopes = $creator->permissionScopes('projects.create');
-
-        if (! in_array(PermissionScope::Organization->value, $createScopes, true)) {
-            $responsibleDepartments = $creator->departments()
-                ->get()
-                ->merge($creator->managedDepartments()->get())
-                ->unique('id');
-
-            $allowedDepartmentIds = collect();
-
-            if (in_array(PermissionScope::Department->value, $createScopes, true)) {
-                $allowedDepartmentIds = $allowedDepartmentIds->merge(
-                    $responsibleDepartments->pluck('id')->map(fn ($id): int => (int) $id)
-                );
-            }
-
-            if (in_array(PermissionScope::DepartmentTree->value, $createScopes, true)) {
-                foreach ($responsibleDepartments as $department) {
-                    $allowedDepartmentIds->push((int) $department->id);
-                    $allowedDepartmentIds = $allowedDepartmentIds->merge(
-                        array_map('intval', $department->descendantIds())
-                    );
-                }
-            }
-
-            $allowedDepartmentIds = $allowedDepartmentIds->unique()->values();
-
-            $departmentOptions = $departmentOptions
-                ->filter(fn (Department $department): bool => $allowedDepartmentIds->contains((int) $department->id))
-                ->values();
-        }
 
         return Inertia::render('Projects/Create', [
             'managers' => \App\Models\User::query()
