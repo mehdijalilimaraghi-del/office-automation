@@ -6,28 +6,6 @@ import { computed, reactive, ref } from 'vue';
 import { formatPersianDate } from '@/Utils/date';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 
-interface ProjectRole {
-    id: number;
-    name: string;
-    code: string;
-    description: string | null;
-    is_active: boolean;
-}
-
-interface MemberOption {
-    id: number;
-    name: string;
-}
-
-interface ProjectMember {
-    id: number;
-    user: {
-        id: number;
-        name: string;
-    } | null;
-    project_role: ProjectRole | null;
-}
-
 interface Task {
     id: number;
     section_id: number | null;
@@ -40,6 +18,8 @@ interface Task {
         name: string;
     } | null;
 }
+
+interface SectionDepartmentOption { id: number; name: string; manager_id: number; manager: { id: number; name: string; status: string } | null; }
 
 interface ProjectSection {
     id: number;
@@ -74,8 +54,6 @@ interface Project {
         id: number;
         name: string;
     } | null;
-    roles: ProjectRole[];
-    members: ProjectMember[];
     tasks: Task[];
     sections: ProjectSection[];
     is_system_default: boolean;
@@ -84,11 +62,9 @@ interface Project {
 
 const props = defineProps<{
     project: Project;
-    canManageMembers: boolean;
-    canManageRoles: boolean;
+    sectionDepartmentOptions: SectionDepartmentOption[];
     canUpdate: boolean;
     canDeleteProject: boolean;
-    memberOptions: MemberOption[];
     canCreateTasks: boolean;
     canUploadProjectDocuments: boolean;
     canDeleteDocuments: boolean;
@@ -96,6 +72,36 @@ const props = defineProps<{
     managerCreatableSectionIds: number[];
     managerDocumentSectionIds: number[];
 }>();
+
+
+const showSectionEditor = ref(false);
+const editingSectionId = ref<number | null>(null);
+const sectionForm = useForm({ name: '', description: '', department_id: '', manager_can_create_tasks: true });
+const openCreateSection = (): void => {
+    editingSectionId.value = null;
+    sectionForm.reset();
+    sectionForm.manager_can_create_tasks = true;
+    sectionForm.clearErrors();
+    showSectionEditor.value = true;
+};
+const openEditSection = (section: ProjectSection): void => {
+    editingSectionId.value = section.id;
+    sectionForm.name = section.name;
+    sectionForm.description = section.description ?? '';
+    sectionForm.department_id = section.department?.id.toString() ?? '';
+    sectionForm.manager_can_create_tasks = section.manager_can_create_tasks;
+    sectionForm.clearErrors();
+    showSectionEditor.value = true;
+};
+const submitSection = (): void => {
+    const options = { preserveScroll: true, onSuccess: () => { showSectionEditor.value = false; sectionForm.reset(); } };
+    if (editingSectionId.value !== null) sectionForm.put(route('projects.sections.update', [props.project.id, editingSectionId.value]), options);
+    else sectionForm.post(route('projects.sections.store', props.project.id), options);
+};
+const deleteSection = (section: ProjectSection): void => {
+    if (!window.confirm('آیا از حذف این بخش مطمئن هستید؟ بخش دارای دستورکار یا سند قابل حذف نیست.')) return;
+    router.delete(route('projects.sections.destroy', [props.project.id, section.id]), { preserveScroll: true });
+};
 
 const showSectionTaskModal = ref(false);
 const uploadingSectionId = ref<number | null>(null);
@@ -205,140 +211,6 @@ const submitSectionTask = (): void => {
     });
 };
 
-const memberRoleSelections = reactive<Record<number, string>>(
-    Object.fromEntries(
-        props.project.members.map((member) => [
-            member.id,
-            member.project_role?.id?.toString() ?? '',
-        ]),
-    ),
-);
-
-const memberRoleForm = useForm({
-    project_role_id: '',
-});
-
-const deletingMemberId = ref<number | null>(null);
-
-const addMemberForm = useForm({
-    user_id: '',
-    project_role_id: '',
-});
-
-const availableMembers = computed(() => props.memberOptions);
-
-const activeProjectRoles = computed(() =>
-    props.project.roles.filter((role) => role.is_active),
-);
-
-const roleForm = useForm({
-    name: '',
-    description: '',
-    is_active: true,
-});
-
-const editingRoleId = ref<number | null>(null);
-const roleActionForm = useForm({
-    role: '',
-});
-
-const startEditRole = (role: ProjectRole): void => {
-    editingRoleId.value = role.id;
-    roleForm.name = role.name;
-    roleForm.description = role.description ?? '';
-    roleForm.is_active = role.is_active;
-};
-
-const cancelEditRole = (): void => {
-    editingRoleId.value = null;
-    roleForm.reset();
-};
-
-const submitCreateRole = (): void => {
-    roleForm.post(route('projects.roles.store', props.project.id), {
-        preserveScroll: true,
-        onSuccess: () => roleForm.reset(),
-    });
-};
-
-const submitEditRole = (role: ProjectRole): void => {
-    roleForm.put(
-        route('projects.roles.update', [props.project.id, role.id]),
-        {
-            preserveScroll: true,
-            onSuccess: () => {
-                editingRoleId.value = null;
-                roleForm.reset();
-            },
-        },
-    );
-};
-
-const toggleRoleStatus = (role: ProjectRole): void => {
-    roleActionForm.patch(
-        route('projects.roles.toggle-status', [props.project.id, role.id]),
-        {
-            preserveScroll: true,
-        },
-    );
-};
-
-const deleteRole = (role: ProjectRole): void => {
-    if (!window.confirm('آیا از حذف این نقش پروژه مطمئن هستید؟')) {
-        return;
-    }
-
-    roleActionForm.delete(
-        route('projects.roles.destroy', [props.project.id, role.id]),
-        {
-            preserveScroll: true,
-        },
-    );
-};
-
-const submitMemberRole = (member: ProjectMember): void => {
-    memberRoleForm.project_role_id =
-        memberRoleSelections[member.id] ?? '';
-
-    memberRoleForm.put(
-        route('projects.members.update-role', [
-            props.project.id,
-            member.id,
-        ]),
-        {
-            preserveScroll: true,
-        },
-    );
-};
-
-const removeMember = (member: ProjectMember): void => {
-    if (!window.confirm('آیا از حذف این عضو از پروژه مطمئن هستید؟')) {
-        return;
-    }
-
-    deletingMemberId.value = member.id;
-
-    useForm({}).delete(
-        route('projects.members.destroy', [
-            props.project.id,
-            member.id,
-        ]),
-        {
-            preserveScroll: true,
-            onFinish: () => {
-                deletingMemberId.value = null;
-            },
-        },
-    );
-};
-
-const submitAddMember = (): void => {
-    addMemberForm.post(route('projects.members.store', props.project.id), {
-        preserveScroll: true,
-        onSuccess: () => addMemberForm.reset(),
-    });
-};
-
 const statusLabels: Record<Project['status'], string> = {
     planning: 'در حال برنامه‌ریزی',
     active: 'فعال',
@@ -407,14 +279,13 @@ const formatDate = (date: string | null): string => {
                 </div>
             </section>
 
-            <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+            <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
                 <article v-for="item in [
                     { label: 'بخش‌های کاری', value: projectTaskStats.sections, note: 'واحدهای مسئول', tone: 'border-r-sky-500', icon: '▦' },
                     { label: 'کل دستورکارها', value: projectTaskStats.total, note: 'دستورکارهای ثبت‌شده', tone: 'border-r-slate-400', icon: '≡' },
                     { label: 'در حال انجام', value: projectTaskStats.inProgress, note: 'در جریان اجرا', tone: 'border-r-blue-500', icon: '↗' },
                     { label: 'تکمیل‌شده', value: projectTaskStats.completed, note: 'خروجی‌های نهایی', tone: 'border-r-emerald-500', icon: '✓' },
                     { label: 'عقب‌افتاده', value: projectTaskStats.overdue, note: 'نیازمند پیگیری', tone: 'border-r-rose-500', icon: '!' },
-                    { label: 'پیشرفت پروژه', value: projectTaskStats.progress + '٪', note: projectTaskStats.completed + ' از ' + projectTaskStats.total + ' دستورکار تکمیل‌شده', tone: 'border-r-primary', icon: '◔' },
                 ]" :key="item.label" class="rounded-xl border border-r-4 bg-card p-4 shadow-sm" :class="item.tone">
                     <div class="flex items-start justify-between gap-3">
                         <div><p class="text-sm text-muted-foreground">{{ item.label }}</p><p class="mt-3 text-3xl font-bold tracking-tight tabular-nums">{{ item.value }}</p><p class="mt-1 text-xs text-muted-foreground">{{ item.note }}</p></div>
@@ -431,14 +302,14 @@ const formatDate = (date: string | null): string => {
                             <h3 class="mt-1 text-xl font-bold">بخش‌های پروژه</h3>
                             <p class="mt-1 text-sm text-muted-foreground">مسئولیت و پیشرفت هر بخش را ببینید؛ برای جزئیات و ثبت دستورکار، بخش را باز کنید.</p>
                         </div>
-                        <span class="rounded-full bg-muted px-3 py-1.5 text-xs font-semibold">{{ project.sections.length }} بخش تعریف‌شده</span>
+                        <div class="flex items-center gap-2"><span class="rounded-full bg-muted px-3 py-1.5 text-xs font-semibold">{{ project.sections.length }} بخش تعریف‌شده</span><Button v-if="canUpdate" type="button" size="sm" @click="openCreateSection">＋ افزودن بخش</Button></div>
                     </div>
 
                     <div v-if="project.sections.length === 0" class="rounded-2xl border border-dashed bg-card px-6 py-12 text-center">
                         <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-xl">▦</div>
                         <h4 class="mt-4 font-semibold">هنوز بخشی تعریف نشده است</h4>
                         <p class="mt-1 text-sm text-muted-foreground">برای ثبت دستورکار در این پروژه، ابتدا باید بخش و واحد مسئول مشخص شود.</p>
-                        <Button v-if="props.canUpdate" class="mt-4" as-child><Link :href="route('projects.edit', project.id)">تعریف بخش‌ها</Link></Button>
+                        <Button v-if="props.canUpdate" class="mt-4" @click="openCreateSection">＋ افزودن بخش</Button>
                     </div>
 
                     <details v-for="(section, sectionIndex) in project.sections" :key="section.id" class="group overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm transition-all open:border-primary/30 open:shadow-md">
@@ -466,6 +337,7 @@ const formatDate = (date: string | null): string => {
                             </div>
                         </summary>
                         <div class="border-t bg-muted/10">
+                        <div v-if="canUpdate" class="flex justify-end gap-2 border-b px-4 py-3"><Button type="button" size="sm" variant="outline" @click="openEditSection(section)">ویرایش بخش</Button><Button type="button" size="sm" variant="destructive" @click="deleteSection(section)">حذف بخش</Button></div>
                         <div class="border-b bg-muted/20 p-4 sm:p-5">
                             <div class="flex flex-wrap items-start justify-between gap-4">
                                 <div class="flex min-w-0 items-start gap-3">
@@ -568,36 +440,24 @@ const formatDate = (date: string | null): string => {
                         </div>
                     </section>
 
-                    <section class="overflow-hidden rounded-2xl border bg-card shadow-sm">
-                        <div class="border-b p-5">
-                            <div class="flex items-center justify-between gap-3"><div><p class="text-xs font-semibold text-primary">همکاری</p><h3 class="mt-1 font-bold">اعضای پروژه</h3></div><span class="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold">{{ project.members.length }} نفر</span></div>
-                        </div>
-                        <form v-if="canManageMembers && memberOptions.length > 0" class="space-y-3 border-b p-5" @submit.prevent="submitAddMember">
-                            <label for="member-user" class="block text-sm font-medium">افزودن عضو جدید</label>
-                            <div class="flex gap-2">
-                                <select id="member-user" v-model="addMemberForm.user_id" required class="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm" :disabled="addMemberForm.processing">
-                                    <option value="">انتخاب کاربر</option>
-                                    <option v-for="member in availableMembers" :key="member.id" :value="member.id.toString()">{{ member.name }}</option>
-                                </select>
-                                <Button type="submit" :disabled="addMemberForm.processing || !addMemberForm.user_id">افزودن</Button>
-                            </div>
-                            <p v-if="addMemberForm.errors.user_id" class="text-xs text-destructive">{{ addMemberForm.errors.user_id }}</p>
-                        </form>
-                        <div v-if="project.members.length === 0" class="p-5 text-sm text-muted-foreground">عضوی برای این پروژه ثبت نشده است.</div>
-                        <div v-else class="divide-y">
-                            <div v-for="member in project.members" :key="member.id" class="flex items-center justify-between gap-3 px-5 py-3">
-                                <div class="flex min-w-0 items-center gap-3">
-                                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-bold">{{ (member.user?.name ?? '؟').slice(0, 1) }}</div>
-                                    <div class="min-w-0"><p class="truncate text-sm font-semibold">{{ member.user?.name ?? 'کاربر حذف‌شده' }}</p><p class="mt-0.5 text-xs text-muted-foreground">{{ member.user?.id === project.manager?.id ? 'مدیر پروژه' : 'عضو پروژه' }}</p></div>
-                                </div>
-                                <Button v-if="canManageMembers && member.user?.id !== project.manager?.id" type="button" size="sm" variant="ghost" class="text-destructive hover:text-destructive" :disabled="deletingMemberId === member.id" @click="removeMember(member)">حذف</Button>
-                            </div>
-                        </div>
-                    </section>
-
+                    
                 </aside>
             </section>
         </main>
+
+
+        <div v-if="showSectionEditor" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 sm:p-6" @keydown.esc="showSectionEditor = false">
+            <div class="my-4 w-full max-w-xl rounded-xl border bg-card shadow-xl sm:my-8" role="dialog" aria-modal="true" aria-labelledby="section-editor-title">
+                <div class="flex items-start justify-between gap-4 border-b p-5"><div><h3 id="section-editor-title" class="text-lg font-semibold">{{ editingSectionId ? 'ویرایش بخش پروژه' : 'افزودن بخش پروژه' }}</h3><p class="mt-1 text-sm text-muted-foreground">واحد مسئول، مالک اجرایی این بخش و دستورکارهای آن است.</p></div><Button type="button" variant="outline" size="sm" @click="showSectionEditor = false">بستن</Button></div>
+                <form class="space-y-4 p-5" @submit.prevent="submitSection">
+                    <div class="space-y-1"><label for="section-name" class="text-sm font-medium">عنوان بخش</label><input id="section-name" v-model="sectionForm.name" required maxlength="150" class="w-full rounded-md border bg-background px-3 py-2 text-sm" /><p v-if="sectionForm.errors.name" class="text-xs text-destructive">{{ sectionForm.errors.name }}</p></div>
+                    <div class="space-y-1"><label for="section-department" class="text-sm font-medium">واحد مسئول</label><select id="section-department" v-model="sectionForm.department_id" required class="w-full rounded-md border bg-background px-3 py-2 text-sm"><option value="">انتخاب واحد</option><option v-for="department in sectionDepartmentOptions" :key="department.id" :value="department.id.toString()">{{ department.name }} — {{ department.manager?.name ?? 'بدون مدیر' }}</option></select><p v-if="sectionForm.errors.department_id" class="text-xs text-destructive">{{ sectionForm.errors.department_id }}</p></div>
+                    <div class="space-y-1"><label for="section-description" class="text-sm font-medium">توضیحات</label><textarea id="section-description" v-model="sectionForm.description" rows="3" class="w-full rounded-md border bg-background px-3 py-2 text-sm" /><p v-if="sectionForm.errors.description" class="text-xs text-destructive">{{ sectionForm.errors.description }}</p></div>
+                    <label class="flex items-center gap-2 text-sm"><input v-model="sectionForm.manager_can_create_tasks" type="checkbox" class="rounded border-input" /> مدیر واحد بتواند در این بخش دستورکار ایجاد کند</label>
+                    <div class="flex justify-end gap-2 border-t pt-4"><Button type="button" variant="outline" @click="showSectionEditor = false">انصراف</Button><Button type="submit" :disabled="sectionForm.processing">{{ sectionForm.processing ? 'در حال ذخیره...' : 'ذخیره بخش' }}</Button></div>
+                </form>
+            </div>
+        </div>
 
         <div v-if="showSectionTaskModal && selectedSection" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 sm:p-6" @keydown.esc="showSectionTaskModal = false">
             <div class="my-4 w-full max-w-2xl overflow-hidden rounded-xl border bg-card shadow-xl sm:my-8" role="dialog" aria-modal="true" aria-labelledby="section-task-modal-title">
