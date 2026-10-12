@@ -513,7 +513,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
             </div>
         </template>
 
-        <div class="mx-auto max-w-7xl space-y-6">
+        <div class="task-show mx-auto max-w-7xl space-y-6 px-4 py-5 sm:px-6 lg:px-8">
             <div class="grid gap-6 pt-2 lg:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.75fr)]">
                 <main class="min-w-0 space-y-6">
                     <section class="overflow-hidden rounded-xl border bg-card shadow-sm">
