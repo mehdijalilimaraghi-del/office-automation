@@ -11,6 +11,7 @@ use App\Core\CustomFields\Http\Controllers\CustomFieldController;
 use App\Core\Settings\Http\Controllers\OrganizationSettingsController;
 use App\Core\ExternalParties\Http\Controllers\ExternalPartyController;
 use App\Modules\Projects\Http\Controllers\ProjectController;
+use App\Modules\Projects\Http\Controllers\ProjectSectionController;
 use App\Modules\Projects\Http\Controllers\ProjectMemberController;
 use App\Modules\Projects\Http\Controllers\ProjectRoleController;
 use App\Modules\Tasks\Http\Controllers\TaskController;
@@ -97,6 +98,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/projects/{project}', [ProjectController::class, 'show'])->middleware('permission:projects.view')->name('projects.show');
     Route::put('/projects/{project}', [ProjectController::class, 'update'])->middleware('permission:projects.update')->name('projects.update');
     Route::delete('/projects/{project}', [ProjectController::class, 'destroy'])->middleware('permission:projects.delete')->name('projects.destroy');
+    Route::post('/projects/{project}/sections', [ProjectSectionController::class, 'store'])->middleware('permission:projects.update')->name('projects.sections.store');
+    Route::put('/projects/{project}/sections/{section}', [ProjectSectionController::class, 'update'])->middleware('permission:projects.update')->name('projects.sections.update');
+    Route::delete('/projects/{project}/sections/{section}', [ProjectSectionController::class, 'destroy'])->middleware('permission:projects.update')->name('projects.sections.destroy');
 
     Route::scopeBindings()->group(function () {
         Route::post('/projects/{project}/roles', [ProjectRoleController::class, 'store'])->middleware('permission:projects.manage_roles')->name('projects.roles.store');
