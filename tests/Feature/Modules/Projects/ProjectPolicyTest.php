@@ -103,6 +103,28 @@ class ProjectPolicyTest extends TestCase
         );
     }
 
+    public function test_project_management_department_manager_can_view_and_delete_project(): void
+    {
+        $manager = User::factory()->create(['status' => 'active']);
+        $project = $this->createProject();
+
+        $parent = Department::query()->firstOrCreate(
+            ['name' => 'واحد مدیریت'],
+            ['code' => 'MGMT', 'is_active' => true],
+        );
+
+        $department = Department::query()->firstOrCreate(
+            ['name' => 'مدیریت پروژه', 'parent_id' => $parent->id],
+            ['code' => 'PROJECT-MGMT', 'is_active' => true],
+        );
+        $department->update(['manager_id' => $manager->id]);
+
+        $this->assertTrue($manager->hasPermission('projects.view'));
+        $this->assertTrue($manager->hasPermission('projects.delete'));
+        $this->assertTrue($manager->can('view', $project));
+        $this->assertTrue($manager->can('delete', $project));
+    }
+
     public function test_system_default_project_cannot_be_updated_deleted_or_managed(): void
     {
         $user = $this->userWithPermission('projects.update');
@@ -167,7 +189,7 @@ class ProjectPolicyTest extends TestCase
     private function addProjectManagementMembership(User $user): void
     {
         $parent = Department::query()->firstOrCreate(
-            ['name' => 'مدیریت'],
+            ['name' => 'واحد مدیریت'],
             ['code' => 'MGMT', 'is_active' => true],
         );
 
