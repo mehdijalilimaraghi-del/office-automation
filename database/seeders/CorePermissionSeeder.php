@@ -267,34 +267,7 @@ class CorePermissionSeeder extends Seeder
                 $permission->update(['is_active' => false]);
             });
 
-        // Project and work-order operations are derived from actual
-        // responsibilities. Keep them out of administrative roles. The system
-        // role is reseeded with all active permissions by CoreRoleSeeder.
-        $responsibilityCodes = [
-            'projects.view',
-            'projects.update',
-            'projects.manage_roles',
-            'projects.manage_members',
-            'tasks.view',
-            'tasks.create',
-            'tasks.update',
-            'tasks.assign',
-            'tasks.refer',
-            'tasks.change_status',
-            'tasks.submit',
-            'tasks.review',
-            'tasks.comment',
-            'tasks.log_work',
-            'tasks.create_reminder',
-        ];
-
-        Permission::query()
-            ->whereIn('code', $responsibilityCodes)
-            ->get()
-            ->each(function (Permission $permission): void {
-                $permission->roles()
-                    ->where('roles.is_system', false)
-                    ->detach();
-            });
+        // Explicit role grants may complement access derived from actual
+        // operational responsibilities. Preserve those grants on reseeding.
     }
 }
