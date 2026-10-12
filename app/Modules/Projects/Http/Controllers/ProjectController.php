@@ -84,11 +84,11 @@ class ProjectController extends Controller
                 ->where(function ($query): void {
                     $query->whereHas('departments', fn ($departmentQuery) => $departmentQuery
                         ->where('departments.name', 'مدیریت پروژه')
-                        ->whereHas('parent', fn ($parentQuery) => $parentQuery->where('name', 'مدیریت'))
+                        ->whereHas('parent', fn ($parentQuery) => $parentQuery->where('name', 'واحد مدیریت'))
                         ->where('departments.is_active', true))
                         ->orWhereHas('managedDepartments', fn ($departmentQuery) => $departmentQuery
                             ->where('departments.name', 'مدیریت پروژه')
-                            ->whereHas('parent', fn ($parentQuery) => $parentQuery->where('name', 'مدیریت'))
+                            ->whereHas('parent', fn ($parentQuery) => $parentQuery->where('name', 'واحد مدیریت'))
                             ->where('departments.is_active', true))
                         ->orWhereHas('roles', fn ($roleQuery) => $roleQuery
                             ->where('roles.code', 'SYSTEM_ADMIN')
