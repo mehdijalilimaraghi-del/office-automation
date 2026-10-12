@@ -442,3 +442,14 @@ Implementation has started for the agreed cross-department project model:
 - A migration consolidates existing department-default projects into one shared default project, creates a section per legacy department project, and preserves legacy project rows as inactive for historical references.
 
 **Validation status:** not yet run in a local Laravel environment. Migration, backend authorization, tests, and frontend build must be validated before this work is considered complete. Existing per-department default projects are hidden from ordinary project selection; the shared default project is created by `db:seed` on fresh installs.
+
+
+## 2026-10-12 — Restore system administrator and combine role/responsibility access
+
+- The active `SYSTEM_ADMIN` user now receives every permission and organization-wide scope centrally through `User::hasPermission()` and `User::permissionScopes()`. This no longer depends on the role seeder having every newly added permission attached; inactive users remain denied.
+- The role-permission editor now allows active operational permissions (including project/task permissions) to be granted explicitly to a normal application role, with scope validation retained.
+- Role permission synchronization no longer rejects responsibility-derived permissions. Explicit role grants and access derived from actual organizational/project/task responsibilities are combined, so a role grant can provide an additional capability beyond the user's position or contextual responsibility.
+- `CorePermissionSeeder` no longer detaches operational grants from non-system roles on every seed run. Historical grants removed by the earlier migration are not automatically restored; an administrator can now assign them again in the role editor.
+- Added regression coverage for system-admin permission/middleware bypass, operational permission assignment to a role, and preserving explicit operational grants during permission reseeding.
+
+**Validation status:** code committed to `development`; focused Laravel tests and frontend production build are pending. V1 remains the active version; V2 has not started.
