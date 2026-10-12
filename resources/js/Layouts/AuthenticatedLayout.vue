@@ -74,8 +74,8 @@ onMounted(() => {
 
 <template>
     <div dir="rtl">
-        <div class="min-h-screen bg-gray-100">
-            <nav class="border-b border-gray-100 bg-white">
+        <div class="app-shell min-h-screen">
+            <nav class="app-topbar border-b border-gray-100 bg-white">
                 <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div class="flex h-16 items-center justify-between">
                         <!-- سمت راست: لوگو و منو -->
@@ -578,7 +578,7 @@ onMounted(() => {
             <!-- عنوان صفحه -->
             <header
                 v-if="$slots.header"
-                class="bg-white shadow"
+                class="app-page-header"
             >
                 <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                     <slot name="header" />
@@ -586,7 +586,7 @@ onMounted(() => {
             </header>
 
             <!-- محتوای صفحه -->
-            <main>
+            <main class="app-main">
                 <slot />
             </main>
         </div>
