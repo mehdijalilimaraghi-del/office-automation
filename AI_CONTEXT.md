@@ -135,3 +135,10 @@ Before making the first code change in a new conversation:
 - Do not re-add or reposition the persistent task-activity guide during admin-account checks.
 - During V1 manual acceptance with a normal user account, review the task detail page and, if the guide is still needed, place it in a dedicated full-width section below the two-column layout containing «فعالیت‌های بعدی» and the «ثبت فعالیت بعدی» section/button. Do not place the paragraph inside either column.
 - The user explicitly deferred this UI decision until normal-user acceptance; leave it pending rather than making further changes now.
+
+
+## Authorization correction — 2026-10-12
+- The active `SYSTEM_ADMIN` role is a global system capability: `User::hasPermission()` returns true and `permissionScopes()` returns organization scope for it, while inactive users remain denied.
+- User capabilities are additive: actual position/context responsibilities derive operational access, and an application Role can explicitly grant additional permissions. Role grants must not be silently removed by `CorePermissionSeeder`.
+- The role permission UI exposes active operational permissions and retains per-permission scope selection. `SyncRolePermissionsAction` validates scopes but does not prohibit operational grants.
+- Regression tests were added for system-admin access and operational role grants. Focused tests and frontend build are pending; remain in V1 until manual acceptance is complete.
