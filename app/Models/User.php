@@ -7,6 +7,7 @@ use App\Core\Permissions\Enums\PermissionScope;
 use App\Core\Departments\Models\Position;
 use App\Core\Departments\Models\PositionAssignment;
 use App\Core\Roles\Models\Role;
+use App\Core\Settings\Services\OrganizationDepartmentRoleService;
 use App\Core\Users\Models\UserProfile;
 use App\Core\CustomFields\Models\CustomFieldValue;
 use App\Modules\Projects\Models\Project;
@@ -312,11 +313,8 @@ class User extends Authenticatable
         }
 
         if ($permissionCode === 'projects.view') {
-            $managesProjectManagementDepartment = $this->managedDepartments()
-                ->where('departments.name', 'مدیریت پروژه')
-                ->whereHas('parent', fn ($query) => $query->where('name', 'واحد مدیریت'))
-                ->where('departments.is_active', true)
-                ->exists();
+            $managesProjectManagementDepartment = app(OrganizationDepartmentRoleService::class)
+                ->userBelongsTo($this, OrganizationDepartmentRoleService::PROJECT_MANAGEMENT);
 
             if ($managesProjectManagementDepartment) {
                 return [PermissionScope::Organization->value];
@@ -340,11 +338,8 @@ class User extends Authenticatable
         }
 
         if (str_starts_with($permissionCode, 'projects.')) {
-            $managesProjectManagementDepartment = $this->managedDepartments()
-                ->where('departments.name', 'مدیریت پروژه')
-                ->whereHas('parent', fn ($query) => $query->where('name', 'واحد مدیریت'))
-                ->where('departments.is_active', true)
-                ->exists();
+            $managesProjectManagementDepartment = app(OrganizationDepartmentRoleService::class)
+                ->userBelongsTo($this, OrganizationDepartmentRoleService::PROJECT_MANAGEMENT);
 
             if ($managesProjectManagementDepartment) {
                 return [PermissionScope::Organization->value];
