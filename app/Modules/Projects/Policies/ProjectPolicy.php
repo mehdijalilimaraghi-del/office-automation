@@ -23,25 +23,22 @@ class ProjectPolicy
 
     public function create(User $user): bool
     {
-        if (! $user->isActive() || ! $user->hasPermission('projects.create')) {
+        if (! $this->canManageProjects($user) || ! $user->hasPermission('projects.create')) {
             return false;
         }
 
-        $scopes = $user->permissionScopes('projects.create');
-
-        return in_array(PermissionScope::Organization->value, $scopes, true)
-            || in_array(PermissionScope::Department->value, $scopes, true)
-            || in_array(PermissionScope::DepartmentTree->value, $scopes, true);
+        return $user->permissionScopes('projects.create') !== [];
     }
 
     public function update(User $user, Project $project): bool
     {
         return ! $project->is_system_default
-            && $user->isActive()
+            && $this->canManageProjects($user)
             && (
                 $user->isSystemAdmin()
                 || (
                     $this->isProjectManager($user, $project)
+                    && $user->hasPermission('projects.update')
                     && $this->hasScopedProjectAccess($user, $project, 'projects.update')
                 )
             );
@@ -50,11 +47,12 @@ class ProjectPolicy
     public function delete(User $user, Project $project): bool
     {
         return ! $project->is_system_default
-            && $user->isActive()
+            && $this->canManageProjects($user)
             && (
                 $user->isSystemAdmin()
                 || (
                     $this->isProjectManager($user, $project)
+                    && $user->hasPermission('projects.delete')
                     && $this->hasScopedProjectAccess($user, $project, 'projects.delete')
                 )
             );
@@ -63,15 +61,41 @@ class ProjectPolicy
     public function manageRoles(User $user, Project $project): bool
     {
         return ! $project->is_system_default
+            && $this->canManageProjects($user)
             && $this->isProjectManager($user, $project)
+            && $user->hasPermission('projects.manage_roles')
             && $this->hasScopedProjectAccess($user, $project, 'projects.manage_roles');
     }
 
     public function manageMembers(User $user, Project $project): bool
     {
         return ! $project->is_system_default
+            && $this->canManageProjects($user)
             && $this->isProjectManager($user, $project)
+            && $user->hasPermission('projects.manage_members')
             && $this->hasScopedProjectAccess($user, $project, 'projects.manage_members');
+    }
+
+    /**
+     * Project administration is limited to active members of the
+     * Management > Project Management department. System administrators
+     * retain the existing emergency-administration bypass.
+     */
+    private function canManageProjects(User $user): bool
+    {
+        if (! $user->isActive()) {
+            return false;
+        }
+
+        if ($user->isSystemAdmin()) {
+            return true;
+        }
+
+        return $user->departments()
+            ->where('departments.name', 'مدیریت پروژه')
+            ->whereHas('parent', fn ($query) => $query->where('name', 'مدیریت'))
+            ->where('departments.is_active', true)
+            ->exists();
     }
 
     private function isProjectManager(User $user, Project $project): bool
