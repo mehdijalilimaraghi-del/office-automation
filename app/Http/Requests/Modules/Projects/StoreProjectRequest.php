@@ -18,6 +18,14 @@ class StoreProjectRequest extends FormRequest
             return false;
         }
 
+        if (! $user->isSystemAdmin() && ! $user->departments()
+            ->where('departments.name', 'مدیریت پروژه')
+            ->whereHas('parent', fn ($query) => $query->where('name', 'مدیریت'))
+            ->where('departments.is_active', true)
+            ->exists()) {
+            return false;
+        }
+
         $scopes = $user->permissionScopes('projects.create');
 
         if (in_array(\App\Core\Permissions\Enums\PermissionScope::Organization->value, $scopes, true)) {
