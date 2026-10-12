@@ -4,6 +4,8 @@ namespace Tests\Feature\Modules\Projects;
 
 use App\Models\User;
 use App\Core\Departments\Models\Department;
+use App\Core\Settings\Models\SystemSetting;
+use App\Core\Settings\Services\OrganizationDepartmentRoleService;
 use App\Modules\Projects\Contracts\ProjectServiceContract;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectMember;
@@ -28,6 +30,15 @@ class CreateProjectTest extends TestCase
         $department = Department::query()->firstOrCreate(
             ['name' => 'مدیریت پروژه', 'parent_id' => $parent->id],
             ['code' => 'PROJECT-MGMT', 'is_active' => true],
+        );
+
+        SystemSetting::query()->updateOrCreate(
+            ['key' => OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::MANAGEMENT)],
+            ['value' => (string) $parent->id],
+        );
+        SystemSetting::query()->updateOrCreate(
+            ['key' => OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::PROJECT_MANAGEMENT)],
+            ['value' => (string) $department->id],
         );
 
         $department->members()->syncWithoutDetaching([
