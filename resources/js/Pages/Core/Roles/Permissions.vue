@@ -18,16 +18,6 @@ interface PermissionGroup {
 }
 
 const props = defineProps<{ role: Role; permissions: Permission[]; scopes: ScopeOption[] }>();
-const responsibilityCodes = new Set([
-    'projects.view', 'projects.update', 'projects.manage_roles', 'projects.manage_members',
-    'tasks.view', 'tasks.create', 'tasks.update', 'tasks.assign', 'tasks.refer',
-    'tasks.change_status', 'tasks.submit', 'tasks.review', 'tasks.comment',
-    'tasks.log_work', 'tasks.create_reminder',
-]);
-
-function isResponsibilityDerived(permission: Permission): boolean {
-    return responsibilityCodes.has(permission.code);
-}
 function defaultScope(permission: Permission): string {
     if (permission.code === 'projects.create') return 'department';
     return permission.code.startsWith('tasks.') || permission.code.startsWith('projects.')
@@ -47,12 +37,11 @@ function existingScope(permission: Permission): string {
     return scopeOptions(permission).some((option) => option.value === scope) ? scope : defaultScope(permission);
 }
 const activeAssignablePermissions = computed(() => props.permissions.filter(
-    (permission) => permission.is_active && !isResponsibilityDerived(permission),
+    (permission) => permission.is_active,
 ));
-const responsibilityPermissions = computed(() => props.permissions.filter(isResponsibilityDerived));
 const form = useForm({
     permissions: props.role.permissions
-        .filter((permission) => permission.is_active && !isResponsibilityDerived(permission))
+        .filter((permission) => permission.is_active)
         .map((permission) => ({ permission_id: permission.id, scope: existingScope(permission) })),
 });
 const search = ref('');
@@ -104,7 +93,7 @@ function isAssigned(permissionId: number): boolean {
     return form.permissions.some((permission) => permission.permission_id === permissionId);
 }
 function togglePermission(permission: Permission): void {
-    if (props.role.is_system || !permission.is_active || isResponsibilityDerived(permission)) return;
+    if (props.role.is_system || !permission.is_active) return;
     const index = form.permissions.findIndex((item) => item.permission_id === permission.id);
     if (index === -1) form.permissions.push({ permission_id: permission.id, scope: defaultScope(permission) });
     else form.permissions.splice(index, 1);
@@ -174,7 +163,7 @@ function submit(): void {
 
                 <section class="rounded-2xl border border-sky-200 bg-sky-50 p-5 text-sm leading-7 text-sky-950">
                     <h3 class="font-extrabold">دو نوع دسترسی را از هم جدا نگه دارید</h3>
-                    <p class="mt-1">دسترسی‌های عملیاتی پروژه و دستورکار بر اساس مسئولیت واقعی تعیین می‌شوند: مدیر واحد، مدیر پروژه، عضو پروژه، مجری یا ایجادکنندهٔ دستورکار. این دسترسی‌ها در نقش قابل اعطا نیستند.</p>
+                    <p class="mt-1">دسترسی عملیاتی می‌تواند از مسئولیت واقعی (مثل مدیر واحد، مدیر پروژه یا مجری دستورکار) یا از نقش کاربری اعطا شود. دسترسی‌های هر دو مسیر با هم جمع می‌شوند؛ اگر مسئولیت به‌تنهایی کافی نباشد، مجوز نقش می‌تواند آن را تکمیل کند.</p>
                     <p class="mt-2">گزینه‌های زیر برای دسترسی‌های مدیریتی یا استثنایی‌اند؛ مثل ایجاد واحد، مدیریت کاربران، ایجاد/حذف پروژه یا حذف دستورکار. فقط مجوز لازم را انتخاب کنید و محدودهٔ آن را به کوچک‌ترین سطح موردنیاز محدود کنید.</p>
                 </section>
 
@@ -197,16 +186,6 @@ function submit(): void {
                                     />
                                 </div>
                             </div>
-                        </div>
-
-<div v-if="responsibilityPermissions.length" class="border-b border-slate-100 bg-sky-50/50 px-5 py-4 sm:px-6">
-                            <p class="text-sm font-extrabold text-sky-950">دسترسی‌های عملیاتی بر اساس مسئولیت</p>
-                            <div class="mt-2 flex flex-wrap gap-2">
-                                <span v-for="permission in responsibilityPermissions" :key="permission.code" class="rounded-full border border-sky-200 bg-white px-3 py-1.5 text-xs font-bold text-sky-800">
-                                    {{ permission.name }} · خودکار
-                                </span>
-                            </div>
-                            <p class="mt-2 text-xs leading-6 text-sky-900">برای نقش‌های عادی این مجوزها از نقش حذف شده‌اند؛ سامانه آن‌ها را از مسئولیت و ارتباط واقعی کاربر با واحد، پروژه و دستورکار محاسبه می‌کند. نقش سیستمی مدیر سامانه استثناست.</p>
                         </div>
 
                         <div v-if="groupedPermissions.length" class="space-y-7 p-4 sm:p-6">
