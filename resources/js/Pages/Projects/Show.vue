@@ -328,8 +328,8 @@ const formatDate = (date: string | null): string => {
                         <Button v-if="props.canUpdate" class="mt-4" @click="openCreateSection">＋ افزودن بخش</Button>
                     </div>
 
-                    <details v-for="(section, sectionIndex) in project.sections" :key="section.id" class="group overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm transition-all open:border-primary/30 open:shadow-md">
-                        <summary class="cursor-pointer list-none bg-gradient-to-l from-muted/30 to-card p-4 transition-colors hover:from-primary/5 hover:to-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary sm:p-5 [&::-webkit-details-marker]:hidden">
+                    <details v-for="(section, sectionIndex) in project.sections" :key="section.id" class="group overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm transition-all duration-200 hover:border-primary/25 open:border-primary/40 open:shadow-md">
+                        <summary class="cursor-pointer list-none bg-gradient-to-l from-primary/[0.035] via-card to-card p-4 transition-colors hover:from-primary/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary sm:p-5 [&::-webkit-details-marker]:hidden">
                             <div class="flex flex-wrap items-center gap-4">
                                 <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/15 bg-primary/10 text-sm font-bold text-primary">{{ String(sectionIndex + 1).padStart(2, '0') }}</span>
                                 <div class="min-w-0 flex-1">
@@ -348,7 +348,7 @@ const formatDate = (date: string | null): string => {
                                 </span>
                             </div>
                         </summary>
-                        <div class="border-t bg-muted/10">
+                        <div class="border-t border-border/70 bg-muted/[0.12]">
                         <div v-if="canUpdate" class="flex justify-end gap-2 border-b px-4 py-3"><Button type="button" size="sm" variant="outline" @click="openEditSection(section)">ویرایش بخش</Button><Button type="button" size="sm" variant="destructive" @click="deleteSection(section)">حذف بخش</Button></div>
                         <div class="border-b bg-muted/20 p-4 sm:p-5">
                             <div class="flex flex-wrap items-start justify-between gap-4">
@@ -395,16 +395,16 @@ const formatDate = (date: string | null): string => {
                             </div>
                         </div>
 
-                        <section class="border-t">
-                            <div class="flex flex-wrap items-center justify-between gap-3 bg-background px-4 py-3 sm:px-5">
+                        <section class="border-t border-border/70">
+                            <div class="flex flex-wrap items-center justify-between gap-3 bg-primary/[0.035] px-4 py-3 sm:px-5">
                                 <div><h5 class="font-semibold">دستورکارهای این بخش</h5><p class="mt-1 text-xs text-muted-foreground">وضعیت، مسئول و مهلت هر دستورکار</p></div>
                                 <span class="rounded-full border bg-card px-3 py-1 text-xs font-semibold tabular-nums">{{ section.tasks.length }} مورد</span>
                             </div>
                             <div v-if="section.tasks.length === 0" class="m-4 rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">برای این بخش هنوز دستورکاری ثبت نشده است.</div>
                             <div v-else class="divide-y">
-                            <Link v-for="task in section.tasks" :key="task.id" :href="route('tasks.show', task.id)" class="flex flex-col gap-3 px-4 py-4 transition hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                            <Link v-for="task in section.tasks" :key="task.id" :href="route('tasks.show', task.id)" class="group/task flex flex-col gap-3 border-r-2 border-transparent px-4 py-4 transition duration-150 hover:border-primary/50 hover:bg-primary/[0.035] sm:flex-row sm:items-center sm:justify-between sm:px-5">
                                 <div class="min-w-0">
-                                    <p class="truncate text-sm font-semibold">{{ task.title }}</p>
+                                    <p class="truncate text-sm font-semibold transition-colors group-hover/task:text-primary">{{ task.title }}</p>
                                     <p class="mt-1 text-xs text-muted-foreground">مسئول: {{ task.assignee?.name ?? section.department?.manager?.name ?? 'مدیر واحد' }}<span v-if="task.due_date"> · مهلت: {{ formatDate(task.due_date) }}</span></p>
                                 </div>
                                 <div class="flex shrink-0 items-center gap-2">
@@ -415,7 +415,7 @@ const formatDate = (date: string | null): string => {
                                         'bg-rose-50 text-rose-700': task.status === 'cancelled',
                                     }">{{ taskStatusLabels[task.status] ?? task.status }}</span>
                                     <span class="text-xs font-semibold" :class="priorityLabels[task.priority] === 'فوری' ? 'text-rose-600' : task.priority === 'high' ? 'text-amber-600' : 'text-muted-foreground'">{{ priorityLabels[task.priority] ?? task.priority }}</span>
-                                    <span aria-hidden="true" class="text-muted-foreground">←</span>
+                                    <span aria-hidden="true" class="text-muted-foreground transition-transform group-hover/task:-translate-x-0.5 group-hover/task:text-primary">←</span>
                                 </div>
                             </Link>
                             </div>
