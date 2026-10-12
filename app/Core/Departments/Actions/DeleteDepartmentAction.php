@@ -11,9 +11,7 @@ class DeleteDepartmentAction
 {
     public function execute(Department $department): void
     {
-        $isLegacyManagement = $department->code === 'ORG-000001';
-
-        if ($department->is_system_default && ! $isLegacyManagement) {
+        if ($department->is_system_default) {
             throw ValidationException::withMessages([
                 'department' => 'واحدهای پیش‌فرض سازمان قابل حذف نیستند.',
             ]);
@@ -25,7 +23,7 @@ class DeleteDepartmentAction
             ]);
         }
 
-        if ($department->manager_id !== null && ! $isLegacyManagement) {
+        if ($department->manager_id !== null) {
             throw ValidationException::withMessages([
                 'department' => 'دپارتمان دارای مدیر است. ابتدا مدیر دپارتمان را حذف کنید.',
             ]);
