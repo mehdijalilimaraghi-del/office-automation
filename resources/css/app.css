@@ -323,3 +323,118 @@
         padding: 1rem;
     }
 }
+
+/* Task detail and operational dialogs. */
+.task-show > .grid > main > section,
+.task-show aside > section,
+.task-show > .grid > main > .grid > section {
+    border-color: #e5e2eb;
+    border-radius: 1.15rem;
+    background: #fff;
+    box-shadow: 0 5px 24px rgb(18 18 18 / 3%);
+}
+
+.task-show > .grid > main > section > div:first-child {
+    border-color: #eeebf3;
+}
+
+.task-show > .grid > main > section h3,
+.task-show aside h3 {
+    letter-spacing: -0.015em;
+}
+
+.task-show button.bg-gray-900,
+.task-modal-panel button.bg-gray-900 {
+    background-color: #6f5cc5;
+    box-shadow: 0 3px 10px rgb(111 92 197 / 15%);
+    transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.task-show button.bg-gray-900:hover,
+.task-modal-panel button.bg-gray-900:hover {
+    background-color: #5e4cb0;
+}
+
+.task-show button:disabled,
+.task-modal-panel button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.task-show article {
+    transition: background-color 150ms ease;
+}
+
+.task-show article:hover {
+    background-color: #fcfbff;
+}
+
+.task-show input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.task-show select,
+.task-show textarea,
+.task-modal-panel input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.task-modal-panel select,
+.task-modal-panel textarea {
+    border-color: #e5e2eb;
+    border-radius: 0.75rem;
+    background-color: #fff;
+    box-shadow: none;
+}
+
+.task-show input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+.task-show select:focus,
+.task-show textarea:focus,
+.task-modal-panel input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+.task-modal-panel select:focus,
+.task-modal-panel textarea:focus {
+    border-color: #b0b1db;
+    box-shadow: 0 0 0 3px rgb(198 183 255 / 25%);
+    outline: none;
+}
+
+.task-modal-overlay {
+    background: rgb(24 20 36 / 42%);
+    padding: 1rem;
+    backdrop-filter: blur(3px);
+}
+
+.task-modal-panel {
+    border: 1px solid #e5e2eb;
+    box-shadow: 0 24px 80px rgb(18 18 18 / 18%);
+}
+
+.task-modal-panel > div:first-child {
+    border-color: #eeebf3;
+}
+
+.task-modal-panel label {
+    color: #45414c;
+    font-weight: 500;
+}
+
+.task-modal-panel button:not(.bg-gray-900) {
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.task-modal-panel button:not(.bg-gray-900):hover {
+    border-color: #c6b7ff;
+    background-color: #f8f6ff;
+}
+
+@media (max-width: 640px) {
+    .task-modal-overlay {
+        align-items: flex-end;
+        padding: 0.5rem;
+    }
+
+    .task-modal-panel {
+        max-height: 92dvh;
+        overflow-y: auto;
+        border-radius: 1.25rem 1.25rem 0.75rem 0.75rem;
+    }
+
+    .task-show {
+        padding-inline: 0.75rem;
+    }
+}
+
