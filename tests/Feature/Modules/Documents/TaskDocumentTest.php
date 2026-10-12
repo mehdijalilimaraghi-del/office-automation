@@ -82,7 +82,7 @@ class TaskDocumentTest extends TestCase
     {
         Storage::fake('local');
 
-        $user = $this->systemAdmin();
+        $user = User::factory()->create(['status' => 'active']);
 
         $task = Task::query()->create([
             'title' => 'Protected task',
