@@ -6,6 +6,8 @@ namespace Tests\Feature\Modules\Projects;
 
 use App\Core\Departments\Models\Department;
 use App\Core\Permissions\Models\Permission;
+use App\Core\Settings\Models\SystemSetting;
+use App\Core\Settings\Services\OrganizationDepartmentRoleService;
 use App\Core\Roles\Models\Role;
 use App\Models\User;
 use App\Modules\Projects\Models\Project;
@@ -103,24 +105,30 @@ class ProjectPolicyTest extends TestCase
         );
     }
 
-    public function test_project_management_department_manager_can_view_and_delete_project(): void
+    public function test_configured_project_management_department_manager_can_view_and_delete_project(): void
     {
         $manager = User::factory()->create(['status' => 'active']);
         $project = $this->createProject();
 
-        $parent = Department::query()->firstOrCreate(
-            ['name' => 'واحد مدیریت'],
-            ['code' => 'MGMT', 'is_active' => true],
-        );
-
-        $department = Department::query()->firstOrCreate(
-            ['name' => 'مدیریت پروژه', 'parent_id' => $parent->id],
-            ['code' => 'PROJECT-MGMT', 'is_active' => true],
-        );
+        $department = $this->projectManagementDepartment();
         $department->update(['manager_id' => $manager->id]);
 
         $this->assertTrue($manager->hasPermission('projects.view'));
         $this->assertTrue($manager->hasPermission('projects.delete'));
+        $this->assertTrue($manager->can('view', $project));
+        $this->assertTrue($manager->can('delete', $project));
+    }
+
+    public function test_renaming_configured_departments_does_not_remove_project_permissions(): void
+    {
+        $manager = User::factory()->create(['status' => 'active']);
+        $project = $this->createProject();
+        $department = $this->projectManagementDepartment();
+        $department->update(['manager_id' => $manager->id]);
+        $department->parent()->update(['name' => 'مدیریت کل سازمان']);
+        $department->update(['name' => 'دفتر راهبری طرح‌ها']);
+
+        $this->assertTrue($manager->hasPermission('projects.view'));
         $this->assertTrue($manager->can('view', $project));
         $this->assertTrue($manager->can('delete', $project));
     }
@@ -188,19 +196,35 @@ class ProjectPolicyTest extends TestCase
 
     private function addProjectManagementMembership(User $user): void
     {
-        $parent = Department::query()->firstOrCreate(
-            ['name' => 'واحد مدیریت'],
-            ['code' => 'MGMT', 'is_active' => true],
-        );
-
-        $department = Department::query()->firstOrCreate(
-            ['name' => 'مدیریت پروژه', 'parent_id' => $parent->id],
-            ['code' => 'PROJECT-MGMT', 'is_active' => true],
-        );
+        $department = $this->projectManagementDepartment();
 
         $department->members()->syncWithoutDetaching([
             $user->id => ['is_primary' => false, 'joined_at' => now()],
         ]);
+    }
+
+    private function projectManagementDepartment(): Department
+    {
+        $parent = Department::query()->firstOrCreate(
+            ['code' => 'TEST-MANAGEMENT'],
+            ['name' => 'واحد اصلی', 'is_active' => true],
+        );
+
+        $department = Department::query()->firstOrCreate(
+            ['code' => 'TEST-PROJECTS'],
+            ['name' => 'واحد طرح‌ها', 'parent_id' => $parent->id, 'is_active' => true],
+        );
+
+        SystemSetting::query()->updateOrCreate(
+            ['key' => OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::MANAGEMENT)],
+            ['value' => (string) $parent->id],
+        );
+        SystemSetting::query()->updateOrCreate(
+            ['key' => OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::PROJECT_MANAGEMENT)],
+            ['value' => (string) $department->id],
+        );
+
+        return $department;
     }
 
     private function createProject(?User $manager = null): Project
