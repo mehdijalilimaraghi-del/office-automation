@@ -289,7 +289,9 @@ class User extends Authenticatable
     {
         $operationalPermissions = [
             'projects.view',
+            'projects.create',
             'projects.update',
+            'projects.delete',
             'projects.manage_roles',
             'projects.manage_members',
             'tasks.view',
@@ -328,6 +330,16 @@ class User extends Authenticatable
         }
 
         if (str_starts_with($permissionCode, 'projects.')) {
+            $managesProjectManagementDepartment = $this->managedDepartments()
+                ->where('departments.name', 'مدیریت پروژه')
+                ->whereHas('parent', fn ($query) => $query->where('name', 'مدیریت'))
+                ->where('departments.is_active', true)
+                ->exists();
+
+            if ($managesProjectManagementDepartment) {
+                return [PermissionScope::Organization->value];
+            }
+
             return $this->managedProjects()->exists()
                 ? [PermissionScope::Project->value]
                 : [];
