@@ -80,4 +80,21 @@ class PermissionMiddlewareTest extends TestCase
                 'ok' => true,
             ]);
     }
+    public function test_system_admin_can_access_permission_route_without_explicit_route_permission(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $role = Role::create([
+            'name' => 'مدیر سیستم',
+            'code' => 'SYSTEM_ADMIN',
+            'is_active' => true,
+            'is_system' => true,
+        ]);
+        $user->roles()->attach($role->id);
+
+        $this->actingAs($user)
+            ->get('/test-permission-route')
+            ->assertOk()
+            ->assertJson(['ok' => true]);
+    }
+
 }
