@@ -139,6 +139,43 @@ class RolePermissionControllerTest extends TestCase
         ]);
     }
 
+
+    public function test_operational_permission_can_be_granted_through_an_application_role(): void
+    {
+        $user = User::factory()->create();
+        $this->grantPermissions($user, ['roles.manage_permissions']);
+
+        $role = Role::create([
+            'name' => 'نقش تکمیلی',
+            'code' => 'SUPPLEMENTAL_ACCESS',
+            'description' => null,
+            'is_active' => true,
+            'is_system' => false,
+        ]);
+
+        $permission = Permission::create([
+            'name' => 'مشاهده دستورکارها',
+            'code' => 'tasks.view',
+            'description' => null,
+            'is_active' => true,
+            'is_system' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->put(route('roles.permissions.update', $role), [
+                'permissions' => [[
+                    'permission_id' => $permission->id,
+                    'scope' => PermissionScope::Organization->value,
+                ]],
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $granted = $role->fresh()->permissions()->whereKey($permission->id)->first();
+        $this->assertNotNull($granted);
+        $this->assertSame(PermissionScope::Organization->value, $granted->pivot->scope);
+    }
+
     public function test_project_permission_accepts_a_project_scope(): void
     {
         $user = User::factory()->create();
