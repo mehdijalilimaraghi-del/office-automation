@@ -200,8 +200,15 @@ class ProjectController extends Controller
             || (int) $project->created_by === (int) $user->id;
         $canUploadProjectDocuments = Gate::allows('create', Document::class)
             && ($isProjectOwner || $hasOrganizationProjectScope);
+        $projectDetails = $this->projectService->show($project);
+        $markTaskDeleteAbility = static function ($task): void {
+            $task->setAttribute('can_delete', Gate::allows('delete', $task));
+        };
+        $projectDetails->tasks->each($markTaskDeleteAbility);
+        $projectDetails->sections->each(fn ($section) => $section->tasks->each($markTaskDeleteAbility));
+
         return Inertia::render('Projects/Show', [
-            'project' => $this->projectService->show($project),
+            'project' => $projectDetails,
             'sectionDepartmentOptions' => Department::query()
                 ->with('manager:id,name,status')
                 ->where('is_active', true)
