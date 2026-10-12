@@ -113,6 +113,15 @@ class ProjectController extends Controller
         return Inertia::render('Projects/Create', [
             'managers' => \App\Models\User::query()
                 ->where('status', 'active')
+                ->where(function ($query): void {
+                    $query->whereHas('departments', fn ($departmentQuery) => $departmentQuery
+                        ->where('departments.name', 'مدیریت پروژه')
+                        ->whereHas('parent', fn ($parentQuery) => $parentQuery->where('name', 'مدیریت'))
+                        ->where('departments.is_active', true))
+                        ->orWhereHas('roles', fn ($roleQuery) => $roleQuery
+                            ->where('roles.code', 'SYSTEM_ADMIN')
+                            ->where('roles.is_active', true));
+                })
                 ->orderBy('name')
                 ->get(['id', 'name']),
             'departments' => $departmentOptions->values(),
