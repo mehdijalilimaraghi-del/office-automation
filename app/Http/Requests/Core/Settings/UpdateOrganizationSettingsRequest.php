@@ -2,7 +2,10 @@
 
 namespace App\Http\Requests\Core\Settings;
 
+use App\Core\Departments\Models\Department;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdateOrganizationSettingsRequest extends FormRequest
 {
@@ -23,10 +26,42 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:150'],
             'website' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:1000'],
-            'management_department_id' => ['nullable', 'integer', 'exists:departments,id'],
-            'project_management_department_id' => ['nullable', 'integer', 'exists:departments,id'],
-            'secretariat_department_id' => ['nullable', 'integer', 'exists:departments,id'],
+            'management_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')->where('is_active', true)],
+            'project_management_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')->where('is_active', true)],
+            'secretariat_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')->where('is_active', true)],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $managementId = $this->input('management_department_id');
+            $projectManagementId = $this->input('project_management_department_id');
+
+            if (blank($managementId) !== blank($projectManagementId)) {
+                $validator->errors()->add(
+                    'project_management_department_id',
+                    'برای تعیین واحد مدیریت پروژه‌ها، واحد مدیریتی را نیز انتخاب کنید.'
+                );
+
+                return;
+            }
+
+            if (filled($managementId) && filled($projectManagementId)) {
+                $isChildOfManagement = Department::query()
+                    ->whereKey($projectManagementId)
+                    ->where('parent_id', $managementId)
+                    ->where('is_active', true)
+                    ->exists();
+
+                if (! $isChildOfManagement) {
+                    $validator->errors()->add(
+                        'project_management_department_id',
+                        'واحد مدیریت پروژه‌ها باید زیرمجموعه واحد مدیریتی انتخاب‌شده باشد.'
+                    );
+                }
+            }
+        });
     }
 
     public function attributes(): array
