@@ -14,6 +14,7 @@
 - The responsible department and its manager define the operational ownership of a section.
 - Task assignees must be selected from the active members of the section's responsible department (including its manager where applicable), rather than from legacy project-member records.
 - Historical project membership records must not be destructively removed as part of the transition; they may be retained for audit/history while being excluded from authorization and current workflows.
+- New project creation must not create legacy `project_user` membership rows; project managers are defined by `projects.manager_id` and eligible organizational membership.
 
 ## Compatibility and rollout
 
