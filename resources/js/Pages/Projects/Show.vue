@@ -281,17 +281,33 @@ const formatDate = (date: string | null): string => {
 
             <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
                 <article v-for="item in [
-                    { label: 'بخش‌های کاری', value: projectTaskStats.sections, note: 'واحدهای مسئول', tone: 'border-r-sky-500', icon: '▦' },
-                    { label: 'کل دستورکارها', value: projectTaskStats.total, note: 'دستورکارهای ثبت‌شده', tone: 'border-r-slate-400', icon: '≡' },
-                    { label: 'در حال انجام', value: projectTaskStats.inProgress, note: 'در جریان اجرا', tone: 'border-r-blue-500', icon: '↗' },
-                    { label: 'تکمیل‌شده', value: projectTaskStats.completed, note: 'خروجی‌های نهایی', tone: 'border-r-emerald-500', icon: '✓' },
-                    { label: 'عقب‌افتاده', value: projectTaskStats.overdue, note: 'نیازمند پیگیری', tone: 'border-r-rose-500', icon: '!' },
-                ]" :key="item.label" class="rounded-xl border border-r-4 bg-card p-4 shadow-sm" :class="item.tone">
+                    { label: 'بخش‌های کاری', value: projectTaskStats.sections, note: 'واحدهای مسئول', tone: 'border-r-sky-500', icon: 'sections' },
+                    { label: 'کل دستورکارها', value: projectTaskStats.total, note: 'ثبت‌شده در پروژه', tone: 'border-r-slate-400', icon: 'tasks' },
+                    { label: 'در حال انجام', value: projectTaskStats.inProgress, note: 'در جریان اجرا', tone: 'border-r-blue-500', icon: 'progress' },
+                    { label: 'تکمیل‌شده', value: projectTaskStats.completed, note: 'به پایان رسیده', tone: 'border-r-emerald-500', icon: 'completed' },
+                    { label: 'عقب‌افتاده', value: projectTaskStats.overdue, note: 'نیازمند پیگیری', tone: 'border-r-rose-500', icon: 'overdue' },
+                ]" :key="item.label" class="rounded-xl border border-r-4 bg-card p-4 shadow-sm transition-shadow hover:shadow-md" :class="item.tone">
                     <div class="flex items-start justify-between gap-3">
                         <div><p class="text-sm text-muted-foreground">{{ item.label }}</p><p class="mt-3 text-3xl font-bold tracking-tight tabular-nums">{{ item.value }}</p><p class="mt-1 text-xs text-muted-foreground">{{ item.note }}</p></div>
-                        <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-lg font-semibold text-foreground">{{ item.icon }}</span>
+                        <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-foreground" aria-hidden="true">
+                            <svg v-if="item.icon === 'sections'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+                            <svg v-else-if="item.icon === 'tasks'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3 6 1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/></svg>
+                            <svg v-else-if="item.icon === 'progress'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M3 17l6-6 4 4 8-9"/><path d="M15 6h6v6"/></svg>
+                            <svg v-else-if="item.icon === 'completed'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16.5 9"/></svg>
+                            <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg>
+                        </span>
                     </div>
                 </article>
+            </section>
+
+            <section class="rounded-2xl border bg-card px-5 py-4 shadow-sm">
+                <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+                    <div><p class="text-xs font-semibold text-primary">نمای کلی</p><h3 class="mt-1 font-bold">پیشرفت کل پروژه</h3></div>
+                    <div class="text-left"><p class="text-2xl font-bold tabular-nums">{{ projectTaskStats.progress }}٪</p><p class="text-xs text-muted-foreground">{{ projectTaskStats.completed }} از {{ projectTaskStats.total }} دستورکار تکمیل شده</p></div>
+                </div>
+                <div class="h-2.5 overflow-hidden rounded-full bg-muted" role="progressbar" :aria-valuenow="projectTaskStats.progress" aria-valuemin="0" aria-valuemax="100" :aria-label="'پیشرفت کل پروژه ' + projectTaskStats.progress + ' درصد'">
+                    <div class="h-full rounded-full transition-all" :class="projectTaskStats.progress === 100 ? 'bg-emerald-500' : 'bg-primary'" :style="{ width: projectTaskStats.progress + '%' }"></div>
+                </div>
             </section>
 
             <section class="grid items-start gap-6 xl:grid-cols-[minmax(0,1.65fr)_minmax(18rem,.85fr)]">
@@ -306,7 +322,7 @@ const formatDate = (date: string | null): string => {
                     </div>
 
                     <div v-if="project.sections.length === 0" class="rounded-2xl border border-dashed bg-card px-6 py-12 text-center">
-                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-xl">▦</div>
+                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-muted-foreground" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/></svg></div>
                         <h4 class="mt-4 font-semibold">هنوز بخشی تعریف نشده است</h4>
                         <p class="mt-1 text-sm text-muted-foreground">برای ثبت دستورکار در این پروژه، ابتدا باید بخش و واحد مسئول مشخص شود.</p>
                         <Button v-if="props.canUpdate" class="mt-4" @click="openCreateSection">＋ افزودن بخش</Button>
@@ -323,11 +339,7 @@ const formatDate = (date: string | null): string => {
                                     </div>
                                     <p class="mt-1 text-sm text-muted-foreground">{{ section.department?.name ?? 'واحد مسئول تعیین نشده' }}<span v-if="section.department?.manager?.name"> · مدیر: {{ section.department.manager.name }}</span></p>
                                 </div>
-                                <div class="hidden w-32 shrink-0 sm:block">
-                                    <div class="mb-1 flex justify-between text-[11px] text-muted-foreground"><span>پیشرفت</span><span>{{ sectionProgress(section) }}٪</span></div>
-                                    <div class="h-1.5 overflow-hidden rounded-full bg-muted"><div class="h-full rounded-full bg-primary" :style="{ width: sectionProgress(section) + '%' }"></div></div>
-                                </div>
-                                <span class="inline-flex shrink-0 items-center gap-2 rounded-lg border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors group-hover:border-primary/30 group-hover:text-foreground group-open:bg-muted">
+                                        <span class="inline-flex shrink-0 items-center gap-2 rounded-lg border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors group-hover:border-primary/30 group-hover:text-foreground group-open:bg-muted">
                                     <span class="hidden group-open:inline">بستن جزئیات</span>
                                     <span class="group-open:hidden">مشاهده جزئیات</span>
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 transition-transform duration-200 group-open:rotate-180" aria-hidden="true">
@@ -343,9 +355,9 @@ const formatDate = (date: string | null): string => {
                                 <div class="flex min-w-0 items-start gap-3">
                                     <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border bg-background text-lg font-bold text-primary">{{ section.name.slice(0, 1) }}</div>
                                     <div class="min-w-0">
-                                        <h4 class="font-bold">{{ section.name }}</h4>
-                                        <p class="mt-1 text-sm text-muted-foreground">{{ section.department?.name ?? 'واحد مسئول تعیین نشده' }}</p>
-                                        <p v-if="section.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-muted-foreground">{{ section.description }}</p>
+                                        <p class="text-xs font-semibold text-muted-foreground">شرح بخش</p>
+                                        <p v-if="section.description" class="mt-1 whitespace-pre-line text-sm leading-6 text-foreground">{{ section.description }}</p>
+                                        <p v-else class="mt-1 text-sm text-muted-foreground">برای این بخش توضیحی ثبت نشده است.</p>
                                     </div>
                                 </div>
                                 <div class="flex flex-wrap gap-2">
@@ -383,8 +395,13 @@ const formatDate = (date: string | null): string => {
                             </div>
                         </div>
 
-                        <div v-if="section.tasks.length === 0" class="p-5 text-sm text-muted-foreground">برای این بخش هنوز دستورکاری ثبت نشده است.</div>
-                        <div v-else class="divide-y">
+                        <section class="border-t">
+                            <div class="flex flex-wrap items-center justify-between gap-3 bg-background px-4 py-3 sm:px-5">
+                                <div><h5 class="font-semibold">دستورکارهای این بخش</h5><p class="mt-1 text-xs text-muted-foreground">وضعیت، مسئول و مهلت هر دستورکار</p></div>
+                                <span class="rounded-full border bg-card px-3 py-1 text-xs font-semibold tabular-nums">{{ section.tasks.length }} مورد</span>
+                            </div>
+                            <div v-if="section.tasks.length === 0" class="m-4 rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">برای این بخش هنوز دستورکاری ثبت نشده است.</div>
+                            <div v-else class="divide-y">
                             <Link v-for="task in section.tasks" :key="task.id" :href="route('tasks.show', task.id)" class="flex flex-col gap-3 px-4 py-4 transition hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                                 <div class="min-w-0">
                                     <p class="truncate text-sm font-semibold">{{ task.title }}</p>
@@ -401,7 +418,8 @@ const formatDate = (date: string | null): string => {
                                     <span aria-hidden="true" class="text-muted-foreground">←</span>
                                 </div>
                             </Link>
-                        </div>
+                            </div>
+                        </section>
                         </div>
                     </details>
                 </div>
