@@ -365,6 +365,8 @@ class ProjectHttpTest extends TestCase
     public function test_authorized_user_can_create_project(): void
     {
         $creator = $this->userWithPermission('projects.create');
+        $this->addProjectManagementMembership($creator);
+
         $manager = User::factory()->create(['status' => 'active']);
         $this->addProjectManagementMembership($manager);
         $unitManager = User::factory()->create(['status' => 'active']);
