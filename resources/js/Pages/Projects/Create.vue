@@ -147,9 +147,9 @@ function submit(): void {
             </div>
         </template>
 
-        <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div class="project-form mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
             <form
-                class="space-y-6 rounded-lg border bg-card p-6 shadow-sm"
+                class="space-y-6 rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-8"
                 @submit.prevent="submit"
             >
                 <div class="grid gap-5">
