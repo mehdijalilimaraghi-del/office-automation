@@ -3,7 +3,7 @@
 > This is the concise handoff/checkpoint file for continuing development in a new conversation.
 
 ## Last Updated
-2026-10-10
+2026-10-12
 
 ## Product Goal
 Build a Persian-language, RTL, production-oriented company office-automation platform as a Modular Monolith.
@@ -453,3 +453,11 @@ Implementation has started for the agreed cross-department project model:
 - Added regression coverage for system-admin permission/middleware bypass, operational permission assignment to a role, and preserving explicit operational grants during permission reseeding.
 
 **Validation status:** code committed to `development`; focused Laravel tests and frontend production build are pending. V1 remains the active version; V2 has not started.
+
+
+### 2026-10-12 — Fix permission seeder test syntax
+- The focused authorization test run stopped before executing tests because `tests/Feature/Core/CorePermissionSeederTest.php` contained an invalid fully qualified class reference with doubled namespace separators.
+- Corrected the reference so PHPUnit can parse the test file.
+- The user also requested PowerShell validation commands avoid Persian console messages and must not close the shell on failure. Future validation commands should use English status text and report `$LASTEXITCODE` without calling `exit`.
+
+**Validation status:** syntax fix committed to `development`; focused authorization tests must be rerun locally.
