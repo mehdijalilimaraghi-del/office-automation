@@ -18,6 +18,26 @@
         --ui-muted-foreground: #58565c;
         --ui-border: #e5e2eb;
         --ui-ring: #b0b1db;
+        --background: 240 14% 95%;
+        --foreground: 0 0% 7%;
+        --card: 0 0% 100%;
+        --card-foreground: 0 0% 7%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 0 0% 7%;
+        --primary: 251 47% 57%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 270 12% 93%;
+        --secondary-foreground: 270 5% 35%;
+        --muted: 270 12% 93%;
+        --muted-foreground: 270 5% 35%;
+        --accent: 254 100% 86%;
+        --accent-foreground: 0 0% 7%;
+        --destructive: 0 72% 51%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 260 18% 91%;
+        --input: 260 18% 91%;
+        --ring: 237 31% 78%;
+        --radius: 0.85rem;
         color-scheme: light;
         font-family: 'Vazirmatn', Tahoma, Arial, sans-serif;
         font-synthesis: none;
@@ -91,6 +111,11 @@
     textarea:focus {
         border-color: #b0b1db;
         --tw-ring-color: #b0b1db;
+    }
+
+    ::selection {
+        background: #c6b7ff;
+        color: #121212;
     }
 }
 
