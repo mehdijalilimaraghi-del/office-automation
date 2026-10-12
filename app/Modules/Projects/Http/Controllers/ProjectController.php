@@ -226,6 +226,12 @@ class ProjectController extends Controller
             && ($isProjectOwner || $hasOrganizationProjectScope);
         return Inertia::render('Projects/Show', [
             'project' => $this->projectService->show($project),
+            'sectionDepartmentOptions' => Department::query()
+                ->with('manager:id,name,status')
+                ->where('is_active', true)
+                ->whereHas('manager', fn ($query) => $query->where('status', 'active'))
+                ->orderBy('name')
+                ->get(['id', 'name', 'manager_id']),
             'canUpdate' => Gate::allows('update', $project),
             'canDeleteProject' => Gate::allows('delete', $project),
             'canManageMembers' => $canManageMembers,
