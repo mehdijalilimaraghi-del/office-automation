@@ -18,6 +18,15 @@ class DeleteProjectAction
             ]);
         }
 
+        if ($project->tasks()->exists()
+            || $project->sections()->whereHas('tasks')->exists()
+            || $project->documents()->exists()
+            || $project->sections()->whereHas('documents')->exists()) {
+            throw ValidationException::withMessages([
+                'project' => 'این پروژه دارای دستورکار یا سند وابسته است؛ برای حفظ سوابق، ابتدا آن‌ها را تعیین تکلیف یا پروژه را غیرفعال کنید.',
+            ]);
+        }
+
         DB::transaction(function () use ($project): void {
             $project->delete();
         });
