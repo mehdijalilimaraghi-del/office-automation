@@ -112,7 +112,7 @@ const statusLabels: Record<Project['status'], string> = {
                             <tr
                                 v-for="project in projects.data"
                                 :key="project.id"
-                                class="transition-colors hover:bg-accent/30"
+                                class="transition-colors duration-150 hover:bg-primary/[0.035]"
                             >
                                 <td class="px-4 py-3 font-medium">
                                     {{ project.name }}
