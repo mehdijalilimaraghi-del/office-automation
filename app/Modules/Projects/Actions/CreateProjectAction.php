@@ -39,14 +39,24 @@ class CreateProjectAction
                     );
                 }
 
-                if (! $manager->isSystemAdmin() && ! $manager->departments()
-                    ->where('departments.name', 'مدیریت پروژه')
-                    ->whereHas('parent', fn ($query) => $query->where('name', 'مدیریت'))
-                    ->where('departments.is_active', true)
-                    ->exists()) {
-                    throw new InvalidArgumentException(
-                        'مدیر پروژه باید عضو فعال واحد «مدیریت پروژه» باشد.'
-                    );
+                if (! $manager->isSystemAdmin()) {
+                    $isDepartmentMember = $manager->departments()
+                        ->where('departments.name', 'مدیریت پروژه')
+                        ->whereHas('parent', fn ($query) => $query->where('name', 'مدیریت'))
+                        ->where('departments.is_active', true)
+                        ->exists();
+
+                    $managesDepartment = $manager->managedDepartments()
+                        ->where('departments.name', 'مدیریت پروژه')
+                        ->whereHas('parent', fn ($query) => $query->where('name', 'مدیریت'))
+                        ->where('departments.is_active', true)
+                        ->exists();
+
+                    if (! $isDepartmentMember && ! $managesDepartment) {
+                        throw new InvalidArgumentException(
+                            'مدیر پروژه باید عضو یا مدیر واحد فعال «مدیریت پروژه» باشد.'
+                        );
+                    }
                 }
 
                 if (
