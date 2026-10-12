@@ -32,30 +32,33 @@ class ProjectPolicy
 
     public function update(User $user, Project $project): bool
     {
-        return ! $project->is_system_default
-            && $this->canManageProjects($user)
-            && (
-                $user->isSystemAdmin()
-                || (
-                    $this->isProjectManager($user, $project)
-                    && $user->hasPermission('projects.update')
-                    && $this->hasScopedProjectAccess($user, $project, 'projects.update')
-                )
-            );
+        if ($project->is_system_default || ! $this->canManageProjects($user)) {
+            return false;
+        }
+
+        if ($user->isSystemAdmin()) {
+            return true;
+        }
+
+        // Project administration belongs to the Project Management unit, not
+        // to the selected operational project manager or legacy project members.
+        return $user->hasPermission('projects.update')
+            && $user->permissionScopes('projects.update') !== [];
     }
 
     public function delete(User $user, Project $project): bool
     {
-        return ! $project->is_system_default
-            && $this->canManageProjects($user)
-            && (
-                $user->isSystemAdmin()
-                || (
-                    $this->isProjectManager($user, $project)
-                    && $user->hasPermission('projects.delete')
-                    && $this->hasScopedProjectAccess($user, $project, 'projects.delete')
-                )
-            );
+        if ($project->is_system_default || ! $this->canManageProjects($user)) {
+            return false;
+        }
+
+        if ($user->isSystemAdmin()) {
+            return true;
+        }
+
+        // Authorized Project Management staff administer project records centrally.
+        return $user->hasPermission('projects.delete')
+            && $user->permissionScopes('projects.delete') !== [];
     }
 
     public function manageRoles(User $user, Project $project): bool
@@ -91,11 +94,19 @@ class ProjectPolicy
             return true;
         }
 
-        return $user->departments()
+        $isDepartmentMember = $user->departments()
             ->where('departments.name', 'مدیریت پروژه')
             ->whereHas('parent', fn ($query) => $query->where('name', 'مدیریت'))
             ->where('departments.is_active', true)
             ->exists();
+
+        $managesDepartment = $user->managedDepartments()
+            ->where('departments.name', 'مدیریت پروژه')
+            ->whereHas('parent', fn ($query) => $query->where('name', 'مدیریت'))
+            ->where('departments.is_active', true)
+            ->exists();
+
+        return $isDepartmentMember || $managesDepartment;
     }
 
     private function isProjectManager(User $user, Project $project): bool
