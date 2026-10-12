@@ -75,16 +75,15 @@ onMounted(() => {
 <template>
     <div dir="rtl">
         <div class="app-shell min-h-screen">
-            <nav class="app-topbar border-b border-gray-100 bg-white">
-                <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <nav class="app-topbar sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 shadow-[0_1px_0_rgba(15,23,42,0.02)] backdrop-blur-xl">
+                <div class="mx-auto max-w-[1600px] px-4 sm:px-6 xl:px-8">
                     <div class="flex h-16 items-center justify-between">
                         <!-- سمت راست: لوگو و منو -->
                         <div class="flex h-full items-center">
                             <div class="flex shrink-0 items-center">
-                                <Link :href="route('dashboard')">
-                                    <ApplicationLogo
-                                        class="block h-9 w-auto fill-current text-gray-800"
-                                    />
+                                <Link :href="route('dashboard')" class="group flex items-center gap-3 rounded-xl py-1.5 pl-3 pr-1 transition hover:bg-slate-50">
+                                    <span class="flex h-11 w-11 items-center justify-center rounded-[15px] ring-1 ring-black/5 transition group-hover:scale-[1.03]"><ApplicationLogo class="block h-10 w-10" /></span>
+                                    <span class="hidden min-w-[8.5rem] lg:block"><span class="block text-sm font-extrabold tracking-tight text-slate-900">اتوماسیون اداری</span><span class="mt-0.5 block text-[10px] font-medium tracking-wide text-slate-400">WORKSPACE</span></span>
                                 </Link>
                             </div>
 
@@ -101,14 +100,14 @@ onMounted(() => {
                                 <div v-if="hasWorkMenu" class="relative h-full">
                                     <button
                                         type="button"
-                                        class="inline-flex h-full items-center gap-1 border-b-2 px-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
+                                        class="inline-flex h-10 items-center gap-2 rounded-xl border border-transparent px-3 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                                         :class="
                                             route().current('cartable.*') ||
                                             route().current('notifications.*') ||
                                             route().current('tasks.*') ||
                                             route().current('projects.*')
-                                                ? 'border-indigo-400 text-gray-900'
-                                                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                                                ? 'border-indigo-100 bg-indigo-50 text-indigo-700 shadow-sm'
+                                                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
                                         "
                                         aria-haspopup="menu"
                                         :aria-expanded="openDesktopMenu === 'work'"
@@ -124,7 +123,7 @@ onMounted(() => {
 
                                     <div
                                         v-if="openDesktopMenu === 'work'"
-                                        class="absolute right-0 z-50 mt-1 w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg shadow-slate-200/50"
+                                        class="absolute right-0 z-50 mt-2 w-56 rounded-2xl border border-slate-200/80 bg-white p-2 shadow-xl shadow-slate-900/10 ring-1 ring-black/[0.02]"
                                         role="menu"
                                     >
                                         <NavLink
@@ -165,14 +164,14 @@ onMounted(() => {
                                 <div v-if="hasOrganizationMenu" class="relative h-full">
                                     <button
                                         type="button"
-                                        class="inline-flex h-full items-center gap-1 border-b-2 px-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
+                                        class="inline-flex h-10 items-center gap-2 rounded-xl border border-transparent px-3 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                                         :class="
                                             route().current('departments.*') ||
                                             route().current('users.*') ||
                                             route().current('roles.*') ||
                                             route().current('custom-fields.*')
-                                                ? 'border-indigo-400 text-gray-900'
-                                                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                                                ? 'border-indigo-100 bg-indigo-50 text-indigo-700 shadow-sm'
+                                                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
                                         "
                                         aria-haspopup="menu"
                                         :aria-expanded="openDesktopMenu === 'organization'"
@@ -188,7 +187,7 @@ onMounted(() => {
 
                                     <div
                                         v-if="openDesktopMenu === 'organization'"
-                                        class="absolute right-0 z-50 mt-1 w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg shadow-slate-200/50"
+                                        class="absolute right-0 z-50 mt-2 w-56 rounded-2xl border border-slate-200/80 bg-white p-2 shadow-xl shadow-slate-900/10 ring-1 ring-black/[0.02]"
                                         role="menu"
                                     >
                                         <NavLink
@@ -237,11 +236,11 @@ onMounted(() => {
                                 <div v-if="hasSettingsMenu" class="relative h-full">
                                     <button
                                         type="button"
-                                        class="inline-flex h-full items-center gap-1 border-b-2 px-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
+                                        class="inline-flex h-10 items-center gap-2 rounded-xl border border-transparent px-3 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                                         :class="
                                             route().current('settings.*')
-                                                ? 'border-indigo-400 text-gray-900'
-                                                : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                                                ? 'border-indigo-100 bg-indigo-50 text-indigo-700 shadow-sm'
+                                                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
                                         "
                                         aria-haspopup="menu"
                                         :aria-expanded="openDesktopMenu === 'settings'"
@@ -257,7 +256,7 @@ onMounted(() => {
 
                                     <div
                                         v-if="openDesktopMenu === 'settings'"
-                                        class="absolute right-0 z-50 mt-1 w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg shadow-slate-200/50"
+                                        class="absolute right-0 z-50 mt-2 w-56 rounded-2xl border border-slate-200/80 bg-white p-2 shadow-xl shadow-slate-900/10 ring-1 ring-black/[0.02]"
                                         role="menu"
                                     >
                                         <NavLink
