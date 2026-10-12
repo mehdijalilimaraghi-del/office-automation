@@ -275,3 +275,51 @@
         min-width: 760px;
     }
 }
+
+
+/* Consistent form surfaces for project creation and editing. */
+.project-form > form {
+    border-color: #e5e2eb;
+    box-shadow: 0 8px 32px rgb(18 18 18 / 4%);
+}
+
+.project-form label {
+    color: #45414c;
+    font-weight: 600;
+}
+
+.project-form input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.project-form select,
+.project-form textarea {
+    min-height: 2.65rem;
+    border-color: #e5e2eb;
+    border-radius: 0.75rem;
+    background-color: #fff;
+    transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.project-form textarea {
+    min-height: auto;
+}
+
+.project-form input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+.project-form select:focus,
+.project-form textarea:focus {
+    border-color: #b0b1db;
+    box-shadow: 0 0 0 3px rgb(198 183 255 / 25%);
+    outline: none;
+}
+
+.project-form .project-form-section {
+    border-color: #e5e2eb;
+}
+
+.project-form .project-form-section h3 {
+    letter-spacing: -0.01em;
+}
+
+@media (max-width: 640px) {
+    .project-form > form {
+        padding: 1rem;
+    }
+}
