@@ -461,3 +461,11 @@ Implementation has started for the agreed cross-department project model:
 - The user also requested PowerShell validation commands avoid Persian console messages and must not close the shell on failure. Future validation commands should use English status text and report `$LASTEXITCODE` without calling `exit`.
 
 **Validation status:** syntax fix committed to `development`; focused authorization tests must be rerun locally.
+
+
+### 2026-10-12 — Correct authorization test fixtures after focused run
+- Two `UserAuthorizationTest` failures were caused by its shared test-role helper using the reserved `SYSTEM_ADMIN` role code. Since system-admin access intentionally bypasses explicit grants, those tests were accidentally testing the admin bypass instead of normal-role behavior. The helper now uses `TEST_ROLE`; the dedicated system-admin tests continue to create `SYSTEM_ADMIN` explicitly.
+- `RolePermissionControllerTest` created `tasks.view` directly even though the permission already existed from `grantPermissions()`. The test now reuses the canonical permission by code, avoiding SQL Server's unique-key violation.
+- The previous focused run confirmed `PermissionMiddlewareTest` and `CorePermissionSeederTest` pass. The authorization and role-permission test files need to be rerun after these fixture fixes.
+
+**Validation status:** test-fixture fixes committed to `development`; rerun the focused test set. PowerShell instructions must leave the session open on errors and use English console messages.
