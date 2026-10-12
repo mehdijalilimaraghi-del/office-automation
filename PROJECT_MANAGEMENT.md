@@ -18,6 +18,7 @@
 ## Compatibility and rollout
 
 - V1 remains the active product version.
+- Regression tests for project creation must explicitly give the selected project manager active membership in the project-management department; permission-denial tests must use a non-system-admin user so the system-admin bypass does not invalidate the scenario.
 - Changes to authorization should be covered by feature tests for allowed members, users outside the project-management department, inactive users, and system administrators.
 - Project sections can be created, edited, and deleted from the project detail page. Sections with tasks or documents cannot be deleted, and changing a section's responsible department is blocked when tasks already exist.
 - Task assignees, delegates, and next-activity assignees must be active members of the section's responsible department or that department's active manager.
