@@ -259,7 +259,7 @@ const handleSectionChange = (): void => {
             </div>
         </template>
 
-        <div class="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+        <div class="task-index mx-auto w-full max-w-[1440px] space-y-5 px-4 py-5 sm:px-6 lg:px-8">
             <section
                 v-if="showCreateModal && canCreate && formOptions"
                 class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 sm:p-6"
@@ -423,7 +423,7 @@ const handleSectionChange = (): void => {
                 </div>
             </section>
 
-            <section class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+            <section class="task-filter-panel rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
                 <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                     <div class="lg:col-span-2">
                         <label for="task-search" class="mb-1.5 block text-sm font-medium text-gray-700">جست‌وجو</label>
@@ -476,7 +476,7 @@ const handleSectionChange = (): void => {
                 </div>
             </section>
 
-            <section class="relative overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <section class="task-list-panel relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
                 <div class="flex items-center justify-between border-b border-gray-100 px-4 py-4 sm:px-5">
                     <div>
                         <h3 class="font-bold text-gray-900">فهرست دستورکارها</h3>
@@ -540,7 +540,7 @@ const handleSectionChange = (): void => {
                                 </td>
                                 <td class="px-5 py-3.5 text-left">
                                     <Link :href="route('tasks.show', task.id)"
-                                        class="inline-flex rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50">
+                                        class="inline-flex rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-semibold text-foreground transition hover:border-primary/40 hover:bg-accent/40 hover:text-primary">
                                         مشاهده
                                     </Link>
                                 </td>
@@ -549,7 +549,7 @@ const handleSectionChange = (): void => {
                     </table>
                 </div>
             </section>
-            <div v-if="props.tasks.last_page > 1" class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+            <div v-if="props.tasks.last_page > 1" class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
                 <p class="text-xs text-gray-500">
                     نمایش {{ props.tasks.from ?? 0 }} تا {{ props.tasks.to ?? 0 }} از {{ props.tasks.total }} دستورکار
                 </p>
@@ -557,7 +557,7 @@ const handleSectionChange = (): void => {
                     <Link v-for="link in paginationLinks" :key="link.label" :href="link.url!" preserve-scroll preserve-state
                         @click="isFiltering = true"
                         class="rounded-lg px-3 py-1.5 text-xs font-medium transition"
-                        :class="link.active ? 'bg-gray-900 text-white' : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50'"
+                        :class="link.active ? 'bg-primary text-primary-foreground shadow-sm' : 'border border-border bg-white text-foreground hover:bg-accent/40 hover:text-primary'"
                         v-html="link.label" />
                 </div>
             </div>
