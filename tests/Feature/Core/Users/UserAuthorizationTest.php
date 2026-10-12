@@ -27,7 +27,7 @@ class UserAuthorizationTest extends TestCase
     {
         return Role::create([
             'name' => 'مدیر سیستم',
-            'code' => 'SYSTEM_ADMIN',
+            'code' => 'TEST_ROLE',
             'is_active' => true,
             'is_system' => false,
         ]);
