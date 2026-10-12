@@ -19,4 +19,7 @@
 
 - V1 remains the active product version.
 - Changes to authorization should be covered by feature tests for allowed members, users outside the project-management department, inactive users, and system administrators.
-- Section CRUD, the remaining task assignment validation, legacy member UI removal, and the project detail-page redesign are tracked as follow-on implementation work in this rollout.
+- Project sections can be created, edited, and deleted from the project detail page. Sections with tasks or documents cannot be deleted, and changing a section's responsible department is blocked when tasks already exist.
+- Task assignees, delegates, and next-activity assignees must be active members of the section's responsible department or that department's active manager.
+- The project detail page no longer presents legacy project members. Existing membership rows are retained for historical compatibility, but are not used to authorize project visibility or task assignment.
+- Project deletion is blocked when task or document history is attached, to avoid cascading loss of operational records.
