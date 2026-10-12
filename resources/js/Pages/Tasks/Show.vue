@@ -717,8 +717,8 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
             </section>
         </div>
 
-        <div v-if="showReferralModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showReferralModal = false">
-            <div class="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+        <div v-if="showReferralModal" class="task-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showReferralModal = false">
+            <div class="task-modal-panel w-full max-w-lg rounded-2xl bg-white shadow-2xl">
                 <div class="flex items-center justify-between border-b p-5"><div><h3 class="font-semibold">ارجاع دستورکار</h3><p class="mt-1 text-sm text-muted-foreground">مسئول فعلی دستورکار را به شخص دیگری واگذار کنید.</p></div><button type="button" class="text-xl" @click="showReferralModal = false">×</button></div>
                 <form class="space-y-4 p-5" @submit.prevent="submitReferral">
                     <select v-model="referralForm.assignee_id" required class="h-10 w-full rounded-lg border bg-background px-3 text-sm"><option value="" disabled>انتخاب مسئول جدید</option><option v-for="user in assigneeOptions" :key="user.id" :value="String(user.id)">{{ user.name }}</option></select>
@@ -729,8 +729,8 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
             </div>
         </div>
 
-        <div v-if="showCommentModal || showWorkLogModal || showReminderModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showCommentModal = showWorkLogModal = showReminderModal = false">
-            <div class="w-full max-w-xl rounded-2xl bg-white shadow-2xl">
+        <div v-if="showCommentModal || showWorkLogModal || showReminderModal" class="task-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showCommentModal = showWorkLogModal = showReminderModal = false">
+            <div class="task-modal-panel w-full max-w-xl rounded-2xl bg-white shadow-2xl">
                 <div class="flex items-center justify-between border-b p-5"><h3 class="font-semibold">{{ showCommentModal ? 'ثبت نظر' : showWorkLogModal ? (editingWorkLogId ? 'ویرایش فعالیت انجام‌شده' : 'ثبت فعالیت انجام‌شده') : 'ایجاد یادآوری' }}</h3><button type="button" class="text-xl" @click="showCommentModal = showWorkLogModal = showReminderModal = false">×</button></div>
                 <form v-if="showCommentModal" class="space-y-4 p-5" @submit.prevent="submitComment"><textarea v-model="commentForm.body" rows="5" required class="w-full rounded-lg border p-3 text-sm" placeholder="نظر خود را وارد کنید..."></textarea><button type="submit" :disabled="commentForm.processing" class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">ثبت نظر</button></form>
                 <form v-else-if="showWorkLogModal" class="space-y-4 p-5" @submit.prevent="submitWorkLog"><input v-model="workLogForm.title" required class="h-10 w-full rounded-lg border px-3 text-sm" placeholder="عنوان فعالیت" /><textarea v-model="workLogForm.description" rows="4" class="w-full rounded-lg border p-3 text-sm" placeholder="شرح فعالیت"></textarea><div class="grid gap-3 sm:grid-cols-2"><JalaliDateTimePicker v-model="workLogForm.started_at" placeholder="شروع" /><JalaliDateTimePicker v-model="workLogForm.completed_at" placeholder="پایان" /></div><button type="submit" :disabled="workLogForm.processing" class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">{{ editingWorkLogId ? 'ذخیره تغییرات' : 'ثبت فعالیت انجام‌شده' }}</button></form>
@@ -738,8 +738,8 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
             </div>
         </div>
 
-        <div v-if="showEditCommentModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showEditCommentModal = false">
-            <div class="w-full max-w-xl rounded-2xl bg-white shadow-2xl">
+        <div v-if="showEditCommentModal" class="task-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showEditCommentModal = false">
+            <div class="task-modal-panel w-full max-w-xl rounded-2xl bg-white shadow-2xl">
                 <div class="flex items-center justify-between border-b p-5"><h3 class="font-semibold">ویرایش نظر</h3><button type="button" class="text-xl" @click="showEditCommentModal = false">×</button></div>
                 <form class="space-y-4 p-5" @submit.prevent="submitCommentEdit">
                     <textarea v-model="editCommentForm.body" rows="5" required class="w-full rounded-lg border p-3 text-sm" placeholder="متن نظر"></textarea>
@@ -749,8 +749,8 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
             </div>
         </div>
 
-        <div v-if="showEditReminderModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showEditReminderModal = false">
-            <div class="w-full max-w-xl rounded-2xl bg-white shadow-2xl">
+        <div v-if="showEditReminderModal" class="task-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showEditReminderModal = false">
+            <div class="task-modal-panel w-full max-w-xl rounded-2xl bg-white shadow-2xl">
                 <div class="flex items-center justify-between border-b p-5"><div><h3 class="font-semibold">ویرایش یادآوری</h3><p class="mt-1 text-sm text-muted-foreground">عنوان، توضیحات و زمان یادآوری را تغییر دهید.</p></div><button type="button" class="text-xl" @click="showEditReminderModal = false">×</button></div>
                 <form class="space-y-4 p-5" @submit.prevent="submitReminderEdit">
                     <input v-model="editReminderForm.title" required class="h-10 w-full rounded-lg border px-3 text-sm" placeholder="عنوان یادآوری" />
@@ -762,8 +762,8 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
             </div>
         </div>
 
-        <div v-if="showEditModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showEditModal = false">
-            <div class="max-h-[92vh] w-full max-w-4xl overflow-auto rounded-2xl bg-white shadow-2xl">
+        <div v-if="showEditModal" class="task-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showEditModal = false">
+            <div class="task-modal-panel max-h-[92vh] w-full max-w-4xl overflow-auto rounded-2xl bg-white shadow-2xl">
                 <div class="flex items-center justify-between border-b p-5"><div><h3 class="font-semibold">ویرایش دستورکار</h3><p class="mt-1 text-sm text-muted-foreground">اطلاعات اصلی دستورکار را ویرایش کنید.</p></div><button type="button" class="text-xl" @click="showEditModal = false">×</button></div>
                 <form class="grid gap-5 p-5 sm:grid-cols-2" @submit.prevent="submitEdit">
                     <div class="sm:col-span-2"><label class="mb-2 block text-sm font-medium">عنوان دستورکار</label><input v-model="editForm.title" required maxlength="255" class="h-10 w-full rounded-lg border px-3 text-sm" /></div>
@@ -778,8 +778,8 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
             </div>
         </div>
     
-            <div v-if="showExternalModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showExternalModal = false">
-                <section class="w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl sm:p-6">
+            <div v-if="showExternalModal" class="task-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showExternalModal = false">
+                <section class="task-modal-panel w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl sm:p-6">
                     <div class="flex items-center justify-between"><div><h3 class="font-semibold text-gray-900">{{ editingExternalContactId ? 'ویرایش ارتباط و پیگیری بیرونی' : 'افزودن ارتباط و پیگیری بیرونی' }}</h3><p class="mt-1 text-sm text-muted-foreground">{{ editingExternalContactId ? 'اطلاعات این ارتباط را ویرایش کنید.' : 'یک یا چند شخص را به‌عنوان ارتباط و پیگیری بیرونی اضافه کنید.' }}</p></div><button type="button" class="text-gray-500 hover:text-gray-900" @click="showExternalModal = false; editingExternalContactId = null">×</button></div>
                     <form class="mt-5 space-y-4" @submit.prevent="submitExternal">
                         <select v-model="externalForm.external_organization_id" @change="handleExternalOrganizationChange" class="h-10 w-full rounded-lg border px-3 text-sm"><option :value="null">بدون سازمان خارجی</option><option v-for="item in externalPartyOptions.external_organizations" :key="item.id" :value="item.id">{{ item.name }}</option></select>
@@ -816,8 +816,8 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                 </section>
             </div>
 
-            <div v-if="showActivityModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showActivityModal = false">
-                <section class="w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl sm:p-6">
+            <div v-if="showActivityModal" class="task-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showActivityModal = false">
+                <section class="task-modal-panel w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl sm:p-6">
                     <div class="flex items-center justify-between"><h3 class="font-semibold text-gray-900">{{ editingActivityId ? 'ویرایش فعالیت بعدی' : 'ثبت فعالیت بعدی' }}</h3><button type="button" class="text-gray-500 hover:text-gray-900" @click="showActivityModal = false">×</button></div>
                     <form class="mt-5 space-y-4" @submit.prevent="submitActivity">
                         <div><label class="mb-1.5 block text-sm font-medium text-gray-700">عنوان فعالیت</label><input v-model="activityForm.title" required class="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm" placeholder="مثلاً دریافت تأیید مالی" /></div>
