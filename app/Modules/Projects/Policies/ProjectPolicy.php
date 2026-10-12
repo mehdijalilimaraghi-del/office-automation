@@ -180,7 +180,6 @@ class ProjectPolicy
         return in_array(PermissionScope::Project->value, $scopes, true)
             && (
                 (int) $project->manager_id === (int) $user->id
-                || $project->users()->whereKey($user->id)->exists()
                 || ($project->is_system_default && $project->department_id === null
                     && $project->sections()->whereHas('department.members', fn ($query) => $query->where('users.id', $user->id))->exists())
             );
