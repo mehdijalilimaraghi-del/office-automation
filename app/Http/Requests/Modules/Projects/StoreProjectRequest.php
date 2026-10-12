@@ -21,13 +21,13 @@ class StoreProjectRequest extends FormRequest
         if (! $user->isSystemAdmin()) {
             $isDepartmentMember = $user->departments()
                 ->where('departments.name', 'مدیریت پروژه')
-                ->whereHas('parent', fn ($query) => $query->where('name', 'مدیریت'))
+                ->whereHas('parent', fn ($query) => $query->where('name', 'واحد مدیریت'))
                 ->where('departments.is_active', true)
                 ->exists();
 
             $managesDepartment = $user->managedDepartments()
                 ->where('departments.name', 'مدیریت پروژه')
-                ->whereHas('parent', fn ($query) => $query->where('name', 'مدیریت'))
+                ->whereHas('parent', fn ($query) => $query->where('name', 'واحد مدیریت'))
                 ->where('departments.is_active', true)
                 ->exists();
 
