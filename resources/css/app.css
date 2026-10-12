@@ -3,27 +3,21 @@
 @import '@fontsource/vazirmatn/600.css';
 @import '@fontsource/vazirmatn/700.css';
 
-@import "tailwindcss";
-
-@theme {
-    --color-background: #f2f2f2;
-    --color-foreground: #121212;
-    --color-card: #ffffff;
-    --color-card-foreground: #121212;
-    --color-primary: #6f5cc5;
-    --color-primary-foreground: #ffffff;
-    --color-secondary: #eeeeee;
-    --color-secondary-foreground: #58565c;
-    --color-muted: #eeeeee;
-    --color-muted-foreground: #58565c;
-    --color-accent: #c6b7ff;
-    --color-accent-foreground: #121212;
-    --color-border: #e5e2eb;
-    --color-ring: #b0b1db;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer base {
     :root {
+        --ui-background: #f2f2f2;
+        --ui-foreground: #121212;
+        --ui-card: #ffffff;
+        --ui-primary: #6f5cc5;
+        --ui-accent: #c6b7ff;
+        --ui-muted: #eeeeee;
+        --ui-muted-foreground: #58565c;
+        --ui-border: #e5e2eb;
+        --ui-ring: #b0b1db;
         color-scheme: light;
         font-family: 'Vazirmatn', Tahoma, Arial, sans-serif;
         font-synthesis: none;
@@ -125,11 +119,5 @@
 .app-main {
     margin-inline: auto;
     max-width: 1440px;
-    padding: 1.5rem;
-}
-
-@media (max-width: 640px) {
-    .app-main {
-        padding: 1rem;
-    }
+    padding: 0;
 }
