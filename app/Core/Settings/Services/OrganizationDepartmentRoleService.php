@@ -52,13 +52,20 @@ class OrganizationDepartmentRoleService
         }
 
         if ($role === self::PROJECT_MANAGEMENT) {
-            $managementDepartmentId = $this->activeDepartmentId(self::MANAGEMENT);
+            $managementDepartmentId = $this->departmentId(self::MANAGEMENT);
 
-            if (
-                $managementDepartmentId !== null
-                && (int) $department->parent_id !== $managementDepartmentId
-            ) {
-                return null;
+            if ($managementDepartmentId !== null) {
+                $managementDepartmentIsActive = Department::query()
+                    ->whereKey($managementDepartmentId)
+                    ->where('is_active', true)
+                    ->exists();
+
+                if (
+                    ! $managementDepartmentIsActive
+                    || (int) $department->parent_id !== $managementDepartmentId
+                ) {
+                    return null;
+                }
             }
         }
 
