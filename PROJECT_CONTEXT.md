@@ -938,3 +938,13 @@ The full V1–V8 version boundaries are maintained in ROADMAP.md.
 
 ## Cross-department project structure (2026-10-10)
 A project may contain multiple project sections. Each section belongs to one responsible internal department and carries its own description, documents, sort order, and `manager_can_create_tasks` flag. The project administrator may create tasks in any section. A department manager may create tasks only in sections assigned to their department where that flag is enabled. Section tasks are initially assigned to the department manager; an optional employee destination creates a second referral-history entry from manager to employee. New departments must not auto-create separate default projects; instead they get a section in the shared default project. Fresh installations receive one shared organizational default project and sections for existing departments from the seeder; existing per-department defaults are consolidated by a data-preserving migration.
+
+
+## 2026-10-12 — Authorization composition
+Authorization has two additive sources:
+1. **Contextual responsibility:** permissions/scopes derived from actual organization, project, membership, manager, assignment, or task relationships.
+2. **Application role:** explicit permission grants configured by an administrator, with the selected permission scope constraining the grant.
+
+The effective access is the union of the two sources, not an intersection. For example, a user who is not a project manager may still receive `projects.create` through their application role; a task/project operational permission may also be granted explicitly where its scope is intentionally configured. Backend authorization remains authoritative.
+
+The active `SYSTEM_ADMIN` account is a special system capability and receives every permission with organization scope independent of business responsibilities and the completeness of seeded permission assignments. Inactive users still have no permissions. Permission seeding must preserve operational grants assigned to ordinary roles.
