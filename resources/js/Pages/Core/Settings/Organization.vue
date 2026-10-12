@@ -15,10 +15,20 @@ interface OrganizationSettings {
     email: string | null;
     website: string | null;
     address: string | null;
+    management_department_id: string | null;
+    project_management_department_id: string | null;
+    secretariat_department_id: string | null;
+}
+
+interface OrganizationDepartment {
+    id: number;
+    name: string;
+    is_active: boolean;
 }
 
 const props = defineProps<{
     settings: OrganizationSettings;
+    departments: OrganizationDepartment[];
 }>();
 
 const form = useForm({
@@ -31,6 +41,9 @@ const form = useForm({
     email: props.settings.email ?? '',
     website: props.settings.website ?? '',
     address: props.settings.address ?? '',
+    management_department_id: props.settings.management_department_id ?? '',
+    project_management_department_id: props.settings.project_management_department_id ?? '',
+    secretariat_department_id: props.settings.secretariat_department_id ?? '',
 });
 
 function submit(): void {
@@ -125,6 +138,50 @@ function submit(): void {
                             <textarea id="address" v-model="form.address" rows="4" class="block w-full rounded-xl border-slate-300 text-sm text-slate-900 shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200"></textarea>
                             <InputError class="mt-1.5" :message="form.errors.address" />
                         </div>
+
+                        <section class="space-y-5 rounded-xl border border-slate-200 bg-slate-50 p-5">
+                            <div>
+                                <h3 class="font-bold text-slate-900">تخصیص نقش به واحدها</h3>
+                                <p class="mt-1 text-sm leading-6 text-slate-600">
+                                    واحدها بر اساس شناسه انتخاب می‌شوند؛ تغییر نام واحد روی دسترسی‌ها اثر نمی‌گذارد. انتخاب این موارد الزامی نیست، اما قابلیت‌های وابسته تا زمان تعیین واحد فعال نخواهند شد.
+                                </p>
+                            </div>
+
+                            <div class="grid gap-5 md:grid-cols-2">
+                                <div>
+                                    <label for="management_department_id" class="mb-2 block text-sm font-semibold text-slate-700">واحد مدیریتی</label>
+                                    <select id="management_department_id" v-model="form.management_department_id" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200">
+                                        <option value="">انتخاب نشده</option>
+                                        <option v-for="department in departments" :key="department.id" :value="String(department.id)" :disabled="!department.is_active">
+                                            {{ department.name }}{{ department.is_active ? '' : ' (غیرفعال)' }}
+                                        </option>
+                                    </select>
+                                    <InputError class="mt-1.5" :message="form.errors.management_department_id" />
+                                </div>
+
+                                <div>
+                                    <label for="project_management_department_id" class="mb-2 block text-sm font-semibold text-slate-700">واحد مدیریت پروژه‌ها</label>
+                                    <select id="project_management_department_id" v-model="form.project_management_department_id" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200">
+                                        <option value="">انتخاب نشده</option>
+                                        <option v-for="department in departments" :key="department.id" :value="String(department.id)" :disabled="!department.is_active">
+                                            {{ department.name }}{{ department.is_active ? '' : ' (غیرفعال)' }}
+                                        </option>
+                                    </select>
+                                    <InputError class="mt-1.5" :message="form.errors.project_management_department_id" />
+                                </div>
+
+                                <div>
+                                    <label for="secretariat_department_id" class="mb-2 block text-sm font-semibold text-slate-700">دبیرخانه</label>
+                                    <select id="secretariat_department_id" v-model="form.secretariat_department_id" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200">
+                                        <option value="">انتخاب نشده</option>
+                                        <option v-for="department in departments" :key="department.id" :value="String(department.id)" :disabled="!department.is_active">
+                                            {{ department.name }}{{ department.is_active ? '' : ' (غیرفعال)' }}
+                                        </option>
+                                    </select>
+                                    <InputError class="mt-1.5" :message="form.errors.secretariat_department_id" />
+                                </div>
+                            </div>
+                        </section>
 
                         <div class="flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
                             <p class="text-xs text-slate-500">این تنظیمات به ساختار داخلی دپارتمان‌ها وابسته نیست.</p>
