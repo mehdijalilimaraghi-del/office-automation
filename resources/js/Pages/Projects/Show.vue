@@ -265,7 +265,7 @@ const formatDate = (date: string | null): string => {
             </div>
         </template>
 
-        <main class="mx-auto w-full max-w-[1600px] space-y-6 px-4 pb-8 pt-2 sm:px-6 lg:px-8">
+        <main class="project-show mx-auto w-full max-w-[1600px] space-y-6 px-4 pb-8 pt-2 sm:px-6 lg:px-8">
             <section v-if="project.description || project.is_system_default" class="flex flex-wrap items-start justify-between gap-4 rounded-xl border bg-card px-5 py-4 shadow-sm">
                 <p v-if="project.description" class="min-w-0 flex-1 whitespace-pre-line text-sm leading-7 text-muted-foreground">{{ project.description }}</p>
                 <div class="flex shrink-0 flex-wrap items-center gap-2">
