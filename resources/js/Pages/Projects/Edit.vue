@@ -65,8 +65,8 @@ const submit = (): void => {
             </div>
         </template>
 
-        <div class="mx-auto max-w-3xl">
-            <form class="space-y-6 rounded-lg border bg-card p-6" @submit.prevent="submit">
+        <div class="project-form mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
+            <form class="space-y-6 rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-8" @submit.prevent="submit">
                 <div class="grid gap-6 md:grid-cols-2">
                     <div class="space-y-2">
                         <label for="name" class="text-sm font-medium">نام پروژه</label>
