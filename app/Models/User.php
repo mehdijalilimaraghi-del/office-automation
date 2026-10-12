@@ -312,6 +312,16 @@ class User extends Authenticatable
         }
 
         if ($permissionCode === 'projects.view') {
+            $managesProjectManagementDepartment = $this->managedDepartments()
+                ->where('departments.name', 'مدیریت پروژه')
+                ->whereHas('parent', fn ($query) => $query->where('name', 'مدیریت'))
+                ->where('departments.is_active', true)
+                ->exists();
+
+            if ($managesProjectManagementDepartment) {
+                return [PermissionScope::Organization->value];
+            }
+
             $scopes = [];
 
             if (
