@@ -27,8 +27,8 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'website' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:1000'],
             'management_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')],
-            'project_management_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')->where('is_active', true)],
-            'secretariat_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')->where('is_active', true)],
+            'project_management_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')],
+            'secretariat_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')],
         ];
     }
 
