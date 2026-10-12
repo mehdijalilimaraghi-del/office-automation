@@ -4,6 +4,7 @@ namespace App\Modules\Projects\Actions;
 
 use App\Models\User;
 use App\Core\Departments\Models\Department;
+use App\Core\Settings\Services\OrganizationDepartmentRoleService;
 use App\Core\CustomFields\Services\CustomFieldService;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectSection;
@@ -40,21 +41,12 @@ class CreateProjectAction
                 }
 
                 if (! $manager->isSystemAdmin()) {
-                    $isDepartmentMember = $manager->departments()
-                        ->where('departments.name', 'مدیریت پروژه')
-                        ->whereHas('parent', fn ($query) => $query->where('name', 'واحد مدیریت'))
-                        ->where('departments.is_active', true)
-                        ->exists();
+                    $isDepartmentMemberOrManager = app(OrganizationDepartmentRoleService::class)
+                        ->userBelongsTo($manager, OrganizationDepartmentRoleService::PROJECT_MANAGEMENT);
 
-                    $managesDepartment = $manager->managedDepartments()
-                        ->where('departments.name', 'مدیریت پروژه')
-                        ->whereHas('parent', fn ($query) => $query->where('name', 'واحد مدیریت'))
-                        ->where('departments.is_active', true)
-                        ->exists();
-
-                    if (! $isDepartmentMember && ! $managesDepartment) {
+                    if (! $isDepartmentMemberOrManager) {
                         throw new InvalidArgumentException(
-                            'مدیر پروژه باید عضو یا مدیر واحد فعال «مدیریت پروژه» باشد.'
+                            'مدیر پروژه باید عضو یا مدیر واحد تعیین‌شده برای مدیریت پروژه‌ها باشد.'
                         );
                     }
                 }
