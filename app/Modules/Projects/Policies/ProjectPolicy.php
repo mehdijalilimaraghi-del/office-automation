@@ -82,7 +82,7 @@ class ProjectPolicy
 
     /**
      * Project administration is limited to active members of the
-     * Management > Project Management department. System administrators
+     * configured project-management department under the configured management department. System administrators
      * retain the existing emergency-administration bypass.
      */
     private function canManageProjects(User $user): bool
