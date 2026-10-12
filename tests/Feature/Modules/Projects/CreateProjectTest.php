@@ -18,6 +18,26 @@ class CreateProjectTest extends TestCase
 {
     use RefreshDatabase;
 
+    private function addProjectManagementMembership(User $user): void
+    {
+        $parent = Department::query()->firstOrCreate(
+            ['name' => 'مدیریت'],
+            ['code' => 'MGMT', 'is_active' => true],
+        );
+
+        $department = Department::query()->firstOrCreate(
+            ['name' => 'مدیریت پروژه', 'parent_id' => $parent->id],
+            ['code' => 'PROJECT-MGMT', 'is_active' => true],
+        );
+
+        $department->members()->syncWithoutDetaching([
+            $user->id => [
+                'is_primary' => false,
+                'joined_at' => now(),
+            ],
+        ]);
+    }
+
     public function test_project_can_be_created_and_manager_is_added_as_member(): void
     {
         $creator = User::factory()->create();
@@ -235,6 +255,7 @@ class CreateProjectTest extends TestCase
     {
         $creator = User::factory()->create();
         $manager = User::factory()->create();
+        $this->addProjectManagementMembership($manager);
         $department = Department::query()->create([
             'name' => 'واحد طراحی',
             'code' => 'DESIGN',
@@ -271,6 +292,7 @@ class CreateProjectTest extends TestCase
     public function test_section_task_is_initially_assigned_to_unit_manager_then_referred_to_employee(): void
     {
         $projectAdmin = User::factory()->create();
+        $this->addProjectManagementMembership($projectAdmin);
         $unitManager = User::factory()->create();
         $employee = User::factory()->create();
 
