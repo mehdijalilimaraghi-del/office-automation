@@ -142,3 +142,9 @@ Before making the first code change in a new conversation:
 - User capabilities are additive: actual position/context responsibilities derive operational access, and an application Role can explicitly grant additional permissions. Role grants must not be silently removed by `CorePermissionSeeder`.
 - The role permission UI exposes active operational permissions and retains per-permission scope selection. `SyncRolePermissionsAction` validates scopes but does not prohibit operational grants.
 - Regression tests were added for system-admin access and operational role grants. Focused tests and frontend build are pending; remain in V1 until manual acceptance is complete.
+
+
+## PowerShell validation output — 2026-10-12
+- Keep validation commands friendly to Windows PowerShell: avoid Persian status/error strings that may render incorrectly in the user's console.
+- Do not use `exit` to propagate a failing test status because it closes the user's PowerShell session. Capture and display `$LASTEXITCODE` instead, leaving the shell open.
+- Current blocker: `tests/Feature/Core/CorePermissionSeederTest.php` had a PHP parse error caused by doubled backslashes in a fully qualified class name. The fix is committed; rerun the focused authorization tests before proceeding.
