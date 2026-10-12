@@ -5,7 +5,7 @@
 - Project creation and administration require an active user with the relevant project permission and either membership in, or management of, the active **مدیریت پروژه** department whose parent department is **مدیریت**.
 - Active system administrators retain the existing administrative bypass; inactive accounts are always denied.
 - Authorized Project Management staff administer non-default project records centrally; edit/delete controls do not depend on being the selected operational project manager.
-- The active manager of **مدیریت > مدیریت پروژه** receives organization-wide project visibility, so project lists and individual project pages use the same access boundary as create/update/delete.
+- The active manager of **واحد مدیریت > مدیریت پروژه** receives organization-wide project visibility, so project lists and individual project pages use the same access boundary as create/update/delete.
 - The project manager selected during creation must be an active member of, or manager of, the project-management department (or an active system administrator).
 - Project manager choices in the creation page include eligible active members and the department manager.
 - Permission grants do not replace department responsibility. Leaving and no longer managing the project-management department removes effective project-administration access even if a role still grants project permissions.
@@ -30,7 +30,7 @@
 
 - V1 remains the active product version.
 - Regression tests for project creation must explicitly give the selected project manager active membership in the project-management department; permission-denial tests must use a non-system-admin user so the system-admin bypass does not invalidate the scenario.
-- Project manager lifecycle and policy tests must also establish the manager's active membership in **مدیریت > مدیریت پروژه**; a `manager_id` alone does not grant project-administration eligibility.
+- Project manager lifecycle and policy tests must also establish the manager's active membership in **واحد مدیریت > مدیریت پروژه**; a `manager_id` alone does not grant project-administration eligibility.
 - Changes to authorization should be covered by feature tests for allowed members, users outside the project-management department, inactive users, and system administrators.
 - Project sections can be created, edited, and deleted from the project detail page. Sections with tasks or documents cannot be deleted, and changing a section's responsible department is blocked when tasks already exist.
 - Task assignees, delegates, and next-activity assignees must be active members of the section's responsible department or that department's active manager.
