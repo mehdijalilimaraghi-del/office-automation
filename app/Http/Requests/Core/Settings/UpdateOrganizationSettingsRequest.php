@@ -23,6 +23,9 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:150'],
             'website' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:1000'],
+            'management_department_id' => ['nullable', 'integer', 'exists:departments,id'],
+            'project_management_department_id' => ['nullable', 'integer', 'exists:departments,id'],
+            'secretariat_department_id' => ['nullable', 'integer', 'exists:departments,id'],
         ];
     }
 
@@ -38,6 +41,9 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'email' => 'ایمیل سازمان',
             'website' => 'وب‌سایت',
             'address' => 'نشانی',
+            'management_department_id' => 'واحد مدیریتی',
+            'project_management_department_id' => 'واحد مدیریت پروژه‌ها',
+            'secretariat_department_id' => 'دبیرخانه',
         ];
     }
 }
