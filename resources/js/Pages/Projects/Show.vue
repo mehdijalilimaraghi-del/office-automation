@@ -10,10 +10,12 @@ interface Task {
     id: number;
     section_id: number | null;
     title: string;
+    description?: string | null;
     status: string;
     priority: string;
     due_date?: string | null;
     created_at: string;
+    can_delete?: boolean;
     creator: { id: number; name: string } | null;
     activities?: Array<{ id: number; title: string; created_at: string; completed_at?: string | null }>;
     assignee: {
@@ -242,6 +244,17 @@ const formatDate = (date: string | null): string => {
 
     return formatPersianDate(date);
 };
+
+const formatDateTime = (date: string | null): string => {
+    if (!date) return '—';
+    return formatPersianDateTime(date);
+};
+
+const deleteTask = (task: Task): void => {
+    if (!task.can_delete) return;
+    if (!window.confirm(`آیا از حذف دستورکار «${task.title}» مطمئن هستید؟ این عملیات قابل بازگشت نیست.`)) return;
+    router.delete(route('tasks.destroy', task.id), { preserveScroll: true });
+};
 </script>
 
 <template>
@@ -436,7 +449,7 @@ const formatDate = (date: string | null): string => {
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 h-4 w-4 shrink-0 text-primary"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>
                                     <div class="min-w-0"><p class="text-[11px] font-semibold text-slate-500">آخرین اقدام</p><p class="mt-0.5 truncate text-xs font-medium text-slate-800">{{ [...(task.activities ?? [])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]?.title ?? 'هنوز اقدامی ثبت نشده' }}</p><p v-if="task.activities?.length" class="mt-1 text-[11px] text-slate-500">{{ formatDateTime([...task.activities].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0].created_at) }}</p></div>
                                 </div>
-                                <div class="mt-4 flex justify-end"><Link :href="route('tasks.show', task.id)" class="inline-flex items-center gap-1.5 text-xs font-bold text-primary transition hover:gap-2.5">جزئیات دستورکار <span aria-hidden="true">←</span></Link></div>
+                                <div class="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3"><button v-if="task.can_delete" type="button" class="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-100" @click="deleteTask(task)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-3.5 w-3.5"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/></svg>حذف</button><span v-else></span><Link :href="route('tasks.show', task.id)" class="inline-flex items-center gap-1.5 text-xs font-bold text-primary transition hover:gap-2.5">جزئیات دستورکار <span aria-hidden="true">←</span></Link></div>
                             </article>
                             </div>
                         </section>
