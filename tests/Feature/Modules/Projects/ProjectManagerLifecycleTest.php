@@ -58,6 +58,8 @@ class ProjectManagerLifecycleTest extends TestCase
         $admin = User::factory()->create();
         $manager = User::factory()->create();
 
+        $this->addProjectManagementMembership($manager);
+
         $this->actingAs($admin);
 
         app(ProjectServiceContract::class)->create([
