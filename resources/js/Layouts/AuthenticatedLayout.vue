@@ -88,7 +88,7 @@ onMounted(() => {
                             </div>
 
                             <div
-                                class="hidden h-full items-center gap-1 sm:ms-10 sm:flex"
+                                class="hidden h-full items-center gap-1 sm:ms-10 sm:flex xl:hidden"
                             >
                                 <NavLink
                                     :href="route('dashboard')"
@@ -574,10 +574,59 @@ onMounted(() => {
                 </div>
             </nav>
 
+            <aside class="fixed bottom-0 right-0 top-16 z-30 hidden w-64 flex-col border-l border-slate-200/80 bg-white px-4 py-5 xl:flex">
+                <div class="mb-5 px-3">
+                    <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">WORKSPACE</p>
+                    <p class="mt-1 text-sm font-bold text-slate-800">فضای کاری</p>
+                </div>
+                <nav class="flex-1 space-y-1" aria-label="منوی اصلی">
+                    <Link :href="route('dashboard')" :class="route().current('dashboard') ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+                        داشبورد
+                    </Link>
+                    <p class="px-3 pb-1 pt-5 text-[11px] font-bold text-slate-400">کار و عملیات</p>
+                    <Link v-if="can('cartable_view')" :href="route('cartable.index')" :class="route().current('cartable.*') ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h5M8 16h6"/></svg>کارتابل
+                    </Link>
+                    <Link v-if="can('tasks_view')" :href="route('tasks.index')" :class="route().current('tasks.*') ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3 6 1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2"/></svg>دستورکارها
+                    </Link>
+                    <Link v-if="can('projects_view')" :href="route('projects.index')" :class="route().current('projects.*') ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4V2M16 4V2M3 9h18"/></svg>پروژه‌ها
+                    </Link>
+                    <Link v-if="can('notification_view')" :href="route('notifications.index')" :class="route().current('notifications.*') ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>اعلان‌ها
+                    </Link>
+                    <p v-if="hasOrganizationMenu" class="px-3 pb-1 pt-5 text-[11px] font-bold text-slate-400">مدیریت سازمان</p>
+                    <Link v-if="can('departments_view')" :href="route('departments.index')" :class="route().current('departments.*') ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="18" height="7" rx="1"/></svg>سازمان
+                    </Link>
+                    <Link v-if="can('users_view')" :href="route('users.index')" :class="route().current('users.*') ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>کاربران
+                    </Link>
+                    <Link v-if="can('roles_view')" :href="route('roles.index')" :class="route().current('roles.*') ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M12 3 4 7v5c0 5 8 9 8 9s8-4 8-9V7z"/><path d="m9 12 2 2 4-4"/></svg>نقش‌های کاربری
+                    </Link>
+                    <Link v-if="can('custom_fields_manage')" :href="route('custom-fields.index')" :class="route().current('custom-fields.*') ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M4 5h16M4 12h16M4 19h16"/><circle cx="8" cy="5" r="2" fill="currentColor"/><circle cx="15" cy="12" r="2" fill="currentColor"/><circle cx="10" cy="19" r="2" fill="currentColor"/></svg>فیلدهای سفارشی
+                    </Link>
+                    <Link v-if="can('external_parties_view')" :href="route('external-parties.index')" :class="route().current('external-parties.*') ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>برون‌سازمانی
+                    </Link>
+                    <Link v-if="hasSettingsMenu" :href="route('settings.organization.edit')" :class="route().current('settings.*') ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="mt-1 flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1a2 2 0 1 1-2.8 2.8l-.1-.1a2 2 0 0 0-3.4 1.4v.3a2 2 0 1 1-4 0v-.2A2 2 0 0 0 5.8 17l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A2 2 0 0 0 1.6 11H1.5a2 2 0 1 1 0-4h.2A2 2 0 0 0 3 3.6l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A2 2 0 0 0 9.2 2.2V2a2 2 0 1 1 4 0v.2a2 2 0 0 0 3.4 1.4l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A2 2 0 0 0 20.8 10h.2a2 2 0 1 1 0 4h-.2a2 2 0 0 0-1.4 1z"/></svg>تنظیمات سازمان
+                    </Link>
+                </nav>
+                <div class="mt-5 rounded-2xl bg-slate-50 p-3">
+                    <p class="text-xs font-bold text-slate-700">{{ $page.props.auth.user.name }}</p>
+                    <p class="mt-1 truncate text-[11px] text-slate-400">{{ $page.props.auth.user.email }}</p>
+                </div>
+            </aside>
+
             <!-- عنوان صفحه -->
             <header
                 v-if="$slots.header"
-                class="app-page-header"
+                class="app-page-header xl:mr-64"
             >
                 <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                     <slot name="header" />
@@ -585,7 +634,7 @@ onMounted(() => {
             </header>
 
             <!-- محتوای صفحه -->
-            <main class="app-main">
+            <main class="app-main xl:mr-64">
                 <slot />
             </main>
         </div>
