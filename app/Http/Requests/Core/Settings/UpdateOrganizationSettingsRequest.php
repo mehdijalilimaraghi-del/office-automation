@@ -26,7 +26,7 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:150'],
             'website' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:1000'],
-            'management_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')->where('is_active', true)],
+            'management_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')],
             'project_management_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')->where('is_active', true)],
             'secretariat_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')->where('is_active', true)],
         ];
@@ -51,7 +51,6 @@ class UpdateOrganizationSettingsRequest extends FormRequest
                 $isChildOfManagement = Department::query()
                     ->whereKey($projectManagementId)
                     ->where('parent_id', $managementId)
-                    ->where('is_active', true)
                     ->exists();
 
                 if (! $isChildOfManagement) {
