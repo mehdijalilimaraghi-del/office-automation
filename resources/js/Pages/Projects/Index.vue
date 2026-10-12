@@ -85,7 +85,7 @@ const statusLabels: Record<Project['status'], string> = {
 
                 <div v-else class="overflow-x-auto">
                     <table class="w-full text-sm">
-                        <thead class="border-b border-border bg-muted/50">
+                        <thead class="border-b border-border/80 bg-muted/60">
                             <tr>
                                 <th class="px-4 py-3 text-right font-medium">
                                     نام پروژه
