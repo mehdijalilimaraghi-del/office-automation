@@ -27,7 +27,7 @@ class ProjectHttpTest extends TestCase
         $user = $this->userWithPermission('projects.view');
 
         for ($index = 0; $index < 16; $index++) {
-            $this->createProject($user);
+            $this->createProject();
         }
 
         $response = $this->actingAs($user)
@@ -41,7 +41,7 @@ class ProjectHttpTest extends TestCase
                 ->where('projects.current_page', 1)
                 ->where('projects.per_page', 15)
                 ->where('projects.last_page', 2)
-                ->where('projects.total', 17)
+                ->where('projects.total', 16)
                 ->has('projects.data', 15)
         );
     }
@@ -65,6 +65,7 @@ class ProjectHttpTest extends TestCase
     public function test_authorized_user_can_open_project_create_page_with_active_managers(): void
     {
         $creator = $this->userWithPermission('projects.create');
+        $this->addProjectManagementMembership($creator);
 
         $activeManager = User::factory()->create([
             'name' => 'Active Manager',
@@ -547,7 +548,6 @@ class ProjectHttpTest extends TestCase
         ]);
 
         $user->roles()->attach($role->id);
-        $this->addProjectManagementMembership($user);
 
         return $user->fresh();
     }
