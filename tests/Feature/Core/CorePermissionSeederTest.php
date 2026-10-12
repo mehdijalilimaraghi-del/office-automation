@@ -46,16 +46,18 @@ class CorePermissionSeederTest extends TestCase
             ]);
         }
     }
+
     public function test_reseeding_permissions_preserves_explicit_operational_role_grants(): void
     {
         $this->seed(CorePermissionSeeder::class);
 
-        $role = \\App\\Core\\Roles\\Models\\Role::create([
+        $role = \App\Core\Roles\Models\Role::create([
             'name' => 'نقش تکمیلی',
             'code' => 'OPERATIONAL_GRANT_TEST',
             'is_active' => true,
             'is_system' => false,
         ]);
+
         $permission = Permission::query()->where('code', 'tasks.view')->firstOrFail();
         $role->permissions()->attach($permission->id, ['scope' => 'organization']);
 
@@ -67,5 +69,4 @@ class CorePermissionSeederTest extends TestCase
             'scope' => 'organization',
         ]);
     }
-
 }
