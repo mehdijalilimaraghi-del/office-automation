@@ -464,9 +464,9 @@ const formatDate = (date: string | null): string => {
         </main>
 
 
-        <div v-if="showSectionEditor" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 sm:p-6" @keydown.esc="showSectionEditor = false">
-            <div class="my-4 w-full max-w-xl rounded-xl border bg-card shadow-xl sm:my-8" role="dialog" aria-modal="true" aria-labelledby="section-editor-title">
-                <div class="flex items-start justify-between gap-4 border-b p-5"><div><h3 id="section-editor-title" class="text-lg font-semibold">{{ editingSectionId ? 'ویرایش بخش پروژه' : 'افزودن بخش پروژه' }}</h3><p class="mt-1 text-sm text-muted-foreground">واحد مسئول، مالک اجرایی این بخش و دستورکارهای آن است.</p></div><Button type="button" variant="outline" size="sm" @click="showSectionEditor = false">بستن</Button></div>
+        <div v-if="showSectionEditor" class="task-modal-overlay fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-[2px] sm:p-6" @click.self="showSectionEditor = false" @keydown.esc="showSectionEditor = false">
+            <div class="task-modal-panel my-4 w-full max-w-xl overflow-hidden rounded-2xl border border-border/80 bg-card shadow-2xl sm:my-8" role="dialog" aria-modal="true" aria-labelledby="section-editor-title">
+                <div class="flex items-start justify-between gap-4 border-b bg-muted/20 p-5"><div><h3 id="section-editor-title" class="text-lg font-semibold">{{ editingSectionId ? 'ویرایش بخش پروژه' : 'افزودن بخش پروژه' }}</h3><p class="mt-1 text-sm text-muted-foreground">واحد مسئول، مالک اجرایی این بخش و دستورکارهای آن است.</p></div><Button type="button" variant="outline" size="sm" @click="showSectionEditor = false">بستن</Button></div>
                 <form class="space-y-4 p-5" @submit.prevent="submitSection">
                     <div class="space-y-1"><label for="section-name" class="text-sm font-medium">عنوان بخش</label><input id="section-name" v-model="sectionForm.name" required maxlength="150" class="w-full rounded-md border bg-background px-3 py-2 text-sm" /><p v-if="sectionForm.errors.name" class="text-xs text-destructive">{{ sectionForm.errors.name }}</p></div>
                     <div class="space-y-1"><label for="section-department" class="text-sm font-medium">واحد مسئول</label><select id="section-department" v-model="sectionForm.department_id" required class="w-full rounded-md border bg-background px-3 py-2 text-sm"><option value="">انتخاب واحد</option><option v-for="department in sectionDepartmentOptions" :key="department.id" :value="department.id.toString()">{{ department.name }} — {{ department.manager?.name ?? 'بدون مدیر' }}</option></select><p v-if="sectionForm.errors.department_id" class="text-xs text-destructive">{{ sectionForm.errors.department_id }}</p></div>
@@ -477,9 +477,9 @@ const formatDate = (date: string | null): string => {
             </div>
         </div>
 
-        <div v-if="showSectionTaskModal && selectedSection" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 sm:p-6" @keydown.esc="showSectionTaskModal = false">
-            <div class="my-4 w-full max-w-2xl overflow-hidden rounded-xl border bg-card shadow-xl sm:my-8" role="dialog" aria-modal="true" aria-labelledby="section-task-modal-title">
-                <div class="flex items-start justify-between gap-4 border-b p-5">
+        <div v-if="showSectionTaskModal && selectedSection" class="task-modal-overlay fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-[2px] sm:p-6" @click.self="showSectionTaskModal = false" @keydown.esc="showSectionTaskModal = false">
+            <div class="task-modal-panel my-4 w-full max-w-2xl overflow-hidden rounded-2xl border border-border/80 bg-card shadow-2xl sm:my-8" role="dialog" aria-modal="true" aria-labelledby="section-task-modal-title">
+                <div class="flex items-start justify-between gap-4 border-b bg-muted/20 p-5">
                     <div>
                         <h3 id="section-task-modal-title" class="text-lg font-semibold">ایجاد دستورکار جدید</h3>
                         <p class="mt-1 text-sm text-muted-foreground">دستورکار ابتدا به مدیر واحد ارجاع می‌شود.</p>
