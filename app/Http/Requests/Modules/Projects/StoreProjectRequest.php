@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Modules\Projects;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Core\Settings\Services\OrganizationDepartmentRoleService;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 
@@ -19,19 +20,10 @@ class StoreProjectRequest extends FormRequest
         }
 
         if (! $user->isSystemAdmin()) {
-            $isDepartmentMember = $user->departments()
-                ->where('departments.name', 'مدیریت پروژه')
-                ->whereHas('parent', fn ($query) => $query->where('name', 'واحد مدیریت'))
-                ->where('departments.is_active', true)
-                ->exists();
+            $isDepartmentMemberOrManager = app(OrganizationDepartmentRoleService::class)
+                ->userBelongsTo($user, OrganizationDepartmentRoleService::PROJECT_MANAGEMENT);
 
-            $managesDepartment = $user->managedDepartments()
-                ->where('departments.name', 'مدیریت پروژه')
-                ->whereHas('parent', fn ($query) => $query->where('name', 'واحد مدیریت'))
-                ->where('departments.is_active', true)
-                ->exists();
-
-            if (! $isDepartmentMember && ! $managesDepartment) {
+            if (! $isDepartmentMemberOrManager) {
                 return false;
             }
         }
