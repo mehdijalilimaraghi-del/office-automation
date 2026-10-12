@@ -314,7 +314,7 @@ class User extends Authenticatable
         if ($permissionCode === 'projects.view') {
             $managesProjectManagementDepartment = $this->managedDepartments()
                 ->where('departments.name', 'مدیریت پروژه')
-                ->whereHas('parent', fn ($query) => $query->where('name', 'مدیریت'))
+                ->whereHas('parent', fn ($query) => $query->where('name', 'واحد مدیریت'))
                 ->where('departments.is_active', true)
                 ->exists();
 
@@ -342,7 +342,7 @@ class User extends Authenticatable
         if (str_starts_with($permissionCode, 'projects.')) {
             $managesProjectManagementDepartment = $this->managedDepartments()
                 ->where('departments.name', 'مدیریت پروژه')
-                ->whereHas('parent', fn ($query) => $query->where('name', 'مدیریت'))
+                ->whereHas('parent', fn ($query) => $query->where('name', 'واحد مدیریت'))
                 ->where('departments.is_active', true)
                 ->exists();
 
