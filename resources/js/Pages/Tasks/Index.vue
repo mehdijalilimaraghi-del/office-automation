@@ -262,10 +262,11 @@ const handleSectionChange = (): void => {
         <div class="task-index mx-auto w-full max-w-[1440px] space-y-5 px-4 py-5 sm:px-6 lg:px-8">
             <section
                 v-if="showCreateModal && canCreate && formOptions"
-                class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 sm:p-6"
+                class="task-create-overlay fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 sm:p-6"
+                @click.self="showCreateModal = false"
             >
-                <div class="my-4 w-full max-w-5xl overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl sm:my-8">
-                <div class="flex items-start justify-between gap-4 border-b border-gray-100 bg-gray-50/70 px-5 py-4 sm:px-6">
+                <div class="task-create-panel my-4 w-full max-w-5xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl sm:my-8">
+                <div class="flex items-start justify-between gap-4 border-b border-gray-100 bg-white px-5 py-4 sm:px-6">
                     <div>
                         <h3 class="font-bold text-gray-900">ایجاد دستورکار جدید</h3>
                         <p class="mt-1 text-sm text-gray-500">اطلاعات اصلی دستورکار را ثبت کنید. وضعیت اولیه «انجام نشده» خواهد بود.</p>
