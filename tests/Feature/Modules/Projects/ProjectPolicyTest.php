@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Modules\Projects;
 
+use App\Core\Departments\Models\Department;
 use App\Core\Permissions\Models\Permission;
 use App\Core\Roles\Models\Role;
 use App\Models\User;
@@ -163,11 +164,30 @@ class ProjectPolicyTest extends TestCase
         return $user->fresh();
     }
 
+    private function addProjectManagementMembership(User $user): void
+    {
+        $parent = Department::query()->firstOrCreate(
+            ['name' => 'مدیریت'],
+            ['code' => 'MGMT', 'is_active' => true],
+        );
+
+        $department = Department::query()->firstOrCreate(
+            ['name' => 'مدیریت پروژه', 'parent_id' => $parent->id],
+            ['code' => 'PROJECT-MGMT', 'is_active' => true],
+        );
+
+        $department->members()->syncWithoutDetaching([
+            $user->id => ['is_primary' => false, 'joined_at' => now()],
+        ]);
+    }
+
     private function createProject(?User $manager = null): Project
     {
         $manager ??= User::factory()->create([
             'status' => 'active',
         ]);
+
+        $this->addProjectManagementMembership($manager);
 
         return Project::query()->create([
             'name' => 'Policy Test Project',
