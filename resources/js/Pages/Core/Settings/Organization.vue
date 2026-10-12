@@ -61,7 +61,7 @@ function submit(): void {
             <div>
                 <p class="text-xs font-semibold tracking-wide text-teal-600">مدیریت سامانه</p>
                 <h2 class="mt-1 text-2xl font-bold tracking-tight text-slate-900">تنظیمات سازمان</h2>
-                <p class="mt-1 text-sm text-slate-500">اطلاعات پایه شرکت را مستقل از ساختار دپارتمان‌ها مدیریت کنید.</p>
+                <p class="mt-1 text-sm text-slate-500">اطلاعات پایه سازمان و نقش‌های اختصاص‌یافته به واحدها را مدیریت کنید.</p>
             </div>
         </template>
 
@@ -184,7 +184,7 @@ function submit(): void {
                         </section>
 
                         <div class="flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
-                            <p class="text-xs text-slate-500">این تنظیمات به ساختار داخلی دپارتمان‌ها وابسته نیست.</p>
+                            <p class="text-xs text-slate-500">نقش‌های واحدها بر اساس شناسه ذخیره می‌شوند؛ تغییر نام واحدها دسترسی‌ها را تغییر نمی‌دهد.</p>
                             <PrimaryButton :disabled="form.processing" class="min-h-11 rounded-xl bg-slate-900 px-5 text-sm font-semibold tracking-normal hover:bg-slate-800">
                                 {{ form.processing ? 'در حال ذخیره...' : 'ذخیره تنظیمات' }}
                             </PrimaryButton>
