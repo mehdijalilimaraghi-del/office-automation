@@ -122,6 +122,10 @@ class ProjectPolicy
             && (
                 (int) $project->created_by === (int) $user->id
                 || (int) $project->manager_id === (int) $user->id
+                || $project->tasks()->where(function ($taskQuery) use ($user): void {
+                    $taskQuery->where('tasks.assignee_id', $user->id)
+                        ->orWhere('tasks.created_by', $user->id);
+                })->exists()
             )
         ) {
             return true;
@@ -181,6 +185,10 @@ class ProjectPolicy
         return in_array(PermissionScope::Project->value, $scopes, true)
             && (
                 (int) $project->manager_id === (int) $user->id
+                || $project->tasks()->where(function ($taskQuery) use ($user): void {
+                    $taskQuery->where('tasks.assignee_id', $user->id)
+                        ->orWhere('tasks.created_by', $user->id);
+                })->exists()
                 || ($project->is_system_default && $project->department_id === null
                     && $project->sections()->whereHas('department.members', fn ($query) => $query->where('users.id', $user->id))->exists())
             );
