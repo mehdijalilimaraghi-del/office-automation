@@ -533,6 +533,30 @@ class TaskHttpTest extends TestCase
         $this->assertNotSame($ownTask->id, $hiddenTask->id);
     }
 
+    public function test_unprivileged_project_member_only_sees_tasks_assigned_to_or_created_by_them(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $manager = User::factory()->create(['status' => 'active']);
+        $project = $this->createProject($manager);
+        $this->addMember($project, $user);
+
+        $assignedTask = $this->createTask($project, $manager);
+        $assignedTask->update(['assignee_id' => $user->id]);
+
+        $unrelatedTask = $this->createTask($project, $manager);
+        $unrelatedTask->update(['title' => 'Unrelated project task']);
+
+        $response = $this->actingAs($user)->get(route('tasks.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Tasks/Index')
+            ->has('tasks.data', 1)
+            ->where('tasks.data.0.id', $assignedTask->id));
+
+        $this->assertNotSame($assignedTask->id, $unrelatedTask->id);
+    }
+
     public function test_project_scope_filters_task_index_at_http_layer(): void
     {
         $user = $this->userWithPermissionScope('tasks.view', 'project');
