@@ -326,7 +326,7 @@ const deleteTask = (task: Task): void => {
                 </div>
             </section>
 
-            <section class="grid items-start gap-6 xl:grid-cols-[minmax(0,1.65fr)_minmax(18rem,.85fr)]">
+            <section class="grid items-start gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(14rem,.7fr)]">
                 <div class="min-w-0 space-y-4">
                     <div class="flex flex-wrap items-end justify-between gap-3">
                         <div>
@@ -376,38 +376,31 @@ const deleteTask = (task: Task): void => {
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                             </div>
                         </div>
-                        <div class="border-b bg-muted/20 p-4 sm:p-5">
+                        <div class="border-b bg-slate-50/70 p-4 sm:p-5">
+                            <div class="mb-4 rounded-xl border border-slate-200/80 bg-white p-4">
+                                <div class="mb-2 flex items-center justify-between gap-3 text-xs"><span class="font-semibold text-slate-600">پیشرفت بخش</span><span class="font-bold tabular-nums text-slate-800">{{ sectionProgress(section) }}٪</span></div>
+                                <div class="h-2 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full transition-all" :class="sectionProgress(section) === 100 ? 'bg-emerald-500' : 'bg-primary'" :style="{ width: sectionProgress(section) + '%' }"></div></div>
+                                <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500"><span>{{ section.tasks.filter((task) => task.status === 'completed').length }} تکمیل‌شده</span><span>{{ section.tasks.filter((task) => task.status === 'in_progress').length }} در حال انجام</span><span>{{ section.tasks.length }} کل دستورکارها</span></div>
+                            </div>
                             <div class="flex flex-wrap items-start justify-between gap-4">
                                 <div class="flex min-w-0 items-start gap-3">
-                                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border bg-background text-lg font-bold text-primary">{{ section.name.slice(0, 1) }}</div>
+                                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-lg font-bold text-primary">{{ section.name.slice(0, 1) }}</div>
                                     <div class="min-w-0">
-                                        <p class="text-xs font-semibold text-muted-foreground">شرح بخش</p>
-                                        <p v-if="section.description" class="mt-1 whitespace-pre-line text-sm leading-6 text-foreground">{{ section.description }}</p>
-                                        <p v-else class="mt-1 text-sm text-muted-foreground">برای این بخش توضیحی ثبت نشده است.</p>
+                                        <p class="flex items-center gap-2 text-xs font-semibold text-slate-500"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-slate-400"><path d="M4 5h16M4 12h16M4 19h10"/></svg>توضیحات بخش</p>
+                                        <p v-if="section.description" class="mt-1 whitespace-pre-line text-sm leading-6 text-slate-800">{{ section.description }}</p>
+                                        <p v-else class="mt-1 text-sm text-slate-400">برای این بخش توضیحی ثبت نشده است.</p>
+                                        <div class="mt-3 flex items-center gap-2.5">
+                                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700 ring-2 ring-white">{{ section.department?.manager?.name?.slice(0, 1) ?? '؟' }}</span>
+                                            <div><p class="text-[11px] text-slate-400">مدیر واحد</p><p class="text-sm font-semibold text-slate-700">{{ section.department?.manager?.name ?? 'تعیین نشده' }}</p></div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="flex flex-wrap gap-2">
-                                    <label v-if="canUploadProjectDocuments || managerDocumentSectionIds.includes(section.id)" class="inline-flex cursor-pointer items-center rounded-lg border bg-background px-3 py-2 text-xs font-semibold transition hover:bg-muted" :class="{ 'pointer-events-none opacity-50': uploadingSectionId === section.id }">
+                                    <label v-if="canUploadProjectDocuments || managerDocumentSectionIds.includes(section.id)" class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-primary/30 hover:text-primary" :class="{ 'pointer-events-none opacity-50': uploadingSectionId === section.id }">
                                         {{ uploadingSectionId === section.id ? 'در حال بارگذاری...' : '＋ مدرک' }}
                                         <input type="file" class="sr-only" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" :disabled="uploadingSectionId === section.id" @change="uploadSectionDocument(section, $event)" />
                                     </label>
-                                    
                                 </div>
-                            </div>
-                            <div class="mt-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                                <div>
-                                    <div class="mb-2 flex items-center justify-between gap-3 text-xs"><span class="text-muted-foreground">پیشرفت بخش</span><span class="font-bold tabular-nums">{{ sectionProgress(section) }}٪</span></div>
-                                    <div class="h-2 overflow-hidden rounded-full bg-muted"><div class="h-full rounded-full transition-all" :class="sectionProgress(section) === 100 ? 'bg-emerald-500' : 'bg-primary'" :style="{ width: sectionProgress(section) + '%' }"></div></div>
-                                </div>
-                                <div class="flex gap-4 text-xs text-muted-foreground">
-                                    <span><strong class="text-foreground">{{ section.tasks.filter((task) => task.status === 'completed').length }}</strong> تکمیل</span>
-                                    <span><strong class="text-foreground">{{ section.tasks.filter((task) => task.status === 'in_progress').length }}</strong> در جریان</span>
-                                    <span><strong class="text-foreground">{{ section.tasks.length }}</strong> کل</span>
-                                </div>
-                            </div>
-                            <div class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
-                                <span>مدیر واحد: <strong class="text-foreground">{{ section.department?.manager?.name ?? 'تعیین نشده' }}</strong></span>
-                                <span>{{ section.manager_can_create_tasks ? 'ایجاد دستورکار توسط مدیر واحد فعال است' : 'ایجاد دستورکار توسط مدیر واحد غیرفعال است' }}</span>
                             </div>
                         </div>
 
@@ -427,7 +420,7 @@ const deleteTask = (task: Task): void => {
                                 <div class="flex items-center gap-2"><span class="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 tabular-nums">{{ section.tasks.length }} مورد</span><Button v-if="canCreateTasks || managerCreatableSectionIds.includes(section.id)" type="button" size="sm" class="h-9 gap-1.5" @click="openSectionTaskModal(section)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M12 5v14M5 12h14"/></svg>ایجاد دستورکار</Button></div>
                             </div>
                             <div v-if="section.tasks.length === 0" class="m-4 rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">برای این بخش هنوز دستورکاری ثبت نشده است.</div>
-                            <div v-else class="grid gap-3 p-4 sm:p-5 xl:grid-cols-2">
+                            <div v-else class="grid gap-3 p-3 sm:p-4 2xl:grid-cols-2">
                             <article v-for="task in section.tasks" :key="task.id" class="group/task min-w-0 rounded-2xl border border-slate-200/80 bg-white p-4 transition duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg hover:shadow-slate-200/50">
                                 <div class="flex items-start justify-between gap-3">
                                     <Link :href="route('tasks.show', task.id)" class="min-w-0 flex-1">
