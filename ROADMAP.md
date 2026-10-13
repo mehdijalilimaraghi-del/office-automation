@@ -876,3 +876,9 @@ The development branch now contains the first implementation of project sections
 - The full Digital Archive product remains V3; V2 only uses existing document/version infrastructure and correspondence archive references.
 - PBX remains V4 before CRM V5. V4 is standalone; PBX ↔ CRM customer lookup/history remains deferred until both modules exist.
 - V1 full-suite validation (380 tests) and frontend production build were reported passing by the project owner; remaining manual-acceptance notes stay tracked and V1 regression coverage remains required.
+
+
+### 2026-10-13 — V2 correspondence foundation started
+- The first code slice is committed: correspondence model/schema and transactional draft creation service.
+- Focused tests cover incoming drafts, outgoing/internal types, unsupported type rejection and blank subjects.
+- Local migration/test validation is pending; registration-number allocation, routes/UI, authorization and workflow/Cartable integration are not yet complete.
