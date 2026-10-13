@@ -469,3 +469,13 @@ Implementation has started for the agreed cross-department project model:
 - The previous focused run confirmed `PermissionMiddlewareTest` and `CorePermissionSeederTest` pass. The authorization and role-permission test files need to be rerun after these fixture fixes.
 
 **Validation status:** test-fixture fixes committed to `development`; rerun the focused test set. PowerShell instructions must leave the session open on errors and use English console messages.
+
+
+## 2026-10-13 — V2 Office Automation kickoff
+
+- Project owner authorized starting V2 while any remaining V1 manual-acceptance notes remain visible and tracked.
+- V1 validation reported by the project owner: full backend suite passed (380 tests); frontend production build succeeded.
+- First V2 slice: correspondence foundation. Inspect and reuse the existing Workflow, Documents, Cartable, Notifications and Audit modules; do not introduce parallel implementations of those shared capabilities.
+- V2 includes incoming/outgoing/internal correspondence, draft/registered lifecycle, numbering, referrals/instructions/replies, attachments, task/workflow links, Cartable actions, notifications and audit, followed by Forms & Requests.
+- Full Digital Archive remains V3. PBX remains V4 (standalone) and CRM V5; PBX ↔ CRM integration stays deferred until both modules exist.
+- Validation for new V2 code must include focused backend tests, authorization checks, full regression tests, frontend production build where UI changes, and manual Persian RTL acceptance.
