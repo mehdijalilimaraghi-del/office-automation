@@ -29,22 +29,6 @@ class AssignTaskAction
             throw new InvalidArgumentException('مسئول تسک باید کاربر فعال باشد.');
         }
 
-        if ($task->project !== null) {
-            $isProjectMember = $task->project->is_system_default && $task->project->department_id !== null
-                ? $task->project->department
-                    ?->members()
-                    ->where('users.id', $assignee->id)
-                    ->exists()
-                : $task->project
-                    ->members()
-                    ->where('user_id', $assignee->id)
-                    ->exists();
-
-            if (! $isProjectMember) {
-                throw new InvalidArgumentException('مسئول تسک باید عضو همان پروژه باشد.');
-            }
-        }
-
         return DB::transaction(function () use ($task, $assignee, $actor, $type, $note): Task {
             $previousAssigneeId = $task->assignee_id;
 
