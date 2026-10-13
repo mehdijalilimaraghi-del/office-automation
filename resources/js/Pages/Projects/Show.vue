@@ -224,6 +224,7 @@ const statusLabels: Record<Project['status'], string> = {
 };
 
 const taskStatusLabels: Record<string, string> = {
+    todo: 'انجام‌نشده',
     pending: 'در انتظار',
     in_progress: 'در حال انجام',
     completed: 'تکمیل‌شده',
@@ -417,7 +418,7 @@ const deleteTask = (task: Task): void => {
                         <section class="border-t border-border/70">
                             <div class="flex flex-wrap items-center justify-between gap-3 bg-white px-4 py-4 sm:px-5">
                                 <div><h5 class="font-bold">دستورکارهای این بخش</h5><p class="mt-1 text-xs text-muted-foreground">وضعیت، مسئول، مهلت و آخرین فعالیت هر مورد</p></div>
-                                <div class="flex items-center gap-2"><span class="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 tabular-nums">{{ section.tasks.length }} مورد</span><Button v-if="canCreateTasks || managerCreatableSectionIds.includes(section.id)" type="button" size="sm" class="h-9 gap-1.5" @click="openSectionTaskModal(section)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M12 5v14M5 12h14"/></svg>ایجاد دستورکار</Button></div>
+                                <div class="flex items-center gap-2"><span class="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 tabular-nums">{{ section.tasks.length }} مورد</span><Button v-if="canCreateTasks || managerCreatableSectionIds.includes(section.id)" type="button" size="sm" class="h-9 gap-1.5" @click="openSectionTaskModal(section)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h5M8 16h4"/><path d="M17 14v5M14.5 16.5h5"/></svg>ایجاد دستورکار</Button></div>
                             </div>
                             <div v-if="section.tasks.length === 0" class="m-4 rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">برای این بخش هنوز دستورکاری ثبت نشده است.</div>
                             <div v-else class="grid gap-3 p-3 sm:p-4 2xl:grid-cols-2">
@@ -469,6 +470,7 @@ const deleteTask = (task: Task): void => {
                             <div class="flex items-start justify-between gap-3"><dt class="text-sm text-muted-foreground">تاریخ شروع</dt><dd class="text-sm font-medium">{{ formatDate(project.start_date) }}</dd></div>
                             <div class="flex items-start justify-between gap-3"><dt class="text-sm text-muted-foreground">تاریخ پایان</dt><dd class="text-sm font-medium">{{ formatDate(project.end_date) }}</dd></div>
                             <div class="flex items-start justify-between gap-3"><dt class="text-sm text-muted-foreground">وضعیت رکورد</dt><dd class="text-sm font-medium">{{ project.is_active ? 'فعال' : 'غیرفعال' }}</dd></div>
+                            <div class="flex items-start justify-between gap-3"><dt class="text-sm text-muted-foreground">ایجاد دستورکار توسط مدیر واحد</dt><dd class="text-sm font-medium" :class="project.sections.some((section) => section.manager_can_create_tasks) ? 'text-emerald-700' : 'text-slate-500'">{{ project.sections.some((section) => section.manager_can_create_tasks) ? 'فعال در بخش‌های مجاز' : 'غیرفعال' }}</dd></div>
                         </dl>
                     </section>
 
