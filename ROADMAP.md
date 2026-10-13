@@ -147,7 +147,7 @@ Before V1 is formally closed, run:
 - frontend production build
 - final manual visual/functional acceptance
 
-No V2 implementation should begin until the V1 acceptance gate is closed.
+V2 implementation requires explicit project-owner authorization. When authorized before every manual V1 acceptance item is closed, keep those items tracked and preserve full V1 regression coverage.
 
 ---
 
@@ -551,31 +551,29 @@ A version closes only when all of the following are true:
 
 ---
 
-# Current Position — 2026-10-06
+# Current Position — 2026-10-13
 
-**Current version: V1 — Foundation & Work Management**
+**Current version: V2 — Office Automation**
 
-**V1 implementation status:** scope implemented.
+**V1 implementation status:** complete.
 
-**V1 acceptance status:** technical validation passed; manual UI/functional acceptance in progress.
+**V1 technical validation:** the project owner confirmed that the full backend suite passed (380 tests) and the frontend production build succeeded.
 
-Recent V1 manual acceptance found a user-password validation localization defect: passwords shorter than the enforced 8-character minimum displayed the Laravel translation key `validation.min.string`. This was fixed by adding the Persian validation dictionary at `lang/fa/validation.php`.
+**V1 manual acceptance:** any remaining visual/functional acceptance notes remain tracked in the status log. V2 kickoff is explicitly authorized by the project owner; remaining V1 acceptance items must not be silently dropped, and V1 regression coverage remains mandatory.
 
-Recent V1 acceptance also found redundant user identity inputs. The standalone user `name` field was removed from the UI; first name and last name are now the user-facing identity inputs, while `users.name` is derived by the backend.
+**V2 implementation status:** started. The first implementation slice is the correspondence foundation, beginning with domain boundaries and the draft/registration data model.
 
-Technical validation completed:
-1. Dedicated system-code regression test — passed.
-2. Full PHPUnit/Laravel suite — passed.
-3. Frontend production build — passed.
+## V2 delivery order
 
-Before V1 closes:
-1. Manually confirm the Persian password validation message after pulling the latest development change.
-2. Continue final manual UI/functional acceptance.
-3. Fix any newly discovered runtime defects at their root cause.
-4. Reconcile documentation and close the V1 acceptance gate.
+1. Inspect existing Workflow, Documents, Cartable, Notifications and Audit capabilities and define correspondence integration contracts.
+2. Correspondence foundation: incoming/outgoing/internal types, draft/registered lifecycle, registration numbering, authorization and audit.
+3. Referrals, instructions, replies and correspondence attachments.
+4. Correspondence ↔ Workflow and Correspondence ↔ Task integration.
+5. Correspondence actions in Cartable plus notifications.
+6. Forms & Requests using reusable Workflow + Cartable + Documents.
+7. V2 acceptance: end-to-end journeys, authorization/regression tests, frontend build and manual Persian RTL acceptance.
 
-No V2 implementation should begin until the V1 acceptance gate is closed.
-
+The full Digital Archive product remains V3. V2 may create archive references and use existing document/version infrastructure, but must not grow into the V3 archive product.
 # Implementation Order
 
 The implementation order is version-based:
@@ -596,7 +594,7 @@ Within each version, implementation remains incremental:
 
 **Inspect → Design/Boundary Review → Smallest Coherent Change → Test → Build → Manual Acceptance → Documentation → Next Item**
 
-Do not start a new module merely because it appears later in this document. Work proceeds from the current version's acceptance gate.
+Do not start unrelated later-version scope merely because it appears in this document. Work proceeds from the active version's acceptance criteria. V2 kickoff is explicitly authorized; remaining V1 manual-acceptance notes remain tracked separately.
 
 ---
 
@@ -870,3 +868,11 @@ Project mutation authorization and task workflow actions now enforce permission 
 
 ### Shared Project / Sections implementation checkpoint — 2026-10-10
 The development branch now contains the first implementation of project sections, shared-project migration/seeding, department-to-section provisioning, section-scoped task creation, manager-first referral history, and general/section document uploads. This extension is **pending local test-suite, migration, and frontend-build validation**; it is not yet accepted as complete.
+
+
+### 2026-10-13 — V2 kickoff authorized
+- Roadmap current position advanced to V2 — Office Automation by explicit project-owner instruction.
+- V2 starts with correspondence foundation and reuses existing Workflow, Documents, Cartable, Notifications and Audit capabilities.
+- The full Digital Archive product remains V3; V2 only uses existing document/version infrastructure and correspondence archive references.
+- PBX remains V4 before CRM V5. V4 is standalone; PBX ↔ CRM customer lookup/history remains deferred until both modules exist.
+- V1 full-suite validation (380 tests) and frontend production build were reported passing by the project owner; remaining manual-acceptance notes stay tracked and V1 regression coverage remains required.
