@@ -155,49 +155,34 @@ No V2 implementation should begin until the V1 acceptance gate is closed.
 
 ## Goal
 
-Turn the V1 operational backbone into a real office-automation workflow platform.
+Deliver the core administrative correspondence and reusable request processes on top of the V1 Workflow, Cartable, Documents, Notifications and Audit backbone.
 
 ## Scope
 
 ### Correspondence
-- Incoming letters
-- Outgoing letters
-- Internal letters
+- Incoming, outgoing and internal letters
 - Registration and numbering
 - Draft / registered lifecycle
-- Referrals
-- Instructions
+- Referrals and instructions
 - Replies
 - Attachments
-- Correspondence archive references
 - Correspondence ↔ Task
 - Correspondence ↔ Workflow
 - Approval/signature flow
 - Correspondence actions in Cartable
 - Correspondence notifications and audit
 
-### Digital Archive
-- Central document archive
-- Document categories
-- Metadata
-- Version management
-- Searchable archive references
-- Retention metadata
-- Access control
-- Scan/upload integration
-- Archive links to business records
-
 ### Forms & Requests
 Generic request engine built on Workflow + Cartable + Documents:
 - Administrative requests
-- Leave requests
 - Purchase requests
 - Equipment requests
 - Approval requests
 - Request lifecycle/history
 - Request attachments
-- Approval routing
+- Reusable approval routing
 - Notifications
+- Leave requests are included only as a generic request type in V2; HR-specific leave balances and policies belong to the HR version.
 
 ### Backbone hardening for V2
 - More complete document handoff
@@ -206,21 +191,130 @@ Generic request engine built on Workflow + Cartable + Documents:
 - Expanded audit coverage
 - Queue-backed notification delivery where justified
 
-## V2 Acceptance Gate
+## Explicitly deferred from V2
+- Full Digital Archive product and advanced archive search
+- Meetings & Calendar and advanced task planning
+- PBX / organizational telephony
+- CRM and customer-specific call history
+- PBX ↔ CRM integration
+- Internal Chat
+- HR-specific workflows and records
 
-- Correspondence end-to-end workflow works.
-- Archive records are searchable and access-controlled.
-- Forms can use reusable workflow definitions.
-- Cartable can surface actionable correspondence/requests.
+## V2 Acceptance Gate
+- Incoming, outgoing and internal correspondence journeys work end to end.
+- Correspondence can be referred, instructed, replied to, attached to tasks and routed through Workflow.
+- Forms use reusable workflow definitions and appear as actionable items in Cartable.
+- Authorization, notifications and audit are enforced for correspondence and requests.
 - Existing V1 features remain regression-safe.
+- Documentation and manual UI/functional acceptance are complete.
 
 ---
 
-# V3 — Collaboration & Planning
+# V3 — Digital Archive
 
 ## Goal
 
-Give users a complete daily workspace for planning, scheduling and collaboration around work.
+Deliver a first-class, searchable, access-controlled digital archive that builds on the shared Documents foundation and links to business records.
+
+## Scope
+- Central document archive
+- Document categories
+- Metadata
+- Version management
+- Searchable archive references
+- Retention metadata
+- Access control
+- Scan/upload integration
+- Archive links to correspondence, tasks, workflows and other business records
+- Reuse existing document/version references instead of duplicating files
+
+## V3 Acceptance Gate
+- Archive records are searchable and access-controlled.
+- Metadata and version history are preserved.
+- Archive documents can be linked to business records without duplicate file storage.
+- Correspondence and V1 workflows remain regression-safe.
+
+---
+
+# V4 — Organizational Telephony (PBX)
+
+## Goal
+
+Deliver a usable standalone organizational telephone system before CRM, without making PBX depend on customer records.
+
+## Scope
+- PBX driver interface and Asterisk driver
+- Extension management and registration status
+- Trunks and gateways
+- IVR
+- Queues
+- Call routing and call state handling
+- Call logs and history
+- Recording management and access control
+- Conference and voicemail where supported by the selected Asterisk integration
+- Phone book for internal extensions
+- Click-to-call where supported
+- PBX dashboard and operational reports
+- Events/contracts for incoming, outgoing, answered and ended calls, plus recording and extension status events
+
+## Architectural Boundary
+- PBX owns telephony configuration, call state, call logs and recording references.
+- PBX must work without CRM being installed or enabled.
+- CRM lookups, customer profile opening, customer-linked call history and call-to-customer links are deferred to the explicit integration version.
+- Cross-module communication must use stable contracts/events; PBX must not directly query CRM tables.
+
+## V4 Acceptance Gate
+- Core inbound/outbound call flows work against the supported Asterisk environment.
+- Extension, trunk, queue and IVR behavior is covered by integration tests where practical.
+- Call logs and recordings respect backend authorization.
+- PBX can be disabled without loading its routes, jobs, events or UI.
+- PBX functions without CRM.
+
+---
+
+# V5 — CRM & Commercial Operations
+
+## Goal
+
+Add customer-facing operations while keeping external customers and contacts separate from internal users and departments.
+
+## Scope
+
+### CRM
+- Customers and customer organizations
+- Contacts
+- Leads
+- Activities and follow-ups
+- Customer documents
+- Customer tasks
+- Communication history
+- CRM ↔ Task/Workflow integration
+
+### Sales
+- Opportunities
+- Sales pipeline
+- Quotations
+- Orders
+- Sales tasks
+- Customer approvals
+- Sales documents
+
+## Architectural Rule
+External organizations and external contacts remain separate from authenticated internal Users and internal Departments. CRM must consume shared Workflow, Documents, Cartable, Notifications and Audit capabilities rather than duplicating them.
+
+## V5 Acceptance Gate
+- Customer, contact and activity records enforce scoped authorization.
+- Customer tasks and approvals use shared Tasks/Workflow capabilities.
+- CRM remains usable when PBX is disabled.
+- Existing V1–V4 behavior remains regression-safe.
+
+---
+
+# V6 — Collaboration & Planning
+
+## Goal
+
+Provide a complete daily workspace for planning, scheduling and collaboration around work.
 
 ## Scope
 
@@ -246,7 +340,6 @@ Give users a complete daily workspace for planning, scheduling and collaboration
 - Personal operational dashboard
 
 ### Advanced Task Planning
-These were intentionally deferred from V1:
 - Board view
 - Calendar task view
 - Gantt view
@@ -255,96 +348,15 @@ These were intentionally deferred from V1:
 - Better dependency visualization
 
 ### Search
-- Unified search foundation
-- Tasks
-- Projects
-- Documents
-- Correspondence
-- Requests
-- Employees
+- Unified search foundation across tasks, projects, documents, correspondence, requests and employees
 
 ---
 
-# V4 — Customer & Commercial Operations
+# V7 — Internal Collaboration, HR, Procurement & Resources
 
 ## Goal
 
-Add customer-facing operational processes without coupling them to Core users/departments.
-
-## Scope
-
-### CRM
-- Customers
-- Customer organizations
-- Contacts
-- Leads
-- Activities
-- Follow-ups
-- Customer documents
-- Customer tasks
-- Communication history
-
-### Sales
-- Opportunities
-- Sales pipeline
-- Quotations
-- Orders
-- Sales tasks
-- Customer approvals
-- Sales documents
-- CRM ↔ Task/Workflow integration
-
-## Architectural rule
-
-External organizations and external contacts remain separate from authenticated internal Users and internal Departments.
-
----
-
-# V5 — Procurement, Inventory & Assets
-
-## Goal
-
-Automate material purchasing and resource ownership/maintenance.
-
-## Scope
-
-### Procurement
-- Purchase requests
-- Supplier management
-- RFQ
-- Supplier quotations
-- Purchase orders
-- Approval workflow
-- Procurement documents
-- Procurement tasks
-
-### Inventory
-- Warehouses
-- Items
-- Stock movements
-- Inventory balances
-- Stock requests
-- Inventory documents
-
-### Assets
-- Asset registry
-- Asset assignment
-- Maintenance
-- Asset history
-- Asset documents
-- Approval workflows
-
-## Architectural rule
-
-Procurement and Inventory must use the existing Workflow, Documents, Cartable and Audit backbone rather than creating parallel approval/document systems.
-
----
-
-# V6 — HR & Internal Collaboration
-
-## Goal
-
-Complete employee-oriented automation and internal communication.
+Expand employee-oriented workflows and internal collaboration, then automate procurement and resource ownership using the shared platform backbone.
 
 ## Scope
 
@@ -353,7 +365,7 @@ Complete employee-oriented automation and internal communication.
 - Employment information
 - Organizational positions integration
 - Employment documents
-- Leave
+- Leave balances and policies
 - Attendance
 - Personnel requests
 - HR workflows
@@ -368,13 +380,39 @@ Complete employee-oriented automation and internal communication.
 - Realtime messaging
 - Notifications
 
+### Procurement
+- Supplier management
+- RFQ
+- Supplier quotations
+- Purchase orders
+- Approval workflow
+- Procurement documents
+- Procurement tasks
+- Purchase requests should reuse the V2 request engine where applicable
+
+### Inventory & Assets
+- Warehouses
+- Items
+- Stock movements
+- Inventory balances
+- Stock requests
+- Asset registry
+- Asset assignment
+- Maintenance
+- Asset history
+- Asset documents
+- Approval workflows
+
+## Architectural Rule
+HR, Procurement, Inventory and Assets must reuse Workflow, Documents, Cartable and Audit rather than creating parallel approval/document systems.
+
 ---
 
-# V7 — Intelligence, Automation & Integrations
+# V8 — Intelligence, Automation & Integrations
 
 ## Goal
 
-Move from workflow digitization to cross-module intelligence and automation.
+Automate cross-module work and add operational visibility after the foundational modules and their contracts are stable.
 
 ## Scope
 
@@ -386,6 +424,7 @@ Move from workflow digitization to cross-module intelligence and automation.
 - SLA reports
 - Correspondence reports
 - CRM reports
+- PBX reports
 - Cross-module dashboards
 
 ### SLA & Escalation
@@ -413,26 +452,28 @@ Driver-based integrations for:
 - Calendar
 - External APIs
 - SSO / identity providers
-- PBX / Asterisk
 
-### Telephony / PBX
-- Extensions
-- Call logs
-- Call history
-- Asterisk integration
-- Recordings
-- Queues
-- IVR
-- Call-to-customer linking
-- Call-to-task linking
+### PBX ↔ CRM Integration
+- Incoming call → customer lookup
+- Open the matched customer profile when a match is found
+- Save call history against the customer
+- Link calls to tasks where appropriate
+- Show call notifications in the relevant internal workspace
+- Keep integration event-driven and optional so PBX and CRM remain independently usable
+
+## V8 Acceptance Gate
+- Cross-module automation uses explicit events/contracts and is auditable.
+- Reports respect each source module's authorization boundaries.
+- PBX/CRM integration can be disabled independently of both modules.
+- Retry and failure handling are defined for asynchronous integrations.
 
 ---
 
-# V8 — Production & Enterprise Readiness
+# V9 — Production & Enterprise Readiness
 
 ## Goal
 
-Prepare the platform for serious production deployment and long-term operation.
+Prepare the platform for production deployment and long-term operation.
 
 ## Scope
 
@@ -537,16 +578,19 @@ No V2 implementation should begin until the V1 acceptance gate is closed.
 
 # Implementation Order
 
-The implementation order is now version-based:
+The implementation order is version-based:
 
 1. **V1 — Foundation & Work Management**
-2. **V2 — Office Automation**
-3. **V3 — Collaboration & Planning**
-4. **V4 — Customer & Commercial Operations**
-5. **V5 — Procurement, Inventory & Assets**
-6. **V6 — HR & Internal Collaboration**
-7. **V7 — Intelligence, Automation & Integrations**
-8. **V8 — Production & Enterprise Readiness**
+2. **V2 — Office Automation (Correspondence and Forms & Requests)**
+3. **V3 — Digital Archive**
+4. **V4 — Organizational Telephony (standalone PBX)**
+5. **V5 — CRM & Commercial Operations**
+6. **V6 — Collaboration & Planning**
+7. **V7 — Internal Collaboration, HR, Procurement & Resources**
+8. **V8 — Intelligence, Automation & Integrations (including PBX ↔ CRM)**
+9. **V9 — Production & Enterprise Readiness**
+
+PBX is intentionally scheduled before CRM-dependent telephony features. V4 must be independently usable; customer lookup, customer-linked call history and other PBX ↔ CRM behavior are delivered in V8 after both modules exist.
 
 Within each version, implementation remains incremental:
 
