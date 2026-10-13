@@ -83,7 +83,7 @@ onMounted(() => {
                             <div class="flex shrink-0 items-center">
                                 <Link :href="route('dashboard')" class="group flex items-center gap-3 rounded-xl py-1.5 pl-3 pr-1 transition hover:bg-slate-50">
                                     <span class="flex h-11 w-11 items-center justify-center rounded-[15px] ring-1 ring-black/5 transition group-hover:scale-[1.03]"><ApplicationLogo class="block h-10 w-10" /></span>
-                                    <span class="hidden min-w-[8.5rem] lg:block"><span class="block text-sm font-extrabold tracking-tight text-slate-900">اتوماسیون اداری</span><span class="mt-0.5 block text-[10px] font-medium tracking-wide text-slate-400">WORKSPACE</span></span>
+                                    <span class="hidden min-w-[8.5rem] lg:block"><span class="block text-sm font-extrabold tracking-tight text-slate-900">اتوماسیون اداری</span><span class="mt-0.5 block text-[10px] font-medium tracking-wide text-slate-400">فضای کاری</span></span>
                                 </Link>
                             </div>
 
@@ -576,7 +576,7 @@ onMounted(() => {
 
             <aside class="fixed bottom-0 right-0 top-16 z-30 hidden w-64 flex-col border-l border-slate-200/80 bg-white px-4 py-5 xl:flex">
                 <div class="mb-5 px-3">
-                    <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">WORKSPACE</p>
+                    <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">فضای کاری</p>
                     <p class="mt-1 text-sm font-bold text-slate-800">فضای کاری</p>
                 </div>
                 <nav class="flex-1 space-y-1" aria-label="منوی اصلی">
