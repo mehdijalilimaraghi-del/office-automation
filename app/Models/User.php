@@ -353,11 +353,10 @@ class User extends Authenticatable
         if ($permissionCode === 'tasks.view') {
             $scopes = [];
 
-            if (
-                $this->managedProjects()->exists()
-                || $this->projectMemberships()->exists()
-                || $this->projects()->exists()
-            ) {
+            // Project membership alone must not expose every task in the project
+            // to an ordinary user. Broad project visibility is reserved for
+            // project managers or an explicit role grant above.
+            if ($this->managedProjects()->exists()) {
                 $scopes[] = PermissionScope::Project->value;
             }
 
