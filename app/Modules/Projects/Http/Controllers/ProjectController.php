@@ -202,6 +202,24 @@ class ProjectController extends Controller
         $canUploadProjectDocuments = Gate::allows('create', Document::class)
             && ($isProjectOwner || $hasOrganizationProjectScope);
         $projectDetails = $this->projectService->show($project);
+
+        // Project visibility does not grant blanket access to every task in it.
+        // Apply the task policy before serializing any project-level or section-level task list.
+        $projectDetails->setRelation(
+            'tasks',
+            $projectDetails->tasks
+                ->filter(fn ($task): bool => Gate::allows('view', $task))
+                ->values()
+        );
+        $projectDetails->sections->each(function ($section): void {
+            $section->setRelation(
+                'tasks',
+                $section->tasks
+                    ->filter(fn ($task): bool => Gate::allows('view', $task))
+                    ->values()
+            );
+        });
+
         $markTaskDeleteAbility = static function ($task): void {
             $task->setAttribute('can_delete', Gate::allows('delete', $task));
         };
