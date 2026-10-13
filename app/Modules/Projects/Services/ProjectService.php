@@ -104,7 +104,7 @@ class ProjectService implements ProjectServiceContract
             'tasks.assignee',
             'tasks.creator',
             'tasks.activities' => fn ($query) => $query->select('id', 'task_id', 'title', 'created_at')->latest()->limit(1),
-            'sections.department.manager',
+            'sections.department.manager.profile',
             'sections.department.members' => fn ($query) => $query->where('users.status', 'active'),
             'sections.documents.document.latestVersion',
             'sections.tasks.assignee',
