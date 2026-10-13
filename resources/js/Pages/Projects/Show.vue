@@ -384,10 +384,11 @@ const deleteTask = (task: Task): void => {
                             </div>
                             <div class="flex flex-wrap items-start justify-between gap-4">
                                 <div class="flex min-w-0 items-start gap-3">
-                                    <div class="min-w-0">
-                                        <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500" :title="section.description || 'برای این بخش توضیحی ثبت نشده است'" :aria-label="section.description ? 'نمایش توضیحات بخش' : 'توضیحی برای این بخش ثبت نشده است'">
+                                    <div class="flex min-w-0 items-start gap-2.5">
+                                        <button type="button" class="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500" title="توضیحات بخش" aria-label="توضیحات بخش">
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>
                                         </button>
+                                        <p class="min-w-0 whitespace-pre-line text-sm leading-6 text-slate-700">{{ section.description || 'برای این بخش توضیحی ثبت نشده است.' }}</p>
                                     </div>
                                 </div>
                                 <div class="flex flex-wrap gap-2">
