@@ -711,7 +711,6 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                 </aside>
             </div>
 
-  </section>
         </div>
 
         <div v-if="showActivityHelp" class="task-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showActivityHelp = false">
