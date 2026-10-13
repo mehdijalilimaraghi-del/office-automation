@@ -327,7 +327,7 @@ const deleteTask = (task: Task): void => {
                 </div>
             </section>
 
-            <section class="grid items-start gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(14rem,.7fr)]">
+            <section class="grid items-start gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(11rem,.45fr)]">
                 <div class="min-w-0 space-y-4">
                     <div class="flex flex-wrap items-end justify-between gap-3">
                         <div>
