@@ -354,29 +354,27 @@ const deleteTask = (task: Task): void => {
                                         <h4 class="font-bold">{{ section.name }}</h4>
                                         <span class="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">{{ section.tasks.length }} دستورکار</span>
                                     </div>
-                                    <p class="mt-1 text-sm text-muted-foreground">{{ section.department?.name ?? 'واحد مسئول تعیین نشده' }}<span v-if="section.department?.manager?.name"> · مدیر: {{ section.department.manager.name }}</span></p>
+                                    <div class="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                                        <span class="inline-flex items-center gap-1.5">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-slate-400" aria-hidden="true"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/><path d="M9 9v.01M9 12v.01M9 15v.01M9 18v.01M16 13v.01M16 16v.01M16 19v.01"/></svg>
+                                            {{ section.department?.name ?? 'واحد مسئول تعیین نشده' }}
+                                        </span>
+                                        <span v-if="section.department?.manager" class="inline-flex items-center gap-2">
+                                            <span class="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 ring-1 ring-indigo-200">{{ section.department.manager.name.slice(0, 1) }}</span>
+                                            <span>{{ section.department.manager.name }}</span>
+                                        </span>
+                                    </div>
                                 </div>
-                                        <span class="inline-flex shrink-0 items-center gap-2 rounded-lg border bg-background px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors group-hover:border-primary/30 group-hover:text-foreground group-open:bg-muted">
-                                    <span class="hidden group-open:inline">بستن جزئیات</span>
-                                    <span class="group-open:hidden">مشاهده جزئیات</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 transition-transform duration-200 group-open:rotate-180" aria-hidden="true">
-                                        <path d="m6 9 6 6 6-6" />
-                                    </svg>
-                                </span>
+                                <div class="flex shrink-0 items-center gap-1">
+                                    <button v-if="canUpdate" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-indigo-50 hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500" aria-label="ویرایش بخش" title="ویرایش بخش" @click.stop.prevent="openEditSection(section)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></button>
+                                    <button v-if="canUpdate" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-rose-600 transition hover:bg-rose-50 hover:text-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500" aria-label="حذف بخش" title="حذف بخش" @click.stop.prevent="deleteSection(section)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg></button>
+                                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition group-open:bg-muted" aria-hidden="true">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 transition-transform duration-200 group-open:rotate-180"><path d="m6 9 6 6 6-6"/></svg>
+                                    </span>
+                                </div>
                             </div>
                         </summary>
                         <div class="border-t border-border/70 bg-muted/[0.12]">
-                        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 bg-white px-4 py-3 sm:px-5">
-                            <div class="flex min-w-0 items-center gap-2 text-xs text-muted-foreground"><span class="inline-flex h-8 min-w-8 items-center justify-center rounded-lg bg-primary/10 px-2 font-bold text-primary">{{ section.tasks.length }}</span><span>دستورکار</span></div>
-                            <div class="flex items-center gap-2">
-                                <div v-if="canUpdate" class="flex items-center gap-1">
-                                    <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-indigo-50 hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500" aria-label="ویرایش بخش" title="ویرایش بخش" @click.stop.prevent="openEditSection(section)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></button>
-                                    <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-rose-600 transition hover:bg-rose-50 hover:text-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500" aria-label="حذف بخش" title="حذف بخش" @click.stop.prevent="deleteSection(section)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg></button>
-                                </div>
-                                <span class="text-xs text-muted-foreground">جزئیات</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-slate-400 transition-transform group-open:rotate-180" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-                            </div>
-                        </div>
                         <div class="border-b bg-slate-50/70 p-4 sm:p-5">
                             <div class="mb-4 rounded-xl border border-slate-200/80 bg-white p-4">
                                 <div class="mb-2 flex items-center justify-between gap-3 text-xs"><span class="font-semibold text-slate-600">پیشرفت بخش</span><span class="font-bold tabular-nums text-slate-800">{{ sectionProgress(section) }}٪</span></div>
@@ -385,15 +383,11 @@ const deleteTask = (task: Task): void => {
                             </div>
                             <div class="flex flex-wrap items-start justify-between gap-4">
                                 <div class="flex min-w-0 items-start gap-3">
-                                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-lg font-bold text-primary">{{ section.name.slice(0, 1) }}</div>
                                     <div class="min-w-0">
-                                        <p class="flex items-center gap-2 text-xs font-semibold text-slate-500"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-slate-400"><path d="M4 5h16M4 12h16M4 19h10"/></svg>توضیحات بخش</p>
-                                        <p v-if="section.description" class="mt-1 whitespace-pre-line text-sm leading-6 text-slate-800">{{ section.description }}</p>
-                                        <p v-else class="mt-1 text-sm text-slate-400">برای این بخش توضیحی ثبت نشده است.</p>
-                                        <div class="mt-3 flex items-center gap-2.5">
-                                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700 ring-2 ring-white">{{ section.department?.manager?.name?.slice(0, 1) ?? '؟' }}</span>
-                                            <div><p class="text-[11px] text-slate-400">مدیر واحد</p><p class="text-sm font-semibold text-slate-700">{{ section.department?.manager?.name ?? 'تعیین نشده' }}</p></div>
-                                        </div>
+                                        <button v-if="section.description" type="button" class="group/description inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-indigo-50 hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500" :title="section.description" :aria-label="'توضیحات بخش: ' + section.description">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg>
+                                        </button>
+                                        <p v-else class="text-sm text-slate-400">برای این بخش توضیحی ثبت نشده است.</p>
                                     </div>
                                 </div>
                                 <div class="flex flex-wrap gap-2">
