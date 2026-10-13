@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -206,6 +207,13 @@ class ProjectController extends Controller
         };
         $projectDetails->tasks->each($markTaskDeleteAbility);
         $projectDetails->sections->each(fn ($section) => $section->tasks->each($markTaskDeleteAbility));
+        $projectDetails->sections->each(function ($section): void {
+            $manager = $section->department?->manager;
+            $avatarPath = $manager?->profile?->avatar_path;
+            if ($manager !== null) {
+                $manager->setAttribute('avatar_url', $avatarPath ? Storage::url($avatarPath) : null);
+            }
+        });
 
         return Inertia::render('Projects/Show', [
             'project' => $projectDetails,
