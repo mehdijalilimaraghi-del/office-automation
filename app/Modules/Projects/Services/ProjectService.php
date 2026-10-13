@@ -39,7 +39,10 @@ class ProjectService implements ProjectServiceContract
             if (in_array(PermissionScope::Self->value, $scopes, true)) {
                 $scopeQuery
                     ->where('projects.created_by', $user->id)
-                    ->orWhere('projects.manager_id', $user->id);
+                    ->orWhere('projects.manager_id', $user->id)
+                    ->orWhereHas('tasks', fn ($taskQuery) => $taskQuery
+                        ->where('tasks.assignee_id', $user->id)
+                        ->orWhere('tasks.created_by', $user->id));
             }
 
             if (in_array(PermissionScope::Department->value, $scopes, true)) {
@@ -83,7 +86,11 @@ class ProjectService implements ProjectServiceContract
             }
 
             if (in_array(PermissionScope::Project->value, $scopes, true)) {
-                $scopeQuery->orWhere('projects.manager_id', $user->id);
+                $scopeQuery
+                    ->orWhere('projects.manager_id', $user->id)
+                    ->orWhereHas('tasks', fn ($taskQuery) => $taskQuery
+                        ->where('tasks.assignee_id', $user->id)
+                        ->orWhere('tasks.created_by', $user->id));
             }
         });
 
