@@ -146,6 +146,7 @@ const editingActivityId = ref<number | null>(null);
 const showActivityModal = ref(false);
 const showEditModal = ref(false);
 const showReferralModal = ref(false);
+const showActivityHelp = ref(false);
 const showCommentModal = ref(false);
 const showWorkLogModal = ref(false);
 const showReminderModal = ref(false);
@@ -519,8 +520,12 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                     <section class="overflow-hidden rounded-xl border bg-card shadow-sm">
                         <div class="flex items-start justify-between gap-3 border-b bg-blue-50/60 px-5 py-4 sm:px-6">
                             <div class="min-w-0">
-                                <h3 class="font-semibold">فعالیت‌های بعدی</h3>
-                                <p class="mt-1 text-sm text-muted-foreground">کارهایی که هنوز باید انجام شوند.</p>
+                                <div class="flex items-center gap-2">
+                                    <h3 class="font-semibold">فعالیت‌های بعدی</h3>
+                                    <button type="button" class="inline-flex h-6 w-6 items-center justify-center rounded-full border border-blue-200 bg-white text-blue-700 transition hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" aria-label="راهنمای فعالیت‌های بعدی" title="راهنمای فعالیت‌های بعدی" @click="showActivityHelp = true">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.6 9a2.5 2.5 0 0 1 4.8 1c0 1.7-2.4 2-2.4 3.5"/><path d="M12 17h.01"/></svg>
+                                    </button>
+                                </div>
                                 
                             </div>
                             <button v-if="abilities.update" type="button" title="برای کاری که هنوز باید انجام شود؛ پس از انجام، دکمه «انجام شد» را بزنید." class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="openActivityForm()">+ ثبت فعالیت بعدی</button>
@@ -552,7 +557,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                             <button v-if="abilities.refer" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showReferralModal = true">ارجاع دستورکار</button>
                         </div>
                         <div v-if="task.assignments.length === 0" class="p-6 text-center text-sm text-muted-foreground">هنوز سابقه ارجاعی برای این دستورکار ثبت نشده است.</div>
-                        <div v-else class="divide-y px-5 sm:px-6">
+                        <div v-else class="divide-y px-5 py-4 sm:px-6">
                             <article v-for="(assignment, index) in task.assignments" :key="assignment.id" class="py-4 first:pt-0 last:pb-0">
                                 <div class="flex gap-3">
                                     <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-50 text-xs font-semibold text-violet-700">{{ index + 1 }}</div>
@@ -706,14 +711,16 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                 </aside>
             </div>
 
-            <section class="w-full rounded-xl border border-blue-200 bg-blue-50/70 p-5 shadow-sm sm:p-6" aria-labelledby="task-activity-guide-title">
-                <div class="flex items-start gap-3">
-                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700" aria-hidden="true">i</div>
-                    <div class="min-w-0 flex-1">
-                        <h3 id="task-activity-guide-title" class="font-semibold text-blue-950">راهنمای فعالیت‌ها</h3>
-                        <p class="mt-2 text-sm leading-7 text-blue-900">«فعالیت‌های بعدی» برای کارهایی است که هنوز باید انجام شوند. بعد از انجام، «انجام شد» را بزنید تا همان فعالیت با زمان تکمیل در این گزارش نمایش داده شود. برای کاری که قبلاً انجام شده و از قبل در فهرست فعالیت‌های بعدی نبوده، «ثبت فعالیت انجام‌شده» را انتخاب کنید.</p>
-                    </div>
+  </section>
+        </div>
+
+        <div v-if="showActivityHelp" class="task-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showActivityHelp = false">
+            <section class="task-modal-panel w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl sm:p-6" role="dialog" aria-modal="true" aria-labelledby="task-activity-help-title">
+                <div class="flex items-center justify-between gap-3">
+                    <h3 id="task-activity-help-title" class="font-semibold text-gray-900">راهنمای فعالیت‌ها</h3>
+                    <button type="button" class="text-xl text-gray-500 hover:text-gray-900" aria-label="بستن راهنما" @click="showActivityHelp = false">×</button>
                 </div>
+                <p class="mt-4 text-sm leading-7 text-gray-700">«فعالیت‌های بعدی» برای کارهایی است که هنوز باید انجام شوند. بعد از انجام، «انجام شد» را بزنید تا همان فعالیت با زمان تکمیل در گزارش فعالیت نمایش داده شود. برای کاری که قبلاً انجام شده و از قبل در فهرست فعالیت‌های بعدی نبوده، «ثبت فعالیت انجام‌شده» را انتخاب کنید.</p>
             </section>
         </div>
 
