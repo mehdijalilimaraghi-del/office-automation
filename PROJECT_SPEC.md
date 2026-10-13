@@ -168,15 +168,18 @@ V1 already contains the operational backbone required by the implemented work-ma
 - Audit V1
 
 Post-V1 expansion is versioned in ROADMAP.md:
-- V2: Correspondence, Digital Archive, Forms & Requests
-- V3: Collaboration & Planning
-- V4: Customer & Commercial Operations
-- V5: Procurement, Inventory & Assets
-- V6: HR & Internal Collaboration
-- V7: Intelligence, Automation & Integrations
-- V8: Production & Enterprise Readiness
+- V2: Office Automation — Correspondence and Forms & Requests
+- V3: Digital Archive
+- V4: Organizational Telephony (standalone PBX, independent of CRM)
+- V5: CRM & Commercial Operations
+- V6: Collaboration & Planning
+- V7: Internal Collaboration, HR, Procurement & Resources
+- V8: Intelligence, Automation & Integrations, including optional PBX ↔ CRM integration
+- V9: Production & Enterprise Readiness
 
-No later-version scope should be pulled into V1 without an explicit product decision.
+V2 explicitly excludes the full Digital Archive product, PBX, CRM and PBX ↔ CRM integration. PBX is planned before CRM and must be independently usable; customer lookup and customer-linked call history are deferred until both modules are available.
+
+No later-version scope should be pulled into V1 or V2 without an explicit product decision.
 
 ---
 
