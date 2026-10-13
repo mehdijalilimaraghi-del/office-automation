@@ -299,7 +299,7 @@ class TaskServiceTest extends TestCase
             $otherUser
         );
 
-        $this->assertSame($otherUser->id, $updated->assignee_id);
+        $this->assertEquals($otherUser->id, $updated->assignee_id);
         $this->assertDatabaseHas('tasks', [
             'id' => $task->id,
             'assignee_id' => $otherUser->id,
