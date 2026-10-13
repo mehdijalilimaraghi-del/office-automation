@@ -479,3 +479,11 @@ Implementation has started for the agreed cross-department project model:
 - V2 includes incoming/outgoing/internal correspondence, draft/registered lifecycle, numbering, referrals/instructions/replies, attachments, task/workflow links, Cartable actions, notifications and audit, followed by Forms & Requests.
 - Full Digital Archive remains V3. PBX remains V4 (standalone) and CRM V5; PBX ↔ CRM integration stays deferred until both modules exist.
 - Validation for new V2 code must include focused backend tests, authorization checks, full regression tests, frontend production build where UI changes, and manual Persian RTL acceptance.
+
+
+### 2026-10-13 — V2 correspondence foundation (first code slice)
+
+- Added the `Correspondence` model and initial `correspondences` schema with incoming/outgoing/internal type values, draft/registered lifecycle fields, optional registration metadata, department ownership, workflow linkage, reply threading, and document-link relationship.
+- Added `CorrespondenceService::createDraft()` to create drafts transactionally and reject unsupported correspondence types or blank subjects.
+- Added focused service tests for incoming drafts, outgoing/internal draft types, invalid type rejection and blank-subject rejection.
+- Files are committed to `development`; tests and migrations have **not yet been run locally**. Registration-number allocation, HTTP authorization/routes, UI, referral/instruction/reply workflows and Cartable integration remain future slices.
