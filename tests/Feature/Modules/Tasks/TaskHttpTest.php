@@ -510,6 +510,29 @@ class TaskHttpTest extends TestCase
         $this->assertDatabaseMissing('task_reminders', ['id' => $reminder->id]);
     }
 
+    public function test_self_scope_hides_tasks_not_assigned_to_or_created_by_the_user(): void
+    {
+        $user = $this->userWithPermissionScope('tasks.view', 'self');
+        $other = User::factory()->create(['status' => 'active']);
+
+        $ownProject = $this->createProject($other);
+        $ownTask = $this->createTask($ownProject, $other);
+        $ownTask->update(['assignee_id' => $user->id]);
+
+        $otherProject = $this->createProject($other);
+        $hiddenTask = $this->createTask($otherProject, $other);
+
+        $response = $this->actingAs($user)->get(route('tasks.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Tasks/Index')
+            ->has('tasks.data', 1)
+            ->where('tasks.data.0.id', $ownTask->id));
+
+        $this->assertNotSame($ownTask->id, $hiddenTask->id);
+    }
+
     public function test_project_scope_filters_task_index_at_http_layer(): void
     {
         $user = $this->userWithPermissionScope('tasks.view', 'project');
