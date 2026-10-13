@@ -272,7 +272,7 @@ class TaskServiceTest extends TestCase
         );
     }
 
-    public function test_task_cannot_be_assigned_to_user_from_another_project(): void
+    public function test_task_can_be_assigned_to_active_user_outside_project(): void
     {
         $creator = User::factory()->create();
         $project = $this->createProject([], $creator);
@@ -294,14 +294,16 @@ class TaskServiceTest extends TestCase
             $creator
         );
 
-        $this->expectException(
-            InvalidArgumentException::class
-        );
-
-        app(TaskServiceContract::class)->assign(
+        $updated = app(TaskServiceContract::class)->assign(
             $task,
             $otherUser
         );
+
+        $this->assertSame($otherUser->id, $updated->assignee_id);
+        $this->assertDatabaseHas('tasks', [
+            'id' => $task->id,
+            'assignee_id' => $otherUser->id,
+        ]);
     }
 
     public function test_task_status_can_be_changed_to_completed(): void
