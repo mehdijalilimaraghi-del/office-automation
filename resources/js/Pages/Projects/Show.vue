@@ -35,7 +35,7 @@ interface ProjectSection {
     department: {
         id: number;
         name: string;
-        manager: { id: number; name: string } | null;
+        manager: { id: number; name: string; avatar_url?: string | null } | null;
         members: Array<{ id: number; name: string }>;
     } | null;
     tasks: Task[];
@@ -360,7 +360,8 @@ const deleteTask = (task: Task): void => {
                                             {{ section.department?.name ?? 'واحد مسئول تعیین نشده' }}
                                         </span>
                                         <span v-if="section.department?.manager" class="inline-flex items-center gap-2">
-                                            <span class="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 ring-1 ring-indigo-200">{{ section.department.manager.name.slice(0, 1) }}</span>
+                                            <img v-if="section.department.manager.avatar_url" :src="section.department.manager.avatar_url" :alt="'تصویر ' + section.department.manager.name" class="h-7 w-7 rounded-full object-cover ring-1 ring-indigo-200" />
+                                            <span v-else class="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 ring-1 ring-indigo-200">{{ section.department.manager.name.slice(0, 1) }}</span>
                                             <span>{{ section.department.manager.name }}</span>
                                         </span>
                                     </div>
@@ -384,10 +385,9 @@ const deleteTask = (task: Task): void => {
                             <div class="flex flex-wrap items-start justify-between gap-4">
                                 <div class="flex min-w-0 items-start gap-3">
                                     <div class="min-w-0">
-                                        <button v-if="section.description" type="button" class="group/description inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-indigo-50 hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500" :title="section.description" :aria-label="'توضیحات بخش: ' + section.description">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg>
+                                        <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500" :title="section.description || 'برای این بخش توضیحی ثبت نشده است'" :aria-label="section.description ? 'نمایش توضیحات بخش' : 'توضیحی برای این بخش ثبت نشده است'">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>
                                         </button>
-                                        <p v-else class="text-sm text-slate-400">برای این بخش توضیحی ثبت نشده است.</p>
                                     </div>
                                 </div>
                                 <div class="flex flex-wrap gap-2">
