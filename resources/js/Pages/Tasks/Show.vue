@@ -535,7 +535,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                     </section>
 
                     <section class="overflow-hidden rounded-xl border bg-card shadow-sm">
-                        <div class="border-b bg-gray-50/70 px-5 py-4 sm:px-6">
+                        <div class="border-b bg-blue-50/60 px-5 py-4 sm:px-6">
                             <div class="flex items-center justify-between gap-3"><div><h3 class="font-semibold">گزارش فعالیت</h3><p class="mt-1 text-sm text-muted-foreground">کارهایی که انجام شده‌اند؛ فعالیت‌های تکمیل‌شده و ثبت‌های قبلی در این فهرست نگهداری می‌شوند.</p></div><div class="flex shrink-0 items-center gap-3"><span class="text-xs text-muted-foreground">{{ loggedActivities.length }} فعالیت</span><button v-if="abilities.log_work" type="button" title="برای ثبت کاری که قبلاً انجام شده است" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showWorkLogModal = true">+ ثبت فعالیت انجام‌شده</button></div></div>
                         </div>
                         <div v-if="loggedActivities.length === 0" class="p-8 text-center text-sm text-muted-foreground">هنوز فعالیت انجام‌شده‌ای ثبت نشده است.</div>
@@ -546,13 +546,13 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                         </div>
                     </section>
 
-                    <section class="rounded-xl border bg-card p-5 shadow-sm sm:p-6">
-                        <div class="flex items-center justify-between">
+                    <section class="overflow-hidden rounded-xl border bg-card shadow-sm">
+                        <div class="flex items-start justify-between gap-3 border-b bg-blue-50/60 px-5 py-4 sm:px-6">
                             <div><h3 class="font-semibold">سوابق ارجاع دستورکار</h3><p class="mt-1 text-sm text-muted-foreground">مشخص می‌کند دستورکار از چه کسی به چه کسی ارجاع شده و چه کسی ارجاع را ثبت کرده است.</p></div>
-                            <button v-if="abilities.refer" type="button" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showReferralModal = true">ارجاع دستورکار</button>
+                            <button v-if="abilities.refer" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showReferralModal = true">ارجاع دستورکار</button>
                         </div>
-                        <div v-if="task.assignments.length === 0" class="mt-5 rounded-lg bg-gray-50 p-6 text-center text-sm text-muted-foreground">هنوز سابقه ارجاعی برای این دستورکار ثبت نشده است.</div>
-                        <div v-else class="mt-5 divide-y">
+                        <div v-if="task.assignments.length === 0" class="p-6 text-center text-sm text-muted-foreground">هنوز سابقه ارجاعی برای این دستورکار ثبت نشده است.</div>
+                        <div v-else class="divide-y px-5 sm:px-6">
                             <article v-for="(assignment, index) in task.assignments" :key="assignment.id" class="py-4 first:pt-0 last:pb-0">
                                 <div class="flex gap-3">
                                     <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-50 text-xs font-semibold text-violet-700">{{ index + 1 }}</div>
@@ -570,15 +570,15 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                     </section>
 
                     <div class="grid gap-6 md:grid-cols-2">
-                        <section class="rounded-xl border bg-card p-5 shadow-sm">
-                            <div class="flex items-center justify-between gap-3">
+                        <section class="overflow-hidden rounded-xl border bg-card shadow-sm">
+                            <div class="flex items-start justify-between gap-3 border-b bg-blue-50/60 px-5 py-4">
                                 <div>
                                     <h3 class="font-semibold">نظرات</h3>
                                     <p class="mt-1 text-xs text-muted-foreground">{{ task.comments?.length ?? 0 }} نظر ثبت شده</p>
                                 </div>
                                 <button v-if="abilities.comment" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="showCommentModal = true">ثبت نظر</button>
                             </div>
-                            <div v-if="task.comments?.length" class="mt-4 space-y-3">
+                            <div v-if="task.comments?.length" class="space-y-3 p-4">
                                 <article v-for="comment in task.comments" :key="comment.id" class="rounded-lg bg-gray-50 p-3">
                                     <p class="text-sm leading-6">{{ comment.body }}</p>
                                     <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-2">
@@ -590,17 +590,17 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                                     </div>
                                 </article>
                             </div>
-                            <p v-else class="mt-4 text-sm text-muted-foreground">نظری ثبت نشده است.</p>
+                            <p v-else class="p-4 text-sm text-muted-foreground">نظری ثبت نشده است.</p>
                         </section>
-                        <section class="rounded-xl border bg-card p-5 shadow-sm">
-                            <div class="flex items-center justify-between gap-3">
+                        <section class="overflow-hidden rounded-xl border bg-card shadow-sm">
+                            <div class="flex items-start justify-between gap-3 border-b bg-blue-50/60 px-5 py-4">
                                 <div>
                                     <h3 class="font-semibold">یادآوری‌ها</h3>
                                     <p class="mt-1 text-xs text-muted-foreground">{{ task.reminders?.length ?? 0 }} یادآوری ثبت شده</p>
                                 </div>
                                 <button v-if="abilities.create_reminder" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="showReminderModal = true">ثبت یادآوری</button>
                             </div>
-                            <div v-if="task.reminders.length" class="mt-4 space-y-3">
+                            <div v-if="task.reminders.length" class="space-y-3 p-4">
                                 <article v-for="reminder in task.reminders" :key="reminder.id" class="rounded-lg border p-4">
                                     <div class="flex items-start justify-between gap-3">
                                         <div class="min-w-0">
@@ -616,7 +616,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                                     <p v-if="reminder.description" class="mt-2 text-xs text-muted-foreground">{{ reminder.description }}</p>
                                 </article>
                             </div>
-                            <p v-else class="mt-4 text-sm text-muted-foreground">یادآوری ثبت نشده است.</p>
+                            <p v-else class="p-4 text-sm text-muted-foreground">یادآوری ثبت نشده است.</p>
                         </section>
                     </div>
                 </main>
