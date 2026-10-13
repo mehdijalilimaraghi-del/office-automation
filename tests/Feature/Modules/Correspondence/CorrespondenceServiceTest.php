@@ -1,0 +1,80 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature\Modules\Correspondence;
+
+use App\Models\User;
+use App\Modules\Correspondence\Models\Correspondence;
+use App\Modules\Correspondence\Services\CorrespondenceService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use InvalidArgumentException;
+use Tests\TestCase;
+
+class CorrespondenceServiceTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_create_draft_persists_incoming_correspondence_with_creator_and_no_registration_number(): void
+    {
+        $creator = User::factory()->create(['status' => 'active']);
+
+        $correspondence = app(CorrespondenceService::class)->createDraft([
+            'type' => Correspondence::TYPE_INCOMING,
+            'subject' => '  درخواست رسمی  ',
+            'body' => 'متن نامه',
+            'sender_name' => 'سازمان فرستنده',
+        ], $creator);
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $correspondence->id,
+            'type' => Correspondence::TYPE_INCOMING,
+            'subject' => 'درخواست رسمی',
+            'status' => Correspondence::STATUS_DRAFT,
+            'registration_number' => null,
+            'created_by' => $creator->id,
+        ]);
+        $this->assertSame((int) $creator->id, (int) $correspondence->creator->id);
+        $this->assertNull($correspondence->registered_at);
+    }
+
+    public function test_create_draft_supports_outgoing_and_internal_correspondence_types(): void
+    {
+        $creator = User::factory()->create(['status' => 'active']);
+        $service = app(CorrespondenceService::class);
+
+        foreach ([Correspondence::TYPE_OUTGOING, Correspondence::TYPE_INTERNAL] as $type) {
+            $correspondence = $service->createDraft([
+                'type' => $type,
+                'subject' => 'مکاتبه آزمایشی '.$type,
+            ], $creator);
+
+            $this->assertSame($type, $correspondence->type);
+            $this->assertSame(Correspondence::STATUS_DRAFT, $correspondence->status);
+        }
+    }
+
+    public function test_create_draft_rejects_unknown_type(): void
+    {
+        $creator = User::factory()->create(['status' => 'active']);
+
+        $this->expectException(InvalidArgumentException::class);
+
+        app(CorrespondenceService::class)->createDraft([
+            'type' => 'unknown',
+            'subject' => 'موضوع',
+        ], $creator);
+    }
+
+    public function test_create_draft_rejects_empty_subject(): void
+    {
+        $creator = User::factory()->create(['status' => 'active']);
+
+        $this->expectException(InvalidArgumentException::class);
+
+        app(CorrespondenceService::class)->createDraft([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => '   ',
+        ], $creator);
+    }
+}
