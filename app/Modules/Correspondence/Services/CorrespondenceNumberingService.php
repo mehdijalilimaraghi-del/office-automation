@@ -79,7 +79,7 @@ class CorrespondenceNumberingService
             'format' => (string) $settings['correspondence.numbering.format'],
             'custom_order' => (string) $settings['correspondence.numbering.custom_order'],
             'separator' => (string) $settings['correspondence.numbering.separator'],
-            'padding' => max(1, min(12, (int) $settings['correspondence.numbering.padding'])),
+            'padding' => max(4, min(12, (int) $settings['correspondence.numbering.padding'])),
         ];
     }
 
