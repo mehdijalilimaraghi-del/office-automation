@@ -3,7 +3,7 @@
 > This is the concise handoff/checkpoint file for continuing development in a new conversation.
 
 ## Last Updated
-2026-10-12
+2026-10-14
 
 ## Product Goal
 Build a Persian-language, RTL, production-oriented company office-automation platform as a Modular Monolith.
@@ -14,13 +14,13 @@ Long-term architecture:
 Projects and Tasks are early business capabilities, not the architectural center of all future modules.
 
 ## Version
-**Current version: V1 — Foundation & Work Management**
+**Current version: V2 — Office Automation**
 
 V1 core scope is implemented; the shared-project/project-sections extension is in progress and must pass technical validation before acceptance.
 
-**Current checkpoint:** technical validation + manual UI/functional acceptance.
+**Current checkpoint:** V2 correspondence foundation; numbering/configuration implementation in progress.
 
-**Next version:** V2 — Office Automation.
+**Previous version:** V1 — Foundation & Work Management (V1 regression coverage remains mandatory).
 
 Version boundaries and acceptance gates are authoritative in `ROADMAP.md`.
 
@@ -487,3 +487,14 @@ Implementation has started for the agreed cross-department project model:
 - Added `CorrespondenceService::createDraft()` to create drafts transactionally and reject unsupported correspondence types or blank subjects.
 - Added focused service tests for incoming drafts, outgoing/internal draft types, invalid type rejection and blank-subject rejection.
 - Files are committed to `development`; tests and migrations have **not yet been run locally**. Registration-number allocation, HTTP authorization/routes, UI, referral/instruction/reply workflows and Cartable integration remain future slices.
+
+
+## 2026-10-14 — V2 correspondence numbering and settings
+
+- Organization Settings now include correspondence numbering presets (simple sequence, Jalali year + sequence, Jalali year + department code + sequence), custom ordering of year/department/sequence, separator and sequence padding.
+- Organization Settings also expose the writing method policy (internal editor, Word upload, or both) and approval policy per incoming/outgoing/internal correspondence type.
+- Added a database-backed singleton counter and a correspondence numbering service. Number allocation is serialized with a row lock; final registration updates status, number, timestamp and registrar in one transaction.
+- Registration enforces the configured approval policy: correspondence types requiring approval cannot be registered until their linked workflow instance is completed.
+- Added tests for preset/custom number formatting, counter increments, final registration, duplicate registration prevention, approval gating, and persistence of settings.
+- **Not yet validated locally:** focused Laravel tests/migrations and frontend production build must be run by the project owner.
+- **Next slice:** expose authorized correspondence list/draft creation/final-registration HTTP flows; implement the selected internal editor and Word upload route; then connect attachments, audit, notifications and Cartable actions.
