@@ -24,7 +24,7 @@ return new class extends Migration
             $table->foreignId('created_by')->constrained('users');
             $table->foreignId('department_id')->nullable()->constrained('departments')->nullOnDelete();
             $table->foreignId('workflow_instance_id')->nullable()->constrained('workflow_instances')->nullOnDelete();
-            $table->foreignId('reply_to_id')->nullable()->constrained('correspondences')->nullOnDelete();
+            $table->foreignId('reply_to_id')->nullable()->constrained('correspondences')->noActionOnDelete();
             $table->timestamps();
 
             $table->index(['type', 'status', 'created_at']);
