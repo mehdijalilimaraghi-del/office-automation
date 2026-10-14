@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Modules\Correspondence\Services;
 
 use App\Core\Settings\Services\SystemSettingsService;
+use App\Models\User;
 use App\Modules\Correspondence\Models\Correspondence;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -17,52 +19,129 @@ class CorrespondenceNumberingService
 
     public function nextNumber(Correspondence $correspondence): string
     {
-        $config = $this->settings->get([
+        $config = $this->configuration();
+        $this->assertFormatIsValid($config['format'], $config['custom_order']);
+        $this->assertSeparator($config['separator']);
+
+        $sequence = DB::transaction(fn (): int => $this->incrementCounter());
+        return $this->formatNumber($correspondence, $sequence, $config);
+    }
+
+    public function register(Correspondence $correspondence, User $registrar): Correspondence
+    {
+        return DB::transaction(function () use ($correspondence, $registrar): Correspondence {
+            $locked = Correspondence::query()
+                ->whereKey($correspondence->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($locked->status !== Correspondence::STATUS_DRAFT) {
+                throw new InvalidArgumentException('فقط پیش‌نویس را می‌توان ثبت نهایی کرد.');
+            }
+
+            if (app(CorrespondenceCompositionSettings::class)->requiresApproval($locked->type)) {
+                $workflow = $locked->workflowInstance()->first();
+                if ($workflow === null || $workflow->status !== 'completed') {
+                    throw new InvalidArgumentException('این نوع نامه پیش از ثبت نهایی باید تأیید گردش کار را دریافت کند.');
+                }
+            }
+
+            $config = $this->configuration();
+            $this->assertFormatIsValid($config['format'], $config['custom_order']);
+            $this->assertSeparator($config['separator']);
+            $sequence = $this->incrementCounter();
+            $number = $this->formatNumber($locked, $sequence, $config);
+
+            $locked->forceFill([
+                'status' => Correspondence::STATUS_REGISTERED,
+                'registration_number' => $number,
+                'registered_at' => now(),
+                'registered_by' => $registrar->id,
+            ])->save();
+
+            return $locked->refresh()->load(['creator', 'registrar', 'department', 'replyTo']);
+        });
+    }
+
+    /**
+     * @return array{format: string, custom_order: string, separator: string, padding: int}
+     */
+    private function configuration(): array
+    {
+        $settings = $this->settings->get([
             'correspondence.numbering.format' => 'year',
             'correspondence.numbering.custom_order' => 'year,department,sequence',
             'correspondence.numbering.separator' => '/',
             'correspondence.numbering.padding' => '6',
         ]);
 
-        $format = $config['correspondence.numbering.format'];
-        $sequence = DB::transaction(function (): int {
-            $counter = DB::table('correspondence_number_counters')
-                ->where('id', 1)
-                ->lockForUpdate()
-                ->first();
+        return [
+            'format' => (string) $settings['correspondence.numbering.format'],
+            'custom_order' => (string) $settings['correspondence.numbering.custom_order'],
+            'separator' => (string) $settings['correspondence.numbering.separator'],
+            'padding' => max(1, min(12, (int) $settings['correspondence.numbering.padding'])),
+        ];
+    }
 
-            if ($counter === null) {
-                throw new \RuntimeException('Correspondence numbering counter is not initialized.');
-            }
+    private function incrementCounter(): int
+    {
+        $counter = DB::table('correspondence_number_counters')
+            ->where('id', 1)
+            ->lockForUpdate()
+            ->first();
 
-            $next = (int) $counter->last_number + 1;
-            DB::table('correspondence_number_counters')
-                ->where('id', 1)
-                ->update(['last_number' => $next, 'updated_at' => now()]);
+        if ($counter === null) {
+            throw new \RuntimeException('Correspondence numbering counter is not initialized.');
+        }
 
-            return $next;
-        });
+        $next = (int) $counter->last_number + 1;
+        DB::table('correspondence_number_counters')
+            ->where('id', 1)
+            ->update(['last_number' => $next, 'updated_at' => now()]);
 
-        $year = (string) ((int) now()->format('Y') - 621);
-        $departmentCode = $correspondence->department?->code;
+        return $next;
+    }
+
+    /**
+     * @param array{format: string, custom_order: string, separator: string, padding: int} $config
+     */
+    private function formatNumber(Correspondence $correspondence, int $sequence, array $config): string
+    {
+        $departmentCode = $correspondence->department()->value('code');
         $parts = [
-            'year' => $year,
+            'year' => (string) $this->jalaliYear(now()),
             'department' => filled($departmentCode) ? (string) $departmentCode : 'ORG',
-            'sequence' => str_pad((string) $sequence, max(1, min(12, (int) $config['correspondence.numbering.padding'])), '0', STR_PAD_LEFT),
+            'sequence' => str_pad((string) $sequence, $config['padding'], '0', STR_PAD_LEFT),
         ];
 
-        $separator = (string) $config['correspondence.numbering.separator'];
+        return match ($config['format']) {
+            'simple' => $parts['sequence'],
+            'year' => implode($config['separator'], [$parts['year'], $parts['sequence']]),
+            'year_department' => implode($config['separator'], [$parts['year'], $parts['department'], $parts['sequence']]),
+            'custom' => $this->formatCustom($config['custom_order'], $parts, $config['separator']),
+        };
+    }
+
+    private function assertSeparator(string $separator): void
+    {
         if (mb_strlen($separator) > 5) {
             throw new InvalidArgumentException('جداکننده شماره نامه حداکثر ۵ نویسه است.');
         }
+    }
 
-        return match ($format) {
-            'simple' => $parts['sequence'],
-            'year' => implode($separator, [$parts['year'], $parts['sequence']]),
-            'year_department' => implode($separator, [$parts['year'], $parts['department'], $parts['sequence']]),
-            'custom' => $this->formatCustom((string) $config['correspondence.numbering.custom_order'], $parts, $separator),
-            default => throw new InvalidArgumentException('قالب شماره‌گذاری مکاتبات نامعتبر است.'),
-        };
+    private function assertFormatIsValid(string $format, string $order): void
+    {
+        if (! in_array($format, ['simple', 'year', 'year_department', 'custom'], true)) {
+            throw new InvalidArgumentException('قالب شماره‌گذاری مکاتبات نامعتبر است.');
+        }
+
+        if ($format === 'custom') {
+            $tokens = array_map('trim', explode(',', $order));
+            $allowed = ['year', 'department', 'sequence'];
+            if (count($tokens) !== 3 || count(array_unique($tokens)) !== 3 || array_diff($tokens, $allowed) !== []) {
+                throw new InvalidArgumentException('ترتیب سفارشی شماره نامه نامعتبر است.');
+            }
+        }
     }
 
     /**
@@ -71,12 +150,41 @@ class CorrespondenceNumberingService
     private function formatCustom(string $order, array $parts, string $separator): string
     {
         $tokens = array_map('trim', explode(',', $order));
-        $allowed = ['year', 'department', 'sequence'];
+        return implode($separator, array_map(static fn (string $token): string => $parts[$token], $tokens));
+    }
 
-        if (count($tokens) !== 3 || count(array_unique($tokens)) !== 3 || array_diff($tokens, $allowed) !== []) {
-            throw new InvalidArgumentException('ترتیب سفارشی شماره نامه نامعتبر است.');
+    private function jalaliYear(CarbonInterface $date): int
+    {
+        $gy = $date->year;
+        $gm = $date->month;
+        $gd = $date->day;
+        $daysInGregorianMonth = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+
+        if ($gy > 1600) {
+            $jy = 979;
+            $gy -= 1600;
+        } else {
+            $jy = 0;
+            $gy -= 621;
         }
 
-        return implode($separator, array_map(static fn (string $token): string => $parts[$token], $tokens));
+        $gy2 = $gm > 2 ? $gy + 1 : $gy;
+        $days = 365 * $gy
+            + intdiv($gy2 + 3, 4)
+            - intdiv($gy2 + 99, 100)
+            + intdiv($gy2 + 399, 400)
+            - 80
+            + $gd
+            + $daysInGregorianMonth[$gm - 1];
+
+        $jy += 33 * intdiv($days, 12053);
+        $days %= 12053;
+        $jy += 4 * intdiv($days, 1461);
+        $days %= 1461;
+        if ($days > 365) {
+            $jy += intdiv($days - 1, 365);
+        }
+
+        return $jy;
     }
 }
