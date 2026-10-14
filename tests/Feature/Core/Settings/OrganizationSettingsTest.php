@@ -46,6 +46,16 @@ class OrganizationSettingsTest extends TestCase
             'email' => 'info@example.com',
             'website' => 'https://example.com',
             'address' => 'تهران',
+            'numbering_format' => 'custom',
+            'numbering_order_first' => 'sequence',
+            'numbering_order_second' => 'department',
+            'numbering_order_third' => 'year',
+            'numbering_separator' => '-',
+            'numbering_padding' => 7,
+            'composition_method' => 'both',
+            'approval_incoming' => 'approval',
+            'approval_outgoing' => 'approval',
+            'approval_internal' => 'direct',
             'management_department_id' => $management->id,
             'project_management_department_id' => $projects->id,
             'secretariat_department_id' => $secretariat->id,
@@ -63,6 +73,10 @@ class OrganizationSettingsTest extends TestCase
             'key' => 'organization.national_id',
             'value' => '1234567890',
         ]);
+        $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.numbering.format', 'value' => 'custom']);
+        $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.numbering.custom_order', 'value' => 'sequence,department,year']);
+        $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.composition.method', 'value' => 'both']);
+        $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.approval.outgoing', 'value' => 'approval']);
 
         $this->assertDatabaseHas('system_settings', [
             'key' => OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::MANAGEMENT),
