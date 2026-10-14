@@ -882,3 +882,14 @@ The development branch now contains the first implementation of project sections
 - The first code slice is committed: correspondence model/schema and transactional draft creation service.
 - Focused tests cover incoming drafts, outgoing/internal types, unsupported type rejection and blank subjects.
 - Local migration/test validation is pending; registration-number allocation, routes/UI, authorization and workflow/Cartable integration are not yet complete.
+
+
+## 2026-10-14 — V2 correspondence configuration and numbering
+
+The first configuration/registration slice is implemented in `development`:
+- Organization settings support the three numbering presets plus a custom token order, separator and sequence padding.
+- Writing method is configurable as internal editor, Word upload, or both.
+- Approval policy is configurable separately for incoming, outgoing and internal correspondence.
+- Numbering uses a database counter row locked inside the registration transaction. Registration assigns the immutable official number and registrar metadata only when the draft can be registered.
+- Local migration, focused tests, frontend build and manual RTL acceptance are still pending.
+- HTTP correspondence screens and editor/Word-upload integration are the next implementation slice.
