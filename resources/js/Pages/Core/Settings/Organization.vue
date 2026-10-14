@@ -18,6 +18,14 @@ interface OrganizationSettings {
     management_department_id: string | null;
     project_management_department_id: string | null;
     secretariat_department_id: string | null;
+    numbering_format: string | null;
+    numbering_custom_order: string | null;
+    numbering_separator: string | null;
+    numbering_padding: string | null;
+    composition_method: string | null;
+    approval_incoming: string | null;
+    approval_outgoing: string | null;
+    approval_internal: string | null;
 }
 
 interface OrganizationDepartment {
@@ -30,6 +38,8 @@ const props = defineProps<{
     settings: OrganizationSettings;
     departments: OrganizationDepartment[];
 }>();
+
+const customOrder = (props.settings.numbering_custom_order ?? 'year,department,sequence').split(',');
 
 const form = useForm({
     name: props.settings.name ?? '',
@@ -44,6 +54,16 @@ const form = useForm({
     management_department_id: props.settings.management_department_id ?? '',
     project_management_department_id: props.settings.project_management_department_id ?? '',
     secretariat_department_id: props.settings.secretariat_department_id ?? '',
+    numbering_format: props.settings.numbering_format ?? 'year',
+    numbering_order_first: customOrder[0] ?? 'year',
+    numbering_order_second: customOrder[1] ?? 'department',
+    numbering_order_third: customOrder[2] ?? 'sequence',
+    numbering_separator: props.settings.numbering_separator ?? '/',
+    numbering_padding: props.settings.numbering_padding ?? '6',
+    composition_method: props.settings.composition_method ?? 'both',
+    approval_incoming: props.settings.approval_incoming ?? 'approval',
+    approval_outgoing: props.settings.approval_outgoing ?? 'approval',
+    approval_internal: props.settings.approval_internal ?? 'direct',
 });
 
 function submit(): void {
@@ -179,6 +199,63 @@ function submit(): void {
                                         </option>
                                     </select>
                                     <InputError class="mt-1.5" :message="form.errors.secretariat_department_id" />
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="space-y-5 rounded-xl border border-slate-200 bg-slate-50 p-5">
+                            <div>
+                                <h3 class="font-bold text-slate-900">تنظیمات مکاتبات</h3>
+                                <p class="mt-1 text-sm leading-6 text-slate-600">قالب شماره‌گذاری، روش نگارش و سیاست تأیید را برای کل سازمان تنظیم کنید. شماره نهایی هنگام ثبت رسمی تخصیص می‌یابد.</p>
+                            </div>
+                            <div class="grid gap-5 md:grid-cols-2">
+                                <div>
+                                    <label for="numbering_format" class="mb-2 block text-sm font-semibold text-slate-700">قالب شماره نامه</label>
+                                    <select id="numbering_format" v-model="form.numbering_format" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200">
+                                        <option value="simple">شماره ترتیبی — ۰۰۰۱۲۳</option>
+                                        <option value="year">سال + شماره — ۱۴۰۵/۰۰۰۱۲۳</option>
+                                        <option value="year_department">سال + واحد + شماره — ۱۴۰۵/IT/۰۰۰۱۲۳</option>
+                                        <option value="custom">سفارشی — انتخاب ترتیب اجزا</option>
+                                    </select>
+                                    <InputError class="mt-1.5" :message="form.errors.numbering_format" />
+                                </div>
+                                <div>
+                                    <label for="numbering_separator" class="mb-2 block text-sm font-semibold text-slate-700">جداکننده اجزا</label>
+                                    <TextInput id="numbering_separator" v-model="form.numbering_separator" class="block min-h-11 w-full rounded-xl text-right" maxlength="5" />
+                                    <InputError class="mt-1.5" :message="form.errors.numbering_separator" />
+                                </div>
+                                <div>
+                                    <label for="numbering_padding" class="mb-2 block text-sm font-semibold text-slate-700">طول شماره ترتیبی</label>
+                                    <select id="numbering_padding" v-model="form.numbering_padding" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200">
+                                        <option value="4">۴ رقم</option><option value="5">۵ رقم</option><option value="6">۶ رقم</option><option value="7">۷ رقم</option><option value="8">۸ رقم</option><option value="9">۹ رقم</option><option value="10">۱۰ رقم</option><option value="11">۱۱ رقم</option><option value="12">۱۲ رقم</option>
+                                    </select>
+                                    <InputError class="mt-1.5" :message="form.errors.numbering_padding" />
+                                </div>
+                            </div>
+                            <div v-if="form.numbering_format === 'custom'" class="grid gap-5 md:grid-cols-3">
+                                <div v-for="(field, index) in (['numbering_order_first', 'numbering_order_second', 'numbering_order_third'] as const)" :key="field">
+                                    <label :for="field" class="mb-2 block text-sm font-semibold text-slate-700">جزء {{ ['اول', 'دوم', 'سوم'][index] }}</label>
+                                    <select :id="field" v-model="form[field]" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200">
+                                        <option value="year">سال شمسی</option><option value="department">کد واحد</option><option value="sequence">شماره ترتیبی</option>
+                                    </select>
+                                    <InputError class="mt-1.5" :message="form.errors[field]" />
+                                </div>
+                            </div>
+                            <p class="rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-600">قالب‌های پیش‌فرض از سال شمسی، کد واحد و شمارنده استفاده می‌کنند. تغییر قالب فقط بر شماره‌های آینده اثر دارد.</p>
+                            <div>
+                                <label for="composition_method" class="block text-sm font-semibold text-slate-700">روش نگارش نامه</label>
+                                <select id="composition_method" v-model="form.composition_method" class="mt-2 block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200">
+                                    <option value="editor">فقط ویرایشگر داخلی</option><option value="word">فقط فایل Word</option><option value="both">هر دو روش؛ انتخاب هنگام ایجاد نامه</option>
+                                </select>
+                                <InputError class="mt-1.5" :message="form.errors.composition_method" />
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-slate-800">سیاست تأیید بر اساس نوع نامه</h4>
+                                <p class="mt-1 text-sm text-slate-500">تعیین کنید کدام نوع نامه به تأیید نیاز دارد؛ مسیر ثبت نهایی باید این سیاست را رعایت کند.</p>
+                                <div class="mt-4 grid gap-4 md:grid-cols-3">
+                                    <div><label for="approval_incoming" class="mb-2 block text-sm font-semibold text-slate-700">نامه وارده</label><select id="approval_incoming" v-model="form.approval_incoming" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm"><option value="direct">ثبت مستقیم توسط کاربر مجاز</option><option value="approval">نیازمند تأیید</option></select><InputError class="mt-1.5" :message="form.errors.approval_incoming" /></div>
+                                    <div><label for="approval_outgoing" class="mb-2 block text-sm font-semibold text-slate-700">نامه صادره</label><select id="approval_outgoing" v-model="form.approval_outgoing" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm"><option value="direct">ثبت مستقیم توسط کاربر مجاز</option><option value="approval">نیازمند تأیید</option></select><InputError class="mt-1.5" :message="form.errors.approval_outgoing" /></div>
+                                    <div><label for="approval_internal" class="mb-2 block text-sm font-semibold text-slate-700">نامه داخلی</label><select id="approval_internal" v-model="form.approval_internal" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm"><option value="direct">ثبت مستقیم توسط کاربر مجاز</option><option value="approval">نیازمند تأیید</option></select><InputError class="mt-1.5" :message="form.errors.approval_internal" /></div>
                                 </div>
                             </div>
                         </section>
