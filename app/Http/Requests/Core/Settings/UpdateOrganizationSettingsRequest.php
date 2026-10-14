@@ -26,6 +26,16 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:150'],
             'website' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:1000'],
+            'numbering_format' => ['required', 'string', Rule::in(['simple', 'year', 'year_department', 'custom'])],
+            'numbering_order_first' => ['required', 'string', Rule::in(['year', 'department', 'sequence'])],
+            'numbering_order_second' => ['required', 'string', Rule::in(['year', 'department', 'sequence'])],
+            'numbering_order_third' => ['required', 'string', Rule::in(['year', 'department', 'sequence'])],
+            'numbering_separator' => ['required', 'string', 'max:5'],
+            'numbering_padding' => ['required', 'integer', 'min:1', 'max:12'],
+            'composition_method' => ['required', 'string', Rule::in(['editor', 'word', 'both'])],
+            'approval_incoming' => ['required', 'string', Rule::in(['direct', 'approval'])],
+            'approval_outgoing' => ['required', 'string', Rule::in(['direct', 'approval'])],
+            'approval_internal' => ['required', 'string', Rule::in(['direct', 'approval'])],
             'management_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')],
             'project_management_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')],
             'secretariat_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')],
@@ -35,6 +45,10 @@ class UpdateOrganizationSettingsRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
+            $order = [$this->input('numbering_order_first'), $this->input('numbering_order_second'), $this->input('numbering_order_third')];
+            if (count(array_unique($order)) !== 3) {
+                $validator->errors()->add('numbering_order_third', 'هر جزء شماره نامه باید فقط یک‌بار در ترتیب سفارشی انتخاب شود.');
+            }
             $managementId = $this->input('management_department_id');
             $projectManagementId = $this->input('project_management_department_id');
 
@@ -75,6 +89,16 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'email' => 'ایمیل سازمان',
             'website' => 'وب‌سایت',
             'address' => 'نشانی',
+            'numbering_format' => 'قالب شماره نامه',
+            'numbering_order_first' => 'جزء اول شماره نامه',
+            'numbering_order_second' => 'جزء دوم شماره نامه',
+            'numbering_order_third' => 'جزء سوم شماره نامه',
+            'numbering_separator' => 'جداکننده شماره نامه',
+            'numbering_padding' => 'طول شماره ترتیبی',
+            'composition_method' => 'روش نگارش نامه',
+            'approval_incoming' => 'سیاست تأیید نامه وارده',
+            'approval_outgoing' => 'سیاست تأیید نامه صادره',
+            'approval_internal' => 'سیاست تأیید نامه داخلی',
             'management_department_id' => 'واحد مدیریتی',
             'project_management_department_id' => 'واحد مدیریت پروژه‌ها',
             'secretariat_department_id' => 'دبیرخانه',
