@@ -31,7 +31,7 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'numbering_order_second' => ['required', 'string', Rule::in(['year', 'department', 'sequence'])],
             'numbering_order_third' => ['required', 'string', Rule::in(['year', 'department', 'sequence'])],
             'numbering_separator' => ['required', 'string', 'max:5'],
-            'numbering_padding' => ['required', 'integer', 'min:1', 'max:12'],
+            'numbering_padding' => ['required', 'integer', 'min:4', 'max:12'],
             'composition_method' => ['required', 'string', Rule::in(['editor', 'word', 'both'])],
             'approval_incoming' => ['required', 'string', Rule::in(['direct', 'approval'])],
             'approval_outgoing' => ['required', 'string', Rule::in(['direct', 'approval'])],
