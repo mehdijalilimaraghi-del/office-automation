@@ -8,6 +8,7 @@ use App\Core\Settings\Services\SystemSettingsService;
 use App\Models\User;
 use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Services\CorrespondenceNumberingService;
+use InvalidArgumentException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -54,4 +55,60 @@ class CorrespondenceNumberingServiceTest extends TestCase
 
         $this->assertMatchesRegularExpression('/^000001-\d{4}-ORG$/', $number);
     }
+    public function test_register_assigns_a_unique_number_and_freezes_the_correspondence(): void
+    {
+        $creator = User::factory()->create(['status' => 'active']);
+        $registrar = User::factory()->create(['status' => 'active']);
+        $correspondence = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => 'ثبت نامه داخلی',
+            'status' => Correspondence::STATUS_DRAFT,
+            'created_by' => $creator->id,
+        ]);
+
+        $registered = app(CorrespondenceNumberingService::class)->register($correspondence, $registrar);
+
+        $this->assertSame(Correspondence::STATUS_REGISTERED, $registered->status);
+        $this->assertNotEmpty($registered->registration_number);
+        $this->assertSame((int) $registrar->id, (int) $registered->registered_by);
+        $this->assertNotNull($registered->registered_at);
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $correspondence->id,
+            'status' => Correspondence::STATUS_REGISTERED,
+            'registration_number' => $registered->registration_number,
+        ]);
+
+        try {
+            app(CorrespondenceNumberingService::class)->register($registered, $registrar);
+            $this->fail('A registered correspondence must not be registered again.');
+        } catch (InvalidArgumentException $exception) {
+            $this->assertSame('فقط پیش‌نویس را می‌توان ثبت نهایی کرد.', $exception->getMessage());
+        }
+    }
+
+    public function test_registration_requiring_approval_does_not_consume_a_number_without_completed_workflow(): void
+    {
+        $creator = User::factory()->create(['status' => 'active']);
+        $correspondence = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_OUTGOING,
+            'subject' => 'نامه صادره نیازمند تأیید',
+            'status' => Correspondence::STATUS_DRAFT,
+            'created_by' => $creator->id,
+        ]);
+
+        try {
+            app(CorrespondenceNumberingService::class)->register($correspondence, $creator);
+            $this->fail('Registration should require a completed approval workflow.');
+        } catch (InvalidArgumentException $exception) {
+            $this->assertSame('این نوع نامه پیش از ثبت نهایی باید تأیید گردش کار را دریافت کند.', $exception->getMessage());
+        }
+
+        $this->assertDatabaseHas('correspondence_number_counters', ['id' => 1, 'last_number' => 0]);
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $correspondence->id,
+            'status' => Correspondence::STATUS_DRAFT,
+            'registration_number' => null,
+        ]);
+    }
+
 }
