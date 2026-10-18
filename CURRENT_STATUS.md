@@ -522,3 +522,11 @@ Implementation has started for the agreed cross-department project model:
 - Task upload visibility now follows the scoped task-update authorization already enforced by the upload controller. Project-level upload visibility follows project responsibility or organization-scoped project administration; section upload visibility also includes the responsible department manager without requiring a global document permission.
 - Added regression assertions for task and project upload-control authorization for users who have contextual access but lack document-specific permissions.
 - **Branch:** `development`. Run the focused document, task HTTP, and project HTTP tests plus the frontend production build before acceptance. Keep `master` unchanged until explicitly approved.
+
+## Project public-document upload button UX — 2026-10-18
+
+- In the project detail page under «مستندات → مدارک عمومی پروژه», replaced the text upload control with a compact sky-blue icon-only upload button.
+- Added an upload icon, hover/focus tooltip «افزودن فایل», an accessible label, visible keyboard focus, and a loading indicator while upload is in progress.
+- Upload behavior, accepted file types, and existing authorization visibility remain unchanged.
+- **Branch:** `development`. Local frontend production build and manual hover/focus/upload acceptance are pending; keep `master` unchanged.
+
