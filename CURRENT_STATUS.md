@@ -498,3 +498,12 @@ Implementation has started for the agreed cross-department project model:
 - Added tests for preset/custom number formatting, counter increments, final registration, duplicate registration prevention, approval gating, and persistence of settings.
 - **Not yet validated locally:** focused Laravel tests/migrations and frontend production build must be run by the project owner.
 - **Next slice:** expose authorized correspondence list/draft creation/final-registration HTTP flows; implement the selected internal editor and Word upload route; then connect attachments, audit, notifications and Cartable actions.
+
+
+## Document access authorization alignment — 2026-10-18
+
+- Audited document authorization on `development`: operational access to a task/project was being checked separately from global `documents.view` and `documents.create` grants. This caused authorized task assignees and project/section managers to be blocked from attachments.
+- Task attachments now rely on the already-scoped task update policy for upload authorization. Project and section attachments rely on the existing project/section responsibility checks; a separate global document-create grant is not required for these contextual attachment routes.
+- Linked-document viewing/downloading now accepts scoped access to the linked task/project/section. Explicit document-level creator/access grants still require `documents.view`; the linked-record check remains authoritative for contextual attachments.
+- Added regression coverage for an assigned user attaching and downloading a file without document-specific permissions, and for an unrelated user being denied upload.
+- **Branch:** `development`. **Status:** implementation committed; local focused Laravel tests and the full suite are pending. Do not cherry-pick/merge to `master` until validation and user acceptance.

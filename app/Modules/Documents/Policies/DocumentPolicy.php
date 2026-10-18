@@ -20,16 +20,21 @@ class DocumentPolicy
 
     public function view(User $user, Document $document): bool
     {
-        if (! $user->isActive() || ! $user->hasPermission('documents.view') || ! $document->is_active) {
+        if (! $user->isActive() || ! $document->is_active) {
             return false;
         }
 
-        if ((int) $document->created_by === (int) $user->id) {
-            return true;
-        }
+        // Explicit document-level access still requires the document permission.
+        // Attachments linked to business records also inherit the user's scoped
+        // access to that task, project, or project section.
+        if ($user->hasPermission('documents.view')) {
+            if ((int) $document->created_by === (int) $user->id) {
+                return true;
+            }
 
-        if ($document->accesses()->where('user_id', $user->id)->exists()) {
-            return true;
+            if ($document->accesses()->where('user_id', $user->id)->exists()) {
+                return true;
+            }
         }
 
         foreach ($document->links()->with('linkable')->get() as $link) {

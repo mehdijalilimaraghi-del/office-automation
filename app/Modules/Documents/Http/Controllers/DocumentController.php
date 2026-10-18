@@ -26,8 +26,8 @@ class DocumentController extends Controller
 
     public function storeForTask(StoreTaskDocumentRequest $request, Task $task): RedirectResponse
     {
+        // Task-scoped update access also authorizes attaching files to this task.
         Gate::authorize('update', $task);
-        Gate::authorize('create', Document::class);
 
         $data = $request->validated();
 
@@ -51,8 +51,9 @@ class DocumentController extends Controller
         $hasOrganizationScope = in_array(PermissionScope::Organization->value, $user->permissionScopes('projects.update'), true)
             || in_array(PermissionScope::Organization->value, $user->permissionScopes('projects.create'), true);
 
+        // Project responsibility or organization-level project administration
+        // authorizes attachments without requiring a separate global document grant.
         abort_unless($isProjectOwner || $hasOrganizationScope, 403);
-        Gate::authorize('create', Document::class);
 
         $this->documents->create(
             data: $request->validated(),
@@ -79,8 +80,8 @@ class DocumentController extends Controller
             || in_array(PermissionScope::Organization->value, $user->permissionScopes('projects.create'), true);
         $isDepartmentManager = (int) $section->department?->manager_id === (int) $user->id;
 
+        // Section responsibility is the authority boundary for section attachments.
         abort_unless($isProjectManager || $hasOrganizationScope || $isDepartmentManager, 403);
-        Gate::authorize('create', Document::class);
 
         $this->documents->create(
             data: $request->validated(),
