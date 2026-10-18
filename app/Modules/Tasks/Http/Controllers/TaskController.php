@@ -119,8 +119,7 @@ class TaskController extends Controller
                 'review' => Gate::allows('review', $task),
                 'update' => Gate::allows('update', $task),
                 'delete' => Gate::allows('delete', $task),
-                'documents_create' => Gate::allows('update', $task)
-                    && Gate::allows('create', \App\Modules\Documents\Models\Document::class),
+                'documents_create' => Gate::allows('update', $task),
             ],
             'assigneeOptions' => $this->taskFormOptionsService->assigneesFor($task),
             'participantOptions' => $this->taskFormOptionsService->relatedUsers(),

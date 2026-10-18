@@ -514,3 +514,11 @@ Implementation has started for the agreed cross-department project model:
 - The first focused test run exposed an additional authorization layer: route middleware still required `documents.create` on task/project/section attachment routes and `documents.view` on download, before the scoped policies could evaluate responsibility-based access.
 - Removed those global document-permission middleware checks only from contextual attachment routes and document download. The controller still authorizes uploads against task/project/section responsibility, and download still authorizes through the document policy.
 - **Branch:** `development`. Focused tests must be rerun; do not promote to `master` until green and accepted.
+
+
+## Follow-up: contextual attachment buttons — 2026-10-18
+
+- Manual acceptance found that normal users could view/download linked documents but the upload controls were hidden because the Inertia props still required the global `documents.create` permission.
+- Task upload visibility now follows the scoped task-update authorization already enforced by the upload controller. Project-level upload visibility follows project responsibility or organization-scoped project administration; section upload visibility also includes the responsible department manager without requiring a global document permission.
+- Added regression assertions for task and project upload-control authorization for users who have contextual access but lack document-specific permissions.
+- **Branch:** `development`. Run the focused document, task HTTP, and project HTTP tests plus the frontend production build before acceptance. Keep `master` unchanged until explicitly approved.

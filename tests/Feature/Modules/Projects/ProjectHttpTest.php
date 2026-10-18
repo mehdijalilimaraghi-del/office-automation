@@ -125,6 +125,7 @@ class ProjectHttpTest extends TestCase
                 ->where('project.code', $project->code)
                 ->where('project.manager.id', $manager->id)
                 ->where('project.manager.name', $manager->name)
+                ->where('canUploadProjectDocuments', true)
                 ->has('project.members', 2)
         );
     }

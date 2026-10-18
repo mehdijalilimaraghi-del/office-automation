@@ -199,8 +199,7 @@ class ProjectController extends Controller
             || in_array(\App\Core\Permissions\Enums\PermissionScope::Organization->value, $user->permissionScopes('projects.create'), true);
         $isProjectOwner = (int) $project->manager_id === (int) $user->id
             || (int) $project->created_by === (int) $user->id;
-        $canUploadProjectDocuments = Gate::allows('create', Document::class)
-            && ($isProjectOwner || $hasOrganizationProjectScope);
+        $canUploadProjectDocuments = $isProjectOwner || $hasOrganizationProjectScope;
         $projectDetails = $this->projectService->show($project);
 
         // Project visibility does not grant blanket access to every task in it.
@@ -251,10 +250,9 @@ class ProjectController extends Controller
             'canUploadProjectDocuments' => $canUploadProjectDocuments,
             'canDeleteDocuments' => $user->hasPermission('documents.delete'),
             'currentUserId' => (int) $user->id,
-            'managerDocumentSectionIds' => Gate::allows('create', Document::class)
-                ? $project->sections()->whereHas('department', fn ($query) => $query->where('manager_id', $user->id))
-                    ->pluck('id')->map(fn ($id): int => (int) $id)->values()->all()
-                : [],
+            'managerDocumentSectionIds' => $project->sections()
+                ->whereHas('department', fn ($query) => $query->where('manager_id', $user->id))
+                ->pluck('id')->map(fn ($id): int => (int) $id)->values()->all(),
             'canCreateTasks' => Gate::allows('create', [Task::class, (int) $project->id]),
             'managerCreatableSectionIds' => $request->user()->hasPermission('tasks.create')
                 ? $project->sections()

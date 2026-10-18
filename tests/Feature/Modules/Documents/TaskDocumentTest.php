@@ -15,6 +15,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class TaskDocumentTest extends TestCase
@@ -93,6 +94,13 @@ class TaskDocumentTest extends TestCase
             'assignee_id' => $user->id,
             'is_active' => true,
         ]);
+
+        $this->actingAs($user)
+            ->get(route('tasks.show', $task))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Tasks/Show')
+                ->where('abilities.documents_create', true));
 
         $this->actingAs($user)
             ->post(route('tasks.documents.store', $task), [
