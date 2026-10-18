@@ -115,7 +115,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/tasks', [TaskController::class, 'index'])->middleware('permission:tasks.view')->name('tasks.index');
     Route::post('/tasks', [TaskController::class, 'store'])->middleware('permission:tasks.create')->name('tasks.store');
     Route::post('/tasks/{task}/documents', [DocumentController::class, 'storeForTask'])
-        ->middleware('permission:documents.create')
         ->name('tasks.documents.store');
     Route::get('/tasks/{task}', [TaskController::class, 'show'])->middleware('permission:tasks.view')->name('tasks.show');
     Route::put('/tasks/{task}', [TaskController::class, 'update'])->middleware('permission:tasks.update')->name('tasks.update');
@@ -130,15 +129,12 @@ Route::middleware('auth')->group(function () {
     Route::patch('/tasks/{task}/status', [TaskController::class, 'changeStatus'])->middleware('permission:tasks.change_status')->name('tasks.change-status');
 
     Route::post('/projects/{project}/documents', [DocumentController::class, 'storeForProject'])
-        ->middleware('permission:documents.create')
         ->name('documents.projects.store');
 
     Route::post('/project-sections/{section}/documents', [DocumentController::class, 'storeForSection'])
-        ->middleware('permission:documents.create')
         ->name('documents.sections.store');
 
     Route::get('/documents/{document}/download', [DocumentController::class, 'download'])
-        ->middleware('permission:documents.view')
         ->name('documents.download');
 
     Route::delete('/documents/{document}', [DocumentController::class, 'destroy'])

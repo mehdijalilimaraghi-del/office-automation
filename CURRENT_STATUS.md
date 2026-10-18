@@ -507,3 +507,10 @@ Implementation has started for the agreed cross-department project model:
 - Linked-document viewing/downloading now accepts scoped access to the linked task/project/section. Explicit document-level creator/access grants still require `documents.view`; the linked-record check remains authoritative for contextual attachments.
 - Added regression coverage for an assigned user attaching and downloading a file without document-specific permissions, and for an unrelated user being denied upload.
 - **Branch:** `development`. **Status:** implementation committed; local focused Laravel tests and the full suite are pending. Do not cherry-pick/merge to `master` until validation and user acceptance.
+
+
+## Follow-up: contextual document route middleware — 2026-10-18
+
+- The first focused test run exposed an additional authorization layer: route middleware still required `documents.create` on task/project/section attachment routes and `documents.view` on download, before the scoped policies could evaluate responsibility-based access.
+- Removed those global document-permission middleware checks only from contextual attachment routes and document download. The controller still authorizes uploads against task/project/section responsibility, and download still authorizes through the document policy.
+- **Branch:** `development`. Focused tests must be rerun; do not promote to `master` until green and accepted.
