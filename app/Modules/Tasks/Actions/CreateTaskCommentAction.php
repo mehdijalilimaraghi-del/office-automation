@@ -13,11 +13,11 @@ class CreateTaskCommentAction
     public function execute(Task $task, User $author, string $body): TaskComment
     {
         if ($task->isFinalized()) {
-            throw new \\InvalidArgumentException('برای دستورکار نهایی‌شده امکان ثبت نظر وجود ندارد.');
+            throw new \InvalidArgumentException('برای دستورکار نهایی‌شده امکان ثبت نظر وجود ندارد.');
         }
 
         if ($task->review_status === 'pending') {
-            throw new \\InvalidArgumentException('تا تعیین تکلیف مدیر، ثبت نظر امکان‌پذیر نیست.');
+            throw new \InvalidArgumentException('تا تعیین تکلیف مدیر، ثبت نظر امکان‌پذیر نیست.');
         }
 
         return $task->comments()->create([
