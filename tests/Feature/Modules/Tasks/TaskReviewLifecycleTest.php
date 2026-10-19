@@ -200,9 +200,9 @@ class TaskReviewLifecycleTest extends TestCase
             'created_by' => $actor->id,
         ]);
 
-        $this->expectException(\\InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
 
-        app(\\App\\Modules\\Tasks\\Actions\\ChangeTaskStatusAction::class)
+        app(\App\Modules\Tasks\Actions\ChangeTaskStatusAction::class)
             ->execute($task, 'in_progress', $actor);
     }
 
