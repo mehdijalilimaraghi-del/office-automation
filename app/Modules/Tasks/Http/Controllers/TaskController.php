@@ -352,7 +352,6 @@ class TaskController extends Controller
     public function comment(StoreTaskCommentRequest $request, Task $task): RedirectResponse
     {
         Gate::authorize('comment', $task);
-        $this->assertTaskContentEditable($request, $task);
 
         $this->taskService->addComment(
             task: $task,
@@ -365,9 +364,9 @@ class TaskController extends Controller
 
     public function updateComment(Request $request, Task $task, \App\Modules\Tasks\Models\TaskComment $comment): RedirectResponse
     {
-        Gate::authorize('update', $task);
-        $this->assertTaskContentEditable($request, $task);
+        Gate::authorize('view', $task);
         abort_unless((int) $comment->task_id === (int) $task->id, 404);
+        abort_unless((int) $comment->user_id === (int) $request->user()->id, 403);
 
         $data = $request->validate([
             'body' => ['required', 'string', 'max:10000'],
@@ -380,9 +379,9 @@ class TaskController extends Controller
 
     public function destroyComment(Request $request, Task $task, \App\Modules\Tasks\Models\TaskComment $comment): RedirectResponse
     {
-        Gate::authorize('update', $task);
-        $this->assertTaskContentEditable($request, $task);
+        Gate::authorize('view', $task);
         abort_unless((int) $comment->task_id === (int) $task->id, 404);
+        abort_unless((int) $comment->user_id === (int) $request->user()->id, 403);
 
         $comment->delete();
 
