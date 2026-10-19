@@ -49,7 +49,8 @@ class TaskTimelineService
                 'title' => 'تغییر وضعیت',
                 'description' => $this->statusLabel($item->from_status)
                     .' ← '
-                    .$this->statusLabel($item->to_status),
+                    .$this->statusLabel($item->to_status)
+                    .($item->note ? ' — '.$item->note : ''),
                 'occurred_at' => $item->changed_at,
                 'user' => $item->changedBy,
                 'meta' => [
