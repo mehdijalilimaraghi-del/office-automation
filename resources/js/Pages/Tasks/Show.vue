@@ -599,7 +599,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
 
                     <section class="overflow-hidden rounded-xl border bg-card shadow-sm">
                         <div class="border-b bg-blue-50/60 px-5 py-4 sm:px-6">
-                            <div class="flex items-center justify-between gap-3"><div><h3 class="font-semibold">گزارش فعالیت</h3><p class="mt-1 text-sm text-muted-foreground">کارهایی که انجام شده‌اند؛ فعالیت‌های تکمیل‌شده و ثبت‌های قبلی در این فهرست نگهداری می‌شوند.</p></div><div class="flex shrink-0 items-center gap-3"><span class="text-xs text-muted-foreground">{{ loggedActivities.length }} فعالیت</span><button v-if="abilities.log_work" type="button" title="برای ثبت کاری که قبلاً انجام شده است" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showWorkLogModal = true">+ ثبت فعالیت انجام‌شده</button></div></div>
+                            <div class="flex items-center justify-between gap-3"><div><h3 class="font-semibold">گزارش فعالیت</h3><p class="mt-1 text-sm text-muted-foreground">کارهایی که انجام شده‌اند؛ فعالیت‌های تکمیل‌شده و ثبت‌های قبلی در این فهرست نگهداری می‌شوند.</p></div><div class="flex shrink-0 items-center gap-3"><span class="text-xs text-muted-foreground">{{ loggedActivities.length }} فعالیت</span><button v-if="abilities.log_work && canEditTaskContent" type="button" title="برای ثبت کاری که قبلاً انجام شده است" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showWorkLogModal = true">+ ثبت فعالیت انجام‌شده</button></div></div>
                         </div>
                         <div v-if="loggedActivities.length === 0" class="p-8 text-center text-sm text-muted-foreground">هنوز فعالیت انجام‌شده‌ای ثبت نشده است.</div>
                         <div v-if="loggedActivities.length" class="divide-y">
@@ -646,7 +646,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                                     <p class="text-sm leading-6">{{ comment.body }}</p>
                                     <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-2">
                                         <p class="text-xs text-muted-foreground">{{ comment.user?.name ?? '—' }}</p>
-                                        <div v-if="abilities.update" class="flex gap-2">
+                                        <div v-if="abilities.update && canEditTaskContent" class="flex gap-2">
                                             <button type="button" class="text-xs font-medium text-gray-700 hover:underline" @click="editComment(comment)">ویرایش</button>
                                             <button type="button" class="text-xs font-medium text-red-600 hover:underline" @click="deleteComment(comment.id)">حذف</button>
                                         </div>
@@ -670,7 +670,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                                             <p class="text-sm font-semibold">{{ reminder.title }}</p>
                                             <p class="mt-1 text-xs text-muted-foreground">{{ formatDateTime(reminder.remind_at) }}</p>
                                         </div>
-                                        <div v-if="abilities.update" class="flex shrink-0 gap-3">
+                                        <div v-if="abilities.update && canEditTaskContent" class="flex shrink-0 gap-3">
                                             <button type="button" class="text-xs font-medium text-gray-700 hover:underline" @click="editReminder(reminder)">ویرایش</button>
                                             <button type="button" class="text-xs font-medium text-red-600 hover:underline" @click="deleteReminder(reminder.id)">حذف</button>
                                         </div>
