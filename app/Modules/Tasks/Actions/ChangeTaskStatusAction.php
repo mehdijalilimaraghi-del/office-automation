@@ -17,9 +17,6 @@ class ChangeTaskStatusAction
     ) {}
 
     private const ALLOWED_STATUSES = [
-        'todo',
-        'observed',
-        'in_progress',
         'cancelled',
         'cannot_continue',
     ];
@@ -29,22 +26,12 @@ class ChangeTaskStatusAction
         string $status,
         User $actor
     ): Task {
-        if (! in_array($status, self::ALLOWED_STATUSES, true)) {
-            throw new InvalidArgumentException(
-                'وضعیت تسک نامعتبر است.'
-            );
-        }
-
-        if (in_array($status, ['completed', 'submitted'], true)) {
-            throw new InvalidArgumentException('تکمیل فقط از مسیر تأیید مدیر و ارسال برای بررسی از مسیر ارسال نتیجه کار امکان‌پذیر است.');
-        }
-
-        if ($task->review_required && $task->review_status === 'pending') {
-            throw new InvalidArgumentException('تا تعیین تکلیف مدیر، وضعیت دستورکار در انتظار بررسی قابل تغییر نیست.');
-        }
-
         if ($task->isFinalized()) {
             throw new InvalidArgumentException('دستورکار نهایی‌شده امکان هیچ تغییری ندارد.');
+        }
+
+        if (! in_array($status, self::ALLOWED_STATUSES, true)) {
+            throw new InvalidArgumentException('فقط مدیر می‌تواند دستورکار را لغو کند یا امکان ادامه نداشتن آن را ثبت کند.');
         }
 
         if ($task->review_status === 'pending') {
@@ -59,26 +46,11 @@ class ChangeTaskStatusAction
             }
         }
 
-        if ($status === 'in_progress' && ! $this->dependencyService->canStart($task)) {
-            throw new InvalidArgumentException('تا تکمیل و تأیید تسک‌های پیش‌نیاز، امکان شروع این تسک وجود ندارد.');
-        }
-
         $fromStatus = $task->status;
 
         $task->status = $status;
         if (in_array($status, ['cancelled', 'cannot_continue'], true)) {
             $task->sub_status = null;
-        }
-
-        if ($status === 'completed') {
-            $task->completed_at ??= now();
-        } else {
-            $task->completed_at = null;
-        }
-
-        if ($status === 'submitted' && $task->review_required) {
-            $task->review_status = 'pending';
-            $task->review_requested_at = now();
         }
 
         $task->save();
