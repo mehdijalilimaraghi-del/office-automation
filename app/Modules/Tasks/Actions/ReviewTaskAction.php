@@ -43,6 +43,7 @@ class ReviewTaskAction
                 'from_status' => 'in_progress',
                 'to_status' => 'completed',
                 'changed_by' => $reviewer->id,
+                'note' => 'تأیید مدیر',
                 'changed_at' => now(),
             ]);
 
@@ -79,6 +80,7 @@ class ReviewTaskAction
                 'from_status' => 'in_progress',
                 'to_status' => 'in_progress',
                 'changed_by' => $reviewer->id,
+                'note' => 'برگشت برای تکمیل: '.$note,
                 'changed_at' => now(),
             ]);
 
