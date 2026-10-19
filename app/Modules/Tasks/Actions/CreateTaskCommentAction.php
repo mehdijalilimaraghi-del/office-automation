@@ -16,6 +16,10 @@ class CreateTaskCommentAction
             throw new \\InvalidArgumentException('برای دستورکار نهایی‌شده امکان ثبت نظر وجود ندارد.');
         }
 
+        if ($task->review_status === 'pending') {
+            throw new \\InvalidArgumentException('تا تعیین تکلیف مدیر، ثبت نظر امکان‌پذیر نیست.');
+        }
+
         return $task->comments()->create([
             'user_id' => $author->id,
             'body' => $body,
