@@ -533,7 +533,7 @@ const handleSectionChange = (): void => {
                                             'bg-green-50 text-green-700': task.status === 'completed',
                                             'bg-red-50 text-red-700': task.status === 'cancelled',
                                         }">
-                                        {{ statusLabels[task.status] ? (task.sub_status && task.status === 'in_progress' ? `${statusLabels[task.status]} (${subStatusLabels[task.sub_status] ?? task.sub_status})` : statusLabels[task.status]) : task.status }}
+                                        {{ statusLabels[task.status] ? (task.sub_status && !['completed', 'cancelled', 'cannot_continue'].includes(task.status) ? `${statusLabels[task.status]} (${subStatusLabels[task.sub_status] ?? task.sub_status})` : statusLabels[task.status]) : task.status }}
                                     </span>
                                 </td>
                                 <td class="px-4 py-3.5">
