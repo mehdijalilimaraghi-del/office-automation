@@ -3,7 +3,14 @@
 > This is the concise handoff/checkpoint file for continuing development in a new conversation.
 
 ## Last Updated
-2026-10-14
+2026-10-19
+
+## 2026-10-19 — Fix user department membership modal
+
+- Fixed the Vue template nesting in `resources/js/Pages/Core/Users/Index.vue`: the membership dialog was rendered inside the user create/edit dialog, so clicking «واحدها» alone could not display it and a subsequent click on «ویرایش» could reveal the stale membership dialog.
+- The membership dialog is now a sibling of the user form dialog. Opening «واحدها» displays membership management independently; opening «ویرایش» displays the user edit form without the membership dialog.
+- No routes, authorization rules, or membership persistence logic were changed.
+- **Branch:** `development`. **Validation pending:** run frontend production build and manually verify both actions on the user list.
 
 ## Product Goal
 Build a Persian-language, RTL, production-oriented company office-automation platform as a Modular Monolith.
