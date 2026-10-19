@@ -135,6 +135,7 @@ class TaskReviewLifecycleTest extends TestCase
         );
 
         $this->assertSame('in_progress', $result->status);
+        $this->assertSame('returned_for_completion', $result->sub_status);
         $this->assertSame('rejected', $result->review_status);
         $this->assertSame('مدرک نهایی باید اصلاح شود.', $result->review_note);
         $this->assertSame($manager->id, $result->reviewed_by);
