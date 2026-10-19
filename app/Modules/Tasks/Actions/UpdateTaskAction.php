@@ -23,6 +23,10 @@ class UpdateTaskAction
             throw new InvalidArgumentException('دستورکار نهایی‌شده امکان ویرایش ندارد.');
         }
 
+        if ($task->review_status === 'pending') {
+            throw new InvalidArgumentException('تا تعیین تکلیف مدیر، دستورکار قابل ویرایش نیست.');
+        }
+
         return DB::transaction(function () use ($task, $data): Task {
             $startDate = $data['start_date']
             ?? $task->start_date?->format('Y-m-d');
