@@ -622,4 +622,4 @@ Implementation has started for the agreed cross-department project model:
 - Updated the task status-scope HTTP test to submit a valid manager-only terminal status so it exercises authorization rather than failing earlier in request validation.
 - Updated task creation coverage to assert that new tasks start in the automatic `todo` state, and adjusted status-policy coverage to reflect that an assignee without manager responsibility cannot manually change task status.
 - Updated the HTTP status test to cover manager-authorized cancellation rather than direct completion; cancellation does not set `completed_at`.
-- **Validation pending:** these are source/test updates committed to `development`; rerun the five affected test files and then the full Laravel suite. No local test run was performed by this update. Keep `master` unchanged.
+- **Validation pending:** these are source/test updates committed to `development`; rerun the four affected test files and then the full Laravel suite. No local test run was performed by this update. Keep `master` unchanged.
