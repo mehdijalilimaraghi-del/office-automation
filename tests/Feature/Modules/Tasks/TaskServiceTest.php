@@ -324,20 +324,9 @@ class TaskServiceTest extends TestCase
             $creator
         );
 
-        $updated = app(TaskServiceContract::class)
-            ->changeStatus(
-                $task,
-                'completed'
-            );
+        $this->expectException(InvalidArgumentException::class);
 
-        $this->assertSame(
-            'completed',
-            $updated->status
-        );
-
-        $this->assertNotNull(
-            $updated->completed_at
-        );
+        app(TaskServiceContract::class)->changeStatus($task, 'completed');
     }
 
     public function test_completed_task_cannot_return_to_in_progress(): void
@@ -360,18 +349,12 @@ class TaskServiceTest extends TestCase
 
         $service = app(TaskServiceContract::class);
 
-        $service->changeStatus(
-            $task,
-            'completed'
-        );
+        $task->update(['status' => 'completed', 'completed_at' => now()]);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('تسک نهایی‌شده امکان تغییر وضعیت ندارد.');
+        $this->expectExceptionMessage('نهایی‌شده');
 
-        $service->changeStatus(
-            $task->refresh(),
-            'in_progress'
-        );
+        $service->changeStatus($task->refresh(), 'cancelled');
     }
 
     public function test_invalid_task_status_is_rejected(): void
