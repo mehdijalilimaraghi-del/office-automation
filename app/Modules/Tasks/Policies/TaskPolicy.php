@@ -119,7 +119,7 @@ class TaskPolicy
 
     public function comment(User $user, Task $task): bool
     {
-        return $this->taskAccessService->canAccess($user, $task, 'tasks.comment');
+        return $this->taskAccessService->canAccess($user, $task, 'tasks.view');
     }
 
     public function logWork(User $user, Task $task): bool
