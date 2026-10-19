@@ -485,6 +485,9 @@ const updateReminderStatus = (reminderId: number, status: 'completed' | 'cancell
     );
 };
 const formatDateTime = formatPersianDateTime;
+const isReviewLocked = computed(() => props.task.review_status === 'pending');
+const isCurrentAssignee = computed(() => Number(props.task.assignee?.id ?? props.task.assignee_id) === Number(props.currentUserId));
+const canEditTaskContent = computed(() => !isReviewLocked.value && isCurrentAssignee.value);
 const nextActivity = computed(() => props.task.activities?.find(activity => activity.status === 'pending' && activity.activity_type === 'planned') ?? null);
 const openActivityForm = (activity?: TaskActivity): void => {
     editingActivityId.value = activity?.id ?? null;
@@ -545,8 +548,8 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                     <button v-if="abilities.submit && ['todo', 'in_progress'].includes(task.status)" type="button" :disabled="reviewForm.processing" class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 disabled:opacity-50" @click="submitForReview">{{ reviewForm.processing ? 'در حال ارسال...' : 'ارسال برای بررسی مدیر' }}</button>
                     <button v-if="abilities.review && task.status === 'submitted' && task.review_status === 'pending'" type="button" :disabled="reviewForm.processing" class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800 disabled:opacity-50" @click="approveReview">{{ reviewForm.processing ? 'در حال ثبت...' : 'تأیید و تکمیل دستورکار' }}</button>
                     <button v-if="abilities.review && task.status === 'submitted' && task.review_status === 'pending'" type="button" :disabled="reviewForm.processing" class="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-50" @click="showReturnReviewModal = true">برگشت برای اصلاح</button>
-                    <button v-if="abilities.update && task.review_status !== 'pending'" type="button" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-800" @click="showEditModal = true">ویرایش</button>
-                    <button v-if="abilities.refer" type="button" class="rounded-lg border bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50" @click="showReferralModal = true">ارجاع دستورکار</button>
+                    <button v-if="abilities.update && !isReviewLocked" type="button" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-800" @click="showEditModal = true">ویرایش</button>
+                    <button v-if="abilities.refer && !isReviewLocked" type="button" class="rounded-lg border bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50" @click="showReferralModal = true">ارجاع دستورکار</button>
                 </div>
             </div>
         </template>
@@ -554,7 +557,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
         <div class="task-show mx-auto max-w-7xl space-y-6 px-4 py-5 sm:px-6 lg:px-8">
             <section class="rounded-xl border p-4 shadow-sm" :class="task.review_status === 'pending' ? 'border-amber-200 bg-amber-50/70' : task.review_status === 'approved' ? 'border-emerald-200 bg-emerald-50/60' : task.review_status === 'rejected' ? 'border-red-200 bg-red-50/60' : 'border-gray-200 bg-white'">
                 <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div><h3 class="font-semibold">گردش بررسی دستورکار</h3><p class="mt-1 text-sm text-gray-700">{{ task.review_status === 'pending' ? 'دستورکار برای بررسی مدیر ارسال شده و تا تصمیم مدیر نباید وضعیت آن را دستی تغییر داد.' : task.review_status === 'approved' ? 'مدیر دستورکار را تأیید کرده است.' : task.review_status === 'rejected' ? 'دستورکار برای اصلاح برگشت داده شده است.' : 'پس از انجام کار، دستورکار را برای بررسی مدیر ارسال کنید.' }}</p></div>
+                    <div><h3 class="font-semibold">گردش بررسی دستورکار</h3><p class="mt-1 text-sm text-gray-700">{{ task.review_status === 'pending' ? 'این دستورکار در انتظار بررسی مدیر است.' : task.review_status === 'approved' ? 'مدیر دستورکار را تأیید کرده است.' : task.review_status === 'rejected' ? 'دستورکار برای اصلاح برگشت داده شده است؛ پس از اصلاح می‌توانید دوباره ارسال کنید.' : 'پس از انجام کار، دستورکار را برای بررسی مدیر ارسال کنید.' }}</p></div>
                     <span class="rounded-full px-3 py-1 text-xs font-medium" :class="task.review_status === 'pending' ? 'bg-amber-100 text-amber-800' : task.review_status === 'approved' ? 'bg-emerald-100 text-emerald-800' : task.review_status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-700'">{{ task.review_status === 'pending' ? 'در انتظار بررسی' : task.review_status === 'approved' ? 'تأیید شده' : task.review_status === 'rejected' ? 'نیازمند اصلاح' : 'آماده ارسال' }}</span>
                 </div>
                 <p v-if="task.review_note" class="mt-3 whitespace-pre-line rounded-lg border border-red-200 bg-white/70 p-3 text-sm text-red-800"><span class="font-semibold">توضیح مدیر برای برگشت:</span> {{ task.review_note }}</p>
@@ -577,13 +580,13 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                                 </div>
                                 
                             </div>
-                            <button v-if="abilities.update" type="button" title="برای کاری که هنوز باید انجام شود؛ پس از انجام، دکمه «انجام شد» را بزنید." class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="openActivityForm()">+ ثبت فعالیت بعدی</button>
+                            <button v-if="abilities.update && canEditTaskContent" type="button" title="برای کاری که هنوز باید انجام شود؛ پس از انجام، دکمه «انجام شد» را بزنید." class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="openActivityForm()">+ ثبت فعالیت بعدی</button>
                         </div>
                         <div v-if="pendingActivities.length === 0" class="p-6 text-center text-sm text-muted-foreground">هنوز فعالیتی ثبت نشده است.</div>
                         <div v-if="pendingActivities.length" class="divide-y">
                             <article v-for="activity in pendingActivities" :key="activity.id" class="flex flex-wrap items-start justify-between gap-4 p-5">
                                 <div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><span class="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">در انتظار انجام</span><h4 class="font-medium text-gray-900">{{ activity.title }}</h4></div><p v-if="activity.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ activity.description }}</p></div>
-                                <div v-if="abilities.update" class="flex shrink-0 flex-wrap gap-2"><button type="button" title="فعالیت را تکمیل می‌کند و همان رکورد را در گزارش فعالیت انجام‌شده نمایش می‌دهد." class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700" @click="completeActivity(activity.id)">انجام شد</button><button type="button" class="rounded-lg border px-3 py-2 text-sm" @click="openActivityForm(activity)">ویرایش</button><button type="button" class="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600" @click="deleteActivity(activity.id)">حذف</button></div>
+                                <div v-if="abilities.update && canEditTaskContent" class="flex shrink-0 flex-wrap gap-2"><button type="button" title="فعالیت را تکمیل می‌کند و همان رکورد را در گزارش فعالیت انجام‌شده نمایش می‌دهد." class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700" @click="completeActivity(activity.id)">انجام شد</button><button type="button" class="rounded-lg border px-3 py-2 text-sm" @click="openActivityForm(activity)">ویرایش</button><button type="button" class="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600" @click="deleteActivity(activity.id)">حذف</button></div>
                             </article>
                         </div>
                     </section>
@@ -603,7 +606,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                     <section class="overflow-hidden rounded-xl border bg-card shadow-sm">
                         <div class="flex items-start justify-between gap-3 border-b bg-blue-50/60 px-5 py-4 sm:px-6">
                             <div><h3 class="font-semibold">سوابق ارجاع دستورکار</h3><p class="mt-1 text-sm text-muted-foreground">مشخص می‌کند دستورکار از چه کسی به چه کسی ارجاع شده و چه کسی ارجاع را ثبت کرده است.</p></div>
-                            <button v-if="abilities.refer" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showReferralModal = true">ارجاع دستورکار</button>
+                            <button v-if="abilities.refer && !isReviewLocked" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showReferralModal = true">ارجاع دستورکار</button>
                         </div>
                         <div v-if="task.assignments.length === 0" class="p-6 text-center text-sm text-muted-foreground">هنوز سابقه ارجاعی برای این دستورکار ثبت نشده است.</div>
                         <div v-else class="divide-y px-5 py-4 sm:px-6">
@@ -630,7 +633,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                                     <h3 class="font-semibold">نظرات</h3>
                                     <p class="mt-1 text-xs text-muted-foreground">{{ task.comments?.length ?? 0 }} نظر ثبت شده</p>
                                 </div>
-                                <button v-if="abilities.comment" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="showCommentModal = true">ثبت نظر</button>
+                                <button v-if="abilities.comment && canEditTaskContent" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="showCommentModal = true">ثبت نظر</button>
                             </div>
                             <div v-if="task.comments?.length" class="space-y-3 p-4">
                                 <article v-for="comment in task.comments" :key="comment.id" class="rounded-lg bg-gray-50 p-3">
@@ -652,7 +655,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                                     <h3 class="font-semibold">یادآوری‌ها</h3>
                                     <p class="mt-1 text-xs text-muted-foreground">{{ task.reminders?.length ?? 0 }} یادآوری ثبت شده</p>
                                 </div>
-                                <button v-if="abilities.create_reminder" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="showReminderModal = true">ثبت یادآوری</button>
+                                <button v-if="abilities.create_reminder && canEditTaskContent" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="showReminderModal = true">ثبت یادآوری</button>
                             </div>
                             <div v-if="task.reminders.length" class="space-y-3 p-4">
                                 <article v-for="reminder in task.reminders" :key="reminder.id" class="rounded-lg border p-4">
