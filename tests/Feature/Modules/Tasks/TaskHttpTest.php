@@ -644,7 +644,7 @@ class TaskHttpTest extends TestCase
 
         $this->actingAs($user)
             ->patch(route('tasks.change-status', $task), [
-                'status' => 'completed',
+                'status' => 'cancelled',
             ])
             ->assertForbidden();
 
