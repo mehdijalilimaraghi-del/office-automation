@@ -579,3 +579,12 @@ Implementation has started for the agreed cross-department project model:
 - Corrected `resources/js/Pages/Tasks/Show.vue`: removed the duplicate from `TaskActivity` and declared `assignee_id: number | null` on `Task` itself.
 - Commit: `8e4886c8b0b8f83c5d8fffa1c2064606480e626a`.
 - **Branch:** `development`; build verification is pending. Do not promote to `master` before Version 2 is complete.
+
+## Task comments authorization — 2026-10-19
+
+- Comment creation now follows task visibility: anyone authorized to view a task can add a comment, including during manager review. It no longer requires the separate `tasks.comment` permission or the assignee-only task-content edit check.
+- Comment edit/delete routes are authorized in the controller: the actor must be able to view the task, the comment must belong to that task, and the actor must be the comment author. Route-level `tasks.update` middleware was removed for these routes so authors do not need task-edit permission to manage their own comments.
+- The task detail UI shows the create-comment action to viewers and only shows edit/delete controls on comments authored by the current user.
+- Updated the focused HTTP test fixture to use `tasks.view` for comment creation.
+- Commits: `5d6a1b27485bf53fb3fa405b26a5ec05ab27741a`, `c5dab070531f65c70acaea073b53019536d285ed`, `6ad27dc6edb4524e6f319fa46b4a4b42cc893ef6`, `1592bed1dc192bf10655b5479f9d0f8fb9d3fd2f`, `933e83b68c292d1f068200f68a0c4e086e1545b5`.
+- **Branch:** `development`. Run the focused task HTTP tests and frontend production build before acceptance. Keep `master` unchanged until Version 2 is complete.
