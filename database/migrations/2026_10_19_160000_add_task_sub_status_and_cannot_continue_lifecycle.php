@@ -25,6 +25,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        DB::table('tasks')->where('sub_status', 'manager_review')->where('review_status', 'pending')->update([
+            'status' => 'submitted',
+        ]);
+
         Schema::table('tasks', function (Blueprint $table): void {
             $table->dropColumn('sub_status');
         });
