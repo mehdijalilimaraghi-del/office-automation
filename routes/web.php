@@ -20,9 +20,7 @@ use App\Http\Controllers\ProfileController;
 use App\Modules\Dashboard\Http\Controllers\DashboardController;
 use App\Modules\Cartable\Http\Controllers\CartableController;
 use App\Modules\Notifications\Http\Controllers\NotificationController;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 Route::get('/', fn () => auth()->check()
     ? redirect()->route('dashboard')
