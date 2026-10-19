@@ -12,6 +12,16 @@
 - No routes, authorization rules, or membership persistence logic were changed.
 - **Branch:** `development`. **Validation pending:** run frontend production build and manually verify both actions on the user list.
 
+## 2026-10-19 — Complete task review workflow in detail UI
+
+- Added the missing «ارسال برای بررسی مدیر» action for the assigned user on review-required tasks in `resources/js/Pages/Tasks/Show.vue`, using the existing `tasks.submit` route and permission.
+- Added manager-only «تأیید و تکمیل دستورکار» and «برگشت برای اصلاح» actions when a task is pending review. Returning requires a reason, and the reason/reviewer/time are displayed on the task detail page.
+- While review is pending, the detail page hides manual status changes and the edit action. For review-required tasks, the UI does not offer manual completion before approval.
+- Hardened `ChangeTaskStatusAction` so no manual status transition can bypass a pending manager review; hardened task creation so review-required tasks cannot be created already completed/cancelled.
+- Added a regression test that a task awaiting review cannot be manually changed to another status.
+- Kept referral separate from review submission; referral continues to transfer responsibility and is not used as the review action.
+- **Branch:** `development`. **Validation pending:** run the focused review lifecycle test and frontend production build locally. Do not merge to `master` until user validates.
+
 ## Product Goal
 Build a Persian-language, RTL, production-oriented company office-automation platform as a Modular Monolith.
 
