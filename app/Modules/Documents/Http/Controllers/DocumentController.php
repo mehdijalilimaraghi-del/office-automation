@@ -27,8 +27,10 @@ class DocumentController extends Controller
 
     public function storeForTask(StoreTaskDocumentRequest $request, Task $task): RedirectResponse
     {
-        // Task-scoped update access also authorizes attaching files to this task.
+        // Only the current assignee can add files, and never while manager review is pending.
         Gate::authorize('update', $task);
+        abort_if($task->review_status === 'pending', 403, 'پیوست دستورکار در زمان بررسی قابل تغییر نیست.');
+        abort_unless((int) $task->assignee_id === (int) $request->user()->id, 403, 'فقط مسئول فعلی دستورکار می‌تواند پیوست اضافه کند.');
 
         $data = $request->validated();
 
