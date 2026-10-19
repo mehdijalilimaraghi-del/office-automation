@@ -47,7 +47,7 @@ class TaskController extends Controller
 
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
-            'status' => ['nullable', 'in:todo,in_progress,submitted,completed,cancelled'],
+            'status' => ['nullable', 'in:todo,observed,in_progress,completed,cancelled,cannot_continue'],
             'priority' => ['nullable', 'in:low,normal,high,urgent'],
             'project_id' => ['nullable', 'integer'],
             'department_id' => ['nullable', 'integer'],
@@ -80,6 +80,21 @@ class TaskController extends Controller
     public function show(Request $request, Task $task): Response
     {
         Gate::authorize('view', $task);
+
+        if ((int) $task->assignee_id === (int) $request->user()->id) {
+            $changed = false;
+            if ($task->status === 'todo') {
+                $task->status = 'observed';
+                $changed = true;
+            }
+            if ($task->sub_status === 'referred') {
+                $task->sub_status = 'referral_seen';
+                $changed = true;
+            }
+            if ($changed) {
+                $task->save();
+            }
+        }
 
         return Inertia::render('Tasks/Show', [
             'task' => $task->load([
@@ -278,6 +293,10 @@ class TaskController extends Controller
             'completed_at' => ($data['activity_type'] ?? 'planned') === 'logged' ? now() : null,
         ]);
 
+        if (in_array($task->status, ['todo', 'observed'], true)) {
+            $task->update(['status' => 'in_progress', 'sub_status' => null]);
+        }
+
         return back()->with('success', 'فعالیت با موفقیت ثبت شد.');
     }
 
@@ -295,6 +314,10 @@ class TaskController extends Controller
             'completed_by' => $request->user()->id,
             'completed_at' => now(),
         ]);
+
+        if (in_array($task->status, ['todo', 'observed'], true)) {
+            $task->update(['status' => 'in_progress', 'sub_status' => null]);
+        }
 
         return back()->with('success', 'فعالیت انجام شد و در گزارش فعالیت ثبت شد.');
     }
@@ -374,6 +397,8 @@ class TaskController extends Controller
 
         $comment->update(['body' => $data['body']]);
 
+        abort_if($task->isFinalized(), 403, 'نظر دستورکار نهایی‌شده قابل تغییر نیست.');
+
         return back()->with('success', 'نظر با موفقیت ویرایش شد.');
     }
 
@@ -383,6 +408,7 @@ class TaskController extends Controller
         abort_unless((int) $comment->task_id === (int) $task->id, 404);
         abort_unless((int) $comment->user_id === (int) $request->user()->id, 403);
 
+        abort_if($task->isFinalized(), 403, 'نظر دستورکار نهایی‌شده قابل تغییر نیست.');
         $comment->delete();
 
         return back()->with('success', 'نظر با موفقیت حذف شد.');
@@ -469,6 +495,7 @@ class TaskController extends Controller
         TaskReminder $reminder,
     ): RedirectResponse {
         $status = $request->validated()['status'];
+        abort_if($task->isFinalized(), 403, 'یادآوری دستورکار نهایی‌شده قابل تغییر نیست.');
 
         Gate::authorize(
             $status === 'completed' ? 'completeReminder' : 'cancelReminder',
@@ -556,6 +583,7 @@ class TaskController extends Controller
 
     private function assertTaskContentEditable(Request $request, Task $task): void
     {
+        abort_if($task->isFinalized(), 403, 'دستورکار نهایی‌شده و قابل تغییر نیست.');
         abort_if($task->review_status === 'pending', 403, 'این دستورکار تا زمان برگشت برای اصلاح یا تعیین تکلیف مدیر قابل تغییر نیست.');
         abort_unless((int) $task->assignee_id === (int) $request->user()->id, 403, 'فقط مسئول فعلی دستورکار می‌تواند فعالیت‌ها و اطلاعات اجرایی آن را تغییر دهد.');
     }
