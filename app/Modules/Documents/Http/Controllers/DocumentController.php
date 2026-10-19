@@ -29,6 +29,7 @@ class DocumentController extends Controller
     {
         // Only the current assignee can add files, and never while manager review is pending.
         Gate::authorize('update', $task);
+        abort_if($task->isFinalized(), 403, 'پیوست دستورکار نهایی‌شده قابل تغییر نیست.');
         abort_if($task->review_status === 'pending', 403, 'پیوست دستورکار در زمان بررسی قابل تغییر نیست.');
         abort_unless((int) $task->assignee_id === (int) $request->user()->id, 403, 'فقط مسئول فعلی دستورکار می‌تواند پیوست اضافه کند.');
 
@@ -48,6 +49,7 @@ class DocumentController extends Controller
     public function destroyForTask(Request $request, Task $task, Document $document): RedirectResponse
     {
         Gate::authorize('update', $task);
+        abort_if($task->isFinalized(), 403, 'پیوست دستورکار نهایی‌شده قابل تغییر نیست.');
         abort_if($task->review_status === 'pending', 403, 'پیوست دستورکار در زمان بررسی قابل حذف نیست.');
         abort_unless((int) $task->assignee_id === (int) $request->user()->id, 403, 'فقط مسئول فعلی دستورکار می‌تواند پیوست را حذف کند.');
 
