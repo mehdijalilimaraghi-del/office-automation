@@ -29,6 +29,10 @@ class AssignTaskAction
             throw new InvalidArgumentException('دستورکار نهایی‌شده امکان ارجاع یا تغییر مسئول ندارد.');
         }
 
+        if ($task->review_status === 'pending') {
+            throw new InvalidArgumentException('تا تعیین تکلیف مدیر، مسئول دستورکار قابل تغییر نیست.');
+        }
+
         if (! $assignee->isActive()) {
             throw new InvalidArgumentException('مسئول تسک باید کاربر فعال باشد.');
         }
