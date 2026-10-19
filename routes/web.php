@@ -24,14 +24,9 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-});
+Route::get('/', fn () => auth()->check()
+    ? redirect()->route('dashboard')
+    : redirect()->route('login'));
 
 Route::get('/users/invitations/{token}', [UserInvitationController::class, 'accept'])->middleware('guest')->name('users.invitation.accept');
 Route::post('/users/invitations', [UserInvitationController::class, 'store'])->middleware('guest')->name('users.invitation.store');
