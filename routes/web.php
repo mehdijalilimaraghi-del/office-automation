@@ -141,7 +141,7 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:documents.delete')
         ->name('documents.destroy');
 
-    Route::patch('/tasks/{task}/submit', [TaskController::class, 'submit'])->middleware('permission:tasks.submit')->name('tasks.submit');
+    Route::patch('/tasks/{task}/submit', [TaskController::class, 'submit'])->name('tasks.submit');
     Route::patch('/tasks/{task}/approve', [TaskController::class, 'approve'])->middleware('permission:tasks.review')->name('tasks.approve');
     Route::patch('/tasks/{task}/return', [TaskController::class, 'returnFromReview'])->middleware('permission:tasks.review')->name('tasks.return');
     Route::post('/tasks/{task}/comments', [TaskController::class, 'comment'])->middleware('permission:tasks.comment')->name('tasks.comments.store');
