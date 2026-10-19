@@ -97,6 +97,7 @@ class DashboardService
             'sub_status' => $task->sub_status,
             'priority' => $task->priority,
             'due_date' => $task->due_date?->format('Y-m-d'),
+            'is_overdue' => $task->due_date !== null && $task->due_date->lt($today) && ! in_array($task->status, ['completed', 'cancelled', 'cannot_continue'], true),
             'project' => $task->project?->name,
             'assignee' => $task->assignee?->name,
         ];
