@@ -258,6 +258,7 @@ class TaskController extends Controller
     public function storeActivity(StoreTaskActivityRequest $request, Task $task): RedirectResponse
     {
         Gate::authorize('update', $task);
+        $this->assertTaskContentEditable($request, $task);
 
         $data = $request->validated();
         $lastSequence = (int) $task->activities()->max('sequence');
@@ -280,6 +281,7 @@ class TaskController extends Controller
     public function completeActivity(Request $request, Task $task, TaskActivity $activity): RedirectResponse
     {
         Gate::authorize('update', $task);
+        $this->assertTaskContentEditable($request, $task);
         abort_unless((int) $activity->task_id === (int) $task->id, 404);
 
         abort_unless($activity->activity_type === 'planned' && $activity->status === 'pending', 422);
@@ -297,6 +299,7 @@ class TaskController extends Controller
     public function updateActivity(Request $request, Task $task, TaskActivity $activity): RedirectResponse
     {
         Gate::authorize('update', $task);
+        $this->assertTaskContentEditable($request, $task);
         abort_unless((int) $activity->task_id === (int) $task->id, 404);
 
         $data = $request->validate([
@@ -319,6 +322,7 @@ class TaskController extends Controller
     public function destroyActivity(Request $request, Task $task, TaskActivity $activity): RedirectResponse
     {
         Gate::authorize('update', $task);
+        $this->assertTaskContentEditable($request, $task);
         abort_unless((int) $activity->task_id === (int) $task->id, 404);
 
         $activity->delete();
@@ -344,6 +348,7 @@ class TaskController extends Controller
     public function comment(StoreTaskCommentRequest $request, Task $task): RedirectResponse
     {
         Gate::authorize('comment', $task);
+        $this->assertTaskContentEditable($request, $task);
 
         $this->taskService->addComment(
             task: $task,
@@ -357,6 +362,7 @@ class TaskController extends Controller
     public function updateComment(Request $request, Task $task, \App\Modules\Tasks\Models\TaskComment $comment): RedirectResponse
     {
         Gate::authorize('update', $task);
+        $this->assertTaskContentEditable($request, $task);
         abort_unless((int) $comment->task_id === (int) $task->id, 404);
 
         $data = $request->validate([
@@ -371,6 +377,7 @@ class TaskController extends Controller
     public function destroyComment(Request $request, Task $task, \App\Modules\Tasks\Models\TaskComment $comment): RedirectResponse
     {
         Gate::authorize('update', $task);
+        $this->assertTaskContentEditable($request, $task);
         abort_unless((int) $comment->task_id === (int) $task->id, 404);
 
         $comment->delete();
@@ -381,6 +388,7 @@ class TaskController extends Controller
     public function updateReminder(Request $request, Task $task, TaskReminder $reminder): RedirectResponse
     {
         Gate::authorize('update', $task);
+        $this->assertTaskContentEditable($request, $task);
         abort_unless((int) $reminder->task_id === (int) $task->id, 404);
 
         $data = $request->validate([
@@ -401,6 +409,7 @@ class TaskController extends Controller
     public function destroyReminder(Request $request, Task $task, TaskReminder $reminder): RedirectResponse
     {
         Gate::authorize('update', $task);
+        $this->assertTaskContentEditable($request, $task);
         abort_unless((int) $reminder->task_id === (int) $task->id, 404);
 
         $reminder->delete();
@@ -411,6 +420,7 @@ class TaskController extends Controller
     public function workLog(StoreTaskWorkLogRequest $request, Task $task): RedirectResponse
     {
         Gate::authorize('logWork', $task);
+        $this->assertTaskContentEditable($request, $task);
         $data = $request->validated();
         $sequence = ((int) $task->activities()->max('sequence')) + 1;
 
@@ -434,6 +444,7 @@ class TaskController extends Controller
     public function reminder(StoreTaskReminderRequest $request, Task $task): RedirectResponse
     {
         Gate::authorize('createReminder', $task);
+        $this->assertTaskContentEditable($request, $task);
         $data = $request->validated();
         $recipient = User::query()->findOrFail($data['user_id']);
 
@@ -536,6 +547,12 @@ class TaskController extends Controller
         }
 
         return back()->with('success', 'وضعیت تسک با موفقیت تغییر کرد.');
+    }
+
+    private function assertTaskContentEditable(Request $request, Task $task): void
+    {
+        abort_if($task->review_status === 'pending', 403, 'این دستورکار تا زمان برگشت برای اصلاح یا تعیین تکلیف مدیر قابل تغییر نیست.');
+        abort_unless((int) $task->assignee_id === (int) $request->user()->id, 403, 'فقط مسئول فعلی دستورکار می‌تواند فعالیت‌ها و اطلاعات اجرایی آن را تغییر دهد.');
     }
 
     public function destroy(Task $task): RedirectResponse
