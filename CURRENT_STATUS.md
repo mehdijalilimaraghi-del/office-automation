@@ -588,3 +588,9 @@ Implementation has started for the agreed cross-department project model:
 - Updated the focused HTTP test fixture to use `tasks.view` for comment creation.
 - Commits: `5d6a1b27485bf53fb3fa405b26a5ec05ab27741a`, `c5dab070531f65c70acaea073b53019536d285ed`, `6ad27dc6edb4524e6f319fa46b4a4b42cc893ef6`, `1592bed1dc192bf10655b5479f9d0f8fb9d3fd2f`, `933e83b68c292d1f068200f68a0c4e086e1545b5`.
 - **Branch:** `development`. Run the focused task HTTP tests and frontend production build before acceptance. Keep `master` unchanged until Version 2 is complete.
+
+## Comment author controls follow-up — 2026-10-19
+
+- Adjusted the comment UI ownership check to use the persisted `comments.user_id` field rather than the nested `comments.user.id` relation. This ensures managers and other viewers see edit/delete controls for their own comments even if the nested user relation is not serialized as expected.
+- Backend ownership enforcement remains unchanged: only the authenticated comment author may update or delete a comment.
+- Commit: `9466357a6b5035157736fc3e673606b1724da3bb` on `development`. Frontend build and manager-side verification are pending. Do not merge to `master` until Version 2 is complete.
