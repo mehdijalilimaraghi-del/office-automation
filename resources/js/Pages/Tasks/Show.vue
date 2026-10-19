@@ -383,6 +383,11 @@ const handleDocumentFileChange = (event: Event): void => {
     }
 };
 
+const deleteTaskDocument = (documentId: number): void => {
+    if (!window.confirm('آیا از حذف این پیوست مطمئن هستید؟')) return;
+    router.delete(route('tasks.documents.destroy', [props.task.id, documentId]), { preserveScroll: true });
+};
+
 const submitDocument = (): void => {
     documentForm.post(route('tasks.documents.store', props.task.id), {
         preserveScroll: true,
@@ -698,7 +703,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                     <section class="rounded-xl border bg-card shadow-sm">
                         <div class="border-b px-5 py-4"><h3 class="font-semibold">پیوست‌ها</h3><p class="mt-1 text-xs text-muted-foreground">{{ task.documents.length }} فایل</p></div>
                         <div v-if="task.documents.length" class="divide-y">
-                            <div v-for="link in task.documents" :key="link.id" class="p-4"><p class="truncate text-sm font-medium">{{ link.document?.title ?? 'سند' }}</p><p v-if="link.document?.latest_version" class="mt-1 text-xs text-muted-foreground">{{ link.document.latest_version.original_name }} · {{ formatFileSize(link.document.latest_version.size) }}</p><a v-if="link.document" :href="route('documents.download', link.document.id)" class="mt-2 inline-block text-xs font-medium text-gray-700 hover:underline">دریافت فایل</a></div>
+                            <div v-for="link in task.documents" :key="link.id" class="p-4"><p class="truncate text-sm font-medium">{{ link.document?.title ?? 'سند' }}</p><p v-if="link.document?.latest_version" class="mt-1 text-xs text-muted-foreground">{{ link.document.latest_version.original_name }} · {{ formatFileSize(link.document.latest_version.size) }}</p><div class="mt-2 flex flex-wrap items-center gap-3"><a v-if="link.document" :href="route('documents.download', link.document.id)" class="inline-block text-xs font-medium text-gray-700 hover:underline">دریافت فایل</a><button v-if="canEditTaskContent && abilities.documents_create && link.document" type="button" class="text-xs font-medium text-red-600 hover:underline" @click="deleteTaskDocument(link.document.id)">حذف پیوست</button></div></div>
                         </div>
                         <div v-else class="p-5 text-center text-sm text-muted-foreground">پیوستی وجود ندارد.</div>
                         <form v-if="abilities.documents_create" class="border-t p-4 space-y-3" @submit.prevent="submitDocument">
