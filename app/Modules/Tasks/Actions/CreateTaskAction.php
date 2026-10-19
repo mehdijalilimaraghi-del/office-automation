@@ -142,6 +142,7 @@ class CreateTaskAction
                 'title' => $data['title'],
                 'description' => $data['description'] ?? null,
                 'status' => 'todo',
+                'sub_status' => $delegateAssignee !== null ? 'referred' : null,
                 'priority' => $data['priority'] ?? 'normal',
                 'review_required' => $reviewRequired,
                 'review_status' => $reviewRequired ? 'not_started' : 'not_required',
