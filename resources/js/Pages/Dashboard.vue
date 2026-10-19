@@ -31,6 +31,7 @@ interface DashboardTask {
     sub_status: string | null;
     priority: string;
     due_date: string | null;
+    is_overdue: boolean;
     project: string | null;
     assignee: string | null;
 }
@@ -192,7 +193,7 @@ const statusTone = (status: string) => ({
                         <div v-else class="divide-y divide-slate-100">
                             <Link v-for="task in personalTasks" :key="task.id" :href="'/tasks/' + task.id" class="block px-5 py-4 transition hover:bg-slate-50">
                                 <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div class="min-w-0"><p class="truncate text-sm font-semibold text-slate-800">{{ task.title }}</p><p class="mt-1 text-xs text-slate-500">{{ task.project || 'بدون پروژه' }}</p></div><span class="w-fit rounded-full px-2.5 py-1 text-xs font-semibold" :class="statusTone(task.status)">{{ statusLabels[task.status] || task.status }}</span></div>
-                                <div class="mt-2 flex items-center justify-between gap-3"><span class="text-xs" :class="priorityClasses[task.priority] || 'text-slate-500'">اولویت {{ priorityLabels[task.priority] || task.priority }}</span><span class="text-xs" :class="task.due_date && task.due_date < new Date().toISOString().slice(0, 10) ? 'font-semibold text-rose-700' : 'text-slate-400'">مهلت: {{ formatDate(task.due_date) }}</span></div>
+                                <div class="mt-2 flex items-center justify-between gap-3"><span class="text-xs" :class="priorityClasses[task.priority] || 'text-slate-500'">اولویت {{ priorityLabels[task.priority] || task.priority }}</span><span class="text-xs" :class="task.is_overdue ? 'font-semibold text-rose-700' : 'text-slate-400'">مهلت: {{ formatDate(task.due_date) }}</span></div>
                             </Link>
                         </div>
                     </section>
