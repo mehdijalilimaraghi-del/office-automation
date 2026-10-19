@@ -661,7 +661,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                                         <p class="text-xs text-muted-foreground">{{ comment.user?.name ?? '—' }}</p>
                                         <div class="flex gap-2">
                                             <button v-if="!isFinalized && Number(comment.user_id) === Number(currentUserId)" type="button" class="text-xs font-medium text-gray-700 hover:underline" @click="editComment(comment)">ویرایش</button>
-                                            <button v-if="Number(comment.user_id) === Number(currentUserId)" type="button" class="text-xs font-medium text-red-600 hover:underline" @click="deleteComment(comment.id)">حذف</button>
+                                            <button v-if="!isFinalized && Number(comment.user_id) === Number(currentUserId)" type="button" class="text-xs font-medium text-red-600 hover:underline" @click="deleteComment(comment.id)">حذف</button>
                                         </div>
                                     </div>
                                 </article>
