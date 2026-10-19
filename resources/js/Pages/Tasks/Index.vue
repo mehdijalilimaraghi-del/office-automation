@@ -76,6 +76,7 @@ interface Task {
     id: number;
     title: string;
     status: string;
+    sub_status: string | null;
     priority: string;
     start_date: string | null;
     due_date: string | null;
@@ -122,11 +123,13 @@ const createForm = useForm({
     custom_fields: {} as Record<string, string | number | boolean | null>,
 });
 
+const subStatusLabels: Record<string, string> = {
+    referred: 'ارجاع شده', referral_seen: 'ارجاع مشاهده شده',
+    manager_review: 'در حال بررسی مدیر', returned_for_completion: 'برگشت برای تکمیل',
+};
 const statusLabels: Record<string, string> = {
-    todo: 'انجام نشده',
-    in_progress: 'در حال انجام',
-    completed: 'تکمیل شده',
-    cancelled: 'لغو شده',
+    todo: 'انجام نشده', observed: 'مشاهده شده', in_progress: 'در حال انجام',
+    completed: 'تکمیل شده', cancelled: 'لغو شده', cannot_continue: 'امکان ادامه وجود ندارد',
 };
 
 const priorityLabels: Record<string, string> = {
@@ -440,9 +443,11 @@ const handleSectionChange = (): void => {
                         <select v-model="statusFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
                             <option value="">همه وضعیت‌ها</option>
                             <option value="todo">انجام نشده</option>
+                            <option value="observed">مشاهده شده</option>
                             <option value="in_progress">در حال انجام</option>
                             <option value="completed">تکمیل شده</option>
                             <option value="cancelled">لغو شده</option>
+                            <option value="cannot_continue">امکان ادامه وجود ندارد</option>
                         </select>
                     </div>
                     <div>
@@ -528,7 +533,7 @@ const handleSectionChange = (): void => {
                                             'bg-green-50 text-green-700': task.status === 'completed',
                                             'bg-red-50 text-red-700': task.status === 'cancelled',
                                         }">
-                                        {{ statusLabels[task.status] ?? task.status }}
+                                        {{ statusLabels[task.status] ? (task.sub_status && task.status === 'in_progress' ? `${statusLabels[task.status]} (${subStatusLabels[task.sub_status] ?? task.sub_status})` : statusLabels[task.status]) : task.status }}
                                     </span>
                                 </td>
                                 <td class="px-4 py-3.5">
