@@ -572,3 +572,10 @@ Implementation has started for the agreed cross-department project model:
 - Fixed the TypeScript build error in `resources/js/Pages/Tasks/Show.vue` by declaring `assignee_id: number | null` on the frontend `Task` interface, matching the existing assignee fallback used by the current-assignee check.
 - Commit: `4e62fdb70e7c649a45111df10251f753461faca2`.
 - **Branch:** `development`. Run `npm run build` and the focused task review tests locally. Keep `master` unchanged; promotion is deferred until Version 2 is complete and explicitly approved.
+
+## Corrected Task assignee type placement — 2026-10-19
+
+- Follow-up build output showed the previous insertion matched `TaskActivity` instead of `Task`, creating a duplicate field and leaving `Task.assignee_id` undeclared.
+- Corrected `resources/js/Pages/Tasks/Show.vue`: removed the duplicate from `TaskActivity` and declared `assignee_id: number | null` on `Task` itself.
+- Commit: `8e4886c8b0b8f83c5d8fffa1c2064606480e626a`.
+- **Branch:** `development`; build verification is pending. Do not promote to `master` before Version 2 is complete.
