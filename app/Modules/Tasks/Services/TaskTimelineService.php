@@ -113,9 +113,12 @@ class TaskTimelineService
     {
         return match ($status) {
             'todo' => 'انجام نشده',
+            'observed' => 'مشاهده شده',
             'in_progress' => 'در حال انجام',
             'completed' => 'تکمیل شده',
             'cancelled' => 'لغو شده',
+            'cannot_continue' => 'امکان ادامه وجود ندارد',
+            'submitted' => 'در حال بررسی مدیر',
             null => '—',
             default => $status,
         };
