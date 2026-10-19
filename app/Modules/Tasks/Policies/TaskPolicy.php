@@ -103,39 +103,41 @@ class TaskPolicy
 
     public function update(User $user, Task $task): bool
     {
-        return ! $task->isFinalized() && $this->taskAccessService->canAccess($user, $task, 'tasks.update');
+        return ! $task->isFinalized() && $task->review_status !== 'pending' && $this->taskAccessService->canAccess($user, $task, 'tasks.update');
     }
 
     public function assign(User $user, Task $task): bool
     {
-        return ! $task->isFinalized() && $this->taskAccessService->canAccess($user, $task, 'tasks.assign');
+        return ! $task->isFinalized() && $task->review_status !== 'pending' && $this->taskAccessService->canAccess($user, $task, 'tasks.assign');
     }
 
     public function refer(User $user, Task $task): bool
     {
         return ! $task->isFinalized()
+            && $task->review_status !== 'pending'
             && (int) $task->assignee_id === (int) $user->id
             && $this->taskAccessService->canAccess($user, $task, 'tasks.refer');
     }
 
     public function comment(User $user, Task $task): bool
     {
-        return ! $task->isFinalized() && $this->taskAccessService->canAccess($user, $task, 'tasks.view');
+        return ! $task->isFinalized() && $task->review_status !== 'pending' && $this->taskAccessService->canAccess($user, $task, 'tasks.view');
     }
 
     public function logWork(User $user, Task $task): bool
     {
-        return ! $task->isFinalized() && $this->taskAccessService->canAccess($user, $task, 'tasks.log_work');
+        return ! $task->isFinalized() && $task->review_status !== 'pending' && $this->taskAccessService->canAccess($user, $task, 'tasks.log_work');
     }
 
     public function createReminder(User $user, Task $task): bool
     {
-        return ! $task->isFinalized() && $this->taskAccessService->canAccess($user, $task, 'tasks.create_reminder');
+        return ! $task->isFinalized() && $task->review_status !== 'pending' && $this->taskAccessService->canAccess($user, $task, 'tasks.create_reminder');
     }
 
     public function completeReminder(User $user, Task $task, TaskReminder $reminder): bool
     {
         return ! $task->isFinalized()
+            && $task->review_status !== 'pending'
             && (int) $reminder->task_id === (int) $task->id
             && (int) $reminder->user_id === (int) $user->id
             && $this->taskAccessService->canAccess($user, $task, 'tasks.view');
@@ -171,7 +173,7 @@ class TaskPolicy
 
     public function changeStatus(User $user, Task $task): bool
     {
-        if ($task->isFinalized() || ! $this->taskAccessService->canAccess($user, $task, 'tasks.change_status')) {
+        if ($task->isFinalized() || $task->review_status === 'pending' || ! $this->taskAccessService->canAccess($user, $task, 'tasks.change_status')) {
             return false;
         }
 
@@ -181,6 +183,6 @@ class TaskPolicy
 
     public function delete(User $user, Task $task): bool
     {
-        return ! $task->isFinalized() && $this->taskAccessService->canAccess($user, $task, 'tasks.delete');
+        return ! $task->isFinalized() && $task->review_status !== 'pending' && $this->taskAccessService->canAccess($user, $task, 'tasks.delete');
     }
 }
