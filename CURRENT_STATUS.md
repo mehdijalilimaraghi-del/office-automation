@@ -602,3 +602,15 @@ Implementation has started for the agreed cross-department project model:
 - Removed that unrelated wrapper; each control is shown only when `comment.user_id` matches `currentUserId`. Both edit and delete now use the same persisted author ID.
 - Backend author-only enforcement remains unchanged.
 - **Branch:** `development`. Frontend build and manager-side manual verification are pending. Keep `master` unchanged until V2 is complete and explicitly approved.
+
+
+## 2026-10-19 — Implement task main/sub-status lifecycle and final-state lock
+
+- Added nullable `tasks.sub_status` with a reversible migration. Existing `submitted/pending` tasks are migrated to main status `in_progress` with sub-status `manager_review`; rejected review tasks receive `returned_for_completion`.
+- Main statuses now use `todo`, `observed`, `in_progress`, `completed`, `cancelled`, and `cannot_continue`. Creation starts automatically at `todo`; manual status changes are limited to manager-authorized `cancelled` and `cannot_continue`. Completion remains exclusive to manager approval.
+- Viewing a task as its current assignee moves `todo` to `observed`; viewing a newly referred task marks `referral_seen`. Adding/completing/logging the first activity moves `todo/observed` to `in_progress` and clears transient referral/return sub-statuses.
+- Sub-status values implemented: `referred`, `referral_seen`, `manager_review`, and `returned_for_completion`. Task detail/list status badges render the sub-status in parentheses; timeline entries now include transition notes.
+- Manager return preserves main status `in_progress` and sets `returned_for_completion`. Manager approval sets `completed` and clears the sub-status.
+- Terminal states `completed`, `cancelled`, and `cannot_continue` are guarded in policy, controller, task actions, comments, reminders, assignments and attachment endpoints. Read access remains available; mutations are blocked server-side and mutation controls are hidden in the task UI.
+- Added/updated task review lifecycle tests for main/sub-status and terminal status changes.
+- **Branch:** `development`. **Validation pending:** run `php artisan migrate`, focused task lifecycle/review/HTTP tests, the full backend test suite and `npm run build`; manually verify automatic statuses, manager review/return/approval, final-state locking, and existing data migration. No test result is claimed yet. Keep `master` unchanged until Version 2 is complete and explicitly approved.
