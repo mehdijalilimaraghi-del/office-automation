@@ -18,6 +18,10 @@ class CreateTaskReminderAction
         $remindAt,
         ?string $description = null,
     ): TaskReminder {
+        if ($task->isFinalized()) {
+            throw new \\InvalidArgumentException('برای دستورکار نهایی‌شده امکان ثبت یادآوری وجود ندارد.');
+        }
+
         return $task->reminders()->create([
             'user_id' => $recipient->id,
             'created_by' => $creator->id,
