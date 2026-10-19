@@ -21,7 +21,6 @@ interface TaskActivity {
     activity_type: 'planned' | 'logged';
     sequence: number;
     assignee_id: number | null;
-    assignee_id: number | null;
     assignee: User | null;
     creator: User | null;
     assignments: TaskAssignment[];
@@ -65,6 +64,7 @@ interface Task {
     is_active: boolean;
     start_date: string | null;
     due_date: string | null;
+    assignee_id: number | null;
     assignee: User | null;
     creator: User | null;
     department: { id: number; name: string; manager: User | null } | null;
