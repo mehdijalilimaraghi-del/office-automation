@@ -630,3 +630,10 @@ Implementation has started for the agreed cross-department project model:
 - **Validation pending:** rerun `WorkflowServiceTest`, then the broader affected tests and full suite.
 - PowerShell test scripts must pause on failure without using `exit`; keep the console available for inspection.
 - Keep `master` unchanged.
+
+## Regression suite validation — 2026-10-19
+
+- Project owner reports that the focused notification/task tests and the full Laravel test suite all passed after the task lifecycle and workflow review fixture updates.
+- This is user-reported local validation; no test command was executed in the assistant environment.
+- **Branch:** `development`. Keep `master` unchanged until Version 2 is complete and explicitly approved.
+- **Next step:** continue V2 implementation from the correspondence foundation/numbering checkpoint, inspect the roadmap and current code before choosing the next slice, and preserve focused tests plus full regression validation.
