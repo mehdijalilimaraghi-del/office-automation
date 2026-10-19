@@ -116,6 +116,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/tasks', [TaskController::class, 'store'])->middleware('permission:tasks.create')->name('tasks.store');
     Route::post('/tasks/{task}/documents', [DocumentController::class, 'storeForTask'])
         ->name('tasks.documents.store');
+    Route::delete('/tasks/{task}/documents/{document}', [DocumentController::class, 'destroyForTask'])->name('tasks.documents.destroy');
     Route::get('/tasks/{task}', [TaskController::class, 'show'])->middleware('permission:tasks.view')->name('tasks.show');
     Route::put('/tasks/{task}', [TaskController::class, 'update'])->middleware('permission:tasks.update')->name('tasks.update');
     Route::put('/tasks/{task}/external-parties', [TaskController::class, 'updateExternalParties'])->middleware('permission:tasks.update')->name('tasks.external-parties.update');
