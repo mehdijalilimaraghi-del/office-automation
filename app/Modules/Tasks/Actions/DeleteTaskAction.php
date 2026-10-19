@@ -12,11 +12,11 @@ class DeleteTaskAction
     public function execute(Task $task): void
     {
         if ($task->isFinalized()) {
-            throw new \\InvalidArgumentException('دستورکار نهایی‌شده قابل حذف نیست.');
+            throw new \InvalidArgumentException('دستورکار نهایی‌شده قابل حذف نیست.');
         }
 
         if ($task->review_status === 'pending') {
-            throw new \\InvalidArgumentException('تا تعیین تکلیف مدیر، دستورکار قابل حذف نیست.');
+            throw new \InvalidArgumentException('تا تعیین تکلیف مدیر، دستورکار قابل حذف نیست.');
         }
 
         DB::transaction(function () use ($task): void {
