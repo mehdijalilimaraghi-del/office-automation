@@ -47,7 +47,7 @@ class ChangeTaskStatusAction
             throw new InvalidArgumentException('تسک نهایی‌شده امکان تغییر وضعیت ندارد.');
         }
 
-        if ($status === 'completed' && $task->review_required && $task->review_status !== 'approved') {
+        if ($status === 'completed' && ($task->status !== 'submitted' || $task->review_status !== 'approved')) {
             throw new InvalidArgumentException('این تسک باید ابتدا توسط بررسی‌کننده تأیید شود.');
         }
 
