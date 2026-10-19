@@ -26,10 +26,10 @@ class TaskReviewLifecycleTest extends TestCase
         $this->seed(\Database\Seeders\CorePermissionSeeder::class);
     }
 
-    public function test_assignee_can_submit_review_required_task(): void
+    public function test_assignee_without_submit_permission_can_submit_task_for_review(): void
     {
         $manager = User::factory()->create(['status' => 'active']);
-        $assignee = $this->userWithPermission('tasks.submit');
+        $assignee = User::factory()->create(['status' => 'active']);
 
         $department = Department::query()->create([
             'name' => 'Review Unit',
@@ -43,8 +43,8 @@ class TaskReviewLifecycleTest extends TestCase
             'title' => 'Review task',
             'status' => 'in_progress',
             'priority' => 'normal',
-            'review_required' => true,
-            'review_status' => 'not_started',
+            'review_required' => false,
+            'review_status' => 'not_required',
             'assignee_id' => $assignee->id,
             'created_by' => $manager->id,
         ]);
@@ -53,6 +53,7 @@ class TaskReviewLifecycleTest extends TestCase
 
         $this->assertSame('submitted', $result->status);
         $this->assertSame('pending', $result->review_status);
+        $this->assertTrue($result->review_required);
         $this->assertNotNull($result->review_requested_at);
         $this->assertDatabaseHas('task_status_histories', [
             'task_id' => $task->id,
