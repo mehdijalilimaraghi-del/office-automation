@@ -640,7 +640,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                                     <h3 class="font-semibold">نظرات</h3>
                                     <p class="mt-1 text-xs text-muted-foreground">{{ task.comments?.length ?? 0 }} نظر ثبت شده</p>
                                 </div>
-                                <button v-if="abilities.comment && canEditTaskContent" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="showCommentModal = true">ثبت نظر</button>
+                                <button v-if="abilities.comment" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="showCommentModal = true">ثبت نظر</button>
                             </div>
                             <div v-if="task.comments?.length" class="space-y-3 p-4">
                                 <article v-for="comment in task.comments" :key="comment.id" class="rounded-lg bg-gray-50 p-3">
@@ -648,8 +648,8 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                                     <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-2">
                                         <p class="text-xs text-muted-foreground">{{ comment.user?.name ?? '—' }}</p>
                                         <div v-if="abilities.update && canEditTaskContent" class="flex gap-2">
-                                            <button type="button" class="text-xs font-medium text-gray-700 hover:underline" @click="editComment(comment)">ویرایش</button>
-                                            <button type="button" class="text-xs font-medium text-red-600 hover:underline" @click="deleteComment(comment.id)">حذف</button>
+                                            <button v-if="Number(comment.user?.id) === Number(currentUserId)" type="button" class="text-xs font-medium text-gray-700 hover:underline" @click="editComment(comment)">ویرایش</button>
+                                            <button v-if="Number(comment.user?.id) === Number(currentUserId)" type="button" class="text-xs font-medium text-red-600 hover:underline" @click="deleteComment(comment.id)">حذف</button>
                                         </div>
                                     </div>
                                 </article>
