@@ -25,7 +25,7 @@ class TaskActivityHttpTest extends TestCase
 
     public function test_authorized_user_can_create_comment(): void
     {
-        $user = $this->userWithPermission('tasks.comment');
+        $user = $this->userWithPermission('tasks.view');
         $task = $this->createTask($user);
 
         $this->actingAs($user)
