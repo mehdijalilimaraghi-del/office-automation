@@ -476,6 +476,7 @@ class TaskController extends Controller
             [$task, $reminder],
         );
         abort_if($task->review_status === 'pending', 403, 'یادآوری این دستورکار در زمان بررسی قابل تغییر نیست.');
+        abort_unless((int) $reminder->user_id === (int) $request->user()->id, 403);
 
         try {
             $this->taskService->updateReminderStatus(
