@@ -25,6 +25,10 @@ class AssignTaskAction
         string $type = 'assignment',
         ?string $note = null
     ): Task {
+        if ($task->isFinalized()) {
+            throw new InvalidArgumentException('دستورکار نهایی‌شده امکان ارجاع یا تغییر مسئول ندارد.');
+        }
+
         if (! $assignee->isActive()) {
             throw new InvalidArgumentException('مسئول تسک باید کاربر فعال باشد.');
         }
@@ -42,7 +46,10 @@ class AssignTaskAction
                 $current->update(['ended_at' => now()]);
             }
 
-            $task->update(['assignee_id' => $assignee->id]);
+            $task->update([
+                'assignee_id' => $assignee->id,
+                'sub_status' => in_array($type, ['handoff', 'referral'], true) ? 'referred' : $task->sub_status,
+            ]);
 
             TaskAssignment::query()->create([
                 'task_id' => $task->id,
