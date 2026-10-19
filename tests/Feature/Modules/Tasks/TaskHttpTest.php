@@ -766,20 +766,20 @@ class TaskHttpTest extends TestCase
         ]);
     }
 
-    public function test_creating_completed_task_sets_completed_at(): void
+    public function test_creating_task_starts_with_automatic_todo_status(): void
     {
         $creator = $this->userWithPermissionScope('tasks.create', 'organization');
 
         $this->actingAs($creator)->post(route('tasks.store'), [
-            'title' => 'Completed Task',
-            'status' => 'completed',
+            'title' => 'Automatically Started Task',
+            'status' => 'todo',
             'priority' => 'normal',
         ])->assertRedirect();
 
-        $task = Task::query()->where('title', 'Completed Task')->firstOrFail();
+        $task = Task::query()->where('title', 'Automatically Started Task')->firstOrFail();
 
-        $this->assertSame('completed', $task->status);
-        $this->assertNotNull($task->completed_at);
+        $this->assertSame('todo', $task->status);
+        $this->assertNull($task->completed_at);
     }
 
     public function test_task_creator_can_update_task(): void
