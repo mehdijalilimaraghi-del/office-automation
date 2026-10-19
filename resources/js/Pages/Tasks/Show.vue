@@ -54,6 +54,7 @@ interface Task {
     title: string;
     description: string | null;
     status: string;
+    sub_status: string | null;
     priority: string;
     review_required: boolean;
     review_status: string;
@@ -146,7 +147,7 @@ const reminderForm = useForm({
 });
 const referralForm = useForm({ assignee_id: '', note: '' });
 const reviewForm = useForm({ note: '' });
-const statusForm = useForm({ status: props.task.status });
+const statusForm = useForm({ status: 'cancelled' });
 const reminderStatusForm = useForm({ status: '' as 'completed' | 'cancelled' | '' });
 const editReminderForm = useForm({ title: '', description: '', remind_at: '' });
 const editingReminderId = ref<number | null>(null);
@@ -227,12 +228,20 @@ const removeExternalContact = (contactId: number): void => {
     submitExternal();
 };
 
+const subStatusLabels: Record<string, string> = {
+    referred: 'ارجاع شده',
+    referral_seen: 'ارجاع مشاهده شده',
+    manager_review: 'در حال بررسی مدیر',
+    returned_for_completion: 'برگشت برای تکمیل',
+};
 const statusLabels: Record<string, string> = {
     todo: 'انجام نشده',
+    observed: 'مشاهده شده',
     in_progress: 'در حال انجام',
     completed: 'تکمیل شده',
-    submitted: 'در انتظار بررسی مدیر',
+    submitted: 'در حال انجام',
     cancelled: 'لغو شده',
+    cannot_continue: 'امکان ادامه وجود ندارد',
 };
 const priorityLabels: Record<string, string> = {
     low: 'کم',
@@ -253,6 +262,8 @@ const statusClasses: Record<string, string> = {
     in_progress: 'bg-blue-50 text-blue-700 ring-blue-200',
     completed: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
     submitted: 'bg-amber-50 text-amber-800 ring-amber-200',
+    observed: 'bg-sky-50 text-sky-700 ring-sky-200',
+    cannot_continue: 'bg-red-50 text-red-700 ring-red-200',
     cancelled: 'bg-red-50 text-red-700 ring-red-200',
 };
 const priorityClasses: Record<string, string> = {
@@ -492,9 +503,10 @@ const updateReminderStatus = (reminderId: number, status: 'completed' | 'cancell
     );
 };
 const formatDateTime = formatPersianDateTime;
+const isFinalized = computed(() => ['completed', 'cancelled', 'cannot_continue'].includes(props.task.status));
 const isReviewLocked = computed(() => props.task.review_status === 'pending');
 const isCurrentAssignee = computed(() => Number(props.task.assignee?.id ?? props.task.assignee_id) === Number(props.currentUserId));
-const canEditTaskContent = computed(() => !isReviewLocked.value && isCurrentAssignee.value);
+const canEditTaskContent = computed(() => !isFinalized.value && !isReviewLocked.value && isCurrentAssignee.value);
 const nextActivity = computed(() => props.task.activities?.find(activity => activity.status === 'pending' && activity.activity_type === 'planned') ?? null);
 const openActivityForm = (activity?: TaskActivity): void => {
     editingActivityId.value = activity?.id ?? null;
@@ -545,18 +557,18 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                     <Link :href="route('tasks.index')" class="text-sm text-muted-foreground hover:text-gray-900">← بازگشت به دستورکارها</Link>
                     <div class="mt-2 flex flex-wrap items-center gap-2">
                         <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">دستورکار #{{ task.id }}</span>
-                        <span class="rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset" :class="statusClasses[task.status] ?? 'bg-gray-100 text-gray-700 ring-gray-200'">{{ statusLabels[task.status] ?? task.status }}</span>
+                        <span class="rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset" :class="statusClasses[task.status] ?? 'bg-gray-100 text-gray-700 ring-gray-200'">{{ statusLabels[task.status] ? (task.status === 'submitted' ? `${statusLabels[task.status]} (${subStatusLabels[task.sub_status ?? 'manager_review']})` : task.sub_status && task.status === 'in_progress' ? `${statusLabels[task.status]} (${subStatusLabels[task.sub_status] ?? task.sub_status})` : statusLabels[task.status]) : task.status }}</span>
                         <span class="rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset" :class="priorityClasses[task.priority] ?? 'bg-gray-100 text-gray-700 ring-gray-200'">اولویت {{ priorityLabels[task.priority] ?? task.priority }}</span>
                     </div>
                     <h2 class="mt-2 text-xl font-semibold text-gray-900">{{ task.title }}</h2>
                     <p class="mt-1 text-sm text-muted-foreground">مدیریت، پیگیری و ثبت سوابق دستورکار</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <button v-if="abilities.submit && ['todo', 'in_progress'].includes(task.status)" type="button" :disabled="reviewForm.processing" class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 disabled:opacity-50" @click="submitForReview">{{ reviewForm.processing ? 'در حال ارسال...' : 'ارسال برای بررسی مدیر' }}</button>
-                    <button v-if="abilities.review && task.status === 'submitted' && task.review_status === 'pending'" type="button" :disabled="reviewForm.processing" class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800 disabled:opacity-50" @click="approveReview">{{ reviewForm.processing ? 'در حال ثبت...' : 'تأیید و تکمیل دستورکار' }}</button>
+                    <button v-if="abilities.submit && !isFinalized && !isReviewLocked && ['todo', 'observed', 'in_progress'].includes(task.status)" type="button" :disabled="reviewForm.processing" class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 disabled:opacity-50" @click="submitForReview">{{ reviewForm.processing ? 'در حال ارسال...' : 'ارسال برای بررسی مدیر' }}</button>
+                    <button v-if="abilities.review && task.review_status === 'pending' && task.sub_status === 'manager_review'" type="button" :disabled="reviewForm.processing" class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800 disabled:opacity-50" @click="approveReview">{{ reviewForm.processing ? 'در حال ثبت...' : 'تأیید و تکمیل دستورکار' }}</button>
                     <button v-if="abilities.review && task.status === 'submitted' && task.review_status === 'pending'" type="button" :disabled="reviewForm.processing" class="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-50" @click="showReturnReviewModal = true">برگشت برای اصلاح</button>
                     <button v-if="abilities.update && canEditTaskContent" type="button" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-800" @click="showEditModal = true">ویرایش</button>
-                    <button v-if="abilities.refer && !isReviewLocked" type="button" class="rounded-lg border bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50" @click="showReferralModal = true">ارجاع دستورکار</button>
+                    <button v-if="abilities.refer && !isFinalized && !isReviewLocked" type="button" class="rounded-lg border bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50" @click="showReferralModal = true">ارجاع دستورکار</button>
                 </div>
             </div>
         </template>
@@ -640,7 +652,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                                     <h3 class="font-semibold">نظرات</h3>
                                     <p class="mt-1 text-xs text-muted-foreground">{{ task.comments?.length ?? 0 }} نظر ثبت شده</p>
                                 </div>
-                                <button v-if="abilities.comment" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="showCommentModal = true">ثبت نظر</button>
+                                <button v-if="abilities.comment && !isFinalized" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="showCommentModal = true">ثبت نظر</button>
                             </div>
                             <div v-if="task.comments?.length" class="space-y-3 p-4">
                                 <article v-for="comment in task.comments" :key="comment.id" class="rounded-lg bg-gray-50 p-3">
@@ -648,7 +660,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                                     <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-2">
                                         <p class="text-xs text-muted-foreground">{{ comment.user?.name ?? '—' }}</p>
                                         <div class="flex gap-2">
-                                            <button v-if="Number(comment.user_id) === Number(currentUserId)" type="button" class="text-xs font-medium text-gray-700 hover:underline" @click="editComment(comment)">ویرایش</button>
+                                            <button v-if="!isFinalized && Number(comment.user_id) === Number(currentUserId)" type="button" class="text-xs font-medium text-gray-700 hover:underline" @click="editComment(comment)">ویرایش</button>
                                             <button v-if="Number(comment.user_id) === Number(currentUserId)" type="button" class="text-xs font-medium text-red-600 hover:underline" @click="deleteComment(comment.id)">حذف</button>
                                         </div>
                                     </div>
@@ -760,10 +772,10 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                         </div>
 </section>
 
-                    <section v-if="abilities.change_status && task.status !== 'submitted' && task.review_status !== 'pending'" class="rounded-xl border bg-card p-5 shadow-sm">
+                    <section v-if="abilities.change_status && !isFinalized && task.review_status !== 'pending'" class="rounded-xl border bg-card p-5 shadow-sm">
                         <h3 class="font-semibold">وضعیت</h3>
                         <form class="mt-3 flex gap-2" @submit.prevent="changeStatus">
-                            <select v-model="statusForm.status" class="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm"><option value="todo">انجام نشده</option><option value="in_progress">در حال انجام</option><option value="cancelled">لغو شده</option></select>
+                            <select v-model="statusForm.status" class="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm"><option value="cancelled">لغو شده</option><option value="cannot_continue">امکان ادامه وجود ندارد</option></select>
                             <button type="submit" :disabled="statusForm.processing" class="rounded-lg border bg-white px-3 text-sm font-medium">ذخیره</button>
                         </form>
                     </section>
