@@ -47,6 +47,7 @@ class Task extends Model
         'title',
         'description',
         'status',
+        'sub_status',
         'priority',
         'review_required',
         'review_status',
@@ -61,6 +62,11 @@ class Task extends Model
         'completed_at',
         'is_active',
     ];
+
+    public function isFinalized(): bool
+    {
+        return in_array($this->status, ['completed', 'cancelled', 'cannot_continue'], true);
+    }
 
     protected function casts(): array
     {
