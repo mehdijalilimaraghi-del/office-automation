@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Tests\Feature\Modules\Tasks;
 
 use App\Models\User;
+use App\Core\Departments\Models\Department;
 use App\Modules\Tasks\Actions\ChangeTaskStatusAction;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskStatusHistory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class TaskStatusHistoryTest extends TestCase
@@ -62,7 +64,7 @@ class TaskStatusHistoryTest extends TestCase
             'priority' => 'normal',
         ]);
 
-        $this->expectException(\\InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
 
         app(ChangeTaskStatusAction::class)->execute(
             task: $task,
