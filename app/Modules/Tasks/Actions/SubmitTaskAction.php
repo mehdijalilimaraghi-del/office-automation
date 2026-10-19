@@ -27,10 +27,6 @@ class SubmitTaskAction
             throw new InvalidArgumentException('فقط مسئول فعلی تسک می‌تواند نتیجه کار را ارسال کند.');
         }
 
-        if (! $task->review_required) {
-            throw new InvalidArgumentException('این تسک نیاز به بررسی و تأیید ندارد.');
-        }
-
         if (! in_array($task->status, ['in_progress', 'todo'], true)) {
             throw new InvalidArgumentException('وضعیت فعلی تسک امکان ارسال برای بررسی را ندارد.');
         }
@@ -44,6 +40,7 @@ class SubmitTaskAction
 
             $task->update([
                 'status' => 'submitted',
+                'review_required' => true,
                 'review_status' => 'pending',
                 'review_requested_at' => now(),
                 'reviewed_by' => null,
