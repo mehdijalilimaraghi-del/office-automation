@@ -594,3 +594,11 @@ Implementation has started for the agreed cross-department project model:
 - Adjusted the comment UI ownership check to use the persisted `comments.user_id` field rather than the nested `comments.user.id` relation. This ensures managers and other viewers see edit/delete controls for their own comments even if the nested user relation is not serialized as expected.
 - Backend ownership enforcement remains unchanged: only the authenticated comment author may update or delete a comment.
 - Commit: `9466357a6b5035157736fc3e673606b1724da3bb` on `development`. Frontend build and manager-side verification are pending. Do not merge to `master` until Version 2 is complete.
+
+
+## Task comment controls — 2026-10-19 (root-cause fix)
+
+- Root cause confirmed in `resources/js/Pages/Tasks/Show.vue`: the edit/delete buttons were wrapped in `abilities.update && canEditTaskContent`, which hides comment controls from managers who are not the assignee or when task content is locked for review. Comment ownership is independent of task-content edit permission.
+- Removed that unrelated wrapper; each control is shown only when `comment.user_id` matches `currentUserId`. Both edit and delete now use the same persisted author ID.
+- Backend author-only enforcement remains unchanged.
+- **Branch:** `development`. Frontend build and manager-side manual verification are pending. Keep `master` unchanged until V2 is complete and explicitly approved.
