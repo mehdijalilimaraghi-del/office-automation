@@ -395,9 +395,8 @@ class TaskController extends Controller
             'body' => ['required', 'string', 'max:10000'],
         ]);
 
-        $comment->update(['body' => $data['body']]);
-
         abort_if($task->isFinalized(), 403, 'نظر دستورکار نهایی‌شده قابل تغییر نیست.');
+        $comment->update(['body' => $data['body']]);
 
         return back()->with('success', 'نظر با موفقیت ویرایش شد.');
     }
@@ -465,6 +464,10 @@ class TaskController extends Controller
             'started_at' => $data['started_at'] ?? null,
             'completed_at' => $data['completed_at'] ?? null,
         ]);
+
+        if (in_array($task->status, ['todo', 'observed'], true)) {
+            $task->update(['status' => 'in_progress', 'sub_status' => null]);
+        }
 
         return back()->with('success', 'فعالیت انجام‌شده با موفقیت ثبت شد.');
     }
