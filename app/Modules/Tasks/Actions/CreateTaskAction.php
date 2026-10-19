@@ -127,9 +127,9 @@ class CreateTaskAction
             $this->validateDates($data);
             $this->externalPartyService->validateTaskContext($data);
 
-            $reviewRequired = (bool) ($data['review_required'] ?? false);
+            $reviewRequired = true;
             $initialStatus = $data['status'] ?? 'todo';
-            if ($reviewRequired && in_array($initialStatus, ['completed', 'cancelled'], true)) {
+            if (in_array($initialStatus, ['completed', 'cancelled'], true)) {
                 throw new InvalidArgumentException('دستورکار نیازمند بررسی باید ابتدا انجام شود و سپس برای بررسی مدیر ارسال گردد.');
             }
 
