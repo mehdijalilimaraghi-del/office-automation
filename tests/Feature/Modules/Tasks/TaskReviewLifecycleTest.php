@@ -185,6 +185,27 @@ class TaskReviewLifecycleTest extends TestCase
             ->execute($task, 'submitted', $actor);
     }
 
+    public function test_pending_review_task_cannot_be_changed_manually(): void
+    {
+        $actor = User::factory()->create(['status' => 'active']);
+
+        $task = Task::query()->create([
+            'title' => 'Pending review task',
+            'status' => 'submitted',
+            'priority' => 'normal',
+            'review_required' => true,
+            'review_status' => 'pending',
+            'review_requested_at' => now(),
+            'assignee_id' => $actor->id,
+            'created_by' => $actor->id,
+        ]);
+
+        $this->expectException(\\InvalidArgumentException::class);
+
+        app(\\App\\Modules\\Tasks\\Actions\\ChangeTaskStatusAction::class)
+            ->execute($task, 'in_progress', $actor);
+    }
+
     public function test_completed_task_cannot_be_reopened_through_status_change(): void
     {
         $actor = User::factory()->create(['status' => 'active']);
