@@ -295,6 +295,8 @@ class TaskController extends Controller
 
         if (in_array($task->status, ['todo', 'observed'], true)) {
             $task->update(['status' => 'in_progress', 'sub_status' => null]);
+        } elseif ($task->sub_status !== null && $task->sub_status !== 'manager_review') {
+            $task->update(['sub_status' => null]);
         }
 
         return back()->with('success', 'فعالیت با موفقیت ثبت شد.');
@@ -317,6 +319,8 @@ class TaskController extends Controller
 
         if (in_array($task->status, ['todo', 'observed'], true)) {
             $task->update(['status' => 'in_progress', 'sub_status' => null]);
+        } elseif ($task->sub_status !== null && $task->sub_status !== 'manager_review') {
+            $task->update(['sub_status' => null]);
         }
 
         return back()->with('success', 'فعالیت انجام شد و در گزارش فعالیت ثبت شد.');
@@ -467,6 +471,8 @@ class TaskController extends Controller
 
         if (in_array($task->status, ['todo', 'observed'], true)) {
             $task->update(['status' => 'in_progress', 'sub_status' => null]);
+        } elseif ($task->sub_status !== null && $task->sub_status !== 'manager_review') {
+            $task->update(['sub_status' => null]);
         }
 
         return back()->with('success', 'فعالیت انجام‌شده با موفقیت ثبت شد.');
