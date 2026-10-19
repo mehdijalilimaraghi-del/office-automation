@@ -567,3 +567,8 @@ Implementation has started for the agreed cross-department project model:
 - Upload behavior, accepted file types, and existing authorization visibility remain unchanged.
 - **Branch:** `development`. Local frontend production build and manual hover/focus/upload acceptance are pending; keep `master` unchanged.
 
+## Frontend Task type fix — 2026-10-19
+
+- Fixed the TypeScript build error in `resources/js/Pages/Tasks/Show.vue` by declaring `assignee_id: number | null` on the frontend `Task` interface, matching the existing assignee fallback used by the current-assignee check.
+- Commit: `4e62fdb70e7c649a45111df10251f753461faca2`.
+- **Branch:** `development`. Run `npm run build` and the focused task review tests locally. Keep `master` unchanged; promotion is deferred until Version 2 is complete and explicitly approved.
