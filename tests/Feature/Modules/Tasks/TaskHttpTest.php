@@ -826,7 +826,7 @@ class TaskHttpTest extends TestCase
             'status' => 'cancelled',
         ]);
 
-        $this->assertNotNull(
+        $this->assertNull(
             $task->refresh()->completed_at
         );
     }
