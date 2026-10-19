@@ -62,6 +62,7 @@ class SubmitTaskAction
                 'from_status' => $fromStatus,
                 'to_status' => 'in_progress',
                 'changed_by' => $actor->id,
+                'note' => 'ارسال برای بررسی مدیر؛ در حال بررسی مدیر',
                 'changed_at' => now(),
             ]);
 
