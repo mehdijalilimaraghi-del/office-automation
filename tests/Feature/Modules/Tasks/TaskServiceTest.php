@@ -306,7 +306,7 @@ class TaskServiceTest extends TestCase
         ]);
     }
 
-    public function test_task_status_can_be_changed_to_completed(): void
+    public function test_task_cannot_be_completed_through_manual_status_change(): void
     {
         $creator = User::factory()->create();
         $project = $this->createProject([], $creator);
