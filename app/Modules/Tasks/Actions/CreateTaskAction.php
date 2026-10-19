@@ -129,8 +129,8 @@ class CreateTaskAction
 
             $reviewRequired = true;
             $initialStatus = $data['status'] ?? 'todo';
-            if (in_array($initialStatus, ['completed', 'cancelled'], true)) {
-                throw new InvalidArgumentException('دستورکار نیازمند بررسی باید ابتدا انجام شود و سپس برای بررسی مدیر ارسال گردد.');
+            if ($initialStatus !== 'todo') {
+                throw new InvalidArgumentException('وضعیت اولیه دستورکار به‌صورت خودکار «انجام نشده» تعیین می‌شود.');
             }
 
             $task = Task::query()->create([
@@ -141,7 +141,7 @@ class CreateTaskAction
                 'external_department_id' => $data['external_department_id'] ?? null,
                 'title' => $data['title'],
                 'description' => $data['description'] ?? null,
-                'status' => $data['status'] ?? 'todo',
+                'status' => 'todo',
                 'priority' => $data['priority'] ?? 'normal',
                 'review_required' => $reviewRequired,
                 'review_status' => $reviewRequired ? 'not_started' : 'not_required',
@@ -149,7 +149,7 @@ class CreateTaskAction
                 'created_by' => $creator->id,
                 'start_date' => $data['start_date'] ?? null,
                 'due_date' => $data['due_date'] ?? null,
-                'completed_at' => ($data['status'] ?? 'todo') === 'completed' ? now() : null,
+                'completed_at' => null,
                 'is_active' => $data['is_active'] ?? true,
             ]);
 
