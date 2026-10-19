@@ -91,7 +91,7 @@ class StoreTaskRequest extends FormRequest
             'external_contact_id' => ['nullable', 'integer', 'exists:external_contacts,id'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'status' => ['sometimes', Rule::in(['todo', 'in_progress', 'completed', 'cancelled'])],
+            'status' => ['sometimes', Rule::in(['todo'])],
             'priority' => ['sometimes', Rule::in(['low', 'normal', 'high', 'urgent'])],
             'review_required' => ['sometimes', 'boolean'],
             'assignee_id' => ['nullable', 'integer', Rule::exists('users', 'id')->where(fn ($query) => $query->where('status', 'active'))],
