@@ -148,9 +148,9 @@ class TaskPolicy
 
     public function submit(User $user, Task $task): bool
     {
-        return (int) $task->assignee_id === (int) $user->id
-            && $task->review_required
-            && $this->taskAccessService->canAccess($user, $task, 'tasks.submit');
+        return $user->isActive()
+            && (int) $task->assignee_id === (int) $user->id
+            && ! in_array($task->status, ['submitted', 'completed', 'cancelled'], true);
     }
 
     public function review(User $user, Task $task): bool
@@ -165,7 +165,12 @@ class TaskPolicy
 
     public function changeStatus(User $user, Task $task): bool
     {
-        return $this->taskAccessService->canAccess($user, $task, 'tasks.change_status');
+        if (! $this->taskAccessService->canAccess($user, $task, 'tasks.change_status')) {
+            return false;
+        }
+
+        return (int) $task->department?->manager_id === (int) $user->id
+            || (int) $task->project?->manager_id === (int) $user->id;
     }
 
     public function delete(User $user, Task $task): bool
