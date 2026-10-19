@@ -12,6 +12,10 @@ class CreateTaskCommentAction
 {
     public function execute(Task $task, User $author, string $body): TaskComment
     {
+        if ($task->isFinalized()) {
+            throw new \\InvalidArgumentException('برای دستورکار نهایی‌شده امکان ثبت نظر وجود ندارد.');
+        }
+
         return $task->comments()->create([
             'user_id' => $author->id,
             'body' => $body,
