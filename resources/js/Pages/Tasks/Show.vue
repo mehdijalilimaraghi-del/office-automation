@@ -462,7 +462,7 @@ const returnFromReview = (): void => {
 
     reviewForm.patch(route('tasks.return', props.task.id), {
         preserveScroll: true,
-        onSuccess: () => reviewForm.reset(),
+        onSuccess: () => { reviewForm.reset(); showReturnReviewModal.value = false; },
     });
 };
 const changeStatus = (): void => {
