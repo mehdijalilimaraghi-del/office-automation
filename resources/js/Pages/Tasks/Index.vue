@@ -529,9 +529,10 @@ const handleSectionChange = (): void => {
                                     <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
                                         :class="{
                                             'bg-gray-100 text-gray-700': task.status === 'todo',
+                                            'bg-sky-50 text-sky-700': task.status === 'observed',
                                             'bg-blue-50 text-blue-700': task.status === 'in_progress',
                                             'bg-green-50 text-green-700': task.status === 'completed',
-                                            'bg-red-50 text-red-700': task.status === 'cancelled',
+                                            'bg-red-50 text-red-700': ['cancelled', 'cannot_continue'].includes(task.status),
                                         }">
                                         {{ statusLabels[task.status] ? (task.sub_status && !['completed', 'cancelled', 'cannot_continue'].includes(task.status) ? `${statusLabels[task.status]} (${subStatusLabels[task.sub_status] ?? task.sub_status})` : statusLabels[task.status]) : task.status }}
                                     </span>
