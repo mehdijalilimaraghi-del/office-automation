@@ -12,6 +12,16 @@
 - No routes, authorization rules, or membership persistence logic were changed.
 - **Branch:** `development`. **Validation pending:** run frontend production build and manually verify both actions on the user list.
 
+## 2026-10-19 — Enforce manager-approved task completion
+
+- Every newly created task now requires manager review; it cannot be created directly as completed or cancelled.
+- The assigned active user can submit their task for review without requiring the separate `tasks.submit` role permission. Backend policy still restricts submission to the task's current assignee.
+- The review workflow is visible for all tasks. Submission moves the task to `submitted/pending` and marks review as required, including older tasks created before this rule.
+- Manual status changes are restricted to users with the existing status-change permission who are also the task's department or project manager. Assignees cannot change task status directly.
+- Completion remains approval-driven: the manager's approval action changes the task to completed; direct status changes cannot bypass that lifecycle.
+- Added/updated regression coverage for an assigned user without `tasks.submit` permission submitting a task.
+- **Branch:** `development`. **Validation pending:** run `TaskReviewLifecycleTest` and `npm run build`; do not merge to `master` until user validation.
+
 ## 2026-10-19 — Complete task review workflow in detail UI
 
 - Added the missing «ارسال برای بررسی مدیر» action for the assigned user on review-required tasks in `resources/js/Pages/Tasks/Show.vue`, using the existing `tasks.submit` route and permission.
