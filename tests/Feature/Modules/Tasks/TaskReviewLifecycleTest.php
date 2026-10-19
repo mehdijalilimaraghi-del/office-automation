@@ -250,9 +250,9 @@ class TaskReviewLifecycleTest extends TestCase
             ]);
 
             try {
-                app(\\App\\Modules\\Tasks\\Actions\\ChangeTaskStatusAction::class)->execute($task, 'in_progress', $actor);
+                app(\App\Modules\Tasks\Actions\ChangeTaskStatusAction::class)->execute($task, 'in_progress', $actor);
                 $this->fail('Finalized task accepted a status change.');
-            } catch (\\InvalidArgumentException $exception) {
+            } catch (\InvalidArgumentException $exception) {
                 $this->assertStringContainsString('نهایی‌شده', $exception->getMessage());
             }
         }
