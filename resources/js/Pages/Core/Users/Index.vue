@@ -656,6 +656,8 @@ function currentUserId(): number | null {
                     </div>
                 </form>
             </div>
+        </div>
+
         <div v-if="membershipUser" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
             <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
                 <div class="flex items-center justify-between">
@@ -680,8 +682,6 @@ function currentUserId(): number | null {
                     <button type="button" :disabled="membershipForm.processing" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50" @click="submitMembership">{{ membershipForm.processing ? 'در حال ذخیره...' : 'ذخیره عضویت' }}</button>
                 </div>
             </div>
-        </div>
-
         </div>
     </AuthenticatedLayout>
 </template>
