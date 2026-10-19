@@ -20,6 +20,7 @@ interface TaskActivity {
     status: 'pending' | 'completed';
     activity_type: 'planned' | 'logged';
     sequence: number;
+    assignee_id: number | null;
     assignee: User | null;
     creator: User | null;
     assignments: TaskAssignment[];
@@ -553,7 +554,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                     <button v-if="abilities.submit && ['todo', 'in_progress'].includes(task.status)" type="button" :disabled="reviewForm.processing" class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 disabled:opacity-50" @click="submitForReview">{{ reviewForm.processing ? 'در حال ارسال...' : 'ارسال برای بررسی مدیر' }}</button>
                     <button v-if="abilities.review && task.status === 'submitted' && task.review_status === 'pending'" type="button" :disabled="reviewForm.processing" class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800 disabled:opacity-50" @click="approveReview">{{ reviewForm.processing ? 'در حال ثبت...' : 'تأیید و تکمیل دستورکار' }}</button>
                     <button v-if="abilities.review && task.status === 'submitted' && task.review_status === 'pending'" type="button" :disabled="reviewForm.processing" class="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-50" @click="showReturnReviewModal = true">برگشت برای اصلاح</button>
-                    <button v-if="abilities.update && !isReviewLocked" type="button" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-800" @click="showEditModal = true">ویرایش</button>
+                    <button v-if="abilities.update && canEditTaskContent" type="button" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-800" @click="showEditModal = true">ویرایش</button>
                     <button v-if="abilities.refer && !isReviewLocked" type="button" class="rounded-lg border bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50" @click="showReferralModal = true">ارجاع دستورکار</button>
                 </div>
             </div>
@@ -603,7 +604,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                         <div v-if="loggedActivities.length === 0" class="p-8 text-center text-sm text-muted-foreground">هنوز فعالیت انجام‌شده‌ای ثبت نشده است.</div>
                         <div v-if="loggedActivities.length" class="divide-y">
                             <article v-for="(item, index) in loggedActivities" :key="'work-'+item.id" class="p-5 sm:p-6">
-                                <div class="flex flex-wrap items-start justify-between gap-4"><div class="flex min-w-0 flex-1 gap-3"><div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-xs font-semibold text-emerald-700">{{ index + 1 }}</div><div class="min-w-0 flex-1"><div class="flex justify-between gap-3"><h4 class="font-medium">{{ item.title }}</h4><time class="text-xs text-muted-foreground">{{ formatDateTime(item.completed_at ?? item.created_at) }}</time></div><p v-if="item.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ item.description }}</p><p v-if="item.completed_by?.name" class="mt-2 text-xs text-muted-foreground">ثبت توسط {{ item.completed_by.name }}</p></div></div><div v-if="abilities.update" class="flex shrink-0 gap-2"><button type="button" class="rounded-lg border px-3 py-2 text-sm" @click="editWorkLog(item)">ویرایش</button><button type="button" class="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600" @click="deleteWorkLog(item.id)">حذف</button></div></div>
+                                <div class="flex flex-wrap items-start justify-between gap-4"><div class="flex min-w-0 flex-1 gap-3"><div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-xs font-semibold text-emerald-700">{{ index + 1 }}</div><div class="min-w-0 flex-1"><div class="flex justify-between gap-3"><h4 class="font-medium">{{ item.title }}</h4><time class="text-xs text-muted-foreground">{{ formatDateTime(item.completed_at ?? item.created_at) }}</time></div><p v-if="item.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ item.description }}</p><p v-if="item.completed_by?.name" class="mt-2 text-xs text-muted-foreground">ثبت توسط {{ item.completed_by.name }}</p></div></div><div v-if="abilities.update && canEditTaskContent" class="flex shrink-0 gap-2"><button type="button" class="rounded-lg border px-3 py-2 text-sm" @click="editWorkLog(item)">ویرایش</button><button type="button" class="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600" @click="deleteWorkLog(item.id)">حذف</button></div></div>
                             </article>
                         </div>
                     </section>
@@ -706,7 +707,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                             <div v-for="link in task.documents" :key="link.id" class="p-4"><p class="truncate text-sm font-medium">{{ link.document?.title ?? 'سند' }}</p><p v-if="link.document?.latest_version" class="mt-1 text-xs text-muted-foreground">{{ link.document.latest_version.original_name }} · {{ formatFileSize(link.document.latest_version.size) }}</p><div class="mt-2 flex flex-wrap items-center gap-3"><a v-if="link.document" :href="route('documents.download', link.document.id)" class="inline-block text-xs font-medium text-gray-700 hover:underline">دریافت فایل</a><button v-if="canEditTaskContent && abilities.documents_create && link.document" type="button" class="text-xs font-medium text-red-600 hover:underline" @click="deleteTaskDocument(link.document.id)">حذف پیوست</button></div></div>
                         </div>
                         <div v-else class="p-5 text-center text-sm text-muted-foreground">پیوستی وجود ندارد.</div>
-                        <form v-if="abilities.documents_create" class="border-t p-4 space-y-3" @submit.prevent="submitDocument">
+                        <form v-if="abilities.documents_create && canEditTaskContent" class="border-t p-4 space-y-3" @submit.prevent="submitDocument">
                             <input v-model="documentForm.title" required maxlength="255" class="h-10 w-full rounded-lg border bg-background px-3 text-sm" placeholder="عنوان فایل" />
                             <input ref="documentFileInput" type="file" required accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" class="block w-full rounded-lg border bg-background px-3 py-2 text-sm" @change="handleDocumentFileChange" />
                             <button type="submit" :disabled="documentForm.processing" class="w-full rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50">{{ documentForm.processing ? 'در حال بارگذاری...' : 'پیوست فایل' }}</button>
@@ -719,7 +720,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                                 <h3 class="font-semibold">ارتباط و پیگیری بیرونی</h3>
                                 <p class="mt-1 text-xs text-muted-foreground">سازمان، واحد یا شخص خارج از شرکت مرتبط با این دستورکار.</p>
                             </div>
-                            <button v-if="abilities.update" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="openExternalModal">
+                            <button v-if="abilities.update && canEditTaskContent" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="openExternalModal">
                                 افزودن ارتباط
                             </button>
                         </div>
@@ -741,7 +742,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                                             <p v-if="contact.email"><span class="font-medium text-gray-700">ایمیل:</span> {{ contact.email }}</p>
                                         </div>
                                     </div>
-                                    <div v-if="abilities.update" class="mt-4 flex gap-2 border-t pt-3">
+                                    <div v-if="abilities.update && canEditTaskContent" class="mt-4 flex gap-2 border-t pt-3">
                                         <button type="button" class="rounded-md border px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-white" @click="editExternalContact(contact.id)">ویرایش ارتباط</button>
                                         <button type="button" class="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50" @click="removeExternalContact(contact.id)">حذف ارتباط</button>
                                     </div>
