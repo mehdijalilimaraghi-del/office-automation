@@ -133,6 +133,7 @@ class TaskController extends Controller
     public function update(UpdateTaskRequest $request, Task $task): RedirectResponse
     {
         Gate::authorize('update', $task);
+        $this->assertTaskContentEditable($request, $task);
 
         try {
             $this->taskService->update(task: $task, data: $request->validated());
@@ -146,6 +147,7 @@ class TaskController extends Controller
     public function updateExternalParties(Request $request, Task $task): RedirectResponse
     {
         Gate::authorize('update', $task);
+        $this->assertTaskContentEditable($request, $task);
 
         $data = $request->validate([
             'external_organization_id' => ['nullable', 'integer', 'exists:external_organizations,id'],
@@ -237,6 +239,7 @@ class TaskController extends Controller
     public function refer(ReferTaskRequest $request, Task $task): RedirectResponse
     {
         Gate::authorize('refer', $task);
+        $this->assertTaskContentEditable($request, $task);
 
         $assignee = User::query()->findOrFail($request->validated()['assignee_id']);
 
@@ -333,6 +336,7 @@ class TaskController extends Controller
     public function updateParticipants(UpdateTaskParticipantsRequest $request, Task $task): RedirectResponse
     {
         Gate::authorize('update', $task);
+        $this->assertTaskContentEditable($request, $task);
 
         $userIds = array_values(array_unique(array_map('intval', $request->validated()['user_ids'])));
 
@@ -471,6 +475,7 @@ class TaskController extends Controller
             $status === 'completed' ? 'completeReminder' : 'cancelReminder',
             [$task, $reminder],
         );
+        abort_if($task->review_status === 'pending', 403, 'یادآوری این دستورکار در زمان بررسی قابل تغییر نیست.');
 
         try {
             $this->taskService->updateReminderStatus(
