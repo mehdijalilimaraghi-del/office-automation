@@ -42,7 +42,7 @@ class TaskActivityHttpTest extends TestCase
         ]);
     }
 
-    public function test_user_without_comment_permission_is_forbidden(): void
+    public function test_user_without_task_view_access_is_forbidden(): void
     {
         $user = User::factory()->create(['status' => 'active']);
         $owner = User::factory()->create(['status' => 'active']);
