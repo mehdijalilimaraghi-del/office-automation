@@ -184,7 +184,8 @@ class WorkflowServiceTest extends TestCase
         Storage::disk(config('filesystems.default'))->assertExists($document->versions()->firstOrFail()->path);
 
         $nextTask->update([
-            'status' => 'submitted',
+            'status' => 'in_progress',
+            'sub_status' => 'manager_review',
             'review_status' => 'pending',
             'review_requested_at' => now(),
         ]);
