@@ -806,7 +806,7 @@ class TaskHttpTest extends TestCase
         ]);
     }
 
-    public function test_assignee_can_change_task_status(): void
+    public function test_project_manager_assignee_can_cancel_task(): void
     {
         $assignee = $this->userWithPermission('tasks.change_status');
         $project = $this->createProject($assignee);
@@ -815,7 +815,7 @@ class TaskHttpTest extends TestCase
         $response = $this->actingAs($assignee)->patch(
             route('tasks.change-status', $task),
             [
-                'status' => 'completed',
+                'status' => 'cancelled',
             ]
         );
 
@@ -823,7 +823,7 @@ class TaskHttpTest extends TestCase
 
         $this->assertDatabaseHas('tasks', [
             'id' => $task->id,
-            'status' => 'completed',
+            'status' => 'cancelled',
         ]);
 
         $this->assertNotNull(
