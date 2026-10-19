@@ -6,13 +6,11 @@ use App\Modules\Tasks\Models\Task;
 use App\Models\User;
 use App\Core\Audit\Contracts\AuditServiceInterface;
 use App\Modules\Tasks\Models\TaskStatusHistory;
-use App\Modules\Tasks\Services\TaskDependencyService;
 use InvalidArgumentException;
 
 class ChangeTaskStatusAction
 {
     public function __construct(
-        private readonly TaskDependencyService $dependencyService,
         private readonly AuditServiceInterface $audit,
     ) {}
 
