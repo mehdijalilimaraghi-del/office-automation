@@ -18,10 +18,10 @@ class ChangeTaskStatusAction
 
     private const ALLOWED_STATUSES = [
         'todo',
+        'observed',
         'in_progress',
-        'completed',
         'cancelled',
-        'submitted',
+        'cannot_continue',
     ];
 
     public function execute(
@@ -35,20 +35,28 @@ class ChangeTaskStatusAction
             );
         }
 
-        if ($status === 'submitted') {
-            throw new InvalidArgumentException('ارسال تسک برای بررسی فقط از مسیر ارسال نتیجه کار امکان‌پذیر است.');
+        if (in_array($status, ['completed', 'submitted'], true)) {
+            throw new InvalidArgumentException('تکمیل فقط از مسیر تأیید مدیر و ارسال برای بررسی از مسیر ارسال نتیجه کار امکان‌پذیر است.');
         }
 
         if ($task->review_required && $task->review_status === 'pending') {
             throw new InvalidArgumentException('تا تعیین تکلیف مدیر، وضعیت دستورکار در انتظار بررسی قابل تغییر نیست.');
         }
 
-        if (in_array($task->status, ['completed', 'cancelled'], true) && $status !== $task->status) {
-            throw new InvalidArgumentException('تسک نهایی‌شده امکان تغییر وضعیت ندارد.');
+        if ($task->isFinalized()) {
+            throw new InvalidArgumentException('دستورکار نهایی‌شده امکان هیچ تغییری ندارد.');
         }
 
-        if ($status === 'completed' && ($task->status !== 'submitted' || $task->review_status !== 'approved')) {
-            throw new InvalidArgumentException('این تسک باید ابتدا توسط بررسی‌کننده تأیید شود.');
+        if ($task->review_status === 'pending') {
+            throw new InvalidArgumentException('تا تعیین تکلیف مدیر، وضعیت دستورکار قابل تغییر نیست.');
+        }
+
+        if (in_array($status, ['cancelled', 'cannot_continue'], true)) {
+            $isDepartmentManager = (int) $task->department?->manager_id === (int) $actor->id;
+            $isProjectManager = (int) $task->project?->manager_id === (int) $actor->id;
+            if (! $isDepartmentManager && ! $isProjectManager) {
+                throw new InvalidArgumentException('فقط مدیر واحد یا مدیر پروژه می‌تواند وضعیت نهایی را تعیین کند.');
+            }
         }
 
         if ($status === 'in_progress' && ! $this->dependencyService->canStart($task)) {
@@ -58,6 +66,9 @@ class ChangeTaskStatusAction
         $fromStatus = $task->status;
 
         $task->status = $status;
+        if (in_array($status, ['cancelled', 'cannot_continue'], true)) {
+            $task->sub_status = null;
+        }
 
         if ($status === 'completed') {
             $task->completed_at ??= now();
