@@ -8,7 +8,7 @@
 - Added a real seven-day trend based on visible tasks' creation and completion timestamps, and surfaced team overdue/review/completion metrics separately from personal metrics.
 - Kept existing backend task-scope filtering in place; the dashboard does not treat frontend visibility as authorization.
 - Changed `/` to redirect guests directly to login and authenticated users to `/dashboard`, removing the extra click through the standalone welcome page. The login page itself remains the existing username/password screen.
-- Added dashboard feature assertions for the personal/team payload and root routing.
+- Added dashboard feature assertions for the personal/team payload and root routing. Overdue styling is driven by server-calculated state to avoid browser timezone discrepancies.
 - **Branch:** `development`. **Validation pending:** pull changes, run the focused DashboardTest and frontend production build, then manually verify with both an ordinary user and a department/project manager. No tests or build have been run by the assistant. Keep `master` unchanged.
 
 
