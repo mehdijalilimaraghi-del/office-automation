@@ -412,6 +412,7 @@ class TaskController extends Controller
         ]);
 
         abort_if($task->isFinalized(), 403, 'نظر دستورکار نهایی‌شده قابل تغییر نیست.');
+        abort_if($task->review_status === 'pending', 403, 'تا تعیین تکلیف مدیر، نظر قابل تغییر نیست.');
         $comment->update(['body' => $data['body']]);
 
         return back()->with('success', 'نظر با موفقیت ویرایش شد.');
@@ -424,6 +425,7 @@ class TaskController extends Controller
         abort_unless((int) $comment->user_id === (int) $request->user()->id, 403);
 
         abort_if($task->isFinalized(), 403, 'نظر دستورکار نهایی‌شده قابل تغییر نیست.');
+        abort_if($task->review_status === 'pending', 403, 'تا تعیین تکلیف مدیر، نظر قابل تغییر نیست.');
         $comment->delete();
 
         return back()->with('success', 'نظر با موفقیت حذف شد.');
