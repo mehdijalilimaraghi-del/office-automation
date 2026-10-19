@@ -11,6 +11,10 @@ class DeleteTaskAction
 {
     public function execute(Task $task): void
     {
+        if ($task->isFinalized()) {
+            throw new \\InvalidArgumentException('دستورکار نهایی‌شده قابل حذف نیست.');
+        }
+
         DB::transaction(function () use ($task): void {
             $task->delete();
         });
