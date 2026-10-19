@@ -146,6 +146,7 @@ class TaskPolicy
     public function cancelReminder(User $user, Task $task, TaskReminder $reminder): bool
     {
         return ! $task->isFinalized()
+            && $task->review_status !== 'pending'
             && (int) $reminder->task_id === (int) $task->id
             && in_array((int) $user->id, [(int) $reminder->user_id, (int) $reminder->created_by], true)
             && $this->taskAccessService->canAccess($user, $task, 'tasks.view');
