@@ -127,6 +127,12 @@ class CreateTaskAction
             $this->validateDates($data);
             $this->externalPartyService->validateTaskContext($data);
 
+            $reviewRequired = (bool) ($data['review_required'] ?? false);
+            $initialStatus = $data['status'] ?? 'todo';
+            if ($reviewRequired && in_array($initialStatus, ['completed', 'cancelled'], true)) {
+                throw new InvalidArgumentException('دستورکار نیازمند بررسی باید ابتدا انجام شود و سپس برای بررسی مدیر ارسال گردد.');
+            }
+
             $task = Task::query()->create([
                 'project_id' => $project?->id,
                 'section_id' => $section?->id,
@@ -137,8 +143,8 @@ class CreateTaskAction
                 'description' => $data['description'] ?? null,
                 'status' => $data['status'] ?? 'todo',
                 'priority' => $data['priority'] ?? 'normal',
-                'review_required' => (bool) ($data['review_required'] ?? false),
-                'review_status' => ($data['review_required'] ?? false) ? 'not_started' : 'not_required',
+                'review_required' => $reviewRequired,
+                'review_status' => $reviewRequired ? 'not_started' : 'not_required',
                 'assignee_id' => $assignee?->id,
                 'created_by' => $creator->id,
                 'start_date' => $data['start_date'] ?? null,
