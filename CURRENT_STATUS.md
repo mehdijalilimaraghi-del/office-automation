@@ -615,3 +615,11 @@ Implementation has started for the agreed cross-department project model:
 - Added/updated task review, service and status-history tests for main/sub-status behavior, manager-only terminal transitions, and rejection of direct completion. Timeline history now records automatic view, manager-review and return notes.
 - The UI hides comment edit/delete, activity, reminder, referral, attachment, content-edit, and status mutation controls for finalized tasks; the server independently rejects those mutations.
 - **Branch:** `development`. **Validation pending:** run `php artisan migrate`, focused task lifecycle/review/HTTP tests, the full backend test suite and `npm run build`; manually verify automatic statuses, manager review/return/approval, final-state locking, and existing data migration. No test result is claimed yet. Keep `master` unchanged until Version 2 is complete and explicitly approved.
+
+## Task lifecycle regression-test alignment — 2026-10-19
+
+- Updated notification and workflow review fixtures to use the current review state: main status `in_progress`, sub-status `manager_review`, and review status `pending`.
+- Updated the task status-scope HTTP test to submit a valid manager-only terminal status so it exercises authorization rather than failing earlier in request validation.
+- Updated task creation coverage to assert that new tasks start in the automatic `todo` state, and adjusted status-policy coverage to reflect that an assignee without manager responsibility cannot manually change task status.
+- Updated the HTTP status test to cover manager-authorized cancellation rather than direct completion; cancellation does not set `completed_at`.
+- **Validation pending:** these are source/test updates committed to `development`; rerun the five affected test files and then the full Laravel suite. No local test run was performed by this update. Keep `master` unchanged.
