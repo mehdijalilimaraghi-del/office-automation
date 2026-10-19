@@ -148,7 +148,8 @@ class WorkflowServiceTest extends TestCase
         );
 
         $firstTask->update([
-            'status' => 'submitted',
+            'status' => 'in_progress',
+            'sub_status' => 'manager_review',
             'review_status' => 'pending',
             'review_requested_at' => now(),
         ]);
