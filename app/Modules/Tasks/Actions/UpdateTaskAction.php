@@ -19,6 +19,10 @@ class UpdateTaskAction
         Task $task,
         array $data
     ): Task {
+        if ($task->isFinalized()) {
+            throw new InvalidArgumentException('دستورکار نهایی‌شده امکان ویرایش ندارد.');
+        }
+
         return DB::transaction(function () use ($task, $data): Task {
             $startDate = $data['start_date']
             ?? $task->start_date?->format('Y-m-d');
