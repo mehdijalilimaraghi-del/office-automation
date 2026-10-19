@@ -39,6 +39,10 @@ class ChangeTaskStatusAction
             throw new InvalidArgumentException('ارسال تسک برای بررسی فقط از مسیر ارسال نتیجه کار امکان‌پذیر است.');
         }
 
+        if ($task->review_required && $task->review_status === 'pending') {
+            throw new InvalidArgumentException('تا تعیین تکلیف مدیر، وضعیت دستورکار در انتظار بررسی قابل تغییر نیست.');
+        }
+
         if (in_array($task->status, ['completed', 'cancelled'], true) && $status !== $task->status) {
             throw new InvalidArgumentException('تسک نهایی‌شده امکان تغییر وضعیت ندارد.');
         }
