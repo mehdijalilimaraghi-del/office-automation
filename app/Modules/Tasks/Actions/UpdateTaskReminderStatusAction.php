@@ -20,6 +20,10 @@ class UpdateTaskReminderStatusAction
             throw new InvalidArgumentException('یادآوری دستورکار نهایی‌شده قابل تغییر نیست.');
         }
 
+        if ($reminder->task?->review_status === 'pending') {
+            throw new InvalidArgumentException('تا تعیین تکلیف مدیر، یادآوری قابل تغییر نیست.');
+        }
+
         if (! in_array($status, ['completed', 'cancelled'], true)) {
             throw new InvalidArgumentException('وضعیت یادآور نامعتبر است.');
         }
