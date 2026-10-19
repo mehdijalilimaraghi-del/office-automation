@@ -12,6 +12,16 @@
 - No routes, authorization rules, or membership persistence logic were changed.
 - **Branch:** `development`. **Validation pending:** run frontend production build and manually verify both actions on the user list.
 
+## 2026-10-19 — Lock task content during manager review and protect attachments
+
+- While a task is submitted and awaiting manager review, task-content actions are locked for everyone; only the manager's approve/return actions remain available.
+- The review workflow copy now simply says the task is awaiting manager review; it no longer tells users not to change status manually.
+- Activity create/complete/edit/delete, work-log changes, comments, reminders, task edits, referral/participants and task attachments are restricted server-side to the current assignee and blocked while review is pending.
+- The task page hides those mutation controls while pending and does not offer activity creation/editing to the manager.
+- Added a task-specific attachment deletion route; the current assignee can delete an attachment only outside pending review.
+- Removed the separate `tasks.submit` route middleware so the active assignee's policy authorization can grant submission without an extra permission.
+- **Branch:** `development`. **Validation pending:** run the focused task review tests and `npm run build`; verify submit/return/approve and attachment deletion locally. Do not merge to `master` without user validation.
+
 ## 2026-10-19 — Enforce manager-approved task completion
 
 - Every newly created task now requires manager review; it cannot be created directly as completed or cancelled.
