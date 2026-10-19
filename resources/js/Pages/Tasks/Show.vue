@@ -542,17 +542,17 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                     <p class="mt-1 text-sm text-muted-foreground">مدیریت، پیگیری و ثبت سوابق دستورکار</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <button v-if="abilities.submit && task.review_required && ['todo', 'in_progress'].includes(task.status)" type="button" :disabled="reviewForm.processing" class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 disabled:opacity-50" @click="submitForReview">{{ reviewForm.processing ? 'در حال ارسال...' : 'ارسال برای بررسی مدیر' }}</button>
+                    <button v-if="abilities.submit && ['todo', 'in_progress'].includes(task.status)" type="button" :disabled="reviewForm.processing" class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 disabled:opacity-50" @click="submitForReview">{{ reviewForm.processing ? 'در حال ارسال...' : 'ارسال برای بررسی مدیر' }}</button>
                     <button v-if="abilities.review && task.status === 'submitted' && task.review_status === 'pending'" type="button" :disabled="reviewForm.processing" class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800 disabled:opacity-50" @click="approveReview">{{ reviewForm.processing ? 'در حال ثبت...' : 'تأیید و تکمیل دستورکار' }}</button>
                     <button v-if="abilities.review && task.status === 'submitted' && task.review_status === 'pending'" type="button" :disabled="reviewForm.processing" class="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-50" @click="showReturnReviewModal = true">برگشت برای اصلاح</button>
-                    <button v-if="abilities.update && !(task.review_required && task.review_status === 'pending')" type="button" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-800" @click="showEditModal = true">ویرایش</button>
+                    <button v-if="abilities.update && task.review_status !== 'pending'" type="button" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-800" @click="showEditModal = true">ویرایش</button>
                     <button v-if="abilities.refer" type="button" class="rounded-lg border bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50" @click="showReferralModal = true">ارجاع دستورکار</button>
                 </div>
             </div>
         </template>
 
         <div class="task-show mx-auto max-w-7xl space-y-6 px-4 py-5 sm:px-6 lg:px-8">
-            <section v-if="task.review_required" class="rounded-xl border p-4 shadow-sm" :class="task.review_status === 'pending' ? 'border-amber-200 bg-amber-50/70' : task.review_status === 'approved' ? 'border-emerald-200 bg-emerald-50/60' : task.review_status === 'rejected' ? 'border-red-200 bg-red-50/60' : 'border-gray-200 bg-white'">
+            <section class="rounded-xl border p-4 shadow-sm" :class="task.review_status === 'pending' ? 'border-amber-200 bg-amber-50/70' : task.review_status === 'approved' ? 'border-emerald-200 bg-emerald-50/60' : task.review_status === 'rejected' ? 'border-red-200 bg-red-50/60' : 'border-gray-200 bg-white'">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div><h3 class="font-semibold">گردش بررسی دستورکار</h3><p class="mt-1 text-sm text-gray-700">{{ task.review_status === 'pending' ? 'دستورکار برای بررسی مدیر ارسال شده و تا تصمیم مدیر نباید وضعیت آن را دستی تغییر داد.' : task.review_status === 'approved' ? 'مدیر دستورکار را تأیید کرده است.' : task.review_status === 'rejected' ? 'دستورکار برای اصلاح برگشت داده شده است.' : 'پس از انجام کار، دستورکار را برای بررسی مدیر ارسال کنید.' }}</p></div>
                     <span class="rounded-full px-3 py-1 text-xs font-medium" :class="task.review_status === 'pending' ? 'bg-amber-100 text-amber-800' : task.review_status === 'approved' ? 'bg-emerald-100 text-emerald-800' : task.review_status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-700'">{{ task.review_status === 'pending' ? 'در انتظار بررسی' : task.review_status === 'approved' ? 'تأیید شده' : task.review_status === 'rejected' ? 'نیازمند اصلاح' : 'آماده ارسال' }}</span>
@@ -750,10 +750,10 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                         </div>
 </section>
 
-                    <section v-if="abilities.change_status && task.status !== 'submitted' && !(task.review_required && task.review_status === 'pending')" class="rounded-xl border bg-card p-5 shadow-sm">
+                    <section v-if="abilities.change_status && task.status !== 'submitted' && task.review_status !== 'pending'" class="rounded-xl border bg-card p-5 shadow-sm">
                         <h3 class="font-semibold">وضعیت</h3>
                         <form class="mt-3 flex gap-2" @submit.prevent="changeStatus">
-                            <select v-model="statusForm.status" class="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm"><option value="todo">انجام نشده</option><option value="in_progress">در حال انجام</option><option v-if="!task.review_required || task.review_status === 'approved'" value="completed">تکمیل شده</option><option value="cancelled">لغو شده</option></select>
+                            <select v-model="statusForm.status" class="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm"><option value="todo">انجام نشده</option><option value="in_progress">در حال انجام</option><option value="cancelled">لغو شده</option></select>
                             <button type="submit" :disabled="statusForm.processing" class="rounded-lg border bg-white px-3 text-sm font-medium">ذخیره</button>
                         </form>
                     </section>
