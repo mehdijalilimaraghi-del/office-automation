@@ -623,3 +623,10 @@ Implementation has started for the agreed cross-department project model:
 - Updated task creation coverage to assert that new tasks start in the automatic `todo` state, and adjusted status-policy coverage to reflect that an assignee without manager responsibility cannot manually change task status.
 - Updated the HTTP status test to cover manager-authorized cancellation rather than direct completion; cancellation does not set `completed_at`.
 - **Validation pending:** these are source/test updates committed to `development`; rerun the four affected test files and then the full Laravel suite. No local test run was performed by this update. Keep `master` unchanged.
+
+## Workflow review fixture follow-up — 2026-10-19
+
+- Fixed the second approval setup in `WorkflowServiceTest`: it now sets `status=in_progress`, `sub_status=manager_review`, and `review_status=pending` instead of legacy `submitted`.
+- **Validation pending:** rerun `WorkflowServiceTest`, then the broader affected tests and full suite.
+- PowerShell test scripts must pause on failure without using `exit`; keep the console available for inspection.
+- Keep `master` unchanged.
