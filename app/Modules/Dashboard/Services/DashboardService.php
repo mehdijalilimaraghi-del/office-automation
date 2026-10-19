@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Modules\Dashboard\Services;
 
-use App\Core\Departments\Models\Department;
 use App\Models\User;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectSection;
