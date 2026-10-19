@@ -18,6 +18,7 @@ use App\Http\Requests\Modules\Tasks\UpdateTaskReminderStatusRequest;
 use App\Http\Requests\Modules\Tasks\UpdateTaskRequest;
 use App\Http\Requests\Modules\Tasks\StoreTaskActivityRequest;
 use App\Modules\Tasks\Models\TaskActivity;
+use App\Modules\Tasks\Models\TaskStatusHistory;
 use App\Http\Requests\Modules\Tasks\UpdateTaskParticipantsRequest;
 use App\Models\User;
 use App\Modules\Tasks\Contracts\TaskServiceContract;
@@ -82,17 +83,28 @@ class TaskController extends Controller
         Gate::authorize('view', $task);
 
         if ((int) $task->assignee_id === (int) $request->user()->id) {
-            $changed = false;
+            $fromStatus = $task->status;
+            $notes = [];
+
             if ($task->status === 'todo') {
                 $task->status = 'observed';
-                $changed = true;
+                $notes[] = 'دستورکار توسط مسئول مشاهده شد';
             }
             if ($task->sub_status === 'referred') {
                 $task->sub_status = 'referral_seen';
-                $changed = true;
+                $notes[] = 'ارجاع مشاهده شد';
             }
-            if ($changed) {
+
+            if ($notes !== []) {
                 $task->save();
+                TaskStatusHistory::query()->create([
+                    'task_id' => $task->id,
+                    'from_status' => $fromStatus,
+                    'to_status' => $task->status,
+                    'changed_by' => $request->user()->id,
+                    'note' => implode('؛ ', $notes),
+                    'changed_at' => now(),
+                ]);
             }
         }
 
