@@ -13,6 +13,7 @@ use App\Modules\Projects\Models\ProjectSection;
 use App\Modules\Projects\Models\Project;
 use App\Core\Permissions\Enums\PermissionScope;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -40,6 +41,24 @@ class DocumentController extends Controller
         );
 
         return redirect()->route('tasks.show', $task)->with('success', 'فایل با موفقیت به تسک پیوست شد.');
+    }
+
+    public function destroyForTask(Request $request, Task $task, Document $document): RedirectResponse
+    {
+        Gate::authorize('update', $task);
+        abort_if($task->review_status === 'pending', 403, 'پیوست دستورکار در زمان بررسی قابل حذف نیست.');
+        abort_unless((int) $task->assignee_id === (int) $request->user()->id, 403, 'فقط مسئول فعلی دستورکار می‌تواند پیوست را حذف کند.');
+
+        $isLinkedToTask = $document->links()
+            ->where('linkable_type', Task::class)
+            ->where('linkable_id', $task->id)
+            ->exists();
+
+        abort_unless($isLinkedToTask, 404);
+
+        $this->documents->delete($document);
+
+        return redirect()->route('tasks.show', $task)->with('success', 'پیوست با موفقیت حذف شد.');
     }
 
     public function storeForProject(StoreTaskDocumentRequest $request, \App\Modules\Projects\Models\Project $project): RedirectResponse
