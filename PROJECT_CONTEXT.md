@@ -418,22 +418,17 @@ When checking whether a user belongs to a project, prefer the project's users() 
 
 ## 17. Dashboard
 
-Dashboard is implemented.
+The dashboard is implemented at `/dashboard` and uses the shared `TaskAccessService` scope for all task data.
 
-Current statistics:
-- My Tasks
-- Today's Tasks
-- Overdue Tasks
-- Active Projects
-- Completed Tasks
+Current dashboard behavior:
+- Personal KPIs and the personal-task list are limited to open tasks assigned to the signed-in user.
+- Managerial team metrics and team task list are a separate section, shown only when the user has an organization-wide task-view scope or manages departments/projects.
+- Department managers see work belonging to their managed departments (including project sections); project managers see work in their managed projects. Organization-wide task scope sees the wider task set, excluding tasks assigned to the manager from the team panel so personal work stays separate.
+- The seven-day activity chart counts visible tasks created and completed per day using persisted timestamps.
+- Project and section progress is based on tasks visible under the same backend task scope.
+- The root URL redirects guests to login and authenticated users to the dashboard, rather than showing an extra standalone welcome page.
 
-Recent tasks:
-- latest visible tasks
-- project and assignee information
-
-Dashboard respects TaskAccessService.
-
-Dashboard tests have passed.
+Dashboard feature tests cover root routing and the personal/team payload contract. Local focused test, production build and manual role-based UI validation remain pending after the latest redesign.
 
 ## 18. Frontend/UI
 
