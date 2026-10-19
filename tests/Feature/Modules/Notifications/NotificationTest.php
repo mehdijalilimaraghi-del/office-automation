@@ -101,7 +101,8 @@ class NotificationTest extends TestCase
         $task = Task::query()->create([
             'department_id' => $department->id,
             'title' => 'Lifecycle task',
-            'status' => 'submitted',
+            'status' => 'in_progress',
+            'sub_status' => 'manager_review',
             'priority' => 'normal',
             'review_required' => true,
             'review_status' => 'pending',
@@ -119,7 +120,8 @@ class NotificationTest extends TestCase
         );
 
         $task->update([
-            'status' => 'submitted',
+            'status' => 'in_progress',
+            'sub_status' => 'manager_review',
             'review_status' => 'pending',
             'review_requested_at' => now(),
         ]);
