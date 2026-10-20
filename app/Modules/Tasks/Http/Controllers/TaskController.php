@@ -69,7 +69,7 @@ class TaskController extends Controller
                 ? $this->taskFormOptionsService->forCreate($request->user())
                 : null,
             'customFields' => $this->customFieldService->definitions(Task::class),
-            'filterOptions' => ['users' => $this->taskFormOptionsService->relatedUsers()],
+            'filterOptions' => $this->taskFormOptionsService->forFilters($request->user()),
         ]);
     }
 
