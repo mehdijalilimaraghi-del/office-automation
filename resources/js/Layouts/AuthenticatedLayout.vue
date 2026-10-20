@@ -50,6 +50,20 @@ function markNotificationRead(id: string): void {
         onError: () => { void refreshNotificationSummary(); },
     });
 }
+
+function openNotification(item: { id: string; url: string | null; read_at: string | null }): void {
+    notificationDropdownOpen.value = false;
+    const destination = item.url || route('notifications.index');
+    if (item.read_at) {
+        router.visit(destination);
+        return;
+    }
+    router.patch(route('notifications.read', item.id), {}, {
+        preserveScroll: true,
+        onSuccess: () => router.visit(destination),
+        onError: () => router.visit(destination),
+    });
+}
 const expandedMobileMenus = ref<Record<string, boolean>>({
     work: false,
     organization: false,
@@ -329,7 +343,7 @@ onUnmounted(() => {
                                     </div>
                                     <div v-if="latestNotifications.length === 0" class="px-4 py-8 text-center text-sm text-slate-500">اعلانی برای نمایش وجود ندارد.</div>
                                     <div v-else class="max-h-[22rem] overflow-y-auto divide-y divide-slate-100">
-                                        <Link v-for="item in latestNotifications" :key="item.id" :href="item.url || route('notifications.index')" class="block px-4 py-3 transition hover:bg-slate-50" :class="{ 'bg-indigo-50/50': !item.read_at }" @click="markNotificationRead(item.id); notificationDropdownOpen = false">
+                                        <Link v-for="item in latestNotifications" :key="item.id" :href="item.url || route('notifications.index')" class="block px-4 py-3 transition hover:bg-slate-50" :class="{ 'bg-indigo-50/50': !item.read_at }" @click.prevent="openNotification(item)">
                                             <div class="flex items-start gap-2"><span class="mt-1.5 h-2 w-2 shrink-0 rounded-full" :class="item.read_at ? 'bg-transparent' : 'bg-indigo-600'"></span><span class="min-w-0 flex-1"><span class="block text-sm font-semibold text-slate-900">{{ item.title }}</span><span class="mt-1 block line-clamp-2 text-xs leading-5 text-slate-600">{{ item.message }}</span><span v-if="item.created_at" class="mt-1 block text-[10px] text-slate-400">{{ new Intl.DateTimeFormat('fa-IR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.created_at)) }}</span></span></div>
                                         </Link>
                                     </div>
