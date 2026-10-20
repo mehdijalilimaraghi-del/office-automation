@@ -10,6 +10,7 @@ use App\Core\Roles\Models\Role;
 use App\Models\User;
 use App\Modules\Tasks\Actions\AssignTaskAction;
 use App\Modules\Tasks\Actions\ReviewTaskAction;
+use App\Modules\Tasks\Actions\CreateTaskCommentAction;
 use App\Modules\Tasks\Actions\SubmitTaskAction;
 use App\Modules\Tasks\Models\Task;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -132,6 +133,37 @@ class NotificationTest extends TestCase
         $this->assertSame(
             'دستورکار تأیید و تکمیل شد',
             $creator->fresh()->unreadNotifications()->firstOrFail()->data['title'],
+        );
+    }
+
+    public function test_new_task_comment_notifies_creator_and_assignee_except_author(): void
+    {
+        $creator = User::factory()->create(['status' => 'active']);
+        $assignee = User::factory()->create(['status' => 'active']);
+        $author = User::factory()->create(['status' => 'active']);
+
+        $task = Task::query()->create([
+            'title' => 'Task with new comment',
+            'status' => 'in_progress',
+            'priority' => 'normal',
+            'assignee_id' => $assignee->id,
+            'created_by' => $creator->id,
+        ]);
+
+        app(CreateTaskCommentAction::class)->execute($task, $author, 'لطفاً این مورد را بررسی کنید.');
+
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_type' => User::class,
+            'notifiable_id' => $creator->id,
+        ]);
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_type' => User::class,
+            'notifiable_id' => $assignee->id,
+        ]);
+        $this->assertSame(0, $author->fresh()->unreadNotifications()->count());
+        $this->assertSame(
+            'task_commented',
+            $creator->fresh()->unreadNotifications()->firstOrFail()->data['type'],
         );
     }
 
