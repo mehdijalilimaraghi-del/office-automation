@@ -7,6 +7,7 @@ namespace App\Modules\Tasks\Actions;
 use App\Models\User;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskComment;
+use App\Modules\Tasks\Events\TaskCommented;
 
 class CreateTaskCommentAction
 {
@@ -20,9 +21,13 @@ class CreateTaskCommentAction
             throw new \InvalidArgumentException('تا تعیین تکلیف مدیر، ثبت نظر امکان‌پذیر نیست.');
         }
 
-        return $task->comments()->create([
+        $comment = $task->comments()->create([
             'user_id' => $author->id,
             'body' => $body,
         ])->load('user');
+
+        TaskCommented::dispatch($task, $comment, $author);
+
+        return $comment;
     }
 }
