@@ -8,6 +8,9 @@ use App\Models\User;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectSection;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Tasks\Models\TaskActivity;
+use App\Modules\Tasks\Models\TaskComment;
+use App\Modules\Tasks\Models\TaskReminder;
 use App\Modules\Tasks\Services\TaskAccessService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -111,6 +114,65 @@ class DashboardService
             ->orderByRaw('CASE WHEN tasks.due_date IS NULL THEN 1 ELSE 0 END')
             ->orderBy('tasks.due_date')->latest('tasks.updated_at')->limit(8)->get()->map($mapTask)->values()->all();
 
+        $visiblePersonalTaskIds = (clone $personalTasks)->select('tasks.id');
+        $nextActivities = TaskActivity::query()
+            ->with(['task:id,title,project_id', 'task.project:id,name'])
+            ->where('assigned_to', $user->id)
+            ->where('status', 'pending')
+            ->where('activity_type', 'planned')
+            ->whereHas('task', fn (Builder $query) => $query->whereIn('tasks.id', $visiblePersonalTaskIds))
+            ->orderByRaw('CASE WHEN started_at IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('started_at')
+            ->orderBy('sequence')
+            ->limit(6)
+            ->get()
+            ->map(fn (TaskActivity $activity): array => [
+                'id' => $activity->id,
+                'title' => $activity->title,
+                'description' => $activity->description,
+                'date' => $activity->started_at?->toDateString(),
+                'task_id' => $activity->task_id,
+                'task_title' => $activity->task?->title,
+                'project' => $activity->task?->project?->name,
+                'kind' => 'activity',
+            ])->values()->all();
+
+        $upcomingReminders = TaskReminder::query()
+            ->with(['task:id,title,project_id', 'task.project:id,name'])
+            ->where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->whereHas('task', fn (Builder $query) => $query->whereIn('tasks.id', $visiblePersonalTaskIds))
+            ->orderBy('remind_at')
+            ->limit(6)
+            ->get()
+            ->map(fn (TaskReminder $reminder): array => [
+                'id' => $reminder->id,
+                'title' => $reminder->title,
+                'description' => $reminder->description,
+                'date' => $reminder->remind_at?->toDateString(),
+                'task_id' => $reminder->task_id,
+                'task_title' => $reminder->task?->title,
+                'project' => $reminder->task?->project?->name,
+                'kind' => 'reminder',
+            ])->values()->all();
+
+        $recentComments = TaskComment::query()
+            ->with(['user:id,name', 'task:id,title,project_id', 'task.project:id,name'])
+            ->where('user_id', '!=', $user->id)
+            ->where('created_at', '>=', Carbon::now()->subDays(7))
+            ->whereHas('task', fn (Builder $query) => $query->whereIn('tasks.id', $visiblePersonalTaskIds))
+            ->latest()
+            ->limit(6)
+            ->get()
+            ->map(fn (TaskComment $comment): array => [
+                'id' => $comment->id,
+                'body' => $comment->body,
+                'author' => $comment->user?->name ?? 'کاربر',
+                'created_at' => $comment->created_at?->toIso8601String(),
+                'task_id' => $comment->task_id,
+                'task_title' => $comment->task?->title,
+            ])->values()->all();
+
         return [
             'canViewTeam' => $canViewTeam,
             'stats' => [
@@ -137,6 +199,9 @@ class DashboardService
             'trend' => $trend,
             'personalTasks' => $personalTaskRows,
             'teamTasks' => $teamTaskRows,
+            'nextActivities' => $nextActivities,
+            'upcomingReminders' => $upcomingReminders,
+            'recentComments' => $recentComments,
             'projectsOverview' => $visibleProjects->map(fn (Project $project): array => [
                 'id' => $project->id,
                 'name' => $project->name,
