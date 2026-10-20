@@ -49,19 +49,24 @@ class TaskService implements TaskServiceContract
                 ->map(fn ($id): int => (int) $id)->unique()->values()->all();
             $projectIds = $user->managedProjects()->pluck('projects.id')
                 ->map(fn ($id): int => (int) $id)->all();
+            $hasOrganizationScope = in_array('organization', $user->permissionScopes('tasks.view'), true);
 
-            $query->where(function ($unitQuery) use ($departmentIds, $projectIds): void {
-                if ($departmentIds !== []) {
-                    $unitQuery->whereIn('tasks.department_id', $departmentIds)
-                        ->orWhereHas('section', fn ($sectionQuery) => $sectionQuery->whereIn('department_id', $departmentIds));
-                }
-                if ($projectIds !== []) {
-                    $unitQuery->orWhereIn('tasks.project_id', $projectIds);
-                }
-                if ($departmentIds === [] && $projectIds === []) {
-                    $unitQuery->whereRaw('1 = 0');
-                }
-            })->where(fn ($ownWork) => $ownWork->whereNull('tasks.assignee_id')->orWhere('tasks.assignee_id', '!=', $user->id));
+            if (! $hasOrganizationScope) {
+                $query->where(function ($unitQuery) use ($departmentIds, $projectIds): void {
+                    if ($departmentIds !== []) {
+                        $unitQuery->whereIn('tasks.department_id', $departmentIds)
+                            ->orWhereHas('section', fn ($sectionQuery) => $sectionQuery->whereIn('department_id', $departmentIds));
+                    }
+                    if ($projectIds !== []) {
+                        $unitQuery->orWhereIn('tasks.project_id', $projectIds);
+                    }
+                    if ($departmentIds === [] && $projectIds === []) {
+                        $unitQuery->whereRaw('1 = 0');
+                    }
+                });
+            }
+
+            $query->where(fn ($ownWork) => $ownWork->whereNull('tasks.assignee_id')->orWhere('tasks.assignee_id', '!=', $user->id));
         }
 
         if (($filters['due'] ?? null) === 'today') {
