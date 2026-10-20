@@ -150,9 +150,9 @@ class TaskService implements TaskServiceContract
         return $this->changeTaskStatusAction->execute(task: $task, status: $status, actor: $actor);
     }
 
-    public function addComment(Task $task, User $author, string $body): \App\Modules\Tasks\Models\TaskComment
+    public function addComment(Task $task, User $author, string $body, ?int $parentCommentId = null): \App\Modules\Tasks\Models\TaskComment
     {
-        return $this->createTaskCommentAction->execute($task, $author, $body);
+        return $this->createTaskCommentAction->execute($task, $author, $body, $parentCommentId);
     }
 
     public function addReminder(Task $task, User $recipient, User $creator, string $title, $remindAt, ?string $description = null): TaskReminder
