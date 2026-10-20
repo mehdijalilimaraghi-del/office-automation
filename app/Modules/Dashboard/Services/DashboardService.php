@@ -183,7 +183,7 @@ class DashboardService
                 'team_active_tasks' => (clone $teamTasks)->whereNotIn('tasks.status', ['completed', 'cancelled', 'cannot_continue'])->count(),
                 'team_overdue_tasks' => (clone $teamTasks)->whereNotNull('tasks.due_date')->whereDate('tasks.due_date', '<', $today)->whereNotIn('tasks.status', ['completed', 'cancelled', 'cannot_continue'])->count(),
                 'team_review_tasks' => (clone $teamTasks)->where('tasks.sub_status', 'manager_review')->count(),
-                'team_completed_month' => (clone $teamTasks)->where('tasks.status', 'completed')->whereNotNull('tasks.completed_at')->whereDate('tasks.completed_at', '>=', Carbon::now()->startOfMonth()->toDateString())->count(),
+                'team_completed_month' => (clone $teamTasks)->where('tasks.status', 'completed')->whereBetween('tasks.completed_at', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()])->count(),
                 'active_projects' => $activeProjects,
                 'projects_total' => $visibleProjects->count(),
                 'projects_planning' => $visibleProjects->where('status', 'planning')->count(),
