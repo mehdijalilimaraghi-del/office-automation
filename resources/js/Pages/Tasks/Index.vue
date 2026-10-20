@@ -107,8 +107,7 @@ const props = defineProps<{
 }>();
 
 const search = ref(props.filters.search ?? '');
-const statusFilter = ref(props.filters.status ?? '');
-const statusGroupFilter = ref(props.filters.status_group ?? '');
+const statusFilter = ref(props.filters.status_group === 'pending' ? '__pending' : (props.filters.status ?? ''));
 const priorityFilter = ref(props.filters.priority ?? '');
 const projectFilter = ref(props.filters.project_id?.toString() ?? '');
 const departmentFilter = ref(props.filters.department_id?.toString() ?? '');
@@ -191,7 +190,7 @@ const applyFilters = (): void => {
     router.get(route('tasks.index'), {
         search: search.value.trim() || undefined,
         status: combinedPending ? undefined : (statusFilter.value || undefined),
-        status_group: combinedPending ? 'pending' : (statusGroupFilter.value || undefined),
+        status_group: combinedPending ? 'pending' : undefined,
         status_group: statusGroupFilter.value || undefined,
         priority: priorityFilter.value || undefined,
         project_id: projectFilter.value || undefined,
@@ -215,7 +214,6 @@ const applyFilters = (): void => {
 const clearFilters = (): void => {
     search.value = '';
     statusFilter.value = '';
-    statusGroupFilter.value = '';
     priorityFilter.value = '';
     projectFilter.value = '';
     departmentFilter.value = '';
