@@ -1,17 +1,55 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import UserAvatar from '@/Components/UserAvatar.vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import { ChevronDown } from '@lucide/vue';
 
 const page = usePage();
 const showingNavigationDropdown = ref(false);
 const openDesktopMenu = ref<string | null>(null);
+const notificationDropdownOpen = ref(false);
+const unreadNotificationCount = ref(0);
+const latestNotifications = ref<Array<{ id: string; type: string; title: string; message: string; url: string | null; read_at: string | null; created_at: string | null }>>([]);
+let notificationRefreshTimer: number | undefined;
+
+async function refreshNotificationSummary(): Promise<void> {
+    try {
+        const response = await fetch(route('notifications.summary'), {
+            headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin',
+        });
+        if (!response.ok) return;
+        const data = await response.json() as {
+            unreadCount: number;
+            notifications: Array<{ id: string; type: string; title: string; message: string; url: string | null; read_at: string | null; created_at: string | null }>;
+        };
+        unreadNotificationCount.value = data.unreadCount;
+        latestNotifications.value = data.notifications;
+    } catch {
+        // Keep navigation usable if the optional notification refresh fails.
+    }
+}
+
+function toggleNotificationDropdown(): void {
+    notificationDropdownOpen.value = !notificationDropdownOpen.value;
+    if (notificationDropdownOpen.value) void refreshNotificationSummary();
+}
+
+function markNotificationRead(id: string): void {
+    const item = latestNotifications.value.find(notification => notification.id === id);
+    if (!item || item.read_at) return;
+    item.read_at = new Date().toISOString();
+    unreadNotificationCount.value = Math.max(0, unreadNotificationCount.value - 1);
+    router.patch(route('notifications.read', id), {}, {
+        preserveScroll: true,
+        onError: () => { void refreshNotificationSummary(); },
+    });
+}
 const expandedMobileMenus = ref<Record<string, boolean>>({
     work: false,
     organization: false,
@@ -69,6 +107,13 @@ onMounted(() => {
     if (route().current('settings.*')) {
         expandedMobileMenus.value.settings = true;
     }
+
+    void refreshNotificationSummary();
+    notificationRefreshTimer = window.setInterval(() => void refreshNotificationSummary(), 30000);
+});
+
+onUnmounted(() => {
+    if (notificationRefreshTimer !== undefined) window.clearInterval(notificationRefreshTimer);
 });
 </script>
 
@@ -270,8 +315,27 @@ onMounted(() => {
                             </div>
                         </div>
 
-                        <!-- سمت چپ: کاربر -->
+                        <!-- اعلان‌ها و کاربر -->
                         <div class="hidden sm:ms-6 sm:flex sm:items-center">
+                            <div class="relative me-3">
+                                <button type="button" class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500" aria-label="اعلان‌ها" :aria-expanded="notificationDropdownOpen" aria-haspopup="dialog" @click="toggleNotificationDropdown" @keydown.escape="notificationDropdownOpen = false">
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+                                    <span v-if="unreadNotificationCount > 0" class="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white ring-2 ring-white">{{ unreadNotificationCount > 99 ? '99+' : unreadNotificationCount }}</span>
+                                </button>
+                                <div v-if="notificationDropdownOpen" class="absolute left-0 z-50 mt-2 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl" role="dialog" aria-label="فهرست اعلان‌ها">
+                                    <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                                        <div><p class="text-sm font-bold text-slate-900">اعلان‌ها</p><p class="mt-0.5 text-xs text-slate-500">{{ unreadNotificationCount }} خوانده‌نشده</p></div>
+                                        <button v-if="unreadNotificationCount > 0" type="button" class="text-xs font-semibold text-indigo-700 hover:underline" @click="router.patch(route('notifications.read-all'), {}, { preserveScroll: true, onSuccess: () => void refreshNotificationSummary() })">خواندن همه</button>
+                                    </div>
+                                    <div v-if="latestNotifications.length === 0" class="px-4 py-8 text-center text-sm text-slate-500">اعلانی برای نمایش وجود ندارد.</div>
+                                    <div v-else class="max-h-[22rem] overflow-y-auto divide-y divide-slate-100">
+                                        <Link v-for="item in latestNotifications" :key="item.id" :href="item.url || route('notifications.index')" class="block px-4 py-3 transition hover:bg-slate-50" :class="{ 'bg-indigo-50/50': !item.read_at }" @click="markNotificationRead(item.id); notificationDropdownOpen = false">
+                                            <div class="flex items-start gap-2"><span class="mt-1.5 h-2 w-2 shrink-0 rounded-full" :class="item.read_at ? 'bg-transparent' : 'bg-indigo-600'"></span><span class="min-w-0 flex-1"><span class="block text-sm font-semibold text-slate-900">{{ item.title }}</span><span class="mt-1 block line-clamp-2 text-xs leading-5 text-slate-600">{{ item.message }}</span><span v-if="item.created_at" class="mt-1 block text-[10px] text-slate-400">{{ new Intl.DateTimeFormat('fa-IR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.created_at)) }}</span></span></div>
+                                        </Link>
+                                    </div>
+                                    <Link :href="route('notifications.index')" class="block border-t border-slate-100 px-4 py-3 text-center text-xs font-bold text-indigo-700 hover:bg-slate-50" @click="notificationDropdownOpen = false">مشاهده همه اعلان‌ها</Link>
+                                </div>
+                            </div>
                             <div class="relative ms-3">
                                 <Dropdown align="left" width="48">
                                     <template #trigger>
@@ -319,8 +383,20 @@ onMounted(() => {
                             </div>
                         </div>
 
-                        <!-- منوی موبایل -->
-                        <div class="-ms-2 flex items-center sm:hidden">
+                        <!-- اعلان‌ها و منوی موبایل -->
+                        <div class="-ms-2 flex items-center gap-2 sm:hidden">
+                            <div class="relative">
+                                <button type="button" class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 hover:bg-slate-100" aria-label="اعلان‌ها" :aria-expanded="notificationDropdownOpen" @click="toggleNotificationDropdown">
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+                                    <span v-if="unreadNotificationCount > 0" class="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[9px] font-bold text-white">{{ unreadNotificationCount > 99 ? '99+' : unreadNotificationCount }}</span>
+                                </button>
+                                <div v-if="notificationDropdownOpen" class="absolute left-0 z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl" role="dialog" aria-label="فهرست اعلان‌ها">
+                                    <div class="flex items-center justify-between border-b px-4 py-3"><div><p class="text-sm font-bold text-slate-900">اعلان‌ها</p><p class="mt-0.5 text-xs text-slate-500">{{ unreadNotificationCount }} خوانده‌نشده</p></div><button v-if="unreadNotificationCount > 0" type="button" class="text-xs font-semibold text-indigo-700" @click="router.patch(route('notifications.read-all'), {}, { preserveScroll: true, onSuccess: () => void refreshNotificationSummary() })">خواندن همه</button></div>
+                                    <div v-if="latestNotifications.length === 0" class="px-4 py-8 text-center text-sm text-slate-500">اعلانی برای نمایش وجود ندارد.</div>
+                                    <div v-else class="max-h-[20rem] overflow-y-auto divide-y divide-slate-100"><Link v-for="item in latestNotifications" :key="item.id" :href="item.url || route('notifications.index')" class="block px-4 py-3 hover:bg-slate-50" :class="{ 'bg-indigo-50/50': !item.read_at }" @click="markNotificationRead(item.id); notificationDropdownOpen = false"><span class="block text-sm font-semibold text-slate-900">{{ item.title }}</span><span class="mt-1 block line-clamp-2 text-xs leading-5 text-slate-600">{{ item.message }}</span></Link></div>
+                                    <Link :href="route('notifications.index')" class="block border-t px-4 py-3 text-center text-xs font-bold text-indigo-700" @click="notificationDropdownOpen = false">مشاهده همه اعلان‌ها</Link>
+                                </div>
+                            </div>
                             <button
                                 @click="
                                     showingNavigationDropdown =
