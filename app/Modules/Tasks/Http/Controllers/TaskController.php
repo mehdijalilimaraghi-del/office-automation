@@ -68,13 +68,19 @@ class TaskController extends Controller
             ]);
         }
 
+        $canFilterUnit = in_array('organization', $request->user()->permissionScopes('tasks.view'), true)
+            || $request->user()->managedDepartments()->exists()
+            || $request->user()->managedProjects()->exists();
+
+        if (! $canFilterUnit && ($filters['scope'] ?? null) === 'unit') {
+            unset($filters['scope']);
+        }
+
         return Inertia::render('Tasks/Index', [
             'tasks' => $this->taskService->list($request->user(), $filters),
             'filters' => $filters,
             'canCreate' => Gate::allows('create', Task::class),
-            'canFilterUnit' => in_array('organization', $request->user()->permissionScopes('tasks.view'), true)
-                || $request->user()->managedDepartments()->exists()
-                || $request->user()->managedProjects()->exists(),
+            'canFilterUnit' => $canFilterUnit,
             'formOptions' => Gate::allows('create', Task::class)
                 ? $this->taskFormOptionsService->forCreate($request->user())
                 : null,
