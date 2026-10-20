@@ -40,6 +40,16 @@ final class NotificationService
         ));
     }
 
+    public function taskCommented(Task $task, User $recipient, User $author, string $body): void
+    {
+        $recipient->notify(new TaskNotification(
+            notificationType: 'task_commented',
+            title: 'دیدگاه جدید برای دستورکار',
+            message: $author->name.': '.$body,
+            task: $task,
+        ));
+    }
+
     public function taskApproved(Task $task, User $recipient): void
     {
         $recipient->notify(new TaskNotification(
