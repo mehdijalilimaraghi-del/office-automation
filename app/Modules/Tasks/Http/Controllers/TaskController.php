@@ -56,6 +56,9 @@ class TaskController extends Controller
             'due' => ['nullable', 'in:today,overdue'],
             'review' => ['nullable', 'in:1'],
             'completed_period' => ['nullable', 'in:month'],
+            'assignee_id' => ['nullable', 'integer', 'min:1'],
+            'due_from' => ['nullable', 'date_format:Y-m-d'],
+            'due_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:due_from'],
         ]);
 
         return Inertia::render('Tasks/Index', [
@@ -66,6 +69,7 @@ class TaskController extends Controller
                 ? $this->taskFormOptionsService->forCreate($request->user())
                 : null,
             'customFields' => $this->customFieldService->definitions(Task::class),
+            'filterOptions' => ['users' => $this->taskFormOptionsService->relatedUsers()],
         ]);
     }
 
