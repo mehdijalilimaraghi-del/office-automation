@@ -139,7 +139,7 @@ const statusTone = (status: string) => ({
                         <div class="flex items-start justify-between gap-3"><div><h2 class="font-bold text-slate-950">وضعیت دستورکارها</h2><p class="mt-1 text-xs text-slate-500">دستورکارهای قابل مشاهده در پروژه‌ها</p></div><Link href="/tasks" class="text-sm font-semibold text-teal-700 hover:text-teal-800">همه دستورکارها</Link></div>
                         <div class="mt-5 space-y-4">
                             <Link v-for="item in [
-                                { label: 'در انتظار انجام / دیده‌شده', value: stats.tasks_todo, tone: 'bg-slate-400', href: '/tasks?status=todo' },
+                                { label: 'در انتظار انجام / دیده‌شده', value: stats.tasks_todo, tone: 'bg-slate-400', href: '/tasks?status_group=pending' },
                                 { label: 'در حال انجام', value: stats.tasks_in_progress, tone: 'bg-sky-500', href: '/tasks?status=in_progress' },
                                 { label: 'در انتظار بررسی مدیر', value: stats.tasks_review, tone: 'bg-amber-500', href: '/tasks?review=1' },
                                 { label: 'تکمیل‌شده', value: stats.tasks_completed, tone: 'bg-teal-500', href: '/tasks?status=completed' },
