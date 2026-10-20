@@ -40,17 +40,6 @@ function toggleNotificationDropdown(): void {
     if (notificationDropdownOpen.value) void refreshNotificationSummary();
 }
 
-function markNotificationRead(id: string): void {
-    const item = latestNotifications.value.find(notification => notification.id === id);
-    if (!item || item.read_at) return;
-    item.read_at = new Date().toISOString();
-    unreadNotificationCount.value = Math.max(0, unreadNotificationCount.value - 1);
-    router.patch(route('notifications.read', id), {}, {
-        preserveScroll: true,
-        onError: () => { void refreshNotificationSummary(); },
-    });
-}
-
 function openNotification(item: { id: string; url: string | null; read_at: string | null }): void {
     notificationDropdownOpen.value = false;
     const destination = item.url || route('notifications.index');
