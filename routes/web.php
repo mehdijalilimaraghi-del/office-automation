@@ -37,6 +37,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/cartable', [CartableController::class, 'index'])->middleware('permission:cartable.view')->name('cartable.index');
 
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/summary', [NotificationController::class, 'summary'])->name('notifications.summary');
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
 
