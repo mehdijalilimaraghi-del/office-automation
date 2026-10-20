@@ -74,6 +74,9 @@ interface TaskFilters {
     due?: 'today' | 'overdue';
     review?: '1';
     completed_period?: 'month';
+    assignee_id?: number | string;
+    due_from?: string;
+    due_to?: string;
 }
 
 interface Task {
@@ -94,6 +97,7 @@ const props = defineProps<{
     filters: TaskFilters;
     canCreate: boolean;
     formOptions: FormOptions | null;
+    filterOptions: { users: User[] };
     customFields: Array<{
         id: number; key: string; label: string;
         type: 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select';
@@ -110,6 +114,9 @@ const scopeFilter = ref(props.filters.scope ?? '');
 const dueFilter = ref(props.filters.due ?? '');
 const reviewFilter = ref(props.filters.review ?? '');
 const completedPeriodFilter = ref(props.filters.completed_period ?? '');
+const assigneeFilter = ref(props.filters.assignee_id?.toString() ?? '');
+const dueFromFilter = ref(props.filters.due_from ?? '');
+const dueToFilter = ref(props.filters.due_to ?? '');
 const createForm = useForm({
     project_id: null as number | null,
     section_id: null as number | null,
@@ -188,6 +195,9 @@ const applyFilters = (): void => {
         due: dueFilter.value || undefined,
         review: reviewFilter.value || undefined,
         completed_period: completedPeriodFilter.value || undefined,
+        assignee_id: assigneeFilter.value || undefined,
+        due_from: dueFromFilter.value || undefined,
+        due_to: dueToFilter.value || undefined,
     }, {
         preserveState: true,
         preserveScroll: true,
@@ -207,6 +217,9 @@ const clearFilters = (): void => {
     dueFilter.value = '';
     reviewFilter.value = '';
     completedPeriodFilter.value = '';
+    assigneeFilter.value = '';
+    dueFromFilter.value = '';
+    dueToFilter.value = '';
     applyFilters();
 };
 
@@ -477,6 +490,23 @@ const handleSectionChange = (): void => {
                             <option value="">همه زمان‌ها</option>
                             <option value="month">تکمیل‌شده در ماه جاری</option>
                         </select>
+                    </div>
+                </div>
+                <div class="mb-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">مسئول دستورکار</label>
+                        <select v-model="assigneeFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                            <option value="">همه مسئولان</option>
+                            <option v-for="user in filterOptions.users" :key="user.id" :value="user.id">{{ user.name }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">مهلت از</label>
+                        <input v-model="dueFromFilter" type="date" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm" />
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">مهلت تا</label>
+                        <input v-model="dueToFilter" type="date" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm" />
                     </div>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
