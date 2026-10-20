@@ -1,3 +1,11 @@
+## 2026-10-20 — Task comment recipients, direct replies and header notification center
+
+- Updated comment-notification recipients to the current task manager (department manager, with project manager as fallback) and current assignee only. The author is excluded, duplicate recipients are collapsed, and historical assignees/participants/creator no longer receive new comment alerts merely because of past involvement.
+- Added direct replies to task comments with a nullable self-referencing `parent_comment_id`, request validation, model relationship, and inline reply UI. Existing comments remain valid and render without a parent.
+- Added a notification-summary endpoint and a responsive header bell/dropdown showing unread count, recent notification previews, mark-all-read action, and a link to the full notification center. The summary refreshes on page mount, when opened, and every 30 seconds.
+- Added focused regression tests for current manager/current assignee recipients, exclusion of a previous assignee, and parent-linked replies. These tests and the frontend build have not been run by the assistant; pull and validate locally.
+- **Branch:** `development`. Keep `master` unchanged.
+
 # Office Automation — Current Status
 
 ## 2026-10-20 — Task filters, comment notifications and reminder review
