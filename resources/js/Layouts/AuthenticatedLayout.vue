@@ -429,7 +429,6 @@ onMounted(() => {
                                     پروژه‌ها
                                 </ResponsiveNavLink>
                                 <ResponsiveNavLink
-                                    v-if="can('notification_view')"
                                     :href="route('notifications.index')"
                                     :active="route().current('notifications.*')"
                                     @click="closeMobileNavigation"
@@ -593,7 +592,7 @@ onMounted(() => {
                     <Link v-if="can('projects_view')" :href="route('projects.index')" :class="route().current('projects.*') ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4V2M16 4V2M3 9h18"/></svg>پروژه‌ها
                     </Link>
-                    <Link v-if="can('notification_view')" :href="route('notifications.index')" :class="route().current('notifications.*') ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
+                    <Link :href="route('notifications.index')" :class="route().current('notifications.*') ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>اعلان‌ها
                     </Link>
                     <p v-if="hasOrganizationMenu" class="px-3 pb-1 pt-5 text-[11px] font-bold text-slate-400">مدیریت سازمان</p>
