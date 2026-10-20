@@ -41,6 +41,48 @@ class TaskService implements TaskServiceContract
 
         $this->taskAccessService->applyScope(query: $query, user: $user, permission: 'tasks.view');
 
+        if (($filters['scope'] ?? null) === 'personal') {
+            $query->where('tasks.assignee_id', $user->id);
+        } elseif (($filters['scope'] ?? null) === 'unit') {
+            $departmentIds = $user->managedDepartments()->pluck('departments.id')
+                ->merge($user->departments()->pluck('departments.id'))
+                ->map(fn ($id): int => (int) $id)->unique()->values()->all();
+            $projectIds = $user->managedProjects()->pluck('projects.id')
+                ->map(fn ($id): int => (int) $id)->all();
+
+            $query->where(function ($unitQuery) use ($departmentIds, $projectIds): void {
+                if ($departmentIds !== []) {
+                    $unitQuery->whereIn('tasks.department_id', $departmentIds)
+                        ->orWhereHas('section', fn ($sectionQuery) => $sectionQuery->whereIn('department_id', $departmentIds));
+                }
+                if ($projectIds !== []) {
+                    $unitQuery->orWhereIn('tasks.project_id', $projectIds);
+                }
+                if ($departmentIds === [] && $projectIds === []) {
+                    $unitQuery->whereRaw('1 = 0');
+                }
+            })->where(fn ($ownWork) => $ownWork->whereNull('tasks.assignee_id')->orWhere('tasks.assignee_id', '!=', $user->id));
+        }
+
+        if (($filters['due'] ?? null) === 'today') {
+            $query->whereDate('tasks.due_date', now()->toDateString())
+                ->whereNotIn('tasks.status', ['completed', 'cancelled', 'cannot_continue']);
+        } elseif (($filters['due'] ?? null) === 'overdue') {
+            $query->whereNotNull('tasks.due_date')
+                ->whereDate('tasks.due_date', '<', now()->toDateString())
+                ->whereNotIn('tasks.status', ['completed', 'cancelled', 'cannot_continue']);
+        }
+
+        if (($filters['review'] ?? null) === '1') {
+            $query->where('tasks.sub_status', 'manager_review');
+        }
+
+        if (($filters['completed_period'] ?? null) === 'month') {
+            $query->where('tasks.status', 'completed')
+                ->whereNotNull('tasks.completed_at')
+                ->whereBetween('tasks.completed_at', [now()->startOfMonth(), now()->endOfMonth()]);
+        }
+
         if (! empty($filters['search'])) {
             $search = trim((string) $filters['search']);
             $query->where(function ($searchQuery) use ($search): void {
