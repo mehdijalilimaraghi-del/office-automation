@@ -136,7 +136,7 @@ const statusTone = (status: string) => ({
                     </section>
 
                     <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                        <div class="flex items-start justify-between gap-3"><div><h2 class="font-bold text-slate-950">وضعیت دستورکارها</h2><p class="mt-1 text-xs text-slate-500">دستورکارهای قابل مشاهده در پروژه‌ها</p></div><Link href="/tasks" class="text-sm font-semibold text-teal-700 hover:text-teal-800">جزئیات</Link></div>
+                        <div class="flex items-start justify-between gap-3"><div><h2 class="font-bold text-slate-950">وضعیت دستورکارها</h2><p class="mt-1 text-xs text-slate-500">دستورکارهای قابل مشاهده در پروژه‌ها</p></div><Link href="/tasks" class="text-sm font-semibold text-teal-700 hover:text-teal-800">همه دستورکارها</Link></div>
                         <div class="mt-5 space-y-4">
                             <div v-for="item in [
                                 { label: 'در انتظار انجام / دیده‌شده', value: stats.tasks_todo, tone: 'bg-slate-400' },
@@ -160,10 +160,10 @@ const statusTone = (status: string) => ({
                         </div>
                     </div>
                     <div class="grid gap-3 border-b border-slate-100 bg-slate-50/70 p-4 sm:grid-cols-2 xl:grid-cols-4 sm:p-5">
-                        <div class="rounded-xl border border-slate-200 bg-white p-4"><Link href="/tasks?scope=unit" class="text-xs text-slate-500 hover:text-violet-700">دستورکارهای باز واحد</Link><p class="mt-2 text-2xl font-bold text-slate-950">{{ stats.team_active_tasks }}</p></div>
-                        <div class="rounded-xl border border-rose-100 bg-white p-4"><Link href="/tasks?scope=unit&due=overdue" class="text-xs text-slate-500 hover:text-rose-700">عقب‌افتاده‌های واحد</Link><p class="mt-2 text-2xl font-bold text-rose-700">{{ stats.team_overdue_tasks }}</p></div>
-                        <div class="rounded-xl border border-amber-100 bg-white p-4"><Link href="/tasks?scope=unit&review=1" class="text-xs text-slate-500 hover:text-amber-700">در انتظار بررسی</Link><p class="mt-2 text-2xl font-bold text-amber-700">{{ stats.team_review_tasks }}</p></div>
-                        <div class="rounded-xl border border-teal-100 bg-white p-4"><Link href="/tasks?scope=unit&completed_period=month" class="text-xs text-slate-500 hover:text-teal-700">تکمیل‌شده در ماه جاری</Link><p class="mt-2 text-2xl font-bold text-teal-700">{{ stats.team_completed_month }}</p></div>
+                        <Link href="/tasks?scope=unit" class="rounded-xl border border-slate-200 bg-white p-4 transition hover:border-violet-300"><p class="text-xs text-slate-500">دستورکارهای باز واحد</p><p class="mt-2 text-2xl font-bold text-slate-950">{{ stats.team_active_tasks }}</p></Link>
+                        <Link href="/tasks?scope=unit&due=overdue" class="rounded-xl border border-rose-100 bg-white p-4 transition hover:border-rose-300"><p class="text-xs text-slate-500">عقب‌افتاده‌های واحد</p><p class="mt-2 text-2xl font-bold text-rose-700">{{ stats.team_overdue_tasks }}</p></Link>
+                        <Link href="/tasks?scope=unit&review=1" class="rounded-xl border border-amber-100 bg-white p-4 transition hover:border-amber-300"><p class="text-xs text-slate-500">در انتظار بررسی</p><p class="mt-2 text-2xl font-bold text-amber-700">{{ stats.team_review_tasks }}</p></Link>
+                        <Link href="/tasks?scope=unit&completed_period=month" class="rounded-xl border border-teal-100 bg-white p-4 transition hover:border-teal-300"><p class="text-xs text-slate-500">تکمیل‌شده در ماه جاری</p><p class="mt-2 text-2xl font-bold text-teal-700">{{ stats.team_completed_month }}</p></Link>
                     </div>
                     <div v-if="teamTasks.length === 0" class="px-6 py-10 text-center"><p class="text-sm font-semibold text-slate-700">دستورکار بازی برای نمایش وجود ندارد.</p><p class="mt-1 text-xs text-slate-500">با تخصیص دستورکار به اعضای واحد، موارد قابل پیگیری در این بخش نمایش داده می‌شود.</p></div>
                     <div v-else class="divide-y divide-slate-100">
