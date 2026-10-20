@@ -528,6 +528,7 @@ class TaskHttpTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Tasks/Index')
             ->has('tasks.data', 1)
+            ->where('canFilterUnit', false)
             ->where('tasks.data.0.id', $ownTask->id));
 
         $this->assertNotSame($ownTask->id, $hiddenTask->id);
