@@ -45,7 +45,6 @@ class TaskService implements TaskServiceContract
             $query->where('tasks.assignee_id', $user->id);
         } elseif (($filters['scope'] ?? null) === 'unit') {
             $departmentIds = $user->managedDepartments()->pluck('departments.id')
-                ->merge($user->departments()->pluck('departments.id'))
                 ->map(fn ($id): int => (int) $id)->unique()->values()->all();
             $projectIds = $user->managedProjects()->pluck('projects.id')
                 ->map(fn ($id): int => (int) $id)->all();
