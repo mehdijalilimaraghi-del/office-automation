@@ -10,9 +10,41 @@ use App\Core\ExternalParties\Models\{ExternalContact, ExternalDepartment, Extern
 use App\Models\User;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Tasks\Services\TaskAccessService;
+use App\Modules\Projects\Models\ProjectSection;
 
 class TaskFormOptionsService
 {
+    public function __construct(
+        private readonly TaskAccessService $taskAccessService,
+    ) {
+    }
+
+    /**
+     * @return array{projects: array<int, array{id:int,name:string}>, departments: array<int, array{id:int,name:string}>, users: array<int, array{id:int,name:string}>}
+     */
+    public function forFilters(User $user): array
+    {
+        $visibleTasks = $this->taskAccessService->applyScope(Task::query(), $user, 'tasks.view');
+        $projectIds = (clone $visibleTasks)->whereNotNull('tasks.project_id')->distinct()->pluck('tasks.project_id');
+        $departmentIds = (clone $visibleTasks)->whereNotNull('tasks.department_id')->distinct()->pluck('tasks.department_id');
+        $sectionIds = (clone $visibleTasks)->whereNotNull('tasks.section_id')->select('tasks.section_id');
+        $sectionDepartmentIds = ProjectSection::query()
+            ->whereIn('id', $sectionIds)
+            ->whereNotNull('department_id')
+            ->distinct()
+            ->pluck('department_id');
+
+        return [
+            'projects' => Project::query()->whereIn('id', $projectIds)->orderBy('name')->get(['id', 'name'])
+                ->map(fn (Project $project): array => ['id' => (int) $project->id, 'name' => $project->name])->values()->all(),
+            'departments' => Department::query()->whereIn('id', $departmentIds->merge($sectionDepartmentIds)->unique())
+                ->orderBy('name')->get(['id', 'name'])
+                ->map(fn (Department $department): array => ['id' => (int) $department->id, 'name' => $department->name])->values()->all(),
+            'users' => $this->activeUsers(),
+        ];
+    }
+
     /**
      * @return array{
      *     projects: array<int, array{id:int,name:string,member_ids:array<int,int>}>,
