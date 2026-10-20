@@ -98,13 +98,13 @@ const statusTone = (status: string) => ({
 
 
                 <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    <Link href="/tasks" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                        <div class="flex items-center justify-between"><span class="text-sm font-medium text-slate-500">کارهای باز من</span><span class="rounded-lg bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-700">شخصی</span></div>
+                    <Link href="/tasks?scope=personal" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                        <div class="flex items-center justify-between"><span class="text-sm font-medium text-slate-500">دستورکارهای باز من</span><span class="rounded-lg bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-700">شخصی</span></div>
                         <p class="mt-3 text-3xl font-bold tracking-tight text-slate-950">{{ stats.my_tasks }}</p><p class="mt-2 text-xs text-slate-500">دستورکارهای تخصیص‌یافته به شما</p>
                     </Link>
-                    <Link href="/tasks" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                    <Link href="/tasks?scope=personal&due=today" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                         <div class="flex items-center justify-between"><span class="text-sm font-medium text-slate-500">سررسید امروز من</span><span class="rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">امروز</span></div>
-                        <p class="mt-3 text-3xl font-bold tracking-tight text-slate-950">{{ stats.my_today_tasks }}</p><p class="mt-2 text-xs text-slate-500">کارهای باز با مهلت امروز</p>
+                        <p class="mt-3 text-3xl font-bold tracking-tight text-slate-950">{{ stats.my_today_tasks }}</p><p class="mt-2 text-xs text-slate-500">دستورکارهای باز با مهلت امروز</p>
                     </Link>
                     <Link href="/tasks?scope=personal&due=overdue" class="rounded-2xl border border-rose-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                         <div class="flex items-center justify-between"><span class="text-sm font-medium text-slate-500">عقب‌افتاده‌های من</span><span class="rounded-lg bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700">نیازمند اقدام</span></div>
@@ -112,7 +112,7 @@ const statusTone = (status: string) => ({
                     </Link>
                     <Link href="/tasks?scope=personal&review=1" class="rounded-2xl border border-amber-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                         <div class="flex items-center justify-between"><span class="text-sm font-medium text-slate-500">در انتظار بررسی من</span><span class="rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">بررسی</span></div>
-                        <p class="mt-3 text-3xl font-bold tracking-tight text-slate-950">{{ stats.my_review_tasks }}</p><p class="mt-2 text-xs text-slate-500">کارهای ارسال‌شده برای بررسی مدیر</p>
+                        <p class="mt-3 text-3xl font-bold tracking-tight text-slate-950">{{ stats.my_review_tasks }}</p><p class="mt-2 text-xs text-slate-500">دستورکارهای ارسال‌شده برای بررسی مدیر</p>
                     </Link>
                 </section>
 
@@ -238,7 +238,7 @@ const statusTone = (status: string) => ({
                 </div>
 
                 <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6"><div><h2 class="font-bold text-slate-950">واحدهای نیازمند پیگیری</h2><p class="mt-1 text-xs text-slate-500">پیشرفت بر اساس تسک‌های قابل مشاهده</p></div><span class="text-xs text-slate-400">{{ sectionsOverview.length }} بخش</span></div>
+                    <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6"><div><h2 class="font-bold text-slate-950">واحدهای نیازمند پیگیری</h2><p class="mt-1 text-xs text-slate-500">پیشرفت بر اساس دستورکار‌های قابل مشاهده</p></div><span class="text-xs text-slate-400">{{ sectionsOverview.length }} بخش</span></div>
                     <div v-if="sectionsOverview.length === 0" class="p-8 text-center text-sm text-slate-500">بخشی برای نمایش وجود ندارد.</div>
                     <div v-else class="grid gap-0 divide-y divide-slate-100 md:grid-cols-2 md:divide-y-0 md:divide-x md:divide-x-reverse">
                         <div v-for="section in sectionsOverview" :key="section.id" class="px-5 py-4">
