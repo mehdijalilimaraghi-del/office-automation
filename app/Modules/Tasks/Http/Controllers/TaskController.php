@@ -417,6 +417,13 @@ class TaskController extends Controller
     {
         Gate::authorize('comment', $task);
 
+        $parentCommentId = $request->validated()['parent_comment_id'] ?? null;
+        if ($parentCommentId !== null && ! $task->comments()->whereKey($parentCommentId)->exists()) {
+            throw ValidationException::withMessages([
+                'parent_comment_id' => 'دیدگاه انتخاب‌شده متعلق به این دستورکار نیست.',
+            ]);
+        }
+
         $this->taskService->addComment(
             task: $task,
             author: $request->user(),
