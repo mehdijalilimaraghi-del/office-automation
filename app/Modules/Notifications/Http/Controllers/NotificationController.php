@@ -31,6 +31,7 @@ final class NotificationController extends Controller
                         'task_submitted' => 'دستورکار در انتظار تأیید شماست',
                         'task_returned' => 'دستورکار برای اصلاح بازگردانده شد',
                         'task_approved' => 'دستورکار تأیید و تکمیل شد',
+                        'task_commented' => 'دیدگاه جدید برای دستورکار',
                         default => $notification->data['title'] ?? 'اعلان',
                     };
 
