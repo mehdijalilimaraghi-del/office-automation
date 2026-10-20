@@ -37,6 +37,8 @@ interface DashboardTask {
 }
 
 interface TrendPoint { date: string; label: string; created: number; completed: number; }
+interface PersonalFollowUp { id: number; title: string; description: string | null; date: string | null; task_id: number; task_title: string | null; project?: string | null; kind?: string; }
+interface RecentComment { id: number; body: string; author: string; created_at: string | null; task_id: number; task_title: string | null; }
 interface ProjectOverview { id: number; name: string; code: string; status: string; sections_count: number; tasks_count: number; progress: number; }
 interface SectionOverview { id: number; name: string; project_id: number; project_name: string | null; project_code: string | null; department: string | null; tasks_count: number; completed_tasks: number; progress: number; }
 
@@ -46,6 +48,9 @@ const props = defineProps<{
     trend: TrendPoint[];
     personalTasks: DashboardTask[];
     teamTasks: DashboardTask[];
+    nextActivities: PersonalFollowUp[];
+    upcomingReminders: PersonalFollowUp[];
+    recentComments: RecentComment[];
     projectsOverview: ProjectOverview[];
     sectionsOverview: SectionOverview[];
 }>();
@@ -62,6 +67,7 @@ const priorityLabels: Record<string, string> = { low: 'کم', normal: 'عادی'
 const priorityClasses: Record<string, string> = { low: 'text-slate-500', normal: 'text-slate-500', high: 'text-amber-700', urgent: 'font-bold text-rose-700' };
 const projectStatusLabels: Record<string, string> = { planning: 'برنامه‌ریزی', active: 'فعال', completed: 'تکمیل‌شده', archived: 'بایگانی‌شده' };
 const formatDate = (value: string | null) => value ? value.replaceAll('-', '/') : 'بدون مهلت';
+const formatDateTime = (value: string | null) => value ? new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : 'تاریخ نامشخص';
 const maxTrend = Math.max(1, ...props.trend.flatMap((item) => [item.created, item.completed]));
 
 const statusTone = (status: string) => ({
@@ -82,7 +88,7 @@ const statusTone = (status: string) => ({
                 <div>
                     <p class="text-xs font-bold tracking-wide text-teal-700">مرکز عملیات</p>
                     <h1 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">داشبورد مدیریت</h1>
-                    <p class="mt-1 text-sm text-slate-500">کارهای شخصی، وضعیت تیم و موارد نیازمند پیگیری در یک نگاه</p>
+                    <p class="mt-1 text-sm text-slate-500">عملکرد شخصی و وضعیت واحد در یک نگاه</p>
                 </div>
             </div>
         </template>
@@ -94,17 +100,17 @@ const statusTone = (status: string) => ({
                 <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     <Link href="/tasks" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                         <div class="flex items-center justify-between"><span class="text-sm font-medium text-slate-500">کارهای باز من</span><span class="rounded-lg bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-700">شخصی</span></div>
-                        <p class="mt-3 text-3xl font-bold tracking-tight text-slate-950">{{ stats.my_tasks }}</p><p class="mt-2 text-xs text-slate-500">تسک‌های تخصیص‌یافته به شما</p>
+                        <p class="mt-3 text-3xl font-bold tracking-tight text-slate-950">{{ stats.my_tasks }}</p><p class="mt-2 text-xs text-slate-500">دستورکارهای تخصیص‌یافته به شما</p>
                     </Link>
                     <Link href="/tasks" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                         <div class="flex items-center justify-between"><span class="text-sm font-medium text-slate-500">سررسید امروز من</span><span class="rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">امروز</span></div>
                         <p class="mt-3 text-3xl font-bold tracking-tight text-slate-950">{{ stats.my_today_tasks }}</p><p class="mt-2 text-xs text-slate-500">کارهای باز با مهلت امروز</p>
                     </Link>
-                    <Link href="/tasks" class="rounded-2xl border border-rose-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                    <Link href="/tasks?scope=personal&due=overdue" class="rounded-2xl border border-rose-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                         <div class="flex items-center justify-between"><span class="text-sm font-medium text-slate-500">عقب‌افتاده‌های من</span><span class="rounded-lg bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700">نیازمند اقدام</span></div>
                         <p class="mt-3 text-3xl font-bold tracking-tight text-rose-700">{{ stats.my_overdue_tasks }}</p><p class="mt-2 text-xs text-slate-500">مهلت گذشته و هنوز باز</p>
                     </Link>
-                    <Link href="/tasks" class="rounded-2xl border border-amber-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                    <Link href="/tasks?scope=personal&review=1" class="rounded-2xl border border-amber-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                         <div class="flex items-center justify-between"><span class="text-sm font-medium text-slate-500">در انتظار بررسی من</span><span class="rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">بررسی</span></div>
                         <p class="mt-3 text-3xl font-bold tracking-tight text-slate-950">{{ stats.my_review_tasks }}</p><p class="mt-2 text-xs text-slate-500">کارهای ارسال‌شده برای بررسی مدیر</p>
                     </Link>
@@ -113,7 +119,7 @@ const statusTone = (status: string) => ({
                 <div class="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(300px,.85fr)]">
                     <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                         <div class="flex flex-wrap items-start justify-between gap-3">
-                            <div><h2 class="font-bold text-slate-950">روند هفت‌روزه فعالیت</h2><p class="mt-1 text-xs text-slate-500">تسک‌های ایجادشده و تکمیل‌شده در هر روز</p></div>
+                            <div><h2 class="font-bold text-slate-950">روند هفت‌روزه فعالیت</h2><p class="mt-1 text-xs text-slate-500">دستورکارهای ایجادشده و تکمیل‌شده در هر روز</p></div>
                             <div class="flex gap-3 text-xs"><span class="inline-flex items-center gap-1.5 text-slate-600"><i class="h-2.5 w-2.5 rounded-sm bg-sky-500"></i>ایجادشده</span><span class="inline-flex items-center gap-1.5 text-slate-600"><i class="h-2.5 w-2.5 rounded-sm bg-teal-500"></i>تکمیل‌شده</span></div>
                         </div>
                         <div class="mt-6 grid grid-cols-7 gap-2 sm:gap-4">
@@ -130,7 +136,7 @@ const statusTone = (status: string) => ({
                     </section>
 
                     <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                        <div class="flex items-start justify-between gap-3"><div><h2 class="font-bold text-slate-950">وضعیت کارها</h2><p class="mt-1 text-xs text-slate-500">تسک‌های قابل مشاهده در پروژه‌ها</p></div><Link href="/tasks" class="text-sm font-semibold text-teal-700 hover:text-teal-800">جزئیات</Link></div>
+                        <div class="flex items-start justify-between gap-3"><div><h2 class="font-bold text-slate-950">وضعیت دستورکارها</h2><p class="mt-1 text-xs text-slate-500">دستورکارهای قابل مشاهده در پروژه‌ها</p></div><Link href="/tasks" class="text-sm font-semibold text-teal-700 hover:text-teal-800">جزئیات</Link></div>
                         <div class="mt-5 space-y-4">
                             <div v-for="item in [
                                 { label: 'در انتظار انجام / دیده‌شده', value: stats.tasks_todo, tone: 'bg-slate-400' },
@@ -149,17 +155,17 @@ const statusTone = (status: string) => ({
                 <section v-if="canViewTeam" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <div class="border-b border-slate-100 px-5 py-4 sm:px-6">
                         <div class="flex flex-wrap items-center justify-between gap-3">
-                            <div><p class="text-xs font-bold text-violet-700">نمای مدیریتی</p><h2 class="mt-1 font-bold text-slate-950">عملکرد تیم و زیرمجموعه‌ها</h2><p class="mt-1 text-xs text-slate-500">این آمار جدا از کارهای شخصی شماست و بر اساس محدوده دسترسی مدیریتی محاسبه می‌شود.</p></div>
-                            <Link href="/tasks" class="text-sm font-semibold text-violet-700 hover:text-violet-800">پیگیری کارهای تیم ←</Link>
+                            <div><p class="text-xs font-bold text-violet-700">نمای مدیریتی</p><h2 class="mt-1 font-bold text-slate-950">عملکرد واحد</h2><p class="mt-1 text-xs text-slate-500">این آمار فقط دستورکارهای واحدهای تحت مدیریت شما را نشان می‌دهد و از عملکرد شخصی جداست.</p></div>
+                            <Link href="/tasks?scope=unit" class="text-sm font-semibold text-violet-700 hover:text-violet-800">پیگیری دستورکارهای واحد ←</Link>
                         </div>
                     </div>
                     <div class="grid gap-3 border-b border-slate-100 bg-slate-50/70 p-4 sm:grid-cols-2 xl:grid-cols-4 sm:p-5">
-                        <div class="rounded-xl border border-slate-200 bg-white p-4"><p class="text-xs text-slate-500">کارهای باز تیم</p><p class="mt-2 text-2xl font-bold text-slate-950">{{ stats.team_active_tasks }}</p></div>
-                        <div class="rounded-xl border border-rose-100 bg-white p-4"><p class="text-xs text-slate-500">عقب‌افتاده‌های تیم</p><p class="mt-2 text-2xl font-bold text-rose-700">{{ stats.team_overdue_tasks }}</p></div>
-                        <div class="rounded-xl border border-amber-100 bg-white p-4"><p class="text-xs text-slate-500">در انتظار بررسی</p><p class="mt-2 text-2xl font-bold text-amber-700">{{ stats.team_review_tasks }}</p></div>
-                        <div class="rounded-xl border border-teal-100 bg-white p-4"><p class="text-xs text-slate-500">تکمیل‌شده در ماه جاری</p><p class="mt-2 text-2xl font-bold text-teal-700">{{ stats.team_completed_month }}</p></div>
+                        <div class="rounded-xl border border-slate-200 bg-white p-4"><Link href="/tasks?scope=unit" class="text-xs text-slate-500 hover:text-violet-700">دستورکارهای باز واحد</Link><p class="mt-2 text-2xl font-bold text-slate-950">{{ stats.team_active_tasks }}</p></div>
+                        <div class="rounded-xl border border-rose-100 bg-white p-4"><Link href="/tasks?scope=unit&due=overdue" class="text-xs text-slate-500 hover:text-rose-700">عقب‌افتاده‌های واحد</Link><p class="mt-2 text-2xl font-bold text-rose-700">{{ stats.team_overdue_tasks }}</p></div>
+                        <div class="rounded-xl border border-amber-100 bg-white p-4"><Link href="/tasks?scope=unit&review=1" class="text-xs text-slate-500 hover:text-amber-700">در انتظار بررسی</Link><p class="mt-2 text-2xl font-bold text-amber-700">{{ stats.team_review_tasks }}</p></div>
+                        <div class="rounded-xl border border-teal-100 bg-white p-4"><Link href="/tasks?scope=unit&completed_period=month" class="text-xs text-slate-500 hover:text-teal-700">تکمیل‌شده در ماه جاری</Link><p class="mt-2 text-2xl font-bold text-teal-700">{{ stats.team_completed_month }}</p></div>
                     </div>
-                    <div v-if="teamTasks.length === 0" class="px-6 py-10 text-center"><p class="text-sm font-semibold text-slate-700">کار بازی برای نمایش وجود ندارد.</p><p class="mt-1 text-xs text-slate-500">با ایجاد یا تخصیص کار به اعضای تیم، موارد قابل پیگیری در این بخش نمایش داده می‌شود.</p></div>
+                    <div v-if="teamTasks.length === 0" class="px-6 py-10 text-center"><p class="text-sm font-semibold text-slate-700">دستورکار بازی برای نمایش وجود ندارد.</p><p class="mt-1 text-xs text-slate-500">با تخصیص دستورکار به اعضای واحد، موارد قابل پیگیری در این بخش نمایش داده می‌شود.</p></div>
                     <div v-else class="divide-y divide-slate-100">
                         <Link v-for="task in teamTasks" :key="task.id" :href="'/tasks/' + task.id" class="flex flex-col gap-3 px-5 py-4 transition hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                             <div class="min-w-0"><p class="truncate text-sm font-semibold text-slate-800">{{ task.title }}</p><p class="mt-1 text-xs text-slate-500">{{ task.project || 'بدون پروژه' }} · مسئول: {{ task.assignee || 'تخصیص‌نیافته' }}</p></div>
@@ -168,24 +174,63 @@ const statusTone = (status: string) => ({
                     </div>
                 </section>
 
-                <div class="grid gap-6 xl:grid-cols-2">
+                <div class="space-y-6">
                     <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                        <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h2 class="font-bold text-slate-950">کارهای شخصی من</h2><p class="mt-1 text-xs text-slate-500">فقط تسک‌هایی که به شما تخصیص داده شده‌اند</p></div><Link href="/tasks" class="text-sm font-semibold text-teal-700">همه کارها ←</Link></div>
-                        <div v-if="personalTasks.length === 0" class="px-6 py-10 text-center text-sm text-slate-500">در حال حاضر کار باز تخصیص‌یافته‌ای ندارید.</div>
+                        <div class="border-b border-slate-100 px-5 py-4 sm:px-6">
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <div><p class="text-xs font-bold text-teal-700">نمای شخصی</p><h2 class="mt-1 font-bold text-slate-950">عملکرد شخصی من</h2><p class="mt-1 text-xs text-slate-500">وضعیت دستورکارهایی که به خود شما تخصیص داده شده‌اند.</p></div>
+                                <Link href="/tasks?scope=personal" class="text-sm font-semibold text-teal-700">همه دستورکارهای من ←</Link>
+                            </div>
+                        </div>
+                        <div class="grid gap-3 border-b border-slate-100 bg-slate-50/70 p-4 sm:grid-cols-2 xl:grid-cols-4 sm:p-5">
+                            <Link href="/tasks?scope=personal" class="rounded-xl border border-slate-200 bg-white p-4 transition hover:border-teal-300"><p class="text-xs text-slate-500">دستورکارهای باز من</p><p class="mt-2 text-2xl font-bold text-slate-950">{{ stats.my_tasks }}</p></Link>
+                            <Link href="/tasks?scope=personal&due=today" class="rounded-xl border border-slate-200 bg-white p-4 transition hover:border-blue-300"><p class="text-xs text-slate-500">سررسید امروز</p><p class="mt-2 text-2xl font-bold text-blue-700">{{ stats.my_today_tasks }}</p></Link>
+                            <Link href="/tasks?scope=personal&due=overdue" class="rounded-xl border border-rose-100 bg-white p-4 transition hover:border-rose-300"><p class="text-xs text-slate-500">عقب‌افتاده</p><p class="mt-2 text-2xl font-bold text-rose-700">{{ stats.my_overdue_tasks }}</p></Link>
+                            <Link href="/tasks?scope=personal&review=1" class="rounded-xl border border-amber-100 bg-white p-4 transition hover:border-amber-300"><p class="text-xs text-slate-500">در انتظار بررسی</p><p class="mt-2 text-2xl font-bold text-amber-700">{{ stats.my_review_tasks }}</p></Link>
+                        </div>
+                        <div v-if="personalTasks.length === 0" class="px-6 py-10 text-center text-sm text-slate-500">در حال حاضر دستورکار باز تخصیص‌یافته‌ای ندارید.</div>
                         <div v-else class="divide-y divide-slate-100">
                             <Link v-for="task in personalTasks" :key="task.id" :href="'/tasks/' + task.id" class="block px-5 py-4 transition hover:bg-slate-50">
-                                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div class="min-w-0"><p class="truncate text-sm font-semibold text-slate-800">{{ task.title }}</p><p class="mt-1 text-xs text-slate-500">{{ task.project || 'بدون پروژه' }}</p></div><span class="w-fit rounded-full px-2.5 py-1 text-xs font-semibold" :class="statusTone(task.status)">{{ statusLabels[task.status] || task.status }}</span></div>
+                                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div class="min-w-0"><p class="truncate text-sm font-semibold text-slate-800">{{ task.title }}</p><p class="mt-1 text-xs text-slate-500">{{ task.project || 'بدون پروژه' }}</p></div><span class="w-fit rounded-full px-2.5 py-1 text-xs font-semibold" :class="statusTone(task.status)">{{ statusLabels[task.status] || task.status }}<span v-if="task.sub_status === 'manager_review'"> · در انتظار بررسی</span></span></div>
                                 <div class="mt-2 flex items-center justify-between gap-3"><span class="text-xs" :class="priorityClasses[task.priority] || 'text-slate-500'">اولویت {{ priorityLabels[task.priority] || task.priority }}</span><span class="text-xs" :class="task.is_overdue ? 'font-semibold text-rose-700' : 'text-slate-400'">مهلت: {{ formatDate(task.due_date) }}</span></div>
                             </Link>
+                        </div>
+                        <div class="grid gap-5 border-t border-slate-100 p-5 lg:grid-cols-2 sm:p-6">
+                            <div>
+                                <div class="mb-3 flex items-center justify-between gap-3"><h3 class="font-bold text-slate-900">فعالیت‌های بعدی من</h3><span class="text-xs text-slate-400">{{ nextActivities.length + upcomingReminders.length }} مورد</span></div>
+                                <div v-if="nextActivities.length === 0 && upcomingReminders.length === 0" class="rounded-xl bg-slate-50 p-5 text-sm text-slate-500">فعالیت برنامه‌ریزی‌شده یا یادآور بازی برای نمایش ندارید.</div>
+                                <div v-else class="space-y-2">
+                                    <Link v-for="item in nextActivities" :key="'activity-' + item.id" :href="'/tasks/' + item.task_id" class="block rounded-xl border border-slate-100 p-3 transition hover:bg-slate-50">
+                                        <div class="flex items-center justify-between gap-3"><p class="text-sm font-semibold text-slate-800">{{ item.title }}</p><span class="text-xs text-slate-400">{{ formatDate(item.date) }}</span></div>
+                                        <p class="mt-1 text-xs text-slate-500">دستورکار: {{ item.task_title || 'بدون عنوان' }}</p>
+                                        <p v-if="item.description" class="mt-1 line-clamp-2 text-xs text-slate-500">{{ item.description }}</p>
+                                    </Link>
+                                    <Link v-for="item in upcomingReminders" :key="'reminder-' + item.id" :href="'/tasks/' + item.task_id" class="block rounded-xl border border-amber-100 bg-amber-50/40 p-3 transition hover:bg-amber-50">
+                                        <div class="flex items-center justify-between gap-3"><p class="text-sm font-semibold text-slate-800">{{ item.title }} <span class="text-[10px] font-medium text-amber-700">یادآور</span></p><span class="text-xs text-slate-400">{{ formatDate(item.date) }}</span></div>
+                                        <p class="mt-1 text-xs text-slate-500">دستورکار: {{ item.task_title || 'بدون عنوان' }}</p>
+                                    </Link>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="mb-3 flex items-center justify-between gap-3"><h3 class="font-bold text-slate-900">کامنت‌های جدید دستورکارهای من</h3><Link href="/notifications" class="text-xs font-semibold text-teal-700">مرکز اعلان‌ها ←</Link></div>
+                                <div v-if="recentComments.length === 0" class="rounded-xl bg-slate-50 p-5 text-sm text-slate-500">در هفت روز گذشته کامنت تازه‌ای از دیگران روی دستورکارهای شما ثبت نشده است.</div>
+                                <div v-else class="space-y-2">
+                                    <Link v-for="comment in recentComments" :key="comment.id" :href="'/tasks/' + comment.task_id" class="block rounded-xl border border-slate-100 p-3 transition hover:bg-slate-50">
+                                        <div class="flex items-center justify-between gap-3"><p class="text-sm font-semibold text-slate-800">{{ comment.author }}</p><span class="text-xs text-slate-400">{{ formatDateTime(comment.created_at) }}</span></div>
+                                        <p class="mt-1 text-sm text-slate-600">{{ comment.body }}</p>
+                                        <p class="mt-1 text-xs text-teal-700">دستورکار: {{ comment.task_title || 'بدون عنوان' }}</p>
+                                    </Link>
+                                </div>
+                            </div>
                         </div>
                     </section>
 
                     <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                        <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h2 class="font-bold text-slate-950">پیشرفت پروژه‌ها</h2><p class="mt-1 text-xs text-slate-500">درصد تکمیل بر اساس تسک‌های قابل مشاهده</p></div><Link href="/projects" class="text-sm font-semibold text-teal-700">همه پروژه‌ها ←</Link></div>
+                        <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h2 class="font-bold text-slate-950">پیشرفت پروژه‌ها</h2><p class="mt-1 text-xs text-slate-500">درصد تکمیل بر اساس دستورکارهای قابل مشاهده</p></div><Link href="/projects" class="text-sm font-semibold text-teal-700">همه پروژه‌ها ←</Link></div>
                         <div v-if="projectsOverview.length === 0" class="px-6 py-10 text-center text-sm text-slate-500">پروژه‌ای برای نمایش در دسترس نیست.</div>
                         <div v-else class="divide-y divide-slate-100">
                             <div v-for="project in projectsOverview.slice(0, 6)" :key="project.id" class="px-5 py-4">
-                                <div class="flex items-start justify-between gap-3"><div class="min-w-0"><Link :href="'/projects/' + project.id" class="truncate text-sm font-semibold text-slate-800 hover:text-teal-700">{{ project.name }}</Link><p class="mt-1 text-xs text-slate-500">{{ project.code }} · {{ projectStatusLabels[project.status] || project.status }} · {{ project.tasks_count }} تسک</p></div><span class="shrink-0 text-sm font-bold text-slate-700">{{ project.progress }}٪</span></div>
+                                <div class="flex items-start justify-between gap-3"><div class="min-w-0"><Link :href="'/projects/' + project.id" class="truncate text-sm font-semibold text-slate-800 hover:text-teal-700">{{ project.name }}</Link><p class="mt-1 text-xs text-slate-500">{{ project.code }} · {{ projectStatusLabels[project.status] || project.status }} · {{ project.tasks_count }} دستورکار</p></div><span class="shrink-0 text-sm font-bold text-slate-700">{{ project.progress }}٪</span></div>
                                 <div class="mt-3 h-2 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-teal-500" :style="{ width: project.progress + '%' }"></div></div>
                             </div>
                         </div>
@@ -199,7 +244,7 @@ const statusTone = (status: string) => ({
                         <div v-for="section in sectionsOverview" :key="section.id" class="px-5 py-4">
                             <div class="flex items-start justify-between gap-3"><div class="min-w-0"><p class="truncate text-sm font-semibold text-slate-800">{{ section.name }}</p><p class="mt-1 truncate text-xs text-slate-500">{{ section.project_name || 'پروژه' }} · {{ section.department || 'بدون واحد مسئول' }}</p></div><span class="shrink-0 text-sm font-bold text-slate-700">{{ section.progress }}٪</span></div>
                             <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-violet-500" :style="{ width: section.progress + '%' }"></div></div>
-                            <p class="mt-2 text-xs text-slate-400">{{ section.completed_tasks }} از {{ section.tasks_count }} تسک تکمیل شده</p>
+                            <p class="mt-2 text-xs text-slate-400">{{ section.completed_tasks }} از {{ section.tasks_count }} دستورکار تکمیل شده</p>
                         </div>
                     </div>
                 </section>
