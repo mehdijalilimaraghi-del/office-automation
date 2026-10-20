@@ -10,7 +10,6 @@ use App\Core\ExternalParties\Models\{ExternalContact, ExternalDepartment, Extern
 use App\Models\User;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Tasks\Models\Task;
-use App\Modules\Tasks\Services\TaskAccessService;
 use App\Modules\Projects\Models\ProjectSection;
 
 class TaskFormOptionsService
@@ -41,7 +40,10 @@ class TaskFormOptionsService
             'departments' => Department::query()->whereIn('id', $departmentIds->merge($sectionDepartmentIds)->unique())
                 ->orderBy('name')->get(['id', 'name'])
                 ->map(fn (Department $department): array => ['id' => (int) $department->id, 'name' => $department->name])->values()->all(),
-            'users' => $this->activeUsers(),
+            'users' => User::query()->operational()->where('status', 'active')
+                ->whereIn('id', (clone $visibleTasks)->whereNotNull('tasks.assignee_id')->select('tasks.assignee_id'))
+                ->orderBy('name')->get(['id', 'name'])
+                ->map(fn (User $user): array => ['id' => (int) $user->id, 'name' => $user->name])->values()->all(),
         ];
     }
 
