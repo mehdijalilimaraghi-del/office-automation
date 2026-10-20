@@ -88,6 +88,18 @@ class TaskService implements TaskServiceContract
                 ->whereBetween('tasks.completed_at', [now()->startOfMonth(), now()->endOfMonth()]);
         }
 
+        if (! empty($filters['assignee_id'])) {
+            $query->where('tasks.assignee_id', (int) $filters['assignee_id']);
+        }
+
+        if (! empty($filters['due_from'])) {
+            $query->whereDate('tasks.due_date', '>=', $filters['due_from']);
+        }
+
+        if (! empty($filters['due_to'])) {
+            $query->whereDate('tasks.due_date', '<=', $filters['due_to']);
+        }
+
         if (! empty($filters['search'])) {
             $search = trim((string) $filters['search']);
             $query->where(function ($searchQuery) use ($search): void {
