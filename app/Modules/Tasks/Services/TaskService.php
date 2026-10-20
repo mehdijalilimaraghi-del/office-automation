@@ -111,6 +111,9 @@ class TaskService implements TaskServiceContract
             });
         }
 
+        if (($filters['status_group'] ?? null) === 'pending') {
+            $query->whereIn('tasks.status', ['todo', 'observed']);
+        }
         if (! empty($filters['status'])) $query->where('tasks.status', $filters['status']);
         if (! empty($filters['priority'])) $query->where('tasks.priority', $filters['priority']);
         if (! empty($filters['project_id'])) $query->where('tasks.project_id', (int) $filters['project_id']);
