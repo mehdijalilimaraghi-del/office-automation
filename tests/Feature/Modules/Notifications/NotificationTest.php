@@ -27,6 +27,18 @@ class NotificationTest extends TestCase
         $this->seed(\Database\Seeders\CorePermissionSeeder::class);
     }
 
+    public function test_any_authenticated_user_can_open_their_own_notification_center(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+
+        $this->actingAs($user)
+            ->get(route('notifications.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Notifications/Index')
+                ->where('unreadCount', 0));
+    }
+
     public function test_task_assignment_creates_database_notification_for_assignee(): void
     {
         $actor = User::factory()->create(['status' => 'active']);
