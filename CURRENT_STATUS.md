@@ -2,6 +2,13 @@
 
 > This is the concise handoff/checkpoint file for continuing development in a new conversation.
 
+## 2026-10-20 — Dashboard header cleanup
+
+- Removed the redundant “گزارش زنده از داده‌های سامانه” badge from the dashboard hero.
+- Removed the two top-of-dashboard shortcut buttons (“مشاهده تسک‌ها” and “پروژه‌ها”) because they duplicated navigation and added little value to the page header.
+- **Branch:** `development`. Local validation pending; no tests or build were run by the assistant. Keep `master` unchanged.
+
+
 ## 2026-10-19 — Role-aware dashboard and direct entry routing
 
 - Redesigned `/dashboard` as an operational dashboard with separate personal-task and managerial-team sections. Personal KPIs only count tasks assigned to the signed-in user; team metrics and the team task list are scoped to managed departments/projects or an organization-wide task-view scope.
