@@ -84,10 +84,6 @@ const statusTone = (status: string) => ({
                     <h1 class="mt-1 text-2xl font-bold tracking-tight text-slate-950">داشبورد مدیریت</h1>
                     <p class="mt-1 text-sm text-slate-500">کارهای شخصی، وضعیت تیم و موارد نیازمند پیگیری در یک نگاه</p>
                 </div>
-                <div class="flex flex-wrap gap-2">
-                    <Link href="/tasks" class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800">مشاهده تسک‌ها <span aria-hidden="true">←</span></Link>
-                    <Link v-if="canViewTeam" href="/projects" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">پروژه‌ها</Link>
-                </div>
             </div>
         </template>
 
@@ -98,7 +94,6 @@ const statusTone = (status: string) => ({
                     <div class="pointer-events-none absolute -bottom-28 right-1/3 h-64 w-64 rounded-full bg-blue-400/10 blur-3xl"></div>
                     <div class="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                         <div class="max-w-2xl">
-                            <span class="inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-teal-200">گزارش زنده از داده‌های سامانه</span>
                             <h2 class="mt-4 text-2xl font-bold leading-tight sm:text-3xl">تصویر روشن‌تری از کار امروز داشته باشید.</h2>
                             <p class="mt-2 text-sm leading-7 text-slate-300">ابتدا کارهای خودتان را ببینید؛ در صورت داشتن مسئولیت مدیریتی، عملکرد تیم و گلوگاه‌ها در بخشی جداگانه نمایش داده می‌شود.</p>
                         </div>
