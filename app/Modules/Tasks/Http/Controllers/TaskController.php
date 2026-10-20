@@ -59,8 +59,14 @@ class TaskController extends Controller
             'completed_period' => ['nullable', 'in:month'],
             'assignee_id' => ['nullable', 'integer', 'min:1'],
             'due_from' => ['nullable', 'date_format:Y-m-d'],
-            'due_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:due_from'],
+            'due_to' => ['nullable', 'date_format:Y-m-d'],
         ]);
+
+        if (! empty($filters['due_from']) && ! empty($filters['due_to']) && $filters['due_to'] < $filters['due_from']) {
+            throw ValidationException::withMessages([
+                'due_to' => 'تاریخ پایان باید مساوی یا بعد از تاریخ شروع باشد.',
+            ]);
+        }
 
         return Inertia::render('Tasks/Index', [
             'tasks' => $this->taskService->list($request->user(), $filters),
