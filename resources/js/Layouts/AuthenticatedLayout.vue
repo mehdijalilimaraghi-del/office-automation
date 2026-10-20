@@ -25,7 +25,7 @@ const abilities = computed(
 const can = (ability: string): boolean => Boolean(abilities.value[ability]);
 
 const hasWorkMenu = computed(() =>
-    ['cartable_view', 'tasks_view', 'projects_view', 'notification_view'].some(can),
+    ['cartable_view', 'tasks_view', 'projects_view'].some(can) || Boolean(page.props.auth.user),
 );
 
 const hasOrganizationMenu = computed(() =>
@@ -151,8 +151,7 @@ onMounted(() => {
                                             پروژه‌ها
                                         </NavLink>
                                         <NavLink
-                                            v-if="can('notification_view')"
-                                            :href="route('notifications.index')"
+                                                                                        :href="route('notifications.index')"
                                             :active="route().current('notifications.*')"
                                             class="w-full justify-start rounded-lg border-0 px-3 py-2 text-right"
                                         >
