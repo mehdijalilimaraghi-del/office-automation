@@ -711,6 +711,47 @@ class TaskHttpTest extends TestCase
         );
     }
 
+    public function test_dashboard_task_filters_return_only_matching_personal_or_unit_tasks(): void
+    {
+        $manager = $this->userWithPermissionScope('tasks.view', 'organization');
+        $project = $this->createProject($manager);
+        $employee = User::factory()->create(['status' => 'active']);
+
+        $personalTask = $this->createTask($project, $manager);
+        $personalTask->update(['due_date' => now()->subDay()->toDateString()]);
+
+        $unitTask = Task::query()->create([
+            'project_id' => $project->id,
+            'section_id' => $project->sections()->value('id'),
+            'department_id' => $project->sections()->value('department_id'),
+            'title' => 'Overdue Unit Task',
+            'status' => 'in_progress',
+            'priority' => 'normal',
+            'assignee_id' => $employee->id,
+            'created_by' => $manager->id,
+            'due_date' => now()->subDay()->toDateString(),
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($manager)
+            ->get(route('tasks.index', ['scope' => 'personal', 'due' => 'overdue']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('tasks.total', 1)
+                ->where('tasks.data.0.id', $personalTask->id)
+                ->where('filters.scope', 'personal')
+                ->where('filters.due', 'overdue'));
+
+        $this->actingAs($manager)
+            ->get(route('tasks.index', ['scope' => 'unit', 'due' => 'overdue']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('tasks.total', 1)
+                ->where('tasks.data.0.id', $unitTask->id)
+                ->where('filters.scope', 'unit')
+                ->where('filters.due', 'overdue'));
+    }
+
     public function test_project_member_can_create_task_through_http_layer(): void
     {
         $creator = $this->userWithPermission('tasks.create');
