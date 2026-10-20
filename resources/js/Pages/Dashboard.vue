@@ -138,16 +138,16 @@ const statusTone = (status: string) => ({
                     <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                         <div class="flex items-start justify-between gap-3"><div><h2 class="font-bold text-slate-950">وضعیت دستورکارها</h2><p class="mt-1 text-xs text-slate-500">دستورکارهای قابل مشاهده در پروژه‌ها</p></div><Link href="/tasks" class="text-sm font-semibold text-teal-700 hover:text-teal-800">همه دستورکارها</Link></div>
                         <div class="mt-5 space-y-4">
-                            <div v-for="item in [
-                                { label: 'در انتظار انجام / دیده‌شده', value: stats.tasks_todo, tone: 'bg-slate-400' },
-                                { label: 'در حال انجام', value: stats.tasks_in_progress, tone: 'bg-sky-500' },
-                                { label: 'در انتظار بررسی مدیر', value: stats.tasks_review, tone: 'bg-amber-500' },
-                                { label: 'تکمیل‌شده', value: stats.tasks_completed, tone: 'bg-teal-500' },
-                                { label: 'عقب‌افتاده', value: stats.tasks_overdue, tone: 'bg-rose-500' },
-                            ]" :key="item.label">
+                            <Link v-for="item in [
+                                { label: 'در انتظار انجام / دیده‌شده', value: stats.tasks_todo, tone: 'bg-slate-400', href: '/tasks?status=todo' },
+                                { label: 'در حال انجام', value: stats.tasks_in_progress, tone: 'bg-sky-500', href: '/tasks?status=in_progress' },
+                                { label: 'در انتظار بررسی مدیر', value: stats.tasks_review, tone: 'bg-amber-500', href: '/tasks?review=1' },
+                                { label: 'تکمیل‌شده', value: stats.tasks_completed, tone: 'bg-teal-500', href: '/tasks?status=completed' },
+                                { label: 'عقب‌افتاده', value: stats.tasks_overdue, tone: 'bg-rose-500', href: '/tasks?due=overdue' },
+                            ]" :key="item.label" :href="item.href" class="block rounded-lg p-1 transition hover:bg-slate-50">
                                 <div class="mb-1.5 flex items-center justify-between gap-3 text-sm"><span class="text-slate-600">{{ item.label }}</span><span class="font-bold tabular-nums text-slate-900">{{ item.value }}</span></div>
                                 <div class="h-2 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full" :class="item.tone" :style="{ width: (stats.tasks_total ? Math.min(100, item.value / stats.tasks_total * 100) : 0) + '%' }"></div></div>
-                            </div>
+                            </Link>
                         </div>
                     </section>
                 </div>
