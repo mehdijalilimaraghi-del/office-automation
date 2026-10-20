@@ -67,6 +67,7 @@ interface TaskPaginator {
 interface TaskFilters {
     search?: string;
     status?: string;
+    status_group?: 'pending';
     priority?: string;
     project_id?: number | string;
     department_id?: number | string;
@@ -107,6 +108,7 @@ const props = defineProps<{
 
 const search = ref(props.filters.search ?? '');
 const statusFilter = ref(props.filters.status ?? '');
+const statusGroupFilter = ref(props.filters.status_group ?? '');
 const priorityFilter = ref(props.filters.priority ?? '');
 const projectFilter = ref(props.filters.project_id?.toString() ?? '');
 const departmentFilter = ref(props.filters.department_id?.toString() ?? '');
@@ -184,10 +186,13 @@ const availableAssignees = computed(() => {
 
 const applyFilters = (): void => {
     isFiltering.value = true;
+    const combinedPending = statusFilter.value === '__pending';
 
     router.get(route('tasks.index'), {
         search: search.value.trim() || undefined,
-        status: statusFilter.value || undefined,
+        status: combinedPending ? undefined : (statusFilter.value || undefined),
+        status_group: combinedPending ? 'pending' : (statusGroupFilter.value || undefined),
+        status_group: statusGroupFilter.value || undefined,
         priority: priorityFilter.value || undefined,
         project_id: projectFilter.value || undefined,
         department_id: departmentFilter.value || undefined,
@@ -210,6 +215,7 @@ const applyFilters = (): void => {
 const clearFilters = (): void => {
     search.value = '';
     statusFilter.value = '';
+    statusGroupFilter.value = '';
     priorityFilter.value = '';
     projectFilter.value = '';
     departmentFilter.value = '';
@@ -520,6 +526,7 @@ const handleSectionChange = (): void => {
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">وضعیت</label>
                         <select v-model="statusFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
                             <option value="">همه وضعیت‌ها</option>
+                            <option value="__pending">در انتظار انجام یا دیده‌شده</option>
                             <option value="todo">انجام نشده</option>
                             <option value="observed">مشاهده شده</option>
                             <option value="in_progress">در حال انجام</option>
