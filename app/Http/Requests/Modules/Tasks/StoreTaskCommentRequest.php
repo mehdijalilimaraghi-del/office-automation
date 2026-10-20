@@ -17,6 +17,7 @@ class StoreTaskCommentRequest extends FormRequest
     {
         return [
             'body' => ['required', 'string', 'max:10000'],
+            'parent_comment_id' => ['nullable', 'integer', 'min:1'],
         ];
     }
 
