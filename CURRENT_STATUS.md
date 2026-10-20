@@ -1,5 +1,10 @@
 # Office Automation — Current Status
 
+## 2026-10-20 — Remove the entire dark dashboard hero section
+
+- Removed the complete dark `bg-slate-950` hero section from `resources/js/Pages/Dashboard.vue`, including its headline, explanatory text, and personal-task counter. The dashboard now proceeds directly from the page header to the KPI cards; the task-management/navigation sections remain.
+- **Branch:** `development`. Local validation pending; no tests or build were run by the assistant. Keep `master` unchanged.
+
 > This is the concise handoff/checkpoint file for continuing development in a new conversation.
 
 ## 2026-10-20 — Dashboard header cleanup
