@@ -97,7 +97,7 @@ const props = defineProps<{
     filters: TaskFilters;
     canCreate: boolean;
     formOptions: FormOptions | null;
-    filterOptions: { users: User[] };
+    filterOptions: { projects: Array<{ id: number; name: string }>; departments: DepartmentOption[]; users: User[] };
     customFields: Array<{
         id: number; key: string; label: string;
         type: 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select';
@@ -542,14 +542,14 @@ const handleSectionChange = (): void => {
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">پروژه</label>
                         <select v-model="projectFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
                             <option value="">همه پروژه‌ها</option>
-                            <option v-for="project in formOptions?.projects ?? []" :key="project.id" :value="project.id">{{ project.name }}</option>
+                            <option v-for="project in filterOptions.projects" :key="project.id" :value="project.id">{{ project.name }}</option>
                         </select>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">واحد</label>
                         <select v-model="departmentFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
                             <option value="">همه واحدها</option>
-                            <option v-for="department in formOptions?.departments ?? []" :key="department.id" :value="department.id">{{ department.name }}</option>
+                            <option v-for="department in filterOptions.departments" :key="department.id" :value="department.id">{{ department.name }}</option>
                         </select>
                     </div>
                 </div>
