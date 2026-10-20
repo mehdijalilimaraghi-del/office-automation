@@ -97,25 +97,6 @@ const statusTone = (status: string) => ({
             <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
 
 
-                <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    <Link href="/tasks?scope=personal" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                        <div class="flex items-center justify-between"><span class="text-sm font-medium text-slate-500">دستورکارهای باز من</span><span class="rounded-lg bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-700">شخصی</span></div>
-                        <p class="mt-3 text-3xl font-bold tracking-tight text-slate-950">{{ stats.my_tasks }}</p><p class="mt-2 text-xs text-slate-500">دستورکارهای تخصیص‌یافته به شما</p>
-                    </Link>
-                    <Link href="/tasks?scope=personal&due=today" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                        <div class="flex items-center justify-between"><span class="text-sm font-medium text-slate-500">سررسید امروز من</span><span class="rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">امروز</span></div>
-                        <p class="mt-3 text-3xl font-bold tracking-tight text-slate-950">{{ stats.my_today_tasks }}</p><p class="mt-2 text-xs text-slate-500">دستورکارهای باز با مهلت امروز</p>
-                    </Link>
-                    <Link href="/tasks?scope=personal&due=overdue" class="rounded-2xl border border-rose-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                        <div class="flex items-center justify-between"><span class="text-sm font-medium text-slate-500">عقب‌افتاده‌های من</span><span class="rounded-lg bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700">نیازمند اقدام</span></div>
-                        <p class="mt-3 text-3xl font-bold tracking-tight text-rose-700">{{ stats.my_overdue_tasks }}</p><p class="mt-2 text-xs text-slate-500">مهلت گذشته و هنوز باز</p>
-                    </Link>
-                    <Link href="/tasks?scope=personal&review=1" class="rounded-2xl border border-amber-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                        <div class="flex items-center justify-between"><span class="text-sm font-medium text-slate-500">در انتظار بررسی من</span><span class="rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">بررسی</span></div>
-                        <p class="mt-3 text-3xl font-bold tracking-tight text-slate-950">{{ stats.my_review_tasks }}</p><p class="mt-2 text-xs text-slate-500">دستورکارهای ارسال‌شده برای بررسی مدیر</p>
-                    </Link>
-                </section>
-
                 <div class="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(300px,.85fr)]">
                     <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                         <div class="flex flex-wrap items-start justify-between gap-3">
