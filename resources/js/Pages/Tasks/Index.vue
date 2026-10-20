@@ -97,6 +97,7 @@ const props = defineProps<{
     tasks: TaskPaginator;
     filters: TaskFilters;
     canCreate: boolean;
+    canFilterUnit: boolean;
     formOptions: FormOptions | null;
     filterOptions: { projects: Array<{ id: number; name: string }>; departments: DepartmentOption[]; users: User[] };
     customFields: Array<{
@@ -464,7 +465,7 @@ const handleSectionChange = (): void => {
 
             <section class="task-filter-panel rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
                 <div class="mb-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <div>
+                    <div v-if="props.canFilterUnit">
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">محدوده دستورکار</label>
                         <select v-model="scopeFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
                             <option value="">همه موارد مجاز</option>
@@ -512,13 +513,7 @@ const handleSectionChange = (): void => {
                         <JalaliDatePicker v-model="dueToFilter" />
                     </div>
                 </div>
-                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-                    <div class="lg:col-span-2">
-                        <label for="task-search" class="mb-1.5 block text-sm font-medium text-gray-700">جست‌وجو</label>
-                        <input id="task-search" v-model="search" type="search"
-                            placeholder="عنوان، توضیحات، پروژه، واحد یا مسئول..."
-                            class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
-                    </div>
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">وضعیت</label>
                         <select v-model="statusFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
@@ -556,6 +551,12 @@ const handleSectionChange = (): void => {
                             <option v-for="department in filterOptions.departments" :key="department.id" :value="department.id">{{ department.name }}</option>
                         </select>
                     </div>
+                </div>
+                <div class="mt-4 border-t border-gray-100 pt-4">
+                    <label for="task-search" class="mb-1.5 block text-sm font-medium text-gray-700">جست‌وجو</label>
+                    <input id="task-search" v-model="search" type="search"
+                        placeholder="عنوان، توضیحات، پروژه، واحد یا مسئول..."
+                        class="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10" />
                 </div>
                 <div class="mt-4 flex flex-wrap gap-2 border-t border-gray-100 pt-4">
                     <button type="button" :disabled="isFiltering" @click="applyFilters" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
