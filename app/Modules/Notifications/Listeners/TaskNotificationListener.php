@@ -63,10 +63,11 @@ final class TaskNotificationListener
 
     public function commented(TaskCommented $event): void
     {
-        $task = $event->task->loadMissing(['creator', 'assignee', 'participants.user']);
-        $recipients = collect([$task->creator, $task->assignee])
-            ->filter(fn (?User $user) => $user !== null)
-            ->merge($task->participants->map(fn ($participant) => $participant->user)->filter())
+        $task = $event->task->loadMissing(['assignee', 'department.manager', 'project.manager']);
+        // The department manager is primary; use the project manager only when no department manager is assigned.
+        $manager = $task->department?->manager ?? $task->project?->manager;
+        $recipients = collect([$manager, $task->assignee])
+            ->filter(fn (?User $user) => $user !== null && $user->status === 'active')
             ->unique(fn (User $user) => (int) $user->id)
             ->reject(fn (User $user) => (int) $user->id === (int) $event->author->id);
 
