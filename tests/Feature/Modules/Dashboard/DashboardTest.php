@@ -25,7 +25,7 @@ class DashboardTest extends TestCase
         $this->actingAs($user)->get('/')->assertRedirect(route('dashboard'));
     }
 
-    public function test_authenticated_user_can_open_dashboard_with_separate_personal_and_team_panels(): void
+    public function test_authenticated_user_can_open_dashboard_with_personal_unit_and_follow_up_data(): void
     {
         $user = User::factory()->create(['status' => 'active']);
 
@@ -43,6 +43,9 @@ class DashboardTest extends TestCase
                 ->has('trend', 7)
                 ->where('personalTasks', [])
                 ->where('teamTasks', [])
+                ->where('nextActivities', [])
+                ->where('upcomingReminders', [])
+                ->where('recentComments', [])
                 ->where('projectsOverview', [])
                 ->where('sectionsOverview', []));
     }
