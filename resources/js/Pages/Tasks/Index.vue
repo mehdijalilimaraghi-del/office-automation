@@ -191,7 +191,6 @@ const applyFilters = (): void => {
         search: search.value.trim() || undefined,
         status: combinedPending ? undefined : (statusFilter.value || undefined),
         status_group: combinedPending ? 'pending' : undefined,
-        status_group: statusGroupFilter.value || undefined,
         priority: priorityFilter.value || undefined,
         project_id: projectFilter.value || undefined,
         department_id: departmentFilter.value || undefined,
