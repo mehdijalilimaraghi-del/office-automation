@@ -89,20 +89,7 @@ const statusTone = (status: string) => ({
 
         <div class="min-h-[calc(100vh-9rem)] bg-slate-50/80 py-6 sm:py-8">
             <div class="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
-                <section class="relative overflow-hidden rounded-2xl bg-slate-950 px-5 py-6 text-white shadow-sm sm:px-8 sm:py-8">
-                    <div class="pointer-events-none absolute -left-16 -top-24 h-64 w-64 rounded-full bg-teal-400/15 blur-3xl"></div>
-                    <div class="pointer-events-none absolute -bottom-28 right-1/3 h-64 w-64 rounded-full bg-blue-400/10 blur-3xl"></div>
-                    <div class="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-                        <div class="max-w-2xl">
-                            <h2 class="mt-4 text-2xl font-bold leading-tight sm:text-3xl">تصویر روشن‌تری از کار امروز داشته باشید.</h2>
-                            <p class="mt-2 text-sm leading-7 text-slate-300">ابتدا کارهای خودتان را ببینید؛ در صورت داشتن مسئولیت مدیریتی، عملکرد تیم و گلوگاه‌ها در بخشی جداگانه نمایش داده می‌شود.</p>
-                        </div>
-                        <div class="shrink-0 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                            <p class="text-xs text-slate-400">کارهای شخصی باز</p>
-                            <p class="mt-1 text-2xl font-bold tabular-nums">{{ stats.my_tasks }}</p>
-                        </div>
-                    </div>
-                </section>
+
 
                 <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     <Link href="/tasks" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
