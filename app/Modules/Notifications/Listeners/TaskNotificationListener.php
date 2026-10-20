@@ -7,6 +7,7 @@ namespace App\Modules\Notifications\Listeners;
 use App\Models\User;
 use App\Modules\Notifications\Services\NotificationService;
 use App\Modules\Tasks\Events\TaskApproved;
+use App\Modules\Tasks\Events\TaskCommented;
 use App\Modules\Tasks\Events\TaskAssigned;
 use App\Modules\Tasks\Events\TaskReturned;
 use App\Modules\Tasks\Events\TaskSubmitted;
@@ -58,6 +59,23 @@ final class TaskNotificationListener
         if ($task->assignee !== null) {
             $this->notifications->taskReturned($task, $task->assignee);
         }
+    }
+
+    public function commented(TaskCommented $event): void
+    {
+        $task = $event->task->loadMissing(['creator', 'assignee', 'participants.user']);
+        $recipients = collect([$task->creator, $task->assignee])
+            ->filter(fn (?User $user) => $user !== null)
+            ->merge($task->participants->map(fn ($participant) => $participant->user)->filter())
+            ->unique(fn (User $user) => (int) $user->id)
+            ->reject(fn (User $user) => (int) $user->id === (int) $event->author->id);
+
+        $recipients->each(fn (User $user) => $this->notifications->taskCommented(
+            $task,
+            $user,
+            $event->author,
+            $event->comment->body,
+        ));
     }
 
     public function approved(TaskApproved $event): void
