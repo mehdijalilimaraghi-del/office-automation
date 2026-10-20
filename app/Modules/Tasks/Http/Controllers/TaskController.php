@@ -147,6 +147,7 @@ class TaskController extends Controller
                 'assignments.toUser',
                 'assignments.assignedBy',
                 'comments.user',
+                'comments.parent.user',
                 'activities.creator',
                 'activities.completedBy',
                 'reminders.user',
@@ -420,6 +421,7 @@ class TaskController extends Controller
             task: $task,
             author: $request->user(),
             body: $request->validated()['body'],
+            parentCommentId: $request->validated()['parent_comment_id'] ?? null,
         );
 
         return back()->with('success', 'نظر با موفقیت ثبت شد.');
