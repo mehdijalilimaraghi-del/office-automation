@@ -52,6 +52,10 @@ class TaskController extends Controller
             'priority' => ['nullable', 'in:low,normal,high,urgent'],
             'project_id' => ['nullable', 'integer'],
             'department_id' => ['nullable', 'integer'],
+            'scope' => ['nullable', 'in:personal,unit'],
+            'due' => ['nullable', 'in:today,overdue'],
+            'review' => ['nullable', 'in:1'],
+            'completed_period' => ['nullable', 'in:month'],
         ]);
 
         return Inertia::render('Tasks/Index', [
