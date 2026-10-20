@@ -1,5 +1,14 @@
 # Office Automation — Current Status
 
+## 2026-10-20 — Dashboard operational UX and task filters
+
+- Renamed dashboard task terminology to «دستورکار» and managerial «تیم» terminology to «واحد». Added a matching full-width-style «عملکرد شخصی من» panel alongside «عملکرد واحد», with independent personal KPIs and task rows.
+- Connected dashboard KPI cards and status breakdown rows to task-list query filters. Personal scope filters to the signed-in user's assigned tasks; unit scope uses managed departments/projects (or organization scope) and excludes the manager's own assigned tasks. Added due-today, overdue, review-pending, current-month-completed, assignee, and due-date-range filtering in the task list, with server-side validation and authorization scope retained.
+- Added dashboard lists for pending planned activities and reminders tied to the user's assigned tasks, plus recent comments from other users on those tasks (last seven days).
+- Added event-driven database notifications for new task comments to the task creator, assignee, and participants, excluding the commenter. Personal notification center routes/navigation are available to authenticated users, and each user still sees and updates only their own notifications.
+- Added regression tests for personal/unit task filters, dashboard follow-up payload, notification center access, and task-comment notifications. These tests and the frontend build have **not** been run by the assistant; local validation is pending.
+- **Branch:** `development`. Keep `master` unchanged.
+
 ## 2026-10-20 — Remove the entire dark dashboard hero section
 
 - Removed the complete dark `bg-slate-950` hero section from `resources/js/Pages/Dashboard.vue`, including its headline, explanatory text, and personal-task counter. The dashboard now proceeds directly from the page header to the KPI cards; the task-management/navigation sections remain.
