@@ -1,5 +1,15 @@
 # Office Automation — Current Status
 
+## 2026-10-20 — Task filters, comment notifications and reminder review
+
+- Reorganized the task-list filters: the search field is now a separate full-width row at the bottom of the filter panel, after the compact selectors, to prevent the large input from disrupting the grid.
+- Added a server-provided `canFilterUnit` capability. The «محدوده دستورکار» selector is shown only to users with organization scope or actual managed departments/projects. For ordinary users, a manually supplied `scope=unit` query is normalized away; backend task visibility/authorization remains authoritative.
+- Added a regression assertion that an ordinary user's task list does not expose the unit-scope filter. Tests and frontend build have not been run by the assistant.
+- Re-inspected task-comment notifications: the current `development` branch already dispatches `TaskCommented` after a comment is stored, the registered notification listener targets the task creator, assignee and participants (excluding the author), and the notification center recognizes `task_commented`. If this is not visible locally, first pull the latest `development` branch and test by adding a comment as a different user; if still absent, inspect runtime event/listener errors and the notifications table.
+- Reminder review: reminders are currently persisted as pending rows and displayed in the task detail/dashboard. Users can manually complete or cancel them. No scheduled command/worker was found that sends a notification when `remind_at` arrives, so registering a reminder currently does **not** generate a time-triggered alert. Implementing scheduled reminder notifications is a separate follow-up, requiring scheduler/cron or Windows Task Scheduler setup and a regression test.
+- **Branch:** `development`. Keep `master` unchanged.
+
+
 ## 2026-10-20 — Dashboard operational UX and task filters
 
 - Renamed dashboard task terminology to «دستورکار» and managerial «تیم» terminology to «واحد». Added a matching full-width-style «عملکرد شخصی من» panel alongside «عملکرد واحد», with independent personal KPIs and task rows; removed the duplicate KPI strip at the top to avoid repeating the same numbers.
