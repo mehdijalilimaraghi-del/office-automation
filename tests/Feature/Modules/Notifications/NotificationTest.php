@@ -179,6 +179,54 @@ class NotificationTest extends TestCase
         );
     }
 
+    public function test_new_comment_notifies_only_current_manager_and_assignee_not_previous_assignees(): void
+    {
+        $manager = User::factory()->create(['status' => 'active']);
+        $currentAssignee = User::factory()->create(['status' => 'active']);
+        $previousAssignee = User::factory()->create(['status' => 'active']);
+        $author = User::factory()->create(['status' => 'active']);
+        $department = Department::query()->create([
+            'name' => 'Comment Recipients Unit',
+            'code' => 'CRU-'.Str::upper(Str::random(6)),
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+        $task = Task::query()->create([
+            'department_id' => $department->id,
+            'title' => 'Current assignee comment task',
+            'status' => 'in_progress',
+            'priority' => 'normal',
+            'assignee_id' => $currentAssignee->id,
+            'created_by' => $previousAssignee->id,
+        ]);
+
+        app(CreateTaskCommentAction::class)->execute($task, $author, 'دیدگاه جدید');
+
+        $this->assertSame(1, $manager->fresh()->unreadNotifications()->count());
+        $this->assertSame(1, $currentAssignee->fresh()->unreadNotifications()->count());
+        $this->assertSame(0, $previousAssignee->fresh()->unreadNotifications()->count());
+        $this->assertSame(0, $author->fresh()->unreadNotifications()->count());
+    }
+
+    public function test_direct_comment_reply_is_saved_with_parent_comment(): void
+    {
+        $author = User::factory()->create(['status' => 'active']);
+        $replyAuthor = User::factory()->create(['status' => 'active']);
+        $task = Task::query()->create([
+            'title' => 'Reply task',
+            'status' => 'in_progress',
+            'priority' => 'normal',
+            'assignee_id' => $author->id,
+            'created_by' => $author->id,
+        ]);
+
+        $parent = app(CreateTaskCommentAction::class)->execute($task, $author, 'دیدگاه اصلی');
+        $reply = app(CreateTaskCommentAction::class)->execute($task, $replyAuthor, 'پاسخ', $parent->id);
+
+        $this->assertSame($parent->id, $reply->parent_comment_id);
+        $this->assertSame('دیدگاه اصلی', $reply->parent->body);
+    }
+
     public function test_user_can_mark_notification_as_read(): void
     {
         $user = User::factory()->create(['status' => 'active']);
