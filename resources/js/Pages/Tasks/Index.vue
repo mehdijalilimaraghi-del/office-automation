@@ -70,6 +70,10 @@ interface TaskFilters {
     priority?: string;
     project_id?: number | string;
     department_id?: number | string;
+    scope?: 'personal' | 'unit';
+    due?: 'today' | 'overdue';
+    review?: '1';
+    completed_period?: 'month';
 }
 
 interface Task {
@@ -102,6 +106,10 @@ const statusFilter = ref(props.filters.status ?? '');
 const priorityFilter = ref(props.filters.priority ?? '');
 const projectFilter = ref(props.filters.project_id?.toString() ?? '');
 const departmentFilter = ref(props.filters.department_id?.toString() ?? '');
+const scopeFilter = ref(props.filters.scope ?? '');
+const dueFilter = ref(props.filters.due ?? '');
+const reviewFilter = ref(props.filters.review ?? '');
+const completedPeriodFilter = ref(props.filters.completed_period ?? '');
 const createForm = useForm({
     project_id: null as number | null,
     section_id: null as number | null,
@@ -176,6 +184,10 @@ const applyFilters = (): void => {
         priority: priorityFilter.value || undefined,
         project_id: projectFilter.value || undefined,
         department_id: departmentFilter.value || undefined,
+        scope: scopeFilter.value || undefined,
+        due: dueFilter.value || undefined,
+        review: reviewFilter.value || undefined,
+        completed_period: completedPeriodFilter.value || undefined,
     }, {
         preserveState: true,
         preserveScroll: true,
@@ -191,6 +203,10 @@ const clearFilters = (): void => {
     priorityFilter.value = '';
     projectFilter.value = '';
     departmentFilter.value = '';
+    scopeFilter.value = '';
+    dueFilter.value = '';
+    reviewFilter.value = '';
+    completedPeriodFilter.value = '';
     applyFilters();
 };
 
@@ -431,6 +447,38 @@ const handleSectionChange = (): void => {
             </section>
 
             <section class="task-filter-panel rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+                <div class="mb-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">محدوده دستورکار</label>
+                        <select v-model="scopeFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                            <option value="">همه موارد مجاز</option>
+                            <option value="personal">دستورکارهای شخصی من</option>
+                            <option value="unit">دستورکارهای واحد</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">مهلت</label>
+                        <select v-model="dueFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                            <option value="">همه مهلت‌ها</option>
+                            <option value="today">سررسید امروز</option>
+                            <option value="overdue">عقب‌افتاده</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">بررسی</label>
+                        <select v-model="reviewFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                            <option value="">همه وضعیت‌های بررسی</option>
+                            <option value="1">در انتظار بررسی</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">بازه تکمیل</label>
+                        <select v-model="completedPeriodFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                            <option value="">همه زمان‌ها</option>
+                            <option value="month">تکمیل‌شده در ماه جاری</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                     <div class="lg:col-span-2">
                         <label for="task-search" class="mb-1.5 block text-sm font-medium text-gray-700">جست‌وجو</label>
