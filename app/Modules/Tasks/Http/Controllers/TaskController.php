@@ -72,6 +72,9 @@ class TaskController extends Controller
             'tasks' => $this->taskService->list($request->user(), $filters),
             'filters' => $filters,
             'canCreate' => Gate::allows('create', Task::class),
+            'canFilterUnit' => in_array('organization', $request->user()->permissionScopes('tasks.view'), true)
+                || $request->user()->managedDepartments()->exists()
+                || $request->user()->managedProjects()->exists(),
             'formOptions' => Gate::allows('create', Task::class)
                 ? $this->taskFormOptionsService->forCreate($request->user())
                 : null,
