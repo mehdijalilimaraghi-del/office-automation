@@ -506,11 +506,11 @@ const handleSectionChange = (): void => {
                     </div>
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">مهلت از</label>
-                        <input v-model="dueFromFilter" type="date" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm" />
+                        <JalaliDatePicker v-model="dueFromFilter" />
                     </div>
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">مهلت تا</label>
-                        <input v-model="dueToFilter" type="date" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm" />
+                        <JalaliDatePicker v-model="dueToFilter" />
                     </div>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
