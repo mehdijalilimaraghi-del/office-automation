@@ -77,7 +77,7 @@ interface Task {
     documents: TaskDocument[];
     activities: TaskActivity[];
     assignments: TaskAssignment[];
-    comments: Array<{ id: number; body: string; user_id: number; user: User | null }>;
+    comments: Array<{ id: number; body: string; user_id: number; parent_comment_id: number | null; parent?: { id: number; body: string; user: User | null } | null; user: User | null }>;
 }
 interface TimelineItem {
     id?: number;
@@ -134,7 +134,9 @@ const props = defineProps<{
     customFieldValues: Record<string, string | number | boolean | null>;
 }>();
 
-const commentForm = useForm({ body: '' });
+const commentForm = useForm({ body: '', parent_comment_id: null as number | null });
+const replyForm = useForm({ body: '', parent_comment_id: null as number | null });
+const replyingToCommentId = ref<number | null>(null);
 const editCommentForm = useForm({ body: '' });
 const editingCommentId = ref<number | null>(null);
 const workLogForm = useForm({ title: '', description: '', started_at: '', completed_at: '' });
@@ -284,6 +286,22 @@ const submitComment = (): void => {
     commentForm.post(route('tasks.comments.store', props.task.id), {
         preserveScroll: true,
         onSuccess: () => { commentForm.reset(); showCommentModal.value = false; },
+    });
+};
+
+const startReply = (comment: { id: number }): void => {
+    replyingToCommentId.value = comment.id;
+    replyForm.reset();
+    replyForm.parent_comment_id = comment.id;
+};
+
+const submitReply = (): void => {
+    replyForm.post(route('tasks.comments.store', props.task.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            replyForm.reset();
+            replyingToCommentId.value = null;
+        },
     });
 };
 const editComment = (comment: { id: number; body: string }): void => {
@@ -656,14 +674,27 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                             </div>
                             <div v-if="task.comments?.length" class="space-y-3 p-4">
                                 <article v-for="comment in task.comments" :key="comment.id" class="rounded-lg bg-gray-50 p-3">
-                                    <p class="text-sm leading-6">{{ comment.body }}</p>
+                                    <div v-if="comment.parent" class="mb-2 rounded-md border-r-2 border-indigo-300 bg-white px-3 py-2">
+                                        <p class="text-[11px] font-semibold text-indigo-700">پاسخ به {{ comment.parent.user?.name ?? 'دیدگاه قبلی' }}</p>
+                                        <p class="mt-1 line-clamp-2 text-xs text-gray-500">{{ comment.parent.body }}</p>
+                                    </div>
+                                    <p class="whitespace-pre-line text-sm leading-6">{{ comment.body }}</p>
                                     <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-2">
                                         <p class="text-xs text-muted-foreground">{{ comment.user?.name ?? '—' }}</p>
-                                        <div class="flex gap-2">
+                                        <div class="flex flex-wrap gap-3">
+                                            <button v-if="abilities.comment && !isFinalized" type="button" class="text-xs font-medium text-indigo-700 hover:underline" @click="startReply(comment)">پاسخ</button>
                                             <button v-if="!isFinalized && Number(comment.user_id) === Number(currentUserId)" type="button" class="text-xs font-medium text-gray-700 hover:underline" @click="editComment(comment)">ویرایش</button>
                                             <button v-if="!isFinalized && Number(comment.user_id) === Number(currentUserId)" type="button" class="text-xs font-medium text-red-600 hover:underline" @click="deleteComment(comment.id)">حذف</button>
                                         </div>
                                     </div>
+                                    <form v-if="replyingToCommentId === comment.id" class="mt-3 space-y-2 border-t pt-3" @submit.prevent="submitReply">
+                                        <p class="text-xs text-indigo-700">پاسخ به {{ comment.user?.name ?? 'این دیدگاه' }}</p>
+                                        <textarea v-model="replyForm.body" rows="3" required maxlength="10000" class="w-full rounded-lg border border-slate-200 bg-white p-2 text-sm" placeholder="پاسخ خود را بنویسید..."></textarea>
+                                        <div class="flex justify-end gap-2">
+                                            <button type="button" class="rounded-lg px-3 py-2 text-xs text-slate-600 hover:bg-slate-100" @click="replyingToCommentId = null; replyForm.reset()">انصراف</button>
+                                            <button type="submit" :disabled="replyForm.processing" class="rounded-lg bg-indigo-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">ثبت پاسخ</button>
+                                        </div>
+                                    </form>
                                 </article>
                             </div>
                             <p v-else class="p-4 text-sm text-muted-foreground">نظری ثبت نشده است.</p>
