@@ -8,7 +8,7 @@ interface Department { id: number; name: string; }
 interface ReplyOption { id: number; registration_number: string | null; subject: string; }
 type CompositionMode = 'editor' | 'file' | 'both';
 
-defineProps<{
+const props = defineProps<{
     types: Array<{ value: string; label: string }>;
     classifications: Array<{ value: string; label: string }>;
     departments: Department[];
@@ -23,7 +23,7 @@ const compositionModes: Array<{ value: CompositionMode; label: string; descripti
 ];
 
 const form = useForm({
-    type: 'incoming',
+    type: props.types[0]?.value ?? 'internal',
     classification: 'ordinary',
     subject: '',
     composition_mode: 'editor' as CompositionMode,
