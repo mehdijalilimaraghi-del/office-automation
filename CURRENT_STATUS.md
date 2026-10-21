@@ -731,3 +731,10 @@ Implementation has started for the agreed cross-department project model:
 - This is user-reported local validation; no test command was executed in the assistant environment.
 - **Branch:** `development`. Keep `master` unchanged until Version 2 is complete and explicitly approved.
 - **Next step:** continue V2 implementation from the correspondence foundation/numbering checkpoint, inspect the roadmap and current code before choosing the next slice, and preserve focused tests plus full regression validation.
+
+
+## 2026-10-21 — Correspondence visibility and detail page
+
+- Made the correspondence navigation entry available to users who have either view or create permission; users with view permission go to the list, while create-only users go directly to the creation form. This avoids hiding the module from users whose role can create but cannot browse.
+- Added the correspondence detail route and RTL detail page with status, registration data, sender/recipient, department, linked reply chain, formatted body, and attachment download links.
+- Added a detail-page HTTP regression test. Local validation pending: run the focused correspondence HTTP tests and frontend production build. Keep `master` unchanged.
