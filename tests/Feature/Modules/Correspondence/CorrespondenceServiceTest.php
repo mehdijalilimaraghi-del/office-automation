@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Modules\Correspondence;
 
+use App\Core\Departments\Models\Department;
+use App\Core\Settings\Services\OrganizationDepartmentRoleService;
+use App\Core\Settings\Services\SystemSettingsService;
 use App\Models\User;
 use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Services\CorrespondenceService;
@@ -17,7 +20,7 @@ class CorrespondenceServiceTest extends TestCase
 
     public function test_create_draft_persists_incoming_correspondence_with_creator_and_no_registration_number(): void
     {
-        $creator = User::factory()->create(['status' => 'active']);
+        $creator = $this->createSecretariatUser();
 
         $correspondence = app(CorrespondenceService::class)->createDraft([
             'type' => Correspondence::TYPE_INCOMING,
@@ -76,5 +79,12 @@ class CorrespondenceServiceTest extends TestCase
             'type' => Correspondence::TYPE_INTERNAL,
             'subject' => '   ',
         ], $creator);
+    }
+    private function createSecretariatUser(): User
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $department = Department::query()->create(['name' => 'دبیرخانه تست', 'code' => 'SEC-'.strtoupper(bin2hex(random_bytes(3))), 'is_active' => true, 'manager_id' => $user->id]);
+        app(SystemSettingsService::class)->set([OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT) => (string) $department->id]);
+        return $user;
     }
 }
