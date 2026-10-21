@@ -4,7 +4,7 @@
 - Added resources/js/Pages/Correspondence/Index.vue and Create.vue for Persian RTL list/filter/pagination and draft creation for incoming, outgoing and internal correspondence.
 - Added correspondence.view, correspondence.create, and correspondence.register permissions, Inertia ability exposure, and a navigation link.
 - Added tests/Feature/Modules/Correspondence/CorrespondenceHttpTest.php for authorized listing, draft creation, and denied index access.
-- Local validation is pending. Run the focused correspondence test and frontend production build before continuing. Next: Word attachment/composition, correspondence detail/edit, referral/instruction, workflow/Cartable integration, notifications/audit.
+- Local validation is pending. Run the focused correspondence test and frontend production build before continuing. Composition modes (internal editor, file upload and combined) are implemented; next: correspondence detail/edit, referral/instruction, workflow/Cartable integration, notifications/audit.
 - Branch remains development; keep master unchanged. Development checkout: D:\\KPMM\\Office-automation.
 
 ## Latest handoff — 2026-10-21 frontend notification build fix
