@@ -7,6 +7,9 @@ namespace Tests\Feature\Modules\Correspondence;
 use App\Core\Permissions\Models\Permission;
 use App\Core\Permissions\Enums\PermissionScope;
 use App\Core\Roles\Models\Role;
+use App\Core\Departments\Models\Department;
+use App\Core\Settings\Services\OrganizationDepartmentRoleService;
+use App\Core\Settings\Services\SystemSettingsService;
 use App\Models\User;
 use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Documents\Models\Document;
@@ -193,6 +196,44 @@ class CorrespondenceHttpTest extends TestCase
         $this->actingAs($user)->get(route('correspondence.create'))->assertOk();
     }
 
+    public function test_non_secretariat_can_create_internal_and_outgoing_drafts_but_not_incoming_letters(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $this->actingAs($user)->get(route('correspondence.create'))->assertOk()->assertInertia(fn ($page) => $page->where('types', [['value' => Correspondence::TYPE_OUTGOING, 'label' => 'صادره'], ['value' => Correspondence::TYPE_INTERNAL, 'label' => 'داخلی']]));
+        $this->actingAs($user)->post(route('correspondence.store'), ['type' => Correspondence::TYPE_INCOMING, 'subject' => 'نامه وارده غیرمجاز', 'composition_mode' => 'editor', 'body' => '<p>متن</p>'])->assertForbidden();
+        $this->assertDatabaseCount('correspondences', 0);
+        $this->actingAs($user)->post(route('correspondence.store'), ['type' => Correspondence::TYPE_OUTGOING, 'subject' => 'پیش‌نویس صادره مجاز', 'composition_mode' => 'editor', 'body' => '<p>متن</p>'])->assertRedirect(route('correspondence.index'));
+        $this->actingAs($user)->post(route('correspondence.store'), ['type' => Correspondence::TYPE_INTERNAL, 'subject' => 'نامه داخلی مجاز', 'composition_mode' => 'editor', 'body' => '<p>متن</p>'])->assertRedirect(route('correspondence.index'));
+        $this->assertDatabaseCount('correspondences', 2);
+    }
+
+    public function test_only_secretariat_can_register_outgoing_draft(): void
+    {
+        $creator = User::factory()->create(['status' => 'active']);
+        $letter = Correspondence::query()->create(['type' => Correspondence::TYPE_OUTGOING, 'subject' => 'پیش‌نویس صادره', 'status' => Correspondence::STATUS_DRAFT, 'created_by' => $creator->id]);
+        $this->actingAs($creator)->post(route('correspondence.register', $letter))->assertForbidden();
+        $this->assertDatabaseHas('correspondences', ['id' => $letter->id, 'status' => Correspondence::STATUS_DRAFT, 'registration_number' => null]);
+    }
+
+    public function test_internal_letter_creator_can_register_their_own_internal_draft(): void
+    {
+        $creator = User::factory()->create(['status' => 'active']);
+        $letter = Correspondence::query()->create(['type' => Correspondence::TYPE_INTERNAL, 'subject' => 'نامه داخلی', 'status' => Correspondence::STATUS_DRAFT, 'created_by' => $creator->id]);
+        $this->actingAs($creator)->post(route('correspondence.register', $letter))->assertRedirect();
+        $this->assertDatabaseHas('correspondences', ['id' => $letter->id, 'status' => Correspondence::STATUS_REGISTERED, 'registered_by' => $creator->id]);
+    }
+
+    public function test_configured_secretariat_can_create_incoming_letter_and_register_outgoing_draft(): void
+    {
+        $secretariatUser = User::factory()->create(['status' => 'active']);
+        $department = Department::query()->create(['name' => 'دبیرخانه تست', 'code' => 'TEST-SEC', 'is_active' => true, 'manager_id' => $secretariatUser->id]);
+        app(SystemSettingsService::class)->set([OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT) => (string) $department->id]);
+        $this->actingAs($secretariatUser)->get(route('correspondence.create'))->assertOk()->assertInertia(fn ($page) => $page->where('types.0.value', Correspondence::TYPE_INCOMING));
+        app(SystemSettingsService::class)->set(['correspondence.approval.outgoing' => 'direct']);
+        $letter = Correspondence::query()->create(['type' => Correspondence::TYPE_OUTGOING, 'subject' => 'پیش‌نویس صادره برای دبیرخانه', 'status' => Correspondence::STATUS_DRAFT, 'created_by' => User::factory()->create(['status' => 'active'])->id]);
+        $this->actingAs($secretariatUser)->post(route('correspondence.register', $letter))->assertRedirect();
+        $this->assertDatabaseHas('correspondences', ['id' => $letter->id, 'status' => Correspondence::STATUS_REGISTERED, 'registered_by' => $secretariatUser->id]);
+    }
     private function userWithPermission(string $permissionCode): User
     {
         $permission = Permission::query()->firstOrCreate(
