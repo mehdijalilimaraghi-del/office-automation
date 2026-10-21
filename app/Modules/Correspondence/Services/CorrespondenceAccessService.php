@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\\Modules\\Correspondence\\Services;
+namespace App\Modules\Correspondence\Services;
 
-use App\\Models\\User;
-use App\\Modules\\Correspondence\\Models\\Correspondence;
-use Illuminate\\Database\\Eloquent\\Builder;
+use App\Models\User;
+use App\Modules\Correspondence\Models\Correspondence;
+use Illuminate\Database\Eloquent\Builder;
 
 class CorrespondenceAccessService
 {
