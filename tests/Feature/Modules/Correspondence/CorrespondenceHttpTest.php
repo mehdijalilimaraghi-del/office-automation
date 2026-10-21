@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Tests\\Feature\\Modules\\Correspondence;
+namespace Tests\Feature\Modules\Correspondence;
 
-use App\\Core\\Permissions\\Models\\Permission;
-use App\\Core\\Permissions\\Models\\PermissionScope;
-use App\\Core\\Roles\\Models\\Role;
-use App\\Models\\User;
-use App\\Modules\\Correspondence\\Models\\Correspondence;
-use Illuminate\\Foundation\\Testing\\RefreshDatabase;
-use Illuminate\\Support\\Str;
-use Tests\\TestCase;
+use App\Core\Permissions\Models\Permission;
+use App\Core\Permissions\Models\PermissionScope;
+use App\Core\Roles\Models\Role;
+use App\Models\User;
+use App\Modules\Correspondence\Models\Correspondence;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
+use Tests\TestCase;
 
 class CorrespondenceHttpTest extends TestCase
 {
