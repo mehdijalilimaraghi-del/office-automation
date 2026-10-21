@@ -459,6 +459,8 @@ class TaskController extends Controller
 
         abort_if($task->isFinalized(), 403, 'نظر دستورکار نهایی‌شده قابل تغییر نیست.');
         abort_if($task->review_status === 'pending', 403, 'تا تعیین تکلیف مدیر، نظر قابل تغییر نیست.');
+        // SQL Server rejects cascading self-references; detach replies before deleting their parent.
+        $comment->replies()->update(['parent_comment_id' => null]);
         $comment->delete();
 
         return back()->with('success', 'نظر با موفقیت حذف شد.');
