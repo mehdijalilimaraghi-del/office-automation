@@ -26,6 +26,19 @@ class DocumentPolicy
             return false;
         }
 
+        // Correspondence attachments must never bypass the letter's own access rules.
+        $correspondenceLinks = $document->links()
+            ->where('linkable_type', Correspondence::class)
+            ->with('linkable')
+            ->get();
+
+        if ($correspondenceLinks->isNotEmpty()) {
+            return $correspondenceLinks->contains(
+                fn ($link) => $link->linkable instanceof Correspondence
+                    && app(CorrespondenceAccessService::class)->canView($link->linkable, $user)
+            );
+        }
+
         // Explicit document-level access still requires the document permission.
         // Attachments linked to business records inherit access to that record.
         if ($user->hasPermission('documents.view')) {
