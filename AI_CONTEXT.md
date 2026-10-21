@@ -181,3 +181,10 @@ Before making the first code change in a new conversation:
 - `UserAuthorizationTest`'s ordinary role fixture must never use code `SYSTEM_ADMIN`, because that code intentionally triggers the global administrator bypass. Use a non-system test role; dedicated admin tests should create `SYSTEM_ADMIN` explicitly.
 - Tests that need a permission already seeded/granted in setup should retrieve or `firstOrCreate` the permission by unique code rather than inserting a duplicate row (SQL Server enforces `permissions_code_unique`).
 - Focused authorization rerun is pending after these fixes.
+
+
+## 2026-10-21 — Correspondence visibility and detail page
+
+- Correspondence navigation now appears when the user has `correspondence.view` or `correspondence.create`; the destination respects the available permission.
+- Added `correspondence.show` and the `Correspondence/Show.vue` detail view. Keep attachment authorization delegated to the existing document download policy and do not expose storage paths.
+- Added HTTP coverage for opening correspondence details. Local validation is pending; keep `master` unchanged.
