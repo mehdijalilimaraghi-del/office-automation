@@ -1,3 +1,10 @@
+## Latest handoff — 2026-10-21 frontend notification build fix
+
+- Fixed the TypeScript error in `resources/js/Layouts/AuthenticatedLayout.vue`: the mobile notification dropdown referenced undefined `markNotificationRead`; it now calls the existing `openNotification(item)` handler, matching desktop behavior.
+- The existing handler closes the dropdown, marks unread notifications through `notifications.read`, then navigates to the notification URL (or notification index fallback).
+- User reports `php artisan test --filter=NotificationTest` passed. Frontend build verification is pending.
+- User's development checkout path is `D:\\KPMM\\Office-automation`; do not use the release checkout path for development validation. Keep `master` unchanged.
+
 ## Latest handoff — 2026-10-21 notification test correction
 
 - The comment notification contract is current department manager, falling back to project manager only when no department manager is assigned, plus the current assignee; the comment author is excluded.
