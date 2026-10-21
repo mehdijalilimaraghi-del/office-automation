@@ -41,7 +41,8 @@ class CorrespondenceAccessService
             return true;
         }
 
-        return $correspondence->type === Correspondence::TYPE_INTERNAL
+        return $user->hasPermission('correspondence.create')
+            && $correspondence->type === Correspondence::TYPE_INTERNAL
             && (int) $correspondence->created_by === (int) $user->id;
     }
 
