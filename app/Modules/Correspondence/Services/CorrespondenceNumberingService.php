@@ -35,6 +35,10 @@ class CorrespondenceNumberingService
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            if (! app(CorrespondenceAccessService::class)->canRegister($locked, $registrar)) {
+                throw new InvalidArgumentException('ثبت نهایی این مکاتبه فقط برای دبیرخانه مجاز است؛ ثبت نامه داخلی فقط برای ایجادکننده آن مجاز است.');
+            }
+
             if ($locked->status !== Correspondence::STATUS_DRAFT) {
                 throw new InvalidArgumentException('فقط پیش‌نویس را می‌توان ثبت نهایی کرد.');
             }
