@@ -1,4 +1,11 @@
 
+## 2026-10-21 — Baseline access for correspondence menu
+
+- The correspondence menu was hidden for ordinary active staff because `correspondence.view` and `correspondence.create` were only explicit role grants, and the standard operational role setup did not grant them.
+- `User::responsibilityDerivedScopes()` now grants organization-wide baseline `correspondence.view` and `correspondence.create` to active users, matching the V2 rule that staff can access the correspondence module and create drafts. Final registration still requires `correspondence.register`; confidential letter access remains limited by `CorrespondenceAccessService` to related users or registrars.
+- Updated the HTTP test to verify active staff can open the correspondence index and draft form without an explicit role grant.
+- Branch: `development`; `master` unchanged. Local validation pending: pull the branch and run `php artisan test --filter=CorrespondenceHttpTest`.
+
 ## 2026-10-21 — Correspondence test permission fixture
 
 - Fixed a SQL Server unique-name collision in `CorrespondenceHttpTest`: test permission names now include the permission code, while permissions are still reused by unique code. The three visibility tests had been failing during fixture setup before reaching their assertions.
