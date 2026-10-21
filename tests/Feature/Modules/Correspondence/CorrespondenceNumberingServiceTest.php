@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature\Modules\Correspondence;
 
 use App\Core\Settings\Services\SystemSettingsService;
+use App\Core\Settings\Services\OrganizationDepartmentRoleService;
+use App\Core\Departments\Models\Department;
 use App\Models\User;
 use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Services\CorrespondenceNumberingService;
@@ -58,7 +60,7 @@ class CorrespondenceNumberingServiceTest extends TestCase
     public function test_register_assigns_a_unique_number_and_freezes_the_correspondence(): void
     {
         $creator = User::factory()->create(['status' => 'active']);
-        $registrar = User::factory()->create(['status' => 'active']);
+        $registrar = $this->createSecretariatUser();
         $correspondence = Correspondence::query()->create([
             'type' => Correspondence::TYPE_INTERNAL,
             'subject' => 'ثبت نامه داخلی',
@@ -88,7 +90,7 @@ class CorrespondenceNumberingServiceTest extends TestCase
 
     public function test_registration_requiring_approval_does_not_consume_a_number_without_completed_workflow(): void
     {
-        $creator = User::factory()->create(['status' => 'active']);
+        $creator = $this->createSecretariatUser();
         $correspondence = Correspondence::query()->create([
             'type' => Correspondence::TYPE_OUTGOING,
             'subject' => 'نامه صادره نیازمند تأیید',
@@ -111,4 +113,11 @@ class CorrespondenceNumberingServiceTest extends TestCase
         ]);
     }
 
+    private function createSecretariatUser(): User
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $department = Department::query()->create(['name' => 'دبیرخانه تست', 'code' => 'SEC-'.strtoupper(bin2hex(random_bytes(3))), 'is_active' => true, 'manager_id' => $user->id]);
+        app(SystemSettingsService::class)->set([OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT) => (string) $department->id]);
+        return $user;
+    }
 }
