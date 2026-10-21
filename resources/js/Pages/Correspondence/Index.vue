@@ -62,7 +62,7 @@ function register(id: number): void {
                         <thead class="bg-slate-50 text-xs font-semibold text-slate-500"><tr><th class="px-5 py-3">موضوع</th><th class="px-5 py-3">نوع</th><th class="px-5 py-3">شماره ثبت</th><th class="px-5 py-3">واحد</th><th class="px-5 py-3">ایجادکننده</th><th class="px-5 py-3">وضعیت</th><th class="px-5 py-3">عملیات</th></tr></thead>
                         <tbody class="divide-y divide-slate-100">
                             <tr v-for="item in correspondences.data" :key="item.id" class="hover:bg-slate-50/70">
-                                <td class="max-w-sm px-5 py-4"><div class="font-semibold text-slate-900">{{ item.subject }}</div><div v-if="item.registration_number" class="mt-1 text-xs text-slate-500">ثبت: {{ item.registered_at ?? '—' }}</div></td>
+                                <td class="max-w-sm px-5 py-4"><Link :href="route('correspondence.show', item.id)" class="font-semibold text-indigo-700 hover:text-indigo-900 hover:underline">{{ item.subject }}</Link><div v-if="item.registration_number" class="mt-1 text-xs text-slate-500">ثبت: {{ item.registered_at ?? '—' }}</div></td>
                                 <td class="whitespace-nowrap px-5 py-4 text-slate-600">{{ typeLabels[item.type] }}</td>
                                 <td class="whitespace-nowrap px-5 py-4 font-mono text-slate-700">{{ item.registration_number ?? '—' }}</td>
                                 <td class="px-5 py-4 text-slate-600">{{ item.department?.name ?? '—' }}</td>
