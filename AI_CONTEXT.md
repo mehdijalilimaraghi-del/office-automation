@@ -10,7 +10,7 @@
 
 ## 2026-10-21 — Baseline access for correspondence menu
 - Active staff now receive organization-wide baseline `correspondence.view` and `correspondence.create` through `User::responsibilityDerivedScopes()`, so the correspondence menu and draft form are available without a bespoke role grant.
-- Final registration remains separately permission-gated by `correspondence.register`; confidential visibility remains enforced by `CorrespondenceAccessService` for related users and registrars.
+- Final registration/numbering is enforced against the configured secretariat; the creator may register their own internal draft. Confidential visibility is enforced by `CorrespondenceAccessService` for related users and the configured secretariat.
 - Updated `CorrespondenceHttpTest` to cover index and draft-form access for an active user without explicit correspondence role permissions.
 - Local validation pending: pull `development` and run `php artisan test --filter=CorrespondenceHttpTest`. Keep `master` unchanged.
 
