@@ -36,6 +36,13 @@ Route::get('/dashboard', DashboardController::class)
 Route::middleware('auth')->group(function () {
     Route::get('/cartable', [CartableController::class, 'index'])->middleware('permission:cartable.view')->name('cartable.index');
 
+    Route::prefix('correspondence')->name('correspondence.')->group(function (): void {
+        Route::get('/', [CorrespondenceController::class, 'index'])->middleware('permission:correspondence.view')->name('index');
+        Route::get('/create', [CorrespondenceController::class, 'create'])->middleware('permission:correspondence.create')->name('create');
+        Route::post('/', [CorrespondenceController::class, 'store'])->middleware('permission:correspondence.create')->name('store');
+        Route::post('/{correspondence}/register', [CorrespondenceController::class, 'register'])->middleware('permission:correspondence.register')->name('register');
+    });
+
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::get('/notifications/summary', [NotificationController::class, 'summary'])->name('notifications.summary');
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
