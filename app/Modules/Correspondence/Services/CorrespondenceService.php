@@ -21,6 +21,10 @@ class CorrespondenceService
             throw new InvalidArgumentException('نوع مکاتبه نامعتبر است.');
         }
 
+        if (! app(CorrespondenceAccessService::class)->canCreateType((string) $type, $creator)) {
+            throw new InvalidArgumentException('ایجاد نامه وارده فقط برای کاربران واحد دبیرخانه مجاز است.');
+        }
+
         if ($subject === '') {
             throw new InvalidArgumentException('موضوع مکاتبه الزامی است.');
         }
