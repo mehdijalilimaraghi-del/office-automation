@@ -16,7 +16,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('correspondence_id')->constrained('correspondences')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('granted_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->unsignedBigInteger('granted_by')->nullable();
             $table->string('reason', 100)->default('participant');
             $table->timestamps();
             $table->unique(['correspondence_id', 'user_id']);
