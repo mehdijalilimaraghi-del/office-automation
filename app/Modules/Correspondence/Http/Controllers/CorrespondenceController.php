@@ -31,7 +31,7 @@ class CorrespondenceController extends Controller
         ]);
 
         $query = $access->visibleToQuery(Correspondence::query(), $request->user())
-            ->with(['creator:id,name', 'department:id,name', 'registrar:id,name'])
+            ->with(['creator:id,name', 'createdDepartment:id,name', 'recipientDepartment:id,name', 'registrar:id,name'])
             ->when($filters['search'] ?? null, function ($query, string $search): void {
                 $query->where(function ($query) use ($search): void {
                     $query->where('subject', 'like', '%'.$search.'%')
@@ -69,7 +69,8 @@ class CorrespondenceController extends Controller
         $correspondence->load([
             'creator:id,name',
             'registrar:id,name',
-            'department:id,name',
+            'createdDepartment:id,name',
+            'recipientDepartment:id,name',
             'replyTo:id,subject,registration_number,type,status',
             'replies:id,subject,registration_number,type,status,reply_to_id',
             'documents.document.latestVersion',
@@ -92,7 +93,8 @@ class CorrespondenceController extends Controller
                 'sent_at' => $correspondence->sent_at,
                 'creator' => $correspondence->creator,
                 'registrar' => $correspondence->registrar,
-                'department' => $correspondence->department,
+                'created_department' => $correspondence->createdDepartment,
+                'recipient_department' => $correspondence->recipientDepartment,
                 'reply_to' => $correspondence->replyTo !== null && $access->canView($correspondence->replyTo, $request->user())
                     ? $correspondence->replyTo
                     : null,
@@ -121,7 +123,16 @@ class CorrespondenceController extends Controller
             ['value' => Correspondence::TYPE_INTERNAL, 'label' => 'داخلی'],
         ], fn (array $type): bool => $access->canCreateType($type['value'], $request->user())));
 
+        $createdDepartment = $request->user()->departments()
+            ->wherePivot('is_primary', true)
+            ->first(['departments.id', 'departments.name']);
+
+        if ($createdDepartment === null && $request->user()->departments()->count() === 1) {
+            $createdDepartment = $request->user()->departments()->first(['departments.id', 'departments.name']);
+        }
+
         return Inertia::render('Correspondence/Create', [
+            'createdDepartment' => $createdDepartment,
             'types' => $types,
             'classifications' => [
                 ['value' => Correspondence::CLASSIFICATION_ORDINARY, 'label' => 'عادی'],
@@ -152,7 +163,7 @@ class CorrespondenceController extends Controller
             'recipient_name' => ['nullable', 'string', 'max:255'],
             'received_at' => ['nullable', 'date'],
             'sent_at' => ['nullable', 'date'],
-            'department_id' => ['nullable', 'integer', 'exists:departments,id'],
+            'recipient_department_id' => ['nullable', 'required_if:type,internal', 'integer', 'exists:departments,id'],
             'reply_to_id' => ['nullable', 'integer', Rule::exists('correspondences', 'id')->where('status', Correspondence::STATUS_REGISTERED)],
             'attachments' => ['nullable', 'array', 'max:10'],
             'attachments.*' => [
@@ -187,7 +198,7 @@ class CorrespondenceController extends Controller
                     'recipient_name' => $data['recipient_name'] ?? null,
                     'received_at' => $data['received_at'] ?? null,
                     'sent_at' => $data['sent_at'] ?? null,
-                    'department_id' => $data['department_id'] ?? null,
+                    'recipient_department_id' => $data['recipient_department_id'] ?? null,
                     'reply_to_id' => $data['reply_to_id'] ?? null,
                 ], $request->user());
 
