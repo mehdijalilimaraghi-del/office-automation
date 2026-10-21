@@ -8,6 +8,7 @@ use App\Core\Departments\Models\Department;
 use App\Http\Controllers\Controller;
 use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Services\CorrespondenceNumberingService;
+use App\Modules\Correspondence\Services\CorrespondenceAccessService;
 use App\Modules\Correspondence\Services\CorrespondenceService;
 use App\Modules\Documents\Services\DocumentService;
 use Illuminate\Http\RedirectResponse;
@@ -106,7 +107,7 @@ class CorrespondenceController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request, CorrespondenceAccessService $access): Response
     {
         return Inertia::render('Correspondence/Create', [
             'types' => [
@@ -119,7 +120,7 @@ class CorrespondenceController extends Controller
                 ['value' => Correspondence::CLASSIFICATION_CONFIDENTIAL, 'label' => 'محرمانه'],
             ],
             'departments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
-            'repliesTo' => Correspondence::query()
+            'repliesTo' => $access->visibleToQuery(Correspondence::query(), $request->user())
                 ->where('status', Correspondence::STATUS_REGISTERED)
                 ->orderByDesc('registered_at')
                 ->limit(100)
@@ -134,7 +135,7 @@ class CorrespondenceController extends Controller
     ): RedirectResponse {
         $data = $request->validate([
             'type' => ['required', Rule::in(Correspondence::allowedTypes())],
-            'classification' => ['required', Rule::in([Correspondence::CLASSIFICATION_ORDINARY, Correspondence::CLASSIFICATION_CONFIDENTIAL])],
+            'classification' => ['sometimes', 'required', Rule::in([Correspondence::CLASSIFICATION_ORDINARY, Correspondence::CLASSIFICATION_CONFIDENTIAL])],
             'subject' => ['required', 'string', 'max:255'],
             'composition_mode' => ['required', Rule::in(['editor', 'file', 'both'])],
             'body' => ['nullable', 'string', 'max:100000'],
@@ -168,7 +169,7 @@ class CorrespondenceController extends Controller
             $correspondence = DB::transaction(function () use ($data, $mode, $body, $attachments, $service, $documents, $request): Correspondence {
                 $correspondence = $service->createDraft([
                     'type' => $data['type'],
-                    'classification' => $data['classification'],
+                    'classification' => $data['classification'] ?? Correspondence::CLASSIFICATION_ORDINARY,
                     'subject' => $data['subject'],
                     'body' => $mode === 'file' ? null : $body,
                     'sender_name' => $data['sender_name'] ?? null,
