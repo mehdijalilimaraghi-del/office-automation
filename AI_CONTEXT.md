@@ -1,3 +1,11 @@
+## 2026-10-21 — Full test suite follow-up
+
+- The user ran the full Laravel suite: 401 tests passed; two tests failed.
+- `CorePermissionSeederTest` expected 53 permissions, but the current seeder correctly creates 56 after the three V2 correspondence permissions were added. Updated the expected count to 56.
+- `ExampleTest` expected HTTP 200 for `/`, but the intended guest route redirects to the login page. Updated the test to assert the named login redirect; application routing was not changed.
+- These are test expectation corrections only. Changes are on `development`; keep `master` unchanged.
+- Local verification pending: run the full test suite after pulling the branch.
+
 ## Latest handoff — 2026-10-21 V2 correspondence HTTP foundation
 
 - Added CorrespondenceController with index/create/store/register actions. Registration delegates to the existing CorrespondenceNumberingService, preserving the draft-only rule and configured approval requirement.
