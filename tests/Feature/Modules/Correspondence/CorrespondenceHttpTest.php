@@ -197,7 +197,7 @@ class CorrespondenceHttpTest extends TestCase
         $permission = Permission::query()->firstOrCreate(
             ['code' => $permissionCode],
             [
-                'name' => 'Correspondence test permission',
+                'name' => 'Correspondence test permission '.$permissionCode,
                 'is_active' => true,
                 'is_system' => true,
             ],
