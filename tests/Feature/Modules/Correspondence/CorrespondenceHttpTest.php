@@ -59,6 +59,65 @@ class CorrespondenceHttpTest extends TestCase
                 ->where('attachments', []));
     }
 
+    public function test_registered_ordinary_letter_is_visible_to_any_viewer(): void
+    {
+        $creator = $this->userWithPermission('correspondence.create');
+        $viewer = $this->userWithPermission('correspondence.view');
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_OUTGOING,
+            'classification' => Correspondence::CLASSIFICATION_ORDINARY,
+            'subject' => 'نامه عادی ثبت‌شده',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'registration_number' => '1405/000001',
+            'created_by' => $creator->id,
+        ]);
+
+        $this->actingAs($viewer)->get(route('correspondence.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('correspondences.total', 1));
+        $this->actingAs($viewer)->get(route('correspondence.show', $letter))->assertOk();
+    }
+
+    public function test_unrelated_viewer_cannot_open_confidential_letter(): void
+    {
+        $creator = $this->userWithPermission('correspondence.create');
+        $viewer = $this->userWithPermission('correspondence.view');
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'classification' => Correspondence::CLASSIFICATION_CONFIDENTIAL,
+            'subject' => 'نامه محرمانه',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'registration_number' => '1405/000002',
+            'created_by' => $creator->id,
+        ]);
+
+        $this->actingAs($viewer)->get(route('correspondence.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('correspondences.total', 0));
+        $this->actingAs($viewer)->get(route('correspondence.show', $letter))->assertForbidden();
+    }
+
+    public function test_related_viewer_can_open_confidential_letter(): void
+    {
+        $creator = $this->userWithPermission('correspondence.create');
+        $viewer = $this->userWithPermission('correspondence.view');
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'classification' => Correspondence::CLASSIFICATION_CONFIDENTIAL,
+            'subject' => 'نامه محرمانه مرتبط',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'created_by' => $creator->id,
+        ]);
+        $letter->authorizedUsers()->attach($viewer->id, [
+            'reason' => 'participant',
+            'granted_by' => $creator->id,
+        ]);
+
+        $this->actingAs($viewer)->get(route('correspondence.show', $letter))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('correspondence.subject', 'نامه محرمانه مرتبط'));
+    }
+
     public function test_user_with_create_permission_can_create_editor_draft_and_unsafe_markup_is_removed(): void
     {
         $user = $this->userWithPermission('correspondence.create');
