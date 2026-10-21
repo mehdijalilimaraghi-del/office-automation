@@ -9,6 +9,7 @@ interface CorrespondenceRow {
     classification: 'ordinary' | 'confidential';
     subject: string;
     status: 'draft' | 'registered';
+    can_register: boolean;
     registration_number: string | null;
     registered_at: string | null;
     created_at: string;
@@ -21,7 +22,6 @@ const props = defineProps<{
     correspondences: { data: CorrespondenceRow[]; total: number; from: number | null; to: number | null; links: PaginationLink[] };
     filters: { search: string; type: string; status: string };
     canCreate: boolean;
-    canRegister: boolean;
 }>();
 const search = ref(props.filters.search);
 const type = ref(props.filters.type);
@@ -71,7 +71,7 @@ function register(id: number): void {
                                 <td class="px-5 py-4 text-slate-600">{{ item.department?.name ?? '—' }}</td>
                                 <td class="px-5 py-4 text-slate-600">{{ item.creator?.name ?? '—' }}</td>
                                 <td class="whitespace-nowrap px-5 py-4"><span :class="item.status === 'registered' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'" class="rounded-full px-2.5 py-1 text-xs font-semibold">{{ statusLabels[item.status] }}</span></td>
-                                <td class="whitespace-nowrap px-5 py-4"><button v-if="canRegister && item.status === 'draft'" type="button" class="rounded-lg border border-indigo-200 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-50" @click="register(item.id)">ثبت نهایی</button><span v-else class="text-xs text-slate-400">—</span></td>
+                                <td class="whitespace-nowrap px-5 py-4"><button v-if="item.can_register && item.status === 'draft'" type="button" class="rounded-lg border border-indigo-200 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-50" @click="register(item.id)">ثبت نهایی</button><span v-else class="text-xs text-slate-400">—</span></td>
                             </tr>
                         </tbody>
                     </table>
