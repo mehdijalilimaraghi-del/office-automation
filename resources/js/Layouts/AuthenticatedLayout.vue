@@ -66,7 +66,7 @@ const abilities = computed(
 const can = (ability: string): boolean => Boolean(abilities.value[ability]);
 
 const hasWorkMenu = computed(() =>
-    ['cartable_view', 'tasks_view', 'projects_view'].some(can) || Boolean(page.props.auth.user),
+    ['cartable_view', 'tasks_view', 'projects_view', 'correspondence_view'].some(can) || Boolean(page.props.auth.user),
 );
 
 const hasOrganizationMenu = computed(() =>
@@ -93,7 +93,8 @@ onMounted(() => {
         route().current('cartable.*') ||
         route().current('notifications.*') ||
         route().current('tasks.*') ||
-        route().current('projects.*')
+        route().current('projects.*') ||
+        route().current('correspondence.*')
     ) {
         expandedMobileMenus.value.work = true;
     }
@@ -153,7 +154,8 @@ onUnmounted(() => {
                                             route().current('cartable.*') ||
                                             route().current('notifications.*') ||
                                             route().current('tasks.*') ||
-                                            route().current('projects.*')
+                                            route().current('projects.*') ||
+                                            route().current('correspondence.*')
                                                 ? 'border-indigo-100 bg-indigo-50 text-indigo-700 shadow-sm'
                                                 : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
                                         "
@@ -197,6 +199,14 @@ onUnmounted(() => {
                                             class="w-full justify-start rounded-lg border-0 px-3 py-2 text-right"
                                         >
                                             پروژه‌ها
+                                        </NavLink>
+                                        <NavLink
+                                            v-if="can('correspondence_view')"
+                                            :href="route('correspondence.index')"
+                                            :active="route().current('correspondence.*')"
+                                            class="w-full justify-start rounded-lg border-0 px-3 py-2 text-right"
+                                        >
+                                            مکاتبات اداری
                                         </NavLink>
                                         <NavLink
                                                                                         :href="route('notifications.index')"
