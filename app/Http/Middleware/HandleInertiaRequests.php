@@ -35,6 +35,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user()?->load('profile'),
                 'abilities' => [
                     'tasks_view' => $request->user()?->hasPermission('tasks.view') ?? false,
+                    'correspondence_view' => $request->user()?->hasPermission('correspondence.view') ?? false,
                     'projects_view' => $request->user()?->hasPermission('projects.view') ?? false,
                     'users_view' => $request->user()?->hasPermission('users.view') ?? false,
                     'departments_view' => $request->user()?->hasPermission('departments.view') ?? false,
