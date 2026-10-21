@@ -885,4 +885,4 @@ The first configuration/registration slice is implemented in `development`:
 - The registration action reuses the existing numbering/approval service; official numbers remain assigned only during final registration.
 - Added view/create/register permissions and focused HTTP regression tests.
 
-Status: implementation committed to development; local tests and frontend build pending. Word upload and deeper workflow/Cartable integration remain incomplete.
+Status: correspondence list/draft/registration HTTP flow and editor/file/both composition modes are committed to development. Local tests and frontend build are pending; correspondence detail/edit and deeper workflow/Cartable integration remain incomplete.
