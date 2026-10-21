@@ -11,6 +11,40 @@ use Illuminate\Database\Eloquent\Builder;
 
 class CorrespondenceAccessService
 {
+    public function isSecretariat(User $user): bool
+    {
+        return $user->isActive()
+            && ($user->isSystemAdmin()
+                || app(OrganizationDepartmentRoleService::class)->userBelongsTo(
+                    $user,
+                    OrganizationDepartmentRoleService::SECRETARIAT,
+                ));
+    }
+
+    public function canCreateType(string $type, User $user): bool
+    {
+        if (! $user->isActive() || ! $user->hasPermission('correspondence.create')) {
+            return false;
+        }
+
+        return in_array($type, [Correspondence::TYPE_INTERNAL, Correspondence::TYPE_OUTGOING], true)
+            || ($type === Correspondence::TYPE_INCOMING && $this->isSecretariat($user));
+    }
+
+    public function canRegister(Correspondence $correspondence, User $user): bool
+    {
+        if (! $user->isActive()) {
+            return false;
+        }
+
+        if ($this->isSecretariat($user)) {
+            return true;
+        }
+
+        return $correspondence->type === Correspondence::TYPE_INTERNAL
+            && (int) $correspondence->created_by === (int) $user->id;
+    }
+
     public function visibleToQuery(Builder $query, User $user): Builder
     {
         if (! $user->isActive() || ! $user->hasPermission('correspondence.view')) {
