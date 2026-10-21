@@ -131,6 +131,10 @@ class CorrespondenceController extends Controller
             $createdDepartment = $request->user()->departments()->first(['departments.id', 'departments.name']);
         }
 
+        if ($createdDepartment === null && $request->user()->managedDepartments()->count() === 1) {
+            $createdDepartment = $request->user()->managedDepartments()->first(['departments.id', 'departments.name']);
+        }
+
         return Inertia::render('Correspondence/Create', [
             'createdDepartment' => $createdDepartment,
             'types' => $types,
