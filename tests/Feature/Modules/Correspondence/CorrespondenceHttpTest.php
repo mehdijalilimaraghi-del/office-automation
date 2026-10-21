@@ -185,11 +185,12 @@ class CorrespondenceHttpTest extends TestCase
         ]);
     }
 
-    public function test_user_without_correspondence_permission_is_forbidden(): void
+    public function test_active_staff_user_has_baseline_correspondence_view_and_draft_access(): void
     {
         $user = User::factory()->create(['status' => 'active']);
 
-        $this->actingAs($user)->get(route('correspondence.index'))->assertForbidden();
+        $this->actingAs($user)->get(route('correspondence.index'))->assertOk();
+        $this->actingAs($user)->get(route('correspondence.create'))->assertOk();
     }
 
     private function userWithPermission(string $permissionCode): User
