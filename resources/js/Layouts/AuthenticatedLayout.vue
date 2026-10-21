@@ -201,8 +201,8 @@ onUnmounted(() => {
                                             پروژه‌ها
                                         </NavLink>
                                         <NavLink
-                                            v-if="can('correspondence_view')"
-                                            :href="route('correspondence.index')"
+                                            v-if="can('correspondence_view') || can('correspondence_create')"
+                                            :href="can('correspondence_view') ? route('correspondence.index') : route('correspondence.create')"
                                             :active="route().current('correspondence.*')"
                                             class="w-full justify-start rounded-lg border-0 px-3 py-2 text-right"
                                         >
@@ -518,8 +518,8 @@ onUnmounted(() => {
                                     پروژه‌ها
                                 </ResponsiveNavLink>
                                 <ResponsiveNavLink
-                                    v-if="can('correspondence_view')"
-                                    :href="route('correspondence.index')"
+                                    v-if="can('correspondence_view') || can('correspondence_create')"
+                                    :href="can('correspondence_view') ? route('correspondence.index') : route('correspondence.create')"
                                     :active="route().current('correspondence.*')"
                                     @click="closeMobileNavigation"
                                 >
@@ -689,7 +689,7 @@ onUnmounted(() => {
                     <Link v-if="can('projects_view')" :href="route('projects.index')" :class="route().current('projects.*') ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4V2M16 4V2M3 9h18"/></svg>پروژه‌ها
                     </Link>
-                    <Link v-if="can('correspondence_view')" :href="route('correspondence.index')" :class="route().current('correspondence.*') ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
+                    <Link v-if="can('correspondence_view') || can('correspondence_create')" :href="can('correspondence_view') ? route('correspondence.index') : route('correspondence.create')" :class="route().current('correspondence.*') ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M4 5h16v14H4z"/><path d="m4 7 8 6 8-6"/></svg>مکاتبات اداری
                     </Link>
                     <Link :href="route('notifications.index')" :class="route().current('notifications.*') ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
