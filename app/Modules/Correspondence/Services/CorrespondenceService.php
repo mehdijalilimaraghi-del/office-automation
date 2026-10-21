@@ -28,6 +28,7 @@ class CorrespondenceService
         return DB::transaction(function () use ($data, $creator, $type, $subject): Correspondence {
             return Correspondence::query()->create([
                 'type' => $type,
+                'classification' => $data['classification'] ?? Correspondence::CLASSIFICATION_ORDINARY,
                 'subject' => $subject,
                 'body' => $data['body'] ?? null,
                 'status' => Correspondence::STATUS_DRAFT,
