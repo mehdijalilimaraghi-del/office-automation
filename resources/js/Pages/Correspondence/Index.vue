@@ -6,6 +6,7 @@ import { ref } from 'vue';
 interface CorrespondenceRow {
     id: number;
     type: 'incoming' | 'outgoing' | 'internal';
+    classification: 'ordinary' | 'confidential';
     subject: string;
     status: 'draft' | 'registered';
     registration_number: string | null;
@@ -27,6 +28,7 @@ const type = ref(props.filters.type);
 const status = ref(props.filters.status);
 const typeLabels: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
 const statusLabels: Record<string, string> = { draft: 'پیش‌نویس', registered: 'ثبت‌شده' };
+const classificationLabels: Record<string, string> = { ordinary: 'عادی', confidential: 'محرمانه' };
 function applyFilters(): void {
     router.get(route('correspondence.index'), { search: search.value || undefined, type: type.value || undefined, status: status.value || undefined }, { preserveState: true, replace: true });
 }
@@ -59,11 +61,12 @@ function register(id: number): void {
                 <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4"><h3 class="font-bold text-slate-900">فهرست مکاتبات</h3><span class="text-xs text-slate-500">{{ correspondences.total }} مورد</span></div>
                 <div v-if="correspondences.data.length" class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-100 text-right text-sm">
-                        <thead class="bg-slate-50 text-xs font-semibold text-slate-500"><tr><th class="px-5 py-3">موضوع</th><th class="px-5 py-3">نوع</th><th class="px-5 py-3">شماره ثبت</th><th class="px-5 py-3">واحد</th><th class="px-5 py-3">ایجادکننده</th><th class="px-5 py-3">وضعیت</th><th class="px-5 py-3">عملیات</th></tr></thead>
+                        <thead class="bg-slate-50 text-xs font-semibold text-slate-500"><tr><th class="px-5 py-3">موضوع</th><th class="px-5 py-3">نوع</th><th class="px-5 py-3">طبقه‌بندی</th><th class="px-5 py-3">شماره ثبت</th><th class="px-5 py-3">واحد</th><th class="px-5 py-3">ایجادکننده</th><th class="px-5 py-3">وضعیت</th><th class="px-5 py-3">عملیات</th></tr></thead>
                         <tbody class="divide-y divide-slate-100">
                             <tr v-for="item in correspondences.data" :key="item.id" class="hover:bg-slate-50/70">
                                 <td class="max-w-sm px-5 py-4"><Link :href="route('correspondence.show', item.id)" class="font-semibold text-indigo-700 hover:text-indigo-900 hover:underline">{{ item.subject }}</Link><div v-if="item.registration_number" class="mt-1 text-xs text-slate-500">ثبت: {{ item.registered_at ?? '—' }}</div></td>
                                 <td class="whitespace-nowrap px-5 py-4 text-slate-600">{{ typeLabels[item.type] }}</td>
+                                <td class="whitespace-nowrap px-5 py-4"><span :class="item.classification === 'confidential' ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-700'" class="rounded-full px-2.5 py-1 text-xs font-semibold">{{ classificationLabels[item.classification] }}</span></td>
                                 <td class="whitespace-nowrap px-5 py-4 font-mono text-slate-700">{{ item.registration_number ?? '—' }}</td>
                                 <td class="px-5 py-4 text-slate-600">{{ item.department?.name ?? '—' }}</td>
                                 <td class="px-5 py-4 text-slate-600">{{ item.creator?.name ?? '—' }}</td>
