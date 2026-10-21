@@ -1,3 +1,12 @@
+## Latest handoff — 2026-10-21 V2 correspondence HTTP foundation
+
+- Added CorrespondenceController with index/create/store/register actions. Registration delegates to the existing CorrespondenceNumberingService, preserving the draft-only rule and configured approval requirement.
+- Added resources/js/Pages/Correspondence/Index.vue and Create.vue for Persian RTL list/filter/pagination and draft creation for incoming, outgoing and internal correspondence.
+- Added correspondence.view, correspondence.create, and correspondence.register permissions, Inertia ability exposure, and a navigation link.
+- Added tests/Feature/Modules/Correspondence/CorrespondenceHttpTest.php for authorized listing, draft creation, and denied index access.
+- Local validation is pending. Run the focused correspondence test and frontend production build before continuing. Next: Word attachment/composition, correspondence detail/edit, referral/instruction, workflow/Cartable integration, notifications/audit.
+- Branch remains development; keep master unchanged. Development checkout: D:\\KPMM\\Office-automation.
+
 ## Latest handoff — 2026-10-21 frontend notification build fix
 
 - Fixed the TypeScript error in `resources/js/Layouts/AuthenticatedLayout.vue`: the mobile notification dropdown referenced undefined `markNotificationRead`; it now calls the existing `openNotification(item)` handler, matching desktop behavior.
