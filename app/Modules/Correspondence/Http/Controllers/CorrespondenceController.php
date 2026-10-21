@@ -55,6 +55,50 @@ class CorrespondenceController extends Controller
         ]);
     }
 
+    public function show(Correspondence $correspondence): Response
+    {
+        $correspondence->load([
+            'creator:id,name',
+            'registrar:id,name',
+            'department:id,name',
+            'replyTo:id,subject,registration_number,type,status',
+            'replies:id,subject,registration_number,type,status,reply_to_id',
+            'documents.document.latestVersion',
+        ]);
+
+        return Inertia::render('Correspondence/Show', [
+            'correspondence' => [
+                'id' => $correspondence->id,
+                'type' => $correspondence->type,
+                'subject' => $correspondence->subject,
+                'body' => $correspondence->body,
+                'status' => $correspondence->status,
+                'registration_number' => $correspondence->registration_number,
+                'registered_at' => $correspondence->registered_at,
+                'created_at' => $correspondence->created_at,
+                'sender_name' => $correspondence->sender_name,
+                'recipient_name' => $correspondence->recipient_name,
+                'received_at' => $correspondence->received_at,
+                'sent_at' => $correspondence->sent_at,
+                'creator' => $correspondence->creator,
+                'registrar' => $correspondence->registrar,
+                'department' => $correspondence->department,
+                'reply_to' => $correspondence->replyTo,
+                'replies' => $correspondence->replies,
+            ],
+            'attachments' => $correspondence->documents
+                ->filter(fn ($link) => $link->document !== null && $link->document->latestVersion !== null)
+                ->map(fn ($link) => [
+                    'id' => $link->document->id,
+                    'title' => $link->document->title,
+                    'file_name' => $link->document->latestVersion->original_name,
+                    'size' => $link->document->latestVersion->size,
+                ])
+                ->values(),
+            'canRegister' => request()->user()->hasPermission('correspondence.register'),
+        ]);
+    }
+
     public function create(): Response
     {
         return Inertia::render('Correspondence/Create', [
