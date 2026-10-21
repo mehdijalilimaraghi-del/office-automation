@@ -130,24 +130,9 @@ Deliver a usable internal company platform with a stable Core, organizational st
 
 **Implementation status: complete.**
 
-**Current acceptance status: manual UI/functional acceptance in progress.**
+**Project-owner status: V1 is closed.** Future corrections may be made when needed, without reopening the version scope; regression coverage should be preserved.
 
-Recent UI/core acceptance work includes:
-- Login UI refinement
-- Password visibility control
-- Independent username support
-- Jalali birth-date presentation
-- Standalone System Bootstrap Admin
-- Organization Settings
-- Core Settings permission
-- RTL/frontend type consistency
-
-Before V1 is formally closed, run:
-- full PHPUnit/Laravel test suite after the latest Core/Settings changes
-- frontend production build
-- final manual visual/functional acceptance
-
-V2 implementation requires explicit project-owner authorization. When authorized before every manual V1 acceptance item is closed, keep those items tracked and preserve full V1 regression coverage.
+**V2 is authorized and has started.** Remaining V1 validation notes are historical unless a future defect is found. Preserve V1 regression coverage while implementing V2.
 
 ---
 
