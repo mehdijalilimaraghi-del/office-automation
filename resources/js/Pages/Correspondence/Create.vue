@@ -2,7 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 interface Department { id: number; name: string; }
 interface ReplyOption { id: number; registration_number: string | null; subject: string; }
@@ -80,6 +80,18 @@ function jalaliDateToIso(value: string): string | null {
     if (gm > 12) return value;
     return String(gy) + '-' + String(gm).padStart(2, '0') + '-' + String(gd).padStart(2, '0');
 }
+
+watch(() => form.type, (type) => {
+    if (type !== 'internal') form.recipient_department_id = '';
+    if (type !== 'incoming') {
+        form.sender_name = '';
+        form.received_at = '';
+    }
+    if (type !== 'outgoing') {
+        form.recipient_name = '';
+        form.sent_at = '';
+    }
+});
 
 function syncBody(): void {
     form.body = editor.value?.innerHTML ?? '';
