@@ -28,6 +28,18 @@ class CorePermissionSeeder extends Seeder
                 'name' => 'مشاهده کارتابل',
                 'code' => 'cartable.view',
             ],
+            [
+                'name' => 'مشاهده مکاتبات',
+                'code' => 'correspondence.view',
+            ],
+            [
+                'name' => 'ایجاد پیش‌نویس مکاتبه',
+                'code' => 'correspondence.create',
+            ],
+            [
+                'name' => 'ثبت نهایی مکاتبه',
+                'code' => 'correspondence.register',
+            ],
 
             [
                 'name' => 'مشاهده کاربران',
