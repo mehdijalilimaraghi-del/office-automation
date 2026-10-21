@@ -1,3 +1,8 @@
+
+
+## 2026-10-21 — Correspondence visibility test fixture fix
+- The three new visibility tests initially failed because different permission codes used the same unique `permissions.name` value. The test helper now suffixes the permission code to the name; lookup remains keyed by permission code.
+- Pull `development` and rerun `php artisan test --filter=CorrespondenceHttpTest`; frontend build remains a later separate validation step. No production policy behavior changed. Keep `master` unchanged.
 ## 2026-10-21 — Full test suite follow-up
 
 - The user ran the full Laravel suite: 401 tests passed; two tests failed.
