@@ -42,7 +42,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/create', [CorrespondenceController::class, 'create'])->middleware('permission:correspondence.create')->name('create');
         Route::get('/{correspondence}', [CorrespondenceController::class, 'show'])->middleware('permission:correspondence.view')->name('show');
         Route::post('/', [CorrespondenceController::class, 'store'])->middleware('permission:correspondence.create')->name('store');
-        Route::post('/{correspondence}/register', [CorrespondenceController::class, 'register'])->middleware('permission:correspondence.register')->name('register');
+        Route::post('/{correspondence}/register', [CorrespondenceController::class, 'register'])->name('register');
     });
 
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
