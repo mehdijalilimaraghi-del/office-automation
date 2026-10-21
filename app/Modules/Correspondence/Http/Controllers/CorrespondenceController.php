@@ -86,8 +86,12 @@ class CorrespondenceController extends Controller
                 'creator' => $correspondence->creator,
                 'registrar' => $correspondence->registrar,
                 'department' => $correspondence->department,
-                'reply_to' => $correspondence->replyTo,
-                'replies' => $correspondence->replies,
+                'reply_to' => $correspondence->replyTo !== null && $access->canView($correspondence->replyTo, $request->user())
+                    ? $correspondence->replyTo
+                    : null,
+                'replies' => $correspondence->replies
+                    ->filter(fn (Correspondence $reply) => $access->canView($reply, $request->user()))
+                    ->values(),
             ],
             'attachments' => $correspondence->documents
                 ->filter(fn ($link) => $link->document !== null && $link->document->latestVersion !== null)
