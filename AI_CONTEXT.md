@@ -1,3 +1,12 @@
+## 2026-10-21 — Correspondence authority correction
+
+- V2 rule: registered ordinary letters are visible organization-wide; confidential letters are visible to their creator/registrar/explicit participants and the configured secretariat.
+- All active users may create internal letters and outgoing drafts. Incoming-letter creation belongs to the department configured as `organization.department_roles.secretariat`.
+- Final registration/numbering of incoming and outgoing letters belongs to that configured secretariat. A creator may register their own internal letter.
+- Resolve secretariat through `OrganizationDepartmentRoleService`; do not replace it with a generic `correspondence.register` role check.
+- Backend authorization is enforced in HTTP handlers and `CorrespondenceNumberingService`; frontend type/action visibility is UX only.
+- Changes are on `development`; focused HTTP and numbering tests are pending. Keep `master` unchanged.
+
 
 ## 2026-10-21 — Baseline access for correspondence menu
 - Active staff now receive organization-wide baseline `correspondence.view` and `correspondence.create` through `User::responsibilityDerivedScopes()`, so the correspondence menu and draft form are available without a bespoke role grant.
