@@ -893,3 +893,11 @@ The first configuration/registration slice is implemented in `development`:
 - Numbering uses a database counter row locked inside the registration transaction. Registration assigns the immutable official number and registrar metadata only when the draft can be registered.
 - Local migration, focused tests, frontend build and manual RTL acceptance are still pending.
 - HTTP correspondence screens and editor/Word-upload integration are the next implementation slice.
+
+
+### 2026-10-21 — Correspondence HTTP foundation
+- Added the first usable HTTP/UI slice for V2 correspondence: permission-protected list, create-draft and register actions, Persian RTL list/form, server-side filters and pagination.
+- The registration action reuses the existing numbering/approval service; official numbers remain assigned only during final registration.
+- Added view/create/register permissions and focused HTTP regression tests.
+
+Status: implementation committed to development; local tests and frontend build pending. Word upload and deeper workflow/Cartable integration remain incomplete.
