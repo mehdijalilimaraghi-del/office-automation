@@ -57,6 +57,38 @@ class CorrespondenceServiceTest extends TestCase
         }
     }
 
+    public function test_internal_draft_keeps_creator_and_recipient_departments_separate(): void
+    {
+        $creator = User::factory()->create(['status' => 'active']);
+        $creatorDepartment = Department::query()->create([
+            'name' => 'واحد ایجادکننده',
+            'code' => 'SRC-'.strtoupper(bin2hex(random_bytes(3))),
+            'is_active' => true,
+        ]);
+        $recipientDepartment = Department::query()->create([
+            'name' => 'واحد گیرنده',
+            'code' => 'DST-'.strtoupper(bin2hex(random_bytes(3))),
+            'is_active' => true,
+        ]);
+        $creator->departments()->attach($creatorDepartment->id, [
+            'is_primary' => true,
+            'joined_at' => now(),
+        ]);
+
+        $correspondence = app(CorrespondenceService::class)->createDraft([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => 'نامه بین دو واحد',
+            'recipient_department_id' => $recipientDepartment->id,
+        ], $creator);
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $correspondence->id,
+            'created_department_id' => $creatorDepartment->id,
+            'recipient_department_id' => $recipientDepartment->id,
+            'sender_name' => $creator->name,
+        ]);
+    }
+
     public function test_create_draft_rejects_unknown_type(): void
     {
         $creator = User::factory()->create(['status' => 'active']);
