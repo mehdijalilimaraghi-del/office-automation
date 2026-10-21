@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Correspondence\Services;
 
+use App\Core\Settings\Services\OrganizationDepartmentRoleService;
 use App\Models\User;
 use App\Modules\Correspondence\Models\Correspondence;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,7 +17,7 @@ class CorrespondenceAccessService
             return $query->whereRaw('1 = 0');
         }
 
-        $isRegistrar = $user->hasPermission('correspondence.register');
+        $isRegistrar = $this->isSecretariat($user);
 
         return $query->where(function (Builder $visible) use ($user, $isRegistrar): void {
             $visible->where(function (Builder $ordinary) use ($user): void {
@@ -49,7 +50,7 @@ class CorrespondenceAccessService
             return false;
         }
 
-        if ($user->hasPermission('correspondence.register')) {
+        if ($this->isSecretariat($user)) {
             return true;
         }
 
