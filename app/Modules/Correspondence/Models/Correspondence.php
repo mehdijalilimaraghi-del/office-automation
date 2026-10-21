@@ -10,6 +10,7 @@ use App\Modules\Documents\Models\DocumentLink;
 use App\Modules\Workflows\Models\WorkflowInstance;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
@@ -96,7 +97,7 @@ class Correspondence extends Model
         return $this->hasMany(self::class, 'reply_to_id');
     }
 
-    public function authorizedUsers(): \\Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany
+    public function authorizedUsers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'correspondence_user_access')
             ->withPivot(['granted_by', 'reason'])
