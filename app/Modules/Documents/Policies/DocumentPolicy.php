@@ -6,6 +6,7 @@ namespace App\Modules\Documents\Policies;
 
 use App\Models\User;
 use App\Modules\Correspondence\Models\Correspondence;
+use App\Modules\Correspondence\Services\CorrespondenceAccessService;
 use App\Modules\Documents\Models\Document;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectSection;
@@ -40,7 +41,7 @@ class DocumentPolicy
         foreach ($document->links()->with('linkable')->get() as $link) {
             $target = $link->linkable;
 
-            if ($target instanceof Correspondence && $user->hasPermission('correspondence.view')) {
+            if ($target instanceof Correspondence && app(CorrespondenceAccessService::class)->canView($target, $user)) {
                 return true;
             }
 
