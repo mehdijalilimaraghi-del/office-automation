@@ -1,3 +1,9 @@
+## 2026-10-21 — SQL Server comment reply migration fix
+
+- Fixed the self-referencing `task_comments.parent_comment_id` foreign key to use SQL Server's default `NO ACTION` instead of `ON DELETE SET NULL`, which SQL Server rejected due to possible multiple cascade paths.
+- When deleting a parent comment, existing replies are detached first so they remain visible as standalone comments and deletion does not violate the self-reference constraint.
+- Migration, tests, and build have not been executed by the assistant. Pull the latest `development` branch and rerun migration and checks locally.
+
 ## 2026-10-20 — Task comment recipients, direct replies and header notification center
 
 - Updated comment-notification recipients to the current task manager (department manager, with project manager as fallback) and current assignee only. The author is excluded, duplicate recipients are collapsed, and historical assignees/participants/creator no longer receive new comment alerts merely because of past involvement.
