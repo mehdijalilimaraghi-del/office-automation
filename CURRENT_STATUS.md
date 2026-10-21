@@ -1,3 +1,9 @@
+## 2026-10-21 — Notification regression fixture aligned with recipient policy
+
+- The failing `NotificationTest` expected a task creator to receive comment notifications even when the creator was not the current department/project manager. That contradicted the implemented policy: notify the current department manager (project manager only as fallback) and current assignee, excluding the author.
+- Updated the test fixture so the creator is also the department manager; the test verifies manager/assignee notifications and author exclusion without changing production notification behavior.
+- Local validation is pending. Run `php artisan test --filter=NotificationTest` after pulling `development`.
+
 ## 2026-10-21 — SQL Server comment reply migration fix
 
 - Fixed the self-referencing `task_comments.parent_comment_id` foreign key to use SQL Server's default `NO ACTION` instead of `ON DELETE SET NULL`, which SQL Server rejected due to possible multiple cascade paths.
