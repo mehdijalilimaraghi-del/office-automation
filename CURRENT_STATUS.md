@@ -619,7 +619,8 @@ Implementation has started for the agreed cross-department project model:
 - Registration enforces the configured approval policy: correspondence types requiring approval cannot be registered until their linked workflow instance is completed.
 - Added tests for preset/custom number formatting, counter increments, final registration, duplicate registration prevention, approval gating, and persistence of settings.
 - **Not yet validated locally:** focused Laravel tests/migrations and frontend production build must be run by the project owner.
-- **Next slice:** expose authorized correspondence list/draft creation/final-registration HTTP flows; implement the selected internal editor and Word upload route; then connect attachments, audit, notifications and Cartable actions.
+- **Completed on development:** authorized correspondence list/draft creation/final-registration HTTP flows, internal editor/file/both composition modes, shared-document attachment linking and attachment-view authorization. Local validation remains pending.
+- **Next slice:** correspondence detail/edit, referrals/instructions, audit/notifications and Cartable actions.
 
 
 ## Document access authorization alignment — 2026-10-18
