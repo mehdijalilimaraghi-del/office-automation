@@ -37,6 +37,10 @@ class CorrespondenceService
                 $createdDepartmentId = $creator->departments()->value('departments.id');
             }
 
+            if ($createdDepartmentId === null && $creator->managedDepartments()->count() === 1) {
+                $createdDepartmentId = $creator->managedDepartments()->value('departments.id');
+            }
+
             return Correspondence::query()->create([
                 'type' => $type,
                 'classification' => $data['classification'] ?? Correspondence::CLASSIFICATION_ORDINARY,
