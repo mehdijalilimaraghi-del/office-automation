@@ -1,8 +1,16 @@
+## 2026-10-21 — Correspondence authorization boundaries (V2)
+
+- Reviewed the V2 roadmap and existing organization settings before changing authorization. The configured secretariat remains the source of truth via `organization.department_roles.secretariat`.
+- Active staff can view registered ordinary letters, create internal letters, and create outgoing drafts. Only the configured secretariat can create incoming letters and register/number incoming or outgoing letters. A creator can register their own internal draft.
+- Applied authorization in the access service, HTTP handlers, draft domain service, and numbering/registration service. The form hides unauthorized types and defaults to an allowed type; list registration actions are computed per letter.
+- Added regression tests for ordinary-user creation boundaries, secretariat access, internal-letter registration, and direct service authorization. Tests/build have **not** been run after these changes; validate locally before starting referrals or Workflow/Cartable integration.
+- Branch: `development`; `master` unchanged.
+
 
 ## 2026-10-21 — Baseline access for correspondence menu
 
 - The correspondence menu was hidden for ordinary active staff because `correspondence.view` and `correspondence.create` were only explicit role grants, and the standard operational role setup did not grant them.
-- `User::responsibilityDerivedScopes()` now grants organization-wide baseline `correspondence.view` and `correspondence.create` to active users, matching the V2 rule that staff can access the correspondence module and create drafts. Final registration still requires `correspondence.register`; confidential letter access remains limited by `CorrespondenceAccessService` to related users or registrars.
+- `User::responsibilityDerivedScopes()` now grants organization-wide baseline `correspondence.view` and `correspondence.create` to active users, matching the V2 rule that staff can access the correspondence module and create drafts. Final registration/numbering is enforced against the configured secretariat; the creator may register their own internal draft. Confidential letter access is enforced by `CorrespondenceAccessService` for related users and the configured secretariat.
 - Updated the HTTP test to verify active staff can open the correspondence index and draft form without an explicit role grant.
 - Branch: `development`; `master` unchanged. Local validation pending: pull the branch and run `php artisan test --filter=CorrespondenceHttpTest`.
 
