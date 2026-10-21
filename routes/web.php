@@ -20,6 +20,7 @@ use App\Http\Controllers\ProfileController;
 use App\Modules\Dashboard\Http\Controllers\DashboardController;
 use App\Modules\Cartable\Http\Controllers\CartableController;
 use App\Modules\Notifications\Http\Controllers\NotificationController;
+use App\Modules\Correspondence\Http\Controllers\CorrespondenceController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => auth()->check()
