@@ -792,3 +792,10 @@ Implementation has started for the agreed cross-department project model:
 - Replaced Gregorian browser date controls with the already-installed Jalali `DatePicker` component for received/sent dates (`system=jalali`, Persian locale). The picker submits Gregorian ISO values for backend validation/storage while users select dates in the Persian calendar. Dates continue to be displayed using the existing Persian locale formatting.
 - Updated correspondence HTTP tests to supply recipient departments for internal drafts and assert that the internal sender is the authenticated creator; added service coverage for storing creator and recipient departments independently.
 - **Branch:** `development`. **Validation not run here:** pull the branch, run the focused correspondence HTTP/service tests and the frontend production build. Verify the migration against the local SQL Server database and manually check Jalali date conversion. Keep `master` unchanged.
+
+## 2026-10-21 — SQL Server correspondence department FK fix
+
+- The project owner reported that migration `2026_10_21_000003_split_correspondence_departments` failed on SQL Server because `ON DELETE SET NULL` on `created_department_id` can introduce multiple cascade paths.
+- Changed the new creator-department foreign key to `NO ACTION` on delete. This avoids SQL Server's cascade-path restriction and preserves referential integrity; a department referenced by correspondence cannot be deleted until the reference is handled.
+- **Branch:** `development`; `master` unchanged. The migration has not yet been rerun after this fix. Pull `development` and retry migration, then run the correspondence tests and frontend build.
+
