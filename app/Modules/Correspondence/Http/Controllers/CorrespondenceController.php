@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace App\\Modules\\Correspondence\\Http\\Controllers;
+namespace App\Modules\Correspondence\Http\Controllers;
 
-use App\\Core\\Departments\\Models\\Department;
-use App\\Http\\Controllers\\Controller;
-use App\\Modules\\Correspondence\\Models\\Correspondence;
-use App\\Modules\\Correspondence\\Services\\CorrespondenceNumberingService;
-use App\\Modules\\Correspondence\\Services\\CorrespondenceService;
-use Illuminate\\Http\\RedirectResponse;
-use Illuminate\\Http\\Request;
-use Illuminate\\Validation\\Rule;
-use Inertia\\Inertia;
-use Inertia\\Response;
+use App\Core\Departments\Models\Department;
+use App\Http\Controllers\Controller;
+use App\Modules\Correspondence\Models\Correspondence;
+use App\Modules\Correspondence\Services\CorrespondenceNumberingService;
+use App\Modules\Correspondence\Services\CorrespondenceService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
+use Inertia\Response;
 use InvalidArgumentException;
 
 class CorrespondenceController extends Controller
