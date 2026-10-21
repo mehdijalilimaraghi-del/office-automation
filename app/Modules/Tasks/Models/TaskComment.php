@@ -15,4 +15,5 @@ class TaskComment extends Model
     public function task(): BelongsTo { return $this->belongsTo(Task::class); }
     public function user(): BelongsTo { return $this->belongsTo(User::class); }
     public function parent(): BelongsTo { return $this->belongsTo(self::class, 'parent_comment_id'); }
+    public function replies(): \Illuminate\Database\Eloquent\Relations\HasMany { return $this->hasMany(self::class, 'parent_comment_id'); }
 }
