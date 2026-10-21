@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\\Modules\\Correspondence\\Policies;
+namespace App\Modules\Correspondence\Policies;
 
-use App\\Models\\User;
-use App\\Modules\\Correspondence\\Models\\Correspondence;
-use App\\Modules\\Correspondence\\Services\\CorrespondenceAccessService;
+use App\Models\User;
+use App\Modules\Correspondence\Models\Correspondence;
+use App\Modules\Correspondence\Services\CorrespondenceAccessService;
 
 class CorrespondencePolicy
 {
