@@ -126,16 +126,16 @@ class CorrespondenceHttpTest extends TestCase
         $user = $this->userWithPermission('correspondence.create');
 
         $this->actingAs($user)->post(route('correspondence.store'), [
-            'type' => 'incoming',
-            'subject' => '  نامه وارده  ',
+            'type' => 'internal',
+            'subject' => '  نامه داخلی  ',
             'composition_mode' => 'editor',
             'body' => '<p>متن <strong>مهم</strong><img src=x onerror=alert(1)></p>',
             'sender_name' => 'فرستنده',
         ])->assertRedirect(route('correspondence.index'));
 
         $this->assertDatabaseHas('correspondences', [
-            'type' => 'incoming',
-            'subject' => 'نامه وارده',
+            'type' => 'internal',
+            'subject' => 'نامه داخلی',
             'body' => '<p>متن <strong>مهم</strong></p>',
             'status' => 'draft',
             'registration_number' => null,
@@ -148,8 +148,8 @@ class CorrespondenceHttpTest extends TestCase
         $user = $this->userWithPermission('correspondence.create');
 
         $this->actingAs($user)->from(route('correspondence.create'))->post(route('correspondence.store'), [
-            'type' => 'incoming',
-            'subject' => 'نامه وارده',
+            'type' => 'outgoing',
+            'subject' => 'نامه صادره',
             'composition_mode' => 'file',
         ])->assertRedirect(route('correspondence.create'))
             ->assertSessionHasErrors('attachments');
@@ -174,7 +174,7 @@ class CorrespondenceHttpTest extends TestCase
         $this->instance(DocumentService::class, $documents);
 
         $this->actingAs($user)->post(route('correspondence.store'), [
-            'type' => 'incoming',
+            'type' => 'internal',
             'subject' => 'نامه پیوست‌شده',
             'composition_mode' => 'file',
             'attachments' => [UploadedFile::fake()->create('letter.pdf', 10, 'application/pdf')],
