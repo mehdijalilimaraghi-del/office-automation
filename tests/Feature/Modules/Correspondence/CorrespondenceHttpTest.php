@@ -124,9 +124,11 @@ class CorrespondenceHttpTest extends TestCase
     public function test_user_with_create_permission_can_create_editor_draft_and_unsafe_markup_is_removed(): void
     {
         $user = $this->userWithPermission('correspondence.create');
+        $recipientDepartmentId = $this->recipientDepartmentId();
 
         $this->actingAs($user)->post(route('correspondence.store'), [
             'type' => 'internal',
+            'recipient_department_id' => $recipientDepartmentId,
             'subject' => '  نامه داخلی  ',
             'composition_mode' => 'editor',
             'body' => '<p>متن <strong>مهم</strong><img src=x onerror=alert(1)></p>',
@@ -140,6 +142,8 @@ class CorrespondenceHttpTest extends TestCase
             'status' => 'draft',
             'registration_number' => null,
             'created_by' => $user->id,
+            'recipient_department_id' => $recipientDepartmentId,
+            'sender_name' => $user->name,
         ]);
     }
 
@@ -160,6 +164,7 @@ class CorrespondenceHttpTest extends TestCase
     public function test_user_can_create_file_only_draft_with_attachment(): void
     {
         $user = $this->userWithPermission('correspondence.create');
+        $recipientDepartmentId = $this->recipientDepartmentId();
         $documents = Mockery::mock(DocumentService::class);
         $documents->shouldReceive('create')
             ->once()
@@ -175,6 +180,7 @@ class CorrespondenceHttpTest extends TestCase
 
         $this->actingAs($user)->post(route('correspondence.store'), [
             'type' => 'internal',
+            'recipient_department_id' => $recipientDepartmentId,
             'subject' => 'نامه پیوست‌شده',
             'composition_mode' => 'file',
             'attachments' => [UploadedFile::fake()->create('letter.pdf', 10, 'application/pdf')],
@@ -203,7 +209,7 @@ class CorrespondenceHttpTest extends TestCase
         $this->actingAs($user)->post(route('correspondence.store'), ['type' => Correspondence::TYPE_INCOMING, 'subject' => 'نامه وارده غیرمجاز', 'composition_mode' => 'editor', 'body' => '<p>متن</p>'])->assertForbidden();
         $this->assertDatabaseCount('correspondences', 0);
         $this->actingAs($user)->post(route('correspondence.store'), ['type' => Correspondence::TYPE_OUTGOING, 'subject' => 'پیش‌نویس صادره مجاز', 'composition_mode' => 'editor', 'body' => '<p>متن</p>'])->assertRedirect(route('correspondence.index'));
-        $this->actingAs($user)->post(route('correspondence.store'), ['type' => Correspondence::TYPE_INTERNAL, 'subject' => 'نامه داخلی مجاز', 'composition_mode' => 'editor', 'body' => '<p>متن</p>'])->assertRedirect(route('correspondence.index'));
+        $this->actingAs($user)->post(route('correspondence.store'), ['type' => Correspondence::TYPE_INTERNAL, 'recipient_department_id' => $this->recipientDepartmentId(), 'subject' => 'نامه داخلی مجاز', 'composition_mode' => 'editor', 'body' => '<p>متن</p>'])->assertRedirect(route('correspondence.index'));
         $this->assertDatabaseCount('correspondences', 2);
     }
 
@@ -236,6 +242,15 @@ class CorrespondenceHttpTest extends TestCase
         $this->actingAs($secretariatUser)->post(route('correspondence.register', $letter))->assertRedirect();
         $this->assertDatabaseHas('correspondences', ['id' => $letter->id, 'status' => Correspondence::STATUS_REGISTERED, 'registered_by' => $secretariatUser->id]);
     }
+    private function recipientDepartmentId(): int
+    {
+        return Department::query()->create([
+            'name' => 'واحد گیرنده '.Str::upper(Str::random(6)),
+            'code' => 'REC-'.Str::upper(Str::random(8)),
+            'is_active' => true,
+        ])->id;
+    }
+
     private function userWithPermission(string $permissionCode): User
     {
         $permission = Permission::query()->firstOrCreate(
