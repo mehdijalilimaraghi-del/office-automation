@@ -21,7 +21,7 @@ use InvalidArgumentException;
 
 class CorrespondenceController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, CorrespondenceAccessService $access): Response
     {
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:150'],
@@ -29,7 +29,7 @@ class CorrespondenceController extends Controller
             'status' => ['nullable', Rule::in([Correspondence::STATUS_DRAFT, Correspondence::STATUS_REGISTERED])],
         ]);
 
-        $query = Correspondence::query()
+        $query = $access->visibleToQuery(Correspondence::query(), $request->user())
             ->with(['creator:id,name', 'department:id,name', 'registrar:id,name'])
             ->when($filters['search'] ?? null, function ($query, string $search): void {
                 $query->where(function ($query) use ($search): void {
@@ -55,8 +55,10 @@ class CorrespondenceController extends Controller
         ]);
     }
 
-    public function show(Correspondence $correspondence): Response
+    public function show(Request $request, Correspondence $correspondence, CorrespondenceAccessService $access): Response
     {
+        abort_unless($access->canView($correspondence, $request->user()), 403);
+
         $correspondence->load([
             'creator:id,name',
             'registrar:id,name',
@@ -70,6 +72,7 @@ class CorrespondenceController extends Controller
             'correspondence' => [
                 'id' => $correspondence->id,
                 'type' => $correspondence->type,
+                'classification' => $correspondence->classification,
                 'subject' => $correspondence->subject,
                 'body' => $correspondence->body,
                 'status' => $correspondence->status,
@@ -107,6 +110,10 @@ class CorrespondenceController extends Controller
                 ['value' => Correspondence::TYPE_OUTGOING, 'label' => 'صادره'],
                 ['value' => Correspondence::TYPE_INTERNAL, 'label' => 'داخلی'],
             ],
+            'classifications' => [
+                ['value' => Correspondence::CLASSIFICATION_ORDINARY, 'label' => 'عادی'],
+                ['value' => Correspondence::CLASSIFICATION_CONFIDENTIAL, 'label' => 'محرمانه'],
+            ],
             'departments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'repliesTo' => Correspondence::query()
                 ->where('status', Correspondence::STATUS_REGISTERED)
@@ -123,6 +130,7 @@ class CorrespondenceController extends Controller
     ): RedirectResponse {
         $data = $request->validate([
             'type' => ['required', Rule::in(Correspondence::allowedTypes())],
+            'classification' => ['required', Rule::in([Correspondence::CLASSIFICATION_ORDINARY, Correspondence::CLASSIFICATION_CONFIDENTIAL])],
             'subject' => ['required', 'string', 'max:255'],
             'composition_mode' => ['required', Rule::in(['editor', 'file', 'both'])],
             'body' => ['nullable', 'string', 'max:100000'],
@@ -156,6 +164,7 @@ class CorrespondenceController extends Controller
             $correspondence = DB::transaction(function () use ($data, $mode, $body, $attachments, $service, $documents, $request): Correspondence {
                 $correspondence = $service->createDraft([
                     'type' => $data['type'],
+                    'classification' => $data['classification'],
                     'subject' => $data['subject'],
                     'body' => $mode === 'file' ? null : $body,
                     'sender_name' => $data['sender_name'] ?? null,
