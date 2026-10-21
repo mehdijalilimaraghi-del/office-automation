@@ -44,7 +44,8 @@ class Correspondence extends Model
         'received_at',
         'sent_at',
         'created_by',
-        'department_id',
+        'created_department_id',
+        'recipient_department_id',
         'workflow_instance_id',
         'reply_to_id',
     ];
@@ -77,9 +78,14 @@ class Correspondence extends Model
         return $this->belongsTo(User::class, 'registered_by');
     }
 
-    public function department(): BelongsTo
+    public function createdDepartment(): BelongsTo
     {
-        return $this->belongsTo(Department::class);
+        return $this->belongsTo(Department::class, 'created_department_id');
+    }
+
+    public function recipientDepartment(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'recipient_department_id');
     }
 
     public function workflowInstance(): BelongsTo
