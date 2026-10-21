@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Modules\Correspondence;
 
 use App\Core\Permissions\Models\Permission;
-use App\Core\Permissions\Models\PermissionScope;
+use App\Core\Permissions\Enums\PermissionScope;
 use App\Core\Roles\Models\Role;
 use App\Models\User;
 use App\Modules\Correspondence\Models\Correspondence;
