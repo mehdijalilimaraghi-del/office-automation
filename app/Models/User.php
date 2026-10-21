@@ -288,10 +288,9 @@ class User extends Authenticatable
      */
     private function responsibilityDerivedScopes(string $permissionCode): array
     {
-        // Correspondence is an organization-wide operational module: every active
-        // staff account can view registered ordinary letters and create drafts.
-        // Confidential-letter visibility and final registration remain separately
-        // constrained by CorrespondenceAccessService and correspondence.register.
+        // Every active staff account may view registered ordinary letters and enter
+        // the draft form. CorrespondenceAccessService restricts incoming-letter
+        // creation to the configured secretariat and enforces registration rules.
         if (in_array($permissionCode, ['correspondence.view', 'correspondence.create'], true)) {
             return [PermissionScope::Organization->value];
         }
