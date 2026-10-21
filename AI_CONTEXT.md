@@ -57,11 +57,9 @@ Read these before implementation when the task touches their scope:
 6. `DEVELOPMENT.md` — engineering workflow
 
 ## Current version
-**V1 — Foundation & Work Management**
+**V1 — Foundation & Work Management: closed by project owner.** Future fixes may still be made if needed, with regression coverage.
 
-V1 implementation scope is considered implemented. The project is currently in technical validation and manual UI/functional acceptance.
-
-**Do not start V2 until V1 acceptance is explicitly closed in the project documentation.**
+**V2 — Office Automation: started and authorized.** Current focus is correspondence composition (internal editor, file upload or both), followed by correspondence detail/edit, referrals/instructions, workflow/Cartable integration, and request forms.
 
 ## V1 capabilities already implemented
 - Authentication and username-based login
@@ -137,12 +135,11 @@ Before making the first code change in a new conversation:
 5. Continue from the documented checkpoint; do not redesign or restart the project.
 
 ## Immediate next work
-1. Run the dedicated `SystemCodeGenerationTest` against SQL Server.
-2. If it passes, run the full PHPUnit/Laravel suite.
-3. Run the frontend production build.
-4. Continue final V1 manual UI/functional acceptance.
-5. Fix newly discovered V1 defects at root cause.
-6. Close V1 acceptance before starting V2.
+1. Validate V2 correspondence tests against the configured SQL Server database.
+2. Run the frontend production build.
+3. Manually verify editor, file-only and combined composition modes, including download access to attached documents.
+4. Fix any defects found at root cause and retain regression coverage.
+5. Continue V2 correspondence detail/edit, referrals/instructions and Workflow/Cartable integration.
 
 
 ## Current task activity model — 2026-10-10
