@@ -188,3 +188,14 @@ Before making the first code change in a new conversation:
 - Correspondence navigation now appears when the user has `correspondence.view` or `correspondence.create`; the destination respects the available permission.
 - Added `correspondence.show` and the `Correspondence/Show.vue` detail view. Keep attachment authorization delegated to the existing document download policy and do not expose storage paths.
 - Added HTTP coverage for opening correspondence details. Local validation is pending; keep `master` unchanged.
+
+
+## 2026-10-21 — V2 correspondence visibility baseline
+
+- Implemented the first security slice on `development` only; `master` remains unchanged.
+- Migration `2026_10_21_120000_add_classification_and_user_access_to_correspondences.php` adds `classification` (`ordinary` default) and `correspondence_user_access`. The `granted_by` column intentionally has no FK to avoid SQL Server multiple-cascade-path issues.
+- `CorrespondenceAccessService` is the current source of truth for list/detail visibility. Registered ordinary letters are visible to active users with `correspondence.view`; drafts are scoped to creator/participant/secretariat; confidential letters are scoped to creator/registrar/participant/secretariat.
+- `CorrespondenceController` uses this service for index, detail, and visible reply choices; linked reply metadata is filtered as well.
+- `DocumentPolicy` delegates correspondence attachment access to the same service before applying generic document-level access, to prevent bypassing confidentiality.
+- `CorrespondenceHttpTest` now covers registered ordinary visibility, denial for unrelated confidential viewers, and access for explicit participants.
+- Validation is pending: pull the branch locally, run `php artisan migrate`, run `php artisan test --filter=CorrespondenceHttpTest`, then `npm run build`. Do not proceed to referral UI until those pass.
