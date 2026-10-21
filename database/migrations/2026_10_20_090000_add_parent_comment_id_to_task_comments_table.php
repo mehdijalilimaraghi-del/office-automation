@@ -12,8 +12,7 @@ return new class extends Migration
             $table->foreignId('parent_comment_id')
                 ->nullable()
                 ->after('user_id')
-                ->constrained('task_comments')
-                ->nullOnDelete();
+                ->constrained('task_comments');
         });
     }
 
