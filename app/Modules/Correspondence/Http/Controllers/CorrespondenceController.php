@@ -52,7 +52,7 @@ class CorrespondenceController extends Controller
                 'status' => $filters['status'] ?? '',
             ],
             'canCreate' => $request->user()->hasPermission('correspondence.create'),
-            'canRegister' => $request->user()->hasPermission('correspondence.register'),
+            'canRegister' => $access->isSecretariat($request->user()),
         ]);
     }
 
@@ -103,18 +103,20 @@ class CorrespondenceController extends Controller
                     'size' => $link->document->latestVersion->size,
                 ])
                 ->values(),
-            'canRegister' => request()->user()->hasPermission('correspondence.register'),
+            'canRegister' => $access->canRegister($correspondence, $request->user()),
         ]);
     }
 
     public function create(Request $request, CorrespondenceAccessService $access): Response
     {
+        $types = array_values(array_filter([
+            ['value' => Correspondence::TYPE_INCOMING, 'label' => 'وارده'],
+            ['value' => Correspondence::TYPE_OUTGOING, 'label' => 'صادره'],
+            ['value' => Correspondence::TYPE_INTERNAL, 'label' => 'داخلی'],
+        ], fn (array $type): bool => $access->canCreateType($type['value'], $request->user())));
+
         return Inertia::render('Correspondence/Create', [
-            'types' => [
-                ['value' => Correspondence::TYPE_INCOMING, 'label' => 'وارده'],
-                ['value' => Correspondence::TYPE_OUTGOING, 'label' => 'صادره'],
-                ['value' => Correspondence::TYPE_INTERNAL, 'label' => 'داخلی'],
-            ],
+            'types' => $types,
             'classifications' => [
                 ['value' => Correspondence::CLASSIFICATION_ORDINARY, 'label' => 'عادی'],
                 ['value' => Correspondence::CLASSIFICATION_CONFIDENTIAL, 'label' => 'محرمانه'],
@@ -132,6 +134,7 @@ class CorrespondenceController extends Controller
         Request $request,
         CorrespondenceService $service,
         DocumentService $documents,
+        CorrespondenceAccessService $access,
     ): RedirectResponse {
         $data = $request->validate([
             'type' => ['required', Rule::in(Correspondence::allowedTypes())],
@@ -152,6 +155,8 @@ class CorrespondenceController extends Controller
                 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,txt,csv,zip',
             ],
         ]);
+
+        abort_unless($access->canCreateType($data['type'], $request->user()), 403);
 
         $mode = $data['composition_mode'];
         $body = $this->sanitizeBody((string) ($data['body'] ?? ''));
@@ -207,7 +212,10 @@ class CorrespondenceController extends Controller
         Request $request,
         Correspondence $correspondence,
         CorrespondenceNumberingService $numbering,
+        CorrespondenceAccessService $access,
     ): RedirectResponse {
+        abort_unless($access->canRegister($correspondence, $request->user()), 403);
+
         try {
             $numbering->register($correspondence, $request->user());
         } catch (InvalidArgumentException $exception) {
