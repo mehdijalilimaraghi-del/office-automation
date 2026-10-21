@@ -782,3 +782,13 @@ Implementation has started for the agreed cross-department project model:
 - Added the classification selector to the create form and classification labels to the list.
 - Added HTTP tests for ordinary visibility, unrelated confidential denial, and explicitly authorized participant access.
 - No test suite or frontend build has been run in this environment. Pull `development`, run migrations, then run the correspondence feature tests and frontend build before proceeding to referrals/workflow integration.
+
+## 2026-10-21 — Correspondence department semantics and Jalali dates
+
+- Replaced the ambiguous correspondence `department_id` with explicit `recipient_department_id`, and added nullable `created_department_id` through a reversible migration. The migration renames the existing column rather than dropping it.
+- Draft creation derives the creator department from the user's primary department membership; if the user has exactly one department membership, that department is used as a fallback. The creator department is not user-editable.
+- Internal correspondence now asks for a recipient department. The UI shows the sender automatically as the current creator for internal letters, asks for an external sender only for incoming letters, and asks for an external recipient only for outgoing letters.
+- Correspondence list/detail now distinguish creator department from recipient department. The recipient department is not treated as the current assignee; referral-to-person and manager-led routing remain a subsequent workflow slice.
+- Replaced Gregorian browser date controls with Persian/Jalali date entry (YYYY/MM/DD, accepting Persian or Arabic digits) for received/sent dates and converts the submitted value to ISO Gregorian for backend validation/storage. Dates continue to be displayed using the existing Persian locale formatting.
+- Updated correspondence HTTP tests to supply recipient departments for internal drafts and assert that the internal sender is the authenticated creator.
+- **Branch:** `development`. **Validation not run here:** pull the branch, run the focused correspondence HTTP/service tests and the frontend production build. Verify the migration against the local SQL Server database and manually check Jalali date conversion. Keep `master` unchanged.
