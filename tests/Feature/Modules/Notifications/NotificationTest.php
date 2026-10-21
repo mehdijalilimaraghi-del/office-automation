@@ -148,13 +148,21 @@ class NotificationTest extends TestCase
         );
     }
 
-    public function test_new_task_comment_notifies_creator_and_assignee_except_author(): void
+    public function test_new_task_comment_notifies_current_manager_and_assignee_except_author(): void
     {
         $creator = User::factory()->create(['status' => 'active']);
         $assignee = User::factory()->create(['status' => 'active']);
         $author = User::factory()->create(['status' => 'active']);
 
+        $department = Department::query()->create([
+            'name' => 'Task Comment Notification Unit',
+            'code' => 'TCN-'.Str::upper(Str::random(6)),
+            'manager_id' => $creator->id,
+            'is_active' => true,
+        ]);
+
         $task = Task::query()->create([
+            'department_id' => $department->id,
             'title' => 'Task with new comment',
             'status' => 'in_progress',
             'priority' => 'normal',
