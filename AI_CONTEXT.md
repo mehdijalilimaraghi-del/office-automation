@@ -1,3 +1,9 @@
+## Latest handoff — 2026-10-21 notification test correction
+
+- The comment notification contract is current department manager, falling back to project manager only when no department manager is assigned, plus the current assignee; the comment author is excluded.
+- `NotificationTest` had a stale fixture expecting a non-manager task creator to be notified. The regression fixture is aligned by making the creator the department manager; production behavior is unchanged.
+- After pulling `development`, validate with `php artisan test --filter=NotificationTest`. Do not merge to `master` until the user validates.
+
 # AI Context — Office Automation
 
 > Read this file before making code changes. It is a compact handoff for any AI/engineer continuing the project.
