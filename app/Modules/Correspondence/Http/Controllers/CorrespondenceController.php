@@ -9,8 +9,11 @@ use App\Http\Controllers\Controller;
 use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Services\CorrespondenceNumberingService;
 use App\Modules\Correspondence\Services\CorrespondenceService;
+use App\Modules\Documents\Services\DocumentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -69,11 +72,15 @@ class CorrespondenceController extends Controller
         ]);
     }
 
-    public function store(Request $request, CorrespondenceService $service): RedirectResponse
-    {
+    public function store(
+        Request $request,
+        CorrespondenceService $service,
+        DocumentService $documents,
+    ): RedirectResponse {
         $data = $request->validate([
             'type' => ['required', Rule::in(Correspondence::allowedTypes())],
             'subject' => ['required', 'string', 'max:255'],
+            'composition_mode' => ['required', Rule::in(['editor', 'file', 'both'])],
             'body' => ['nullable', 'string', 'max:100000'],
             'sender_name' => ['nullable', 'string', 'max:255'],
             'recipient_name' => ['nullable', 'string', 'max:255'],
@@ -81,16 +88,61 @@ class CorrespondenceController extends Controller
             'sent_at' => ['nullable', 'date'],
             'department_id' => ['nullable', 'integer', 'exists:departments,id'],
             'reply_to_id' => ['nullable', 'integer', Rule::exists('correspondences', 'id')->where('status', Correspondence::STATUS_REGISTERED)],
+            'attachments' => ['nullable', 'array', 'max:10'],
+            'attachments.*' => [
+                'file',
+                'max:20480',
+                'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,txt,csv,zip',
+            ],
         ]);
 
+        $mode = $data['composition_mode'];
+        $body = $this->sanitizeBody((string) ($data['body'] ?? ''));
+
+        if (in_array($mode, ['editor', 'both'], true) && trim(strip_tags($body)) === '') {
+            return back()->withErrors(['body' => 'متن نامه را وارد کنید.'])->withInput();
+        }
+
+        $attachments = $request->file('attachments', []);
+        if (in_array($mode, ['file', 'both'], true) && count($attachments) === 0) {
+            return back()->withErrors(['attachments' => 'برای روش انتخاب‌شده حداقل یک فایل پیوست کنید.'])->withInput();
+        }
+
         try {
-            $correspondence = $service->createDraft($data, $request->user());
+            $correspondence = DB::transaction(function () use ($data, $mode, $body, $attachments, $service, $documents, $request): Correspondence {
+                $correspondence = $service->createDraft([
+                    'type' => $data['type'],
+                    'subject' => $data['subject'],
+                    'body' => $mode === 'file' ? null : $body,
+                    'sender_name' => $data['sender_name'] ?? null,
+                    'recipient_name' => $data['recipient_name'] ?? null,
+                    'received_at' => $data['received_at'] ?? null,
+                    'sent_at' => $data['sent_at'] ?? null,
+                    'department_id' => $data['department_id'] ?? null,
+                    'reply_to_id' => $data['reply_to_id'] ?? null,
+                ], $request->user());
+
+                foreach ($attachments as $file) {
+                    $documents->create(
+                        data: [
+                            'title' => Str::limit(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME), 255, ''),
+                            'document_type' => 'correspondence_attachment',
+                        ],
+                        file: $file,
+                        creator: $request->user(),
+                        linkable: $correspondence,
+                        purpose: 'correspondence_attachment',
+                    );
+                }
+
+                return $correspondence;
+            });
         } catch (InvalidArgumentException $exception) {
             return back()->withErrors(['subject' => $exception->getMessage()])->withInput();
         }
 
         return redirect()->route('correspondence.index')
-            ->with('success', 'پیش‌نویس مکاتبه با موفقیت ایجاد شد.');
+            ->with('success', 'پیش‌نویس مکاتبه و پیوست‌های آن با موفقیت ذخیره شد.');
     }
 
     public function register(
@@ -105,5 +157,17 @@ class CorrespondenceController extends Controller
         }
 
         return back()->with('success', 'مکاتبه با موفقیت ثبت نهایی شد.');
+    }
+
+    private function sanitizeBody(string $body): string
+    {
+        $allowedTags = '<p><br><strong><b><em><i><u><ul><ol><li><h2><h3><blockquote><table><thead><tbody><tr><th><td>';
+        $body = strip_tags($body, $allowedTags);
+
+        return (string) preg_replace_callback(
+            '/<(\/?)(p|br|strong|b|em|i|u|ul|ol|li|h2|h3|blockquote|table|thead|tbody|tr|th|td)\b[^>]*>/i',
+            static fn (array $match): string => '<'.$match[1].strtolower($match[2]).'>',
+            $body,
+        );
     }
 }
