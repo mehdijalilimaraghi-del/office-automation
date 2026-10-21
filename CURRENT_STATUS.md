@@ -1,3 +1,10 @@
+## 2026-10-21 — Fix notification dropdown TypeScript build error
+
+- Fixed the mobile notification list in `resources/js/Layouts/AuthenticatedLayout.vue`: it referenced the undefined `markNotificationRead` handler.
+- Reused the existing `openNotification(item)` handler, which closes the dropdown, marks unread notifications as read through the existing route, and navigates to the notification destination.
+- User reports the focused `NotificationTest` suite passed. Frontend production build is pending.
+- Development working directory on the user's machine: `D:\\KPMM\\Office-automation`. Keep `master` unchanged.
+
 ## 2026-10-21 — Notification regression fixture aligned with recipient policy
 
 - The failing `NotificationTest` expected a task creator to receive comment notifications even when the creator was not the current department/project manager. That contradicted the implemented policy: notify the current department manager (project manager only as fallback) and current assignee, excluding the author.
