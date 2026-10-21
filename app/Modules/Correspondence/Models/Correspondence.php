@@ -21,12 +21,17 @@ class Correspondence extends Model
 
     public const TYPE_INTERNAL = 'internal';
 
+    public const CLASSIFICATION_ORDINARY = 'ordinary';
+
+    public const CLASSIFICATION_CONFIDENTIAL = 'confidential';
+
     public const STATUS_DRAFT = 'draft';
 
     public const STATUS_REGISTERED = 'registered';
 
     protected $fillable = [
         'type',
+        'classification',
         'subject',
         'body',
         'status',
@@ -89,6 +94,13 @@ class Correspondence extends Model
     public function replies(): HasMany
     {
         return $this->hasMany(self::class, 'reply_to_id');
+    }
+
+    public function authorizedUsers(): \\Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'correspondence_user_access')
+            ->withPivot(['granted_by', 'reason'])
+            ->withTimestamps();
     }
 
     public function documents(): MorphMany
