@@ -64,6 +64,15 @@
 
 # Office Automation — Current Status
 
+## 2026-10-21 — Correspondence authorization boundaries (V2)
+
+- Repository/roadmap review confirmed V2 is active and correspondence authorization must be enforced in backend services, with the configured organization secretariat as the registration authority.
+- Every active user may view registered ordinary letters and access the draft form; ordinary users can create internal letters and outgoing drafts, while incoming-letter creation is restricted to the configured secretariat.
+- Final registration/numbering of incoming and outgoing letters is restricted to the configured secretariat. A user may register their own internal draft.
+- Confidential visibility treats the configured secretariat as the privileged operational unit rather than relying solely on a generic register permission.
+- Regression coverage added for type-specific creation and registration boundaries. Validation is pending; do not proceed to referrals/workflow integration until focused tests pass. Branch: development; master unchanged.
+
+
 ## 2026-10-20 — Task filters, comment notifications and reminder review
 
 - Reorganized the task-list filters: the search field is now a separate full-width row at the bottom of the filter panel, after the compact selectors, to prevent the large input from disrupting the grid.
