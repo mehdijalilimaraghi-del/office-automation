@@ -39,6 +39,26 @@ class CorrespondenceHttpTest extends TestCase
                 ->where('correspondences.data.0.subject', 'نامه آزمایشی'));
     }
 
+    public function test_user_with_view_permission_can_open_correspondence_details(): void
+    {
+        $user = $this->userWithPermission('correspondence.view');
+        $correspondence = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => 'جزئیات نامه آزمایشی',
+            'body' => '<p>متن نامه</p>',
+            'status' => Correspondence::STATUS_DRAFT,
+            'created_by' => $user->id,
+        ]);
+
+        $this->actingAs($user)->get(route('correspondence.show', $correspondence))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Correspondence/Show')
+                ->where('correspondence.subject', 'جزئیات نامه آزمایشی')
+                ->where('correspondence.body', '<p>متن نامه</p>')
+                ->where('attachments', []));
+    }
+
     public function test_user_with_create_permission_can_create_editor_draft_and_unsafe_markup_is_removed(): void
     {
         $user = $this->userWithPermission('correspondence.create');
