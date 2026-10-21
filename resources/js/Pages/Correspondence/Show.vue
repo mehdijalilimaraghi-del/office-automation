@@ -25,7 +25,8 @@ interface CorrespondenceDetail {
     sent_at: string | null;
     creator: { id: number; name: string } | null;
     registrar: { id: number; name: string } | null;
-    department: { id: number; name: string } | null;
+    created_department: { id: number; name: string } | null;
+    recipient_department: { id: number; name: string } | null;
     reply_to: RelatedCorrespondence | null;
     replies: RelatedCorrespondence[];
 }
@@ -85,7 +86,8 @@ function registerCorrespondence(): void {
         <div class="mx-auto max-w-6xl space-y-5 p-4 sm:p-6">
             <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-xs font-medium text-slate-500">شماره ثبت</p><p class="mt-2 font-semibold text-slate-900">{{ correspondence.registration_number ?? 'پس از ثبت نهایی مشخص می‌شود' }}</p></div>
-                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-xs font-medium text-slate-500">واحد سازمانی</p><p class="mt-2 font-semibold text-slate-900">{{ correspondence.department?.name ?? 'تعیین نشده' }}</p></div>
+                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-xs font-medium text-slate-500">واحد ایجادکننده</p><p class="mt-2 font-semibold text-slate-900">{{ correspondence.created_department?.name ?? 'تعیین نشده' }}</p></div>
+                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-xs font-medium text-slate-500">واحد گیرنده</p><p class="mt-2 font-semibold text-slate-900">{{ correspondence.recipient_department?.name ?? 'هنوز تعیین نشده' }}</p></div>
                 <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-xs font-medium text-slate-500">ایجادکننده</p><p class="mt-2 font-semibold text-slate-900">{{ correspondence.creator?.name ?? 'نامشخص' }}</p></div>
                 <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-xs font-medium text-slate-500">تاریخ ایجاد</p><p class="mt-2 font-semibold text-slate-900">{{ formatDateTime(correspondence.created_at) }}</p></div>
             </section>
