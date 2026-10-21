@@ -3,6 +3,8 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
+import { DatePicker } from '@jalali-js/vue';
+import '@jalali-js/vue/date-picker.css';
 
 interface Department { id: number; name: string; }
 interface ReplyOption { id: number; registration_number: string | null; subject: string; }
@@ -39,47 +41,6 @@ const form = useForm({
     attachments: [] as File[],
 });
 
-
-function jalaliDateToIso(value: string): string | null {
-    const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
-    const arabicDigits = '٠١٢٣٤٥٦٧٨٩';
-    const digits = value.replace(/[۰-۹]/g, digit => String(persianDigits.indexOf(digit)))
-        .replace(/[٠-٩]/g, digit => String(arabicDigits.indexOf(digit))).trim();
-    if (!digits) return null;
-    const match = digits.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})$/);
-    if (!match) return value;
-    const jy = Number(match[1]);
-    const jm = Number(match[2]);
-    const jd = Number(match[3]);
-    if (jm < 1 || jm > 12 || jd < 1 || jd > (jm <= 6 ? 31 : jm <= 11 ? 30 : 30)) return value;
-    const jYear = jy + 1595;
-    let days = -355668 + 365 * jYear + Math.floor(jYear / 33) * 8
-        + Math.floor(((jYear % 33) + 3) / 4) + jd
-        + (jm < 7 ? (jm - 1) * 31 : (jm - 7) * 30 + 186);
-    let gy = 400 * Math.floor(days / 146097);
-    days %= 146097;
-    if (days > 36524) {
-        gy += 100 * Math.floor(--days / 36524);
-        days %= 36524;
-        if (days >= 365) days++;
-    }
-    gy += 4 * Math.floor(days / 1461);
-    days %= 1461;
-    if (days > 365) {
-        gy += Math.floor((days - 1) / 365);
-        days = (days - 1) % 365;
-    }
-    let gd = days + 1;
-    const leap = gy % 4 === 0 && (gy % 100 !== 0 || gy % 400 === 0);
-    const monthDays = [0, 31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    let gm = 1;
-    while (gm <= 12 && gd > monthDays[gm]) {
-        gd -= monthDays[gm];
-        gm++;
-    }
-    if (gm > 12) return value;
-    return String(gy) + '-' + String(gm).padStart(2, '0') + '-' + String(gd).padStart(2, '0');
-}
 
 watch(() => form.type, (type) => {
     if (type !== 'internal') form.recipient_department_id = '';
@@ -127,7 +88,7 @@ function removeFile(index: number): void {
             <form
                 class="mx-auto max-w-5xl space-y-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"
                 enctype="multipart/form-data"
-                @submit.prevent="form.transform(data => ({ ...data, received_at: jalaliDateToIso(data.received_at), sent_at: jalaliDateToIso(data.sent_at) })).post(route('correspondence.store'), { forceFormData: true })"
+                @submit.prevent="form.post(route('correspondence.store'), { forceFormData: true })"
             >
                 <section class="space-y-4">
                     <h3 class="text-base font-bold text-slate-900">مشخصات مکاتبه</h3>
@@ -177,14 +138,12 @@ function removeFile(index: number): void {
                         </div>
                         <div v-if="form.type === 'incoming'">
                             <label for="received_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ دریافت</label>
-                            <input id="received_at" v-model="form.received_at" type="text" inputmode="numeric" placeholder="۱۴۰۵/۰۷/۲۹" dir="rtl" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
-                            <p class="mt-1 text-xs text-slate-500">تاریخ را به شمسی و به‌شکل سال/ماه/روز وارد کنید.</p>
+                            <DatePicker v-model="form.received_at" system="jalali" locale="fa" value-format="gregorian-iso" />
                             <InputError class="mt-1" :message="form.errors.received_at" />
                         </div>
                         <div v-if="form.type === 'outgoing'">
                             <label for="sent_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ ارسال</label>
-                            <input id="sent_at" v-model="form.sent_at" type="text" inputmode="numeric" placeholder="۱۴۰۵/۰۷/۲۹" dir="rtl" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
-                            <p class="mt-1 text-xs text-slate-500">تاریخ را به شمسی و به‌شکل سال/ماه/روز وارد کنید.</p>
+                            <DatePicker v-model="form.sent_at" system="jalali" locale="fa" value-format="gregorian-iso" />
                             <InputError class="mt-1" :message="form.errors.sent_at" />
                         </div>
                         <div class="sm:col-span-2">
