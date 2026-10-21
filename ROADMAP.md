@@ -877,7 +877,7 @@ The first configuration/registration slice is implemented in `development`:
 - Approval policy is configurable separately for incoming, outgoing and internal correspondence.
 - Numbering uses a database counter row locked inside the registration transaction. Registration assigns the immutable official number and registrar metadata only when the draft can be registered.
 - Local migration, focused tests, frontend build and manual RTL acceptance are still pending.
-- HTTP correspondence screens and editor/Word-upload integration are the next implementation slice.
+- HTTP correspondence screens and editor/Word-upload integration are implemented on development; local test/build validation remains pending.
 
 
 ### 2026-10-21 — Correspondence HTTP foundation
