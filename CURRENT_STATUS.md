@@ -738,3 +738,18 @@ Implementation has started for the agreed cross-department project model:
 - Made the correspondence navigation entry available to users who have either view or create permission; users with view permission go to the list, while create-only users go directly to the creation form. This avoids hiding the module from users whose role can create but cannot browse.
 - Added the correspondence detail route and RTL detail page with status, registration data, sender/recipient, department, linked reply chain, formatted body, and attachment download links.
 - Added a detail-page HTTP regression test. Local validation pending: run the focused correspondence HTTP tests and frontend production build. Keep `master` unchanged.
+
+
+## 2026-10-21 — V2 correspondence visibility baseline
+
+- Added a correspondence classification column with `ordinary` and `confidential` values. Existing rows default to ordinary for backward compatibility.
+- Added `correspondence_user_access` to record users explicitly related to a letter; the model exposes this through `authorizedUsers`.
+- Added `CorrespondenceAccessService` to centralize visibility rules:
+  - Registered ordinary letters are visible to active users with `correspondence.view`.
+  - Drafts are visible to their creator, explicit participants, and users with `correspondence.register` (secretariat).
+  - Confidential registered letters are visible only to their creator, registrar, explicit participants, and users with `correspondence.register`.
+- Applied the visibility filter to the correspondence index, detail route, reply choices, and linked reply metadata.
+- Linked document downloads now check the access policy of the associated correspondence first, preventing generic document access from bypassing confidentiality.
+- Added the classification selector to the create form and classification labels to the list.
+- Added HTTP tests for ordinary visibility, unrelated confidential denial, and explicitly authorized participant access.
+- No test suite or frontend build has been run in this environment. Pull `development`, run migrations, then run the correspondence feature tests and frontend build before proceeding to referrals/workflow integration.
