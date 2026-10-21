@@ -103,7 +103,7 @@ class CorrespondenceController extends Controller
             return back()->withErrors(['body' => 'متن نامه را وارد کنید.'])->withInput();
         }
 
-        $attachments = $request->file('attachments', []);
+        $attachments = array_values(array_filter((array) $request->file('attachments', [])));
         if (in_array($mode, ['file', 'both'], true) && count($attachments) === 0) {
             return back()->withErrors(['attachments' => 'برای روش انتخاب‌شده حداقل یک فایل پیوست کنید.'])->withInput();
         }
