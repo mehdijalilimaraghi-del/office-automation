@@ -4,7 +4,7 @@
 - The internal editor provides basic bold/italic/underline and ordered/unordered list formatting. Submitted HTML is allow-listed and stripped of attributes before persistence.
 - File uploads use the shared Documents service and link documents to their correspondence; the existing DocumentPolicy now permits viewing linked files to users with correspondence.view.
 - Up to 10 attachments are accepted, each up to 20 MB, limited to the configured document types. File-only mode requires at least one attachment; combined mode requires both body text and an attachment.
-- Added focused tests for editor HTML sanitization, missing file validation, file-only draft creation and permission fixture setup. Tests/build have not been run by the assistant; user validation is pending.
+- Added focused tests for editor HTML sanitization, missing file validation, file-only draft creation and permission fixture setup. Fixed the test fixture import to use the actual enum namespace `App\\Core\\Permissions\\Enums\\PermissionScope` after local execution exposed a class-not-found error. The focused test must be rerun locally; build remains pending.
 - **Branch:** development. Keep master unchanged.
 
 ## 2026-10-21 — V2 correspondence HTTP foundation
