@@ -19,7 +19,7 @@ return new class extends Migration
                 ->nullable()
                 ->after('created_by')
                 ->constrained('departments')
-                ->nullOnDelete();
+                ->noActionOnDelete();
         });
     }
 
