@@ -10,6 +10,7 @@ type CompositionMode = 'editor' | 'file' | 'both';
 
 defineProps<{
     types: Array<{ value: string; label: string }>;
+    classifications: Array<{ value: string; label: string }>;
     departments: Department[];
     repliesTo: ReplyOption[];
 }>();
@@ -23,6 +24,7 @@ const compositionModes: Array<{ value: CompositionMode; label: string; descripti
 
 const form = useForm({
     type: 'incoming',
+    classification: 'ordinary',
     subject: '',
     composition_mode: 'editor' as CompositionMode,
     body: '',
@@ -80,6 +82,14 @@ function removeFile(index: number): void {
                                 <option v-for="item in types" :key="item.value" :value="item.value">{{ item.label }}</option>
                             </select>
                             <InputError class="mt-1" :message="form.errors.type" />
+                        </div>
+                        <div>
+                            <label for="classification" class="mb-1.5 block text-sm font-semibold text-slate-700">طبقه‌بندی دسترسی <span class="text-rose-600">*</span></label>
+                            <select id="classification" v-model="form.classification" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option v-for="item in classifications" :key="item.value" :value="item.value">{{ item.label }}</option>
+                            </select>
+                            <p class="mt-1 text-xs text-slate-500">نامه عادی پس از ثبت نهایی برای کاربران دارای مجوز مشاهده قابل مشاهده است؛ نامه محرمانه فقط برای افراد مرتبط و دبیرخانه.</p>
+                            <InputError class="mt-1" :message="form.errors.classification" />
                         </div>
                         <div>
                             <label for="department_id" class="mb-1.5 block text-sm font-semibold text-slate-700">واحد مرتبط</label>
