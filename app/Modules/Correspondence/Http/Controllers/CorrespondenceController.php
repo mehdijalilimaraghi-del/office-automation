@@ -44,15 +44,21 @@ class CorrespondenceController extends Controller
             ->when($filters['status'] ?? null, fn ($query, string $status) => $query->where('status', $status))
             ->latest('created_at');
 
+        $correspondences = $query->paginate(15)->withQueryString();
+        $correspondences->getCollection()->transform(function (Correspondence $correspondence) use ($access, $request): Correspondence {
+            $correspondence->setAttribute('can_register', $access->canRegister($correspondence, $request->user()));
+
+            return $correspondence;
+        });
+
         return Inertia::render('Correspondence/Index', [
-            'correspondences' => $query->paginate(15)->withQueryString(),
+            'correspondences' => $correspondences,
             'filters' => [
                 'search' => $filters['search'] ?? '',
                 'type' => $filters['type'] ?? '',
                 'status' => $filters['status'] ?? '',
             ],
             'canCreate' => $request->user()->hasPermission('correspondence.create'),
-            'canRegister' => $access->isSecretariat($request->user()),
         ]);
     }
 
