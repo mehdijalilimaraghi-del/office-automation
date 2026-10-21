@@ -1,3 +1,8 @@
+
+## 2026-10-21 — Correspondence test permission fixture
+
+- Fixed a SQL Server unique-name collision in `CorrespondenceHttpTest`: test permission names now include the permission code, while permissions are still reused by unique code. The three visibility tests had been failing during fixture setup before reaching their assertions.
+- Local validation pending: pull `development` and rerun `php artisan test --filter=CorrespondenceHttpTest`. No production authorization logic was changed by this fix. Keep `master` unchanged.
 ## 2026-10-21 — Full test suite follow-up
 
 - The user ran the full Laravel suite: 401 tests passed; two tests failed.
