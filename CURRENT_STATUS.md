@@ -13,7 +13,7 @@
 - Added Persian RTL correspondence list and draft form for incoming, outgoing and internal letters, with server-side search/type/status filters, pagination, department selection, reply-to selection and registration feedback.
 - Added correspondence.view, correspondence.create and correspondence.register permissions; exposed view capability to Inertia and added navigation to the authenticated work menu.
 - Added CorrespondenceHttpTest coverage for list access, draft creation and denied access without permission.
-- Validation pending: pull development, run the focused correspondence tests, then npm run build. Verify permissions are seeded and granted to the intended roles. Word upload, detail/edit screen, referrals/instructions, workflow/Cartable actions and correspondence-linked tasks remain the next V2 slices. Keep master unchanged.
+- Validation pending: pull development, run the focused correspondence tests, then npm run build. Verify permissions are seeded and granted to the intended roles. Detail/edit screen, referrals/instructions, workflow/Cartable actions and correspondence-linked tasks remain the next V2 slices. Keep master unchanged.
 
 ## 2026-10-21 — Fix notification dropdown TypeScript build error
 
