@@ -17,6 +17,8 @@ use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Documents\Models\Document;
 use App\Modules\Documents\Services\DocumentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
 use Mockery;
@@ -200,6 +202,30 @@ class CorrespondenceHttpTest extends TestCase
             ->assertSessionHasErrors('attachments');
 
         $this->assertDatabaseCount('correspondences', 0);
+    }
+
+    public function test_scanner_upload_token_accepts_pdf_and_exposes_ready_status_only_to_its_owner(): void
+    {
+        Storage::fake('local');
+        $owner = $this->userWithPermission('correspondence.create');
+        $otherUser = $this->userWithPermission('correspondence.create');
+        $token = Str::random(64);
+        $cacheKey = 'correspondence_scanner_upload:'.hash('sha256', $token);
+
+        Cache::put($cacheKey, [
+            'user_id' => (int) $owner->id,
+            'status' => 'pending',
+        ], now()->addMinutes(10));
+
+        $this->post(route('correspondence.scanner.upload', $token), [
+            'file' => UploadedFile::fake()->create('scanned-letter.pdf', 10, 'application/pdf'),
+        ])->assertOk()->assertJson(['status' => 'ready']);
+
+        $this->actingAs($owner)->get(route('correspondence.scanner.status', $token))
+            ->assertOk()
+            ->assertJson(['status' => 'ready', 'file_name' => 'scanned-letter.pdf']);
+
+        $this->actingAs($otherUser)->get(route('correspondence.scanner.status', $token))->assertNotFound();
     }
 
     public function test_incoming_correspondence_requires_an_original_letter_file_even_if_body_is_provided(): void
