@@ -814,3 +814,11 @@ Implementation has started for the agreed cross-department project model:
 - Expanded the existing RTL in-browser editor toolbar with paragraph/heading styles, text alignment, remove formatting, undo/redo, and accessible labels. It remains a lightweight contenteditable editor; a dedicated rich-text editor package has not been introduced.
 - External outgoing correspondence still uses the existing free-text recipient field. No external organization/unit directory model was identified in the correspondence code inspected for this change; replacing the field with structured organization and unit selection requires confirming whether to introduce a new external-party directory or reuse an existing registry elsewhere in the application.
 - **Branch:** `development`; `master` unchanged. Local Laravel tests and frontend build must be run after pulling the latest commits.
+
+## 2026-10-24 — Word-style correspondence editor toolbar
+
+- Reworked the correspondence editor toolbar into grouped, icon-first controls with accessible titles/labels rather than text-only buttons. Added font family/size, text color, bold/italic/underline/strike-through, superscript/subscript, alignment, lists, indentation, heading/paragraph, horizontal rule, and undo/redo controls.
+- The editor still uses the browser's built-in contenteditable commands. This is a visual and functional improvement, but it is not yet a full-featured document editor engine such as Tiptap; adopting one also requires aligning the backend HTML allow-list so supported formatting survives sanitization.
+- The outgoing recipient is still a free-text field because the application currently has no identified external-organization/unit directory. Reusing internal departments for external recipients would mix separate domains. A dedicated external-party directory (organizations plus units, selection UI, and a way to maintain those records) needs explicit approval before adding schema and management screens.
+- User reports the correspondence tests and frontend build passed before this latest toolbar change. The latest toolbar change still needs local validation.
+- **Branch:** `development`; `master` unchanged.
