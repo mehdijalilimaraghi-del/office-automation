@@ -168,6 +168,10 @@ function removeScannedLetter(): void {
 
 async function scanOriginalLetter(): Promise<void> {
     if (scannerLoading.value) return;
+
+    // Reserve a browser tab during the actual click gesture. Launching a custom
+    // protocol only after an awaited HTTP request can be blocked by browsers.
+    const launchTab = window.open('about:blank', '_blank');
     scannerLoading.value = true;
     scannerMessage.value = 'در حال آماده‌سازی اتصال اسکنر...';
     scannerFileName.value = '';
@@ -178,9 +182,16 @@ async function scanOriginalLetter(): Promise<void> {
         const token = String(started.data.token);
         const uploadUrl = String(started.data.upload_url);
         const statusUrl = String(started.data.status_url);
+        const launchUrl = 'officeautomation-scanner://scan?uploadUrl=' + encodeURIComponent(uploadUrl);
 
-        scannerMessage.value = 'NAPS2 با پروفایل تنظیم‌شده اجرا می‌شود و PDF پس از اسکن به‌صورت خودکار به همین فرم ارسال خواهد شد.';
-        window.location.href = 'officeautomation-scanner://scan?uploadUrl=' + encodeURIComponent(uploadUrl);
+        scannerMessage.value = launchTab
+            ? 'درخواست اجرای NAPS2 ارسال شد. اگر پیام اجازه اجرای برنامه نمایش داده شد، آن را تأیید کنید.'
+            : 'مرورگر اجازه بازکردن پنجره اتصال را نداد؛ تلاش مستقیم برای اجرای NAPS2 انجام می‌شود.';
+        if (launchTab) {
+            launchTab.location.href = launchUrl;
+        } else {
+            window.location.href = launchUrl;
+        }
 
         for (let attempt = 0; attempt < 90; attempt += 1) {
             await new Promise((resolve) => window.setTimeout(resolve, 2000));
@@ -193,10 +204,13 @@ async function scanOriginalLetter(): Promise<void> {
             }
         }
 
-        scannerMessage.value = 'اسکنی دریافت نشد. نصب NAPS2، مسیر برنامه و پروفایل اسکن را بررسی کنید یا فایل را دستی بارگذاری کنید.';
+        scannerMessage.value = 'پس از ۳ دقیقه فایلی دریافت نشد. نصب رابط اسکن، ثبت پروتکل officeautomation-scanner:// و مسیر NAPS2 را بررسی کنید یا فایل را دستی بارگذاری کنید.';
     } catch {
-        scannerMessage.value = 'اجرای NAPS2 یا ارسال فایل ناموفق بود. تنظیمات NAPS2 را بررسی کنید یا فایل اسکن‌شده را دستی انتخاب کنید.';
+        scannerMessage.value = 'آماده‌سازی اتصال اسکنر یا دریافت وضعیت ناموفق بود. اتصال سامانه و تنظیمات رابط اسکن را بررسی کنید یا فایل را دستی انتخاب کنید.';
     } finally {
+        if (launchTab && !launchTab.closed) {
+            try { launchTab.close(); } catch { /* The browser may already have handed off the protocol. */ }
+        }
         scannerLoading.value = false;
     }
 }
