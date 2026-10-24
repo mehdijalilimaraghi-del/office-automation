@@ -275,16 +275,38 @@ internal sealed class DeviceSelectionForm : Form
     private readonly ComboBox devices = new() { DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Top };
     private DeviceSelectionForm(IReadOnlyList<ScanDevice> available)
     {
-        Text = "انتخاب اسکنر"; Width = 560; Height = 160; StartPosition = FormStartPosition.CenterScreen;
-        RightToLeft = RightToLeft.Yes; RightToLeftLayout = true;
-        var label = new Label { Text = "دستگاه اسکن مورد استفاده را انتخاب کنید:", Dock = DockStyle.Top, Height = 36, TextAlign = ContentAlignment.MiddleRight };
+        Text = "انتخاب اسکنر";
+        Width = 560;
+        Height = 210;
+        MinimumSize = new Size(480, 200);
+        StartPosition = FormStartPosition.CenterScreen;
+        RightToLeft = RightToLeft.Yes;
+        RightToLeftLayout = true;
+        Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point);
+        BackColor = Color.FromArgb(248, 250, 252);
+        Padding = new Padding(18);
+
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, Padding = new Padding(4) };
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        var label = new Label { Text = "دستگاه اسکن مورد استفاده را انتخاب کنید", Dock = DockStyle.Fill, AutoSize = true, Padding = new Padding(0, 0, 0, 12), TextAlign = ContentAlignment.MiddleRight, Font = new Font("Segoe UI", 10F, FontStyle.Bold) };
+        devices.Dock = DockStyle.Fill;
+        devices.Font = new Font("Segoe UI", 10F);
+        devices.Margin = new Padding(0, 0, 0, 16);
         foreach (var item in available) devices.Items.Add(new DeviceChoice(item));
         devices.SelectedIndex = 0;
-        var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 48, FlowDirection = FlowDirection.LeftToRight };
-        var ok = new Button { Text = "ادامه", DialogResult = DialogResult.OK, AutoSize = true };
-        var cancel = new Button { Text = "انصراف", DialogResult = DialogResult.Cancel, AutoSize = true };
-        buttons.Controls.Add(ok); buttons.Controls.Add(cancel);
-        Controls.Add(devices); Controls.Add(label); Controls.Add(buttons); AcceptButton = ok; CancelButton = cancel;
+        var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, Padding = new Padding(0, 8, 0, 0) };
+        var ok = new Button { Text = "ادامه", DialogResult = DialogResult.OK, AutoSize = true, MinimumSize = new Size(100, 38), FlatStyle = FlatStyle.Flat, BackColor = Color.FromArgb(79, 70, 229), ForeColor = Color.White, UseVisualStyleBackColor = false };
+        var cancel = new Button { Text = "انصراف", DialogResult = DialogResult.Cancel, AutoSize = true, MinimumSize = new Size(100, 38), FlatStyle = FlatStyle.Flat, BackColor = Color.White, ForeColor = Color.FromArgb(51, 65, 85), UseVisualStyleBackColor = false };
+        buttons.Controls.Add(ok);
+        buttons.Controls.Add(cancel);
+        layout.Controls.Add(label, 0, 0);
+        layout.Controls.Add(devices, 0, 1);
+        layout.Controls.Add(buttons, 0, 2);
+        Controls.Add(layout);
+        AcceptButton = ok;
+        CancelButton = cancel;
     }
     public static ScanDevice? Select(IReadOnlyList<ScanDevice> available)
     {
@@ -302,8 +324,20 @@ internal sealed class ProgressForm : Form
     private readonly Label message = new() { Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter };
     public ProgressForm(string text)
     {
-        Text = "اسکن نامه"; Width = 440; Height = 130; StartPosition = FormStartPosition.CenterScreen;
-        RightToLeft = RightToLeft.Yes; RightToLeftLayout = true; message.Text = text; Controls.Add(message);
+        Text = "اسکن نامه";
+        Width = 480;
+        Height = 150;
+        StartPosition = FormStartPosition.CenterScreen;
+        RightToLeft = RightToLeft.Yes;
+        RightToLeftLayout = true;
+        Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point);
+        BackColor = Color.White;
+        Padding = new Padding(20);
+        message.Text = text;
+        message.Font = new Font("Segoe UI", 11F, FontStyle.Regular, GraphicsUnit.Point);
+        message.ForeColor = Color.FromArgb(30, 41, 59);
+        message.Padding = new Padding(12);
+        Controls.Add(message);
     }
     public void SetMessage(string text)
     {
@@ -318,20 +352,76 @@ internal sealed class FlatbedPageReviewForm : Form
     private FlatbedReviewAction actionResult = FlatbedReviewAction.Cancel;
     private FlatbedPageReviewForm(ProcessedImage image, int pageNumber)
     {
-        Text = $"بازبینی صفحه {pageNumber}"; Width = 900; Height = 720; MinimumSize = new Size(640, 480);
-        StartPosition = FormStartPosition.CenterScreen; RightToLeft = RightToLeft.Yes; RightToLeftLayout = true;
+        Text = $"بازبینی صفحه {pageNumber}";
+        Width = 1100;
+        Height = 820;
+        MinimumSize = new Size(720, 540);
+        StartPosition = FormStartPosition.CenterScreen;
+        RightToLeft = RightToLeft.Yes;
+        RightToLeftLayout = true;
+        Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point);
+        BackColor = Color.FromArgb(241, 245, 249);
+        Padding = new Padding(16);
+
+        var header = new Label
+        {
+            Text = $"بازبینی صفحه {pageNumber}  |  کیفیت تصویر را بررسی کنید",
+            Dock = DockStyle.Top,
+            Height = 48,
+            TextAlign = ContentAlignment.MiddleRight,
+            Font = new Font("Segoe UI", 12F, FontStyle.Bold),
+            ForeColor = Color.FromArgb(30, 41, 59),
+            Padding = new Padding(8, 0, 8, 0)
+        };
+        picture.Dock = DockStyle.Fill;
+        picture.BackColor = Color.FromArgb(226, 232, 240);
+        picture.BorderStyle = BorderStyle.FixedSingle;
+        picture.Margin = new Padding(0, 0, 0, 12);
         using (var bitmap = image.RenderToBitmap()) picture.Image = new Bitmap(bitmap);
-        Controls.Add(picture);
-        var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 56, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(8) };
-        var next = new Button { Text = "۱. اسکن صفحه بعدی", AutoSize = true };
-        var rescan = new Button { Text = "۲. اسکن دوباره همین صفحه", AutoSize = true };
-        var finish = new Button { Text = "۳. اتمام و ذخیره", AutoSize = true };
-        var cancel = new Button { Text = "لغو", AutoSize = true };
+
+        var buttons = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Bottom,
+            Height = 76,
+            FlowDirection = FlowDirection.RightToLeft,
+            WrapContents = false,
+            Padding = new Padding(4, 14, 4, 4),
+            BackColor = Color.White
+        };
+        Button MakeButton(string text, Color background, Color foreground)
+        {
+            var button = new Button
+            {
+                Text = text,
+                AutoSize = true,
+                MinimumSize = new Size(150, 42),
+                Padding = new Padding(12, 4, 12, 4),
+                Margin = new Padding(6, 0, 6, 0),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = background,
+                ForeColor = foreground,
+                UseVisualStyleBackColor = false,
+                Font = new Font("Segoe UI", 9.5F, FontStyle.Bold)
+            };
+            button.FlatAppearance.BorderColor = background == Color.White ? Color.FromArgb(203, 213, 225) : background;
+            return button;
+        }
+        var next = MakeButton("اسکن صفحه بعدی", Color.FromArgb(79, 70, 229), Color.White);
+        var rescan = MakeButton("اسکن دوباره این صفحه", Color.White, Color.FromArgb(51, 65, 85));
+        var finish = MakeButton("اتمام و ذخیره PDF", Color.FromArgb(5, 150, 105), Color.White);
+        var cancel = MakeButton("لغو", Color.White, Color.FromArgb(185, 28, 28));
         next.Click += (_, _) => { actionResult = FlatbedReviewAction.Next; Close(); };
         rescan.Click += (_, _) => { actionResult = FlatbedReviewAction.Rescan; Close(); };
         finish.Click += (_, _) => { actionResult = FlatbedReviewAction.Finish; Close(); };
         cancel.Click += (_, _) => { actionResult = FlatbedReviewAction.Cancel; Close(); };
-        buttons.Controls.Add(next); buttons.Controls.Add(rescan); buttons.Controls.Add(finish); buttons.Controls.Add(cancel); Controls.Add(buttons);
+        buttons.Controls.Add(next);
+        buttons.Controls.Add(rescan);
+        buttons.Controls.Add(finish);
+        buttons.Controls.Add(cancel);
+
+        Controls.Add(picture);
+        Controls.Add(header);
+        Controls.Add(buttons);
     }
     public static FlatbedReviewAction Review(ProcessedImage image, int pageNumber)
     {
