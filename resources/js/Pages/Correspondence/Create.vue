@@ -179,7 +179,7 @@ async function scanOriginalLetter(): Promise<void> {
         const uploadUrl = String(started.data.upload_url);
         const statusUrl = String(started.data.status_url);
 
-        scannerMessage.value = 'اگر برنامه کمکی نصب است، پنجره اسکنر را تأیید کنید. پس از پایان اسکن، فایل به همین فرم بازمی‌گردد.';
+        scannerMessage.value = 'NAPS2 با پروفایل تنظیم‌شده اجرا می‌شود و PDF پس از اسکن به‌صورت خودکار به همین فرم ارسال خواهد شد.';
         window.location.href = 'officeautomation-scanner://scan?uploadUrl=' + encodeURIComponent(uploadUrl);
 
         for (let attempt = 0; attempt < 90; attempt += 1) {
@@ -193,9 +193,9 @@ async function scanOriginalLetter(): Promise<void> {
             }
         }
 
-        scannerMessage.value = 'اسکنی دریافت نشد. نصب بودن برنامه کمکی و اتصال اسکنر را بررسی کنید یا فایل را دستی بارگذاری کنید.';
+        scannerMessage.value = 'اسکنی دریافت نشد. نصب NAPS2، مسیر برنامه و پروفایل اسکن را بررسی کنید یا فایل را دستی بارگذاری کنید.';
     } catch {
-        scannerMessage.value = 'اتصال اسکنر برقرار نشد. در صورت نصب نبودن برنامه کمکی، فایل اسکن‌شده را دستی انتخاب کنید.';
+        scannerMessage.value = 'اجرای NAPS2 یا ارسال فایل ناموفق بود. تنظیمات NAPS2 را بررسی کنید یا فایل اسکن‌شده را دستی انتخاب کنید.';
     } finally {
         scannerLoading.value = false;
     }
@@ -422,7 +422,7 @@ async function scanOriginalLetter(): Promise<void> {
                         </label>
                         <div class="flex flex-col items-center justify-center rounded-xl border border-slate-200 px-5 py-6 text-center">
                             <button type="button" :disabled="scannerLoading" class="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-wait disabled:opacity-60" @click="scanOriginalLetter">
-                                {{ scannerLoading ? 'در انتظار اسکن...' : 'اسکن مستقیم از دستگاه' }}
+                                {{ scannerLoading ? 'در حال اجرای NAPS2...' : 'اسکن با NAPS2 و ارسال خودکار' }}
                             </button>
                             <p class="mt-2 text-xs leading-5 text-slate-500">نیازمند نصب NAPS2 و رابط اتصال سامانه روی رایانه دبیرخانه است؛ PDF پس از اسکن خودکار به همین فرم ارسال می‌شود.</p>
                         </div>
