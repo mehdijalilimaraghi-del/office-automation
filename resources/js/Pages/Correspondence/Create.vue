@@ -31,6 +31,8 @@ const editor = ref<HTMLDivElement | null>(null);
 const scannerLoading = ref(false);
 const scannerMessage = ref('');
 const scannerFileName = ref('');
+const scannerPreviewUrl = ref('');
+const scannerPreviewOpen = ref(false);
 const scannerSession = ref<{ token: string; uploadUrl: string; statusUrl: string } | null>(null);
 const scannerPreparing = ref(false);
 const compositionModes: Array<{ value: CompositionMode; label: string; description: string }> = [
@@ -167,7 +169,28 @@ function removeOriginalLetter(index: number): void {
 function removeScannedLetter(): void {
     form.scanner_upload_token = '';
     scannerFileName.value = '';
+    scannerPreviewUrl.value = '';
+    scannerPreviewOpen.value = false;
     scannerMessage.value = 'فایل اسکن‌شده از پیش‌نویس حذف شد.';
+}
+
+function confirmScannedLetter(): void {
+    if (!scannerSession.value || !scannerPreviewUrl.value) return;
+    form.scanner_upload_token = scannerSession.value.token;
+    scannerPreviewOpen.value = false;
+    scannerMessage.value = 'فایل پس از ذخیره پیش‌نویس به‌عنوان اصل نامه ثبت خواهد شد.';
+    scannerSession.value = null;
+    void prepareScannerSession();
+}
+
+function discardScannedLetterPreview(): void {
+    form.scanner_upload_token = '';
+    scannerFileName.value = '';
+    scannerPreviewUrl.value = '';
+    scannerPreviewOpen.value = false;
+    scannerSession.value = null;
+    scannerMessage.value = 'اسکن تأیید نشد. می‌توانید دوباره اسکن کنید.';
+    void prepareScannerSession();
 }
 
 async function prepareScannerSession(): Promise<void> {
