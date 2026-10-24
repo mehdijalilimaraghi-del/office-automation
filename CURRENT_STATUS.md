@@ -799,3 +799,11 @@ Implementation has started for the agreed cross-department project model:
 - Changed the new creator-department foreign key to `NO ACTION` on delete. This avoids SQL Server's cascade-path restriction and preserves referential integrity; a department referenced by correspondence cannot be deleted until the reference is handled.
 - **Branch:** `development`; `master` unchanged. The migration has not yet been rerun after this fix. Pull `development` and retry migration, then run the correspondence tests and frontend build.
 
+## 2026-10-24 — Correspondence numbering after department split
+
+- The project owner reported correspondence registration and numbering tests failing because `CorrespondenceNumberingService` still called the removed `department()` relation.
+- Updated number formatting to read the department code from `createdDepartment`, treating the originating/creator department as the issuer component of a number; the recipient department is not used as the issuing unit.
+- Updated registration's eager-loaded relations to `createdDepartment` and `recipientDepartment`.
+- Added regression coverage proving a department-based number uses the creator department code and not the recipient department code.
+- **Branch:** `development`; `master` unchanged. Tests and frontend build have not been run by the assistant; rerun correspondence tests and build locally.
+
