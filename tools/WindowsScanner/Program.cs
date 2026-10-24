@@ -192,7 +192,8 @@ internal static class Program
 
     private static async Task UploadPdf(string uploadUrl, string pdfPath)
     {
-        using var client = new HttpClient { Timeout = TimeSpan.FromMinutes(2) };
+        using var handler = new HttpClientHandler { AllowAutoRedirect = false };
+        using var client = new HttpClient(handler) { Timeout = TimeSpan.FromMinutes(2) };
         using var form = new MultipartFormDataContent();
         await using var stream = File.OpenRead(pdfPath);
         using var file = new StreamContent(stream);
