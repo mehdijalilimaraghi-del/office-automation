@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Correspondence\Services;
 
 use App\Models\User;
+use App\Core\ExternalParties\Models\ExternalOrganization;
+use App\Core\ExternalParties\Models\ExternalDepartment;
 use App\Modules\Correspondence\Models\Correspondence;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -26,6 +28,24 @@ class CorrespondenceService
 
         if ($subject === '') {
             throw new InvalidArgumentException('موضوع مکاتبه الزامی است.');
+        }
+
+        $externalOrganizationId = isset($data['external_organization_id']) && $data['external_organization_id'] !== ''
+            ? (int) $data['external_organization_id'] : null;
+        $externalDepartmentId = isset($data['external_department_id']) && $data['external_department_id'] !== ''
+            ? (int) $data['external_department_id'] : null;
+
+        if ($type === Correspondence::TYPE_INTERNAL && ($externalOrganizationId !== null || $externalDepartmentId !== null)) {
+            throw new InvalidArgumentException('برای مکاتبه داخلی نباید طرف برون‌سازمانی انتخاب شود.');
+        }
+        if ($externalDepartmentId !== null && $externalOrganizationId === null) {
+            throw new InvalidArgumentException('برای انتخاب واحد بیرونی، ابتدا سازمان بیرونی را انتخاب کنید.');
+        }
+        if ($externalOrganizationId !== null && ! ExternalOrganization::query()->whereKey($externalOrganizationId)->where('status', 'active')->exists()) {
+            throw new InvalidArgumentException('سازمان بیرونی انتخاب‌شده فعال نیست یا وجود ندارد.');
+        }
+        if ($externalDepartmentId !== null && ! ExternalDepartment::query()->whereKey($externalDepartmentId)->where('external_organization_id', $externalOrganizationId)->where('status', 'active')->exists()) {
+            throw new InvalidArgumentException('واحد بیرونی انتخاب‌شده متعلق به سازمان انتخاب‌شده نیست یا فعال نیست.');
         }
 
         return DB::transaction(function () use ($data, $creator, $type, $subject): Correspondence {
@@ -67,6 +87,8 @@ class CorrespondenceService
                 'created_by' => $creator->id,
                 'created_department_id' => $createdDepartmentId,
                 'recipient_department_id' => $data['recipient_department_id'] ?? null,
+                'external_organization_id' => $externalOrganizationId,
+                'external_department_id' => $externalDepartmentId,
                 'reply_to_id' => $data['reply_to_id'] ?? null,
             ])->load(['creator', 'createdDepartment', 'recipientDepartment', 'replyTo']);
         });
