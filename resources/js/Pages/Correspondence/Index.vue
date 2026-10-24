@@ -17,6 +17,8 @@ interface CorrespondenceRow {
     registrar: { id: number; name: string } | null;
     created_department: { id: number; name: string } | null;
     recipient_department: { id: number; name: string } | null;
+    external_organization: { id: number; name: string } | null;
+    external_department: { id: number; name: string; external_organization_id: number } | null;
 }
 interface PaginationLink { url: string | null; label: string; active: boolean; }
 const props = defineProps<{
@@ -69,7 +71,7 @@ function register(id: number): void {
                                 <td class="whitespace-nowrap px-5 py-4 text-slate-600">{{ typeLabels[item.type] }}</td>
                                 <td class="whitespace-nowrap px-5 py-4"><span :class="item.classification === 'confidential' ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-700'" class="rounded-full px-2.5 py-1 text-xs font-semibold">{{ classificationLabels[item.classification] }}</span></td>
                                 <td class="whitespace-nowrap px-5 py-4 font-mono text-slate-700">{{ item.registration_number ?? '—' }}</td>
-                                <td class="px-5 py-4 text-slate-600">{{ item.recipient_department?.name ?? item.created_department?.name ?? '—' }}</td>
+                                <td class="px-5 py-4 text-slate-600"><div>{{ item.recipient_department?.name ?? item.created_department?.name ?? '—' }}</div><div v-if="item.external_organization" class="mt-1 text-xs text-teal-700">{{ item.external_organization.name }}<span v-if="item.external_department"> — {{ item.external_department.name }}</span></div></td>
                                 <td class="px-5 py-4 text-slate-600">{{ item.creator?.name ?? '—' }}</td>
                                 <td class="whitespace-nowrap px-5 py-4"><span :class="item.status === 'registered' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'" class="rounded-full px-2.5 py-1 text-xs font-semibold">{{ statusLabels[item.status] }}</span></td>
                                 <td class="whitespace-nowrap px-5 py-4"><button v-if="item.can_register && item.status === 'draft'" type="button" class="rounded-lg border border-indigo-200 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-50" @click="register(item.id)">ثبت نهایی</button><span v-else class="text-xs text-slate-400">—</span></td>
