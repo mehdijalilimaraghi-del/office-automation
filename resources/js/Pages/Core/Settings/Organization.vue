@@ -23,6 +23,7 @@ interface OrganizationSettings {
     numbering_separator: string | null;
     numbering_padding: string | null;
     composition_method: string | null;
+    correspondence_font_family: string | null;
     approval_incoming: string | null;
     approval_outgoing: string | null;
     approval_internal: string | null;
@@ -61,6 +62,7 @@ const form = useForm({
     numbering_separator: props.settings.numbering_separator ?? '/',
     numbering_padding: props.settings.numbering_padding ?? '6',
     composition_method: props.settings.composition_method ?? 'both',
+    correspondence_font_family: props.settings.correspondence_font_family ?? 'Vazirmatn',
     approval_incoming: props.settings.approval_incoming ?? 'approval',
     approval_outgoing: props.settings.approval_outgoing ?? 'approval',
     approval_internal: props.settings.approval_internal ?? 'direct',
@@ -242,6 +244,20 @@ function submit(): void {
                                 </div>
                             </div>
                             <p class="rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-600">قالب‌های پیش‌فرض از سال شمسی، کد واحد و شمارنده استفاده می‌کنند. تغییر قالب فقط بر شماره‌های آینده اثر دارد.</p>
+                            <div>
+                                <label for="correspondence_font_family" class="block text-sm font-semibold text-slate-700">قلم پیش‌فرض نامه‌ها</label>
+                                <select id="correspondence_font_family" v-model="form.correspondence_font_family" class="mt-2 block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200">
+                                    <option value="Vazirmatn">وزیرمتن (Vazirmatn)</option>
+                                    <option value="Tahoma">Tahoma</option>
+                                    <option value="Arial">Arial</option>
+                                    <option value="B Nazanin">B Nazanin</option>
+                                    <option value="B Mitra">B Mitra</option>
+                                    <option value="IRANSans">IRANSans</option>
+                                    <option value="Times New Roman">Times New Roman</option>
+                                </select>
+                                <p class="mt-1 text-xs leading-5 text-slate-500">قلم انتخابی در ویرایشگر و نمایش متن نامه‌ها اعمال می‌شود. برای نمایش دقیق، قلم باید روی رایانه کاربران نصب یا در سامانه بارگذاری شده باشد.</p>
+                                <InputError class="mt-1.5" :message="form.errors.correspondence_font_family" />
+                            </div>
                             <div>
                                 <label for="composition_method" class="block text-sm font-semibold text-slate-700">روش نگارش نامه</label>
                                 <select id="composition_method" v-model="form.composition_method" class="mt-2 block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200">
