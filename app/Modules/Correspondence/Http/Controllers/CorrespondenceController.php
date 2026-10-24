@@ -12,6 +12,7 @@ use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Services\CorrespondenceNumberingService;
 use App\Modules\Correspondence\Services\CorrespondenceAccessService;
 use App\Modules\Correspondence\Services\CorrespondenceService;
+use App\Core\Settings\Services\SystemSettingsService;
 use App\Modules\Documents\Services\DocumentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -64,7 +65,7 @@ class CorrespondenceController extends Controller
         ]);
     }
 
-    public function show(Request $request, Correspondence $correspondence, CorrespondenceAccessService $access): Response
+    public function show(Request $request, Correspondence $correspondence, CorrespondenceAccessService $access, SystemSettingsService $settings): Response
     {
         abort_unless($access->canView($correspondence, $request->user()), 403);
 
@@ -118,10 +119,11 @@ class CorrespondenceController extends Controller
                 ])
                 ->values(),
             'canRegister' => $access->canRegister($correspondence, $request->user()),
+            'correspondenceFontFamily' => $settings->get(['correspondence.composition.font_family' => 'Vazirmatn'])['correspondence.composition.font_family'],
         ]);
     }
 
-    public function create(Request $request, CorrespondenceAccessService $access): Response
+    public function create(Request $request, CorrespondenceAccessService $access, SystemSettingsService $settings): Response
     {
         $types = array_values(array_filter([
             ['value' => Correspondence::TYPE_INCOMING, 'label' => 'وارده'],
@@ -155,6 +157,7 @@ class CorrespondenceController extends Controller
         }
 
         return Inertia::render('Correspondence/Create', [
+            'correspondenceFontFamily' => $settings->get(['correspondence.composition.font_family' => 'Vazirmatn'])['correspondence.composition.font_family'],
             'createdDepartment' => $createdDepartment,
             'createdDepartments' => $createdDepartments,
             'externalOrganizations' => ExternalOrganization::query()->where('status', 'active')->orderBy('name')->get(['id', 'name']),
@@ -289,12 +292,22 @@ class CorrespondenceController extends Controller
 
     private function sanitizeBody(string $body): string
     {
-        $allowedTags = '<p><br><strong><b><em><i><u><ul><ol><li><h2><h3><blockquote><table><thead><tbody><tr><th><td>';
+        $allowedTags = '<p><div><br><strong><b><em><i><u><ul><ol><li><h2><h3><blockquote><table><thead><tbody><tr><th><td>';
         $body = strip_tags($body, $allowedTags);
 
         return (string) preg_replace_callback(
-            '/<(\/?)(p|br|strong|b|em|i|u|ul|ol|li|h2|h3|blockquote|table|thead|tbody|tr|th|td)\b[^>]*>/i',
-            static fn (array $match): string => '<'.$match[1].strtolower($match[2]).'>',
+            '/<(\/?)(p|div|br|strong|b|em|i|u|ul|ol|li|h2|h3|blockquote|table|thead|tbody|tr|th|td)\b([^>]*)>/i',
+            static function (array $match): string {
+                $closing = $match[1];
+                $tag = strtolower($match[2]);
+                if ($closing === '/' || $tag === 'br') {
+                    return '<'.$closing.$tag.'>';
+                }
+                $direction = preg_match('/\bdir\s*=\s*["\'](rtl|ltr)["\']/i', $match[3], $dirMatch)
+                    ? strtolower($dirMatch[1])
+                    : null;
+                return '<'.$tag.($direction !== null ? ' dir="'.$direction.'"' : '').'>';
+            },
             $body,
         );
     }
