@@ -1,5 +1,4 @@
 {
   "ApplicationOrigin": "https://office.example.org",
-  "Naps2ConsolePath": "C:\\Program Files\\NAPS2\\NAPS2.Console.exe",
-  "Naps2ProfileName": ""
+  "Naps2GuiPath": "C:\\Program Files\\NAPS2\\NAPS2.exe"
 }
