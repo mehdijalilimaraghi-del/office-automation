@@ -58,12 +58,16 @@ const form = useForm({
 });
 
 
-watch(() => form.type, (type) => {
+watch(() => form.type, (type, previousType) => {
     if (type === 'incoming') {
         form.composition_mode = 'file';
         form.body = '';
-    } else if (form.composition_mode === 'file' && form.original_letters.length === 0) {
+    } else if (previousType === 'incoming') {
         form.composition_mode = 'editor';
+        form.original_letters = [];
+        form.scanner_upload_token = '';
+        scannerFileName.value = '';
+        scannerMessage.value = '';
     }
     if (type !== 'internal') form.recipient_department_id = '';
     if (type === 'internal') {
