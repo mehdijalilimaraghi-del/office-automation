@@ -44,6 +44,7 @@ const props = defineProps<{
     correspondence: CorrespondenceDetail;
     attachments: Attachment[];
     canRegister: boolean;
+    correspondenceFontFamily: string;
 }>();
 
 const typeLabels: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
@@ -110,7 +111,7 @@ function registerCorrespondence(): void {
 
             <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">متن نامه</h2></div>
-                <div v-if="correspondence.body" class="correspondence-body p-5 text-sm leading-8 text-slate-800" dir="rtl" v-html="correspondence.body"></div>
+                <div v-if="correspondence.body" class="correspondence-body p-5 text-sm leading-8 text-slate-800" dir="rtl" :style="{ fontFamily: correspondenceFontFamily }" v-html="correspondence.body"></div>
                 <div v-else class="p-5 text-sm text-slate-500">متن داخلی ثبت نشده است؛ محتوای نامه در فایل پیوست قرار دارد.</div>
             </section>
 
