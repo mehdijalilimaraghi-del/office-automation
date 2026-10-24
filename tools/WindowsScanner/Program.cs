@@ -11,13 +11,35 @@ internal static class Program
 {
     private const long MaximumPdfBytes = 20L * 1024 * 1024;
     private const int ScanDpi = 300;
+    private static readonly string LogPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "OfficeAutomation", "Scanner", "scanner.log");
+
+    private static void Log(string message)
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(LogPath)!);
+            File.AppendAllText(LogPath, $"[{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss zzz}] {message}{Environment.NewLine}");
+        }
+        catch { }
+    }
 
     [STAThread]
     private static async Task Main(string[] args)
     {
         ApplicationConfiguration.Initialize();
+        AppDomain.CurrentDomain.UnhandledException += (_, eventArgs) =>
+            Log("UNHANDLED: " + eventArgs.ExceptionObject);
+        TaskScheduler.UnobservedTaskException += (_, eventArgs) =>
+        {
+            Log("UNOBSERVED TASK: " + eventArgs.Exception);
+            eventArgs.SetObserved();
+        };
+        Log("Helper started.");
         try
         {
+            Log($"Protocol arguments received: {args.Length}.");
             var uploadUrl = args.Length > 0 ? ReadUploadUrl(args[0]) : null;
             if (uploadUrl is null)
             {
@@ -25,29 +47,37 @@ internal static class Program
                 return;
             }
 
+            Log("Upload URL validated.");
             using var temporary = new TemporaryDirectory();
             var pdfPath = Path.Combine(temporary.Path, "scanned-letter.pdf");
+            Log("Starting scanner discovery and scan.");
             await ScanAndCreatePdf(pdfPath);
+            Log("Scan and PDF export completed.");
             var file = new FileInfo(pdfPath);
             if (!file.Exists || file.Length == 0)
                 throw new InvalidOperationException("فایل PDF اسکن‌شده ساخته نشد.");
             if (file.Length > MaximumPdfBytes)
                 throw new InvalidOperationException("حجم PDF اسکن‌شده بیش از ۲۰ مگابایت است. وضوح اسکن را کاهش دهید.");
+            Log($"PDF created ({file.Length} bytes); starting upload.");
             await UploadPdf(uploadUrl, pdfPath);
+            Log("Upload completed successfully.");
             MessageBox.Show("اسکن ارسال شد. پیش‌نمایش PDF در فرم مکاتبه نمایش داده می‌شود؛ پس از بررسی، آن را تأیید و پیوست کنید.", "اسکن نامه", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
+            Log("Operation cancelled: " + ex.Message);
             // Intentional user cancellation.
         }
         catch (Exception ex)
         {
+            Log("ERROR: " + ex);
             MessageBox.Show("اسکن یا ارسال فایل انجام نشد.\n\n" + ex.Message, "اسکن نامه", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 
     private static async Task ScanAndCreatePdf(string pdfPath)
     {
+        Log("Creating NAPS2 scanning context.");
         using var context = new ScanningContext(new GdiImageContext());
         context.SetUpWin32Worker();
         var controller = new ScanController(context);
@@ -60,15 +90,18 @@ internal static class Program
             .Select(g => g.First())
             .ToList();
 
+        Log($"Scanner discovery completed. Device count: {devices.Count}.");
         if (devices.Count == 0)
             throw new InvalidOperationException("هیچ اسکنری از طریق WIA یا TWAIN شناسایی نشد. اتصال دستگاه و درایور آن را بررسی کنید.");
 
         var device = devices.Count == 1 ? devices[0] : DeviceSelectionForm.Select(devices);
         if (device is null) throw new OperationCanceledException("انتخاب اسکنر لغو شد.");
 
+        Log($"Selected device: {device.Name}; driver: {device.Driver}.");
         var caps = await controller.GetCaps(device);
         var hasFeeder = caps.PaperSourceCaps?.SupportsFeeder == true || caps.FeederCaps is not null;
         var hasFlatbed = caps.PaperSourceCaps?.SupportsFlatbed == true || caps.FlatbedCaps is not null;
+        Log($"Reported capabilities: feeder={hasFeeder}, flatbed={hasFlatbed}.");
 
         if (hasFeeder)
         {
@@ -81,6 +114,7 @@ internal static class Program
                 await foreach (var image in controller.Scan(options))
                 {
                     pages.Add(image);
+                    Log($"ADF page received: {pages.Count}.");
                     progress.SetMessage($"در حال اسکن صفحه {pages.Count}...");
                 }
                 progress.Close();
@@ -88,6 +122,7 @@ internal static class Program
                 if (pages.Count == 0)
                     throw new InvalidOperationException("اسکنر ADF هیچ صفحه‌ای برنگرداند. وجود کاغذ و تنظیمات منبع اسکن را بررسی کنید.");
 
+                Log($"Exporting ADF pages to PDF. Page count: {pages.Count}.");
                 var exporter = new PdfExporter(context);
                 await exporter.Export(pdfPath, pages);
             }
@@ -141,6 +176,7 @@ internal static class Program
             if (flatbedPages.Count == 0)
                 throw new OperationCanceledException("هیچ صفحه‌ای برای ذخیره انتخاب نشد.");
 
+            Log($"Exporting flatbed pages to PDF. Page count: {flatbedPages.Count}.");
             var exporter = new PdfExporter(context);
             await exporter.Export(pdfPath, flatbedPages);
         }
