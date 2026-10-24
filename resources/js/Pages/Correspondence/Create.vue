@@ -131,38 +131,7 @@ function removeFile(index: number): void {
             </div>
         </template>
 
-<style scoped>
-.editor-tool {
-    display: inline-flex;
-    height: 2.25rem;
-    width: 2.25rem;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid #dbe2ea;
-    border-radius: 0.5rem;
-    background: #fff;
-    color: #334155;
-    transition: background-color 120ms, border-color 120ms;
-}
-.editor-tool:hover {
-    border-color: #a5b4fc;
-    background: #eef2ff;
-    color: #4338ca;
-}
-.editor-tool:focus-visible {
-    outline: 2px solid #6366f1;
-    outline-offset: 2px;
-}
-.editor-tool svg {
-    width: 1.125rem;
-    height: 1.125rem;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-</style>
+
 
         <div class="p-4 sm:p-6">
             <form
@@ -389,3 +358,36 @@ function removeFile(index: number): void {
         </div>
     </AuthenticatedLayout>
 </template>
+
+<style scoped>
+.editor-tool {
+    display: inline-flex;
+    height: 2.25rem;
+    width: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #dbe2ea;
+    border-radius: 0.5rem;
+    background: #fff;
+    color: #334155;
+    transition: background-color 120ms, border-color 120ms;
+}
+.editor-tool:hover {
+    border-color: #a5b4fc;
+    background: #eef2ff;
+    color: #4338ca;
+}
+.editor-tool:focus-visible {
+    outline: 2px solid #6366f1;
+    outline-offset: 2px;
+}
+.editor-tool svg {
+    width: 1.125rem;
+    height: 1.125rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+</style>
