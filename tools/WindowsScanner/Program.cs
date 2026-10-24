@@ -21,10 +21,13 @@ internal static class Program
 
             using var temporary = new TemporaryDirectory();
             var pdfPath = Path.Combine(temporary.Path, "scanned-letter.pdf");
-            await ScanWithNaps2(pdfPath);
+            var selectedPdf = await ScanWithNaps2();
+            File.Copy(selectedPdf, pdfPath, true);
+            var file = new FileInfo(pdfPath);
+            if (file.Length > MaximumPdfBytes)
+                throw new InvalidOperationException("حجم PDF اسکن‌شده بیش از ۲۰ مگابایت است. وضوح یا تنظیمات رنگ اسکن را در پروفایل NAPS2 کاهش دهید.");
             await UploadPdf(uploadUrl, pdfPath);
-
-            MessageBox.Show("فایل PDF اسکن‌شده با موفقیت به فرم مکاتبات ارسال شد. به مرورگر بازگردید و پیش‌نویس را ذخیره کنید.", "اسکن نامه", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show("فایل PDF ارسال شد. به مرورگر بازگردید، پیش‌نمایش همه صفحه‌ها را بررسی و در صورت تأیید، آن را به نامه پیوست کنید.", "اسکن نامه", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (Exception ex)
         {
@@ -69,64 +72,23 @@ internal static class Program
         return uploadUri.ToString();
     }
 
-    private static async Task ScanWithNaps2(string outputPath)
+    private static async Task<string> ScanWithNaps2()
     {
         var settingsPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
         using var settings = JsonDocument.Parse(File.ReadAllText(settingsPath));
-        var root = settings.RootElement;
-
-        var consolePath = root.TryGetProperty("Naps2ConsolePath", out var pathValue)
-            ? pathValue.GetString()
-            : null;
-        if (string.IsNullOrWhiteSpace(consolePath) || !File.Exists(consolePath))
-            throw new InvalidOperationException("NAPS2 پیدا نشد. ابتدا NAPS2 را نصب و مسیر NAPS2.Console.exe را در appsettings.json تنظیم کنید.");
-
-        var profileName = root.TryGetProperty("Naps2ProfileName", out var profileValue)
-            ? profileValue.GetString()
-            : null;
-
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = consolePath,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            WorkingDirectory = Path.GetDirectoryName(consolePath) ?? AppContext.BaseDirectory,
-        };
-        startInfo.ArgumentList.Add("--output");
-        startInfo.ArgumentList.Add(outputPath);
-        if (!string.IsNullOrWhiteSpace(profileName))
-        {
-            startInfo.ArgumentList.Add("--profile");
-            startInfo.ArgumentList.Add(profileName);
-        }
-        startInfo.ArgumentList.Add("--progress");
-        startInfo.ArgumentList.Add("--verbose");
-
-        using var process = new Process { StartInfo = startInfo };
-        if (!process.Start())
-            throw new InvalidOperationException("اجرای NAPS2 انجام نشد.");
-
-        var stdoutTask = process.StandardOutput.ReadToEndAsync();
-        var stderrTask = process.StandardError.ReadToEndAsync();
+        var guiPath = settings.RootElement.TryGetProperty("Naps2GuiPath", out var guiValue) ? guiValue.GetString() : null;
+        if (string.IsNullOrWhiteSpace(guiPath) || !File.Exists(guiPath))
+            throw new InvalidOperationException("مسیر NAPS2.exe در appsettings.json تنظیم نشده است. مسیر رابط گرافیکی NAPS2 را وارد کنید.");
+        MessageBox.Show("در پنجره NAPS2 همه صفحه‌های نامه را اسکن کنید. برای اسکنر تخت، پس از هر صفحه برگه بعدی را قرار دهید و دوباره Scan را بزنید.\n\nهمه صفحه‌ها را بررسی و در یک فایل PDF ذخیره کنید، سپس NAPS2 را ببندید تا فایل ذخیره‌شده را برای ارسال انتخاب کنید.", "اسکن چندصفحه‌ای نامه", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        var startInfo = new ProcessStartInfo { FileName = guiPath, UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(guiPath) ?? AppContext.BaseDirectory };
+        using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("اجرای رابط گرافیکی NAPS2 انجام نشد.");
         await process.WaitForExitAsync();
-        var stdout = await stdoutTask;
-        var stderr = await stderrTask;
-
-        if (process.ExitCode != 0)
-        {
-            var details = string.Join(Environment.NewLine, new[] { stderr.Trim(), stdout.Trim() }.Where(value => value.Length > 0));
-            if (details.Length > 1200) details = details[..1200];
-            throw new InvalidOperationException("NAPS2 اسکن را کامل نکرد. اتصال اسکنر، پروفایل انتخاب‌شده و تنظیمات فیدر را بررسی کنید."
-                + (details.Length > 0 ? Environment.NewLine + details : string.Empty));
-        }
-
-        var file = new FileInfo(outputPath);
-        if (!file.Exists || file.Length == 0)
-            throw new InvalidOperationException("NAPS2 فایل PDF تولید نکرد. بررسی کنید اسکن لغو نشده و پروفایل اسکن معتبر است.");
-        if (file.Length > MaximumPdfBytes)
-            throw new InvalidOperationException("حجم PDF اسکن‌شده بیش از ۲۰ مگابایت است. وضوح یا تنظیمات رنگ اسکن را در پروفایل NAPS2 کاهش دهید.");
+        using var dialog = new OpenFileDialog { Title = "انتخاب PDF نهایی اسکن‌شده", Filter = "فایل PDF (*.pdf)|*.pdf", CheckFileExists = true, Multiselect = false, ValidateNames = true };
+        if (dialog.ShowDialog() != DialogResult.OK) throw new OperationCanceledException("انتخاب فایل اسکن‌شده لغو شد.");
+        var selected = new FileInfo(dialog.FileName);
+        if (!selected.Exists || selected.Length == 0) throw new InvalidOperationException("فایل انتخاب‌شده خالی یا در دسترس نیست.");
+        if (selected.Length > MaximumPdfBytes) throw new InvalidOperationException("حجم PDF اسکن‌شده بیش از ۲۰ مگابایت است. وضوح یا تنظیمات رنگ اسکن را در پروفایل NAPS2 کاهش دهید.");
+        return selected.FullName;
     }
 
     private static async Task UploadPdf(string uploadUrl, string pdfPath)
