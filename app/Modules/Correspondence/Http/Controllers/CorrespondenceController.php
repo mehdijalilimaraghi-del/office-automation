@@ -202,7 +202,7 @@ class CorrespondenceController extends Controller
             'sender_name' => ['nullable', 'string', 'max:255'],
             'recipient_name' => ['nullable', 'string', 'max:255'],
             'external_organization_id' => ['nullable', 'integer', Rule::exists('external_organizations', 'id')->where('status', 'active')],
-            'external_department_id' => ['nullable', 'integer', Rule::exists('external_departments', 'id')->where('status', 'active')],
+            'external_department_id' => ['nullable', 'integer', Rule::exists('external_departments', 'id')->where(fn ($query) => $query->where('status', 'active')->where('external_organization_id', $request->input('external_organization_id')))],
             'received_at' => ['nullable', 'date'],
             'sent_at' => ['nullable', 'date'],
             'recipient_department_id' => ['nullable', 'required_if:type,internal', 'integer', 'exists:departments,id'],
