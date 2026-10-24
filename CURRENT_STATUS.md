@@ -1,3 +1,10 @@
+## 2026-10-24 — Keep scanner UI message loop alive
+
+- The scanner log consistently stops after detecting the Samsung SCX-3200 as a flatbed device, before any page-return log. This narrows the failure to the start of the native flatbed scan or the helper's UI/runtime lifecycle; the exact driver failure is not yet confirmed.
+- Updated the Windows helper to run inside a persistent WinForms message loop (Application.Run) and moved the asynchronous scan workflow into that loop. This is intended to keep WIA/TWAIN native interactions, progress forms, and the flatbed review form alive across awaits.
+- Commit on development: 8f0e586e7891f7e52760cf5a77a119dddfb68b23.
+- Validation pending: no .NET publish or physical scanner test has been run here. Republish and test once; if the log still stops at capability detection, collect the matching Windows Event Viewer application error. Keep master unchanged.
+
 ## 2026-10-24 — Add persistent Windows scanner diagnostics
 
 - The project owner reports that the scan window closes without any message while the correspondence form remains in “waiting for scan completion”. The browser is polling the upload status, so no completed upload has been confirmed.
