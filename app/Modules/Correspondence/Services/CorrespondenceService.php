@@ -48,7 +48,7 @@ class CorrespondenceService
             throw new InvalidArgumentException('واحد بیرونی انتخاب‌شده متعلق به سازمان انتخاب‌شده نیست یا فعال نیست.');
         }
 
-        return DB::transaction(function () use ($data, $creator, $type, $subject): Correspondence {
+        return DB::transaction(function () use ($data, $creator, $type, $subject, $externalOrganizationId, $externalDepartmentId): Correspondence {
             $createdDepartmentId = $data['created_department_id'] ?? null;
             $allowedDepartmentIds = $creator->departments()
                 ->where('departments.is_active', true)
