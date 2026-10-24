@@ -123,20 +123,34 @@ class CorrespondenceController extends Controller
             ['value' => Correspondence::TYPE_INTERNAL, 'label' => 'داخلی'],
         ], fn (array $type): bool => $access->canCreateType($type['value'], $request->user())));
 
-        $createdDepartment = $request->user()->departments()
-            ->wherePivot('is_primary', true)
-            ->first(['departments.id', 'departments.name']);
+        $createdDepartments = $request->user()->departments()
+            ->where('departments.is_active', true)
+            ->orderBy('departments.name')
+            ->get(['departments.id', 'departments.name'])
+            ->keyBy('id');
 
-        if ($createdDepartment === null && $request->user()->departments()->count() === 1) {
-            $createdDepartment = $request->user()->departments()->first(['departments.id', 'departments.name']);
+        $managedDepartments = $request->user()->managedDepartments()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        foreach ($managedDepartments as $department) {
+            $createdDepartments->put($department->id, $department);
         }
 
-        if ($createdDepartment === null && $request->user()->managedDepartments()->count() === 1) {
-            $createdDepartment = $request->user()->managedDepartments()->first(['departments.id', 'departments.name']);
+        $createdDepartments = $createdDepartments->sortBy('name')->values();
+        $createdDepartment = $request->user()->departments()
+            ->wherePivot('is_primary', true)
+            ->where('departments.is_active', true)
+            ->first(['departments.id', 'departments.name']);
+
+        if ($createdDepartment === null && $createdDepartments->count() === 1) {
+            $createdDepartment = $createdDepartments->first();
         }
 
         return Inertia::render('Correspondence/Create', [
             'createdDepartment' => $createdDepartment,
+            'createdDepartments' => $createdDepartments,
             'types' => $types,
             'classifications' => [
                 ['value' => Correspondence::CLASSIFICATION_ORDINARY, 'label' => 'عادی'],
@@ -157,8 +171,22 @@ class CorrespondenceController extends Controller
         DocumentService $documents,
         CorrespondenceAccessService $access,
     ): RedirectResponse {
+        $allowedCreatedDepartmentIds = $request->user()->departments()
+            ->where('departments.is_active', true)
+            ->pluck('departments.id')
+            ->merge($request->user()->managedDepartments()->where('is_active', true)->pluck('id'))
+            ->unique()
+            ->values()
+            ->all();
+
+        $createdDepartmentRules = ['nullable', 'integer', Rule::in($allowedCreatedDepartmentIds)];
+        if (count($allowedCreatedDepartmentIds) > 1) {
+            $createdDepartmentRules[0] = 'required';
+        }
+
         $data = $request->validate([
             'type' => ['required', Rule::in(Correspondence::allowedTypes())],
+            'created_department_id' => $createdDepartmentRules,
             'classification' => ['sometimes', 'required', Rule::in([Correspondence::CLASSIFICATION_ORDINARY, Correspondence::CLASSIFICATION_CONFIDENTIAL])],
             'subject' => ['required', 'string', 'max:255'],
             'composition_mode' => ['required', Rule::in(['editor', 'file', 'both'])],
