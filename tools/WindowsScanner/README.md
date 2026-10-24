@@ -16,7 +16,7 @@ From the repository root, publish a self-contained Windows executable:
 dotnet publish .\tools\WindowsScanner\OfficeAutomation.Scanner.csproj -c Release -r win-x64 --self-contained true -o .\tools\WindowsScanner\publish
 ```
 
-Copy the published files into `%LOCALAPPDATA%\OfficeAutomation\Scanner`, then run `install.ps1` as the signed-in secretariat user. Registration is per-user and does not require administrator rights.
+Copy the published files into `%LOCALAPPDATA%\OfficeAutomation\Scanner`. Copy `appsettings.json.example` to `appsettings.json` in that folder and set `ApplicationOrigin` to the exact deployed application origin (scheme, hostname, and optional port; no path). The helper rejects uploads to a different origin. Then run `install.ps1` as the signed-in secretariat user. Registration is per-user and does not require administrator rights.
 
 ## Operation and safety
 
