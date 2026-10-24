@@ -4,6 +4,7 @@ import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import { DatePicker } from '@jalali-js/vue';
+import axios from 'axios';
 import '@jalali-js/vue/date-picker.css';
 
 interface Department { id: number; name: string; }
@@ -27,6 +28,9 @@ const props = defineProps<{
 }>();
 
 const editor = ref<HTMLDivElement | null>(null);
+const scannerLoading = ref(false);
+const scannerMessage = ref('');
+const scannerFileName = ref('');
 const compositionModes: Array<{ value: CompositionMode; label: string; description: string }> = [
     { value: 'editor', label: 'ویرایشگر داخلی', description: 'نامه را داخل سامانه بنویسید.' },
     { value: 'file', label: 'پیوست فایل', description: 'فایل آماده نامه را بارگذاری کنید.' },
@@ -49,6 +53,7 @@ const form = useForm({
     recipient_department_id: '' as number | '',
     reply_to_id: '' as number | '',
     original_letters: [] as File[],
+    scanner_upload_token: '',
     attachments: [] as File[],
 });
 
@@ -149,6 +154,41 @@ function chooseOriginalLetters(event: Event): void {
 
 function removeOriginalLetter(index: number): void {
     form.original_letters.splice(index, 1);
+}
+
+async function scanOriginalLetter(): Promise<void> {
+    if (scannerLoading.value) return;
+    scannerLoading.value = true;
+    scannerMessage.value = 'در حال آماده‌سازی اتصال اسکنر...';
+    scannerFileName.value = '';
+    form.scanner_upload_token = '';
+
+    try {
+        const started = await axios.post(route('correspondence.scanner.start'));
+        const token = String(started.data.token);
+        const uploadUrl = String(started.data.upload_url);
+        const statusUrl = String(started.data.status_url);
+
+        scannerMessage.value = 'اگر برنامه کمکی نصب است، پنجره اسکنر را تأیید کنید. پس از پایان اسکن، فایل به همین فرم بازمی‌گردد.';
+        window.location.href = 'officeautomation-scanner://scan?uploadUrl=' + encodeURIComponent(uploadUrl);
+
+        for (let attempt = 0; attempt < 90; attempt += 1) {
+            await new Promise((resolve) => window.setTimeout(resolve, 2000));
+            const status = await axios.get(statusUrl);
+            if (status.data.status === 'ready') {
+                form.scanner_upload_token = token;
+                scannerFileName.value = String(status.data.file_name || 'scanned-letter.pdf');
+                scannerMessage.value = 'اسکن دریافت شد و همراه پیش‌نویس ذخیره خواهد شد.';
+                return;
+            }
+        }
+
+        scannerMessage.value = 'اسکنی دریافت نشد. نصب بودن برنامه کمکی و اتصال اسکنر را بررسی کنید یا فایل را دستی بارگذاری کنید.';
+    } catch {
+        scannerMessage.value = 'اتصال اسکنر برقرار نشد. در صورت نصب نبودن برنامه کمکی، فایل اسکن‌شده را دستی انتخاب کنید.';
+    } finally {
+        scannerLoading.value = false;
+    }
 }
 </script>
 
@@ -364,12 +404,23 @@ function removeOriginalLetter(index: number): void {
                         <h3 class="text-base font-bold text-slate-900">اصل نامه دریافتی <span class="text-rose-600">*</span></h3>
                         <p class="mt-1 text-sm leading-6 text-slate-500">تصویر اسکن‌شده یا PDF اصل نامه را بارگذاری کنید. این فایل‌ها جدا از پیوست‌های همراه نامه نگهداری می‌شوند. حداکثر ۱۰ فایل، هرکدام تا ۲۰ مگابایت.</p>
                     </div>
-                    <label for="original_letters" class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 px-5 py-7 text-center transition hover:border-indigo-400 hover:bg-indigo-50">
-                        <span class="text-sm font-semibold text-slate-800">انتخاب اسکن یا تصویر اصل نامه</span>
-                        <span class="mt-1 text-xs text-slate-500">PDF، JPG یا PNG؛ اتصال اسکن مستقیم در مرحله برنامه کمکی ویندوز انجام می‌شود.</span>
-                        <input id="original_letters" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" class="mt-3 block max-w-full text-sm text-slate-600 file:ml-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-700" @change="chooseOriginalLetters" />
-                    </label>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <label for="original_letters" class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 px-5 py-7 text-center transition hover:border-indigo-400 hover:bg-indigo-50">
+                            <span class="text-sm font-semibold text-slate-800">انتخاب فایل اسکن‌شده</span>
+                            <span class="mt-1 text-xs text-slate-500">PDF، JPG یا PNG</span>
+                            <input id="original_letters" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" class="mt-3 block max-w-full text-sm text-slate-600 file:ml-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-700" @change="chooseOriginalLetters" />
+                        </label>
+                        <div class="flex flex-col items-center justify-center rounded-xl border border-slate-200 px-5 py-6 text-center">
+                            <button type="button" :disabled="scannerLoading" class="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-wait disabled:opacity-60" @click="scanOriginalLetter">
+                                {{ scannerLoading ? 'در انتظار اسکن...' : 'اسکن مستقیم از دستگاه' }}
+                            </button>
+                            <p class="mt-2 text-xs leading-5 text-slate-500">نیازمند نصب برنامه کمکی روی رایانه دبیرخانه و اتصال اسکنر است.</p>
+                        </div>
+                    </div>
+                    <p v-if="scannerMessage" class="text-sm leading-6 text-slate-600" role="status">{{ scannerMessage }}</p>
+                    <p v-if="scannerFileName" class="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">فایل اسکن‌شده: {{ scannerFileName }}</p>
                     <InputError :message="form.errors.original_letters" />
+                    <InputError :message="form.errors.scanner_upload_token" />
                     <InputError :message="form.errors['original_letters.0']" />
                     <ul v-if="form.original_letters.length" class="divide-y divide-slate-100 rounded-xl border border-slate-200">
                         <li v-for="(file, index) in form.original_letters" :key="file.name + file.size + index" class="flex items-center justify-between gap-3 px-3 py-2.5">
