@@ -230,6 +230,7 @@ class CorrespondenceController extends Controller
                     'recipient_name' => $data['recipient_name'] ?? null,
                     'received_at' => $data['received_at'] ?? null,
                     'sent_at' => $data['sent_at'] ?? null,
+                    'created_department_id' => $data['created_department_id'] ?? null,
                     'recipient_department_id' => $data['recipient_department_id'] ?? null,
                     'reply_to_id' => $data['reply_to_id'] ?? null,
                 ], $request->user());
