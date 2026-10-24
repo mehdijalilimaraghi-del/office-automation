@@ -1,6 +1,6 @@
 # Office Automation NAPS2 Integration
 
-This small Windows bridge connects the correspondence form to **NAPS2**, the free and open-source scanner application. NAPS2 handles scanner drivers, feeder/duplex scanning, page assembly, and PDF creation. The bridge only starts NAPS2, uploads the resulting PDF to the current user's short-lived upload URL, and returns the result to the browser.
+This small Windows bridge connects the correspondence form to **NAPS2**, the free and open-source scanner application. It opens the NAPS2 desktop UI so users can scan multiple pages on a flatbed, inspect/reorder pages, and save one PDF. The helper then lets the user choose that PDF and uploads it to the current user's short-lived upload URL. The web form provides a separate preview-and-confirm step before attachment.
 
 ## Requirements
 
@@ -23,16 +23,16 @@ This small Windows bridge connects the correspondence form to **NAPS2**, the fre
 4. Copy the published files into `%LOCALAPPDATA%\OfficeAutomation\Scanner`.
 5. Copy `appsettings.json.example` to `appsettings.json` in that folder and configure:
    - `ApplicationOrigin`: exact deployed origin (scheme, host, optional port; no path).
-   - `Naps2ConsolePath`: full path to `NAPS2.Console.exe` (usually `C:\Program Files\NAPS2\NAPS2.Console.exe`).
-   - `Naps2ProfileName`: exact profile name created in NAPS2. Leave empty to use NAPS2's most recently used profile.
+   - `Naps2GuiPath`: full path to `NAPS2.exe` (usually `C:\Program Files\NAPS2\NAPS2.exe`).
 6. Run `install.ps1` as the signed-in secretariat user. Protocol registration is per-user and does not require administrator rights. Close and reopen the browser afterward.
 
 ## User workflow
 
 1. Open **ایجاد مکاتبه** and choose **وارده**.
 2. Fill in the letter details and click **اسکن با NAPS2 و ارسال خودکار**.
-3. NAPS2 scans using the configured profile and saves all pages from that scan operation into one PDF. The bridge uploads the PDF to the active form; no manual file selection or copy/paste is required.
-4. Wait for the success message in the browser, then save the draft in the correspondence form.
+3. NAPS2 opens in its normal window. Scan every page; with a flatbed scanner, replace the paper and click Scan again for each page. Review, rotate, reorder, or remove pages in NAPS2, save all pages as one PDF, and close NAPS2.
+4. In the helper's file picker, choose the final PDF. The bridge uploads it as a pending scan; it is not attached to the letter until you confirm the preview in the browser.
+5. In the browser, inspect the PDF and choose to attach it or discard it. Then save the draft.
 
 The user can still use **انتخاب فایل اسکن‌شده** to upload a PDF/image manually if needed. Separate accompanying files continue to use the existing attachment field.
 
