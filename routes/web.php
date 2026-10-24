@@ -47,6 +47,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/', [CorrespondenceController::class, 'store'])->middleware('permission:correspondence.create')->name('store');
         Route::post('/scanner/start', [CorrespondenceScannerController::class, 'start'])->middleware('permission:correspondence.create')->name('scanner.start');
         Route::get('/scanner/status/{token}', [CorrespondenceScannerController::class, 'status'])->middleware('permission:correspondence.create')->name('scanner.status');
+        Route::get('/scanner/preview/{token}', [CorrespondenceScannerController::class, 'preview'])->middleware('permission:correspondence.create')->name('scanner.preview');
         Route::post('/{correspondence}/register', [CorrespondenceController::class, 'register'])->name('register');
     });
 
