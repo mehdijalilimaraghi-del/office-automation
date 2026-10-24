@@ -2,7 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { DatePicker } from '@jalali-js/vue';
 import axios from 'axios';
 import '@jalali-js/vue/date-picker.css';
@@ -31,6 +31,8 @@ const editor = ref<HTMLDivElement | null>(null);
 const scannerLoading = ref(false);
 const scannerMessage = ref('');
 const scannerFileName = ref('');
+const scannerSession = ref<{ token: string; uploadUrl: string; statusUrl: string } | null>(null);
+const scannerPreparing = ref(false);
 const compositionModes: Array<{ value: CompositionMode; label: string; description: string }> = [
     { value: 'editor', label: 'ویرایشگر داخلی', description: 'نامه را داخل سامانه بنویسید.' },
     { value: 'file', label: 'پیوست فایل', description: 'فایل آماده نامه را بارگذاری کنید.' },
@@ -62,12 +64,14 @@ watch(() => form.type, (type, previousType) => {
     if (type === 'incoming') {
         form.composition_mode = 'file';
         form.body = '';
+        void prepareScannerSession();
     } else if (previousType === 'incoming') {
         form.composition_mode = 'editor';
         form.original_letters = [];
         form.scanner_upload_token = '';
         scannerFileName.value = '';
         scannerMessage.value = '';
+        scannerSession.value = null;
     }
     if (type !== 'internal') form.recipient_department_id = '';
     if (type === 'internal') {
@@ -166,51 +170,71 @@ function removeScannedLetter(): void {
     scannerMessage.value = 'فایل اسکن‌شده از پیش‌نویس حذف شد.';
 }
 
+async function prepareScannerSession(): Promise<void> {
+    if (scannerPreparing.value || scannerSession.value || form.type !== 'incoming') return;
+    scannerPreparing.value = true;
+    try {
+        const started = await axios.post(route('correspondence.scanner.start'));
+        scannerSession.value = {
+            token: String(started.data.token),
+            uploadUrl: String(started.data.upload_url),
+            statusUrl: String(started.data.status_url),
+        };
+        if (!scannerMessage.value) {
+            scannerMessage.value = 'اتصال اسکنر آماده است. برای اجرای NAPS2 روی دکمه اسکن کلیک کنید.';
+        }
+    } catch {
+        scannerMessage.value = 'آماده‌سازی اتصال اسکنر ناموفق بود. اتصال سامانه را بررسی و صفحه را تازه‌سازی کنید.';
+    } finally {
+        scannerPreparing.value = false;
+    }
+}
+
+onMounted(() => {
+    if (form.type === 'incoming') void prepareScannerSession();
+});
+
 async function scanOriginalLetter(): Promise<void> {
     if (scannerLoading.value) return;
 
-    // Reserve a browser tab during the actual click gesture. Launching a custom
-    // protocol only after an awaited HTTP request can be blocked by browsers.
-    const launchTab = window.open('about:blank', '_blank');
+    // The session is prepared before the click so the external protocol can be
+    // invoked synchronously while the browser still has the user's activation.
+    if (!scannerSession.value) {
+        scannerMessage.value = 'اتصال اسکنر هنوز آماده نیست. چند ثانیه صبر کنید و دوباره کلیک کنید.';
+        void prepareScannerSession();
+        return;
+    }
+
+    const session = scannerSession.value;
+    const launchUrl = 'officeautomation-scanner://scan?uploadUrl=' + encodeURIComponent(session.uploadUrl);
+    const launchWindow = window.open(launchUrl, '_blank');
     scannerLoading.value = true;
-    scannerMessage.value = 'در حال آماده‌سازی اتصال اسکنر...';
+    scannerMessage.value = launchWindow
+        ? 'درخواست اجرای رابط اسکن ارسال شد. در صورت نمایش پیام مرورگر، اجرای برنامه را تأیید کنید.'
+        : 'مرورگر پنجره اجرای اسکنر را مسدود کرد. اجازه بازشدن پنجره‌ها و اجرای برنامه خارجی را بررسی کنید.';
     scannerFileName.value = '';
     form.scanner_upload_token = '';
 
     try {
-        const started = await axios.post(route('correspondence.scanner.start'));
-        const token = String(started.data.token);
-        const uploadUrl = String(started.data.upload_url);
-        const statusUrl = String(started.data.status_url);
-        const launchUrl = 'officeautomation-scanner://scan?uploadUrl=' + encodeURIComponent(uploadUrl);
-
-        scannerMessage.value = launchTab
-            ? 'درخواست اجرای NAPS2 ارسال شد. اگر پیام اجازه اجرای برنامه نمایش داده شد، آن را تأیید کنید.'
-            : 'مرورگر اجازه بازکردن پنجره اتصال را نداد؛ تلاش مستقیم برای اجرای NAPS2 انجام می‌شود.';
-        if (launchTab) {
-            launchTab.location.href = launchUrl;
-        } else {
-            window.location.href = launchUrl;
-        }
-
         for (let attempt = 0; attempt < 90; attempt += 1) {
             await new Promise((resolve) => window.setTimeout(resolve, 2000));
-            const status = await axios.get(statusUrl);
+            const status = await axios.get(session.statusUrl);
             if (status.data.status === 'ready') {
-                form.scanner_upload_token = token;
+                form.scanner_upload_token = session.token;
                 scannerFileName.value = String(status.data.file_name || 'scanned-letter.pdf');
                 scannerMessage.value = 'اسکن دریافت شد و همراه پیش‌نویس ذخیره خواهد شد.';
+                scannerSession.value = null;
+                void prepareScannerSession();
                 return;
             }
         }
 
-        scannerMessage.value = 'پس از ۳ دقیقه فایلی دریافت نشد. نصب رابط اسکن، ثبت پروتکل officeautomation-scanner:// و مسیر NAPS2 را بررسی کنید یا فایل را دستی بارگذاری کنید.';
+        scannerMessage.value = 'پس از ۳ دقیقه فایلی دریافت نشد. ثبت پروتکل officeautomation-scanner:// در ویندوز و نصب رابط اسکن را بررسی کنید یا فایل را دستی بارگذاری کنید.';
+        scannerSession.value = null;
+        void prepareScannerSession();
     } catch {
-        scannerMessage.value = 'آماده‌سازی اتصال اسکنر یا دریافت وضعیت ناموفق بود. اتصال سامانه و تنظیمات رابط اسکن را بررسی کنید یا فایل را دستی انتخاب کنید.';
+        scannerMessage.value = 'دریافت وضعیت اسکن ناموفق بود. اتصال سامانه را بررسی کنید یا فایل اسکن‌شده را دستی انتخاب کنید.';
     } finally {
-        if (launchTab && !launchTab.closed) {
-            try { launchTab.close(); } catch { /* The browser may already have handed off the protocol. */ }
-        }
         scannerLoading.value = false;
     }
 }
