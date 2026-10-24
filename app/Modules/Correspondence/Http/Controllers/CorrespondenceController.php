@@ -223,7 +223,7 @@ class CorrespondenceController extends Controller
             'recipient_department_id' => ['nullable', 'required_if:type,internal', 'required_if:type,incoming', 'integer', 'exists:departments,id'],
             'reply_to_id' => ['nullable', 'integer', Rule::exists('correspondences', 'id')->where('status', Correspondence::STATUS_REGISTERED)],
             'scanner_upload_token' => ['nullable', 'string', 'max:100'],
-            'original_letters' => [Rule::requiredIf($request->input('type') === Correspondence::TYPE_INCOMING), 'nullable', 'array', 'max:10'],
+            'original_letters' => ['nullable', 'array', 'max:10'],
             'original_letters.*' => ['file', 'max:20480', 'mimes:pdf,jpg,jpeg,png'],
             'attachments' => ['nullable', 'array', 'max:10'],
             'attachments.*' => [
@@ -260,6 +260,10 @@ class CorrespondenceController extends Controller
                 true,
             );
         }
+        if (count($originalLetters) > 10) {
+            return back()->withErrors(['original_letters' => 'حداکثر ۱۰ فایل برای اصل نامه قابل ثبت است.'])->withInput();
+        }
+
         if ($data['type'] === Correspondence::TYPE_INCOMING && count($originalLetters) === 0) {
             return back()->withErrors(['original_letters' => 'برای ثبت نامه وارده، تصویر یا PDF اصل نامه را بارگذاری کنید.'])->withInput();
         }
