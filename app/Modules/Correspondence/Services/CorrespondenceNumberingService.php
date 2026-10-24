@@ -63,7 +63,7 @@ class CorrespondenceNumberingService
                 'registered_by' => $registrar->id,
             ])->save();
 
-            return $locked->refresh()->load(['creator', 'registrar', 'department', 'replyTo']);
+            return $locked->refresh()->load(['creator', 'registrar', 'createdDepartment', 'recipientDepartment', 'replyTo']);
         });
     }
 
@@ -111,7 +111,7 @@ class CorrespondenceNumberingService
      */
     private function formatNumber(Correspondence $correspondence, int $sequence, array $config): string
     {
-        $departmentCode = $correspondence->department()->value('code');
+        $departmentCode = $correspondence->createdDepartment()->value('code');
         $parts = [
             'year' => (string) $this->jalaliYear(now()),
             'department' => filled($departmentCode) ? (string) $departmentCode : 'ORG',
