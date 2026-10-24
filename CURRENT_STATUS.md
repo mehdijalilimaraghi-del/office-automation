@@ -882,3 +882,10 @@ Implementation has started for the agreed cross-department project model:
 - Added regression coverage for incoming original-file requirements, separate original-file rendering, and scanner token ownership/status.
 - **Validation status:** no PHP test suite, frontend build, .NET publish, or physical scanner test was run from this editing session. These changes require `php artisan test --filter=CorrespondenceHttpTest`, `npm run build`, and a Windows `dotnet publish` followed by testing against the actual secretariat scanner model. Confirm the deployed app origin in the helper's `appsettings.json` before installation.
 - **Branch:** `development` only. `master` remains unchanged.
+
+
+## 2026-10-24 — Fix incoming correspondence validation order
+
+- Updated the store action to check whether the signed-in user may create the requested correspondence type before validating fields specific to that type. This preserves the expected 403 response for users who are not allowed to create incoming correspondence, rather than redirecting them for a missing recipient department.
+- Updated incoming-correspondence feature tests to supply the required recipient department when their purpose is to test the missing-original-file validation or successful incoming-letter creation.
+- **Validation status:** changes committed; rerun `php artisan test --filter=CorrespondenceHttpTest` and report the actual result. No passing result is claimed yet.
