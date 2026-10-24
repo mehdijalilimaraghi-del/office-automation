@@ -16,6 +16,7 @@ const props = defineProps<{
     classifications: Array<{ value: string; label: string }>;
     departments: Department[];
     createdDepartment: CreatedDepartment | null;
+    createdDepartments: CreatedDepartment[];
     repliesTo: ReplyOption[];
 }>();
 
@@ -28,6 +29,7 @@ const compositionModes: Array<{ value: CompositionMode; label: string; descripti
 
 const form = useForm({
     type: props.types[0]?.value ?? 'internal',
+    created_department_id: props.createdDepartment?.id ?? '' as number | '',
     classification: 'ordinary',
     subject: '',
     composition_mode: 'editor' as CompositionMode,
@@ -61,6 +63,12 @@ function syncBody(): void {
 function format(command: string): void {
     editor.value?.focus();
     document.execCommand(command, false);
+    syncBody();
+}
+
+function formatBlock(tag: 'p' | 'h2'): void {
+    editor.value?.focus();
+    document.execCommand('formatBlock', false, tag);
     syncBody();
 }
 
@@ -109,9 +117,20 @@ function removeFile(index: number): void {
                             <InputError class="mt-1" :message="form.errors.classification" />
                         </div>
                         <div>
-                            <label class="mb-1.5 block text-sm font-semibold text-slate-700">واحد ایجادکننده</label>
-                            <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">{{ createdDepartment?.name ?? 'برای کاربر واحد اصلی تعیین نشده است' }}</div>
-                            <p class="mt-1 text-xs text-slate-500">از عضویت اصلی سازمانی شما تعیین می‌شود.</p>
+                            <label for="created_department_id" class="mb-1.5 block text-sm font-semibold text-slate-700">واحد ایجادکننده <span v-if="createdDepartments.length > 1" class="text-rose-600">*</span></label>
+                            <select
+                                v-if="createdDepartments.length > 1"
+                                id="created_department_id"
+                                v-model="form.created_department_id"
+                                required
+                                class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            >
+                                <option value="">انتخاب واحدی که از طرف آن نامه ایجاد می‌شود</option>
+                                <option v-for="item in createdDepartments" :key="item.id" :value="item.id">{{ item.name }}</option>
+                            </select>
+                            <div v-else class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">{{ createdDepartment?.name ?? 'برای کاربر واحد فعالی تعیین نشده است' }}</div>
+                            <p class="mt-1 text-xs text-slate-500">در صورت عضویت یا مدیریت چند واحد، واحد مربوط به این نامه را انتخاب کنید.</p>
+                            <InputError class="mt-1" :message="form.errors.created_department_id" />
                         </div>
                         <div v-if="form.type === 'internal'">
                             <label for="recipient_department_id" class="mb-1.5 block text-sm font-semibold text-slate-700">واحد گیرنده <span class="text-rose-600">*</span></label>
@@ -186,12 +205,22 @@ function removeFile(index: number): void {
                     </div>
                     <div class="overflow-hidden rounded-xl border border-slate-300 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
                         <div class="flex flex-wrap gap-1 border-b border-slate-200 bg-slate-50 p-2" role="toolbar" aria-label="قالب‌بندی متن نامه">
-                            <button type="button" title="پررنگ" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-bold hover:bg-slate-100" @click="format('bold')">B</button>
-                            <button type="button" title="مورب" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm italic hover:bg-slate-100" @click="format('italic')">I</button>
-                            <button type="button" title="زیرخط" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm underline hover:bg-slate-100" @click="format('underline')">U</button>
+                            <button type="button" title="پررنگ" aria-label="پررنگ" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-bold hover:bg-slate-100" @click="format('bold')">B</button>
+                            <button type="button" title="مورب" aria-label="مورب" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm italic hover:bg-slate-100" @click="format('italic')">I</button>
+                            <button type="button" title="زیرخط" aria-label="زیرخط" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm underline hover:bg-slate-100" @click="format('underline')">U</button>
+                            <button type="button" title="حذف قالب‌بندی" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm hover:bg-slate-100" @click="format('removeFormat')">پاک‌کردن قالب</button>
                             <span class="mx-1 w-px bg-slate-200"></span>
+                            <button type="button" title="راست‌چین" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm hover:bg-slate-100" @click="format('justifyRight')">راست‌چین</button>
+                            <button type="button" title="وسط‌چین" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm hover:bg-slate-100" @click="format('justifyCenter')">وسط‌چین</button>
+                            <button type="button" title="چپ‌چین" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm hover:bg-slate-100" @click="format('justifyLeft')">چپ‌چین</button>
+                            <span class="mx-1 w-px bg-slate-200"></span>
+                            <button type="button" title="عنوان بخش" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm hover:bg-slate-100" @click="formatBlock('h2')">عنوان</button>
+                            <button type="button" title="پاراگراف معمولی" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm hover:bg-slate-100" @click="formatBlock('p')">پاراگراف</button>
                             <button type="button" title="فهرست نشانه‌دار" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm hover:bg-slate-100" @click="format('insertUnorderedList')">فهرست •</button>
                             <button type="button" title="فهرست شماره‌دار" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm hover:bg-slate-100" @click="format('insertOrderedList')">فهرست ۱.</button>
+                            <span class="mx-1 w-px bg-slate-200"></span>
+                            <button type="button" title="واگرد" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm hover:bg-slate-100" @click="format('undo')">واگرد</button>
+                            <button type="button" title="ازنو" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm hover:bg-slate-100" @click="format('redo')">ازنو</button>
                         </div>
                         <div
                             ref="editor"
