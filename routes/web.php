@@ -21,11 +21,14 @@ use App\Modules\Dashboard\Http\Controllers\DashboardController;
 use App\Modules\Cartable\Http\Controllers\CartableController;
 use App\Modules\Notifications\Http\Controllers\NotificationController;
 use App\Modules\Correspondence\Http\Controllers\CorrespondenceController;
+use App\Modules\Correspondence\Http\Controllers\CorrespondenceScannerController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => auth()->check()
     ? redirect()->route('dashboard')
     : redirect()->route('login'));
+
+Route::post('/correspondence/scanner/upload/{token}', [CorrespondenceScannerController::class, 'upload'])->middleware('throttle:10,1')->name('correspondence.scanner.upload');
 
 Route::get('/users/invitations/{token}', [UserInvitationController::class, 'accept'])->middleware('guest')->name('users.invitation.accept');
 Route::post('/users/invitations', [UserInvitationController::class, 'store'])->middleware('guest')->name('users.invitation.store');
@@ -42,6 +45,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/create', [CorrespondenceController::class, 'create'])->middleware('permission:correspondence.create')->name('create');
         Route::get('/{correspondence}', [CorrespondenceController::class, 'show'])->middleware('permission:correspondence.view')->name('show');
         Route::post('/', [CorrespondenceController::class, 'store'])->middleware('permission:correspondence.create')->name('store');
+        Route::post('/scanner/start', [CorrespondenceScannerController::class, 'start'])->middleware('permission:correspondence.create')->name('scanner.start');
+        Route::get('/scanner/status/{token}', [CorrespondenceScannerController::class, 'status'])->middleware('permission:correspondence.create')->name('scanner.status');
         Route::post('/{correspondence}/register', [CorrespondenceController::class, 'register'])->name('register');
     });
 
