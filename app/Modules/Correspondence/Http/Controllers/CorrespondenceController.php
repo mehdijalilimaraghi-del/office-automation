@@ -73,6 +73,8 @@ class CorrespondenceController extends Controller
             'registrar:id,name',
             'createdDepartment:id,name',
             'recipientDepartment:id,name',
+            'externalOrganization:id,name',
+            'externalDepartment:id,name,external_organization_id',
             'replyTo:id,subject,registration_number,type,status',
             'replies:id,subject,registration_number,type,status,reply_to_id',
             'documents.document.latestVersion',
@@ -97,6 +99,8 @@ class CorrespondenceController extends Controller
                 'registrar' => $correspondence->registrar,
                 'created_department' => $correspondence->createdDepartment,
                 'recipient_department' => $correspondence->recipientDepartment,
+                'external_organization' => $correspondence->externalOrganization,
+                'external_department' => $correspondence->externalDepartment,
                 'reply_to' => $correspondence->replyTo !== null && $access->canView($correspondence->replyTo, $request->user())
                     ? $correspondence->replyTo
                     : null,
