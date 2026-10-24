@@ -1,3 +1,11 @@
+## 2026-10-24 — Add persistent Windows scanner diagnostics
+
+- The project owner reports that the scan window closes without any message while the correspondence form remains in “waiting for scan completion”. The browser is polling the upload status, so no completed upload has been confirmed.
+- Added persistent stage-by-stage logging to the Windows helper, including protocol launch, scanner discovery, detected capabilities, pages returned, PDF export, upload start/success, and managed exceptions. No upload token or full URL is written to the log.
+- Log location: `%LOCALAPPDATA%\OfficeAutomation\Scanner\scanner.log`.
+- **Next diagnostic:** pull `development`, republish the helper, replace the installed helper files, reproduce once, and inspect the final lines of `scanner.log`. If the log stops abruptly during native scanning, inspect Windows Event Viewer for an application crash at the same timestamp.
+- **Validation pending:** no .NET publish or physical scanner test has been run here. Keep `master` unchanged.
+
 ## 2026-10-24 — Simplify Windows scanner appsettings
 
 - Removed the obsolete `Naps2GuiPath` setting from `tools/WindowsScanner/appsettings.json.example`. The current SDK-based helper does not launch the NAPS2 desktop executable.
