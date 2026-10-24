@@ -33,7 +33,7 @@ class CorrespondenceController extends Controller
         ]);
 
         $query = $access->visibleToQuery(Correspondence::query(), $request->user())
-            ->with(['creator:id,name', 'createdDepartment:id,name', 'recipientDepartment:id,name', 'registrar:id,name'])
+            ->with(['creator:id,name', 'createdDepartment:id,name', 'recipientDepartment:id,name', 'externalOrganization:id,name', 'externalDepartment:id,name,external_organization_id', 'registrar:id,name'])
             ->when($filters['search'] ?? null, function ($query, string $search): void {
                 $query->where(function ($query) use ($search): void {
                     $query->where('subject', 'like', '%'.$search.'%')
