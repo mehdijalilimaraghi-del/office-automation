@@ -160,6 +160,12 @@ function removeOriginalLetter(index: number): void {
     form.original_letters.splice(index, 1);
 }
 
+function removeScannedLetter(): void {
+    form.scanner_upload_token = '';
+    scannerFileName.value = '';
+    scannerMessage.value = 'فایل اسکن‌شده از پیش‌نویس حذف شد.';
+}
+
 async function scanOriginalLetter(): Promise<void> {
     if (scannerLoading.value) return;
     scannerLoading.value = true;
@@ -422,7 +428,10 @@ async function scanOriginalLetter(): Promise<void> {
                         </div>
                     </div>
                     <p v-if="scannerMessage" class="text-sm leading-6 text-slate-600" role="status">{{ scannerMessage }}</p>
-                    <p v-if="scannerFileName" class="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">فایل اسکن‌شده: {{ scannerFileName }}</p>
+                    <div v-if="scannerFileName" class="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-emerald-50 px-3 py-2">
+                        <p class="text-sm text-emerald-800">فایل اسکن‌شده: {{ scannerFileName }}</p>
+                        <button type="button" class="text-xs font-semibold text-rose-700 hover:underline" @click="removeScannedLetter">حذف اسکن</button>
+                    </div>
                     <InputError :message="form.errors.original_letters" />
                     <InputError :message="form.errors.scanner_upload_token" />
                     <InputError :message="form.errors['original_letters.0']" />
