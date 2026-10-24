@@ -198,7 +198,6 @@ function removeFile(index: number): void {
                             <DatePicker v-model="form.received_at" system="jalali" locale="fa" value-format="gregorian-iso" />
                             <InputError class="mt-1" :message="form.errors.received_at" />
                         </div>
-v>
                         <div class="sm:col-span-2">
                             <label for="subject" class="mb-1.5 block text-sm font-semibold text-slate-700">موضوع <span class="text-rose-600">*</span></label>
                             <input id="subject" v-model="form.subject" required maxlength="255" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
