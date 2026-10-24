@@ -1,4 +1,3 @@
 {
-  "ApplicationOrigin": "https://office.example.org",
-  "Naps2GuiPath": "C:\\Program Files\\NAPS2\\NAPS2.exe"
+  "ApplicationOrigin": "https://your-office-automation-domain.example"
 }
