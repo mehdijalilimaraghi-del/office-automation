@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Correspondence\Http\Controllers;
 
 use App\Core\Departments\Models\Department;
+use App\Core\ExternalParties\Models\ExternalOrganization;
+use App\Core\ExternalParties\Models\ExternalDepartment;
 use App\Http\Controllers\Controller;
 use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Services\CorrespondenceNumberingService;
@@ -151,6 +153,8 @@ class CorrespondenceController extends Controller
         return Inertia::render('Correspondence/Create', [
             'createdDepartment' => $createdDepartment,
             'createdDepartments' => $createdDepartments,
+            'externalOrganizations' => ExternalOrganization::query()->where('status', 'active')->orderBy('name')->get(['id', 'name']),
+            'externalDepartments' => ExternalDepartment::query()->where('status', 'active')->orderBy('name')->get(['id', 'external_organization_id', 'name']),
             'types' => $types,
             'classifications' => [
                 ['value' => Correspondence::CLASSIFICATION_ORDINARY, 'label' => 'عادی'],
@@ -193,6 +197,8 @@ class CorrespondenceController extends Controller
             'body' => ['nullable', 'string', 'max:100000'],
             'sender_name' => ['nullable', 'string', 'max:255'],
             'recipient_name' => ['nullable', 'string', 'max:255'],
+            'external_organization_id' => ['nullable', 'integer', Rule::exists('external_organizations', 'id')->where('status', 'active')],
+            'external_department_id' => ['nullable', 'integer', Rule::exists('external_departments', 'id')->where('status', 'active')],
             'received_at' => ['nullable', 'date'],
             'sent_at' => ['nullable', 'date'],
             'recipient_department_id' => ['nullable', 'required_if:type,internal', 'integer', 'exists:departments,id'],
@@ -232,6 +238,8 @@ class CorrespondenceController extends Controller
                     'sent_at' => $data['sent_at'] ?? null,
                     'created_department_id' => $data['created_department_id'] ?? null,
                     'recipient_department_id' => $data['recipient_department_id'] ?? null,
+                    'external_organization_id' => $data['external_organization_id'] ?? null,
+                    'external_department_id' => $data['external_department_id'] ?? null,
                     'reply_to_id' => $data['reply_to_id'] ?? null,
                 ], $request->user());
 
