@@ -221,7 +221,7 @@ internal sealed class DeviceSelectionForm : Form
         Text = "انتخاب اسکنر"; Width = 560; Height = 160; StartPosition = FormStartPosition.CenterScreen;
         RightToLeft = RightToLeft.Yes; RightToLeftLayout = true;
         var label = new Label { Text = "دستگاه اسکن مورد استفاده را انتخاب کنید:", Dock = DockStyle.Top, Height = 36, TextAlign = ContentAlignment.MiddleRight };
-        foreach (var item in available) devices.Items.Add(item);
+        foreach (var item in available) devices.Items.Add(new DeviceChoice(item));
         devices.SelectedIndex = 0;
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 48, FlowDirection = FlowDirection.LeftToRight };
         var ok = new Button { Text = "ادامه", DialogResult = DialogResult.OK, AutoSize = true };
@@ -232,13 +232,7 @@ internal sealed class DeviceSelectionForm : Form
     public static ScanDevice? Select(IReadOnlyList<ScanDevice> available)
     {
         using var form = new DeviceSelectionForm(available);
-        return form.ShowDialog() == DialogResult.OK ? form.devices.SelectedItem as ScanDevice : null;
-    }
-    protected override void OnShown(EventArgs e)
-    {
-        base.OnShown(e);
-        for (var i = 0; i < devices.Items.Count; i++)
-            if (devices.Items[i] is ScanDevice device) devices.Items[i] = new DeviceChoice(device);
+        return form.ShowDialog() == DialogResult.OK && form.devices.SelectedItem is DeviceChoice choice ? choice.Device : null;
     }
     private sealed record DeviceChoice(ScanDevice Device)
     {
