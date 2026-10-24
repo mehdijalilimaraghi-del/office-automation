@@ -1,3 +1,12 @@
+## 2026-10-24 — Reuse external-party directory in correspondence
+
+- Analyzed the existing `Core/ExternalParties` feature before adding any new directory. It already manages external organizations, hierarchical departments, and contacts, and task management consumes those records; no parallel external-party schema was introduced.
+- Correspondence drafts now accept optional `external_organization_id` and `external_department_id` references to the existing active records. The form filters units by the selected organization, clears stale unit selections when the organization changes, and retains the legacy sender/recipient text fields for a person or title and for compatibility with records or parties not yet in the directory.
+- Added a SQL Server-safe migration with nullable foreign keys using NO ACTION on delete, Eloquent relationships, service-level validation, and request validation that verifies the selected unit belongs to the selected organization and both records are active.
+- The correspondence list and detail page display the linked external organization/unit. Added regression tests for successful selection, mismatched organization/unit rejection, circular external department hierarchy prevention, and rejecting inactive external organizations/departments in task context.
+- Hardened external-party maintenance: prevent moving a department with children/contacts to another organization, prevent hierarchy cycles, and reject deletion of organizations/departments/contacts that are still referenced by tasks or correspondence, instead of relying on a database constraint failure.
+- Local validation is **pending**. Pull `development`, run migrations, build the frontend, then run the focused correspondence and external-party service tests. Do not merge or modify `master`.
+
 ## 2026-10-21 — Correspondence authorization boundaries (V2)
 
 - Reviewed the V2 roadmap and existing organization settings before changing authorization. The configured secretariat remains the source of truth via `organization.department_roles.secretariat`.
