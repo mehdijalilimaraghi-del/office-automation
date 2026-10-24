@@ -72,6 +72,8 @@ watch(() => form.type, (type, previousType) => {
         form.original_letters = [];
         form.scanner_upload_token = '';
         scannerFileName.value = '';
+        scannerPreviewUrl.value = '';
+        scannerPreviewOpen.value = false;
         scannerMessage.value = '';
         scannerSession.value = null;
     }
