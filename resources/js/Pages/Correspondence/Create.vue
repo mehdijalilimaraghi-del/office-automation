@@ -204,6 +204,14 @@ function removeFile(index: number): void {
                             <input id="subject" v-model="form.subject" required maxlength="255" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
                             <InputError class="mt-1" :message="form.errors.subject" />
                         </div>
+                        <div class="sm:col-span-2">
+                            <label for="reply_to_id" class="mb-1.5 block text-sm font-semibold text-slate-700">پاسخ به مکاتبه ثبت‌شده</label>
+                            <select id="reply_to_id" v-model="form.reply_to_id" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">مکاتبه‌ای انتخاب نشده</option>
+                                <option v-for="item in repliesTo" :key="item.id" :value="item.id">{{ item.registration_number ?? 'بدون شماره' }} — {{ item.subject }}</option>
+                            </select>
+                            <InputError class="mt-1" :message="form.errors.reply_to_id" />
+                        </div>
                         <div v-if="form.type !== 'internal'" class="sm:col-span-2 lg:col-span-4 space-y-3 rounded-xl border border-teal-100 bg-teal-50/50 p-4">
                             <div class="flex items-center gap-2">
                                 <h4 class="text-sm font-bold text-slate-800">طرف برون‌سازمانی</h4>
@@ -242,14 +250,6 @@ function removeFile(index: number): void {
                             <label for="received_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ دریافت</label>
                             <DatePicker v-model="form.received_at" system="jalali" locale="fa" value-format="gregorian-iso" />
                             <InputError class="mt-1" :message="form.errors.received_at" />
-                        </div>
-                        <div class="sm:col-span-2">
-                            <label for="reply_to_id" class="mb-1.5 block text-sm font-semibold text-slate-700">پاسخ به مکاتبه ثبت‌شده</label>
-                            <select id="reply_to_id" v-model="form.reply_to_id" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                <option value="">مکاتبه‌ای انتخاب نشده</option>
-                                <option v-for="item in repliesTo" :key="item.id" :value="item.id">{{ item.registration_number ?? 'بدون شماره' }} — {{ item.subject }}</option>
-                            </select>
-                            <InputError class="mt-1" :message="form.errors.reply_to_id" />
                         </div>
                     </div>
                 </section>
@@ -311,8 +311,8 @@ function removeFile(index: number): void {
                                 <button type="button" title="پاک‌کردن قالب‌بندی" aria-label="پاک‌کردن قالب‌بندی" class="editor-tool" @click="format('removeFormat')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 7 9-4 7 7-9 4zM3 21h18M6 17l4-3"/></svg></button>
                             </div>
                             <div class="flex flex-wrap items-center gap-1.5 border-t border-slate-200 pt-2">
-                                <button type="button" title="جهت نوشتار راست به چپ" aria-label="جهت نوشتار راست به چپ" class="editor-tool text-xs font-semibold" @click="setEditorDirection('rtl')">راست به چپ</button>
-                                <button type="button" title="جهت نوشتار چپ به راست" aria-label="جهت نوشتار چپ به راست" class="editor-tool text-xs font-semibold" @click="setEditorDirection('ltr')">چپ به راست</button>
+                                <button type="button" title="جهت نوشتار راست به چپ" aria-label="جهت نوشتار راست به چپ" class="editor-tool" @click="setEditorDirection('rtl')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6H8M20 10H4M20 14H8M20 18H4M8 3 4 6l4 3"/></svg></button>
+                                <button type="button" title="جهت نوشتار چپ به راست" aria-label="جهت نوشتار چپ به راست" class="editor-tool" @click="setEditorDirection('ltr')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h12M4 10h16M4 14h12M4 18h16m-4-15 4 3-4 3"/></svg></button>
                                 <span class="mx-1 hidden h-7 w-px bg-slate-300 sm:block"></span>
                                 <button type="button" title="راست‌چین" aria-label="راست‌چین" class="editor-tool" @click="format('justifyRight')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18M8 9h13M3 13h18M8 17h13M3 21h18"/></svg></button>
                                 <button type="button" title="وسط‌چین" aria-label="وسط‌چین" class="editor-tool" @click="format('justifyCenter')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18M6 9h12M3 13h18M6 17h12M3 21h18"/></svg></button>
