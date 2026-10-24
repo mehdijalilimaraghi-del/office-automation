@@ -124,7 +124,7 @@ function registerCorrespondence(): void {
                             <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg></span>
                             <div class="min-w-0"><p class="truncate text-sm font-semibold text-slate-900">{{ file.title || file.file_name }}</p><p class="mt-1 truncate text-xs text-slate-500">{{ file.file_name }} · {{ formatSize(file.size) }}</p></div>
                         </div>
-                        <a :href="route('documents.download', file.id)" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">دریافت اصل نامه</a>
+                        <div class="flex flex-wrap gap-2"><a :href="route('documents.download', file.id) + '?inline=1'" target="_blank" rel="noopener" class="rounded-lg border border-indigo-200 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50">مشاهده</a><a :href="route('documents.download', file.id)" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">دریافت فایل</a></div>
                     </div>
                 </div>
                 <div v-else class="px-5 py-6 text-sm text-slate-500">فایل اصل نامه‌ای برای این مکاتبه ثبت نشده است.</div>
@@ -138,7 +138,7 @@ function registerCorrespondence(): void {
                             <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg></span>
                             <div class="min-w-0"><p class="truncate text-sm font-semibold text-slate-900">{{ file.title || file.file_name }}</p><p class="mt-1 truncate text-xs text-slate-500">{{ file.file_name }} · {{ formatSize(file.size) }}</p></div>
                         </div>
-                        <a :href="route('documents.download', file.id)" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">دریافت فایل</a>
+                        <div class="flex flex-wrap gap-2"><a :href="route('documents.download', file.id) + '?inline=1'" target="_blank" rel="noopener" class="rounded-lg border border-indigo-200 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50">مشاهده</a><a :href="route('documents.download', file.id)" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">دریافت فایل</a></div>
                     </div>
                 </div>
                 <div v-else class="px-5 py-8 text-center text-sm text-slate-500">برای این مکاتبه پیوستی ثبت نشده است.</div>
