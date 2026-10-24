@@ -64,7 +64,7 @@ class CorrespondenceScannerController
             'status' => 'ready',
             'path' => $path,
             'original_name' => Str::limit($data['file']->getClientOriginalName(), 255, ''),
-        ], now()->addMinutes(10));
+        ], now()->addMinutes(30));
 
         return response()->json(['status' => 'ready']);
     }
