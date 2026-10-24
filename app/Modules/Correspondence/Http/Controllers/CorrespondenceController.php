@@ -109,8 +109,17 @@ class CorrespondenceController extends Controller
                     ->filter(fn (Correspondence $reply) => $access->canView($reply, $request->user()))
                     ->values(),
             ],
+            'originalLetters' => $correspondence->documents
+                ->filter(fn ($link) => $link->purpose === 'correspondence_original' && $link->document !== null && $link->document->latestVersion !== null)
+                ->map(fn ($link) => [
+                    'id' => $link->document->id,
+                    'title' => $link->document->title,
+                    'file_name' => $link->document->latestVersion->original_name,
+                    'size' => $link->document->latestVersion->size,
+                ])
+                ->values(),
             'attachments' => $correspondence->documents
-                ->filter(fn ($link) => $link->document !== null && $link->document->latestVersion !== null)
+                ->filter(fn ($link) => $link->purpose !== 'correspondence_original' && $link->document !== null && $link->document->latestVersion !== null)
                 ->map(fn ($link) => [
                     'id' => $link->document->id,
                     'title' => $link->document->title,
@@ -200,7 +209,7 @@ class CorrespondenceController extends Controller
             'created_department_id' => $createdDepartmentRules,
             'classification' => ['sometimes', 'required', Rule::in([Correspondence::CLASSIFICATION_ORDINARY, Correspondence::CLASSIFICATION_CONFIDENTIAL])],
             'subject' => ['required', 'string', 'max:255'],
-            'composition_mode' => ['required', Rule::in(['editor', 'file', 'both'])],
+            'composition_mode' => [Rule::requiredIf($request->input('type') !== Correspondence::TYPE_INCOMING), 'nullable', Rule::in(['editor', 'file', 'both'])],
             'body' => ['nullable', 'string', 'max:100000'],
             'sender_name' => ['nullable', 'string', 'max:255'],
             'recipient_name' => ['nullable', 'string', 'max:255'],
@@ -210,6 +219,8 @@ class CorrespondenceController extends Controller
             'sent_at' => ['nullable', 'date'],
             'recipient_department_id' => ['nullable', 'required_if:type,internal', 'required_if:type,incoming', 'integer', 'exists:departments,id'],
             'reply_to_id' => ['nullable', 'integer', Rule::exists('correspondences', 'id')->where('status', Correspondence::STATUS_REGISTERED)],
+            'original_letters' => [Rule::requiredIf($request->input('type') === Correspondence::TYPE_INCOMING), 'nullable', 'array', 'max:10'],
+            'original_letters.*' => ['file', 'max:20480', 'mimes:pdf,jpg,jpeg,png'],
             'attachments' => ['nullable', 'array', 'max:10'],
             'attachments.*' => [
                 'file',
@@ -220,20 +231,27 @@ class CorrespondenceController extends Controller
 
         abort_unless($access->canCreateType($data['type'], $request->user()), 403);
 
-        $mode = $data['composition_mode'];
-        $body = $this->sanitizeBody((string) ($data['body'] ?? ''));
+        $mode = $data['type'] === Correspondence::TYPE_INCOMING
+            ? 'file'
+            : ($data['composition_mode'] ?? 'editor');
+        $body = $mode === 'file' ? '' : $this->sanitizeBody((string) ($data['body'] ?? ''));
 
-        if (in_array($mode, ['editor', 'both'], true) && trim(strip_tags($body)) === '') {
+        if ($data['type'] !== Correspondence::TYPE_INCOMING && in_array($mode, ['editor', 'both'], true) && trim(strip_tags($body)) === '') {
             return back()->withErrors(['body' => 'متن نامه را وارد کنید.'])->withInput();
         }
 
+        $originalLetters = array_values(array_filter((array) $request->file('original_letters', [])));
+        if ($data['type'] === Correspondence::TYPE_INCOMING && count($originalLetters) === 0) {
+            return back()->withErrors(['original_letters' => 'برای ثبت نامه وارده، تصویر یا PDF اصل نامه را بارگذاری کنید.'])->withInput();
+        }
+
         $attachments = array_values(array_filter((array) $request->file('attachments', [])));
-        if (in_array($mode, ['file', 'both'], true) && count($attachments) === 0) {
+        if ($data['type'] !== Correspondence::TYPE_INCOMING && in_array($mode, ['file', 'both'], true) && count($attachments) === 0) {
             return back()->withErrors(['attachments' => 'برای روش انتخاب‌شده حداقل یک فایل پیوست کنید.'])->withInput();
         }
 
         try {
-            $correspondence = DB::transaction(function () use ($data, $mode, $body, $attachments, $service, $documents, $request): Correspondence {
+            $correspondence = DB::transaction(function () use ($data, $mode, $body, $originalLetters, $attachments, $service, $documents, $request): Correspondence {
                 $correspondence = $service->createDraft([
                     'type' => $data['type'],
                     'classification' => $data['classification'] ?? Correspondence::CLASSIFICATION_ORDINARY,
@@ -249,6 +267,19 @@ class CorrespondenceController extends Controller
                     'external_department_id' => $data['external_department_id'] ?? null,
                     'reply_to_id' => $data['reply_to_id'] ?? null,
                 ], $request->user());
+
+                foreach ($originalLetters as $file) {
+                    $documents->create(
+                        data: [
+                            'title' => Str::limit(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME), 255, ''),
+                            'document_type' => 'correspondence_original',
+                        ],
+                        file: $file,
+                        creator: $request->user(),
+                        linkable: $correspondence,
+                        purpose: 'correspondence_original',
+                    );
+                }
 
                 foreach ($attachments as $file) {
                     $documents->create(
