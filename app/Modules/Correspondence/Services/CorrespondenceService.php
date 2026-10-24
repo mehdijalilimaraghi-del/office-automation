@@ -29,16 +29,27 @@ class CorrespondenceService
         }
 
         return DB::transaction(function () use ($data, $creator, $type, $subject): Correspondence {
-            $createdDepartmentId = $creator->departments()
-                ->wherePivot('is_primary', true)
-                ->value('departments.id');
+            $createdDepartmentId = $data['created_department_id'] ?? null;
+            $allowedDepartmentIds = $creator->departments()
+                ->where('departments.is_active', true)
+                ->pluck('departments.id')
+                ->merge($creator->managedDepartments()->where('is_active', true)->pluck('id'))
+                ->unique()
+                ->values();
 
-            if ($createdDepartmentId === null && $creator->departments()->count() === 1) {
-                $createdDepartmentId = $creator->departments()->value('departments.id');
+            if ($createdDepartmentId !== null && ! $allowedDepartmentIds->contains((int) $createdDepartmentId)) {
+                throw new InvalidArgumentException('واحد ایجادکننده باید یکی از واحدهای فعال محل عضویت یا مدیریت شما باشد.');
             }
 
-            if ($createdDepartmentId === null && $creator->managedDepartments()->count() === 1) {
-                $createdDepartmentId = $creator->managedDepartments()->value('departments.id');
+            if ($createdDepartmentId === null) {
+                $createdDepartmentId = $creator->departments()
+                    ->wherePivot('is_primary', true)
+                    ->where('departments.is_active', true)
+                    ->value('departments.id');
+            }
+
+            if ($createdDepartmentId === null && $allowedDepartmentIds->count() === 1) {
+                $createdDepartmentId = $allowedDepartmentIds->first();
             }
 
             return Correspondence::query()->create([
