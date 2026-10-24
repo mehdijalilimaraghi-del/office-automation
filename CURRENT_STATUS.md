@@ -870,3 +870,15 @@ Implementation has started for the agreed cross-department project model:
 - Reordered the form so the reply-to correspondence field occupies the row beside the subject, while the external-party panel is moved to its own full-width row below them. This avoids placing the external-party panel beside the subject in the four-column metadata grid.
 - Replaced the classification and creator-unit helper paragraphs with compact question-mark popovers; the external-party explanation is also now available from a question-mark popover. The guidance appears on click and no longer increases the default field-row height.
 - **Branch:** `development`; `master` unchanged. Frontend build and manual responsive/layout checks are pending; no test result is claimed.
+
+
+## 2026-10-24 — Incoming correspondence originals and Windows scanner helper
+
+- Incoming correspondence no longer uses the internal text editor or the editor/file composition selector. The server forces incoming letters into file-based mode and requires at least one original-letter PDF/image; supplying typed body text alone is not accepted.
+- Added a dedicated `original_letters` upload collection (PDF/JPG/PNG, up to 10 files and 20 MB each) and retained `attachments` as a separate, optional collection for accompanying documents. Both are stored through the existing `DocumentService`, but use distinct document types and link purposes (`correspondence_original` and `correspondence_attachment`).
+- The correspondence detail page displays original incoming letters separately from accompanying attachments. Existing non-original links continue to appear under attachments for backward compatibility.
+- Added a short-lived, random, user-bound scanner upload token workflow. The browser launches the `officeautomation-scanner://` protocol, polls the authenticated status endpoint, and attaches the staged scan token to the draft. The unauthenticated upload endpoint is token-protected, rate-limited, accepts PDF only, and excludes CSRF only for that exact upload route. Staged files are deleted after a successful draft save; stale staged PDFs older than 30 minutes are cleaned when a new scan starts.
+- Added source for a Windows x64 .NET 8 helper under `tools/WindowsScanner`. It uses Windows Image Acquisition (WIA), attempts feeder-based multi-page scanning, assembles a PDF, uploads only to the configured application origin, and refuses cross-origin redirects. Per-user protocol registration and build/install instructions are included.
+- Added regression coverage for incoming original-file requirements, separate original-file rendering, and scanner token ownership/status.
+- **Validation status:** no PHP test suite, frontend build, .NET publish, or physical scanner test was run from this editing session. These changes require `php artisan test --filter=CorrespondenceHttpTest`, `npm run build`, and a Windows `dotnet publish` followed by testing against the actual secretariat scanner model. Confirm the deployed app origin in the helper's `appsettings.json` before installation.
+- **Branch:** `development` only. `master` remains unchanged.
