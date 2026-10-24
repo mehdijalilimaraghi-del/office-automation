@@ -147,6 +147,45 @@ class CorrespondenceHttpTest extends TestCase
         ]);
     }
 
+    public function test_user_with_multiple_department_memberships_can_choose_the_creator_department(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $primaryDepartment = Department::query()->create([
+            'name' => 'واحد اصلی '.Str::upper(Str::random(5)),
+            'code' => 'PRI-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+        ]);
+        $secondDepartment = Department::query()->create([
+            'name' => 'واحد دوم '.Str::upper(Str::random(5)),
+            'code' => 'SEC-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+        ]);
+        $user->departments()->attach($primaryDepartment->id, ['is_primary' => true, 'joined_at' => now()]);
+        $user->departments()->attach($secondDepartment->id, ['is_primary' => false, 'joined_at' => now()]);
+
+        $this->actingAs($user)->get(route('correspondence.create'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('createdDepartments', fn ($departments) => collect($departments)->pluck('id')->contains($primaryDepartment->id)
+                    && collect($departments)->pluck('id')->contains($secondDepartment->id)));
+
+        $this->actingAs($user)->post(route('correspondence.store'), [
+            'type' => Correspondence::TYPE_INTERNAL,
+            'created_department_id' => $secondDepartment->id,
+            'recipient_department_id' => $primaryDepartment->id,
+            'subject' => 'نامه از واحد دوم',
+            'composition_mode' => 'editor',
+            'body' => '<p>متن نامه</p>',
+        ])->assertRedirect(route('correspondence.index'));
+
+        $this->assertDatabaseHas('correspondences', [
+            'subject' => 'نامه از واحد دوم',
+            'created_by' => $user->id,
+            'created_department_id' => $secondDepartment->id,
+            'recipient_department_id' => $primaryDepartment->id,
+        ]);
+    }
+
     public function test_file_mode_requires_at_least_one_attachment(): void
     {
         $user = $this->userWithPermission('correspondence.create');
