@@ -191,7 +191,7 @@ class CorrespondenceController extends Controller
             ->all();
 
         $createdDepartmentRules = ['nullable', 'integer', Rule::in($allowedCreatedDepartmentIds)];
-        if (count($allowedCreatedDepartmentIds) > 1) {
+        if (count($allowedCreatedDepartmentIds) > 1 && $request->input('type') !== Correspondence::TYPE_INCOMING) {
             $createdDepartmentRules[0] = 'required';
         }
 
@@ -208,7 +208,7 @@ class CorrespondenceController extends Controller
             'external_department_id' => ['nullable', 'integer', Rule::exists('external_departments', 'id')->where(fn ($query) => $query->where('status', 'active')->where('external_organization_id', $request->input('external_organization_id')))],
             'received_at' => ['nullable', 'date'],
             'sent_at' => ['nullable', 'date'],
-            'recipient_department_id' => ['nullable', 'required_if:type,internal', 'integer', 'exists:departments,id'],
+            'recipient_department_id' => ['nullable', 'required_if:type,internal', 'required_if:type,incoming', 'integer', 'exists:departments,id'],
             'reply_to_id' => ['nullable', 'integer', Rule::exists('correspondences', 'id')->where('status', Correspondence::STATUS_REGISTERED)],
             'attachments' => ['nullable', 'array', 'max:10'],
             'attachments.*' => [
