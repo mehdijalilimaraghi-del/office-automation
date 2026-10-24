@@ -165,15 +165,14 @@ function removeFile(index: number): void {
                             <InputError class="mt-1" :message="form.errors.type" />
                         </div>
                         <div>
-                            <label for="classification" class="mb-1.5 block text-sm font-semibold text-slate-700">طبقه‌بندی دسترسی <span class="text-rose-600">*</span></label>
+                            <div class="mb-1.5 flex items-center gap-1.5"><label for="classification" class="text-sm font-semibold text-slate-700">طبقه‌بندی دسترسی <span class="text-rose-600">*</span></label><details class="group relative"><summary aria-label="راهنمای طبقه‌بندی دسترسی" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-300">؟</summary><div class="absolute right-0 top-7 z-20 w-64 rounded-lg border border-slate-200 bg-white p-3 text-xs font-normal leading-6 text-slate-700 shadow-lg">نامه عادی پس از ثبت نهایی برای کاربران دارای مجوز مشاهده قابل مشاهده است؛ نامه محرمانه فقط برای افراد مرتبط و دبیرخانه.</div></details></div>
                             <select id="classification" v-model="form.classification" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option v-for="item in classifications" :key="item.value" :value="item.value">{{ item.label }}</option>
                             </select>
-                            <p class="mt-1 text-xs text-slate-500">نامه عادی پس از ثبت نهایی برای کاربران دارای مجوز مشاهده قابل مشاهده است؛ نامه محرمانه فقط برای افراد مرتبط و دبیرخانه.</p>
                             <InputError class="mt-1" :message="form.errors.classification" />
                         </div>
                         <div>
-                            <label for="created_department_id" class="mb-1.5 block text-sm font-semibold text-slate-700">واحد ایجادکننده <span v-if="createdDepartments.length > 1" class="text-rose-600">*</span></label>
+                            <div class="mb-1.5 flex items-center gap-1.5"><label for="created_department_id" class="text-sm font-semibold text-slate-700">واحد ایجادکننده <span v-if="createdDepartments.length > 1" class="text-rose-600">*</span></label><details class="group relative"><summary aria-label="راهنمای واحد ایجادکننده" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-300">؟</summary><div class="absolute right-0 top-7 z-20 w-64 rounded-lg border border-slate-200 bg-white p-3 text-xs font-normal leading-6 text-slate-700 shadow-lg">واحدی را انتخاب کنید که نامه از طرف آن ایجاد و شماره‌گذاری می‌شود.</div></details></div>
                             <select
                                 v-if="createdDepartments.length > 1"
                                 id="created_department_id"
@@ -185,7 +184,6 @@ function removeFile(index: number): void {
                                 <option v-for="item in createdDepartments" :key="item.id" :value="item.id">{{ item.name }}</option>
                             </select>
                             <div v-else class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">{{ createdDepartment?.name ?? 'برای کاربر واحد فعالی تعیین نشده است' }}</div>
-                            <p class="mt-1 text-xs text-slate-500">در صورت عضویت یا مدیریت چند واحد، واحد مربوط به این نامه را انتخاب کنید.</p>
                             <InputError class="mt-1" :message="form.errors.created_department_id" />
                         </div>
                         <div v-if="form.type === 'outgoing'">
@@ -206,10 +204,10 @@ function removeFile(index: number): void {
                             <input id="subject" v-model="form.subject" required maxlength="255" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
                             <InputError class="mt-1" :message="form.errors.subject" />
                         </div>
-                        <div v-if="form.type !== 'internal'" class="sm:col-span-2 space-y-3 rounded-xl border border-teal-100 bg-teal-50/50 p-4">
-                            <div>
+                        <div v-if="form.type !== 'internal'" class="sm:col-span-2 lg:col-span-4 space-y-3 rounded-xl border border-teal-100 bg-teal-50/50 p-4">
+                            <div class="flex items-center gap-2">
                                 <h4 class="text-sm font-bold text-slate-800">طرف برون‌سازمانی</h4>
-                                <p class="mt-1 text-xs text-slate-600">سازمان و واحد را از دفترچهٔ موجود انتخاب کنید. انتخاب سازمان و واحد اختیاری است تا مکاتبات با طرف‌های جدید نیز قابل ثبت باشد.</p>
+                                <details class="group relative"><summary aria-label="راهنمای طرف برون‌سازمانی" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 bg-white text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-300">؟</summary><div class="absolute right-0 top-7 z-20 w-64 rounded-lg border border-slate-200 bg-white p-3 text-xs font-normal leading-6 text-slate-700 shadow-lg">سازمان و واحد را از دفترچه موجود انتخاب کنید. این اطلاعات اختیاری است تا مکاتبه با طرف‌های جدید نیز قابل ثبت باشد.</div></details>
                             </div>
                             <div class="grid gap-4 sm:grid-cols-2">
                                 <div>
