@@ -424,7 +424,7 @@ async function scanOriginalLetter(): Promise<void> {
                             <button type="button" :disabled="scannerLoading" class="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-wait disabled:opacity-60" @click="scanOriginalLetter">
                                 {{ scannerLoading ? 'در انتظار اسکن...' : 'اسکن مستقیم از دستگاه' }}
                             </button>
-                            <p class="mt-2 text-xs leading-5 text-slate-500">نیازمند نصب برنامه کمکی روی رایانه دبیرخانه و اتصال اسکنر است.</p>
+                            <p class="mt-2 text-xs leading-5 text-slate-500">نیازمند نصب NAPS2 و رابط اتصال سامانه روی رایانه دبیرخانه است؛ PDF پس از اسکن خودکار به همین فرم ارسال می‌شود.</p>
                         </div>
                     </div>
                     <p v-if="scannerMessage" class="text-sm leading-6 text-slate-600" role="status">{{ scannerMessage }}</p>
