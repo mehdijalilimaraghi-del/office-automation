@@ -1,3 +1,10 @@
+## 2026-10-24 — Incoming correspondence direction and received-date placement
+
+- Incoming correspondence now presents the internal recipient unit as **واحد دریافت‌کننده** instead of exposing the outgoing-letter creator unit in the form. The server still derives the creator/numbering unit internally when saving the draft; users do not have to select it for incoming letters.
+- The incoming recipient unit is required by server validation and saved in `recipient_department_id`. Internal letters continue to require a recipient unit; outgoing letters continue to show their creator unit and send date.
+- Moved **تاریخ دریافت** into the top metadata grid alongside the relevant fields, rather than leaving it below the external-party panel. The external-party panel is labeled as sender organization for incoming letters and recipient organization for outgoing letters.
+- **Branch:** `development`; `master` unchanged. Build, correspondence tests, and manual UI checks are pending; no test result is claimed.
+
 ## 2026-10-24 — Correspondence reply row and direction icon correction
 
 - Moved the “پاسخ به مکاتبه ثبت‌شده” field in the form markup to immediately precede the full-width external-party panel, so the reply field is placed with the subject row and the external-party panel begins on the following row.
