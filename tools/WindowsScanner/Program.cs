@@ -1,14 +1,11 @@
-using System.Net.Http.Headers;
-using System.Runtime.InteropServices;
+using System.Diagnostics;
 using System.Text.Json;
-using PdfSharp.Drawing;
-using PdfSharp.Pdf;
 
 namespace OfficeAutomation.Scanner;
 
 internal static class Program
 {
-    private const string JpegFormat = "{B96B3CAE-0728-11D3-9D7B-0000F81EF32E}";
+    private const long MaximumPdfBytes = 20L * 1024 * 1024;
 
     [STAThread]
     private static async Task Main(string[] args)
@@ -23,14 +20,11 @@ internal static class Program
             }
 
             using var temporary = new TemporaryDirectory();
-            var pages = ScanPages(temporary.Path);
-            if (pages.Count == 0)
-                throw new InvalidOperationException("هیچ صفحه‌ای از اسکنر دریافت نشد.");
-
-            var pdfPath = System.IO.Path.Combine(temporary.Path, "scanned-letter.pdf");
-            CreatePdf(pages, pdfPath);
+            var pdfPath = Path.Combine(temporary.Path, "scanned-letter.pdf");
+            await ScanWithNaps2(pdfPath);
             await UploadPdf(uploadUrl, pdfPath);
-            MessageBox.Show($"اسکن {pages.Count} صفحه با موفقیت به فرم مکاتبات ارسال شد. به مرورگر بازگردید و پیش‌نویس را ذخیره کنید.", "اسکن نامه", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            MessageBox.Show("فایل PDF اسکن‌شده با موفقیت به فرم مکاتبات ارسال شد. به مرورگر بازگردید و پیش‌نویس را ذخیره کنید.", "اسکن نامه", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (Exception ex)
         {
@@ -47,7 +41,7 @@ internal static class Program
         var pair = query.Select(part => part.Split('=', 2))
             .FirstOrDefault(parts => parts.Length == 2 && parts[0] == "uploadUrl");
         if (pair is null)
-            return null;
+            throw new InvalidOperationException("نشانی موقت ارسال اسکن در پیوند اجرا وجود ندارد.");
 
         var decoded = Uri.UnescapeDataString(pair[1]);
         if (!Uri.TryCreate(decoded, UriKind.Absolute, out var uploadUri)
@@ -56,9 +50,9 @@ internal static class Program
             || uploadUri.UserInfo.Length > 0)
             throw new InvalidOperationException("نشانی ارسال فایل نامعتبر است.");
 
-        var settingsPath = System.IO.Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+        var settingsPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
         if (!File.Exists(settingsPath))
-            throw new InvalidOperationException("فایل appsettings.json برنامه کمکی وجود ندارد؛ نشانی سامانه را طبق راهنمای نصب تنظیم کنید.");
+            throw new InvalidOperationException("فایل appsettings.json برنامه اتصال وجود ندارد؛ تنظیمات را طبق راهنمای نصب تکمیل کنید.");
 
         using var settings = JsonDocument.Parse(File.ReadAllText(settingsPath));
         var configuredOrigin = settings.RootElement.TryGetProperty("ApplicationOrigin", out var originValue)
@@ -75,119 +69,64 @@ internal static class Program
         return uploadUri.ToString();
     }
 
-    private static List<string> ScanPages(string outputDirectory)
+    private static async Task ScanWithNaps2(string outputPath)
     {
-        var managerType = Type.GetTypeFromProgID("WIA.DeviceManager")
-            ?? throw new InvalidOperationException("قابلیت Windows Image Acquisition (WIA) در این ویندوز در دسترس نیست.");
-        dynamic manager = Activator.CreateInstance(managerType)!;
-        dynamic? scanner = null;
-        try
+        var settingsPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+        using var settings = JsonDocument.Parse(File.ReadAllText(settingsPath));
+        var root = settings.RootElement;
+
+        var consolePath = root.TryGetProperty("Naps2ConsolePath", out var pathValue)
+            ? pathValue.GetString()
+            : null;
+        if (string.IsNullOrWhiteSpace(consolePath) || !File.Exists(consolePath))
+            throw new InvalidOperationException("NAPS2 پیدا نشد. ابتدا NAPS2 را نصب و مسیر NAPS2.Console.exe را در appsettings.json تنظیم کنید.");
+
+        var profileName = root.TryGetProperty("Naps2ProfileName", out var profileValue)
+            ? profileValue.GetString()
+            : null;
+
+        var startInfo = new ProcessStartInfo
         {
-            foreach (dynamic info in manager.DeviceInfos)
-            {
-                try
-                {
-                    if (Convert.ToInt32(info.Type) == 1)
-                    {
-                        scanner = info.Connect();
-                        break;
-                    }
-                }
-                finally
-                {
-                    if (scanner is null) Marshal.ReleaseComObject(info);
-                }
-            }
-
-            if (scanner is null)
-                throw new InvalidOperationException("اسکنر WIA پیدا نشد. اتصال کابل، روشن بودن دستگاه و درایور اسکنر را بررسی کنید.");
-
-            TrySetProperty(scanner.Properties, 3088, 1);
-            var pages = new List<string>();
-            var item = scanner.Items[1];
-            for (var pageNumber = 1; pageNumber <= 100; pageNumber++)
-            {
-                try
-                {
-                    var image = item.Transfer(JpegFormat);
-                    var pagePath = System.IO.Path.Combine(outputDirectory, $"page-{pageNumber:D3}.jpg");
-                    image.SaveFile(pagePath);
-                    pages.Add(pagePath);
-                    Marshal.ReleaseComObject(image);
-                }
-                catch (COMException) when (pages.Count > 0)
-                {
-                    break;
-                }
-
-                var status = TryGetProperty(scanner.Properties, 3087);
-                var hasFeederReady = status.HasValue && (status.Value & 1) == 1;
-                var hasFeeder = TryGetProperty(scanner.Properties, 3088) == 1;
-                if (!hasFeeder || !hasFeederReady)
-                    break;
-            }
-
-            Marshal.ReleaseComObject(item);
-            return pages;
-        }
-        finally
+            FileName = consolePath,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            WorkingDirectory = Path.GetDirectoryName(consolePath) ?? AppContext.BaseDirectory,
+        };
+        startInfo.ArgumentList.Add("--output");
+        startInfo.ArgumentList.Add(outputPath);
+        if (!string.IsNullOrWhiteSpace(profileName))
         {
-            if (scanner is not null) Marshal.ReleaseComObject(scanner);
-            Marshal.ReleaseComObject(manager);
+            startInfo.ArgumentList.Add("--profile");
+            startInfo.ArgumentList.Add(profileName);
         }
-    }
+        startInfo.ArgumentList.Add("--progress");
+        startInfo.ArgumentList.Add("--verbose");
 
-    private static void TrySetProperty(dynamic properties, int propertyId, int value)
-    {
-        try
-        {
-            foreach (dynamic property in properties)
-            {
-                try
-                {
-                    if (Convert.ToInt32(property.PropertyID) == propertyId)
-                    {
-                        property.set_Value(value);
-                        return;
-                    }
-                }
-                finally { Marshal.ReleaseComObject(property); }
-            }
-        }
-        catch (COMException) { }
-    }
+        using var process = new Process { StartInfo = startInfo };
+        if (!process.Start())
+            throw new InvalidOperationException("اجرای NAPS2 انجام نشد.");
 
-    private static int? TryGetProperty(dynamic properties, int propertyId)
-    {
-        try
-        {
-            foreach (dynamic property in properties)
-            {
-                try
-                {
-                    if (Convert.ToInt32(property.PropertyID) == propertyId)
-                        return Convert.ToInt32(property.get_Value());
-                }
-                finally { Marshal.ReleaseComObject(property); }
-            }
-        }
-        catch (COMException) { }
-        return null;
-    }
+        var stdoutTask = process.StandardOutput.ReadToEndAsync();
+        var stderrTask = process.StandardError.ReadToEndAsync();
+        await process.WaitForExitAsync();
+        var stdout = await stdoutTask;
+        var stderr = await stderrTask;
 
-    private static void CreatePdf(IReadOnlyList<string> images, string destination)
-    {
-        using var document = new PdfDocument();
-        foreach (var imagePath in images)
+        if (process.ExitCode != 0)
         {
-            using var image = XImage.FromFile(imagePath);
-            var page = document.AddPage();
-            page.Width = XUnit.FromPoint(image.PointWidth);
-            page.Height = XUnit.FromPoint(image.PointHeight);
-            using var graphics = XGraphics.FromPdfPage(page);
-            graphics.DrawImage(image, 0, 0, page.Width, page.Height);
+            var details = string.Join(Environment.NewLine, new[] { stderr.Trim(), stdout.Trim() }.Where(value => value.Length > 0));
+            if (details.Length > 1200) details = details[..1200];
+            throw new InvalidOperationException("NAPS2 اسکن را کامل نکرد. اتصال اسکنر، پروفایل انتخاب‌شده و تنظیمات فیدر را بررسی کنید."
+                + (details.Length > 0 ? Environment.NewLine + details : string.Empty));
         }
-        document.Save(destination);
+
+        var file = new FileInfo(outputPath);
+        if (!file.Exists || file.Length == 0)
+            throw new InvalidOperationException("NAPS2 فایل PDF تولید نکرد. بررسی کنید اسکن لغو نشده و پروفایل اسکن معتبر است.");
+        if (file.Length > MaximumPdfBytes)
+            throw new InvalidOperationException("حجم PDF اسکن‌شده بیش از ۲۰ مگابایت است. وضوح یا تنظیمات رنگ اسکن را در پروفایل NAPS2 کاهش دهید.");
     }
 
     private static async Task UploadPdf(string uploadUrl, string pdfPath)
@@ -197,12 +136,13 @@ internal static class Program
         using var form = new MultipartFormDataContent();
         await using var stream = File.OpenRead(pdfPath);
         using var file = new StreamContent(stream);
-        file.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
+        file.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/pdf");
         form.Add(file, "file", "scanned-letter.pdf");
         using var response = await client.PostAsync(uploadUrl, form);
         if (!response.IsSuccessStatusCode)
         {
             var details = await response.Content.ReadAsStringAsync();
+            if (details.Length > 1200) details = details[..1200];
             throw new InvalidOperationException($"سامانه فایل اسکن‌شده را نپذیرفت ({(int)response.StatusCode}). {details}");
         }
     }
