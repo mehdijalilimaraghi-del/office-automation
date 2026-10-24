@@ -1,3 +1,12 @@
+## 2026-10-24 — Replace manual NAPS2 desktop workflow with SDK-driven scanning
+
+- Replaced the launch/wait/save/select workflow with the official NAPS2 .NET SDK in the Windows bridge. It enumerates WIA/TWAIN devices, asks the user to choose when multiple devices are detected, and reads reported feeder/flatbed capabilities.
+- When ADF is reported, the helper scans the batch and creates one PDF automatically; the browser then shows its existing PDF preview for explicit attach/discard confirmation.
+- For flatbed-only scanners, each scanned page is previewed in a native window with the requested three actions: scan next page, rescan/replace the current page, or finish and save. Pages are assembled into one PDF and uploaded without a manual Save dialog or file picker.
+- Added official NAPS2 SDK, GDI image support, and the official 32-bit TWAIN worker package. The NAPS2 desktop executable is no longer launched by the helper.
+- **Validation pending:** source changes have not been compiled or tested here. Run the Windows publish command and test ADF and flatbed workflows with the actual scanner/driver. Capability reporting varies by driver; if a device reports both feeder and flatbed, the current flow prioritizes ADF.
+- **Branch:** `development` only; `master` unchanged.
+
 ## 2026-10-24 — Scanner launch requires a prepared session
 
 - Updated the correspondence creation page to prepare the short-lived scanner upload session before the user clicks the scan button, then invoke `officeautomation-scanner://` directly during the click gesture. This avoids relying on a delayed custom-protocol navigation after an asynchronous request.
