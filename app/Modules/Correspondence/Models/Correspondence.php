@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Correspondence\Models;
 
 use App\Core\Departments\Models\Department;
+use App\Core\ExternalParties\Models\ExternalOrganization;
+use App\Core\ExternalParties\Models\ExternalDepartment;
 use App\Models\User;
 use App\Modules\Documents\Models\DocumentLink;
 use App\Modules\Workflows\Models\WorkflowInstance;
@@ -46,6 +48,8 @@ class Correspondence extends Model
         'created_by',
         'created_department_id',
         'recipient_department_id',
+        'external_organization_id',
+        'external_department_id',
         'workflow_instance_id',
         'reply_to_id',
     ];
@@ -86,6 +90,16 @@ class Correspondence extends Model
     public function recipientDepartment(): BelongsTo
     {
         return $this->belongsTo(Department::class, 'recipient_department_id');
+    }
+
+    public function externalOrganization(): BelongsTo
+    {
+        return $this->belongsTo(ExternalOrganization::class, 'external_organization_id');
+    }
+
+    public function externalDepartment(): BelongsTo
+    {
+        return $this->belongsTo(ExternalDepartment::class, 'external_department_id');
     }
 
     public function workflowInstance(): BelongsTo
