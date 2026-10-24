@@ -12,6 +12,7 @@ interface ExternalDepartment { id: number; external_organization_id: number; nam
 interface ReplyOption { id: number; registration_number: string | null; subject: string; }
 interface CreatedDepartment { id: number; name: string; }
 type CompositionMode = 'editor' | 'file' | 'both';
+type TextDirection = 'rtl' | 'ltr';
 
 const props = defineProps<{
     types: Array<{ value: string; label: string }>;
@@ -22,6 +23,7 @@ const props = defineProps<{
     createdDepartment: CreatedDepartment | null;
     createdDepartments: CreatedDepartment[];
     repliesTo: ReplyOption[];
+    correspondenceFontFamily: string;
 }>();
 
 const editor = ref<HTMLDivElement | null>(null);
@@ -111,6 +113,19 @@ function applyColor(color: string): void {
     syncBody();
 }
 
+function setEditorDirection(direction: TextDirection): void {
+    const target = editor.value;
+    if (!target) return;
+    target.focus();
+    const selection = window.getSelection();
+    const anchor = selection?.anchorNode;
+    const element = anchor instanceof Element ? anchor : anchor?.parentElement;
+    const block = element?.closest('p, div, li, h2, h3, blockquote');
+    if (block && target.contains(block)) block.setAttribute('dir', direction);
+    target.setAttribute('dir', direction);
+    syncBody();
+}
+
 function chooseFiles(event: Event): void {
     const target = event.target as HTMLInputElement;
     form.attachments = Array.from(target.files ?? []);
@@ -141,7 +156,7 @@ function removeFile(index: number): void {
             >
                 <section class="space-y-4">
                     <h3 class="text-base font-bold text-slate-900">مشخصات مکاتبه</h3>
-                    <div class="grid gap-5 sm:grid-cols-2">
+                    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <div>
                             <label for="type" class="mb-1.5 block text-sm font-semibold text-slate-700">نوع مکاتبه <span class="text-rose-600">*</span></label>
                             <select id="type" v-model="form.type" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -172,6 +187,11 @@ function removeFile(index: number): void {
                             <div v-else class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">{{ createdDepartment?.name ?? 'برای کاربر واحد فعالی تعیین نشده است' }}</div>
                             <p class="mt-1 text-xs text-slate-500">در صورت عضویت یا مدیریت چند واحد، واحد مربوط به این نامه را انتخاب کنید.</p>
                             <InputError class="mt-1" :message="form.errors.created_department_id" />
+                        </div>
+                        <div v-if="form.type === 'outgoing'">
+                            <label for="sent_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ ارسال</label>
+                            <DatePicker v-model="form.sent_at" system="jalali" locale="fa" value-format="gregorian-iso" />
+                            <InputError class="mt-1" :message="form.errors.sent_at" />
                         </div>
                         <div v-if="form.type === 'internal'">
                             <label for="recipient_department_id" class="mb-1.5 block text-sm font-semibold text-slate-700">واحد گیرنده <span class="text-rose-600">*</span></label>
@@ -225,11 +245,6 @@ function removeFile(index: number): void {
                             <DatePicker v-model="form.received_at" system="jalali" locale="fa" value-format="gregorian-iso" />
                             <InputError class="mt-1" :message="form.errors.received_at" />
                         </div>
-                        <div v-if="form.type === 'outgoing'">
-                            <label for="sent_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ ارسال</label>
-                            <DatePicker v-model="form.sent_at" system="jalali" locale="fa" value-format="gregorian-iso" />
-                            <InputError class="mt-1" :message="form.errors.sent_at" />
-                        </div>
                         <div class="sm:col-span-2">
                             <label for="reply_to_id" class="mb-1.5 block text-sm font-semibold text-slate-700">پاسخ به مکاتبه ثبت‌شده</label>
                             <select id="reply_to_id" v-model="form.reply_to_id" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -271,10 +286,13 @@ function removeFile(index: number): void {
                     <div class="overflow-hidden rounded-xl border border-slate-300 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
                         <div class="space-y-2 border-b border-slate-200 bg-slate-50 p-3" role="toolbar" aria-label="قالب‌بندی متن نامه">
                             <div class="flex flex-wrap items-center gap-1.5">
-                                <select aria-label="نوع قلم" title="نوع قلم" class="h-9 max-w-36 rounded-lg border-slate-300 bg-white text-xs" @change="applyFontFamily(($event.target as HTMLSelectElement).value)">
+                                <select aria-label="نوع قلم" title="نوع قلم" :value="correspondenceFontFamily" class="h-9 max-w-36 rounded-lg border-slate-300 bg-white text-xs" @change="applyFontFamily(($event.target as HTMLSelectElement).value)">
                                     <option value="Vazirmatn">وزیرمتن</option>
                                     <option value="Arial">Arial</option>
                                     <option value="Tahoma">Tahoma</option>
+                                    <option value="B Nazanin">B Nazanin</option>
+                                    <option value="B Mitra">B Mitra</option>
+                                    <option value="IRANSans">IRANSans</option>
                                     <option value="Times New Roman">Times New Roman</option>
                                 </select>
                                 <select aria-label="اندازه قلم" title="اندازه قلم" class="h-9 w-20 rounded-lg border-slate-300 bg-white text-xs" @change="applyFontSize(($event.target as HTMLSelectElement).value)">
@@ -295,6 +313,9 @@ function removeFile(index: number): void {
                                 <button type="button" title="پاک‌کردن قالب‌بندی" aria-label="پاک‌کردن قالب‌بندی" class="editor-tool" @click="format('removeFormat')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 7 9-4 7 7-9 4zM3 21h18M6 17l4-3"/></svg></button>
                             </div>
                             <div class="flex flex-wrap items-center gap-1.5 border-t border-slate-200 pt-2">
+                                <button type="button" title="جهت نوشتار راست به چپ" aria-label="جهت نوشتار راست به چپ" class="editor-tool text-xs font-semibold" @click="setEditorDirection('rtl')">راست به چپ</button>
+                                <button type="button" title="جهت نوشتار چپ به راست" aria-label="جهت نوشتار چپ به راست" class="editor-tool text-xs font-semibold" @click="setEditorDirection('ltr')">چپ به راست</button>
+                                <span class="mx-1 hidden h-7 w-px bg-slate-300 sm:block"></span>
                                 <button type="button" title="راست‌چین" aria-label="راست‌چین" class="editor-tool" @click="format('justifyRight')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18M8 9h13M3 13h18M8 17h13M3 21h18"/></svg></button>
                                 <button type="button" title="وسط‌چین" aria-label="وسط‌چین" class="editor-tool" @click="format('justifyCenter')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18M6 9h12M3 13h18M6 17h12M3 21h18"/></svg></button>
                                 <button type="button" title="چپ‌چین" aria-label="چپ‌چین" class="editor-tool" @click="format('justifyLeft')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18M3 9h13M3 13h18M3 17h13M3 21h18"/></svg></button>
@@ -320,6 +341,7 @@ function removeFile(index: number): void {
                             aria-label="متن نامه"
                             aria-multiline="true"
                             dir="rtl"
+                            :style="{ fontFamily: correspondenceFontFamily }"
                             class="min-h-72 whitespace-normal p-4 text-sm leading-8 text-slate-800 outline-none"
                             data-placeholder="متن نامه را اینجا بنویسید..."
                             @input="syncBody"
