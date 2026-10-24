@@ -807,3 +807,10 @@ Implementation has started for the agreed cross-department project model:
 - Added regression coverage proving a department-based number uses the creator department code and not the recipient department code.
 - **Branch:** `development`; `master` unchanged. Tests and frontend build have not been run by the assistant; rerun correspondence tests and build locally.
 
+## 2026-10-24 — Correspondence creator-unit selection and editor controls
+
+- Updated correspondence creation so users with multiple active department memberships or managed departments can select the originating/creator unit per letter. The backend restricts the selected unit to the authenticated user's active memberships or managed units; the recipient unit remains a separate field.
+- Added focused HTTP coverage for selecting a non-primary creator unit and verifying creator and recipient units persist independently.
+- Expanded the existing RTL in-browser editor toolbar with paragraph/heading styles, text alignment, remove formatting, undo/redo, and accessible labels. It remains a lightweight contenteditable editor; a dedicated rich-text editor package has not been introduced.
+- External outgoing correspondence still uses the existing free-text recipient field. No external organization/unit directory model was identified in the correspondence code inspected for this change; replacing the field with structured organization and unit selection requires confirming whether to introduce a new external-party directory or reuse an existing registry elsewhere in the application.
+- **Branch:** `development`; `master` unchanged. Local Laravel tests and frontend build must be run after pulling the latest commits.
