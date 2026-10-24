@@ -194,6 +194,11 @@ class CorrespondenceController extends Controller
         DocumentService $documents,
         CorrespondenceAccessService $access,
     ): RedirectResponse {
+        $requestedType = $request->input('type');
+        if (is_string($requestedType) && in_array($requestedType, Correspondence::allowedTypes(), true)) {
+            abort_unless($access->canCreateType($requestedType, $request->user()), 403);
+        }
+
         $allowedCreatedDepartmentIds = $request->user()->departments()
             ->where('departments.is_active', true)
             ->pluck('departments.id')
