@@ -245,7 +245,7 @@ function removeFile(index: number): void {
                                 </div>
                             </div>
                         </div>
-v>
+
                     </div>
                 </section>
 
