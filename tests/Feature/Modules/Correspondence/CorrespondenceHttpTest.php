@@ -8,6 +8,8 @@ use App\Core\Permissions\Models\Permission;
 use App\Core\Permissions\Enums\PermissionScope;
 use App\Core\Roles\Models\Role;
 use App\Core\Departments\Models\Department;
+use App\Core\ExternalParties\Models\ExternalOrganization;
+use App\Core\ExternalParties\Models\ExternalDepartment;
 use App\Core\Settings\Services\OrganizationDepartmentRoleService;
 use App\Core\Settings\Services\SystemSettingsService;
 use App\Models\User;
@@ -316,4 +318,75 @@ class CorrespondenceHttpTest extends TestCase
 
         return $user->fresh();
     }
+    public function test_outgoing_correspondence_can_select_an_existing_external_organization_and_department(): void
+    {
+        $user = $this->userWithPermission('correspondence.create');
+        $organization = ExternalOrganization::query()->create([
+            'name' => 'سازمان بیرونی '.Str::upper(Str::random(5)),
+            'status' => 'active',
+        ]);
+        $department = ExternalDepartment::query()->create([
+            'external_organization_id' => $organization->id,
+            'name' => 'واحد بیرونی '.Str::upper(Str::random(5)),
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($user)->get(route('correspondence.create'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('externalOrganizations.0.id', $organization->id)
+                ->where('externalDepartments.0.id', $department->id));
+
+        $this->actingAs($user)->post(route('correspondence.store'), [
+            'type' => Correspondence::TYPE_OUTGOING,
+            'external_organization_id' => $organization->id,
+            'external_department_id' => $department->id,
+            'recipient_name' => 'مدیر واحد',
+            'subject' => 'نامه به سازمان بیرونی',
+            'composition_mode' => 'editor',
+            'body' => '<p>متن نامه</p>',
+        ])->assertRedirect(route('correspondence.index'));
+
+        $letter = Correspondence::query()->where('subject', 'نامه به سازمان بیرونی')->firstOrFail();
+        $this->assertSame($organization->id, (int) $letter->external_organization_id);
+        $this->assertSame($department->id, (int) $letter->external_department_id);
+
+        $this->actingAs($user)->get(route('correspondence.show', $letter))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('correspondence.external_organization.name', $organization->name)
+                ->where('correspondence.external_department.name', $department->name));
+    }
+
+    public function test_correspondence_rejects_external_department_from_another_organization(): void
+    {
+        $user = $this->userWithPermission('correspondence.create');
+        $organization = ExternalOrganization::query()->create([
+            'name' => 'سازمان الف '.Str::upper(Str::random(5)),
+            'status' => 'active',
+        ]);
+        $otherOrganization = ExternalOrganization::query()->create([
+            'name' => 'سازمان ب '.Str::upper(Str::random(5)),
+            'status' => 'active',
+        ]);
+        $department = ExternalDepartment::query()->create([
+            'external_organization_id' => $otherOrganization->id,
+            'name' => 'واحد متعلق به سازمان ب',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($user)->from(route('correspondence.create'))->post(route('correspondence.store'), [
+            'type' => Correspondence::TYPE_OUTGOING,
+            'external_organization_id' => $organization->id,
+            'external_department_id' => $department->id,
+            'subject' => 'نامه با واحد نامعتبر',
+            'composition_mode' => 'editor',
+            'body' => '<p>متن نامه</p>',
+        ])->assertRedirect(route('correspondence.create'))
+            ->assertSessionHasErrors('external_department_id');
+
+        $this->assertDatabaseMissing('correspondences', ['subject' => 'نامه با واحد نامعتبر']);
+    }
+
+
 }
