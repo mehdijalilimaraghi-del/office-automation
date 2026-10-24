@@ -171,34 +171,34 @@ function removeFile(index: number): void {
                             </select>
                             <InputError class="mt-1" :message="form.errors.classification" />
                         </div>
-                        <div>
+                        <div v-if="form.type !== 'incoming'">
                             <div class="mb-1.5 flex items-center gap-1.5"><label for="created_department_id" class="text-sm font-semibold text-slate-700">واحد ایجادکننده <span v-if="createdDepartments.length > 1" class="text-rose-600">*</span></label><details class="group relative"><summary aria-label="راهنمای واحد ایجادکننده" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-300">؟</summary><div class="absolute right-0 top-7 z-20 w-64 rounded-lg border border-slate-200 bg-white p-3 text-xs font-normal leading-6 text-slate-700 shadow-lg">واحدی را انتخاب کنید که نامه از طرف آن ایجاد و شماره‌گذاری می‌شود.</div></details></div>
-                            <select
-                                v-if="createdDepartments.length > 1"
-                                id="created_department_id"
-                                v-model="form.created_department_id"
-                                required
-                                class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            >
+                            <select v-if="createdDepartments.length > 1" id="created_department_id" v-model="form.created_department_id" :required="createdDepartments.length > 1" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">انتخاب واحدی که از طرف آن نامه ایجاد می‌شود</option>
                                 <option v-for="item in createdDepartments" :key="item.id" :value="item.id">{{ item.name }}</option>
                             </select>
                             <div v-else class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">{{ createdDepartment?.name ?? 'برای کاربر واحد فعالی تعیین نشده است' }}</div>
                             <InputError class="mt-1" :message="form.errors.created_department_id" />
                         </div>
+                        <div v-if="form.type === 'incoming' || form.type === 'internal'">
+                            <label for="recipient_department_id" class="mb-1.5 block text-sm font-semibold text-slate-700">واحد دریافت‌کننده <span class="text-rose-600">*</span></label>
+                            <select id="recipient_department_id" v-model="form.recipient_department_id" required class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">انتخاب واحد دریافت‌کننده</option>
+                                <option v-for="item in departments" :key="item.id" :value="item.id">{{ item.name }}</option>
+                            </select>
+                            <InputError class="mt-1" :message="form.errors.recipient_department_id" />
+                        </div>
                         <div v-if="form.type === 'outgoing'">
                             <label for="sent_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ ارسال</label>
                             <DatePicker v-model="form.sent_at" system="jalali" locale="fa" value-format="gregorian-iso" />
                             <InputError class="mt-1" :message="form.errors.sent_at" />
                         </div>
-                        <div v-if="form.type === 'internal'">
-                            <label for="recipient_department_id" class="mb-1.5 block text-sm font-semibold text-slate-700">واحد گیرنده <span class="text-rose-600">*</span></label>
-                            <select id="recipient_department_id" v-model="form.recipient_department_id" required class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                <option value="">انتخاب واحد گیرنده</option>
-                                <option v-for="item in departments" :key="item.id" :value="item.id">{{ item.name }}</option>
-                            </select>
-                            <InputError class="mt-1" :message="form.errors.recipient_department_id" />
+                        <div v-if="form.type === 'incoming'">
+                            <label for="received_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ دریافت</label>
+                            <DatePicker v-model="form.received_at" system="jalali" locale="fa" value-format="gregorian-iso" />
+                            <InputError class="mt-1" :message="form.errors.received_at" />
                         </div>
+v>
                         <div class="sm:col-span-2">
                             <label for="subject" class="mb-1.5 block text-sm font-semibold text-slate-700">موضوع <span class="text-rose-600">*</span></label>
                             <input id="subject" v-model="form.subject" required maxlength="255" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
@@ -214,12 +214,12 @@ function removeFile(index: number): void {
                         </div>
                         <div v-if="form.type !== 'internal'" class="sm:col-span-2 lg:col-span-4 space-y-3 rounded-xl border border-teal-100 bg-teal-50/50 p-4">
                             <div class="flex items-center gap-2">
-                                <h4 class="text-sm font-bold text-slate-800">طرف برون‌سازمانی</h4>
+                                <h4 class="text-sm font-bold text-slate-800">{{ form.type === 'incoming' ? 'سازمان فرستنده' : 'سازمان گیرنده' }}</h4>
                                 <details class="group relative"><summary aria-label="راهنمای طرف برون‌سازمانی" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 bg-white text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-300">؟</summary><div class="absolute right-0 top-7 z-20 w-64 rounded-lg border border-slate-200 bg-white p-3 text-xs font-normal leading-6 text-slate-700 shadow-lg">سازمان و واحد را از دفترچه موجود انتخاب کنید. این اطلاعات اختیاری است تا مکاتبه با طرف‌های جدید نیز قابل ثبت باشد.</div></details>
                             </div>
                             <div class="grid gap-4 sm:grid-cols-2">
                                 <div>
-                                    <label for="external_organization_id" class="mb-1.5 block text-sm font-semibold text-slate-700">سازمان بیرونی</label>
+                                    <label for="external_organization_id" class="mb-1.5 block text-sm font-semibold text-slate-700">{{ form.type === 'incoming' ? 'سازمان مبدأ نامه' : 'سازمان مخاطب' }}</label>
                                     <select id="external_organization_id" v-model="form.external_organization_id" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                                         <option value="">انتخاب سازمان بیرونی</option>
                                         <option v-for="item in externalOrganizations" :key="item.id" :value="item.id">{{ item.name }}</option>
@@ -227,7 +227,7 @@ function removeFile(index: number): void {
                                     <InputError class="mt-1" :message="form.errors.external_organization_id" />
                                 </div>
                                 <div>
-                                    <label for="external_department_id" class="mb-1.5 block text-sm font-semibold text-slate-700">واحد بیرونی</label>
+                                    <label for="external_department_id" class="mb-1.5 block text-sm font-semibold text-slate-700">{{ form.type === 'incoming' ? 'واحد فرستنده' : 'واحد مخاطب بیرونی' }}</label>
                                     <select id="external_department_id" v-model="form.external_department_id" :disabled="!form.external_organization_id" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-slate-100">
                                         <option value="">انتخاب واحد بیرونی (اختیاری)</option>
                                         <option v-for="item in externalDepartmentsForOrganization" :key="item.id" :value="item.id">{{ item.name }}</option>
@@ -246,11 +246,7 @@ function removeFile(index: number): void {
                                 </div>
                             </div>
                         </div>
-                        <div v-if="form.type === 'incoming'">
-                            <label for="received_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ دریافت</label>
-                            <DatePicker v-model="form.received_at" system="jalali" locale="fa" value-format="gregorian-iso" />
-                            <InputError class="mt-1" :message="form.errors.received_at" />
-                        </div>
+v>
                     </div>
                 </section>
 
