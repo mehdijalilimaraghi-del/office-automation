@@ -236,23 +236,24 @@ async function scanOriginalLetter(): Promise<void> {
         ? 'درخواست اجرای رابط اسکن ارسال شد. در صورت نمایش پیام مرورگر، اجرای برنامه را تأیید کنید.'
         : 'مرورگر پنجره اجرای اسکنر را مسدود کرد. اجازه بازشدن پنجره‌ها و اجرای برنامه خارجی را بررسی کنید.';
     scannerFileName.value = '';
+    scannerPreviewUrl.value = '';
+    scannerPreviewOpen.value = false;
     form.scanner_upload_token = '';
 
     try {
-        for (let attempt = 0; attempt < 90; attempt += 1) {
+        for (let attempt = 0; attempt < 600; attempt += 1) {
             await new Promise((resolve) => window.setTimeout(resolve, 2000));
             const status = await axios.get(session.statusUrl);
             if (status.data.status === 'ready') {
-                form.scanner_upload_token = session.token;
                 scannerFileName.value = String(status.data.file_name || 'scanned-letter.pdf');
-                scannerMessage.value = 'اسکن دریافت شد و همراه پیش‌نویس ذخیره خواهد شد.';
-                scannerSession.value = null;
-                void prepareScannerSession();
+                scannerPreviewUrl.value = String(status.data.preview_url || '');
+                scannerPreviewOpen.value = true;
+                scannerMessage.value = 'اسکن دریافت شد. قبل از پیوست، همه صفحه‌ها را در پیش‌نمایش بررسی و تأیید کنید.';
                 return;
             }
         }
 
-        scannerMessage.value = 'پس از ۳ دقیقه فایلی دریافت نشد. ثبت پروتکل officeautomation-scanner:// در ویندوز و نصب رابط اسکن را بررسی کنید یا فایل را دستی بارگذاری کنید.';
+        scannerMessage.value = 'پس از ۲۰ دقیقه فایلی دریافت نشد. اتصال اسکنر و برنامه واسط را بررسی کنید یا فایل را دستی بارگذاری کنید.';
         scannerSession.value = null;
         void prepareScannerSession();
     } catch {
@@ -483,9 +484,9 @@ async function scanOriginalLetter(): Promise<void> {
                         </label>
                         <div class="flex flex-col items-center justify-center rounded-xl border border-slate-200 px-5 py-6 text-center">
                             <button type="button" :disabled="scannerLoading" class="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-wait disabled:opacity-60" @click="scanOriginalLetter">
-                                {{ scannerLoading ? 'در حال اجرای NAPS2...' : 'اسکن با NAPS2 و ارسال خودکار' }}
+                                {{ scannerLoading ? 'در انتظار پایان اسکن...' : 'شروع اسکن چندصفحه‌ای' }}
                             </button>
-                            <p class="mt-2 text-xs leading-5 text-slate-500">نیازمند نصب NAPS2 و رابط اتصال سامانه روی رایانه دبیرخانه است؛ PDF پس از اسکن خودکار به همین فرم ارسال می‌شود.</p>
+                            <p class="mt-2 text-xs leading-5 text-slate-500">در NAPS2 همه صفحه‌ها را اسکن و در یک PDF ذخیره کنید؛ سپس پیش‌نمایش را بررسی و تأیید کنید.</p>
                         </div>
                     </div>
                     <p v-if="scannerMessage" class="text-sm leading-6 text-slate-600" role="status">{{ scannerMessage }}</p>
@@ -531,6 +532,19 @@ async function scanOriginalLetter(): Promise<void> {
                     </button>
                 </div>
             </form>
+        </div>
+        <div v-if="scannerPreviewOpen && scannerPreviewUrl" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="scanner-preview-title">
+            <div class="flex max-h-[95vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 sm:px-6">
+                    <div><h2 id="scanner-preview-title" class="font-bold text-slate-900">پیش‌نمایش اصل نامه اسکن‌شده</h2><p class="mt-1 text-xs text-slate-500">{{ scannerFileName }} — قبل از تأیید، صفحه‌ها را بررسی کنید.</p></div>
+                    <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" @click="discardScannedLetterPreview">بستن و رد اسکن</button>
+                </div>
+                <iframe :src="scannerPreviewUrl" title="پیش‌نمایش PDF اسکن‌شده" class="min-h-[55vh] flex-1 bg-slate-100 sm:min-h-[65vh]"></iframe>
+                <div class="flex flex-wrap justify-end gap-3 border-t border-slate-200 px-4 py-3 sm:px-6">
+                    <button type="button" class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50" @click="discardScannedLetterPreview">اسکن مجدد</button>
+                    <button type="button" class="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700" @click="confirmScannedLetter">تأیید و پیوست اصل نامه</button>
+                </div>
+            </div>
         </div>
     </AuthenticatedLayout>
 </template>
