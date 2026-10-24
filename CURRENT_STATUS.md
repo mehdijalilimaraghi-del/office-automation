@@ -1,3 +1,10 @@
+## 2026-10-24 — Simplify Windows scanner appsettings
+
+- Removed the obsolete `Naps2GuiPath` setting from `tools/WindowsScanner/appsettings.json.example`. The current SDK-based helper does not launch the NAPS2 desktop executable.
+- The installed `appsettings.json` must contain `ApplicationOrigin` set to the exact base origin of the deployed application (scheme + host + optional port), for example `https://office.example.org`; replace the example with the real deployment URL. Do not include a path such as `/login` or a trailing route.
+- Validation pending: after publishing, copy the example to `appsettings.json` beside the EXE, set the real origin, install the helper, and test scanner upload. No build or device test is claimed.
+- Branch: `development`; `master` unchanged.
+
 ## 2026-10-24 — Replace manual NAPS2 desktop workflow with SDK-driven scanning
 
 - Replaced the launch/wait/save/select workflow with the official NAPS2 .NET SDK in the Windows bridge. It enumerates WIA/TWAIN devices, asks the user to choose when multiple devices are detected, and reads reported feeder/flatbed capabilities.
