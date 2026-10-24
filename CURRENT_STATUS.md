@@ -1,3 +1,13 @@
+## 2026-10-24 — Replace direct WIA scanner implementation with NAPS2 integration
+
+- Reworked the Windows bridge to delegate scanning, feeder/duplex handling, page assembly, and PDF generation to the free NAPS2 command-line application instead of implementing scanner drivers and PDF generation in the bridge itself.
+- The bridge still provides the small required integration layer: validates the custom protocol launch and trusted application origin, invokes NAPS2 with the configured profile, enforces the 20 MB PDF limit, uploads the PDF to the short-lived user-bound endpoint, and reports success/failure to the user.
+- Added configurable NAPS2 executable path and profile name in `appsettings.json.example`; updated the workstation setup guide to install NAPS2, create a feeder/duplex profile, and configure the bridge.
+- Updated the incoming-letter UI label and help text to describe NAPS2 scanning with automatic upload. Manual file upload remains available.
+- Removed the bridge's PdfSharp/System.Drawing dependencies because PDF creation is now handled by NAPS2.
+- **Validation status:** intentionally deferred as requested. NAPS2 CLI invocation, .NET publish, PHP correspondence tests, frontend production build, and physical scanner tests have not been run. Confirm the installed NAPS2 CLI path and profile name during later workstation setup.
+- **Branch:** `development` only; `master` remains unchanged.
+
 ## 2026-10-24 — Incoming correspondence template cleanup
 
 - Cleaned up stray template text left by the incoming-field reorder in `Create.vue`. The incoming recipient and received-date controls remain in the top metadata grid.
