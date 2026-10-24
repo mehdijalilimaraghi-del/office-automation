@@ -2,11 +2,13 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { DatePicker } from '@jalali-js/vue';
 import '@jalali-js/vue/date-picker.css';
 
 interface Department { id: number; name: string; }
+interface ExternalOrganization { id: number; name: string; }
+interface ExternalDepartment { id: number; external_organization_id: number; name: string; }
 interface ReplyOption { id: number; registration_number: string | null; subject: string; }
 interface CreatedDepartment { id: number; name: string; }
 type CompositionMode = 'editor' | 'file' | 'both';
@@ -15,6 +17,8 @@ const props = defineProps<{
     types: Array<{ value: string; label: string }>;
     classifications: Array<{ value: string; label: string }>;
     departments: Department[];
+    externalOrganizations: ExternalOrganization[];
+    externalDepartments: ExternalDepartment[];
     createdDepartment: CreatedDepartment | null;
     createdDepartments: CreatedDepartment[];
     repliesTo: ReplyOption[];
@@ -36,6 +40,8 @@ const form = useForm({
     body: '',
     sender_name: '',
     recipient_name: '',
+    external_organization_id: '' as number | '',
+    external_department_id: '' as number | '',
     received_at: '',
     sent_at: '',
     recipient_department_id: '' as number | '',
@@ -46,6 +52,10 @@ const form = useForm({
 
 watch(() => form.type, (type) => {
     if (type !== 'internal') form.recipient_department_id = '';
+    if (type === 'internal') {
+        form.external_organization_id = '';
+        form.external_department_id = '';
+    }
     if (type !== 'incoming') {
         form.sender_name = '';
         form.received_at = '';
@@ -54,6 +64,17 @@ watch(() => form.type, (type) => {
         form.recipient_name = '';
         form.sent_at = '';
     }
+});
+
+const externalDepartmentsForOrganization = computed(() =>
+    props.externalDepartments.filter((item) => String(item.external_organization_id) === String(form.external_organization_id)),
+);
+
+watch(() => form.external_organization_id, (organizationId) => {
+    if (!externalDepartmentsForOrganization.value.some((item) => item.id === form.external_department_id)) {
+        form.external_department_id = '';
+    }
+    if (!organizationId) form.external_department_id = '';
 });
 
 function syncBody(): void {
@@ -196,15 +217,39 @@ function removeFile(index: number): void {
                             <input id="subject" v-model="form.subject" required maxlength="255" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
                             <InputError class="mt-1" :message="form.errors.subject" />
                         </div>
-                        <div v-if="form.type === 'incoming'">
-                            <label for="sender_name" class="mb-1.5 block text-sm font-semibold text-slate-700">فرستنده نامه وارده</label>
-                            <input id="sender_name" v-model="form.sender_name" maxlength="255" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
-                            <InputError class="mt-1" :message="form.errors.sender_name" />
-                        </div>
-                        <div v-if="form.type === 'outgoing'">
-                            <label for="recipient_name" class="mb-1.5 block text-sm font-semibold text-slate-700">گیرنده بیرونی</label>
-                            <input id="recipient_name" v-model="form.recipient_name" maxlength="255" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
-                            <InputError class="mt-1" :message="form.errors.recipient_name" />
+                        <div v-if="form.type !== 'internal'" class="sm:col-span-2 space-y-3 rounded-xl border border-teal-100 bg-teal-50/50 p-4">
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-800">طرف برون‌سازمانی</h4>
+                                <p class="mt-1 text-xs text-slate-600">سازمان و واحد را از دفترچهٔ موجود انتخاب کنید. انتخاب سازمان و واحد اختیاری است تا مکاتبات با طرف‌های جدید نیز قابل ثبت باشد.</p>
+                            </div>
+                            <div class="grid gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label for="external_organization_id" class="mb-1.5 block text-sm font-semibold text-slate-700">سازمان بیرونی</label>
+                                    <select id="external_organization_id" v-model="form.external_organization_id" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                        <option value="">انتخاب سازمان بیرونی</option>
+                                        <option v-for="item in externalOrganizations" :key="item.id" :value="item.id">{{ item.name }}</option>
+                                    </select>
+                                    <InputError class="mt-1" :message="form.errors.external_organization_id" />
+                                </div>
+                                <div>
+                                    <label for="external_department_id" class="mb-1.5 block text-sm font-semibold text-slate-700">واحد بیرونی</label>
+                                    <select id="external_department_id" v-model="form.external_department_id" :disabled="!form.external_organization_id" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-slate-100">
+                                        <option value="">انتخاب واحد بیرونی (اختیاری)</option>
+                                        <option v-for="item in externalDepartmentsForOrganization" :key="item.id" :value="item.id">{{ item.name }}</option>
+                                    </select>
+                                    <InputError class="mt-1" :message="form.errors.external_department_id" />
+                                </div>
+                                <div v-if="form.type === 'incoming'">
+                                    <label for="sender_name" class="mb-1.5 block text-sm font-semibold text-slate-700">نام شخص یا سمت فرستنده (اختیاری)</label>
+                                    <input id="sender_name" v-model="form.sender_name" maxlength="255" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                                    <InputError class="mt-1" :message="form.errors.sender_name" />
+                                </div>
+                                <div v-if="form.type === 'outgoing'">
+                                    <label for="recipient_name" class="mb-1.5 block text-sm font-semibold text-slate-700">نام شخص یا سمت گیرنده (اختیاری)</label>
+                                    <input id="recipient_name" v-model="form.recipient_name" maxlength="255" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                                    <InputError class="mt-1" :message="form.errors.recipient_name" />
+                                </div>
+                            </div>
                         </div>
                         <div v-if="form.type === 'incoming'">
                             <label for="received_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ دریافت</label>
