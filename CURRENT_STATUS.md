@@ -1,3 +1,9 @@
+## 2026-10-24 — Incoming correspondence template cleanup
+
+- Cleaned up stray template text left by the incoming-field reorder in `Create.vue`. The incoming recipient and received-date controls remain in the top metadata grid.
+- Local Vue compilation/build is still pending; no successful build is claimed.
+- **Branch:** `development`; `master` unchanged.
+
 ## 2026-10-24 — Incoming correspondence direction and received-date placement
 
 - Incoming correspondence now presents the internal recipient unit as **واحد دریافت‌کننده** instead of exposing the outgoing-letter creator unit in the form. The server still derives the creator/numbering unit internally when saving the draft; users do not have to select it for incoming letters.
