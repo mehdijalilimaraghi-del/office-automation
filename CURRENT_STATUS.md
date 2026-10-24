@@ -924,3 +924,5 @@ Implementation has started for the agreed cross-department project model:
 - Updated Windows scanner setup documentation and sample configuration to use `Naps2GuiPath` pointing to `NAPS2.exe`.
 - **Validation pending:** these changes have not been built or tested in this environment. Check the C# publish and GUI close/selection flow on the secretariat workstation, verify multi-page flatbed scanning and the browser preview/confirm/reject path, then run the correspondence feature tests and frontend production build.
 - **Branch:** `development` only; `master` unchanged.
+
+- Follow-up: scanner staging cache expiry is 30 minutes for both pending and ready states; inline document previews stream from the configured storage disk.
