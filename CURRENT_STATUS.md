@@ -844,3 +844,10 @@ Implementation has started for the agreed cross-department project model:
 - Added explicit right-to-left and left-to-right writing-direction controls to the editor. Direction is applied to the selected text block and retained through correspondence HTML sanitization using a restricted `dir=rtl|ltr` allow-list.
 - Added an organization-level default correspondence font in Organization Settings. The setting is stored through the existing system-settings service (no schema migration required), validated against supported font names, and applied to the editor and correspondence detail display. Default remains Vazirmatn for backward compatibility; the selected font must be installed on user devices or separately supplied as a web font.
 - **Branch:** `development`; `master` unchanged. Local frontend build, focused correspondence tests, and manual RTL/LTR/font verification are pending; no test result is claimed.
+
+
+## 2026-10-24 — Correspondence create form layout follow-up
+
+- Reordered the form so the reply-to correspondence field occupies the row beside the subject, while the external-party panel is moved to its own full-width row below them. This avoids placing the external-party panel beside the subject in the four-column metadata grid.
+- Replaced the classification and creator-unit helper paragraphs with compact question-mark popovers; the external-party explanation is also now available from a question-mark popover. The guidance appears on click and no longer increases the default field-row height.
+- **Branch:** `development`; `master` unchanged. Frontend build and manual responsive/layout checks are pending; no test result is claimed.
