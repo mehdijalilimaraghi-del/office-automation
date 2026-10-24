@@ -1,15 +1,21 @@
-using System.Diagnostics;
+using System.Drawing;
 using System.Text.Json;
+using NAPS2.Images;
+using NAPS2.Images.Gdi;
+using NAPS2.Pdf;
+using NAPS2.Scan;
 
 namespace OfficeAutomation.Scanner;
 
 internal static class Program
 {
     private const long MaximumPdfBytes = 20L * 1024 * 1024;
+    private const int ScanDpi = 300;
 
     [STAThread]
     private static async Task Main(string[] args)
     {
+        ApplicationConfiguration.Initialize();
         try
         {
             var uploadUrl = args.Length > 0 ? ReadUploadUrl(args[0]) : null;
@@ -21,17 +27,126 @@ internal static class Program
 
             using var temporary = new TemporaryDirectory();
             var pdfPath = Path.Combine(temporary.Path, "scanned-letter.pdf");
-            var selectedPdf = await ScanWithNaps2();
-            File.Copy(selectedPdf, pdfPath, true);
+            await ScanAndCreatePdf(pdfPath);
             var file = new FileInfo(pdfPath);
+            if (!file.Exists || file.Length == 0)
+                throw new InvalidOperationException("فایل PDF اسکن‌شده ساخته نشد.");
             if (file.Length > MaximumPdfBytes)
-                throw new InvalidOperationException("حجم PDF اسکن‌شده بیش از ۲۰ مگابایت است. وضوح یا تنظیمات رنگ اسکن را در پروفایل NAPS2 کاهش دهید.");
+                throw new InvalidOperationException("حجم PDF اسکن‌شده بیش از ۲۰ مگابایت است. وضوح اسکن را کاهش دهید.");
             await UploadPdf(uploadUrl, pdfPath);
-            MessageBox.Show("فایل PDF ارسال شد. به مرورگر بازگردید، پیش‌نمایش همه صفحه‌ها را بررسی و در صورت تأیید، آن را به نامه پیوست کنید.", "اسکن نامه", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show("اسکن ارسال شد. پیش‌نمایش PDF در فرم مکاتبه نمایش داده می‌شود؛ پس از بررسی، آن را تأیید و پیوست کنید.", "اسکن نامه", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (OperationCanceledException)
+        {
+            // Intentional user cancellation.
         }
         catch (Exception ex)
         {
             MessageBox.Show("اسکن یا ارسال فایل انجام نشد.\n\n" + ex.Message, "اسکن نامه", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private static async Task ScanAndCreatePdf(string pdfPath)
+    {
+        using var context = new ScanningContext(new GdiImageContext());
+        context.SetUpWin32Worker();
+        var controller = new ScanController(context);
+
+        var devices = new List<ScanDevice>();
+        try { devices.AddRange(await controller.GetDeviceList(Driver.Wia)); } catch { }
+        try { devices.AddRange(await controller.GetDeviceList(Driver.Twain)); } catch { }
+        devices = devices
+            .GroupBy(d => $"{d.Driver}:{d.ID}", StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.First())
+            .ToList();
+
+        if (devices.Count == 0)
+            throw new InvalidOperationException("هیچ اسکنری از طریق WIA یا TWAIN شناسایی نشد. اتصال دستگاه و درایور آن را بررسی کنید.");
+
+        var device = devices.Count == 1 ? devices[0] : DeviceSelectionForm.Select(devices);
+        if (device is null) throw new OperationCanceledException("انتخاب اسکنر لغو شد.");
+
+        var caps = await controller.GetCaps(device);
+        var hasFeeder = caps.PaperSourceCaps?.SupportsFeeder == true || caps.FeederCaps is not null;
+        var hasFlatbed = caps.PaperSourceCaps?.SupportsFlatbed == true || caps.FlatbedCaps is not null;
+
+        if (hasFeeder)
+        {
+            var options = new ScanOptions { Device = device, PaperSource = PaperSource.Feeder, PageSize = PageSize.A4, Dpi = ScanDpi };
+            var pages = new List<ProcessedImage>();
+            try
+            {
+                using var progress = new ProgressForm("در حال اسکن همه صفحه‌ها از تغذیه‌کننده خودکار (ADF)...");
+                progress.Show();
+                await foreach (var image in controller.Scan(options))
+                {
+                    pages.Add(image);
+                    progress.SetMessage($"در حال اسکن صفحه {pages.Count}...");
+                }
+                progress.Close();
+
+                if (pages.Count == 0)
+                    throw new InvalidOperationException("اسکنر ADF هیچ صفحه‌ای برنگرداند. وجود کاغذ و تنظیمات منبع اسکن را بررسی کنید.");
+
+                var exporter = new PdfExporter(context);
+                await exporter.Export(pdfPath, pages);
+            }
+            finally
+            {
+                foreach (var page in pages) page.Dispose();
+            }
+            return;
+        }
+
+        if (!hasFlatbed)
+            throw new InvalidOperationException("قابلیت ADF یا تخت از طریق درایور این اسکنر گزارش نشد. درایور WIA/TWAIN و تنظیمات دستگاه را بررسی کنید.");
+
+        var flatbedOptions = new ScanOptions { Device = device, PaperSource = PaperSource.Flatbed, PageSize = PageSize.A4, Dpi = ScanDpi };
+        var flatbedPages = new List<ProcessedImage>();
+        try
+        {
+            while (true)
+            {
+                ProcessedImage? page = null;
+                using (var progress = new ProgressForm($"در حال اسکن صفحه {flatbedPages.Count + 1}..."))
+                {
+                    progress.Show();
+                    await foreach (var image in controller.Scan(flatbedOptions))
+                    {
+                        page = image;
+                        break;
+                    }
+                }
+
+                if (page is null)
+                    throw new InvalidOperationException("اسکنر تصویری برای این صفحه برنگرداند.");
+
+                var action = FlatbedPageReviewForm.Review(page, flatbedPages.Count + 1);
+                if (action == FlatbedReviewAction.Rescan)
+                {
+                    page.Dispose();
+                    continue;
+                }
+                if (action == FlatbedReviewAction.Cancel)
+                {
+                    page.Dispose();
+                    throw new OperationCanceledException("اسکن توسط کاربر لغو شد.");
+                }
+
+                flatbedPages.Add(page);
+                if (action == FlatbedReviewAction.Finish)
+                    break;
+            }
+
+            if (flatbedPages.Count == 0)
+                throw new OperationCanceledException("هیچ صفحه‌ای برای ذخیره انتخاب نشد.");
+
+            var exporter = new PdfExporter(context);
+            await exporter.Export(pdfPath, flatbedPages);
+        }
+        finally
+        {
+            foreach (var page in flatbedPages) page.Dispose();
         }
     }
 
@@ -58,9 +173,7 @@ internal static class Program
             throw new InvalidOperationException("فایل appsettings.json برنامه اتصال وجود ندارد؛ تنظیمات را طبق راهنمای نصب تکمیل کنید.");
 
         using var settings = JsonDocument.Parse(File.ReadAllText(settingsPath));
-        var configuredOrigin = settings.RootElement.TryGetProperty("ApplicationOrigin", out var originValue)
-            ? originValue.GetString()
-            : null;
+        var configuredOrigin = settings.RootElement.TryGetProperty("ApplicationOrigin", out var originValue) ? originValue.GetString() : null;
         if (!Uri.TryCreate(configuredOrigin, UriKind.Absolute, out var trustedOrigin)
             || !string.Equals(uploadUri.GetLeftPart(UriPartial.Authority), trustedOrigin.GetLeftPart(UriPartial.Authority), StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("نشانی ارسال فایل با نشانی مجاز سامانه در appsettings.json یکسان نیست.");
@@ -70,25 +183,6 @@ internal static class Program
             throw new InvalidOperationException("شناسه موقت اسکن معتبر نیست.");
 
         return uploadUri.ToString();
-    }
-
-    private static async Task<string> ScanWithNaps2()
-    {
-        var settingsPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
-        using var settings = JsonDocument.Parse(File.ReadAllText(settingsPath));
-        var guiPath = settings.RootElement.TryGetProperty("Naps2GuiPath", out var guiValue) ? guiValue.GetString() : null;
-        if (string.IsNullOrWhiteSpace(guiPath) || !File.Exists(guiPath))
-            throw new InvalidOperationException("مسیر NAPS2.exe در appsettings.json تنظیم نشده است. مسیر رابط گرافیکی NAPS2 را وارد کنید.");
-        MessageBox.Show("در پنجره NAPS2 همه صفحه‌های نامه را اسکن کنید. برای اسکنر تخت، پس از هر صفحه برگه بعدی را قرار دهید و دوباره Scan را بزنید.\n\nهمه صفحه‌ها را بررسی و در یک فایل PDF ذخیره کنید، سپس NAPS2 را ببندید تا فایل ذخیره‌شده را برای ارسال انتخاب کنید.", "اسکن چندصفحه‌ای نامه", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        var startInfo = new ProcessStartInfo { FileName = guiPath, UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(guiPath) ?? AppContext.BaseDirectory };
-        using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("اجرای رابط گرافیکی NAPS2 انجام نشد.");
-        await process.WaitForExitAsync();
-        using var dialog = new OpenFileDialog { Title = "انتخاب PDF نهایی اسکن‌شده", Filter = "فایل PDF (*.pdf)|*.pdf", CheckFileExists = true, Multiselect = false, ValidateNames = true };
-        if (dialog.ShowDialog() != DialogResult.OK) throw new OperationCanceledException("انتخاب فایل اسکن‌شده لغو شد.");
-        var selected = new FileInfo(dialog.FileName);
-        if (!selected.Exists || selected.Length == 0) throw new InvalidOperationException("فایل انتخاب‌شده خالی یا در دسترس نیست.");
-        if (selected.Length > MaximumPdfBytes) throw new InvalidOperationException("حجم PDF اسکن‌شده بیش از ۲۰ مگابایت است. وضوح یا تنظیمات رنگ اسکن را در پروفایل NAPS2 کاهش دهید.");
-        return selected.FullName;
     }
 
     private static async Task UploadPdf(string uploadUrl, string pdfPath)
@@ -113,9 +207,90 @@ internal static class Program
     {
         public string Path { get; } = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "OfficeAutomationScanner-" + Guid.NewGuid().ToString("N"));
         public TemporaryDirectory() => Directory.CreateDirectory(Path);
-        public void Dispose()
-        {
-            try { Directory.Delete(Path, true); } catch { }
-        }
+        public void Dispose() { try { Directory.Delete(Path, true); } catch { } }
+    }
+}
+
+internal enum FlatbedReviewAction { Next, Rescan, Finish, Cancel }
+
+internal sealed class DeviceSelectionForm : Form
+{
+    private readonly ComboBox devices = new() { DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Top };
+    private DeviceSelectionForm(IReadOnlyList<ScanDevice> available)
+    {
+        Text = "انتخاب اسکنر"; Width = 560; Height = 160; StartPosition = FormStartPosition.CenterScreen;
+        RightToLeft = RightToLeft.Yes; RightToLeftLayout = true;
+        var label = new Label { Text = "دستگاه اسکن مورد استفاده را انتخاب کنید:", Dock = DockStyle.Top, Height = 36, TextAlign = ContentAlignment.MiddleRight };
+        foreach (var item in available) devices.Items.Add(item);
+        devices.SelectedIndex = 0;
+        var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 48, FlowDirection = FlowDirection.LeftToRight };
+        var ok = new Button { Text = "ادامه", DialogResult = DialogResult.OK, AutoSize = true };
+        var cancel = new Button { Text = "انصراف", DialogResult = DialogResult.Cancel, AutoSize = true };
+        buttons.Controls.Add(ok); buttons.Controls.Add(cancel);
+        Controls.Add(devices); Controls.Add(label); Controls.Add(buttons); AcceptButton = ok; CancelButton = cancel;
+    }
+    public static ScanDevice? Select(IReadOnlyList<ScanDevice> available)
+    {
+        using var form = new DeviceSelectionForm(available);
+        return form.ShowDialog() == DialogResult.OK ? form.devices.SelectedItem as ScanDevice : null;
+    }
+    protected override void OnShown(EventArgs e)
+    {
+        base.OnShown(e);
+        for (var i = 0; i < devices.Items.Count; i++)
+            if (devices.Items[i] is ScanDevice device) devices.Items[i] = new DeviceChoice(device);
+    }
+    private sealed record DeviceChoice(ScanDevice Device)
+    {
+        public override string ToString() => Device.Name;
+    }
+}
+
+internal sealed class ProgressForm : Form
+{
+    private readonly Label message = new() { Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter };
+    public ProgressForm(string text)
+    {
+        Text = "اسکن نامه"; Width = 440; Height = 130; StartPosition = FormStartPosition.CenterScreen;
+        RightToLeft = RightToLeft.Yes; RightToLeftLayout = true; message.Text = text; Controls.Add(message);
+    }
+    public void SetMessage(string text)
+    {
+        if (InvokeRequired) { BeginInvoke(() => message.Text = text); return; }
+        message.Text = text; Refresh();
+    }
+}
+
+internal sealed class FlatbedPageReviewForm : Form
+{
+    private readonly PictureBox picture = new() { Dock = DockStyle.Fill, SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.DimGray };
+    private FlatbedReviewAction actionResult = FlatbedReviewAction.Cancel;
+    private FlatbedPageReviewForm(ProcessedImage image, int pageNumber)
+    {
+        Text = $"بازبینی صفحه {pageNumber}"; Width = 900; Height = 720; MinimumSize = new Size(640, 480);
+        StartPosition = FormStartPosition.CenterScreen; RightToLeft = RightToLeft.Yes; RightToLeftLayout = true;
+        using (var bitmap = image.RenderToBitmap()) picture.Image = new Bitmap(bitmap);
+        Controls.Add(picture);
+        var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 56, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(8) };
+        var next = new Button { Text = "۱. اسکن صفحه بعدی", AutoSize = true };
+        var rescan = new Button { Text = "۲. اسکن دوباره همین صفحه", AutoSize = true };
+        var finish = new Button { Text = "۳. اتمام و ذخیره", AutoSize = true };
+        var cancel = new Button { Text = "لغو", AutoSize = true };
+        next.Click += (_, _) => { actionResult = FlatbedReviewAction.Next; Close(); };
+        rescan.Click += (_, _) => { actionResult = FlatbedReviewAction.Rescan; Close(); };
+        finish.Click += (_, _) => { actionResult = FlatbedReviewAction.Finish; Close(); };
+        cancel.Click += (_, _) => { actionResult = FlatbedReviewAction.Cancel; Close(); };
+        buttons.Controls.Add(next); buttons.Controls.Add(rescan); buttons.Controls.Add(finish); buttons.Controls.Add(cancel); Controls.Add(buttons);
+    }
+    public static FlatbedReviewAction Review(ProcessedImage image, int pageNumber)
+    {
+        using var form = new FlatbedPageReviewForm(image, pageNumber);
+        form.ShowDialog();
+        return form.actionResult;
+    }
+    protected override void OnFormClosed(FormClosedEventArgs e)
+    {
+        picture.Image?.Dispose();
+        base.OnFormClosed(e);
     }
 }
