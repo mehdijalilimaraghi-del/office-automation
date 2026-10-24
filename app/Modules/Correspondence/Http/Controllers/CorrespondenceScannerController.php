@@ -31,7 +31,7 @@ class CorrespondenceScannerController
             'user_id' => (int) $request->user()->id,
             'status' => 'pending',
             'created_at' => now()->toIso8601String(),
-        ], now()->addMinutes(10));
+        ], now()->addMinutes(30));
 
         return response()->json([
             'token' => $token,
@@ -72,12 +72,26 @@ class CorrespondenceScannerController
     public function status(Request $request, string $token): JsonResponse
     {
         $state = Cache::get($this->cacheKey($token));
-
         abort_unless(is_array($state) && (int) ($state['user_id'] ?? 0) === (int) $request->user()->id, 404);
-
         return response()->json([
             'status' => $state['status'] ?? 'pending',
-            'file_name' => $state['status'] === 'ready' ? ($state['original_name'] ?? 'scanned-letter.pdf') : null,
+            'file_name' => ($state['status'] ?? null) === 'ready' ? ($state['original_name'] ?? 'scanned-letter.pdf') : null,
+            'preview_url' => ($state['status'] ?? null) === 'ready' ? route('correspondence.scanner.preview', ['token' => $token]) : null,
+        ]);
+    }
+
+    public function preview(Request $request, string $token)
+    {
+        $state = Cache::get($this->cacheKey($token));
+        abort_unless(is_array($state) && ($state['status'] ?? null) === 'ready'
+            && (int) ($state['user_id'] ?? 0) === (int) $request->user()->id
+            && is_string($state['path'] ?? null)
+            && Storage::disk('local')->exists($state['path']), 404);
+        return response()->file(Storage::disk('local')->path($state['path']), [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="scanned-letter.pdf"',
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, no-store',
         ]);
     }
 
