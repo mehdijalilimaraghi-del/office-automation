@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 
@@ -54,6 +55,22 @@ internal static class Program
             || !uploadUri.AbsolutePath.Contains("/correspondence/scanner/upload/", StringComparison.Ordinal)
             || uploadUri.UserInfo.Length > 0)
             throw new InvalidOperationException("نشانی ارسال فایل نامعتبر است.");
+
+        var settingsPath = System.IO.Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+        if (!File.Exists(settingsPath))
+            throw new InvalidOperationException("فایل appsettings.json برنامه کمکی وجود ندارد؛ نشانی سامانه را طبق راهنمای نصب تنظیم کنید.");
+
+        using var settings = JsonDocument.Parse(File.ReadAllText(settingsPath));
+        var configuredOrigin = settings.RootElement.TryGetProperty("ApplicationOrigin", out var originValue)
+            ? originValue.GetString()
+            : null;
+        if (!Uri.TryCreate(configuredOrigin, UriKind.Absolute, out var trustedOrigin)
+            || !string.Equals(uploadUri.GetLeftPart(UriPartial.Authority), trustedOrigin.GetLeftPart(UriPartial.Authority), StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("نشانی ارسال فایل با نشانی مجاز سامانه در appsettings.json یکسان نیست.");
+
+        var token = uploadUri.AbsolutePath.Split('/').LastOrDefault();
+        if (token is null || token.Length != 64 || token.Any(character => !char.IsLetterOrDigit(character)))
+            throw new InvalidOperationException("شناسه موقت اسکن معتبر نیست.");
 
         return uploadUri.ToString();
     }
