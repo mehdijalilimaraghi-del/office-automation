@@ -1,3 +1,10 @@
+## 2026-10-24 — Fix browser handoff to the NAPS2 scanner protocol
+
+- Updated the incoming-letter scan button to open a browser tab synchronously during the click gesture, then navigate that reserved tab to the `officeautomation-scanner://` protocol after the server returns the short-lived upload URL. This addresses browsers suppressing external-protocol launches initiated only after an awaited HTTP request.
+- Improved the visible status messages and timeout guidance for protocol registration and helper setup. Manual file upload remains available.
+- **Validation status:** not run. Verify on the secretariat workstation that the custom protocol is registered for the signed-in Windows user, the helper EXE and `appsettings.json` are installed in `%LOCALAPPDATA%\OfficeAutomation\Scanner`, then test the browser handoff. No build or scanner success is claimed.
+- **Branch:** `development` only; `master` remains unchanged.
+
 ## 2026-10-24 — Replace direct WIA scanner implementation with NAPS2 integration
 
 - Reworked the Windows bridge to delegate scanning, feeder/duplex handling, page assembly, and PDF generation to the free NAPS2 command-line application instead of implementing scanner drivers and PDF generation in the bridge itself.
