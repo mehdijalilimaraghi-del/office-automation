@@ -1,3 +1,10 @@
+## 2026-10-24 — Scanner launch requires a prepared session
+
+- Updated the correspondence creation page to prepare the short-lived scanner upload session before the user clicks the scan button, then invoke `officeautomation-scanner://` directly during the click gesture. This avoids relying on a delayed custom-protocol navigation after an asynchronous request.
+- Added clearer feedback when the session is still preparing, the browser blocks the launch, or no upload arrives. Manual file selection remains available.
+- **Validation status:** not run; frontend build and workstation protocol launch still need verification. If the blank tab persists, check that `OfficeAutomation.Scanner.exe` exists under `%LOCALAPPDATA%\OfficeAutomation\Scanner`, `appsettings.json` is configured, and `install.ps1` was run under the same Windows account used by the browser.
+- **Branch:** `development` only; `master` remains unchanged.
+
 ## 2026-10-24 — Fix browser handoff to the NAPS2 scanner protocol
 
 - Updated the incoming-letter scan button to open a browser tab synchronously during the click gesture, then navigate that reserved tab to the `officeautomation-scanner://` protocol after the server returns the short-lived upload URL. This addresses browsers suppressing external-protocol launches initiated only after an awaited HTTP request.
