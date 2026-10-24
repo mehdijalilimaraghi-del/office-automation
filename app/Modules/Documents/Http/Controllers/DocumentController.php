@@ -152,20 +152,28 @@ class DocumentController extends Controller
             ->with('success', 'مدرک با موفقیت حذف شد.');
     }
 
-    public function download(Request $request, Document $document): StreamedResponse|\Symfony\Component\HttpFoundation\BinaryFileResponse
+    public function download(Request $request, Document $document): StreamedResponse
     {
         Gate::authorize('view', $document);
         $version = $document->latestVersion()->firstOrFail();
         $disk = Storage::disk($version->disk);
         abort_unless($disk->exists($version->path), 404);
+
         if ($request->boolean('inline') && in_array(strtolower((string) $version->mime_type), ['application/pdf', 'image/jpeg', 'image/png'], true)) {
-            return response()->file($disk->path($version->path), [
+            $stream = $disk->readStream($version->path);
+            abort_unless(is_resource($stream), 404);
+
+            return response()->stream(function () use ($stream): void {
+                fpassthru($stream);
+                fclose($stream);
+            }, 200, [
                 'Content-Type' => $version->mime_type,
                 'Content-Disposition' => 'inline; filename="' . addslashes(basename($version->original_name)) . '"',
                 'X-Content-Type-Options' => 'nosniff',
                 'Cache-Control' => 'private, no-store',
             ]);
         }
+
         return $disk->download($version->path, $version->original_name, $version->mime_type !== null ? ['Content-Type' => $version->mime_type] : []);
     }
 }
