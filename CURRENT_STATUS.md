@@ -1,3 +1,9 @@
+## 2026-10-24 — Correspondence reply row and direction icon correction
+
+- Moved the “پاسخ به مکاتبه ثبت‌شده” field in the form markup to immediately precede the full-width external-party panel, so the reply field is placed with the subject row and the external-party panel begins on the following row.
+- Replaced the text labels on the RTL/LTR editor toolbar controls with matching direction icons, retaining Persian accessible labels and hover titles.
+- **Branch:** `development`; `master` unchanged. Frontend build and manual layout/icon checks are pending; no test result is claimed.
+
 ## 2026-10-24 — Fix correspondence create-page Vue compiler error
 
 - Fixed the Vite/Vue compiler error in `resources/js/Pages/Correspondence/Create.vue`: the scoped `<style>` block for the editor toolbar had been placed inside the page's `<template>`. Moved the style block after the closing template, preserving its CSS.
