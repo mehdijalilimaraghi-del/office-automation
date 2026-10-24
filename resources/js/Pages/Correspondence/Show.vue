@@ -27,6 +27,8 @@ interface CorrespondenceDetail {
     registrar: { id: number; name: string } | null;
     created_department: { id: number; name: string } | null;
     recipient_department: { id: number; name: string } | null;
+    external_organization: { id: number; name: string } | null;
+    external_department: { id: number; name: string; external_organization_id: number } | null;
     reply_to: RelatedCorrespondence | null;
     replies: RelatedCorrespondence[];
 }
@@ -97,6 +99,8 @@ function registerCorrespondence(): void {
                 <dl class="grid gap-x-8 gap-y-5 p-5 sm:grid-cols-2 lg:grid-cols-3">
                     <div><dt class="text-xs text-slate-500">فرستنده</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.sender_name ?? '—' }}</dd></div>
                     <div><dt class="text-xs text-slate-500">گیرنده</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.recipient_name ?? '—' }}</dd></div>
+                    <div v-if="correspondence.external_organization"><dt class="text-xs text-slate-500">سازمان بیرونی</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.external_organization.name }}</dd></div>
+                    <div v-if="correspondence.external_department"><dt class="text-xs text-slate-500">واحد بیرونی</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.external_department.name }}</dd></div>
                     <div><dt class="text-xs text-slate-500">ثبت‌کننده</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.registrar?.name ?? '—' }}</dd></div>
                     <div><dt class="text-xs text-slate-500">تاریخ دریافت</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ formatDate(correspondence.received_at) }}</dd></div>
                     <div><dt class="text-xs text-slate-500">تاریخ ارسال</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ formatDate(correspondence.sent_at) }}</dd></div>
