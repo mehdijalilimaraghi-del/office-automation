@@ -39,6 +39,35 @@ class CorrespondenceNumberingServiceTest extends TestCase
         $this->assertStringContainsString('/ORG/000003', $service->nextNumber($correspondence));
     }
 
+    public function test_department_numbering_uses_the_creator_department_not_the_recipient_department(): void
+    {
+        $creator = User::factory()->create(['status' => 'active']);
+        $createdDepartment = Department::query()->create([
+            'name' => 'واحد ایجادکننده',
+            'code' => 'CRT'.strtoupper(bin2hex(random_bytes(2))),
+            'is_active' => true,
+        ]);
+        $recipientDepartment = Department::query()->create([
+            'name' => 'واحد گیرنده',
+            'code' => 'RCV'.strtoupper(bin2hex(random_bytes(2))),
+            'is_active' => true,
+        ]);
+        $correspondence = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => 'شماره‌گذاری با واحد ایجادکننده',
+            'status' => Correspondence::STATUS_DRAFT,
+            'created_by' => $creator->id,
+            'created_department_id' => $createdDepartment->id,
+            'recipient_department_id' => $recipientDepartment->id,
+        ]);
+        app(SystemSettingsService::class)->set(['correspondence.numbering.format' => 'year_department']);
+
+        $number = app(CorrespondenceNumberingService::class)->nextNumber($correspondence);
+
+        $this->assertStringContainsString('/'.$createdDepartment->code.'/000001', $number);
+        $this->assertStringNotContainsString($recipientDepartment->code, $number);
+    }
+
     public function test_custom_numbering_order_is_applied(): void
     {
         $correspondence = Correspondence::query()->create([
