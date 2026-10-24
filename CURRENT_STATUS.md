@@ -1,3 +1,11 @@
+## 2026-10-24 — Scanner preview, repeat viewing, and Windows UI polish
+
+- The project owner confirmed the scanner workflow now completes. They reported that the browser download-manager integration intercepted the staged PDF preview, the flatbed review window looked rough, and the create form did not provide a way to reopen the accepted scan.
+- Changed the create form to fetch the staged PDF as a blob and display a local object URL in the embedded preview, avoiding direct navigation to the PDF endpoint. Added a persistent “مشاهده دوباره” action for a scan already accepted in the draft; it reopens the preview without requiring another scan. Blob URLs are revoked when the scan is discarded, replaced, the correspondence type changes, or the page unmounts.
+- Polished the native Windows scanner progress, device selection, and flatbed review forms with clearer spacing, a larger preview window, consistent Segoe UI typography, and distinct action buttons. Scan/next-page/rescan/finish behavior is unchanged.
+- Commits on development: `af1b2417dc63881a9ba093a0fd1fd75e13093daa` (Windows UI) and `7afd2691e839e389ca6e1dcce7b8b4001b0b28e2` (browser preview and repeat viewing). `master` remains unchanged.
+- **Validation pending:** the assistant has not run the .NET publish, frontend build, or physical scanner test for these latest changes. Pull `development`, publish the scanner helper, replace installed helper files while preserving `appsettings.json`, then verify the PDF preview is embedded, “مشاهده دوباره” works before saving the draft, and the redesigned flatbed controls remain usable. Run `npm run build` as well. Do not treat these changes as validated until the local checks pass.
+
 ## 2026-10-24 — Keep scanner UI message loop alive
 
 - The scanner log consistently stops after detecting the Samsung SCX-3200 as a flatbed device, before any page-return log. This narrows the failure to the start of the native flatbed scan or the helper's UI/runtime lifecycle; the exact driver failure is not yet confirmed.
