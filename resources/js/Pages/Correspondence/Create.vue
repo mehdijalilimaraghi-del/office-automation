@@ -38,7 +38,7 @@ const form = useForm({
     created_department_id: props.createdDepartment?.id ?? '' as number | '',
     classification: 'ordinary',
     subject: '',
-    composition_mode: 'editor' as CompositionMode,
+    composition_mode: (props.types[0]?.value === 'incoming' ? 'file' : 'editor') as CompositionMode,
     body: '',
     sender_name: '',
     recipient_name: '',
@@ -48,11 +48,18 @@ const form = useForm({
     sent_at: '',
     recipient_department_id: '' as number | '',
     reply_to_id: '' as number | '',
+    original_letters: [] as File[],
     attachments: [] as File[],
 });
 
 
 watch(() => form.type, (type) => {
+    if (type === 'incoming') {
+        form.composition_mode = 'file';
+        form.body = '';
+    } else if (form.composition_mode === 'file' && form.original_letters.length === 0) {
+        form.composition_mode = 'editor';
+    }
     if (type !== 'internal') form.recipient_department_id = '';
     if (type === 'internal') {
         form.external_organization_id = '';
@@ -133,6 +140,15 @@ function chooseFiles(event: Event): void {
 
 function removeFile(index: number): void {
     form.attachments.splice(index, 1);
+}
+
+function chooseOriginalLetters(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    form.original_letters = Array.from(target.files ?? []);
+}
+
+function removeOriginalLetter(index: number): void {
+    form.original_letters.splice(index, 1);
 }
 </script>
 
@@ -249,7 +265,7 @@ function removeFile(index: number): void {
                     </div>
                 </section>
 
-                <section class="space-y-3 border-t border-slate-100 pt-5">
+                <section v-if="form.type !== 'incoming'" class="space-y-3 border-t border-slate-100 pt-5">
                     <div>
                         <h3 class="text-base font-bold text-slate-900">روش تهیه نامه</h3>
                         <p class="mt-1 text-sm text-slate-500">می‌توانید نامه را داخل سامانه بنویسید، فایل آماده را بارگذاری کنید یا هر دو را با هم داشته باشید.</p>
@@ -271,7 +287,7 @@ function removeFile(index: number): void {
                     <InputError :message="form.errors.composition_mode" />
                 </section>
 
-                <section v-if="form.composition_mode !== 'file'" class="space-y-3 border-t border-slate-100 pt-5">
+                <section v-if="form.type !== 'incoming' && form.composition_mode !== 'file'" class="space-y-3 border-t border-slate-100 pt-5">
                     <div>
                         <h3 class="text-base font-bold text-slate-900">متن نامه</h3>
                         <p class="mt-1 text-sm text-slate-500">از نوار ابزار برای قالب‌بندی متن استفاده کنید. پیش‌نویس قبل از ثبت نهایی قابل ویرایش خواهد بود.</p>
@@ -343,6 +359,26 @@ function removeFile(index: number): void {
                     <InputError :message="form.errors.body" />
                 </section>
 
+                <section v-if="form.type === 'incoming'" class="space-y-3 border-t border-slate-100 pt-5">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">اصل نامه دریافتی <span class="text-rose-600">*</span></h3>
+                        <p class="mt-1 text-sm leading-6 text-slate-500">تصویر اسکن‌شده یا PDF اصل نامه را بارگذاری کنید. این فایل‌ها جدا از پیوست‌های همراه نامه نگهداری می‌شوند. حداکثر ۱۰ فایل، هرکدام تا ۲۰ مگابایت.</p>
+                    </div>
+                    <label for="original_letters" class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 px-5 py-7 text-center transition hover:border-indigo-400 hover:bg-indigo-50">
+                        <span class="text-sm font-semibold text-slate-800">انتخاب اسکن یا تصویر اصل نامه</span>
+                        <span class="mt-1 text-xs text-slate-500">PDF، JPG یا PNG؛ اتصال اسکن مستقیم در مرحله برنامه کمکی ویندوز انجام می‌شود.</span>
+                        <input id="original_letters" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" class="mt-3 block max-w-full text-sm text-slate-600 file:ml-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-700" @change="chooseOriginalLetters" />
+                    </label>
+                    <InputError :message="form.errors.original_letters" />
+                    <InputError :message="form.errors['original_letters.0']" />
+                    <ul v-if="form.original_letters.length" class="divide-y divide-slate-100 rounded-xl border border-slate-200">
+                        <li v-for="(file, index) in form.original_letters" :key="file.name + file.size + index" class="flex items-center justify-between gap-3 px-3 py-2.5">
+                            <span class="min-w-0 truncate text-sm text-slate-700">{{ file.name }} <span class="text-xs text-slate-400">({{ Math.ceil(file.size / 1024) }} KB)</span></span>
+                            <button type="button" class="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50" @click="removeOriginalLetter(index)">حذف</button>
+                        </li>
+                    </ul>
+                </section>
+
                 <section class="space-y-3 border-t border-slate-100 pt-5">
                     <div>
                         <h3 class="text-base font-bold text-slate-900">فایل‌های پیوست</h3>
@@ -350,7 +386,7 @@ function removeFile(index: number): void {
                     </div>
                     <label for="attachments" class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-7 text-center transition hover:border-indigo-400 hover:bg-indigo-50/50">
                         <span class="text-sm font-semibold text-slate-800">انتخاب فایل از رایانه</span>
-                        <span class="mt-1 text-xs text-slate-500">{{ form.composition_mode === 'editor' ? 'اختیاری' : 'برای این روش حداقل یک فایل لازم است' }}</span>
+                        <span class="mt-1 text-xs text-slate-500">{{ form.type === 'incoming' || form.composition_mode === 'editor' ? 'اختیاری' : 'برای این روش حداقل یک فایل لازم است' }}</span>
                         <input id="attachments" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" class="mt-3 block max-w-full text-sm text-slate-600 file:ml-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-700" @change="chooseFiles" />
                     </label>
                     <InputError :message="form.errors.attachments" />
