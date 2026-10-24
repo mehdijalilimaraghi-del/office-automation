@@ -26,7 +26,7 @@ internal static class Program
     }
 
     [STAThread]
-    private static async Task Main(string[] args)
+    private static void Main(string[] args)
     {
         ApplicationConfiguration.Initialize();
         AppDomain.CurrentDomain.UnhandledException += (_, eventArgs) =>
@@ -36,6 +36,27 @@ internal static class Program
             Log("UNOBSERVED TASK: " + eventArgs.Exception);
             eventArgs.SetObserved();
         };
+
+        // Keep the WinForms message loop alive while asynchronous scanning runs
+        // through native WIA/TWAIN drivers and while progress/review forms are shown.
+        using var host = new Form
+        {
+            ShowInTaskbar = false,
+            WindowState = FormWindowState.Minimized,
+            FormBorderStyle = FormBorderStyle.FixedToolWindow,
+            Text = "OfficeAutomation Scanner"
+        };
+        host.Shown += async (_, _) =>
+        {
+            host.Hide();
+            await RunAsync(args);
+            if (!host.IsDisposed) host.Close();
+        };
+        Application.Run(host);
+    }
+
+    private static async Task RunAsync(string[] args)
+    {
         Log("Helper started.");
         try
         {
