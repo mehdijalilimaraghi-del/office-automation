@@ -12,11 +12,14 @@ use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Services\CorrespondenceNumberingService;
 use App\Modules\Correspondence\Services\CorrespondenceAccessService;
 use App\Modules\Correspondence\Services\CorrespondenceService;
+use App\Modules\Correspondence\Http\Controllers\CorrespondenceScannerController;
 use App\Core\Settings\Services\SystemSettingsService;
 use App\Modules\Documents\Services\DocumentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -219,6 +222,7 @@ class CorrespondenceController extends Controller
             'sent_at' => ['nullable', 'date'],
             'recipient_department_id' => ['nullable', 'required_if:type,internal', 'required_if:type,incoming', 'integer', 'exists:departments,id'],
             'reply_to_id' => ['nullable', 'integer', Rule::exists('correspondences', 'id')->where('status', Correspondence::STATUS_REGISTERED)],
+            'scanner_upload_token' => ['nullable', 'string', 'max:100'],
             'original_letters' => [Rule::requiredIf($request->input('type') === Correspondence::TYPE_INCOMING), 'nullable', 'array', 'max:10'],
             'original_letters.*' => ['file', 'max:20480', 'mimes:pdf,jpg,jpeg,png'],
             'attachments' => ['nullable', 'array', 'max:10'],
@@ -241,6 +245,21 @@ class CorrespondenceController extends Controller
         }
 
         $originalLetters = array_values(array_filter((array) $request->file('original_letters', [])));
+        $scannerUpload = null;
+        if (! empty($data['scanner_upload_token'])) {
+            $scannerUpload = CorrespondenceScannerController::consume($data['scanner_upload_token'], $request->user());
+            if ($scannerUpload === null || $data['type'] !== Correspondence::TYPE_INCOMING) {
+                return back()->withErrors(['scanner_upload_token' => 'فایل اسکن‌شده معتبر نیست یا مهلت آن پایان یافته است؛ دوباره اسکن کنید.'])->withInput();
+            }
+
+            $originalLetters[] = new UploadedFile(
+                Storage::disk('local')->path($scannerUpload['path']),
+                $scannerUpload['original_name'] ?? 'scanned-letter.pdf',
+                'application/pdf',
+                null,
+                true,
+            );
+        }
         if ($data['type'] === Correspondence::TYPE_INCOMING && count($originalLetters) === 0) {
             return back()->withErrors(['original_letters' => 'برای ثبت نامه وارده، تصویر یا PDF اصل نامه را بارگذاری کنید.'])->withInput();
         }
@@ -298,6 +317,11 @@ class CorrespondenceController extends Controller
             });
         } catch (InvalidArgumentException $exception) {
             return back()->withErrors(['subject' => $exception->getMessage()])->withInput();
+        }
+
+        if (is_array($scannerUpload)) {
+            Storage::disk('local')->delete($scannerUpload['path']);
+            \Illuminate\Support\Facades\Cache::forget($scannerUpload['key']);
         }
 
         return redirect()->route('correspondence.index')
