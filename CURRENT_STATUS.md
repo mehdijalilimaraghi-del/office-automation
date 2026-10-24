@@ -836,3 +836,11 @@ Implementation has started for the agreed cross-department project model:
 - The outgoing recipient is still a free-text field because the application currently has no identified external-organization/unit directory. Reusing internal departments for external recipients would mix separate domains. A dedicated external-party directory (organizations plus units, selection UI, and a way to maintain those records) needs explicit approval before adding schema and management screens.
 - User reports the correspondence tests and frontend build passed before this latest toolbar change. The latest toolbar change still needs local validation.
 - **Branch:** `development`; `master` unchanged.
+
+
+## 2026-10-24 — Correspondence form layout, text direction, and organization font
+
+- Reorganized the correspondence metadata grid into four desktop columns so type, access classification, creator unit, and outgoing send date can sit in one row; the layout collapses responsively on smaller screens.
+- Added explicit right-to-left and left-to-right writing-direction controls to the editor. Direction is applied to the selected text block and retained through correspondence HTML sanitization using a restricted `dir=rtl|ltr` allow-list.
+- Added an organization-level default correspondence font in Organization Settings. The setting is stored through the existing system-settings service (no schema migration required), validated against supported font names, and applied to the editor and correspondence detail display. Default remains Vazirmatn for backward compatibility; the selected font must be installed on user devices or separately supplied as a web font.
+- **Branch:** `development`; `master` unchanged. Local frontend build, focused correspondence tests, and manual RTL/LTR/font verification are pending; no test result is claimed.
