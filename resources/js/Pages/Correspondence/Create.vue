@@ -2,7 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { DatePicker } from '@jalali-js/vue';
 import axios from 'axios';
 import '@jalali-js/vue/date-picker.css';
@@ -33,6 +33,7 @@ const scannerMessage = ref('');
 const scannerFileName = ref('');
 const scannerPreviewUrl = ref('');
 const scannerPreviewOpen = ref(false);
+const scannerPreviewCanConfirm = ref(false);
 const scannerSession = ref<{ token: string; uploadUrl: string; statusUrl: string } | null>(null);
 const scannerPreparing = ref(false);
 const compositionModes: Array<{ value: CompositionMode; label: string; description: string }> = [
@@ -72,8 +73,7 @@ watch(() => form.type, (type, previousType) => {
         form.original_letters = [];
         form.scanner_upload_token = '';
         scannerFileName.value = '';
-        scannerPreviewUrl.value = '';
-        scannerPreviewOpen.value = false;
+        clearScannerPreview();
         scannerMessage.value = '';
         scannerSession.value = null;
     }
@@ -168,19 +168,30 @@ function removeOriginalLetter(index: number): void {
     form.original_letters.splice(index, 1);
 }
 
+function clearScannerPreview(): void {
+    if (scannerPreviewUrl.value.startsWith('blob:')) URL.revokeObjectURL(scannerPreviewUrl.value);
+    scannerPreviewUrl.value = '';
+    scannerPreviewOpen.value = false;
+    scannerPreviewCanConfirm.value = false;
+}
+
+function openScannedLetterPreview(): void {
+    if (scannerPreviewUrl.value) scannerPreviewOpen.value = true;
+}
+
 function removeScannedLetter(): void {
     form.scanner_upload_token = '';
     scannerFileName.value = '';
-    scannerPreviewUrl.value = '';
-    scannerPreviewOpen.value = false;
+    clearScannerPreview();
     scannerMessage.value = 'فایل اسکن‌شده از پیش‌نویس حذف شد.';
 }
 
 function confirmScannedLetter(): void {
     if (!scannerSession.value || !scannerPreviewUrl.value) return;
     form.scanner_upload_token = scannerSession.value.token;
+    scannerPreviewCanConfirm.value = false;
     scannerPreviewOpen.value = false;
-    scannerMessage.value = 'فایل پس از ذخیره پیش‌نویس به‌عنوان اصل نامه ثبت خواهد شد.';
+    scannerMessage.value = 'فایل اسکن‌شده پیوست شده است؛ با «مشاهده دوباره» می‌توانید آن را بررسی کنید.';
     scannerSession.value = null;
     void prepareScannerSession();
 }
@@ -188,8 +199,7 @@ function confirmScannedLetter(): void {
 function discardScannedLetterPreview(): void {
     form.scanner_upload_token = '';
     scannerFileName.value = '';
-    scannerPreviewUrl.value = '';
-    scannerPreviewOpen.value = false;
+    clearScannerPreview();
     scannerSession.value = null;
     scannerMessage.value = 'اسکن تأیید نشد. می‌توانید دوباره اسکن کنید.';
     void prepareScannerSession();
@@ -219,6 +229,10 @@ onMounted(() => {
     if (form.type === 'incoming') void prepareScannerSession();
 });
 
+onBeforeUnmount(() => {
+    clearScannerPreview();
+});
+
 async function scanOriginalLetter(): Promise<void> {
     if (scannerLoading.value) return;
 
@@ -238,8 +252,7 @@ async function scanOriginalLetter(): Promise<void> {
         ? 'درخواست اجرای رابط اسکن ارسال شد. در صورت نمایش پیام مرورگر، اجرای برنامه را تأیید کنید.'
         : 'مرورگر پنجره اجرای اسکنر را مسدود کرد. اجازه بازشدن پنجره‌ها و اجرای برنامه خارجی را بررسی کنید.';
     scannerFileName.value = '';
-    scannerPreviewUrl.value = '';
-    scannerPreviewOpen.value = false;
+    clearScannerPreview();
     form.scanner_upload_token = '';
 
     try {
@@ -248,7 +261,17 @@ async function scanOriginalLetter(): Promise<void> {
             const status = await axios.get(session.statusUrl);
             if (status.data.status === 'ready') {
                 scannerFileName.value = String(status.data.file_name || 'scanned-letter.pdf');
-                scannerPreviewUrl.value = String(status.data.preview_url || '');
+                const previewEndpoint = String(status.data.preview_url || '');
+                if (!previewEndpoint) throw new Error('Scanner preview URL was not provided.');
+                // Fetch the PDF as a blob and embed a local object URL. This prevents
+                // download-manager browser integrations from intercepting the PDF route.
+                const previewResponse = await axios.get<Blob>(previewEndpoint, {
+                    responseType: 'blob',
+                    headers: { Accept: 'application/pdf' },
+                });
+                clearScannerPreview();
+                scannerPreviewUrl.value = URL.createObjectURL(previewResponse.data);
+                scannerPreviewCanConfirm.value = true;
                 scannerPreviewOpen.value = true;
                 scannerMessage.value = 'اسکن دریافت شد. قبل از پیوست، همه صفحه‌ها را در پیش‌نمایش بررسی و تأیید کنید.';
                 return;
@@ -492,9 +515,12 @@ async function scanOriginalLetter(): Promise<void> {
                         </div>
                     </div>
                     <p v-if="scannerMessage" class="text-sm leading-6 text-slate-600" role="status">{{ scannerMessage }}</p>
-                    <div v-if="scannerFileName" class="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-emerald-50 px-3 py-2">
-                        <p class="text-sm text-emerald-800">فایل اسکن‌شده: {{ scannerFileName }}</p>
-                        <button type="button" class="text-xs font-semibold text-rose-700 hover:underline" @click="removeScannedLetter">حذف اسکن</button>
+                    <div v-if="scannerFileName" class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5">
+                        <p class="min-w-0 truncate text-sm text-emerald-800">فایل اسکن‌شده: {{ scannerFileName }}</p>
+                        <div class="flex shrink-0 items-center gap-3">
+                            <button v-if="form.scanner_upload_token && scannerPreviewUrl" type="button" class="text-xs font-semibold text-indigo-700 hover:underline" @click="openScannedLetterPreview">مشاهده دوباره</button>
+                            <button type="button" class="text-xs font-semibold text-rose-700 hover:underline" @click="removeScannedLetter">حذف اسکن</button>
+                        </div>
                     </div>
                     <InputError :message="form.errors.original_letters" />
                     <InputError :message="form.errors.scanner_upload_token" />
@@ -536,15 +562,18 @@ async function scanOriginalLetter(): Promise<void> {
             </form>
         </div>
         <div v-if="scannerPreviewOpen && scannerPreviewUrl" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="scanner-preview-title">
-            <div class="flex max-h-[95vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 sm:px-6">
-                    <div><h2 id="scanner-preview-title" class="font-bold text-slate-900">پیش‌نمایش اصل نامه اسکن‌شده</h2><p class="mt-1 text-xs text-slate-500">{{ scannerFileName }} — قبل از تأیید، صفحه‌ها را بررسی کنید.</p></div>
-                    <button type="button" class="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50" @click="discardScannedLetterPreview">بستن و رد اسکن</button>
+            <div class="flex max-h-[95vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 sm:px-6">
+                    <div><h2 id="scanner-preview-title" class="font-bold text-slate-900">پیش‌نمایش اصل نامه اسکن‌شده</h2><p class="mt-1 text-xs text-slate-500">{{ scannerFileName }}<span v-if="scannerPreviewCanConfirm"> — پیش از پیوست، همه صفحه‌ها را بررسی کنید.</span><span v-else> — فایل پیوست‌شده</span></p></div>
+                    <button type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-100" @click="scannerPreviewOpen = false">بستن پیش‌نمایش</button>
                 </div>
                 <iframe :src="scannerPreviewUrl" title="پیش‌نمایش PDF اسکن‌شده" class="min-h-[55vh] flex-1 bg-slate-100 sm:min-h-[65vh]"></iframe>
-                <div class="flex flex-wrap justify-end gap-3 border-t border-slate-200 px-4 py-3 sm:px-6">
-                    <button type="button" class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50" @click="discardScannedLetterPreview">اسکن مجدد</button>
-                    <button type="button" class="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700" @click="confirmScannedLetter">تأیید و پیوست اصل نامه</button>
+                <div class="flex flex-wrap justify-end gap-3 border-t border-slate-200 bg-white px-4 py-3 sm:px-6">
+                    <template v-if="scannerPreviewCanConfirm">
+                        <button type="button" class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50" @click="discardScannedLetterPreview">اسکن مجدد</button>
+                        <button type="button" class="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700" @click="confirmScannedLetter">تأیید و پیوست اصل نامه</button>
+                    </template>
+                    <button v-else type="button" class="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700" @click="scannerPreviewOpen = false">بازگشت به فرم مکاتبه</button>
                 </div>
             </div>
         </div>
