@@ -1,3 +1,8 @@
+## 2026-10-24 — Fix correspondence create-page Vue compiler error
+
+- Fixed the Vite/Vue compiler error in `resources/js/Pages/Correspondence/Create.vue`: the scoped `<style>` block for the editor toolbar had been placed inside the page's `<template>`. Moved the style block after the closing template, preserving its CSS.
+- Local frontend build and correspondence tests are pending; do not report them as passed until run locally.
+
 ## 2026-10-24 — Reuse external-party directory in correspondence
 
 - Analyzed the existing `Core/ExternalParties` feature before adding any new directory. It already manages external organizations, hierarchical departments, and contacts, and task management consumes those records; no parallel external-party schema was introduced.
