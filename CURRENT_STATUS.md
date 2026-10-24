@@ -913,3 +913,14 @@ Implementation has started for the agreed cross-department project model:
 - Updated the store action to check whether the signed-in user may create the requested correspondence type before validating fields specific to that type. This preserves the expected 403 response for users who are not allowed to create incoming correspondence, rather than redirecting them for a missing recipient department.
 - Updated incoming-correspondence feature tests to supply the required recipient department when their purpose is to test the missing-original-file validation or successful incoming-letter creation.
 - **Validation status:** changes committed; rerun `php artisan test --filter=CorrespondenceHttpTest` and report the actual result. No passing result is claimed yet.
+
+
+## 2026-10-24 — Incoming scan multi-page review and confirmation flow
+
+- Changed the Windows scanner bridge to open the NAPS2 desktop interface instead of a one-shot CLI scan. Secretariat staff can repeatedly scan pages on a flatbed, review/reorder/correct pages in NAPS2, save one PDF, close NAPS2, and select that PDF for upload.
+- Added an authenticated, owner-bound inline PDF preview endpoint for staged scanner uploads. The browser now waits up to 20 minutes for the desktop scan workflow, opens a PDF preview, and does not set the form's scanner upload token until the user explicitly confirms the scan. Rejected scans can be retried.
+- Extended the staged scanner-token lifetime to 30 minutes to cover longer manual multi-page scans.
+- Added inline preview behavior for PDF/JPEG/PNG documents through the existing authorized document route, and added “مشاهده” actions beside incoming original letters and attachments on the correspondence detail page. Other file types remain downloadable.
+- Updated Windows scanner setup documentation and sample configuration to use `Naps2GuiPath` pointing to `NAPS2.exe`.
+- **Validation pending:** these changes have not been built or tested in this environment. Check the C# publish and GUI close/selection flow on the secretariat workstation, verify multi-page flatbed scanning and the browser preview/confirm/reject path, then run the correspondence feature tests and frontend production build.
+- **Branch:** `development` only; `master` unchanged.
