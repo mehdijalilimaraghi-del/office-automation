@@ -302,6 +302,12 @@ class CorrespondenceHttpTest extends TestCase
         $this->actingAs($secretariatUser)->get(route('correspondence.create'))->assertOk()->assertInertia(fn ($page) => $page->where('types.0.value', Correspondence::TYPE_INCOMING));
         $this->actingAs($secretariatUser)->post(route('correspondence.store'), ['type' => Correspondence::TYPE_INCOMING, 'subject' => 'نامه وارده دبیرخانه', 'original_letters' => [UploadedFile::fake()->create('original.pdf', 10, 'application/pdf')]])->assertRedirect(route('correspondence.index'));
         $this->assertDatabaseHas('correspondences', ['type' => Correspondence::TYPE_INCOMING, 'subject' => 'نامه وارده دبیرخانه', 'created_by' => $secretariatUser->id]);
+        $incomingLetter = Correspondence::query()->where('subject', 'نامه وارده دبیرخانه')->firstOrFail();
+        $this->actingAs($secretariatUser)->get(route('correspondence.show', $incomingLetter))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('originalLetters.0.file_name', 'original.pdf')
+                ->where('attachments', []));
         app(SystemSettingsService::class)->set(['correspondence.approval.outgoing' => 'direct']);
         $letter = Correspondence::query()->create(['type' => Correspondence::TYPE_OUTGOING, 'subject' => 'پیش‌نویس صادره برای دبیرخانه', 'status' => Correspondence::STATUS_DRAFT, 'created_by' => User::factory()->create(['status' => 'active'])->id]);
         $this->actingAs($secretariatUser)->post(route('correspondence.register', $letter))->assertRedirect();
