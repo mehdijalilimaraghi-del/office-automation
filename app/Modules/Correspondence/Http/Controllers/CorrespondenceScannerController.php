@@ -24,6 +24,8 @@ class CorrespondenceScannerController
     {
         abort_unless($access->canCreateType(Correspondence::TYPE_INCOMING, $request->user()), 403);
 
+        $this->removeExpiredStagingFiles();
+
         $token = Str::random(64);
         Cache::put($this->cacheKey($token), [
             'user_id' => (int) $request->user()->id,
@@ -77,6 +79,19 @@ class CorrespondenceScannerController
             'status' => $state['status'] ?? 'pending',
             'file_name' => $state['status'] === 'ready' ? ($state['original_name'] ?? 'scanned-letter.pdf') : null,
         ]);
+    }
+
+    private function removeExpiredStagingFiles(): void
+    {
+        foreach (Storage::disk('local')->allFiles('scanner-staging') as $path) {
+            try {
+                if (Storage::disk('local')->lastModified($path) < now()->subMinutes(30)->timestamp) {
+                    Storage::disk('local')->delete($path);
+                }
+            } catch (\Throwable) {
+                // Cleanup is best-effort; it must not prevent a new scan.
+            }
+        }
     }
 
     public static function consume(string $token, User $user): ?array
