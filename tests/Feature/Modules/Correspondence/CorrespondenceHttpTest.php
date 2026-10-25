@@ -340,6 +340,55 @@ class CorrespondenceHttpTest extends TestCase
         $this->actingAs($secretariatUser)->post(route('correspondence.register', $letter))->assertRedirect();
         $this->assertDatabaseHas('correspondences', ['id' => $letter->id, 'status' => Correspondence::STATUS_REGISTERED, 'registered_by' => $secretariatUser->id]);
     }
+    public function test_outgoing_correspondence_creator_can_update_external_tracking_fields(): void
+    {
+        $creator = User::factory()->create(['status' => 'active']);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_OUTGOING,
+            'subject' => 'نامه صادره برای پیگیری',
+            'status' => Correspondence::STATUS_DRAFT,
+            'created_by' => $creator->id,
+        ]);
+
+        $this->actingAs($creator)->put(route('correspondence.external-tracking.update', $letter), [
+            'task_id' => null,
+            'external_registration_number' => 'IN-1405-184',
+            'external_registered_at' => '2026-10-25',
+            'dispatch_method' => 'official_portal',
+            'external_tracking_notes' => 'نامه در دبیرخانه سازمان مقصد ثبت شد.',
+            'sent_at' => '2026-10-24',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $letter->id,
+            'external_registration_number' => 'IN-1405-184',
+            'external_registered_at' => '2026-10-25',
+            'dispatch_method' => 'official_portal',
+            'external_tracking_notes' => 'نامه در دبیرخانه سازمان مقصد ثبت شد.',
+            'sent_at' => '2026-10-24',
+        ]);
+    }
+
+    public function test_external_tracking_cannot_be_updated_for_an_incoming_letter(): void
+    {
+        $creator = User::factory()->create(['status' => 'active']);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'subject' => 'نامه وارده بدون پیگیری صادره',
+            'status' => Correspondence::STATUS_DRAFT,
+            'created_by' => $creator->id,
+        ]);
+
+        $this->actingAs($creator)->put(route('correspondence.external-tracking.update', $letter), [
+            'external_registration_number' => 'IN-1405-185',
+        ])->assertSessionHasErrors('external_tracking');
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $letter->id,
+            'external_registration_number' => null,
+        ]);
+    }
+
     private function recipientDepartmentId(): int
     {
         return Department::query()->create([
