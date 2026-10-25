@@ -359,7 +359,50 @@ class CorrespondenceController extends Controller
             ->with('success', 'پیش‌نویس مکاتبه و پیوست‌های آن با موفقیت ذخیره شد.');
     }
 
-undefined
+
+    public function updateExternalTracking(
+        Request $request,
+        Correspondence $correspondence,
+        CorrespondenceAccessService $access,
+    ): RedirectResponse {
+        if ($correspondence->type !== Correspondence::TYPE_OUTGOING) {
+            return back()->withErrors([
+                'external_tracking' => 'پیگیری ثبت سازمان مقصد فقط برای نامه‌های صادره قابل ثبت است.',
+            ]);
+        }
+
+        $user = $request->user();
+        $canUpdate = $user->isSystemAdmin()
+            || $access->isSecretariat($user)
+            || (int) $correspondence->created_by === (int) $user->id
+            || (int) $correspondence->task?->assignee_id === (int) $user->id
+            || (int) $correspondence->task?->created_by === (int) $user->id;
+
+        abort_unless($canUpdate, 403);
+
+        $data = $request->validate([
+            'task_id' => ['nullable', 'integer', Rule::exists('tasks', 'id')],
+            'external_registration_number' => ['nullable', 'string', 'max:100'],
+            'external_registered_at' => ['nullable', 'date'],
+            'dispatch_method' => ['nullable', 'string', 'max:50'],
+            'external_tracking_notes' => ['nullable', 'string', 'max:5000'],
+            'sent_at' => ['nullable', 'date'],
+        ]);
+
+        if (! $access->isSecretariat($user) && ! $user->isSystemAdmin() && ! empty($data['task_id'])) {
+            $task = Task::query()->findOrFail($data['task_id']);
+            abort_unless(
+                (int) $task->created_by === (int) $user->id
+                    || (int) $task->assignee_id === (int) $user->id,
+                403,
+            );
+        }
+
+        $correspondence->fill($data);
+        $correspondence->save();
+
+        return back()->with('success', 'اطلاعات پیگیری نامه صادره ذخیره شد.');
+    }
 
     public function register(
         Request $request,
