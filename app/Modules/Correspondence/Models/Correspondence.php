@@ -10,6 +10,7 @@ use App\Core\ExternalParties\Models\ExternalDepartment;
 use App\Models\User;
 use App\Modules\Documents\Models\DocumentLink;
 use App\Modules\Workflows\Models\WorkflowInstance;
+use App\Modules\Tasks\Models\Task;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -52,6 +53,11 @@ class Correspondence extends Model
         'external_department_id',
         'workflow_instance_id',
         'reply_to_id',
+        'task_id',
+        'external_registration_number',
+        'external_registered_at',
+        'dispatch_method',
+        'external_tracking_notes',
     ];
 
     protected function casts(): array
@@ -60,6 +66,7 @@ class Correspondence extends Model
             'registered_at' => 'datetime',
             'received_at' => 'datetime',
             'sent_at' => 'datetime',
+            'external_registered_at' => 'date',
         ];
     }
 
@@ -105,6 +112,11 @@ class Correspondence extends Model
     public function workflowInstance(): BelongsTo
     {
         return $this->belongsTo(WorkflowInstance::class);
+    }
+
+    public function task(): BelongsTo
+    {
+        return $this->belongsTo(Task::class);
     }
 
     public function replyTo(): BelongsTo
