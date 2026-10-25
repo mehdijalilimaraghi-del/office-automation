@@ -1,3 +1,9 @@
+## 2026-10-25 — Remove duplicate declarations in correspondence controller
+
+- Fixed the fatal duplicate `Task` import in `CorrespondenceController.php`.
+- Inspection also found duplicated `updateExternalTracking()` methods and repeated response keys for task/tracking data; removed the duplicates to prevent the next PHP class-load fatal error and avoid duplicate payload declarations.
+- Commit on `development`: `b6fd7fb7a5758578bb53f31aadc5e69f84d36c53`. Tests/build are still unverified; run the focused correspondence HTTP tests after pulling this update.
+
 ## 2026-10-25 — Fix duplicate correspondence task relation
 
 - Fixed the fatal `Cannot redeclare Correspondence::task()` error by keeping a single `task(): BelongsTo` relation in `app/Modules/Correspondence/Models/Correspondence.php`.
