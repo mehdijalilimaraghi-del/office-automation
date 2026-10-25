@@ -1,3 +1,9 @@
+## 2026-10-25 — Fix duplicate Task import and clarify correspondence workflow status
+
+- Fixed the duplicate `use App\\Modules\\Tasks\\Models\\Task;` import in `app/Modules/Correspondence/Models/Correspondence.php` (commit `06a1605fcb13b4ea78910ef167f2f6064681e924`).
+- The agreed end-to-end correspondence lifecycle is **not yet implemented**. The previous changes cover the initial outgoing-letter tracking fields/UI and task association only; they do not implement approval/registration/referral for incoming, outgoing, and internal correspondence.
+- Re-run the correspondence feature tests after pulling this fix. Test/build results are not yet verified here.
+
 ## 2026-10-25 — External outgoing-letter tracking linked to tasks
 
 - Added structured tracking fields for outgoing correspondence: destination organization's registration number and date, dispatch method, tracking notes, and sent date.
