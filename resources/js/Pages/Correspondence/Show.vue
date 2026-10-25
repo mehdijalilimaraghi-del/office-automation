@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import type { PageProps } from '@/types';
 
 interface RelatedCorrespondence {
     id: number;
@@ -23,12 +24,6 @@ interface CorrespondenceDetail {
     recipient_name: string | null;
     received_at: string | null;
     sent_at: string | null;
-    task_id: number | null;
-    task: { id: number; title: string; status: string; assignee_id: number | null; created_by: number } | null;
-    external_registration_number: string | null;
-    external_registered_at: string | null;
-    dispatch_method: string | null;
-    external_tracking_notes: string | null;
     task_id: number | null;
     task: { id: number; title: string; status: string; assignee_id: number | null; created_by: number } | null;
     external_registration_number: string | null;
@@ -62,7 +57,7 @@ const props = defineProps<{
     canUpdateExternalTracking: boolean;
 }>();
 
-const page = usePage<{ errors: Record<string, string>; flash?: { success?: string } }>();
+const page = usePage<PageProps<{ errors: Record<string, string>; flash?: { success?: string } }>>();
 
 const typeLabels: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
 const statusLabels: Record<string, string> = { draft: 'پیش‌نویس', registered: 'ثبت‌شده' };
@@ -77,25 +72,6 @@ const formatSize = (value: number | null) => {
     if (value < 1024 * 1024) return Math.max(1, Math.round(value / 1024)) + ' کیلوبایت';
     return (value / (1024 * 1024)).toLocaleString('fa-IR', { maximumFractionDigits: 1 }) + ' مگابایت';
 };
-const trackingForm = {
-    task_id: props.correspondence.task_id ? String(props.correspondence.task_id) : '',
-    external_registration_number: props.correspondence.external_registration_number ?? '',
-    external_registered_at: props.correspondence.external_registered_at ?? '',
-    dispatch_method: props.correspondence.dispatch_method ?? '',
-    external_tracking_notes: props.correspondence.external_tracking_notes ?? '',
-    sent_at: props.correspondence.sent_at ? props.correspondence.sent_at.slice(0, 10) : '',
-};
-function saveExternalTracking(): void {
-    router.put(route('correspondence.external-tracking.update', props.correspondence.id), {
-        ...trackingForm,
-        task_id: trackingForm.task_id || null,
-        external_registration_number: trackingForm.external_registration_number || null,
-        external_registered_at: trackingForm.external_registered_at || null,
-        dispatch_method: trackingForm.dispatch_method || null,
-        external_tracking_notes: trackingForm.external_tracking_notes || null,
-        sent_at: trackingForm.sent_at || null,
-    }, { preserveScroll: true });
-}
 const trackingForm = {
     task_id: props.correspondence.task_id ? String(props.correspondence.task_id) : '',
     external_registration_number: props.correspondence.external_registration_number ?? '',
