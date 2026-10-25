@@ -9,6 +9,7 @@ use App\Core\ExternalParties\Models\ExternalOrganization;
 use App\Core\ExternalParties\Models\ExternalDepartment;
 use App\Http\Controllers\Controller;
 use App\Modules\Correspondence\Models\Correspondence;
+use App\Modules\Tasks\Models\Task;
 use App\Modules\Correspondence\Services\CorrespondenceNumberingService;
 use App\Modules\Correspondence\Services\CorrespondenceAccessService;
 use App\Modules\Correspondence\Services\CorrespondenceService;
@@ -81,6 +82,7 @@ class CorrespondenceController extends Controller
             'externalDepartment:id,name,external_organization_id',
             'replyTo:id,subject,registration_number,type,status',
             'replies:id,subject,registration_number,type,status,reply_to_id',
+            'task:id,title,status,assignee_id,created_by',
             'documents.document.latestVersion',
         ]);
 
@@ -99,6 +101,12 @@ class CorrespondenceController extends Controller
                 'recipient_name' => $correspondence->recipient_name,
                 'received_at' => $correspondence->received_at,
                 'sent_at' => $correspondence->sent_at,
+                'task' => $correspondence->task,
+                'task_id' => $correspondence->task_id,
+                'external_registration_number' => $correspondence->external_registration_number,
+                'external_registered_at' => $correspondence->external_registered_at?->toDateString(),
+                'dispatch_method' => $correspondence->dispatch_method,
+                'external_tracking_notes' => $correspondence->external_tracking_notes,
                 'creator' => $correspondence->creator,
                 'registrar' => $correspondence->registrar,
                 'created_department' => $correspondence->createdDepartment,
@@ -131,6 +139,20 @@ class CorrespondenceController extends Controller
                 ])
                 ->values(),
             'canRegister' => $access->canRegister($correspondence, $request->user()),
+            'trackableTasks' => Task::query()
+                ->where(function ($query) use ($request): void {
+                    $query->where('created_by', $request->user()->id)
+                        ->orWhere('assignee_id', $request->user()->id);
+                })
+                ->whereNotIn('status', ['cancelled', 'cannot_continue'])
+                ->orderByDesc('created_at')
+                ->limit(100)
+                ->get(['id', 'title', 'status']),
+            'canUpdateExternalTracking' => $request->user()->isSystemAdmin()
+                || $access->isSecretariat($request->user())
+                || (int) $correspondence->created_by === (int) $request->user()->id
+                || (int) $correspondence->task?->assignee_id === (int) $request->user()->id
+                || (int) $correspondence->task?->created_by === (int) $request->user()->id,
             'correspondenceFontFamily' => $settings->get(['correspondence.composition.font_family' => 'Vazirmatn'])['correspondence.composition.font_family'],
         ]);
     }
@@ -335,6 +357,54 @@ class CorrespondenceController extends Controller
 
         return redirect()->route('correspondence.index')
             ->with('success', 'پیش‌نویس مکاتبه و پیوست‌های آن با موفقیت ذخیره شد.');
+    }
+
+    public function updateExternalTracking(Request $request, Correspondence $correspondence, CorrespondenceAccessService $access): RedirectResponse
+    {
+        abort_unless($access->canView($correspondence, $request->user()), 403);
+
+        $task = $correspondence->task;
+        $canUpdate = $request->user()->isSystemAdmin()
+            || $access->isSecretariat($request->user())
+            || (int) $correspondence->created_by === (int) $request->user()->id
+            || ($task !== null && (
+                (int) $task->assignee_id === (int) $request->user()->id
+                || (int) $task->created_by === (int) $request->user()->id
+            ));
+        abort_unless($canUpdate, 403, 'شما اجازه ویرایش اطلاعات پیگیری این نامه را ندارید.');
+
+        if ($correspondence->type !== Correspondence::TYPE_OUTGOING) {
+            return back()->withErrors(['external_tracking' => 'اطلاعات پیگیری سازمان مقصد فقط برای نامه صادره قابل ثبت است.']);
+        }
+
+        $data = $request->validate([
+            'task_id' => ['nullable', 'integer', 'exists:tasks,id'],
+            'external_registration_number' => ['nullable', 'string', 'max:255'],
+            'external_registered_at' => ['nullable', 'date'],
+            'dispatch_method' => ['nullable', 'string', 'max:100'],
+            'external_tracking_notes' => ['nullable', 'string', 'max:10000'],
+            'sent_at' => ['nullable', 'date'],
+        ]);
+
+        if (! empty($data['task_id'])) {
+            $selectedTask = Task::query()->findOrFail($data['task_id']);
+            $canLinkTask = $request->user()->isSystemAdmin()
+                || $access->isSecretariat($request->user())
+                || (int) $selectedTask->created_by === (int) $request->user()->id
+                || (int) $selectedTask->assignee_id === (int) $request->user()->id;
+            abort_unless($canLinkTask, 403, 'فقط می‌توانید تسکی را به نامه مرتبط کنید که در آن نقش دارید.');
+        }
+
+        $correspondence->forceFill([
+            'task_id' => $data['task_id'] ?? null,
+            'external_registration_number' => filled($data['external_registration_number'] ?? null) ? trim($data['external_registration_number']) : null,
+            'external_registered_at' => $data['external_registered_at'] ?? null,
+            'dispatch_method' => filled($data['dispatch_method'] ?? null) ? trim($data['dispatch_method']) : null,
+            'external_tracking_notes' => filled($data['external_tracking_notes'] ?? null) ? trim($data['external_tracking_notes']) : null,
+            'sent_at' => $data['sent_at'] ?? null,
+        ])->save();
+
+        return back()->with('success', 'اطلاعات پیگیری نامه صادره ذخیره شد.');
     }
 
     public function register(
