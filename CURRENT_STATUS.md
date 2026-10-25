@@ -2,6 +2,14 @@
 
 - Added structured tracking fields for outgoing correspondence: destination organization's registration number and date, dispatch method, tracking notes, and sent date.
 - Added an optional `task_id` relation from correspondence to a task, with a nullable foreign key and `ON DELETE SET NULL` behavior. The task and correspondence statuses remain independent; completing a task does not imply destination registration.
+- Added an outgoing-letter tracking section to the correspondence detail page. Eligible users can link a task and maintain dispatch / destination-registration information. Access is limited to Secretariat/system administrators, the correspondence creator, and the linked task creator/assignee; task selection is limited to tasks the current user created or is assigned to.
+- Added route `correspondence.external-tracking.update` and migration `2026_10_25_120000_add_external_tracking_and_task_link_to_correspondences_table.php`.
+- **Validation pending:** tests and frontend build have not been run here. Next phase is to implement the agreed approval/registration/referral lifecycle for incoming, outgoing, and internal correspondence and add feature tests. Keep `master` unchanged.
+
+## 2026-10-25 — External outgoing-letter tracking linked to tasks
+
+- Added structured tracking fields for outgoing correspondence: destination organization's registration number and date, dispatch method, tracking notes, and sent date.
+- Added an optional `task_id` relation from correspondence to a task, with a nullable foreign key and `ON DELETE SET NULL` behavior. The task and correspondence statuses remain independent; completing a task does not imply destination registration.
 - Added an outgoing-letter tracking section to the correspondence detail page. Eligible users can link a task and maintain dispatch / destination-registration information. Access is limited to Secretariat/system administrators, the correspondence creator, and the linked task creator/assignee; task selection is limited to tasks the current user created or is assigned to, except Secretariat/admin.
 - Added route `correspondence.external-tracking.update` and migration `2026_10_25_120000_add_external_tracking_and_task_link_to_correspondences_table.php`.
 - **Validation pending:** changes were committed to `development`; tests and frontend build have not been run here. Next phase is to implement the agreed approval/registration/referral lifecycle for incoming, outgoing, and internal correspondence and add feature tests. Keep `master` unchanged.
