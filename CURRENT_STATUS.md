@@ -1,3 +1,9 @@
+## 2026-10-25 — Fix correspondence detail TypeScript build errors
+
+- Removed duplicated `CorrespondenceDetail` fields (`task_id`, `task`, and external tracking fields) and the duplicate `trackingForm`/`saveExternalTracking()` declarations in `resources/js/Pages/Correspondence/Show.vue`.
+- Typed Inertia `usePage()` with the shared `PageProps` type so the required `auth` property is included while preserving the page's validation errors and flash-message typing.
+- Committed to `development`. The production frontend build has not been run here; pull the branch and rerun `npm run build` to verify.
+
 ## 2026-10-25 — Fix correspondence controller parse error
 
 - Removed the stray literal `undefined` that caused `ParseError: unexpected identifier "undefined", expecting "function"` at `CorrespondenceController.php:362`; this parse error explains the broad HTTP 500 responses in correspondence feature tests.
