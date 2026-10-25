@@ -11,7 +11,6 @@ use App\Models\User;
 use App\Modules\Documents\Models\DocumentLink;
 use App\Modules\Workflows\Models\WorkflowInstance;
 use App\Modules\Tasks\Models\Task;
-use App\Modules\Tasks\Models\Task;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
