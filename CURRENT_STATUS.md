@@ -1,3 +1,9 @@
+## 2026-10-25 — Fix duplicate correspondence task relation
+
+- Fixed the fatal `Cannot redeclare Correspondence::task()` error by keeping a single `task(): BelongsTo` relation in `app/Modules/Correspondence/Models/Correspondence.php`.
+- Also removed duplicate `task_id` / external-tracking entries from `$fillable` and the duplicate `external_registered_at` cast found during inspection.
+- Commit on `development`: `75c0788bebc882d437dba8a03d06da36304799d6`. Tests and frontend build remain unverified; this fixes the PHP class-load fatal error but does not establish that the correspondence feature tests pass.
+
 ## 2026-10-25 — Fix duplicate Task import and clarify correspondence workflow status
 
 - Fixed the duplicate `use App\\Modules\\Tasks\\Models\\Task;` import in `app/Modules/Correspondence/Models/Correspondence.php` (commit `06a1605fcb13b4ea78910ef167f2f6064681e924`).
