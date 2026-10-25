@@ -49,7 +49,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/scanner/status/{token}', [CorrespondenceScannerController::class, 'status'])->middleware('permission:correspondence.create')->name('scanner.status');
         Route::get('/scanner/preview/{token}', [CorrespondenceScannerController::class, 'preview'])->middleware('permission:correspondence.create')->name('scanner.preview');
         Route::put('/{correspondence}/external-tracking', [CorrespondenceController::class, 'updateExternalTracking'])->name('external-tracking.update');
-        Route::put('/{correspondence}/external-tracking', [CorrespondenceController::class, 'updateExternalTracking'])->name('external-tracking.update');
         Route::post('/{correspondence}/register', [CorrespondenceController::class, 'register'])->name('register');
     });
 
