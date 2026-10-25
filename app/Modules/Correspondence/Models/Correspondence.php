@@ -58,11 +58,6 @@ class Correspondence extends Model
         'external_registered_at',
         'dispatch_method',
         'external_tracking_notes',
-        'task_id',
-        'external_registration_number',
-        'external_registered_at',
-        'dispatch_method',
-        'external_tracking_notes',
     ];
 
     protected function casts(): array
@@ -71,7 +66,6 @@ class Correspondence extends Model
             'registered_at' => 'datetime',
             'received_at' => 'datetime',
             'sent_at' => 'datetime',
-            'external_registered_at' => 'date',
             'external_registered_at' => 'date',
         ];
     }
@@ -118,11 +112,6 @@ class Correspondence extends Model
     public function workflowInstance(): BelongsTo
     {
         return $this->belongsTo(WorkflowInstance::class);
-    }
-
-    public function task(): BelongsTo
-    {
-        return $this->belongsTo(Task::class);
     }
 
     public function task(): BelongsTo
