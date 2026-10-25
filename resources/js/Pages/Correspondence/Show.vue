@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 
 interface RelatedCorrespondence {
     id: number;
@@ -48,6 +48,8 @@ const props = defineProps<{
     correspondenceFontFamily: string;
 }>();
 
+const page = usePage<{ errors: Record<string, string> }>();
+
 const typeLabels: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
 const statusLabels: Record<string, string> = { draft: 'پیش‌نویس', registered: 'ثبت‌شده' };
 const formatDate = (value: string | null) => value
@@ -88,6 +90,10 @@ function registerCorrespondence(): void {
         </template>
 
         <div class="mx-auto max-w-6xl space-y-5 p-4 sm:p-6">
+            <div v-if="page.props.errors?.registration" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-800" role="alert">
+                <p class="font-bold">ثبت نهایی انجام نشد</p>
+                <p class="mt-1">{{ page.props.errors.registration }}</p>
+            </div>
             <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-xs font-medium text-slate-500">شماره ثبت</p><p class="mt-2 font-semibold text-slate-900">{{ correspondence.registration_number ?? 'پس از ثبت نهایی مشخص می‌شود' }}</p></div>
                 <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-xs font-medium text-slate-500">واحد ایجادکننده</p><p class="mt-2 font-semibold text-slate-900">{{ correspondence.created_department?.name ?? 'تعیین نشده' }}</p></div>
