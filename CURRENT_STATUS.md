@@ -1,3 +1,9 @@
+## 2026-10-25 — Fix correspondence controller parse error
+
+- Removed the stray literal `undefined` that caused `ParseError: unexpected identifier "undefined", expecting "function"` at `CorrespondenceController.php:362`; this parse error explains the broad HTTP 500 responses in correspondence feature tests.
+- Confirmed the outgoing external-tracking action is present again and the tracking route is declared once.
+- The code has been updated on `development`; tests and frontend build remain unverified. Pull the branch and rerun `php artisan test --filter=CorrespondenceHttpTest` before considering the fix validated.
+
 ## 2026-10-25 — Remove duplicate declarations in correspondence controller
 
 - Fixed the fatal duplicate `Task` import in `CorrespondenceController.php`.
