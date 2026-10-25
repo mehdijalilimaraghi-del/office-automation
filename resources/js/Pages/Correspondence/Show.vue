@@ -23,6 +23,12 @@ interface CorrespondenceDetail {
     recipient_name: string | null;
     received_at: string | null;
     sent_at: string | null;
+    task_id: number | null;
+    task: { id: number; title: string; status: string; assignee_id: number | null; created_by: number } | null;
+    external_registration_number: string | null;
+    external_registered_at: string | null;
+    dispatch_method: string | null;
+    external_tracking_notes: string | null;
     creator: { id: number; name: string } | null;
     registrar: { id: number; name: string } | null;
     created_department: { id: number; name: string } | null;
@@ -46,6 +52,8 @@ const props = defineProps<{
     attachments: Attachment[];
     canRegister: boolean;
     correspondenceFontFamily: string;
+    trackableTasks: { id: number; title: string; status: string }[];
+    canUpdateExternalTracking: boolean;
 }>();
 
 const page = usePage<{ errors: Record<string, string>; flash?: { success?: string } }>();
@@ -63,6 +71,25 @@ const formatSize = (value: number | null) => {
     if (value < 1024 * 1024) return Math.max(1, Math.round(value / 1024)) + ' کیلوبایت';
     return (value / (1024 * 1024)).toLocaleString('fa-IR', { maximumFractionDigits: 1 }) + ' مگابایت';
 };
+const trackingForm = {
+    task_id: props.correspondence.task_id ? String(props.correspondence.task_id) : '',
+    external_registration_number: props.correspondence.external_registration_number ?? '',
+    external_registered_at: props.correspondence.external_registered_at ?? '',
+    dispatch_method: props.correspondence.dispatch_method ?? '',
+    external_tracking_notes: props.correspondence.external_tracking_notes ?? '',
+    sent_at: props.correspondence.sent_at ? props.correspondence.sent_at.slice(0, 10) : '',
+};
+function saveExternalTracking(): void {
+    router.put(route('correspondence.external-tracking.update', props.correspondence.id), {
+        ...trackingForm,
+        task_id: trackingForm.task_id || null,
+        external_registration_number: trackingForm.external_registration_number || null,
+        external_registered_at: trackingForm.external_registered_at || null,
+        dispatch_method: trackingForm.dispatch_method || null,
+        external_tracking_notes: trackingForm.external_tracking_notes || null,
+        sent_at: trackingForm.sent_at || null,
+    }, { preserveScroll: true });
+}
 function registerCorrespondence(): void {
     if (window.confirm('پس از ثبت نهایی، شماره مکاتبه ثابت خواهد شد. ادامه می‌دهید؟')) {
         router.post(route('correspondence.register', props.correspondence.id), {}, { preserveScroll: true });
@@ -117,6 +144,56 @@ function registerCorrespondence(): void {
                     <div><dt class="text-xs text-slate-500">تاریخ ارسال</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ formatDate(correspondence.sent_at) }}</dd></div>
                     <div><dt class="text-xs text-slate-500">تاریخ ثبت نهایی</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ formatDateTime(correspondence.registered_at) }}</dd></div>
                 </dl>
+            </section>
+
+            <section v-if="correspondence.type === 'outgoing'" class="rounded-2xl border border-indigo-100 bg-white shadow-sm">
+                <div class="border-b border-indigo-100 px-5 py-4">
+                    <h2 class="font-bold text-slate-900">پیگیری نامه صادره</h2>
+                    <p class="mt-1 text-sm text-slate-500">اطلاعات ارسال و شماره ثبت نامه در سازمان مقصد مستقل از وضعیت تکمیل تسک نگهداری می‌شود.</p>
+                </div>
+                <form class="grid gap-4 p-5 sm:grid-cols-2" @submit.prevent="saveExternalTracking">
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-slate-700">تسک مرتبط</label>
+                        <select v-model="trackingForm.task_id" :disabled="!canUpdateExternalTracking" class="w-full rounded-xl border-slate-300 text-sm">
+                            <option value="">بدون تسک مرتبط</option>
+                            <option v-for="task in trackableTasks" :key="task.id" :value="String(task.id)">#{{ task.id }} — {{ task.title }}</option>
+                            <option v-if="correspondence.task && !trackableTasks.some(task => task.id === correspondence.task?.id)" :value="String(correspondence.task.id)">#{{ correspondence.task.id }} — {{ correspondence.task.title }}</option>
+                        </select>
+                        <p v-if="correspondence.task" class="mt-1 text-xs text-slate-500">تسک فعلی: {{ correspondence.task.title }} ({{ correspondence.task.status }})</p>
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-slate-700">شماره ثبت در سازمان مقصد</label>
+                        <input v-model="trackingForm.external_registration_number" :disabled="!canUpdateExternalTracking" maxlength="255" class="w-full rounded-xl border-slate-300 text-sm" placeholder="مثلاً شماره وارده در دبیرخانه مقصد" />
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-slate-700">تاریخ ثبت در سازمان مقصد</label>
+                        <input v-model="trackingForm.external_registered_at" :disabled="!canUpdateExternalTracking" type="date" class="w-full rounded-xl border-slate-300 text-sm" />
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-slate-700">روش ارسال</label>
+                        <select v-model="trackingForm.dispatch_method" :disabled="!canUpdateExternalTracking" class="w-full rounded-xl border-slate-300 text-sm">
+                            <option value="">انتخاب نشده</option>
+                            <option value="official_portal">سامانه مکاتبات</option>
+                            <option value="email">ایمیل</option>
+                            <option value="courier">پیک / پست</option>
+                            <option value="in_person">تحویل حضوری</option>
+                            <option value="other">سایر</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-slate-700">تاریخ ارسال</label>
+                        <input v-model="trackingForm.sent_at" :disabled="!canUpdateExternalTracking" type="date" class="w-full rounded-xl border-slate-300 text-sm" />
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="mb-1 block text-sm font-medium text-slate-700">توضیحات پیگیری</label>
+                        <textarea v-model="trackingForm.external_tracking_notes" :disabled="!canUpdateExternalTracking" rows="3" maxlength="10000" class="w-full rounded-xl border-slate-300 text-sm" placeholder="شماره رهگیری، پاسخ سازمان مقصد یا توضیحات تکمیلی"></textarea>
+                    </div>
+                    <div v-if="page.props.errors?.external_tracking" class="sm:col-span-2 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{{ page.props.errors.external_tracking }}</div>
+                    <div v-if="canUpdateExternalTracking" class="sm:col-span-2 flex justify-end">
+                        <button type="submit" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">ذخیره اطلاعات پیگیری</button>
+                    </div>
+                    <p v-else class="sm:col-span-2 text-xs text-slate-500">برای تغییر اطلاعات پیگیری، دسترسی دبیرخانه، ایجادکننده نامه یا مسئول تسک لازم است.</p>
+                </form>
             </section>
 
             <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
