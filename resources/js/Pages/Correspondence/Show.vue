@@ -48,7 +48,7 @@ const props = defineProps<{
     correspondenceFontFamily: string;
 }>();
 
-const page = usePage<{ errors: Record<string, string> }>();
+const page = usePage<{ errors: Record<string, string>; flash?: { success?: string } }>();
 
 const typeLabels: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
 const statusLabels: Record<string, string> = { draft: 'پیش‌نویس', registered: 'ثبت‌شده' };
@@ -93,6 +93,9 @@ function registerCorrespondence(): void {
             <div v-if="page.props.errors?.registration" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-800" role="alert">
                 <p class="font-bold">ثبت نهایی انجام نشد</p>
                 <p class="mt-1">{{ page.props.errors.registration }}</p>
+            </div>
+            <div v-if="page.props.flash?.success" class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-800" role="status">
+                {{ page.props.flash.success }}
             </div>
             <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-xs font-medium text-slate-500">شماره ثبت</p><p class="mt-2 font-semibold text-slate-900">{{ correspondence.registration_number ?? 'پس از ثبت نهایی مشخص می‌شود' }}</p></div>
