@@ -72,7 +72,20 @@ class CorrespondenceService
                 $createdDepartmentId = $allowedDepartmentIds->first();
             }
 
+            $approvalRequired = app(CorrespondenceCompositionSettings::class)->requiresApproval($type);
+            $initialState = $type === Correspondence::TYPE_INCOMING
+                ? 'awaiting_registration'
+                : (($approvalRequired) ? 'awaiting_manager_approval' : 'awaiting_registration');
+            $managerId = $createdDepartmentId === null
+                ? null
+                : \App\Core\Departments\Models\Department::query()->whereKey($createdDepartmentId)->value('manager_id');
+
             return Correspondence::query()->create([
+                'workflow_state' => $initialState,
+                'current_department_id' => $createdDepartmentId,
+                'current_user_id' => $approvalRequired && $type !== Correspondence::TYPE_INCOMING
+                    ? ($managerId === null ? null : (int) $managerId)
+                    : null,
                 'type' => $type,
                 'classification' => $data['classification'] ?? Correspondence::CLASSIFICATION_ORDINARY,
                 'subject' => $subject,
