@@ -1,3 +1,16 @@
+## 2026-10-26 — Validation confirmed; handoff for new chat
+
+- Project owner reports that after the latest updates, the **full Laravel test suite passes and the frontend production build succeeds**. This supersedes the earlier “validation pending” note below for the SQL Server migration fix and the two regression-test alignment changes.
+- Most recent reported full-suite result before the final alignment was **424 passed, 2 failed (426 total)**. The failures were:
+  1. OrganizationSettingsTest: fixture lacked the required default correspondence font (correspondence_font_family); this was addressed by adding Vazirmatn to the test setup.
+  2. CorrespondenceNumberingServiceTest: expected validation text no longer matched the manager-approval guard; the test expectation was updated to the current message. The application validation was not weakened.
+- Owner then confirmed “پاس و بیلد شد”. Treat the current PHP suite and frontend build as user-verified successful; no test commands were executed independently by the assistant.
+- SQL Server migration compatibility follow-up: removed restrictOnDelete() from the new correspondence workflow migration because SQL Server rejected generated ON DELETE RESTRICT. The foreign keys now rely on default NO ACTION behavior. The owner's subsequent successful test run indicates migration setup and tests completed in that environment.
+- **Current feature checkpoint:** correspondence V2 workflow and read-only copy access are implemented in development: workflow state/current department/current user, action history, copy recipients, manager approval/referral/request actions, employee written result to manager, manager confirmation/completion, and separate outgoing dispatch tracking. Copy recipients can view but cannot act solely because of copy access.
+- **Business rules to preserve:** incoming mail is finally registered by Secretariat and then initially referred to one destination department; internal mail bypasses Secretariat but may require manager approval; external outgoing mail can be routed internally, requires approval where configured, and is finally registered/dispatched by Secretariat. Subsequent inter-department referrals are distinct from the Secretariat's initial referral. Task/project/correspondence states remain independent. Project requests must go through Project Management; never create projects or tasks by bypassing their modules. Confidential visibility is limited to explicitly related users, Secretariat, and explicitly selected copy recipients; copies are read-only.
+- **Next session:** read this file and inspect the latest development code before making changes. First check the project roadmap / version-2 plan and identify the next unfinished slice; do not assume the next task from stale notes. Keep CURRENT_STATUS.md updated after every code change. All code changes go to development; do not modify master.
+- **Validation:** latest PHP suite and frontend build are user-reported passing. Continue to run focused tests, full php artisan test, and npm run build after relevant future changes; do not claim new validation without a reported or actually observed result.
+
 ## 2026-10-26 — Regression test alignment
 
 - Full test run reported 424 passing and 2 failing; migration setup completed.
