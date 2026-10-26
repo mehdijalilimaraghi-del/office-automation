@@ -1,3 +1,10 @@
+## 2026-10-26 — Audit coverage for copy recipients
+
+- Updated `CorrespondenceWorkflowService::addCopies()` to record newly attached copy recipients through the same correspondence action + Core Audit path used by workflow actions.
+- Copy attachment and audit/history writes run in one database transaction. Re-adding an already attached department no longer emits a duplicate action/audit event.
+- Added `CorrespondenceCopyAuditTest` to verify the copy action and Core Audit event are created once.
+- Validation pending: pull `development` and run the focused copy-audit and correspondence HTTP tests. No test result is claimed. Branch: `development`; `master` unchanged.
+
 ## 2026-10-26 — Correspondence workflow audit integration
 
 - Connected every correspondence workflow action recorded through the shared workflow service to Core Audit via AuditServiceInterface. Audit entries identify the action type and preserve the action ID plus source/target department and user IDs as metadata; the correspondence action history remains the module-specific business timeline.
