@@ -1,3 +1,11 @@
+## 2026-10-26 — Correspondence workflow audit integration
+
+- Connected every correspondence workflow action recorded through the shared workflow service to Core Audit via AuditServiceInterface. Audit entries identify the action type and preserve the action ID plus source/target department and user IDs as metadata; the correspondence action history remains the module-specific business timeline.
+- Added regression coverage to the manager-approval HTTP test asserting the corresponding Core Audit entry is created alongside the business action.
+- Scope deliberately remains narrow: no workflow/Cartable architecture changes and no notifications or request-engine scope expansion in this slice.
+- Validation pending: pull development and run the focused correspondence HTTP test file. The full suite and frontend build were last reported passing before this change; they have not been rerun for this commit.
+- Branch: development; master unchanged.
+
 ## 2026-10-26 — Validation confirmed; handoff for new chat
 
 - Project owner reports that after the latest updates, the **full Laravel test suite passes and the frontend production build succeeds**. This supersedes the earlier “validation pending” note below for the SQL Server migration fix and the two regression-test alignment changes.
