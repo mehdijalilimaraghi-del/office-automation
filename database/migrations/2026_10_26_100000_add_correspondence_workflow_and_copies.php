@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -17,6 +18,14 @@ return new class extends Migration
             $table->foreign('current_department_id')->references('id')->on('departments')->nullOnDelete();
             $table->foreign('current_user_id')->references('id')->on('users')->nullOnDelete();
         });
+
+        DB::table('correspondences')->update([
+            'workflow_state' => DB::raw("CASE WHEN status = 'registered' THEN 'in_progress' ELSE 'awaiting_registration' END"),
+        ]);
+        DB::table('correspondences')->where('status', 'registered')->whereNotNull('recipient_department_id')
+            ->update(['current_department_id' => DB::raw('recipient_department_id')]);
+        DB::table('correspondences')->whereNull('current_department_id')->whereNotNull('created_department_id')
+            ->update(['current_department_id' => DB::raw('created_department_id')]);
 
         Schema::create('correspondence_actions', function (Blueprint $table): void {
             $table->id();
