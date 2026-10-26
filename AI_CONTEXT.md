@@ -1,3 +1,9 @@
+## 2026-10-26 — Final-registration audit change
+
+- `CorrespondenceWorkflowService::onRegistered()` now records a `registered` correspondence action through the shared recorder, so final registration writes both business history and Core Audit. The note includes the registration number only, never the letter body.
+- `CorrespondenceHttpTest` now asserts the registration action and `correspondence.action.registered` audit event for internal-letter registration.
+- Validation pending. Next exact command after pulling `development`: `php artisan test --filter=CorrespondenceHttpTest`. Await the owner's result before starting another validation step. `master` unchanged.
+
 ## 2026-10-26 — Correspondence copy audit
 
 - `CorrespondenceWorkflowService::addCopies()` now routes newly attached copy recipients through the common action recorder, writing the business action and Core Audit event together in a transaction.
