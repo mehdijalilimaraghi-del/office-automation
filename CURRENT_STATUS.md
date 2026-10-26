@@ -1,3 +1,10 @@
+## 2026-10-26 — Copy audit regression test passed
+
+- Project owner confirmed `php artisan test --filter=CorrespondenceCopyAuditTest` passes after pulling the syntax fix.
+- This validates that adding a new copy recipient creates one correspondence action and one Core Audit event, while re-adding the same department does not duplicate either record.
+- The broader `CorrespondenceHttpTest`, full PHP suite, and frontend build have not been rerun for this latest slice; do not infer their status from the focused pass.
+- Next review: inspect registration and outgoing dispatch for equivalent business-history/Core Audit coverage and check Cartable/notification contracts against the V2 acceptance gate. Branch: `development`; `master` unchanged.
+
 ## 2026-10-26 — Audit coverage for copy recipients
 
 - Updated `CorrespondenceWorkflowService::addCopies()` to record newly attached copy recipients through the same correspondence action + Core Audit path used by workflow actions.
