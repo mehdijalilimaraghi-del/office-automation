@@ -96,6 +96,9 @@ function submitWorkflowAction(): void {
 
 const typeLabels: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
 const statusLabels: Record<string, string> = { draft: 'پیش‌نویس', registered: 'ثبت‌شده' };
+const workflowStateLabels: Record<string, string> = {
+    draft: 'پیش‌نویس', awaiting_registration: 'در انتظار ثبت نهایی', awaiting_manager_approval: 'در انتظار تأیید مدیر', approved_for_registration: 'تأییدشده برای ثبت نهایی', manager_review: 'در انتظار تصمیم مدیر', in_progress: 'در حال گردش', awaiting_dispatch: 'در انتظار ارسال', task_requested: 'درخواست تسک ارجاع شده', project_requested: 'درخواست پروژه ارجاع شده', letter_requested: 'درخواست تهیه نامه ارجاع شده', rejected: 'درخواست رد شده', closed_without_result: 'خاتمه‌یافته بدون نتیجه',
+};
 const formatDate = (value: string | null) => value
     ? new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium' }).format(new Date(value))
     : '—';
@@ -171,7 +174,7 @@ function registerCorrespondence(): void {
             <section class="rounded-2xl border border-indigo-100 bg-white shadow-sm">
                 <div class="border-b border-indigo-100 px-5 py-4">
                     <h2 class="font-bold text-slate-900">گردش و ارجاعات نامه</h2>
-                    <p class="mt-1 text-sm text-slate-600">وضعیت فعلی: {{ correspondence.workflow_state }} <span v-if="correspondence.current_department"> · واحد مسئول: {{ correspondence.current_department.name }}</span></p>
+                    <p class="mt-1 text-sm text-slate-600">وضعیت فعلی: {{ workflowStateLabels[correspondence.workflow_state] ?? correspondence.workflow_state }} <span v-if="correspondence.current_department"> · واحد مسئول: {{ correspondence.current_department.name }}</span></p>
                 </div>
                 <div class="space-y-4 p-5">
                     <div v-if="correspondence.copies.length" class="rounded-xl bg-sky-50 p-4">
