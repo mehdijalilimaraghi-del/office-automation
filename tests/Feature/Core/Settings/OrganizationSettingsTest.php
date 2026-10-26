@@ -53,6 +53,7 @@ class OrganizationSettingsTest extends TestCase
             'numbering_separator' => '-',
             'numbering_padding' => 7,
             'composition_method' => 'both',
+            'correspondence_font_family' => 'Vazirmatn',
             'approval_incoming' => 'approval',
             'approval_outgoing' => 'approval',
             'approval_internal' => 'direct',
