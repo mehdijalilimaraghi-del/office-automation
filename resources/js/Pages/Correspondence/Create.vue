@@ -56,6 +56,7 @@ const form = useForm({
     received_at: '',
     sent_at: '',
     recipient_department_id: '' as number | '',
+    copy_department_ids: [] as number[],
     reply_to_id: '' as number | '',
     original_letters: [] as File[],
     scanner_upload_token: '',
@@ -340,6 +341,14 @@ async function scanOriginalLetter(): Promise<void> {
                                 <option v-for="item in departments" :key="item.id" :value="item.id">{{ item.name }}</option>
                             </select>
                             <InputError class="mt-1" :message="form.errors.recipient_department_id" />
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label for="copy_department_ids" class="mb-1.5 block text-sm font-semibold text-slate-700">رونوشت جهت اطلاع (اختیاری)</label>
+                            <select id="copy_department_ids" v-model="form.copy_department_ids" multiple size="4" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option v-for="item in departments" :key="item.id" :value="item.id">{{ item.name }}</option>
+                            </select>
+                            <p class="mt-1 text-xs leading-5 text-slate-500">واحدهای انتخاب‌شده پس از ثبت نهایی نامه آن را فقط برای اطلاع مشاهده می‌کنند و امکان اقدام یا ارجاع از طریق رونوشت ندارند.</p>
+                            <InputError class="mt-1" :message="form.errors.copy_department_ids" />
                         </div>
                         <div v-if="form.type === 'outgoing'">
                             <label for="sent_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ ارسال</label>
