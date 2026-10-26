@@ -79,7 +79,7 @@ class CorrespondenceWorkflowService
                 return;
             }
 
-            abort_unless($isManager || ($isCurrentUser && $letter->current_user_id === $actor->id), 403);
+            abort_unless($isManager, 403);
 
             if ($type === CorrespondenceAction::MANAGER_APPROVE) {
                 if (! in_array($letter->workflow_state, ['awaiting_manager_approval', 'manager_review'], true)) {
