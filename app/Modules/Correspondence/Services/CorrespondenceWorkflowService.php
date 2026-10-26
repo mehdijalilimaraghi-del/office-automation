@@ -52,6 +52,10 @@ class CorrespondenceWorkflowService
             $letter = Correspondence::query()->whereKey($correspondence->id)->lockForUpdate()->firstOrFail();
             $type = (string) $data['action_type'];
             $note = trim((string) ($data['note'] ?? ''));
+
+            if ($letter->workflow_state === 'completed_with_result') {
+                throw new InvalidArgumentException('گردش این نامه پس از تأیید نتیجه خاتمه یافته است و اقدام جدیدی نمی‌پذیرد.');
+            }
             $targetDepartmentId = isset($data['to_department_id']) ? (int) $data['to_department_id'] : null;
             $currentDepartmentId = $letter->current_department_id === null ? null : (int) $letter->current_department_id;
             $isManager = $currentDepartmentId !== null
