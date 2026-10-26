@@ -15,8 +15,8 @@ return new class extends Migration
             $table->string('workflow_state', 40)->default('draft')->index();
             $table->unsignedBigInteger('current_department_id')->nullable()->index();
             $table->unsignedBigInteger('current_user_id')->nullable()->index();
-            $table->foreign('current_department_id')->references('id')->on('departments')->nullOnDelete();
-            $table->foreign('current_user_id')->references('id')->on('users')->nullOnDelete();
+            $table->foreign('current_department_id')->references('id')->on('departments')->restrictOnDelete();
+            $table->foreign('current_user_id')->references('id')->on('users')->restrictOnDelete();
         });
 
         DB::table('correspondences')->update([
@@ -41,11 +41,11 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('correspondence_id')->references('id')->on('correspondences');
-            $table->foreign('actor_id')->references('id')->on('users')->nullOnDelete();
-            $table->foreign('from_department_id')->references('id')->on('departments')->nullOnDelete();
-            $table->foreign('to_department_id')->references('id')->on('departments')->nullOnDelete();
-            $table->foreign('from_user_id')->references('id')->on('users')->nullOnDelete();
-            $table->foreign('to_user_id')->references('id')->on('users')->nullOnDelete();
+            $table->foreign('actor_id')->references('id')->on('users')->restrictOnDelete();
+            $table->foreign('from_department_id')->references('id')->on('departments')->restrictOnDelete();
+            $table->foreign('to_department_id')->references('id')->on('departments')->restrictOnDelete();
+            $table->foreign('from_user_id')->references('id')->on('users')->restrictOnDelete();
+            $table->foreign('to_user_id')->references('id')->on('users')->restrictOnDelete();
             $table->index(['correspondence_id', 'created_at']);
             $table->index(['to_department_id', 'action_type']);
         });
@@ -60,7 +60,7 @@ return new class extends Migration
 
             $table->foreign('correspondence_id')->references('id')->on('correspondences');
             $table->foreign('department_id')->references('id')->on('departments');
-            $table->foreign('created_by')->references('id')->on('users')->nullOnDelete();
+            $table->foreign('created_by')->references('id')->on('users')->restrictOnDelete();
             $table->unique(['correspondence_id', 'department_id']);
         });
     }
