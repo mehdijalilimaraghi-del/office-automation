@@ -9,10 +9,12 @@ use App\Core\ExternalParties\Models\ExternalOrganization;
 use App\Core\ExternalParties\Models\ExternalDepartment;
 use App\Http\Controllers\Controller;
 use App\Modules\Correspondence\Models\Correspondence;
+use App\Modules\Correspondence\Models\CorrespondenceAction;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Correspondence\Services\CorrespondenceNumberingService;
 use App\Modules\Correspondence\Services\CorrespondenceAccessService;
 use App\Modules\Correspondence\Services\CorrespondenceService;
+use App\Modules\Correspondence\Services\CorrespondenceWorkflowService;
 use App\Modules\Correspondence\Http\Controllers\CorrespondenceScannerController;
 use App\Core\Settings\Services\SystemSettingsService;
 use App\Modules\Documents\Services\DocumentService;
@@ -84,6 +86,10 @@ class CorrespondenceController extends Controller
             'replies:id,subject,registration_number,type,status,reply_to_id',
             'task:id,title,status,assignee_id,created_by',
             'documents.document.latestVersion',
+            'actions.actor:id,name',
+            'actions.fromDepartment:id,name',
+            'actions.toDepartment:id,name',
+            'copies:id,name',
         ]);
 
         return Inertia::render('Correspondence/Show', [
@@ -119,6 +125,11 @@ class CorrespondenceController extends Controller
                 'replies' => $correspondence->replies
                     ->filter(fn (Correspondence $reply) => $access->canView($reply, $request->user()))
                     ->values(),
+                'workflow_state' => $correspondence->workflow_state,
+                'current_department' => $correspondence->current_department_id ? Department::query()->find($correspondence->current_department_id, ['id', 'name']) : null,
+                'current_user_id' => $correspondence->current_user_id,
+                'actions' => $correspondence->actions,
+                'copies' => $correspondence->copies,
             ],
             'originalLetters' => $correspondence->documents
                 ->filter(fn ($link) => $link->purpose === 'correspondence_original' && $link->document !== null && $link->document->latestVersion !== null)
@@ -249,6 +260,8 @@ class CorrespondenceController extends Controller
             'sent_at' => ['nullable', 'date'],
             'recipient_department_id' => ['nullable', 'required_if:type,internal', 'required_if:type,incoming', 'integer', 'exists:departments,id'],
             'reply_to_id' => ['nullable', 'integer', Rule::exists('correspondences', 'id')->where('status', Correspondence::STATUS_REGISTERED)],
+            'copy_department_ids' => ['nullable', 'array', 'max:20'],
+            'copy_department_ids.*' => ['integer', 'distinct', Rule::exists('departments', 'id')->where('is_active', true)],
             'scanner_upload_token' => ['nullable', 'string', 'max:100'],
             'original_letters' => ['nullable', 'array', 'max:10'],
             'original_letters.*' => ['file', 'max:20480', 'mimes:pdf,jpg,jpeg,png'],
@@ -350,6 +363,13 @@ class CorrespondenceController extends Controller
             return back()->withErrors(['subject' => $exception->getMessage()])->withInput();
         }
 
+        try {
+            app(CorrespondenceWorkflowService::class)->addCopies($correspondence, $data['copy_department_ids'] ?? [], $request->user());
+        } catch (InvalidArgumentException $exception) {
+            $correspondence->delete();
+            return back()->withErrors(['copy_department_ids' => $exception->getMessage()])->withInput();
+        }
+
         if (is_array($scannerUpload)) {
             Storage::disk('local')->delete($scannerUpload['path']);
             \Illuminate\Support\Facades\Cache::forget($scannerUpload['key']);
@@ -404,16 +424,50 @@ class CorrespondenceController extends Controller
         return back()->with('success', 'اطلاعات پیگیری نامه صادره ذخیره شد.');
     }
 
+    public function action(
+        Request $request,
+        Correspondence $correspondence,
+        CorrespondenceAccessService $access,
+        CorrespondenceWorkflowService $workflow,
+    ): RedirectResponse {
+        abort_unless($access->canView($correspondence, $request->user()), 403);
+
+        $data = $request->validate([
+            'action_type' => ['required', Rule::in([
+                CorrespondenceAction::EMPLOYEE_RETURN_TO_MANAGER,
+                CorrespondenceAction::MANAGER_APPROVE,
+                CorrespondenceAction::MANAGER_REFER,
+                CorrespondenceAction::REQUEST_TASK,
+                CorrespondenceAction::REQUEST_PROJECT,
+                CorrespondenceAction::REQUEST_LETTER,
+                CorrespondenceAction::REJECT_REQUEST,
+                CorrespondenceAction::CLOSE_WITHOUT_RESULT,
+            ])],
+            'note' => ['nullable', 'string', 'max:10000'],
+            'to_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')->where('is_active', true)],
+        ]);
+
+        try {
+            $workflow->handleAction($correspondence, $request->user(), $data);
+        } catch (InvalidArgumentException $exception) {
+            return back()->withErrors(['workflow_action' => $exception->getMessage()])->withInput();
+        }
+
+        return back()->with('success', 'اقدام گردش مکاتبه ثبت شد.');
+    }
+
     public function register(
         Request $request,
         Correspondence $correspondence,
         CorrespondenceNumberingService $numbering,
         CorrespondenceAccessService $access,
+        CorrespondenceWorkflowService $workflow,
     ): RedirectResponse {
         abort_unless($access->canRegister($correspondence, $request->user()), 403);
 
         try {
             $numbering->register($correspondence, $request->user());
+            $workflow->onRegistered($correspondence, $request->user());
         } catch (InvalidArgumentException $exception) {
             return back()->withErrors(['registration' => $exception->getMessage()]);
         }
