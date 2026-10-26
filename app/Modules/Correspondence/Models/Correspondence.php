@@ -102,6 +102,11 @@ class Correspondence extends Model
         return $this->belongsTo(Department::class, 'recipient_department_id');
     }
 
+    public function currentDepartment(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'current_department_id');
+    }
+
     public function externalOrganization(): BelongsTo
     {
         return $this->belongsTo(ExternalOrganization::class, 'external_organization_id');
