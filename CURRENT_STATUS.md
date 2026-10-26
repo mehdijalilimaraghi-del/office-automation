@@ -1,3 +1,13 @@
+
+## 2026-10-26 — Correct correspondence result handling
+
+- Removed the generic “reject request” and “close without result” actions from the supported backend action allowlist, workflow service, and detail-page controls.
+- Replaced the employee return action with “submit result”: for registered incoming/internal letters, a non-manager member of the currently responsible department must provide a written investigation result or the reason the request cannot be fulfilled. The letter is routed to that department’s manager and remains open for a decision.
+- Added the manager’s “confirm result and complete workflow” action. It is available only after a documented employee result is submitted, requires a manager note, and then marks the correspondence workflow as completed with a result. Managers may instead refer the correspondence or request an authorized next step.
+- Kept outgoing-letter dispatch tracking separate; result submission/confirmation is not available for outgoing correspondence. Task/project/new-letter actions remain requests/routing only and do not create records by bypassing their modules.
+- Added feature coverage for required result text, employee-to-manager routing, manager confirmation, and rejection of the two obsolete action names.
+- **Validation pending:** source and tests have been committed to `development`; no PHP tests, migration, or frontend build have been run in this editing environment. Pull `development`, run focused correspondence tests and the full suite, then run the frontend production build. `master` remains unchanged.
+
 ## 2026-10-26 — Implement correspondence routing actions and read-only copies
 
 - Added a correspondence-specific workflow state (workflow_state, current department, and current user) plus append-only correspondence_actions history and a correspondence_copies table. Existing correspondence rows are initialized to a basic routing state by the migration.
