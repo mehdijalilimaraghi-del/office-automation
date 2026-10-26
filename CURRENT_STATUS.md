@@ -1,3 +1,10 @@
+## 2026-10-26 — Regression test alignment
+
+- Full test run reported 424 passing and 2 failing; migration setup completed.
+- Added the required `correspondence_font_family=Vazirmatn` value to the organization-settings test fixture.
+- Updated the numbering test's expected validation text to match the current manager-approval guard. No application validation was weakened.
+- **Validation pending:** rerun the two affected tests and the full suite. No passing result is claimed. Branch: `development`; `master` unchanged.
+
 ## 2026-10-26 — SQL Server foreign-key delete syntax follow-up
 
 - The next test run showed SQL Server rejects Laravel's generated `ON DELETE RESTRICT` syntax; all 24 correspondence tests stopped during migration setup, with zero assertions executed. This was a migration/bootstrap failure, not evidence that the workflow tests themselves failed.
