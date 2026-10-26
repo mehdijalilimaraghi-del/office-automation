@@ -73,6 +73,9 @@ class CorrespondenceAccessService
                 $private->where(function (Builder $related) use ($user): void {
                     $related->where('created_by', $user->id)
                         ->orWhere('registered_by', $user->id)
+                        ->orWhere('current_user_id', $user->id)
+                        ->orWhereHas('currentDepartment.members', fn (Builder $members) => $members->where('users.id', $user->id))
+                        ->orWhereHas('currentDepartment', fn (Builder $departments) => $departments->where('manager_id', $user->id))
                         ->orWhereHas('authorizedUsers', fn (Builder $users) => $users->where('users.id', $user->id))
                         ->orWhere(function (Builder $copy) use ($user): void {
                             $copy->where('status', Correspondence::STATUS_REGISTERED)
@@ -105,6 +108,10 @@ class CorrespondenceAccessService
 
         return (int) $correspondence->created_by === (int) $user->id
             || (int) $correspondence->registered_by === (int) $user->id
+            || (int) $correspondence->current_user_id === (int) $user->id
+            || ($correspondence->current_department_id !== null
+                && ($correspondence->currentDepartment()->whereHas('members', fn ($members) => $members->where('users.id', $user->id))->exists()
+                    || (int) $correspondence->currentDepartment()->value('manager_id') === (int) $user->id))
             || $correspondence->authorizedUsers()->where('users.id', $user->id)->exists()
             || ($correspondence->status === Correspondence::STATUS_REGISTERED
                 && $correspondence->copies()->where(function ($departments) use ($user): void {
