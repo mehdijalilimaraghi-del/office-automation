@@ -1,8 +1,8 @@
-## 2026-10-26 — Final-registration audit change
+## 2026-10-26 — Correspondence registration and tracking audit
 
-- Final registration now creates a `registered` row in `correspondence_actions` and a matching Core Audit event through the common recorder.
-- The event note contains the assigned registration number only; letter body and confidential content are not added to audit metadata.
-- A regression assertion was added to the internal registration HTTP test. Validation is pending on the owner's machine; run the focused `CorrespondenceHttpTest` after pulling `development`. `master` remains unchanged.
+- Owner confirmed `php artisan test --filter=CorrespondenceHttpTest` passes for final-registration audit. Registration writes the module business-history action and matching Core Audit event; the note contains only the registration number.
+- Outgoing external tracking updates now use a transaction and row lock, audit only changed field names, and avoid persisting tracking note contents in audit old/new values or metadata. Unchanged updates do not create an audit event.
+- Added a regression test for tracking persistence and audit privacy. The new grouped change has not yet been validated by the project owner. After pulling `development`, run the full Laravel suite and frontend build once. `master` remains unchanged.
 
 ## 2026-10-26 — Correspondence audit follow-up
 
