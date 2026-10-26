@@ -43,11 +43,10 @@ class CorrespondenceNumberingService
                 throw new InvalidArgumentException('فقط پیش‌نویس را می‌توان ثبت نهایی کرد.');
             }
 
-            if (app(CorrespondenceCompositionSettings::class)->requiresApproval($locked->type)) {
-                $workflow = $locked->workflowInstance()->first();
-                if ($workflow === null || $workflow->status !== 'completed') {
-                    throw new InvalidArgumentException('این نوع نامه پیش از ثبت نهایی باید تأیید گردش کار را دریافت کند.');
-                }
+            if (app(CorrespondenceCompositionSettings::class)->requiresApproval($locked->type)
+                && in_array($locked->type, [Correspondence::TYPE_INTERNAL, Correspondence::TYPE_OUTGOING], true)
+                && $locked->workflow_state !== 'approved_for_registration') {
+                throw new InvalidArgumentException('این نامه باید پیش از ثبت نهایی توسط مدیر واحد تأیید شود.');
             }
 
             $config = $this->configuration();
