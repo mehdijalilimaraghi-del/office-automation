@@ -1,3 +1,9 @@
+## 2026-10-26 — SQL Server foreign-key compatibility fix
+
+- Updated the new correspondence workflow migration to use restrictive/no-action delete behavior for its nullable foreign keys instead of `ON DELETE SET NULL`. SQL Server rejects the previous `correspondences_current_department_id_foreign` definition because it creates potential multiple cascade paths.
+- This avoids database-side cascade paths across the new workflow references; referenced departments/users must be retained or have their references handled explicitly before deletion.
+- **Validation pending:** rerun the focused correspondence tests and full suite against SQL Server. No test pass is claimed. Branch: `development`; `master` unchanged.
+
 ## 2026-10-26 — Restrict result UI to eligible letters
 
 - The employee result control is now offered only for registered incoming/internal correspondence, matching the backend guard; outgoing dispatch tracking remains separate.
