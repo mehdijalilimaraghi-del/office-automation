@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Services\CorrespondenceWorkflowService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -48,6 +49,6 @@ class CorrespondenceCopyAuditTest extends TestCase
             'auditable_id' => $letter->id,
         ]);
         $this->assertDatabaseCount('correspondence_actions', 1);
-        $this->assertSame(1, DB::table('audit_logs')\n            ->where('event', 'correspondence.action.copy_added')\n            ->where('auditable_id', $letter->id)\n            ->count());
+        $this->assertSame(1, DB::table('audit_logs')
     }
 }
