@@ -1,8 +1,9 @@
-## 2026-10-26 — Final-registration audit change
+## 2026-10-26 — Correspondence registration and tracking audit
 
-- `CorrespondenceWorkflowService::onRegistered()` now records a `registered` correspondence action through the shared recorder, so final registration writes both business history and Core Audit. The note includes the registration number only, never the letter body.
-- `CorrespondenceHttpTest` now asserts the registration action and `correspondence.action.registered` audit event for internal-letter registration.
-- Validation pending. Next exact command after pulling `development`: `php artisan test --filter=CorrespondenceHttpTest`. Await the owner's result before starting another validation step. `master` unchanged.
+- Owner confirmed `php artisan test --filter=CorrespondenceHttpTest` passes for registration audit: final registration creates both a `registered` action and `correspondence.action.registered` Core Audit event.
+- Outgoing external tracking now runs under a DB transaction and row lock. Changed values produce `correspondence.external_tracking.updated` with changed field names only; tracking note contents and other values are deliberately excluded from audit payloads. No-op updates do not create audit noise.
+- Added a privacy regression test covering stored tracking fields and ensuring the private note is absent from the audit record. This latest grouped change is pending user validation. Recommended validation: full `php artisan test` and `npm run build` once after pulling `development`.
+- Branch remains `development`; do not modify `master`.
 
 ## 2026-10-26 — Correspondence copy audit
 
