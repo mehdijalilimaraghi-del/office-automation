@@ -1,3 +1,15 @@
+## 2026-10-26 — Audit correspondence workflow integration before implementation
+
+- Reviewed the existing correspondence model/controller/routes, workflow service/models, cartable service, task policy, project policy, and organization department-role settings on `development`.
+- Confirmed correspondence already has an optional `workflow_instance_id`, but `CorrespondenceService::createDraft()` does not start a workflow or establish a routing history. Correspondence routes currently expose draft creation, registration, and outgoing tracking; there is no correspondence referral/action endpoint.
+- The current `WorkflowService` is task-oriented: each workflow step creates a Task and advances when that task is approved. It does not itself provide the required correspondence action cycle (employee note back to manager, manager decision, inter-department referral, close-without-result, or rejection).
+- Existing task referral is represented by `TaskAssignment` handoffs and is task-specific; it should not be repurposed as correspondence routing.
+- Project creation is guarded by `ProjectPolicy::create()` and `OrganizationDepartmentRoleService::PROJECT_MANAGEMENT` (with the existing system-admin bypass). New correspondence actions must create a request/referral to the Project Management department and must not call project creation directly or broaden project permissions.
+- Task creation is also controlled by `TaskPolicy::create()` and permission scopes. Correspondence actions must route a task request through existing authorized task-creation rules rather than bypassing them.
+- Implementation direction: add a correspondence-specific, auditable action/routing history and current-recipient state; keep approval, registration, referral, and closure as distinct transitions; use the existing department manager assignments and existing module policies for all downstream work. Preserve the current outgoing tracking feature and keep task/project/correspondence statuses independent.
+- This is an audit/design checkpoint only; no functional workflow changes have been made in this entry. The end-to-end lifecycle remains pending implementation and feature tests.
+- Branch: `development`; do not modify `master`.
+
 ## 2026-10-25 — Fix correspondence detail TypeScript build errors
 
 - Removed duplicated `CorrespondenceDetail` fields (`task_id`, `task`, and external tracking fields) and the duplicate `trackingForm`/`saveExternalTracking()` declarations in `resources/js/Pages/Correspondence/Show.vue`.
