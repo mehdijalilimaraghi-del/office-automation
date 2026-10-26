@@ -136,6 +136,18 @@ class Correspondence extends Model
             ->withTimestamps();
     }
 
+    public function actions(): HasMany
+    {
+        return $this->hasMany(CorrespondenceAction::class)->latest();
+    }
+
+    public function copies(): BelongsToMany
+    {
+        return $this->belongsToMany(Department::class, 'correspondence_copies', 'correspondence_id', 'department_id')
+            ->withPivot(['created_by', 'note'])
+            ->withTimestamps();
+    }
+
     public function documents(): MorphMany
     {
         return $this->morphMany(DocumentLink::class, 'linkable');
