@@ -1,8 +1,8 @@
-## 2026-10-26 — Add final-registration audit coverage
+## 2026-10-26 — Correspondence audit coverage and validation
 
-- Final registration now records a `registered` action through the shared correspondence action recorder, producing both the module history entry and Core Audit event. The note includes only the assigned registration number, not letter body/content.
-- Extended the internal-letter registration HTTP test to assert both records exist.
-- Validation pending: pull `development` and run `php artisan test --filter=CorrespondenceHttpTest`. Do not claim this change passes until the owner reports the result. `master` unchanged.
+- Project owner confirmed `php artisan test --filter=CorrespondenceHttpTest` passes after final-registration audit coverage was added. Registration now writes a `registered` business-history action and `correspondence.action.registered` Core Audit event; the note contains the registration number only.
+- Next grouped slice: outgoing external-tracking audit. The controller now saves tracking updates under a row lock and DB transaction, emits `correspondence.external_tracking.updated` only when values actually change, and records changed field names only. It intentionally excludes old/new field values so private tracking notes are not copied into Core Audit.
+- Added a regression test for persisted tracking data and audit privacy. Validation for this grouped slice is pending; after pulling `development`, run the full Laravel suite and frontend production build once, then report the result. `master` unchanged.
 
 ## 2026-10-26 — Copy audit regression test passed
 
