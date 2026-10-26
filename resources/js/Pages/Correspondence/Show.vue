@@ -186,7 +186,7 @@ function registerCorrespondence(): void {
                         <div v-if="canManageWorkflow">
                             <label class="mb-1 block text-sm font-medium text-slate-700">اقدام مدیر</label>
                             <select v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
-                                <option value="manager_approve">تأیید برای ثبت نهایی</option>
+                                <option v-if="correspondence.status === 'draft' && correspondence.workflow_state === 'awaiting_manager_approval'" value="manager_approve">تأیید برای ثبت نهایی</option>
                                 <option value="manager_refer">ارجاع به واحد دیگر</option>
                                 <option value="request_task">درخواست شروع تسک</option>
                                 <option value="request_project">درخواست شروع پروژه</option>
