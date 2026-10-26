@@ -1,3 +1,8 @@
+## 2026-10-26 — Restrict result UI to eligible letters
+
+- The employee result control is now offered only for registered incoming/internal correspondence, matching the backend guard; outgoing dispatch tracking remains separate.
+- Validation remains pending; no test/build result is claimed. Branch: `development`; `master` unchanged.
+
 ## 2026-10-26 — Final-result state guard
 
 - Added a server-side terminal-state guard: after a manager confirms a documented result, the correspondence workflow rejects further routing actions. The detail page also hides manager/employee action controls for this completed state.
