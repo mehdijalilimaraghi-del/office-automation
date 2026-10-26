@@ -610,6 +610,47 @@ class CorrespondenceHttpTest extends TestCase
 
         return $user->fresh();
     }
+    public function test_outgoing_tracking_updates_are_audited_without_storing_tracking_note_values(): void
+    {
+        $user = $this->userWithPermission('correspondence.create');
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_OUTGOING,
+            'classification' => Correspondence::CLASSIFICATION_ORDINARY,
+            'subject' => 'نامه صادره برای پیگیری',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'registration_number' => '1405/000321',
+            'created_by' => $user->id,
+        ]);
+        $privateNote = 'جزئیات داخلی پیگیری که نباید در Audit ذخیره شود';
+
+        $this->actingAs($user)->put(route('correspondence.external-tracking.update', $letter), [
+            'external_registration_number' => 'EXT-991',
+            'external_registered_at' => '2026-10-25',
+            'dispatch_method' => 'courier',
+            'external_tracking_notes' => $privateNote,
+            'sent_at' => '2026-10-26',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $letter->id,
+            'external_registration_number' => 'EXT-991',
+            'dispatch_method' => 'courier',
+            'external_tracking_notes' => $privateNote,
+        ]);
+
+        $audit = \\Illuminate\\Support\\Facades\\DB::table('audit_logs')
+            ->where('event', 'correspondence.external_tracking.updated')
+            ->where('auditable_type', $letter->getMorphClass())
+            ->where('auditable_id', $letter->id)
+            ->first();
+
+        $this->assertNotNull($audit);
+        $this->assertStringContainsString('external_tracking_notes', (string) $audit->metadata);
+        $this->assertStringNotContainsString($privateNote, json_encode($audit, JSON_UNESCAPED_UNICODE));
+        $this->assertNull($audit->old_values);
+        $this->assertNull($audit->new_values);
+    }
+
     public function test_outgoing_correspondence_can_select_an_existing_external_organization_and_department(): void
     {
         $user = $this->userWithPermission('correspondence.create');
