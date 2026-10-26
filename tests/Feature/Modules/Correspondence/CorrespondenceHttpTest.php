@@ -423,6 +423,11 @@ class CorrespondenceHttpTest extends TestCase
             'action_type' => 'manager_approve',
             'actor_id' => $manager->id,
         ]);
+        $this->assertDatabaseHas('audit_logs', [
+            'event' => 'correspondence.action.manager_approve',
+            'auditable_type' => $letter->getMorphClass(),
+            'auditable_id' => $letter->id,
+        ]);
     }
 
     public function test_registered_confidential_letter_is_visible_to_copy_department_members(): void
