@@ -220,3 +220,10 @@ Before making the first code change in a new conversation:
 - `DocumentPolicy` delegates correspondence attachment access to the same service before applying generic document-level access, to prevent bypassing confidentiality.
 - `CorrespondenceHttpTest` now covers registered ordinary visibility, denial for unrelated confidential viewers, and access for explicit participants.
 - Validation is pending: pull the branch locally, run `php artisan migrate`, run `php artisan test --filter=CorrespondenceHttpTest`, then `npm run build`. Do not proceed to referral UI until those pass.
+
+## Latest handoff — 2026-10-26 Core Audit integration for correspondence workflow
+
+- Added Core Audit recording to CorrespondenceWorkflowService::record() using AuditServiceInterface. Each business action remains stored in correspondence_actions; the Core Audit record stores the action event, action row ID, and source/target department/user IDs as metadata.
+- Extended the existing manager-approval HTTP regression test to assert the matching audit_logs row.
+- Code is committed to development; master is unchanged. Local test execution is pending. Run the exact focused PowerShell command in CURRENT_STATUS.md after pulling.
+- Next: validate this slice, then audit registration/copy/dispatch transitions and the Cartable/notification integration contract. Do not start Forms & Requests until the remaining V2 acceptance gate is reviewed.
