@@ -1,3 +1,10 @@
+## 2026-10-26 — Correspondence audit follow-up
+
+- New copy recipients are recorded in both the module-specific `correspondence_actions` history and Core Audit. The writes are transactional, and attaching the same department again does not create duplicate audit/history entries.
+- Added focused regression test: `tests/Feature/Modules/Correspondence/CorrespondenceCopyAuditTest.php`.
+- This slice does not yet claim end-to-end completion of correspondence notifications, Cartable integration, registration audit, or dispatch audit; those remain to be checked against the V2 acceptance gate.
+- Validation is pending on the project owner's environment; do not claim tests pass until their result is reported.
+
 # Project Context
 
 This document is the persistent working context for the Office Automation project. It records architectural decisions, current implementation status, conventions, and the recommended next path so future development can continue without re-discovering the project.
