@@ -462,6 +462,104 @@ class CorrespondenceHttpTest extends TestCase
         ])->assertForbidden();
     }
 
+    public function test_employee_must_submit_a_documented_result_and_manager_confirms_it_before_completion(): void
+    {
+        $manager = $this->userWithPermission('correspondence.view');
+        $employee = $this->userWithPermission('correspondence.view');
+        $department = Department::query()->create([
+            'name' => 'واحد نتیجه '.Str::upper(Str::random(5)),
+            'code' => 'RES-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+        $employee->departments()->attach($department->id, ['is_primary' => true, 'joined_at' => now()]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'classification' => Correspondence::CLASSIFICATION_ORDINARY,
+            'subject' => 'نامه نیازمند اعلام نتیجه',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'in_progress',
+            'current_department_id' => $department->id,
+            'current_user_id' => $manager->id,
+            'created_by' => $manager->id,
+        ]);
+
+        $this->actingAs($employee)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => 'submit_result',
+            'note' => '',
+        ])->assertSessionHasErrors('workflow_action');
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $letter->id,
+            'workflow_state' => 'in_progress',
+        ]);
+
+        $this->actingAs($employee)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => 'submit_result',
+            'note' => 'بررسی انجام شد؛ درخواست به علت نبود اعتبار قابل انجام نیست.',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $letter->id,
+            'workflow_state' => 'result_pending_manager',
+            'current_user_id' => $manager->id,
+        ]);
+        $this->assertDatabaseHas('correspondence_actions', [
+            'correspondence_id' => $letter->id,
+            'action_type' => 'submit_result',
+            'actor_id' => $employee->id,
+            'note' => 'بررسی انجام شد؛ درخواست به علت نبود اعتبار قابل انجام نیست.',
+        ]);
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => 'confirm_result',
+            'note' => '',
+        ])->assertSessionHasErrors('workflow_action');
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => 'confirm_result',
+            'note' => 'نتیجه و علت اعلام‌شده بررسی و تأیید شد.',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $letter->id,
+            'workflow_state' => 'completed_with_result',
+            'current_user_id' => null,
+        ]);
+    }
+
+    public function test_legacy_reject_and_close_without_result_actions_are_not_accepted(): void
+    {
+        $manager = $this->userWithPermission('correspondence.view');
+        $department = Department::query()->create([
+            'name' => 'واحد آزمون گردش '.Str::upper(Str::random(5)),
+            'code' => 'WF-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => 'نامه بدون اقدام منسوخ',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'in_progress',
+            'current_department_id' => $department->id,
+            'current_user_id' => $manager->id,
+            'created_by' => $manager->id,
+        ]);
+
+        foreach (['reject_request', 'close_without_result'] as $legacyAction) {
+            $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+                'action_type' => $legacyAction,
+                'note' => 'این اقدام دیگر نباید پذیرفته شود.',
+            ])->assertSessionHasErrors('action_type');
+        }
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $letter->id,
+            'workflow_state' => 'in_progress',
+        ]);
+    }
+
     private function recipientDepartmentId(): int
     {
         return Department::query()->create([
