@@ -164,6 +164,17 @@ class CorrespondenceWorkflowService
     {
         DB::transaction(function () use ($correspondence, $actor): void {
             $letter = Correspondence::query()->whereKey($correspondence->id)->lockForUpdate()->firstOrFail();
+            $this->record(
+                $letter,
+                $actor,
+                CorrespondenceAction::REGISTERED,
+                'ثبت نهایی با شماره '.$letter->registration_number,
+                null,
+                null,
+                $actor->id,
+                null,
+            );
+
             if ($letter->type === Correspondence::TYPE_INCOMING && $letter->recipient_department_id !== null) {
                 $targetId = (int) $letter->recipient_department_id;
                 $targetManagerId = Department::query()->whereKey($targetId)->value('manager_id');
