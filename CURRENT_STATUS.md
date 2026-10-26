@@ -1,3 +1,9 @@
+## 2026-10-26 — SQL Server foreign-key delete syntax follow-up
+
+- The next test run showed SQL Server rejects Laravel's generated `ON DELETE RESTRICT` syntax; all 24 correspondence tests stopped during migration setup, with zero assertions executed. This was a migration/bootstrap failure, not evidence that the workflow tests themselves failed.
+- Removed explicit `restrictOnDelete()` declarations from the new correspondence workflow migration. Foreign keys now use the database's default `NO ACTION` behavior, avoiding invalid SQL Server syntax while preventing cascading deletes and the multiple-cascade-path issue.
+- **Validation pending:** pull `development` and rerun the focused correspondence tests, full PHP suite, and frontend build. No passing result is claimed. Branch: `development`; `master` unchanged.
+
 ## 2026-10-26 — SQL Server foreign-key compatibility fix
 
 - Updated the new correspondence workflow migration to use restrictive/no-action delete behavior for its nullable foreign keys instead of `ON DELETE SET NULL`. SQL Server rejects the previous `correspondences_current_department_id_foreign` definition because it creates potential multiple cascade paths.
