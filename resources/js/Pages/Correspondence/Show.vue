@@ -41,7 +41,7 @@ interface CorrespondenceDetail {
     workflow_state: string;
     current_department: { id: number; name: string } | null;
     current_user_id: number | null;
-    actions: Array<{ id: number; action_type: string; note: string | null; created_at: string; actor: { id: number; name: string } | null; fromDepartment: { id: number; name: string } | null; toDepartment: { id: number; name: string } | null }>;
+    actions: Array<{ id: number; action_type: string; note: string | null; created_at: string; actor: { id: number; name: string } | null; from_department: { id: number; name: string } | null; to_department: { id: number; name: string } | null }>;
     copies: Array<{ id: number; name: string }>;
 }
 
@@ -221,7 +221,7 @@ function registerCorrespondence(): void {
                                 <p class="text-sm font-semibold text-slate-900">{{ actionLabels[item.action_type] ?? item.action_type }}</p>
                                 <span class="text-xs text-slate-500">{{ formatDateTime(item.created_at) }}</span>
                             </div>
-                            <p class="mt-1 text-xs text-slate-500">ثبت‌کننده: {{ item.actor?.name ?? 'کاربر حذف‌شده' }}<span v-if="item.fromDepartment"> · از {{ item.fromDepartment.name }}</span><span v-if="item.toDepartment"> · به {{ item.toDepartment.name }}</span></p>
+                            <p class="mt-1 text-xs text-slate-500">ثبت‌کننده: {{ item.actor?.name ?? 'کاربر حذف‌شده' }}<span v-if="item.from_department"> · از {{ item.fromDepartment.name }}</span><span v-if="item.to_department"> · به {{ item.toDepartment.name }}</span></p>
                             <p v-if="item.note" class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700">{{ item.note }}</p>
                         </div>
                     </div>
