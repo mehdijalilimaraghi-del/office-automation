@@ -58,6 +58,9 @@ class Correspondence extends Model
         'external_registered_at',
         'dispatch_method',
         'external_tracking_notes',
+        'workflow_state',
+        'current_department_id',
+        'current_user_id',
     ];
 
     protected function casts(): array
