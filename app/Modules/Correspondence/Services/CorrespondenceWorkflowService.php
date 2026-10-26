@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Correspondence\Services;
 
+use App\Core\Audit\Contracts\AuditServiceInterface;
 use App\Core\Departments\Models\Department;
 use App\Core\Settings\Services\OrganizationDepartmentRoleService;
 use App\Models\User;
@@ -178,7 +179,7 @@ class CorrespondenceWorkflowService
         ?int $fromUserId,
         ?int $toUserId,
     ): void {
-        CorrespondenceAction::query()->create([
+        $action = CorrespondenceAction::query()->create([
             'correspondence_id' => $letter->id,
             'actor_id' => $actor->id,
             'action_type' => $type,
@@ -188,5 +189,19 @@ class CorrespondenceWorkflowService
             'from_user_id' => $fromUserId,
             'to_user_id' => $toUserId,
         ]);
+
+        app(AuditServiceInterface::class)->record(
+            'correspondence.action.'.$type,
+            $letter,
+            null,
+            null,
+            [
+                'action_id' => (int) $action->id,
+                'from_department_id' => $fromDepartmentId,
+                'to_department_id' => $toDepartmentId,
+                'from_user_id' => $fromUserId,
+                'to_user_id' => $toUserId,
+            ],
+        );
     }
 }
