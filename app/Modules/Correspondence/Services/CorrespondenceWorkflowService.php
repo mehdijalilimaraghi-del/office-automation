@@ -82,7 +82,7 @@ class CorrespondenceWorkflowService
             abort_unless($isManager, 403);
 
             if ($type === CorrespondenceAction::MANAGER_APPROVE) {
-                if (! in_array($letter->workflow_state, ['awaiting_manager_approval', 'manager_review'], true)) {
+                if ($letter->status !== Correspondence::STATUS_DRAFT || $letter->workflow_state !== 'awaiting_manager_approval') {
                     throw new InvalidArgumentException('این نامه در انتظار تأیید مدیر نیست.');
                 }
                 if (! in_array($letter->type, [Correspondence::TYPE_INTERNAL, Correspondence::TYPE_OUTGOING], true)) {
