@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Correspondence\Http\Controllers;
 
+use App\Core\Audit\Contracts\AuditServiceInterface;
 use App\Core\Departments\Models\Department;
 use App\Core\ExternalParties\Models\ExternalOrganization;
 use App\Core\ExternalParties\Models\ExternalDepartment;
@@ -428,8 +429,31 @@ class CorrespondenceController extends Controller
             );
         }
 
-        $correspondence->fill($data);
-        $correspondence->save();
+        DB::transaction(function () use ($correspondence, $data, $user, $access): void {
+            $letter = Correspondence::query()->whereKey($correspondence->id)->lockForUpdate()->firstOrFail();
+            $canUpdateLocked = $user->isSystemAdmin()
+                || $access->isSecretariat($user)
+                || (int) $letter->created_by === (int) $user->id
+                || (int) $letter->task()->value('assignee_id') === (int) $user->id
+                || (int) $letter->task()->value('created_by') === (int) $user->id;
+
+            abort_unless($letter->type === Correspondence::TYPE_OUTGOING && $canUpdateLocked, 403);
+
+            $letter->fill($data);
+            $changedFields = array_keys($letter->getDirty());
+            if ($changedFields === []) {
+                return;
+            }
+
+            $letter->save();
+            app(AuditServiceInterface::class)->record(
+                'correspondence.external_tracking.updated',
+                $letter,
+                null,
+                null,
+                ['changed_fields' => $changedFields],
+            );
+        });
 
         return back()->with('success', 'اطلاعات پیگیری نامه صادره ذخیره شد.');
     }
