@@ -113,6 +113,10 @@ class CorrespondenceWorkflowService
                         CorrespondenceAction::REQUEST_TASK => 'task_requested',
                         CorrespondenceAction::REQUEST_PROJECT => 'project_requested',
                         CorrespondenceAction::REQUEST_LETTER => 'letter_requested',
+                        CorrespondenceAction::MANAGER_REFER => $letter->status === Correspondence::STATUS_DRAFT
+                            && app(CorrespondenceCompositionSettings::class)->requiresApproval($letter->type)
+                            ? 'awaiting_manager_approval'
+                            : 'in_progress',
                         default => 'in_progress',
                     },
                 ])->save();
