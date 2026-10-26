@@ -131,7 +131,7 @@ class CorrespondenceNumberingServiceTest extends TestCase
             app(CorrespondenceNumberingService::class)->register($correspondence, $creator);
             $this->fail('Registration should require a completed approval workflow.');
         } catch (InvalidArgumentException $exception) {
-            $this->assertSame('این نوع نامه پیش از ثبت نهایی باید تأیید گردش کار را دریافت کند.', $exception->getMessage());
+            $this->assertSame('این نامه باید پیش از ثبت نهایی توسط مدیر واحد تأیید شود.', $exception->getMessage());
         }
 
         $this->assertDatabaseHas('correspondence_number_counters', ['id' => 1, 'last_number' => 0]);
