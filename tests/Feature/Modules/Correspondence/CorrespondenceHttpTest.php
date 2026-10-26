@@ -389,6 +389,68 @@ class CorrespondenceHttpTest extends TestCase
         ]);
     }
 
+    public function test_current_department_manager_can_approve_an_outgoing_draft_before_registration(): void
+    {
+        $manager = $this->userWithPermission('correspondence.view');
+        $department = Department::query()->create([
+            'name' => 'واحد تأییدکننده '.Str::upper(Str::random(5)),
+            'code' => 'APR-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_OUTGOING,
+            'subject' => 'نامه منتظر تأیید مدیر',
+            'status' => Correspondence::STATUS_DRAFT,
+            'workflow_state' => 'awaiting_manager_approval',
+            'current_department_id' => $department->id,
+            'current_user_id' => $manager->id,
+            'created_department_id' => $department->id,
+            'created_by' => $manager->id,
+        ]);
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => 'manager_approve',
+            'note' => 'محتوا بررسی شد.',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $letter->id,
+            'workflow_state' => 'approved_for_registration',
+        ]);
+        $this->assertDatabaseHas('correspondence_actions', [
+            'correspondence_id' => $letter->id,
+            'action_type' => 'manager_approve',
+            'actor_id' => $manager->id,
+        ]);
+    }
+
+    public function test_registered_confidential_letter_is_visible_to_copy_department_members(): void
+    {
+        $creator = $this->userWithPermission('correspondence.create');
+        $viewer = $this->userWithPermission('correspondence.view');
+        $copyDepartment = Department::query()->create([
+            'name' => 'واحد رونوشت '.Str::upper(Str::random(5)),
+            'code' => 'CC-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+        ]);
+        $viewer->departments()->attach($copyDepartment->id, ['is_primary' => true, 'joined_at' => now()]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'classification' => Correspondence::CLASSIFICATION_CONFIDENTIAL,
+            'subject' => 'نامه محرمانه دارای رونوشت',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'created_by' => $creator->id,
+        ]);
+        $letter->copies()->attach($copyDepartment->id, ['created_by' => $creator->id, 'note' => 'جهت اطلاع']);
+
+        $this->actingAs($viewer)->get(route('correspondence.show', $letter))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('correspondence.subject', 'نامه محرمانه دارای رونوشت')
+                ->where('correspondence.copies.0.name', $copyDepartment->name));
+    }
+
     private function recipientDepartmentId(): int
     {
         return Department::query()->create([
