@@ -373,7 +373,6 @@ class CorrespondenceController extends Controller
         try {
             app(CorrespondenceWorkflowService::class)->addCopies($correspondence, $data['copy_department_ids'] ?? [], $request->user());
         } catch (InvalidArgumentException $exception) {
-            $correspondence->delete();
             return back()->withErrors(['copy_department_ids' => $exception->getMessage()])->withInput();
         }
 
