@@ -1,3 +1,11 @@
+## 2026-10-26 — Correspondence copy audit
+
+- `CorrespondenceWorkflowService::addCopies()` now routes newly attached copy recipients through the common action recorder, writing the business action and Core Audit event together in a transaction.
+- Duplicate attachment attempts do not emit duplicate action/audit records.
+- New test: `tests/Feature/Modules/Correspondence/CorrespondenceCopyAuditTest.php`.
+- Next validation step: pull `development` and run `CorrespondenceCopyAuditTest` plus `CorrespondenceHttpTest`. Do not start a second test step before the owner reports the result.
+- Next implementation review after successful validation: assess audit/notification/Cartable coverage for final registration and outgoing dispatch, then continue the V2 acceptance gate. `master` remains unchanged.
+
 ## 2026-10-21 — Correspondence authority correction
 
 - V2 rule: registered ordinary letters are visible organization-wide; confidential letters are visible to their creator/registrar/explicit participants and the configured secretariat.
