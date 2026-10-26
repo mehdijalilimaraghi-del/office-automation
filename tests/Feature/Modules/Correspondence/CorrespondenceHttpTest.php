@@ -449,6 +449,17 @@ class CorrespondenceHttpTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->where('correspondence.subject', 'نامه محرمانه دارای رونوشت')
                 ->where('correspondence.copies.0.name', $copyDepartment->name));
+
+        $targetDepartment = Department::query()->create([
+            'name' => 'واحد مقصد آزمون '.Str::upper(Str::random(5)),
+            'code' => 'DST-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+        ]);
+        $this->actingAs($viewer)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => 'manager_refer',
+            'to_department_id' => $targetDepartment->id,
+            'note' => 'نباید از طریق رونوشت قابل اقدام باشد.',
+        ])->assertForbidden();
     }
 
     private function recipientDepartmentId(): int
