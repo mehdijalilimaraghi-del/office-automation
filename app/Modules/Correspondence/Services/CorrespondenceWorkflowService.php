@@ -56,8 +56,6 @@ class CorrespondenceWorkflowService
             $currentDepartmentId = $letter->current_department_id === null ? null : (int) $letter->current_department_id;
             $isManager = $currentDepartmentId !== null
                 && (int) Department::query()->whereKey($currentDepartmentId)->value('manager_id') === (int) $actor->id;
-            $isCurrentUser = $letter->current_user_id !== null
-                && (int) $letter->current_user_id === (int) $actor->id;
             $isDepartmentMember = $currentDepartmentId !== null && (
                 $actor->departments()->where('departments.id', $currentDepartmentId)->exists()
                 || $actor->managedDepartments()->whereKey($currentDepartmentId)->exists()
@@ -67,15 +65,22 @@ class CorrespondenceWorkflowService
                 abort(403);
             }
 
-            if ($type === CorrespondenceAction::EMPLOYEE_RETURN_TO_MANAGER) {
-                abort_unless($isDepartmentMember && ! $isManager, 403);
+            // Results apply to registered incoming/internal letters. Outgoing dispatch tracking is separate.
+            $canRecordResult = $letter->status === Correspondence::STATUS_REGISTERED
+                && in_array($letter->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true);
+
+            if ($type === CorrespondenceAction::SUBMIT_RESULT) {
+                abort_unless($canRecordResult && $isDepartmentMember && ! $isManager, 403);
+                if ($note === '') {
+                    throw new InvalidArgumentException('برای ثبت نتیجه، شرح بررسی و نتیجه یا علت انجام‌نشدن درخواست الزامی است.');
+                }
                 $managerId = Department::query()->whereKey($currentDepartmentId)->value('manager_id');
                 if ($managerId === null) {
                     throw new InvalidArgumentException('برای واحد فعلی مدیر مشخص نشده است.');
                 }
 
                 $this->record($letter, $actor, $type, $note, $currentDepartmentId, $currentDepartmentId, $actor->id, (int) $managerId);
-                $letter->forceFill(['current_user_id' => $managerId, 'workflow_state' => 'manager_review'])->save();
+                $letter->forceFill(['current_user_id' => (int) $managerId, 'workflow_state' => 'result_pending_manager'])->save();
                 return;
             }
 
@@ -90,6 +95,16 @@ class CorrespondenceWorkflowService
                 }
                 $this->record($letter, $actor, $type, $note, $currentDepartmentId, null, $actor->id, null);
                 $letter->forceFill(['workflow_state' => 'approved_for_registration', 'current_user_id' => null])->save();
+                return;
+            }
+
+            if ($type === CorrespondenceAction::CONFIRM_RESULT) {
+                abort_unless($canRecordResult && $letter->workflow_state === 'result_pending_manager', 403);
+                if ($note === '') {
+                    throw new InvalidArgumentException('برای تأیید نتیجه، توضیح یا جمع‌بندی مدیر الزامی است.');
+                }
+                $this->record($letter, $actor, $type, $note, $currentDepartmentId, null, $actor->id, null);
+                $letter->forceFill(['workflow_state' => 'completed_with_result', 'current_user_id' => null])->save();
                 return;
             }
 
@@ -120,13 +135,6 @@ class CorrespondenceWorkflowService
                         default => 'in_progress',
                     },
                 ])->save();
-                return;
-            }
-
-            if (in_array($type, [CorrespondenceAction::REJECT_REQUEST, CorrespondenceAction::CLOSE_WITHOUT_RESULT], true)) {
-                $state = $type === CorrespondenceAction::REJECT_REQUEST ? 'rejected' : 'closed_without_result';
-                $this->record($letter, $actor, $type, $note, $currentDepartmentId, null, $actor->id, null);
-                $letter->forceFill(['workflow_state' => $state, 'current_user_id' => null])->save();
                 return;
             }
 
