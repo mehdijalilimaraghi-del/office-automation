@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import type { PageProps } from '@/types';
 
 interface RelatedCorrespondence {
@@ -38,6 +38,11 @@ interface CorrespondenceDetail {
     external_department: { id: number; name: string; external_organization_id: number } | null;
     reply_to: RelatedCorrespondence | null;
     replies: RelatedCorrespondence[];
+    workflow_state: string;
+    current_department: { id: number; name: string } | null;
+    current_user_id: number | null;
+    actions: Array<{ id: number; action_type: string; note: string | null; created_at: string; actor: { id: number; name: string } | null; fromDepartment: { id: number; name: string } | null; toDepartment: { id: number; name: string } | null }>;
+    copies: Array<{ id: number; name: string }>;
 }
 
 interface Attachment {
@@ -55,9 +60,39 @@ const props = defineProps<{
     correspondenceFontFamily: string;
     trackableTasks: { id: number; title: string; status: string }[];
     canUpdateExternalTracking: boolean;
+    workflowDepartments: { id: number; name: string }[];
+    canReturnToManager: boolean;
+    canManageWorkflow: boolean;
 }>();
 
 const page = usePage<PageProps<{ errors: Record<string, string>; flash?: { success?: string } }>>();
+
+const actionLabels: Record<string, string> = {
+    employee_return_to_manager: 'بازگشت توضیح‌دار به مدیر',
+    manager_approve: 'تأیید مدیر برای ثبت نهایی',
+    manager_refer: 'ارجاع به واحد دیگر',
+    request_task: 'درخواست شروع تسک',
+    request_project: 'درخواست شروع پروژه',
+    request_letter: 'درخواست تهیه نامه جدید',
+    reject_request: 'رد درخواست',
+    close_without_result: 'خاتمه بدون نتیجه',
+    secretariat_initial_referral: 'ارجاع اولیه دبیرخانه',
+    copy_added: 'ثبت رونوشت جهت اطلاع',
+};
+const actionForm = useForm({
+    action_type: 'manager_refer',
+    note: '',
+    to_department_id: '' as number | '',
+});
+function submitWorkflowAction(): void {
+    actionForm.post(route('correspondence.actions.store', props.correspondence.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            actionForm.note = '';
+            actionForm.to_department_id = '';
+        },
+    });
+}
 
 const typeLabels: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
 const statusLabels: Record<string, string> = { draft: 'پیش‌نویس', registered: 'ثبت‌شده' };
@@ -131,6 +166,67 @@ function registerCorrespondence(): void {
                 <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-xs font-medium text-slate-500">واحد گیرنده</p><p class="mt-2 font-semibold text-slate-900">{{ correspondence.recipient_department?.name ?? 'هنوز تعیین نشده' }}</p></div>
                 <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-xs font-medium text-slate-500">ایجادکننده</p><p class="mt-2 font-semibold text-slate-900">{{ correspondence.creator?.name ?? 'نامشخص' }}</p></div>
                 <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-xs font-medium text-slate-500">تاریخ ایجاد</p><p class="mt-2 font-semibold text-slate-900">{{ formatDateTime(correspondence.created_at) }}</p></div>
+            </section>
+
+            <section class="rounded-2xl border border-indigo-100 bg-white shadow-sm">
+                <div class="border-b border-indigo-100 px-5 py-4">
+                    <h2 class="font-bold text-slate-900">گردش و ارجاعات نامه</h2>
+                    <p class="mt-1 text-sm text-slate-600">وضعیت فعلی: {{ correspondence.workflow_state }} <span v-if="correspondence.current_department"> · واحد مسئول: {{ correspondence.current_department.name }}</span></p>
+                </div>
+                <div class="space-y-4 p-5">
+                    <div v-if="correspondence.copies.length" class="rounded-xl bg-sky-50 p-4">
+                        <p class="text-sm font-semibold text-sky-900">رونوشت جهت اطلاع</p>
+                        <p class="mt-1 text-sm text-sky-800">{{ correspondence.copies.map(item => item.name).join('، ') }}</p>
+                        <p class="mt-1 text-xs text-sky-700">واحدهای رونوشت‌گیرنده فقط امکان مشاهده نامه ثبت‌شده را دارند و نمی‌توانند در گردش آن اقدام کنند.</p>
+                    </div>
+                    <form v-if="canManageWorkflow || canReturnToManager" class="grid gap-3 rounded-xl border border-slate-200 p-4 sm:grid-cols-2" @submit.prevent="submitWorkflowAction">
+                        <div v-if="canManageWorkflow">
+                            <label class="mb-1 block text-sm font-medium text-slate-700">اقدام مدیر</label>
+                            <select v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
+                                <option value="manager_approve">تأیید برای ثبت نهایی</option>
+                                <option value="manager_refer">ارجاع به واحد دیگر</option>
+                                <option value="request_task">درخواست شروع تسک</option>
+                                <option value="request_project">درخواست شروع پروژه</option>
+                                <option value="request_letter">درخواست تهیه نامه جدید</option>
+                                <option value="reject_request">رد درخواست</option>
+                                <option value="close_without_result">خاتمه بدون نتیجه</option>
+                            </select>
+                        </div>
+                        <div v-else>
+                            <label class="mb-1 block text-sm font-medium text-slate-700">اقدام</label>
+                            <select v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
+                                <option value="employee_return_to_manager">ثبت توضیح و بازگشت به مدیر</option>
+                            </select>
+                        </div>
+                        <div v-if="canManageWorkflow && ['manager_refer', 'request_task', 'request_project', 'request_letter'].includes(actionForm.action_type)">
+                            <label class="mb-1 block text-sm font-medium text-slate-700">واحد مقصد</label>
+                            <select v-model="actionForm.to_department_id" required class="w-full rounded-xl border-slate-300 text-sm">
+                                <option value="">انتخاب واحد مقصد</option>
+                                <option v-for="department in workflowDepartments" :key="department.id" :value="department.id">{{ department.name }}</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="mb-1 block text-sm font-medium text-slate-700">توضیح / شرح اقدام</label>
+                            <textarea v-model="actionForm.note" rows="3" maxlength="10000" class="w-full rounded-xl border-slate-300 text-sm" placeholder="توضیح اقدام یا علت ارجاع را وارد کنید"></textarea>
+                            <p v-if="page.props.errors?.workflow_action" class="mt-1 text-sm text-rose-700">{{ page.props.errors.workflow_action }}</p>
+                        </div>
+                        <div class="sm:col-span-2 flex justify-end">
+                            <button type="submit" :disabled="actionForm.processing" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">ثبت اقدام گردش نامه</button>
+                        </div>
+                    </form>
+                    <div v-if="correspondence.actions.length" class="space-y-3">
+                        <h3 class="text-sm font-bold text-slate-800">تاریخچه اقدامات</h3>
+                        <div v-for="item in correspondence.actions" :key="item.id" class="rounded-xl border border-slate-200 p-4">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <p class="text-sm font-semibold text-slate-900">{{ actionLabels[item.action_type] ?? item.action_type }}</p>
+                                <span class="text-xs text-slate-500">{{ formatDateTime(item.created_at) }}</span>
+                            </div>
+                            <p class="mt-1 text-xs text-slate-500">ثبت‌کننده: {{ item.actor?.name ?? 'کاربر حذف‌شده' }}<span v-if="item.fromDepartment"> · از {{ item.fromDepartment.name }}</span><span v-if="item.toDepartment"> · به {{ item.toDepartment.name }}</span></p>
+                            <p v-if="item.note" class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700">{{ item.note }}</p>
+                        </div>
+                    </div>
+                    <p v-else class="text-sm text-slate-500">هنوز اقدامی در تاریخچه گردش نامه ثبت نشده است.</p>
+                </div>
             </section>
 
             <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
