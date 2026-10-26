@@ -32,19 +32,32 @@ class CorrespondenceWorkflowService
             throw new InvalidArgumentException('یکی از واحدهای انتخاب‌شده برای رونوشت فعال نیست یا وجود ندارد.');
         }
 
-        foreach ($validIds as $departmentId) {
-            $correspondence->copies()->syncWithoutDetaching([
-                $departmentId => ['created_by' => $actor->id, 'note' => 'جهت اطلاع'],
-            ]);
+        DB::transaction(function () use ($correspondence, $validIds, $actor): void {
+            $letter = Correspondence::query()->whereKey($correspondence->id)->lockForUpdate()->firstOrFail();
 
-            CorrespondenceAction::query()->create([
-                'correspondence_id' => $correspondence->id,
-                'actor_id' => $actor->id,
-                'action_type' => CorrespondenceAction::COPY_ADDED,
-                'note' => 'رونوشت جهت اطلاع به واحد '.Department::query()->whereKey($departmentId)->value('name'),
-                'to_department_id' => $departmentId,
-            ]);
-        }
+            foreach ($validIds as $departmentId) {
+                $changes = $letter->copies()->syncWithoutDetaching([
+                    $departmentId => ['created_by' => $actor->id, 'note' => 'جهت اطلاع'],
+                ]);
+
+                // Only record an action when a new copy recipient was actually attached.
+                if (! in_array($departmentId, array_map('intval', $changes['attached'] ?? []), true)) {
+                    continue;
+                }
+
+                $departmentName = (string) Department::query()->whereKey($departmentId)->value('name');
+                $this->record(
+                    $letter,
+                    $actor,
+                    CorrespondenceAction::COPY_ADDED,
+                    'رونوشت جهت اطلاع به واحد '.$departmentName,
+                    null,
+                    $departmentId,
+                    $actor->id,
+                    null,
+                );
+            }
+        });
     }
 
     public function handleAction(Correspondence $correspondence, User $actor, array $data): void
