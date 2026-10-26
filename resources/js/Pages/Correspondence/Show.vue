@@ -221,7 +221,7 @@ function registerCorrespondence(): void {
                                 <p class="text-sm font-semibold text-slate-900">{{ actionLabels[item.action_type] ?? item.action_type }}</p>
                                 <span class="text-xs text-slate-500">{{ formatDateTime(item.created_at) }}</span>
                             </div>
-                            <p class="mt-1 text-xs text-slate-500">ثبت‌کننده: {{ item.actor?.name ?? 'کاربر حذف‌شده' }}<span v-if="item.from_department"> · از {{ item.fromDepartment.name }}</span><span v-if="item.to_department"> · به {{ item.toDepartment.name }}</span></p>
+                            <p class="mt-1 text-xs text-slate-500">ثبت‌کننده: {{ item.actor?.name ?? 'کاربر حذف‌شده' }}<span v-if="item.from_department"> · از {{ item.from_department.name }}</span><span v-if="item.to_department"> · به {{ item.to_department.name }}</span></p>
                             <p v-if="item.note" class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700">{{ item.note }}</p>
                         </div>
                     </div>
@@ -293,55 +293,7 @@ function registerCorrespondence(): void {
                 </form>
             </section>
 
-            <section v-if="correspondence.type === 'outgoing'" class="rounded-2xl border border-indigo-100 bg-white shadow-sm">
-                <div class="border-b border-indigo-100 px-5 py-4">
-                    <h2 class="font-bold text-slate-900">پیگیری نامه صادره</h2>
-                    <p class="mt-1 text-sm text-slate-500">اطلاعات ارسال و شماره ثبت نامه در سازمان مقصد مستقل از وضعیت تکمیل تسک نگهداری می‌شود.</p>
-                </div>
-                <form class="grid gap-4 p-5 sm:grid-cols-2" @submit.prevent="saveExternalTracking">
-                    <div>
-                        <label class="mb-1 block text-sm font-medium text-slate-700">تسک مرتبط</label>
-                        <select v-model="trackingForm.task_id" :disabled="!canUpdateExternalTracking" class="w-full rounded-xl border-slate-300 text-sm">
-                            <option value="">بدون تسک مرتبط</option>
-                            <option v-for="task in trackableTasks" :key="task.id" :value="String(task.id)">#{{ task.id }} — {{ task.title }}</option>
-                            <option v-if="correspondence.task && !trackableTasks.some(task => task.id === correspondence.task?.id)" :value="String(correspondence.task.id)">#{{ correspondence.task.id }} — {{ correspondence.task.title }}</option>
-                        </select>
-                        <p v-if="correspondence.task" class="mt-1 text-xs text-slate-500">تسک فعلی: {{ correspondence.task.title }} ({{ correspondence.task.status }})</p>
-                    </div>
-                    <div>
-                        <label class="mb-1 block text-sm font-medium text-slate-700">شماره ثبت در سازمان مقصد</label>
-                        <input v-model="trackingForm.external_registration_number" :disabled="!canUpdateExternalTracking" maxlength="255" class="w-full rounded-xl border-slate-300 text-sm" placeholder="مثلاً شماره وارده در دبیرخانه مقصد" />
-                    </div>
-                    <div>
-                        <label class="mb-1 block text-sm font-medium text-slate-700">تاریخ ثبت در سازمان مقصد</label>
-                        <input v-model="trackingForm.external_registered_at" :disabled="!canUpdateExternalTracking" type="date" class="w-full rounded-xl border-slate-300 text-sm" />
-                    </div>
-                    <div>
-                        <label class="mb-1 block text-sm font-medium text-slate-700">روش ارسال</label>
-                        <select v-model="trackingForm.dispatch_method" :disabled="!canUpdateExternalTracking" class="w-full rounded-xl border-slate-300 text-sm">
-                            <option value="">انتخاب نشده</option>
-                            <option value="official_portal">سامانه مکاتبات</option>
-                            <option value="email">ایمیل</option>
-                            <option value="courier">پیک / پست</option>
-                            <option value="in_person">تحویل حضوری</option>
-                            <option value="other">سایر</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="mb-1 block text-sm font-medium text-slate-700">تاریخ ارسال</label>
-                        <input v-model="trackingForm.sent_at" :disabled="!canUpdateExternalTracking" type="date" class="w-full rounded-xl border-slate-300 text-sm" />
-                    </div>
-                    <div class="sm:col-span-2">
-                        <label class="mb-1 block text-sm font-medium text-slate-700">توضیحات پیگیری</label>
-                        <textarea v-model="trackingForm.external_tracking_notes" :disabled="!canUpdateExternalTracking" rows="3" maxlength="10000" class="w-full rounded-xl border-slate-300 text-sm" placeholder="شماره رهگیری، پاسخ سازمان مقصد یا توضیحات تکمیلی"></textarea>
-                    </div>
-                    <div v-if="page.props.errors?.external_tracking" class="sm:col-span-2 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{{ page.props.errors.external_tracking }}</div>
-                    <div v-if="canUpdateExternalTracking" class="sm:col-span-2 flex justify-end">
-                        <button type="submit" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">ذخیره اطلاعات پیگیری</button>
-                    </div>
-                    <p v-else class="sm:col-span-2 text-xs text-slate-500">برای تغییر اطلاعات پیگیری، دسترسی دبیرخانه، ایجادکننده نامه یا مسئول تسک لازم است.</p>
-                </form>
-            </section>
+            
 
             <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">متن نامه</h2></div>
