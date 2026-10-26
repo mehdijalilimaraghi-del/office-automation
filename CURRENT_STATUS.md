@@ -1,3 +1,8 @@
+## 2026-10-26 — Final-result state guard
+
+- Added a server-side terminal-state guard: after a manager confirms a documented result, the correspondence workflow rejects further routing actions. The detail page also hides manager/employee action controls for this completed state.
+- **Validation remains pending**; no test/build result is claimed. Branch: `development`; `master` unchanged.
+
 
 ## 2026-10-26 — Correct correspondence result handling
 
