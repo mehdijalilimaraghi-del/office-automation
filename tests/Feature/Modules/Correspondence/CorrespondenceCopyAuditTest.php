@@ -49,6 +49,13 @@ class CorrespondenceCopyAuditTest extends TestCase
             'auditable_id' => $letter->id,
         ]);
         $this->assertDatabaseCount('correspondence_actions', 1);
-        $this->assertSame(1, DB::table('audit_logs')
+        $this->assertSame(
+            1,
+            DB::table('audit_logs')
+                ->where('event', 'correspondence.action.copy_added')
+                ->where('auditable_type', $letter->getMorphClass())
+                ->where('auditable_id', $letter->id)
+                ->count()
+        );
     }
 }
