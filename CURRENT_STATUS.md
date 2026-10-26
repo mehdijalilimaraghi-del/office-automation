@@ -1,3 +1,9 @@
+## 2026-10-26 — Add final-registration audit coverage
+
+- Final registration now records a `registered` action through the shared correspondence action recorder, producing both the module history entry and Core Audit event. The note includes only the assigned registration number, not letter body/content.
+- Extended the internal-letter registration HTTP test to assert both records exist.
+- Validation pending: pull `development` and run `php artisan test --filter=CorrespondenceHttpTest`. Do not claim this change passes until the owner reports the result. `master` unchanged.
+
 ## 2026-10-26 — Copy audit regression test passed
 
 - Project owner confirmed `php artisan test --filter=CorrespondenceCopyAuditTest` passes after pulling the syntax fix.
