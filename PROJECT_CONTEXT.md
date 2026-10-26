@@ -943,3 +943,11 @@ Authorization has two additive sources:
 The effective access is the union of the two sources, not an intersection. For example, a user who is not a project manager may still receive `projects.create` through their application role; a task/project operational permission may also be granted explicitly where its scope is intentionally configured. Backend authorization remains authoritative.
 
 The active `SYSTEM_ADMIN` account is a special system capability and receives every permission with organization scope independent of business responsibilities and the completeness of seeded permission assignments. Inactive users still have no permissions. Permission seeding must preserve operational grants assigned to ordinary roles.
+
+## 2026-10-26 — Current V2 checkpoint update
+
+- Current active version is V2 — Office Automation; V1 is closed. Older statements earlier in this file identifying V1 as current are historical and superseded by ROADMAP.md and CURRENT_STATUS.md.
+- Correspondence workflow now records both module-specific action history and Core Audit events for workflow actions. Audit metadata includes action ID and routing actor/target identifiers without duplicating letter body or confidential content.
+- The manager-approval HTTP regression test checks that the Core Audit event is persisted.
+- Next priority after validation: audit remaining correspondence lifecycle transitions (draft creation/final registration/copy recipients/external dispatch tracking) and verify actionable Cartable + notification integration before starting Forms & Requests.
+- Keep work on development; do not change master. Follow the one-step-at-a-time local validation instruction in CURRENT_STATUS.md.
