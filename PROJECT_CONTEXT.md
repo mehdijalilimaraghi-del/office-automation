@@ -1,3 +1,9 @@
+## 2026-10-26 — Final-registration audit change
+
+- Final registration now creates a `registered` row in `correspondence_actions` and a matching Core Audit event through the common recorder.
+- The event note contains the assigned registration number only; letter body and confidential content are not added to audit metadata.
+- A regression assertion was added to the internal registration HTTP test. Validation is pending on the owner's machine; run the focused `CorrespondenceHttpTest` after pulling `development`. `master` remains unchanged.
+
 ## 2026-10-26 — Correspondence audit follow-up
 
 - New copy recipients are recorded in both the module-specific `correspondence_actions` history and Core Audit. The writes are transactional, and attaching the same department again does not create duplicate audit/history entries.
