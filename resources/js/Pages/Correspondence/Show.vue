@@ -68,14 +68,13 @@ const props = defineProps<{
 const page = usePage<PageProps<{ errors: Record<string, string>; flash?: { success?: string } }>>();
 
 const actionLabels: Record<string, string> = {
-    employee_return_to_manager: 'بازگشت توضیح‌دار به مدیر',
+    submit_result: 'ثبت نتیجه بررسی و ارسال به مدیر',
     manager_approve: 'تأیید مدیر برای ثبت نهایی',
     manager_refer: 'ارجاع به واحد دیگر',
     request_task: 'درخواست شروع تسک',
     request_project: 'درخواست شروع پروژه',
     request_letter: 'درخواست تهیه نامه جدید',
-    reject_request: 'رد درخواست',
-    close_without_result: 'خاتمه بدون نتیجه',
+    confirm_result: 'تأیید نتیجه و خاتمه گردش',
     secretariat_initial_referral: 'ارجاع اولیه دبیرخانه',
     copy_added: 'ثبت رونوشت جهت اطلاع',
 };
@@ -97,7 +96,7 @@ function submitWorkflowAction(): void {
 const typeLabels: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
 const statusLabels: Record<string, string> = { draft: 'پیش‌نویس', registered: 'ثبت‌شده' };
 const workflowStateLabels: Record<string, string> = {
-    draft: 'پیش‌نویس', awaiting_registration: 'در انتظار ثبت نهایی', awaiting_manager_approval: 'در انتظار تأیید مدیر', approved_for_registration: 'تأییدشده برای ثبت نهایی', manager_review: 'در انتظار تصمیم مدیر', in_progress: 'در حال گردش', awaiting_dispatch: 'در انتظار ارسال', task_requested: 'درخواست تسک ارجاع شده', project_requested: 'درخواست پروژه ارجاع شده', letter_requested: 'درخواست تهیه نامه ارجاع شده', rejected: 'درخواست رد شده', closed_without_result: 'خاتمه‌یافته بدون نتیجه',
+    draft: 'پیش‌نویس', awaiting_registration: 'در انتظار ثبت نهایی', awaiting_manager_approval: 'در انتظار تأیید مدیر', approved_for_registration: 'تأییدشده برای ثبت نهایی', manager_review: 'در انتظار تصمیم مدیر', result_pending_manager: 'نتیجه ثبت شده؛ در انتظار تصمیم مدیر', completed_with_result: 'خاتمه‌یافته با نتیجه ثبت‌شده', in_progress: 'در حال گردش', awaiting_dispatch: 'در انتظار ارسال', task_requested: 'درخواست تسک ارجاع شده', project_requested: 'درخواست پروژه ارجاع شده', letter_requested: 'درخواست تهیه نامه ارجاع شده',
 };
 const formatDate = (value: string | null) => value
     ? new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium' }).format(new Date(value))
@@ -191,14 +190,13 @@ function registerCorrespondence(): void {
                                 <option value="request_task">درخواست شروع تسک</option>
                                 <option value="request_project">درخواست شروع پروژه</option>
                                 <option value="request_letter">درخواست تهیه نامه جدید</option>
-                                <option value="reject_request">رد درخواست</option>
-                                <option value="close_without_result">خاتمه بدون نتیجه</option>
+                                <option v-if="correspondence.workflow_state === 'result_pending_manager' && ['incoming', 'internal'].includes(correspondence.type)" value="confirm_result">تأیید نتیجه و خاتمه گردش</option>
                             </select>
                         </div>
                         <div v-else>
                             <label class="mb-1 block text-sm font-medium text-slate-700">اقدام</label>
                             <select v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
-                                <option value="employee_return_to_manager">ثبت توضیح و بازگشت به مدیر</option>
+                                <option value="submit_result">ثبت نتیجه بررسی و ارسال به مدیر</option>
                             </select>
                         </div>
                         <div v-if="canManageWorkflow && ['manager_refer', 'request_task', 'request_project', 'request_letter'].includes(actionForm.action_type)">
@@ -210,7 +208,7 @@ function registerCorrespondence(): void {
                         </div>
                         <div class="sm:col-span-2">
                             <label class="mb-1 block text-sm font-medium text-slate-700">توضیح / شرح اقدام</label>
-                            <textarea v-model="actionForm.note" rows="3" maxlength="10000" class="w-full rounded-xl border-slate-300 text-sm" placeholder="توضیح اقدام یا علت ارجاع را وارد کنید"></textarea>
+                            <textarea v-model="actionForm.note" rows="3" maxlength="10000" class="w-full rounded-xl border-slate-300 text-sm"  :required="actionForm.action_type === 'submit_result' || actionForm.action_type === 'confirm_result'" placeholder="شرح بررسی، نتیجه یا علت انجام‌نشدن درخواست را وارد کنید"></textarea>
                             <p v-if="page.props.errors?.workflow_action" class="mt-1 text-sm text-rose-700">{{ page.props.errors.workflow_action }}</p>
                         </div>
                         <div class="sm:col-span-2 flex justify-end">
