@@ -11,14 +11,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CorrespondenceAction extends Model
 {
-    public const EMPLOYEE_RETURN_TO_MANAGER = 'employee_return_to_manager';
+    public const SUBMIT_RESULT = 'submit_result';
     public const MANAGER_APPROVE = 'manager_approve';
     public const MANAGER_REFER = 'manager_refer';
     public const REQUEST_TASK = 'request_task';
     public const REQUEST_PROJECT = 'request_project';
     public const REQUEST_LETTER = 'request_letter';
-    public const REJECT_REQUEST = 'reject_request';
-    public const CLOSE_WITHOUT_RESULT = 'close_without_result';
+    public const CONFIRM_RESULT = 'confirm_result';
     public const SECRETARIAT_INITIAL_REFERRAL = 'secretariat_initial_referral';
     public const COPY_ADDED = 'copy_added';
 
