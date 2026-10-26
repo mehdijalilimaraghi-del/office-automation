@@ -1,3 +1,13 @@
+## 2026-10-26 — Implement correspondence routing actions and read-only copies
+
+- Added a correspondence-specific workflow state (workflow_state, current department, and current user) plus append-only correspondence_actions history and a correspondence_copies table. Existing correspondence rows are initialized to a basic routing state by the migration.
+- Draft creation now initializes approval/registration routing state based on the configured approval setting. Final registration for incoming letters proceeds through Secretariat and then creates the initial referral to the destination department. Internal/outgoing letters configured for approval require a manager approval action before final registration; internal registration then routes to the destination department, while outgoing letters move to Secretariat dispatch tracking.
+- Added workflow actions for an employee to return a letter to the current department manager with a note, and for the manager to approve a draft, refer to another department, request a task/project/new letter, reject a request, or close without result. Project requests are restricted to the configured Project Management department; this does not create tasks or projects directly and does not bypass their module policies.
+- Added optional department copy recipients to the correspondence creation form. Registered letters are visible to members/managers of copy departments, including confidential letters, but copy membership alone does not authorize workflow actions. Copy entries and all workflow actions are recorded in history.
+- Added feature tests for manager approval, copy visibility, and copy-recipient action denial.
+- Validation pending: no PHP test suite, migration, TypeScript check, or frontend build has been run from this environment. Pull development, run the focused correspondence feature tests and full test suite, then run npm run build. Treat this implementation as unvalidated until those checks pass. Review edge cases around missing department managers and downstream task/project/letter request fulfillment; requests are currently recorded and routed, not auto-created.
+- Branch: development; master unchanged.
+
 ## 2026-10-26 — Audit correspondence workflow integration before implementation
 
 - Reviewed the existing correspondence model/controller/routes, workflow service/models, cartable service, task policy, project policy, and organization department-role settings on `development`.
