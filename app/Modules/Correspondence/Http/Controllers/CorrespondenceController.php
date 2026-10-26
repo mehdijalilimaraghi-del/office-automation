@@ -440,14 +440,13 @@ class CorrespondenceController extends Controller
 
         $data = $request->validate([
             'action_type' => ['required', Rule::in([
-                CorrespondenceAction::EMPLOYEE_RETURN_TO_MANAGER,
+                CorrespondenceAction::SUBMIT_RESULT,
                 CorrespondenceAction::MANAGER_APPROVE,
+                CorrespondenceAction::CONFIRM_RESULT,
                 CorrespondenceAction::MANAGER_REFER,
                 CorrespondenceAction::REQUEST_TASK,
                 CorrespondenceAction::REQUEST_PROJECT,
                 CorrespondenceAction::REQUEST_LETTER,
-                CorrespondenceAction::REJECT_REQUEST,
-                CorrespondenceAction::CLOSE_WITHOUT_RESULT,
             ])],
             'note' => ['nullable', 'string', 'max:10000'],
             'to_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')->where('is_active', true)],
