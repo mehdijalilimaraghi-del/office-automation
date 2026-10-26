@@ -319,6 +319,16 @@ class CorrespondenceHttpTest extends TestCase
         $letter = Correspondence::query()->create(['type' => Correspondence::TYPE_INTERNAL, 'subject' => 'نامه داخلی', 'status' => Correspondence::STATUS_DRAFT, 'created_by' => $creator->id]);
         $this->actingAs($creator)->post(route('correspondence.register', $letter))->assertRedirect();
         $this->assertDatabaseHas('correspondences', ['id' => $letter->id, 'status' => Correspondence::STATUS_REGISTERED, 'registered_by' => $creator->id]);
+        $this->assertDatabaseHas('correspondence_actions', [
+            'correspondence_id' => $letter->id,
+            'actor_id' => $creator->id,
+            'action_type' => 'registered',
+        ]);
+        $this->assertDatabaseHas('audit_logs', [
+            'event' => 'correspondence.action.registered',
+            'auditable_type' => $letter->getMorphClass(),
+            'auditable_id' => $letter->id,
+        ]);
     }
 
     public function test_configured_secretariat_can_create_incoming_letter_and_register_outgoing_draft(): void
