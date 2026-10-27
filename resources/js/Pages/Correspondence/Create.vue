@@ -399,7 +399,7 @@ async function scanOriginalLetter(): Promise<void> {
             >
                 <section class="space-y-4">
                     <h3 class="text-base font-bold text-slate-900">مشخصات مکاتبه</h3>
-                    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                         <div>
                             <label for="type" class="mb-1.5 block text-sm font-semibold text-slate-700">نوع مکاتبه <span class="text-rose-600">*</span></label>
                             <select id="type" v-model="form.type" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -478,7 +478,7 @@ async function scanOriginalLetter(): Promise<void> {
                             <p v-else class="mt-2 text-xs text-slate-500">هنوز واحدی برای رونوشت انتخاب نشده است.</p>
                             <InputError class="mt-1" :message="form.errors.copy_department_ids" /><InputError class="mt-1" :message="form.errors['copy_department_ids.0']" />
                         </div>
-                        <div v-if="form.type !== 'internal'" class="sm:col-span-2 lg:col-span-4 space-y-3 rounded-xl border border-teal-100 bg-teal-50/50 p-4">
+                        <div v-if="form.type !== 'internal'" class="sm:col-span-2 col-span-full space-y-3 rounded-xl border border-teal-100 bg-teal-50/50 p-4">
                             <div class="flex items-center gap-2">
                                 <h4 class="text-sm font-bold text-slate-800">{{ form.type === 'incoming' ? 'سازمان فرستنده' : 'سازمان گیرنده' }}</h4>
                                 <details class="group relative"><summary aria-label="راهنمای طرف برون‌سازمانی" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 bg-white text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-300">؟</summary><div class="absolute right-0 top-7 z-20 w-64 rounded-lg border border-slate-200 bg-white p-3 text-xs font-normal leading-6 text-slate-700 shadow-lg">سازمان و واحد را از دفترچه موجود انتخاب کنید. این اطلاعات اختیاری است تا مکاتبه با طرف‌های جدید نیز قابل ثبت باشد.</div></details>
