@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Core\Departments;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreDepartmentRequest extends FormRequest
 {
@@ -31,6 +32,7 @@ class StoreDepartmentRequest extends FormRequest
                 'string',
                 'max:150',
             ],
+            'code' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z0-9_-]+$/', Rule::unique('departments', 'code')],
 
             
             'icon' => [
@@ -59,6 +61,7 @@ class StoreDepartmentRequest extends FormRequest
             'parent_id' => 'دپارتمان والد',
             'manager_id' => 'مدیر دپارتمان',
             'name' => 'نام دپارتمان',
+            'code' => 'کد واحد',
                         'icon' => 'آیکون واحد',
             'description' => 'توضیحات',
             'is_active' => 'وضعیت فعال بودن',
