@@ -98,7 +98,7 @@ class CorrespondenceNumberingService
         }
 
         $next = (int) $counter->last_number + 1;
-        DB::table('correspondence_number_counters')
+        DB::table('correspondence_letter_number_counters')
             ->where('id', 1)
             ->update(['last_number' => $next, 'updated_at' => now()]);
 
@@ -113,7 +113,7 @@ class CorrespondenceNumberingService
             ->first();
 
         if ($counter === null) {
-            throw new \\RuntimeException('Correspondence registration counter is not initialized.');
+            throw new \RuntimeException('Correspondence registration counter is not initialized.');
         }
 
         $next = (int) $counter->last_number + 1;
