@@ -542,7 +542,7 @@ class CorrespondenceController extends Controller
     public function destroy(Request $request, Correspondence $correspondence, CorrespondenceAccessService $access): RedirectResponse
     {
         abort_unless($access->canManageBeforeAction($correspondence,$request->user()),403);
-        DB::transaction(function()use($correspondence,$access,$request):void{$locked=Correspondence::query()->whereKey($correspondence->id)->lockForUpdate()->firstOrFail();abort_unless($access->canManageBeforeAction($locked,$request->user()),403);$locked->documents()->delete();$id=(int)$locked->id;$subject=$locked->subject;$locked->relatedLetters()->detach();$locked->relatedFromLetters()->detach();$locked->copies()->detach();$locked->authorizedUsers()->detach();$locked->delete();app(AuditServiceInterface::class)->record('correspondence.deleted_before_action',null,null,null,['correspondence_id'=>$id,'subject'=>$subject]);});
+        DB::transaction(function()use($correspondence,$access,$request):void{$locked=Correspondence::query()->whereKey($correspondence->id)->lockForUpdate()->firstOrFail();abort_unless($access->canManageBeforeAction($locked,$request->user()),403);$locked->documents()->delete();$id=(int)$locked->id;$subject=$locked->subject;app(AuditServiceInterface::class)->record('correspondence.deleted_before_action',$locked,null,null,['correspondence_id'=>$id,'subject'=>$subject]);$locked->relatedLetters()->detach();$locked->relatedFromLetters()->detach();$locked->copies()->detach();$locked->authorizedUsers()->detach();$locked->delete();});
         return redirect()->route('correspondence.index')->with('success','مکاتبه حذف شد.');
     }
 
