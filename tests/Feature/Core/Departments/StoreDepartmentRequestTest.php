@@ -23,6 +23,17 @@ class StoreDepartmentRequestTest extends TestCase
         );
     }
 
+    public function test_department_code_is_required(): void
+    {
+        $validator = Validator::make(
+            ['name' => 'واحد فنی'],
+            (new StoreDepartmentRequest())->rules()
+        );
+
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('code', $validator->errors()->toArray());
+    }
+
     public function test_name_cannot_exceed_150_characters(): void
     {
         $validator = Validator::make(
