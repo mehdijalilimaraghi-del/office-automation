@@ -445,17 +445,18 @@ async function scanOriginalLetter(): Promise<void> {
                             <div class="mb-1.5 flex items-center gap-1.5"><label for="related_correspondence_search" class="text-sm font-semibold text-slate-700">ارتباط با مکاتبات قبلی</label>
                                 <details class="group relative"><summary aria-label="راهنمای ارتباط با مکاتبات قبلی" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 bg-white text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">؟</summary><span class="absolute right-0 top-7 z-30 w-64 rounded-lg bg-slate-900 p-3 text-xs font-normal leading-6 text-white shadow-lg">برای پیوند دادن این نامه به یک یا چند مکاتبه ثبت‌شده، موضوع یا شماره نامه را جست‌وجو و موارد موردنظر را انتخاب کنید.</span></details><details class="group relative"><summary aria-label="راهنمای ارتباط با مکاتبات قبلی" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-300">؟</summary><div class="absolute right-0 top-7 z-20 w-64 rounded-lg border border-slate-200 bg-white p-3 text-xs font-normal leading-6 text-slate-700 shadow-lg">در صورت ارتباط، نامه قبلی را جست‌وجو و انتخاب کنید؛ این ارتباط می‌تواند ادامه مکاتبه یا پاسخ به نامه قبلی باشد.</div></details></div>
                             <input id="related_correspondence_search" v-model="relatedSearchQuery" type="search" autocomplete="off" placeholder="جستجو..." class="w-full shrink-0 rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @input="searchRelatedLetters" />
+                            <div class="mt-2 max-h-64 space-y-2 overflow-y-auto rounded-xl border border-slate-200 p-2">
                             <p v-if="relatedSearchQuery.trim().length < 2" class="mt-1 text-xs text-slate-500">برای جستجو حداقل دو نویسه وارد کنید.</p>
                             <p v-else-if="relatedSearchLoading" class="mt-2 text-sm text-slate-500">در حال جستجوی مکاتبات...</p>
                             <p v-else-if="relatedSearchResults.length === 0" class="mt-2 text-sm text-slate-500">مکاتبه‌ای با این مشخصات پیدا نشد.</p>
-                            <div v-else class="mt-2 max-h-72 space-y-2 overflow-y-auto rounded-xl border border-slate-200 p-2">
+                            <div v-else class="mt-2 space-y-2">
                                 <button v-for="item in relatedSearchResults" :key="item.id" type="button" class="block w-full rounded-lg border border-slate-100 p-3 text-right transition hover:border-indigo-300 hover:bg-indigo-50 disabled:cursor-default disabled:opacity-50" :disabled="selectedRelatedLetters.some((letter) => letter.id === item.id)" @click="selectRelatedLetter(item)">
                                     <span class="block text-sm font-semibold text-slate-900">{{ item.subject }}</span>
                                     <span class="mt-1 block text-xs leading-5 text-slate-600">شماره نامه: {{ item.letter_number ?? "—" }} | شماره ثبت: {{ item.registration_number ?? "—" }} | تاریخ نامه: {{ formatRelatedLetterDate(item.letter_date) }}</span>
                                     <span class="mt-1 block text-xs leading-5 text-slate-500">{{ [item.created_department, item.created_department_code, item.recipient_department, item.recipient_department_code, item.external_organization, item.external_organization_code, item.external_department, item.external_department_code].filter(Boolean).join(" · ") || "واحد یا سازمان ثبت نشده" }}<span v-if="item.external_registration_number"> · شماره ثبت طرف مقابل: {{ item.external_registration_number }}</span></span>
                                 </button>
                             </div>
-                            <div class="mt-2 max-h-52 space-y-2 overflow-y-auto rounded-xl border border-slate-200 p-2">
+                            <div class="mt-2 space-y-2 rounded-xl border border-slate-200 p-2">
                             <div v-if="selectedRelatedLetters.length" class="mb-3 space-y-2">
                                 <div v-for="letter in selectedRelatedLetters" :key="letter.id" class="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50 p-3">
                                     <div class="min-w-0">
@@ -464,6 +465,7 @@ async function scanOriginalLetter(): Promise<void> {
                                     </div>
                                     <button type="button" class="text-sm font-semibold text-rose-700" @click="selectedRelatedLetters = selectedRelatedLetters.filter((item) => item.id !== letter.id); form.reply_to_ids = selectedRelatedLetters.map((item) => item.id); form.reply_to_id = selectedRelatedLetters[0]?.id ?? ''">حذف</button>
                                 </div>
+                            </div>
                             </div>
                             </div>
                             <InputError class="mt-1" :message="form.errors.reply_to_id" />
