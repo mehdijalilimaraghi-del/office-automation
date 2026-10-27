@@ -33,7 +33,10 @@ class CorrespondenceAccessService
 
     public function canManageBeforeAction(Correspondence $correspondence, User $user): bool
     {
-        return $this->isSecretariat($user) && $correspondence->status === Correspondence::STATUS_DRAFT && ! $correspondence->actions()->exists();
+        return $user->hasPermission('correspondence.view')
+            && $this->isSecretariat($user)
+            && $correspondence->status === Correspondence::STATUS_DRAFT
+            && ! $correspondence->actions()->exists();
     }
 
     public function canRegister(Correspondence $correspondence, User $user): bool
