@@ -305,5 +305,29 @@ class CorrespondenceWorkflowService
                 );
             }
         }
+
+        $followUpUserId = match ($type) {
+            CorrespondenceAction::MANAGER_APPROVE => (int) $letter->created_by,
+            CorrespondenceAction::CONFIRM_RESULT => CorrespondenceAction::query()
+                ->where('correspondence_id', $letter->id)
+                ->where('action_type', CorrespondenceAction::SUBMIT_RESULT)
+                ->latest('id')
+                ->value('actor_id'),
+            default => null,
+        };
+
+        if ($followUpUserId !== null && $followUpUserId !== (int) $actor->id && $followUpUserId !== $toUserId) {
+            $followUpUser = User::query()->whereKey($followUpUserId)->where('status', 'active')->first();
+            if ($followUpUser !== null) {
+                app(NotificationService::class)->correspondenceAction(
+                    $letter,
+                    $followUpUser,
+                    'correspondence.'.$type,
+                    $type === CorrespondenceAction::MANAGER_APPROVE
+                        ? 'نامه شما برای ثبت نهایی تأیید شد'
+                        : 'نتیجه نامه توسط مدیر تأیید شد',
+                );
+            }
+        }
     }
 }
