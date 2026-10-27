@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\\Modules\\Notifications\\Notifications;
+namespace App\Modules\Notifications\Notifications;
 
-use App\\Modules\\Correspondence\\Models\\Correspondence;
-use Illuminate\\Bus\\Queueable;
-use Illuminate\\Notifications\\Notification;
+use App\Modules\Correspondence\Models\Correspondence;
+use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Notification;
 
 final class CorrespondenceNotification extends Notification
 {
