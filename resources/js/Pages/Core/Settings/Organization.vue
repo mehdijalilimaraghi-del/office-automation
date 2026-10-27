@@ -245,7 +245,7 @@ function submit(): void {
                                     <InputError class="mt-1.5" :message="form.errors.numbering_custom_fields_count" />
                                 </div>
                                 <div class="grid gap-5 md:grid-cols-3">
-                                <div v-for="(field, index) in (['numbering_order_first', 'numbering_order_second', 'numbering_order_third'] as const)" v-if="form.numbering_custom_fields_count === '3' || index < 2" :key="field">
+                                <div v-for="(field, index) in (['numbering_order_first', 'numbering_order_second', 'numbering_order_third'] as const)" v-show="form.numbering_custom_fields_count === '3' || index < 2" :key="field">
                                     <label :for="field" class="mb-2 block text-sm font-semibold text-slate-700">جزء {{ ['اول', 'دوم', 'سوم'][index] }}</label>
                                     <select :id="field" v-model="form[field]" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200">
                                         <option value="year">سال شمسی</option><option value="department">کد واحد</option><option value="sequence">شماره ترتیبی</option>
