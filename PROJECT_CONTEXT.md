@@ -1010,3 +1010,10 @@ The active `SYSTEM_ADMIN` account is a special system capability and receives ev
 - Correspondence list/detail surfaces display letter number and registration number separately. The list formats registered_at as a Jalali date and Tehran local time and labels it «ثبت نهایی»; search includes both numbers.
 - Added/adjusted regression coverage for two-part templates, distinct registration numbers, draft letter-number assignment, and department code persistence.
 - Validation pending: pull development, run focused correspondence numbering/service and department tests, then full php artisan test and npm run build. No tests or build have been run by the assistant. master unchanged.
+
+## 2026-10-27 — Correspondence copy recipient UX and workflow additions
+
+- Optional copy recipients are now at the bottom of the creation form and are selected through checkboxes supporting multiple departments.
+- The correspondence creation date fields use the shared JalaliDatePicker component to align date input typography with the rest of the Persian RTL UI.
+- A department manager can add additional copy recipients while the correspondence is in their department's active workflow, provided the workflow has not completed. Backend authorization is authoritative; the existing workflow service records each newly attached copy in correspondence action history and Core Audit, while duplicate recipients are ignored.
+- Added HTTP regression tests for multiple-copy success and non-manager denial. Validation is pending in the user's local environment; no migration is required for this UI/controller change. Development only, master unchanged.
