@@ -360,3 +360,10 @@ Before making the first code change in a new conversation:
 - Restored the outer border/padding around the related-correspondence selector.
 - Search matches now appear in an absolute-positioned dropdown with a white background and shadow, overlaying following content instead of changing page layout. Selected letters remain in a separate list below the search input.
 - Local validation pending: pull `development`, run `php artisan test --filter=CorrespondenceHttpTest`, then `npm run build`. `master` unchanged.
+
+
+## 2026-10-27 — شماره نامه وارده و قالب مستقل شماره ثبت (در انتظار اعتبارسنجی)
+
+- شماره نامه وارده باید عیناً از روی اصل نامه وارد شود و خودکار تولید نمی‌شود؛ شماره ثبت دبیرخانه جداست و هنگام ثبت نهایی با قالب مستقل قابل تنظیم تولید می‌شود.
+- تنظیمات شماره ثبت شامل قالب ساده/سال/کد واحد/سفارشی، دو یا سه جزء، جداکننده و طول بخش ترتیبی است. شماره‌های تاریخی تغییر نمی‌کنند.
+- دبیرخانه فقط تا پیش از اقدام گردش می‌تواند پیش‌نویس را ویرایش یا حذف کند؛ بررسی مجوز در سرور و تراکنش انجام می‌شود. اعتبارسنجی محلی هنوز انجام نشده است.
