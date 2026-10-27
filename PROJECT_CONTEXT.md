@@ -1084,3 +1084,8 @@ The active `SYSTEM_ADMIN` account is a special system capability and receives ev
 - Restored the outer border and padding of «ارتباط با مکاتبات قبلی» to visually match «رونوشت به».
 - Search results use an anchored absolute dropdown with a white background and shadow, so opening results overlays the form rather than pushing selected items and subsequent fields down. Selected letters stay in a separate list below the search field.
 - Local validation pending; run `php artisan test --filter=CorrespondenceHttpTest` and `npm run build` after pulling `development`. `master` unchanged.
+
+
+## 2026-10-27 — Correspondence number policy and secretariat pre-action management
+
+Incoming letter numbers are captured from the original document, never auto-generated. Secretariat registration numbers have a separate configurable template and counter. The secretariat can edit/delete draft correspondence only before any action exists; server-side transactional checks enforce this. Regression tests and local build/test validation are pending.
