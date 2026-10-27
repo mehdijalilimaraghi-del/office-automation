@@ -7,6 +7,7 @@ const props=withDefaults(defineProps<{departments:DepartmentOption[];modelValue?
 const emit=defineEmits<{ 'update:modelValue':[value:number|string|null]; 'update:modelValues':[value:Array<number|string>] }>();
 const isOpen=ref(false), query=ref(''), expandedIds=ref<Set<number>>(new Set());
 const triggerRef=ref<HTMLButtonElement|null>(null);
+const dropdownRef=ref<HTMLDivElement|null>(null);
 const dropdownStyle=ref<Record<string,string>>({});
 const listStyle=ref<Record<string,string>>({});
 function updateDropdownPosition():void {
@@ -29,7 +30,16 @@ function updateDropdownPosition():void {
     };
     listStyle.value={maxHeight:`${Math.max(96,Math.min(288,available-104))}px`};
 }
-function handleViewportChange():void { if(isOpen.value)updateDropdownPosition(); }
+function handleViewportChange(event?:Event):void {
+    if(!isOpen.value)return;
+    const target=event?.target;
+    if(target instanceof Node&&dropdownRef.value?.contains(target))return;
+    if(event?.type==='scroll'){
+        isOpen.value=false;
+        return;
+    }
+    updateDropdownPosition();
+}
 watch(isOpen,async(open)=>{
     if(open){
         await nextTick();
@@ -67,7 +77,7 @@ function clear(){if(props.multiple)emit('update:modelValues',[]);else emit('upda
 <ChevronDown :size="16" class="shrink-0 text-slate-500 transition-transform" :class="isOpen?'rotate-180':''"/>
 </button>
 <Teleport to="body">
-<div v-if="isOpen" :style="dropdownStyle" class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5" dir="rtl">
+<div v-if="isOpen" ref="dropdownRef" :style="dropdownStyle" class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5" dir="rtl">
 <div class="border-b border-slate-100 p-2.5"><div class="relative"><Search :size="16" class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"/><input v-model="query" type="search" class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pr-9 pl-3 text-sm outline-none focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/10" placeholder="جستجوی واحد..." @keydown.esc="isOpen=false"/></div>
 <div class="mt-2 flex items-center justify-between px-1 text-xs text-slate-500"><span>{{nodes.length}} واحد در نمایش</span><span class="flex items-center gap-3"><button type="button" class="hover:text-indigo-700" @click="expandedIds=new Set(parentIds)">بازکردن همه</button><button type="button" class="hover:text-indigo-700" @click="expandedIds=new Set()">بستن همه</button></span></div></div>
 <div :style="listStyle" class="min-h-0 overflow-y-auto overscroll-contain p-1.5">
