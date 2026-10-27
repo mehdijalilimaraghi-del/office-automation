@@ -17,6 +17,7 @@ interface CorrespondenceDetail {
     subject: string;
     body: string | null;
     status: 'draft' | 'registered';
+    letter_number: string | null;
     registration_number: string | null;
     registered_at: string | null;
     created_at: string | null;
@@ -145,7 +146,7 @@ function registerCorrespondence(): void {
                         <h1 class="text-xl font-bold text-slate-900">{{ correspondence.subject }}</h1>
                         <span class="rounded-full px-2.5 py-1 text-xs font-semibold" :class="correspondence.status === 'registered' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ statusLabels[correspondence.status] }}</span>
                     </div>
-                    <p class="mt-1 text-sm text-slate-500">{{ typeLabels[correspondence.type] }} <span v-if="correspondence.registration_number">· شماره ثبت {{ correspondence.registration_number }}</span></p>
+                    <p class="mt-1 text-sm text-slate-500">{{ typeLabels[correspondence.type] }} <span v-if="correspondence.letter_number">· شماره نامه {{ correspondence.letter_number }}</span><span v-if="correspondence.registration_number"> · شماره ثبت {{ correspondence.registration_number }}</span></p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                     <Link :href="route('correspondence.index')" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">بازگشت به فهرست</Link>
