@@ -52,6 +52,12 @@ class OrganizationSettingsTest extends TestCase
             'numbering_order_third' => 'year',
             'numbering_separator' => '-',
             'numbering_padding' => 7,
+            'registration_numbering_format' => 'custom',
+            'registration_numbering_order_first' => 'sequence',
+            'registration_numbering_order_second' => 'year',
+            'registration_numbering_custom_fields_count' => 2,
+            'registration_numbering_separator' => '/',
+            'registration_numbering_padding' => 5,
             'composition_method' => 'both',
             'correspondence_font_family' => 'Vazirmatn',
             'approval_incoming' => 'approval',
@@ -76,6 +82,9 @@ class OrganizationSettingsTest extends TestCase
         ]);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.numbering.format', 'value' => 'custom']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.numbering.custom_order', 'value' => 'sequence,department,year']);
+        $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.registration_numbering.format', 'value' => 'custom']);
+        $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.registration_numbering.custom_order', 'value' => 'sequence,year']);
+        $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.registration_numbering.padding', 'value' => '5']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.composition.method', 'value' => 'both']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.approval.outgoing', 'value' => 'approval']);
 
