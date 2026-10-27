@@ -396,12 +396,12 @@ async function scanOriginalLetter(): Promise<void> {
                         </div>
                         <div v-if="form.type === 'outgoing'">
                             <label for="sent_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ ارسال <span class="text-rose-600">*</span></label>
-                            <JalaliDatePicker v-model="form.sent_at" placeholder="انتخاب تاریخ ارسال" />
+                            <JalaliDatePicker v-model="form.sent_at" placeholder="انتخاب تاریخ ارسال" required />
                             <InputError class="mt-1" :message="form.errors.sent_at" />
                         </div>
                         <div v-if="form.type === 'incoming'">
                             <label for="received_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ دریافت <span class="text-rose-600">*</span></label>
-                            <JalaliDatePicker v-model="form.received_at" placeholder="انتخاب تاریخ دریافت" />
+                            <JalaliDatePicker v-model="form.received_at" placeholder="انتخاب تاریخ دریافت" required />
                             <InputError class="mt-1" :message="form.errors.received_at" />
                         </div>
                         <div class="sm:col-span-2">
