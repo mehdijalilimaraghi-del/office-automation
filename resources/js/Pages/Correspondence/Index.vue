@@ -30,6 +30,7 @@ const search = ref(props.filters.search);
 const type = ref(props.filters.type);
 const status = ref(props.filters.status);
 const scope = ref(props.filters.scope);
+const scope = ref(props.filters.scope);
 const typeLabels: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
 const statusLabels: Record<string, string> = { draft: 'پیش‌نویس', registered: 'ثبت‌شده' };
 const classificationLabels: Record<string, string> = { ordinary: 'عادی', confidential: 'محرمانه' };
