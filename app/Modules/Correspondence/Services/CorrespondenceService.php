@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Core\ExternalParties\Models\ExternalOrganization;
 use App\Core\ExternalParties\Models\ExternalDepartment;
 use App\Modules\Correspondence\Models\Correspondence;
+use App\Modules\Correspondence\Services\CorrespondenceNumberingService;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -80,7 +81,7 @@ class CorrespondenceService
                 ? null
                 : \App\Core\Departments\Models\Department::query()->whereKey($createdDepartmentId)->value('manager_id');
 
-            return Correspondence::query()->create([
+            $correspondence = Correspondence::query()->create([
                 'workflow_state' => $initialState,
                 'current_department_id' => $createdDepartmentId,
                 'current_user_id' => $approvalRequired && $type !== Correspondence::TYPE_INCOMING
@@ -103,7 +104,13 @@ class CorrespondenceService
                 'external_organization_id' => $externalOrganizationId,
                 'external_department_id' => $externalDepartmentId,
                 'reply_to_id' => $data['reply_to_id'] ?? null,
-            ])->load(['creator', 'createdDepartment', 'recipientDepartment', 'replyTo']);
+            ]);
+
+            $correspondence->forceFill([
+                'letter_number' => app(CorrespondenceNumberingService::class)->nextNumber($correspondence),
+            ])->save();
+
+            return $correspondence->load(['creator', 'createdDepartment', 'recipientDepartment', 'replyTo']);
         });
     }
 }
