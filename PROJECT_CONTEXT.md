@@ -1,5 +1,6 @@
 ## 2026-10-27 — Correspondence form grid rows
 
+- Expanded the external organization section (sender for incoming / recipient for outgoing correspondence) to span the full row in the four-column form grid. Validation pending: run the frontend build after pulling `development`.
 - Kept the first correspondence metadata row at five large-screen columns for fields from correspondence type through the applicable date/recipient fields.
 - Started a separate four-column grid for subject and all subsequent form fields, preventing the first-row column count from distorting the remaining sections. Recipient department retains its two-column span where shown, keeping the selector usable without pushing the date field to another row.
 - Validation pending: owner to run the focused correspondence test and frontend build after pulling `development`.
