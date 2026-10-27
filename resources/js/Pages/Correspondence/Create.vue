@@ -578,7 +578,7 @@ async function scanOriginalLetter(): Promise<void> {
                     </div>
                     <p class="text-xs text-slate-500">تعداد واحدهای انتخاب‌شده: {{ form.copy_department_ids.length }}</p>
                     <InputError class="mt-1" :message="form.errors.copy_department_ids" />
-                    <InputError v-for="(message, index) in Object.entries(form.errors).filter(([key]) => key.startsWith('copy_department_ids.')).map(([, message]) => message)" :key="index" :message="message" />
+                    <InputError class="mt-1" :message="form.errors['copy_department_ids.0']" />
                 </section>
 
                 <div class="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-5">
