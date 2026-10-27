@@ -9,7 +9,7 @@ import axios from 'axios';
 interface Department { id: number; name: string; }
 interface ExternalOrganization { id: number; name: string; }
 interface ExternalDepartment { id: number; external_organization_id: number; name: string; }
-interface ReplyOption { id: number; letter_number: string | null; registration_number: string | null; subject: string; }
+interface ReplyOption { id: number; letter_number: string | null; registration_number: string | null; external_registration_number: string | null; subject: string; type: string; letter_date: string | null; created_department: string | null; recipient_department: string | null; external_organization: string | null; external_department: string | null; }
 interface CreatedDepartment { id: number; name: string; }
 type CompositionMode = 'editor' | 'file' | 'both';
 type TextDirection = 'rtl' | 'ltr';
@@ -22,11 +22,57 @@ const props = defineProps<{
     externalDepartments: ExternalDepartment[];
     createdDepartment: CreatedDepartment | null;
     createdDepartments: CreatedDepartment[];
-    repliesTo: ReplyOption[];
     correspondenceFontFamily: string;
 }>();
 
 const editor = ref<HTMLDivElement | null>(null);
+const relatedSearchQuery = ref('');
+const relatedSearchResults = ref<ReplyOption[]>([]);
+const selectedRelatedLetter = ref<ReplyOption | null>(null);
+const relatedSearchLoading = ref(false);
+let relatedSearchTimer: number | undefined;
+let relatedSearchRequest = 0;
+
+function formatRelatedLetterDate(value: string | null): string {
+    if (!value) return 'تاریخ نامشخص';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'تاریخ نامشخص';
+    return new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+        year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Tehran',
+    }).format(date);
+}
+
+function searchRelatedLetters(): void {
+    if (relatedSearchTimer !== undefined) window.clearTimeout(relatedSearchTimer);
+    const query = relatedSearchQuery.value.trim();
+    if (query.length < 2) {
+        relatedSearchResults.value = [];
+        relatedSearchLoading.value = false;
+        return;
+    }
+
+    relatedSearchTimer = window.setTimeout(async () => {
+        const requestId = ++relatedSearchRequest;
+        relatedSearchLoading.value = true;
+        try {
+            const response = await axios.get<{ data: ReplyOption[] }>(route('correspondence.related-search'), {
+                params: { q: query },
+            });
+            if (requestId === relatedSearchRequest) relatedSearchResults.value = response.data.data;
+        } catch {
+            if (requestId === relatedSearchRequest) relatedSearchResults.value = [];
+        } finally {
+            if (requestId === relatedSearchRequest) relatedSearchLoading.value = false;
+        }
+    }, 250);
+}
+
+function selectRelatedLetter(letter: ReplyOption): void {
+    selectedRelatedLetter.value = letter;
+    form.reply_to_id = letter.id;
+    relatedSearchQuery.value = '';
+    relatedSearchResults.value = [];
+}
 const scannerLoading = ref(false);
 const scannerMessage = ref('');
 const scannerFileName = ref('');
@@ -237,6 +283,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
     clearScannerPreview();
+    if (relatedSearchTimer !== undefined) window.clearTimeout(relatedSearchTimer);
 });
 
 async function scanOriginalLetter(): Promise<void> {
@@ -348,12 +395,12 @@ async function scanOriginalLetter(): Promise<void> {
                             <InputError class="mt-1" :message="form.errors.recipient_department_id" />
                         </div>
                         <div v-if="form.type === 'outgoing'">
-                            <label for="sent_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ ارسال</label>
+                            <label for="sent_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ ارسال <span class="text-rose-600">*</span></label>
                             <JalaliDatePicker v-model="form.sent_at" placeholder="انتخاب تاریخ ارسال" />
                             <InputError class="mt-1" :message="form.errors.sent_at" />
                         </div>
                         <div v-if="form.type === 'incoming'">
-                            <label for="received_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ دریافت</label>
+                            <label for="received_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ دریافت <span class="text-rose-600">*</span></label>
                             <JalaliDatePicker v-model="form.received_at" placeholder="انتخاب تاریخ دریافت" />
                             <InputError class="mt-1" :message="form.errors.received_at" />
                         </div>
