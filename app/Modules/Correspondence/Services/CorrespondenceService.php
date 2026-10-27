@@ -30,6 +30,9 @@ class CorrespondenceService
         if ($subject === '') {
             throw new InvalidArgumentException('موضوع مکاتبه الزامی است.');
         }
+        if ($type === Correspondence::TYPE_INCOMING && blank($data['letter_number'] ?? null)) {
+            throw new InvalidArgumentException('شماره نامه وارده باید عیناً از روی نامه اصلی وارد شود.');
+        }
 
         $externalOrganizationId = isset($data['external_organization_id']) && $data['external_organization_id'] !== ''
             ? (int) $data['external_organization_id'] : null;
