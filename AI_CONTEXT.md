@@ -293,3 +293,10 @@ Before making the first code change in a new conversation:
 - Correspondence create date inputs now use the shared JalaliDatePicker component for consistent Persian font styling.
 - Added POST `correspondence.copies.store`: an active user must be able to view the letter and be the manager of its current responsible department; the workflow must not be completed. One or more active departments may be added as copies. Existing `CorrespondenceWorkflowService::addCopies()` handles idempotent attachment and action/audit recording.
 - Added focused HTTP coverage for manager authorization and multiple recipients. Local validation is pending: `php artisan test --filter=CorrespondenceHttpTest`, then `npm run build`. No database migration is required; `master` remains unchanged.
+
+2026-10-27 — Related correspondence field and required dates
+
+- Form label changed to «در ارتباط با مکاتبات قبلی (اختیاری)» to reflect reply and continuation relations.
+- Related correspondence is searched remotely via correspondence.related-search; query matches subject, letter number, registration number, external registration number, internal department name/code, and external organization/department name/code. Search is visibility-filtered and returns up to 20 results with subject, letter/registration numbers, date, and party details.
+- sent_at is required for outgoing and received_at is required for incoming, with matching UI markers and backend validation.
+- Focused tests added; local test/build validation pending. No database migration required. Do not modify master.
