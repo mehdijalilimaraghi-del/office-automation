@@ -392,6 +392,17 @@ class CorrespondenceController extends Controller
 
         abort_unless($access->canCreateType($data['type'], $request->user()), 403);
 
+        $relatedLetterIds = array_values(array_unique(array_map('intval', $data['reply_to_ids'] ?? [])));
+        if ($relatedLetterIds !== []) {
+            $visibleRelatedCount = $access->visibleToQuery(Correspondence::query(), $request->user())
+                ->where('status', Correspondence::STATUS_REGISTERED)
+                ->whereIn('id', $relatedLetterIds)
+                ->count();
+            if ($visibleRelatedCount !== count($relatedLetterIds)) {
+                return back()->withErrors(['reply_to_ids' => 'یک یا چند مکاتبه انتخاب‌شده قابل دسترسی نیست.'])->withInput();
+            }
+        }
+
         $mode = $data['type'] === Correspondence::TYPE_INCOMING
             ? 'file'
             : ($data['composition_mode'] ?? 'editor');
