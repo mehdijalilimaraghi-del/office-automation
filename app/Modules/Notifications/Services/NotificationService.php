@@ -6,6 +6,8 @@ namespace App\Modules\Notifications\Services;
 
 use App\Models\User;
 use App\Modules\Notifications\Notifications\TaskNotification;
+use App\Modules\Notifications\Notifications\CorrespondenceNotification;
+use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Tasks\Models\Task;
 
 final class NotificationService
@@ -59,4 +61,17 @@ final class NotificationService
             task: $task,
         ));
     }
+    public function correspondenceAction(Correspondence $correspondence, User $recipient, string $type, string $title): void
+    {
+        if (! $recipient->isActive()) {
+            return;
+        }
+
+        $recipient->notify(new CorrespondenceNotification(
+            notificationType: $type,
+            title: $title,
+            correspondence: $correspondence,
+        ));
+    }
+
 }
