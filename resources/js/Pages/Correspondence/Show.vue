@@ -6,6 +6,7 @@ import type { PageProps } from '@/types';
 interface RelatedCorrespondence {
     id: number;
     subject: string;
+    letter_number: string | null;
     registration_number: string | null;
     type: string;
     status: string;
@@ -334,8 +335,8 @@ function registerCorrespondence(): void {
             <section v-if="correspondence.reply_to || correspondence.replies.length" class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">ارتباط پاسخ‌ها</h2></div>
                 <div class="space-y-3 p-5">
-                    <div v-if="correspondence.reply_to" class="rounded-xl bg-slate-50 p-4"><p class="text-xs text-slate-500">این نامه در پاسخ به</p><Link :href="route('correspondence.show', correspondence.reply_to.id)" class="mt-1 inline-block text-sm font-semibold text-indigo-700 hover:underline">{{ correspondence.reply_to.subject }}</Link><p class="mt-1 text-xs text-slate-500">شماره ثبت: {{ correspondence.reply_to.registration_number ?? '—' }}</p></div>
-                    <div v-if="correspondence.replies.length" class="space-y-2"><p class="text-xs text-slate-500">پاسخ‌های مرتبط</p><Link v-for="reply in correspondence.replies" :key="reply.id" :href="route('correspondence.show', reply.id)" class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 p-4 hover:border-indigo-200 hover:bg-indigo-50/40"><span class="text-sm font-semibold text-indigo-700">{{ reply.subject }}</span><span class="text-xs text-slate-500">{{ reply.registration_number ?? 'بدون شماره ثبت' }}</span></Link></div>
+                    <div v-if="correspondence.reply_to" class="rounded-xl bg-slate-50 p-4"><p class="text-xs text-slate-500">این نامه در پاسخ به</p><Link :href="route('correspondence.show', correspondence.reply_to.id)" class="mt-1 inline-block text-sm font-semibold text-indigo-700 hover:underline">{{ correspondence.reply_to.subject }}</Link><p class="mt-1 text-xs text-slate-500">شماره نامه: {{ correspondence.reply_to.letter_number ?? correspondence.reply_to.registration_number ?? '—' }}</p></div>
+                    <div v-if="correspondence.replies.length" class="space-y-2"><p class="text-xs text-slate-500">پاسخ‌های مرتبط</p><Link v-for="reply in correspondence.replies" :key="reply.id" :href="route('correspondence.show', reply.id)" class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 p-4 hover:border-indigo-200 hover:bg-indigo-50/40"><span class="text-sm font-semibold text-indigo-700">{{ reply.subject }}</span><span class="text-xs text-slate-500">{{ reply.letter_number ?? reply.registration_number ?? 'بدون شماره' }}</span></Link></div>
                 </div>
             </section>
         </div>
