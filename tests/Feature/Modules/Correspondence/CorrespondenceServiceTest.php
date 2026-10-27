@@ -35,6 +35,7 @@ class CorrespondenceServiceTest extends TestCase
             'subject' => 'درخواست رسمی',
             'status' => Correspondence::STATUS_DRAFT,
             'registration_number' => null,
+            'letter_number' => $correspondence->letter_number,
             'created_by' => $creator->id,
         ]);
         $this->assertSame((int) $creator->id, (int) $correspondence->creator->id);
