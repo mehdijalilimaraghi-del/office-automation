@@ -40,6 +40,7 @@ class Correspondence extends Model
         'body',
         'status',
         'registration_number',
+        'letter_number',
         'registered_at',
         'registered_by',
         'sender_name',
