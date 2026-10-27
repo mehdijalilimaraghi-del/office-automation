@@ -10,6 +10,7 @@ interface CorrespondenceRow {
     subject: string;
     status: 'draft' | 'registered';
     can_register: boolean;
+    letter_number: string | null;
     registration_number: string | null;
     registered_at: string | null;
     created_at: string;
@@ -34,6 +35,15 @@ const scope = ref(props.filters.scope);
 const typeLabels: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
 const statusLabels: Record<string, string> = { draft: 'پیش‌نویس', registered: 'ثبت‌شده' };
 const classificationLabels: Record<string, string> = { ordinary: 'عادی', confidential: 'محرمانه' };
+function formatRegisteredAt(value: string | null): string {
+    if (!value) return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '—';
+    return new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+        timeZone: 'Asia/Tehran', year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    }).format(date);
+}
 function applyFilters(): void {
     router.get(route('correspondence.index'), { scope: scope.value || 'mine', search: search.value || undefined, type: type.value || undefined, status: status.value || undefined }, { preserveState: true, replace: true });
 }
@@ -57,7 +67,7 @@ function register(id: number): void {
             <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                     <select v-model="scope" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @change="applyFilters"><option value="mine">مکاتبات من</option><option value="department">مکاتبات واحد من</option><option value="all">همه مکاتبات مجاز</option></select>
-                    <input v-model="search" type="search" placeholder="جست‌وجو در موضوع یا شماره ثبت" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @keydown.enter="applyFilters" />
+                    <input v-model="search" type="search" placeholder="جست‌وجو در موضوع یا شماره نامه/ثبت" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @keydown.enter="applyFilters" />
                     <select v-model="type" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"><option value="">همه انواع</option><option value="incoming">وارده</option><option value="outgoing">صادره</option><option value="internal">داخلی</option></select>
                     <select v-model="status" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"><option value="">همه وضعیت‌ها</option><option value="draft">پیش‌نویس</option><option value="registered">ثبت‌شده</option></select>
                     <button type="button" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700" @click="applyFilters">اعمال فیلتر</button>
@@ -67,12 +77,13 @@ function register(id: number): void {
                 <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4"><h3 class="font-bold text-slate-900">{{ scope === 'mine' ? 'مکاتبات من' : scope === 'department' ? 'مکاتبات واحد من' : 'همه مکاتبات مجاز' }}</h3><span class="text-xs text-slate-500">{{ correspondences.total }} مورد</span></div>
                 <div v-if="correspondences.data.length" class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-100 text-right text-sm">
-                        <thead class="bg-slate-50 text-xs font-semibold text-slate-500"><tr><th class="px-5 py-3">موضوع</th><th class="px-5 py-3">نوع</th><th class="px-5 py-3">طبقه‌بندی</th><th class="px-5 py-3">شماره ثبت</th><th class="px-5 py-3">واحد</th><th class="px-5 py-3">ایجادکننده</th><th class="px-5 py-3">وضعیت</th><th class="px-5 py-3">عملیات</th></tr></thead>
+                        <thead class="bg-slate-50 text-xs font-semibold text-slate-500"><tr><th class="px-5 py-3">موضوع</th><th class="px-5 py-3">نوع</th><th class="px-5 py-3">طبقه‌بندی</th><th class="px-5 py-3">شماره نامه</th><th class="px-5 py-3">شماره ثبت</th><th class="px-5 py-3">واحد</th><th class="px-5 py-3">ایجادکننده</th><th class="px-5 py-3">وضعیت</th><th class="px-5 py-3">عملیات</th></tr></thead>
                         <tbody class="divide-y divide-slate-100">
                             <tr v-for="item in correspondences.data" :key="item.id" class="hover:bg-slate-50/70">
-                                <td class="max-w-sm px-5 py-4"><Link :href="route('correspondence.show', item.id)" class="font-semibold text-indigo-700 hover:text-indigo-900 hover:underline">{{ item.subject }}</Link><div v-if="item.registration_number" class="mt-1 text-xs text-slate-500">ثبت: {{ item.registered_at ?? '—' }}</div></td>
+                                <td class="max-w-sm px-5 py-4"><Link :href="route('correspondence.show', item.id)" class="font-semibold text-indigo-700 hover:text-indigo-900 hover:underline">{{ item.subject }}</Link><div v-if="item.registration_number" class="mt-1 text-xs text-slate-500">ثبت نهایی: {{ formatRegisteredAt(item.registered_at) }}</div></td>
                                 <td class="whitespace-nowrap px-5 py-4 text-slate-600">{{ typeLabels[item.type] }}</td>
                                 <td class="whitespace-nowrap px-5 py-4"><span :class="item.classification === 'confidential' ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-700'" class="rounded-full px-2.5 py-1 text-xs font-semibold">{{ classificationLabels[item.classification] }}</span></td>
+                                <td class="whitespace-nowrap px-5 py-4 font-mono text-slate-700">{{ item.letter_number ?? '—' }}</td>
                                 <td class="whitespace-nowrap px-5 py-4 font-mono text-slate-700">{{ item.registration_number ?? '—' }}</td>
                                 <td class="px-5 py-4 text-slate-600"><div>{{ item.recipient_department?.name ?? item.created_department?.name ?? '—' }}</div><div v-if="item.external_organization" class="mt-1 text-xs text-teal-700">{{ item.external_organization.name }}<span v-if="item.external_department"> — {{ item.external_department.name }}</span></div></td>
                                 <td class="px-5 py-4 text-slate-600">{{ item.creator?.name ?? '—' }}</td>
