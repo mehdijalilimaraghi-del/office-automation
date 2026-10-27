@@ -6,11 +6,11 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import axios from 'axios';
 
-interface Department { id: number; name: string; parent_id: number | null; }
+interface Department { id: number; name: string; parent_id: number | null; icon?: string | null; }
 interface ExternalOrganization { id: number; name: string; }
 interface ExternalDepartment { id: number; external_organization_id: number; parent_id?: number | null; name: string; }
 interface ReplyOption { id: number; letter_number: string | null; registration_number: string | null; external_registration_number: string | null; subject: string; type: string; letter_date: string | null; created_department: string | null; recipient_department: string | null; external_organization: string | null; external_organization_code: string | null; external_department: string | null; external_department_code: string | null; created_department_code: string | null; recipient_department_code: string | null; }
-interface CreatedDepartment { id: number; name: string; parent_id?: number | null; }
+interface CreatedDepartment { id: number; name: string; parent_id?: number | null; icon?: string | null; }
 type CompositionMode = 'editor' | 'file' | 'both';
 type TextDirection = 'rtl' | 'ltr';
 

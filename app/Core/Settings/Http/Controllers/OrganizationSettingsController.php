@@ -74,7 +74,7 @@ class OrganizationSettingsController extends Controller
             ],
             'departments' => Department::query()
                 ->orderBy('name')
-                ->get(['id', 'name', 'parent_id', 'is_active']),
+                ->get(['id', 'name', 'parent_id', 'icon', 'is_active']),
         ]);
     }
 

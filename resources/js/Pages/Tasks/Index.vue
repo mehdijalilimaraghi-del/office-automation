@@ -36,6 +36,7 @@ interface DepartmentOption {
     id: number;
     name: string;
     parent_id?: number | null;
+    icon?: string | null;
 }
 interface ExternalOrganizationOption { id: number; name: string; }
 interface ExternalDepartmentOption { id: number; external_organization_id: number; parent_id?: number | null; name: string; }

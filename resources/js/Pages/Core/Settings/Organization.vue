@@ -34,6 +34,7 @@ interface OrganizationDepartment {
     id: number;
     name: string;
     parent_id?: number | null;
+    icon?: string | null;
     is_active: boolean;
 }
 

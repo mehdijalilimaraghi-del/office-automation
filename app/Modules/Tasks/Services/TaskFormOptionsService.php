@@ -20,7 +20,7 @@ class TaskFormOptionsService
     }
 
     /**
-     * @return array{projects: array<int, array{id:int,name:string}>, departments: array<int, array{id:int,name:string,parent_id:int|null}>, users: array<int, array{id:int,name:string}>}
+     * @return array{projects: array<int, array{id:int,name:string}>, departments: array<int, array{id:int,name:string,parent_id:int|null,icon:string|null}>, users: array<int, array{id:int,name:string}>}
      */
     public function forFilters(User $user): array
     {
@@ -38,8 +38,8 @@ class TaskFormOptionsService
             'projects' => Project::query()->whereIn('id', $projectIds)->orderBy('name')->get(['id', 'name'])
                 ->map(fn (Project $project): array => ['id' => (int) $project->id, 'name' => $project->name])->values()->all(),
             'departments' => Department::query()->whereIn('id', $departmentIds->merge($sectionDepartmentIds)->unique())
-                ->orderBy('name')->get(['id', 'name', 'parent_id'])
-                ->map(fn (Department $department): array => ['id' => (int) $department->id, 'name' => $department->name, 'parent_id' => $department->parent_id !== null ? (int) $department->parent_id : null])->values()->all(),
+                ->orderBy('name')->get(['id', 'name', 'parent_id', 'icon'])
+                ->map(fn (Department $department): array => ['id' => (int) $department->id, 'name' => $department->name, 'parent_id' => $department->parent_id !== null ? (int) $department->parent_id : null, 'icon' => $department->icon])->values()->all(),
             'users' => User::query()->operational()->where('status', 'active')
                 ->whereIn('id', (clone $visibleTasks)->whereNotNull('tasks.assignee_id')->select('tasks.assignee_id'))
                 ->orderBy('name')->get(['id', 'name'])
@@ -159,11 +159,12 @@ class TaskFormOptionsService
             'departments' => Department::query()
                 ->where('is_active', true)
                 ->orderBy('name')
-                ->get(['id', 'name', 'parent_id'])
+                ->get(['id', 'name', 'parent_id', 'icon'])
                 ->map(fn (Department $department): array => [
                     'id' => (int) $department->id,
                     'name' => $department->name,
                     'parent_id' => $department->parent_id !== null ? (int) $department->parent_id : null,
+                    'icon' => $department->icon,
                 ])
                 ->values()
                 ->all(),

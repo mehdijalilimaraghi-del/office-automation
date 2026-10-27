@@ -189,7 +189,7 @@ class CorrespondenceController extends Controller
                 ])
                 ->values(),
             'canRegister' => $access->canRegister($correspondence, $request->user()),
-            'workflowDepartments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'parent_id']),
+            'workflowDepartments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'parent_id', 'icon']),
             'canReturnToManager' => $correspondence->workflow_state !== 'completed_with_result'
                 && $correspondence->status === Correspondence::STATUS_REGISTERED
                 && in_array($correspondence->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)
@@ -332,7 +332,7 @@ class CorrespondenceController extends Controller
                 ['value' => Correspondence::CLASSIFICATION_ORDINARY, 'label' => 'عادی'],
                 ['value' => Correspondence::CLASSIFICATION_CONFIDENTIAL, 'label' => 'محرمانه'],
             ],
-            'departments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'parent_id']),
+            'departments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'parent_id', 'icon']),
         ]);
     }
 

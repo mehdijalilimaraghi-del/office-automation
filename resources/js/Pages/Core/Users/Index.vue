@@ -11,6 +11,7 @@ interface Department {
     id: number;
     name: string;
     parent_id?: number | null;
+    icon?: string | null;
     code: string | null;
     is_active: boolean;
     pivot?: {
