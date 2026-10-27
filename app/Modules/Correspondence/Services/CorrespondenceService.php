@@ -90,6 +90,7 @@ class CorrespondenceService
                 'type' => $type,
                 'classification' => $data['classification'] ?? Correspondence::CLASSIFICATION_ORDINARY,
                 'subject' => $subject,
+                'letter_number' => $type === Correspondence::TYPE_INCOMING ? trim((string) ($data['letter_number'] ?? '')) : null,
                 'body' => $data['body'] ?? null,
                 'status' => Correspondence::STATUS_DRAFT,
                 'sender_name' => $type === Correspondence::TYPE_INTERNAL
@@ -106,9 +107,7 @@ class CorrespondenceService
                 'reply_to_id' => $data['reply_to_id'] ?? null,
             ]);
 
-            $correspondence->forceFill([
-                'letter_number' => app(CorrespondenceNumberingService::class)->nextNumber($correspondence),
-            ])->save();
+            if ($type !== Correspondence::TYPE_INCOMING) $correspondence->forceFill(['letter_number' => app(CorrespondenceNumberingService::class)->nextNumber($correspondence)])->save();
 
             return $correspondence->load(['creator', 'createdDepartment', 'recipientDepartment', 'replyTo']);
         });
