@@ -686,8 +686,8 @@ class CorrespondenceHttpTest extends TestCase
             'note' => 'جهت اطلاع',
         ]);
 
-        $actorCartable = app(\\App\\Modules\\Cartable\\Services\\CartableService::class)->for($actor);
-        $copyCartable = app(\\App\\Modules\\Cartable\\Services\\CartableService::class)->for($copyViewer);
+        $actorCartable = app(\App\Modules\Cartable\Services\CartableService::class)->for($actor);
+        $copyCartable = app(\App\Modules\Cartable\Services\CartableService::class)->for($copyViewer);
 
         $this->assertSame(1, $actorCartable['summary']['correspondence_referrals']);
         $this->assertSame($letter->id, $actorCartable['correspondenceItems']->first()->id);
