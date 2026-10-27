@@ -43,7 +43,7 @@ class CorrespondenceNumberingServiceTest extends TestCase
         $this->assertStringEndsWith('/000003', $service->nextNumber($correspondence));
 
         $settings->set(['correspondence.numbering.format' => 'year_department']);
-        $this->assertStringContainsString('/ORG/000003', $service->nextNumber($correspondence));
+        $this->assertStringContainsString('/ORG/000004', $service->nextNumber($correspondence));
     }
 
     public function test_department_numbering_uses_the_creator_department_not_the_recipient_department(): void
