@@ -387,7 +387,7 @@ async function scanOriginalLetter(): Promise<void> {
                             <InputError class="mt-1" :message="form.errors.created_department_id" />
                         </div>
                         <div v-if="form.type === 'incoming' || form.type === 'internal'">
-                            <label for="recipient_department_id" class="mb-1.5 block text-sm font-semibold text-slate-700">واحد دریافت‌کننده <span class="text-rose-600">*</span></label>
+                            <label for="recipient_department_id" class="mb-1.5 block text-sm font-semibold text-slate-700">واحد دریافت‌کننده</label>
                             <select id="recipient_department_id" v-model="form.recipient_department_id" required class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">انتخاب واحد دریافت‌کننده</option>
                                 <option v-for="item in departments" :key="item.id" :value="item.id">{{ item.name }}</option>
@@ -395,23 +395,23 @@ async function scanOriginalLetter(): Promise<void> {
                             <InputError class="mt-1" :message="form.errors.recipient_department_id" />
                         </div>
                         <div v-if="form.type === 'outgoing'">
-                            <label for="sent_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ ارسال <span class="text-rose-600">*</span></label>
+                            <label for="sent_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ ارسال</label>
                             <JalaliDatePicker v-model="form.sent_at" placeholder="انتخاب تاریخ ارسال" required />
                             <InputError class="mt-1" :message="form.errors.sent_at" />
                         </div>
                         <div v-if="form.type === 'incoming'">
-                            <label for="received_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ دریافت <span class="text-rose-600">*</span></label>
+                            <label for="received_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ دریافت</label>
                             <JalaliDatePicker v-model="form.received_at" placeholder="انتخاب تاریخ دریافت" required />
                             <InputError class="mt-1" :message="form.errors.received_at" />
                         </div>
                         <div class="sm:col-span-2">
-                            <label for="subject" class="mb-1.5 block text-sm font-semibold text-slate-700">موضوع <span class="text-rose-600">*</span></label>
+                            <label for="subject" class="mb-1.5 block text-sm font-semibold text-slate-700">موضوع</label>
                             <input id="subject" v-model="form.subject" required maxlength="255" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
                             <InputError class="mt-1" :message="form.errors.subject" />
                         </div>
                         <div class="sm:col-span-2">
-                            <label for="related_correspondence_search" class="mb-1.5 block text-sm font-semibold text-slate-700">در ارتباط با مکاتبات قبلی (اختیاری)</label>
-                            <p class="mb-2 text-xs leading-5 text-slate-500">می‌توانید نامه مرتبط قبلی یا نامه‌ای را که این مکاتبه در ادامه یا پاسخ به آن است، جست‌وجو و انتخاب کنید.</p>
+                            <div class="mb-1.5 flex items-center gap-1.5"><label for="related_correspondence_search" class="text-sm font-semibold text-slate-700">در ارتباط با مکاتبات قبلی</label><details class="group relative"><summary aria-label="راهنمای ارتباط با مکاتبات قبلی" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-300">؟</summary><div class="absolute right-0 top-7 z-20 w-64 rounded-lg border border-slate-200 bg-white p-3 text-xs font-normal leading-6 text-slate-700 shadow-lg">در صورت ارتباط، نامه قبلی را جست‌وجو و انتخاب کنید؛ این ارتباط می‌تواند ادامه مکاتبه یا پاسخ به نامه قبلی باشد.</div></details></div>
+                            <p class="mb-2 text-xs leading-5 text-slate-500">در صورت نیاز، نامه مرتبط را با شماره نامه، شماره ثبت، موضوع، واحد یا سازمان جست‌وجو کنید.</p>
                             <div v-if="selectedRelatedLetter" class="mb-3 flex flex-wrap items-start justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50 p-3">
                                 <div class="min-w-0">
                                     <p class="text-sm font-semibold text-slate-900">{{ selectedRelatedLetter.subject }}</p>
