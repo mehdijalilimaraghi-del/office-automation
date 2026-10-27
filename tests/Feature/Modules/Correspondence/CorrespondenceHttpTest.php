@@ -265,6 +265,71 @@ class CorrespondenceHttpTest extends TestCase
         ]);
     }
 
+    public function test_incoming_and_outgoing_letters_require_their_respective_dates(): void
+    {
+        $user = $this->userWithPermission('correspondence.create');
+
+        $this->actingAs($user)->from(route('correspondence.create'))->post(route('correspondence.store'), [
+            'type' => Correspondence::TYPE_OUTGOING,
+            'subject' => 'نامه صادره بدون تاریخ',
+            'composition_mode' => 'editor',
+            'body' => '<p>متن نامه</p>',
+        ])->assertRedirect(route('correspondence.create'))
+            ->assertSessionHasErrors('sent_at');
+
+        $secretariatUser = User::factory()->create(['status' => 'active']);
+        $department = Department::query()->create([
+            'name' => 'دبیرخانه تاریخ '.Str::upper(Str::random(5)),
+            'code' => 'DAT-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $secretariatUser->id,
+        ]);
+        app(SystemSettingsService::class)->set([
+            OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT) => (string) $department->id,
+        ]);
+
+        $this->actingAs($secretariatUser)->from(route('correspondence.create'))->post(route('correspondence.store'), [
+            'type' => Correspondence::TYPE_INCOMING,
+            'recipient_department_id' => $this->recipientDepartmentId(),
+            'subject' => 'نامه وارده بدون تاریخ',
+            'original_letters' => [UploadedFile::fake()->create('original.pdf', 10, 'application/pdf')],
+        ])->assertRedirect(route('correspondence.create'))
+            ->assertSessionHasErrors('received_at');
+
+        $this->assertDatabaseMissing('correspondences', ['subject' => 'نامه صادره بدون تاریخ']);
+        $this->assertDatabaseMissing('correspondences', ['subject' => 'نامه وارده بدون تاریخ']);
+    }
+
+    public function test_related_correspondence_search_returns_numbers_dates_and_party_names(): void
+    {
+        $user = $this->userWithPermission('correspondence.create');
+        $department = Department::query()->create([
+            'name' => 'واحد جستجوی نامه',
+            'code' => 'SRCH-'.Str::upper(Str::random(5)),
+            'is_active' => true,
+        ]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_OUTGOING,
+            'subject' => 'موضوع قابل جستجو',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'letter_number' => '1405-000777',
+            'registration_number' => 'REG-000777',
+            'sent_at' => '2026-10-24',
+            'registered_at' => now(),
+            'created_by' => $user->id,
+            'created_department_id' => $department->id,
+        ]);
+
+        $this->actingAs($user)->getJson(route('correspondence.related-search', ['q' => '000777']))
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $letter->id)
+            ->assertJsonPath('data.0.letter_number', '1405-000777')
+            ->assertJsonPath('data.0.registration_number', 'REG-000777')
+            ->assertJsonPath('data.0.subject', 'موضوع قابل جستجو')
+            ->assertJsonPath('data.0.created_department', 'واحد جستجوی نامه')
+            ->assertJsonStructure(['data' => [['letter_date', 'external_registration_number']]]);
+    }
+
     public function test_user_with_create_permission_can_create_editor_draft_and_unsafe_markup_is_removed(): void
     {
         $user = $this->userWithPermission('correspondence.create');
@@ -336,6 +401,7 @@ class CorrespondenceHttpTest extends TestCase
 
         $this->actingAs($user)->from(route('correspondence.create'))->post(route('correspondence.store'), [
             'type' => 'outgoing',
+            'sent_at' => '2026-10-24',
             'subject' => 'نامه صادره',
             'composition_mode' => 'file',
         ])->assertRedirect(route('correspondence.create'))
@@ -440,7 +506,7 @@ class CorrespondenceHttpTest extends TestCase
         $this->actingAs($user)->get(route('correspondence.create'))->assertOk()->assertInertia(fn ($page) => $page->where('types', [['value' => Correspondence::TYPE_OUTGOING, 'label' => 'صادره'], ['value' => Correspondence::TYPE_INTERNAL, 'label' => 'داخلی']]));
         $this->actingAs($user)->post(route('correspondence.store'), ['type' => Correspondence::TYPE_INCOMING, 'subject' => 'نامه وارده غیرمجاز', 'composition_mode' => 'editor', 'body' => '<p>متن</p>'])->assertForbidden();
         $this->assertDatabaseCount('correspondences', 0);
-        $this->actingAs($user)->post(route('correspondence.store'), ['type' => Correspondence::TYPE_OUTGOING, 'subject' => 'پیش‌نویس صادره مجاز', 'composition_mode' => 'editor', 'body' => '<p>متن</p>'])->assertRedirect(route('correspondence.index'));
+        $this->actingAs($user)->post(route('correspondence.store'), ['type' => Correspondence::TYPE_OUTGOING, 'sent_at' => '2026-10-24', 'subject' => 'پیش‌نویس صادره مجاز', 'composition_mode' => 'editor', 'body' => '<p>متن</p>'])->assertRedirect(route('correspondence.index'));
         $this->actingAs($user)->post(route('correspondence.store'), ['type' => Correspondence::TYPE_INTERNAL, 'recipient_department_id' => $this->recipientDepartmentId(), 'subject' => 'نامه داخلی مجاز', 'composition_mode' => 'editor', 'body' => '<p>متن</p>'])->assertRedirect(route('correspondence.index'));
         $this->assertDatabaseCount('correspondences', 2);
     }
@@ -477,7 +543,7 @@ class CorrespondenceHttpTest extends TestCase
         $department = Department::query()->create(['name' => 'دبیرخانه تست', 'code' => 'TEST-SEC', 'is_active' => true, 'manager_id' => $secretariatUser->id]);
         app(SystemSettingsService::class)->set([OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT) => (string) $department->id]);
         $this->actingAs($secretariatUser)->get(route('correspondence.create'))->assertOk()->assertInertia(fn ($page) => $page->where('types.0.value', Correspondence::TYPE_INCOMING));
-        $this->actingAs($secretariatUser)->post(route('correspondence.store'), ['type' => Correspondence::TYPE_INCOMING, 'recipient_department_id' => $this->recipientDepartmentId(), 'subject' => 'نامه وارده دبیرخانه', 'original_letters' => [UploadedFile::fake()->create('original.pdf', 10, 'application/pdf')]])->assertRedirect(route('correspondence.index'));
+        $this->actingAs($secretariatUser)->post(route('correspondence.store'), ['type' => Correspondence::TYPE_INCOMING, 'received_at' => '2026-10-24', 'recipient_department_id' => $this->recipientDepartmentId(), 'subject' => 'نامه وارده دبیرخانه', 'original_letters' => [UploadedFile::fake()->create('original.pdf', 10, 'application/pdf')]])->assertRedirect(route('correspondence.index'));
         $this->assertDatabaseHas('correspondences', ['type' => Correspondence::TYPE_INCOMING, 'subject' => 'نامه وارده دبیرخانه', 'created_by' => $secretariatUser->id]);
         $incomingLetter = Correspondence::query()->where('subject', 'نامه وارده دبیرخانه')->firstOrFail();
         $this->actingAs($secretariatUser)->get(route('correspondence.show', $incomingLetter))
@@ -876,6 +942,7 @@ class CorrespondenceHttpTest extends TestCase
 
         $this->actingAs($user)->post(route('correspondence.store'), [
             'type' => Correspondence::TYPE_OUTGOING,
+            'sent_at' => '2026-10-24',
             'external_organization_id' => $organization->id,
             'external_department_id' => $department->id,
             'recipient_name' => 'مدیر واحد',
