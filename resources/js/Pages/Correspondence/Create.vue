@@ -9,7 +9,7 @@ import axios from 'axios';
 interface Department { id: number; name: string; }
 interface ExternalOrganization { id: number; name: string; }
 interface ExternalDepartment { id: number; external_organization_id: number; name: string; }
-interface ReplyOption { id: number; letter_number: string | null; registration_number: string | null; external_registration_number: string | null; subject: string; type: string; letter_date: string | null; created_department: string | null; recipient_department: string | null; external_organization: string | null; external_department: string | null; }
+interface ReplyOption { id: number; letter_number: string | null; registration_number: string | null; external_registration_number: string | null; subject: string; type: string; letter_date: string | null; created_department: string | null; recipient_department: string | null; external_organization: string | null; external_organization_code: string | null; external_department: string | null; external_department_code: string | null; created_department_code: string | null; recipient_department_code: string | null; }
 interface CreatedDepartment { id: number; name: string; }
 type CompositionMode = 'editor' | 'file' | 'both';
 type TextDirection = 'rtl' | 'ltr';
@@ -427,7 +427,7 @@ async function scanOriginalLetter(): Promise<void> {
                                 <button v-for="item in relatedSearchResults" :key="item.id" type="button" class="block w-full rounded-lg border border-slate-100 p-3 text-right transition hover:border-indigo-300 hover:bg-indigo-50" @click="selectRelatedLetter(item)">
                                     <span class="block text-sm font-semibold text-slate-900">{{ item.subject }}</span>
                                     <span class="mt-1 block text-xs leading-5 text-slate-600">شماره نامه: {{ item.letter_number ?? "—" }} | شماره ثبت: {{ item.registration_number ?? "—" }} | تاریخ نامه: {{ formatRelatedLetterDate(item.letter_date) }}</span>
-                                    <span class="mt-1 block text-xs leading-5 text-slate-500">{{ [item.created_department, item.recipient_department, item.external_organization, item.external_department].filter(Boolean).join(" · ") || "واحد یا سازمان ثبت نشده" }}<span v-if="item.external_registration_number"> · شماره ثبت طرف مقابل: {{ item.external_registration_number }}</span></span>
+                                    <span class="mt-1 block text-xs leading-5 text-slate-500">{{ [item.created_department, item.created_department_code, item.recipient_department, item.recipient_department_code, item.external_organization, item.external_organization_code, item.external_department, item.external_department_code].filter(Boolean).join(" · ") || "واحد یا سازمان ثبت نشده" }}<span v-if="item.external_registration_number"> · شماره ثبت طرف مقابل: {{ item.external_registration_number }}</span></span>
                                 </button>
                             </div>
                             <InputError class="mt-1" :message="form.errors.reply_to_id" />
