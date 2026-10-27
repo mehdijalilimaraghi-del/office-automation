@@ -346,11 +346,22 @@ class CorrespondenceHttpTest extends TestCase
                 ->where('originalLetters.0.file_name', 'original.pdf')
                 ->where('attachments', []));
         app(SystemSettingsService::class)->set(['correspondence.approval.outgoing' => 'direct']);
-        $letter = Correspondence::query()->create(['type' => Correspondence::TYPE_OUTGOING, 'subject' => 'پیش‌نویس صادره برای دبیرخانه', 'status' => Correspondence::STATUS_DRAFT, 'created_by' => User::factory()->create(['status' => 'active'])->id]);
+        $outgoingCreator = User::factory()->create(['status' => 'active']);
+        $letter = Correspondence::query()->create(['type' => Correspondence::TYPE_OUTGOING, 'subject' => 'پیش‌نویس صادره برای دبیرخانه', 'status' => Correspondence::STATUS_DRAFT, 'created_by' => $outgoingCreator->id]);
         $this->actingAs($secretariatUser)->post(route('correspondence.register', $letter))->assertRedirect();
-        $this->assertDatabaseHas('correspondences', ['id' => $letter->id, 'status' => Correspondence::STATUS_REGISTERED, 'registered_by' => $secretariatUser->id]);
+        $this->assertDatabaseHas('correspondences', ['id' => $letter->id, 'status' => Correspondence::STATUS_REGISTERED, 'registered_by' => $secretariatUser->id, 'workflow_state' => 'awaiting_dispatch']);
+
+        $this->actingAs($secretariatUser)->put(route('correspondence.external-tracking.update', $letter), [
+            'sent_at' => '2026-10-27 10:30:00',
+            'dispatch_method' => 'courier',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('correspondences', ['id' => $letter->id, 'workflow_state' => 'dispatched', 'sent_at' => '2026-10-27 10:30:00']);
+        $this->assertDatabaseHas('correspondence_actions', ['correspondence_id' => $letter->id, 'action_type' => 'dispatched', 'actor_id' => $secretariatUser->id]);
+        $this->assertDatabaseHas('audit_logs', ['event' => 'correspondence.action.dispatched', 'auditable_type' => $letter->getMorphClass(), 'auditable_id' => $letter->id]);
+        $this->assertDatabaseHas('notifications', ['notifiable_id' => $outgoingCreator->id, 'type' => 'App\\Modules\\Notifications\\Notifications\\CorrespondenceNotification']);
     }
-    public function test_outgoing_correspondence_creator_can_update_external_tracking_fields(): void
+    public function test_outgoing_correspondence_creator_can_update_tracking_but_cannot_finalize_dispatch(): void
     {
         $creator = User::factory()->create(['status' => 'active']);
         $letter = Correspondence::query()->create([
@@ -361,12 +372,15 @@ class CorrespondenceHttpTest extends TestCase
         ]);
 
         $this->actingAs($creator)->put(route('correspondence.external-tracking.update', $letter), [
+            'sent_at' => '2026-10-24',
+        ])->assertForbidden();
+
+        $this->actingAs($creator)->put(route('correspondence.external-tracking.update', $letter), [
             'task_id' => null,
             'external_registration_number' => 'IN-1405-184',
             'external_registered_at' => '2026-10-25',
             'dispatch_method' => 'official_portal',
             'external_tracking_notes' => 'نامه در دبیرخانه سازمان مقصد ثبت شد.',
-            'sent_at' => '2026-10-24',
         ])->assertRedirect();
 
         $this->assertDatabaseHas('correspondences', [
@@ -375,7 +389,7 @@ class CorrespondenceHttpTest extends TestCase
             'external_registered_at' => '2026-10-25',
             'dispatch_method' => 'official_portal',
             'external_tracking_notes' => 'نامه در دبیرخانه سازمان مقصد ثبت شد.',
-            'sent_at' => '2026-10-24',
+            'sent_at' => null,
         ]);
     }
 
