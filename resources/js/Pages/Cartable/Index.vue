@@ -20,11 +20,21 @@ interface Referral {
     created_at?: string;
 }
 
+interface CorrespondenceItem {
+    id: number;
+    type: string;
+    subject: string;
+    registration_number: string | null;
+    workflow_state: string | null;
+    currentDepartment?: { id: number; name: string } | null;
+}
+
 interface CartableData {
     summary: { my_tasks: number; pending_approvals: number; referrals: number; correspondence_referrals?: number };
     myTasks: TaskItem[];
     pendingApprovals: TaskItem[];
     referrals: Referral[];
+    correspondenceItems: CorrespondenceItem[];
 }
 
 const props = defineProps<{ cartable: CartableData }>();
@@ -36,6 +46,21 @@ const statusLabels: Record<string, string> = {
     completed: 'تکمیل‌شده',
     cancelled: 'لغوشده',
 };
+const correspondenceStateLabels: Record<string, string> = {
+    awaiting_manager_approval: 'در انتظار تأیید مدیر',
+    result_pending_manager: 'در انتظار تأیید نتیجه',
+    awaiting_dispatch: 'در انتظار ثبت ارسال',
+    in_progress: 'در حال پیگیری',
+    task_requested: 'درخواست تسک',
+    project_requested: 'درخواست پروژه',
+    letter_requested: 'درخواست مکاتبه',
+};
+const correspondenceTypeLabels: Record<string, string> = {
+    incoming: 'وارده',
+    outgoing: 'صادره',
+    internal: 'داخلی',
+};
+
 const priorityLabels: Record<string, string> = {
     low: 'کم',
     normal: 'عادی',
@@ -169,6 +194,36 @@ function formatDate(value: string | null | undefined): string {
                         </section>
                     </div>
                 </div>
+
+                <section class="mt-6 overflow-hidden rounded-2xl border border-teal-200 bg-white shadow-sm">
+                    <div class="border-b border-teal-100 bg-teal-50/60 px-5 py-4 sm:px-6">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <h3 class="font-bold text-slate-900">اقدامات مکاتبات</h3>
+                                <p class="mt-1 text-xs text-slate-500">نامه‌هایی که بر اساس مسئولیت فعلی شما نیاز به پیگیری دارند؛ رونوشت‌های صرفاً جهت اطلاع در این فهرست نمی‌آیند.</p>
+                            </div>
+                            <span class="rounded-full bg-teal-100 px-3 py-1 text-xs font-semibold text-teal-800">{{ props.cartable.summary.correspondence_referrals || 0 }}</span>
+                        </div>
+                    </div>
+                    <div v-if="!props.cartable.correspondenceItems || props.cartable.correspondenceItems.length === 0" class="px-6 py-10 text-center">
+                        <p class="text-sm font-semibold text-slate-700">مکاتبه‌ای برای اقدام ندارید.</p>
+                    </div>
+                    <div v-else class="divide-y divide-slate-100">
+                        <Link v-for="letter in props.cartable.correspondenceItems" :key="letter.id" :href="route('correspondence.show', letter.id)" class="block px-5 py-4 transition hover:bg-teal-50/30 sm:px-6">
+                            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                <div class="min-w-0">
+                                    <p class="truncate font-semibold text-slate-800">{{ letter.subject }}</p>
+                                    <p class="mt-1 text-xs text-slate-500">
+                                        {{ correspondenceTypeLabels[letter.type] || letter.type }}
+                                        <span v-if="letter.registration_number"> · شماره {{ letter.registration_number }}</span>
+                                        <span v-if="letter.currentDepartment"> · {{ letter.currentDepartment.name }}</span>
+                                    </p>
+                                </div>
+                                <span class="shrink-0 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-800">{{ correspondenceStateLabels[letter.workflow_state || ''] || letter.workflow_state || 'نیازمند پیگیری' }}</span>
+                            </div>
+                        </Link>
+                    </div>
+                </section>
             </div>
         </div>
     </AuthenticatedLayout>
