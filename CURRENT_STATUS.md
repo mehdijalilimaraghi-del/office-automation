@@ -1,3 +1,10 @@
+## 2026-10-27 — Correspondence create-form refinement (validation pending)
+
+- Incoming «تاریخ دریافت» and outgoing «تاریخ ارسال» are required in server validation (`required_if`) and in the date-picker (`required`); explicit red asterisks were added because the custom picker labels did not visibly inherit the CSS required marker.
+- The related-letter search input now stays above results and selected letters. Results and selected items share a fixed-height scroll area to avoid increasing the whole form row as items/search results grow.
+- «رونوشت به» no longer displays «اختیاری»; the explanatory paragraph below it was removed and its meaning moved to a question-mark tooltip. Related-letter guidance is also a question-mark tooltip, with duplicate help removed.
+- Changes are on `development`; no local build or tests have been run by the assistant. Validate with `php artisan test --filter=CorrespondenceHttpTest` and `npm run build`.
+
 ## 2026-10-27 — Correspondence create-form UX and multi-link support (validation pending)
 
 - The correspondence create form now gives Subject the full row; related correspondence and copy recipients sit side by side beneath it.
