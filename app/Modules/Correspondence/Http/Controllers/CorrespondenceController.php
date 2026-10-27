@@ -200,6 +200,14 @@ class CorrespondenceController extends Controller
             'canManageWorkflow' => $correspondence->workflow_state !== 'completed_with_result'
                 && $correspondence->current_department_id !== null
                 && (int) Department::query()->whereKey($correspondence->current_department_id)->value('manager_id') === (int) $request->user()->id,
+            'canAddCopies' => $correspondence->workflow_state !== 'completed_with_result'
+                && $correspondence->current_department_id !== null
+                && (int) Department::query()->whereKey($correspondence->current_department_id)->value('manager_id') === (int) $request->user()->id,
+            'copyDepartments' => Department::query()
+                ->where('is_active', true)
+                ->whereNotIn('id', $correspondence->copies()->select('departments.id'))
+                ->orderBy('name')
+                ->get(['id', 'name']),
             'trackableTasks' => Task::query()
                 ->where(function ($query) use ($request): void {
                     $query->where('created_by', $request->user()->id)
@@ -505,6 +513,37 @@ class CorrespondenceController extends Controller
         });
 
         return back()->with('success', 'اطلاعات پیگیری نامه صادره ذخیره شد.');
+    }
+
+    public function addCopies(
+        Request $request,
+        Correspondence $correspondence,
+        CorrespondenceAccessService $access,
+        CorrespondenceWorkflowService $workflow,
+    ): RedirectResponse {
+        abort_unless($access->canView($correspondence, $request->user()), 403);
+
+        $currentDepartmentId = $correspondence->current_department_id;
+        abort_unless(
+            $correspondence->workflow_state !== 'completed_with_result'
+                && $currentDepartmentId !== null
+                && (int) Department::query()->whereKey($currentDepartmentId)->value('manager_id') === (int) $request->user()->id,
+            403,
+            'افزودن رونوشت در ادامه گردش فقط توسط مدیر واحد مسئول نامه مجاز است.',
+        );
+
+        $data = $request->validate([
+            'department_ids' => ['required', 'array', 'min:1', 'max:20'],
+            'department_ids.*' => ['required', 'integer', 'distinct', Rule::exists('departments', 'id')->where('is_active', true)],
+        ]);
+
+        try {
+            $workflow->addCopies($correspondence, $data['department_ids'], $request->user());
+        } catch (InvalidArgumentException $exception) {
+            return back()->withErrors(['department_ids' => $exception->getMessage()])->withInput();
+        }
+
+        return back()->with('success', 'رونوشت‌های انتخاب‌شده به مکاتبه اضافه شدند.');
     }
 
     public function action(
