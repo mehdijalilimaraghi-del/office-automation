@@ -1159,3 +1159,13 @@ Implementation has started for the agreed cross-department project model:
   - In correspondence settings, a custom letter-number template must support either two or three fields (not force exactly three).
   - Add a required, user-configurable code field for each organizational department/unit, entered by an authorized user when configuring that unit (e.g. IT department code `IT`). Use that code in the letter-number template instead of exposing the numeric database department ID.
 - Keep the existing workflow and historical data compatible; inspect schema, settings UI, number-generation logic, and tests before choosing migration/compatibility behavior. No implementation of these backlog items is claimed yet.
+
+## 2026-10-27 — Correspondence number separation and department codes (validation pending)
+
+- Added a dedicated letter_number field. New drafts receive a letter number immediately using the organization-configured template; the Secretariat assigns a separate registration_number at final registration (REG + configured separator + sequence). Existing registration numbers are preserved; legacy drafts without a letter number receive one at final registration.
+- Added a separate counter table for letter numbers while retaining the existing counter for Secretariat registration numbers.
+- Custom letter-number templates now accept two or three distinct components. The settings form exposes a two/three-part selector and persists only the selected components.
+- Department creation/editing now requires a unique short alphanumeric code (hyphens/underscores allowed), persists it, and uses it in letter-number templates instead of the database ID. Existing department codes are preserved.
+- Correspondence list/detail surfaces display letter number and registration number separately. The list formats registered_at as a Jalali date and Tehran local time and labels it «ثبت نهایی»; search includes both numbers.
+- Added/adjusted regression coverage for two-part templates, distinct registration numbers, draft letter-number assignment, and department code persistence.
+- Validation pending: pull development, run focused correspondence numbering/service and department tests, then full php artisan test and npm run build. No tests or build have been run by the assistant. master unchanged.
