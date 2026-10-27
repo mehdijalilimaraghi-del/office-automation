@@ -78,7 +78,8 @@ function clear(){if(props.multiple)emit('update:modelValues',[]);else emit('upda
 <span v-if="clearable&&(multiple?modelValues.length>0:modelValue!==null&&modelValue!==undefined&&modelValue!=='')" role="button" tabindex="0" class="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="پاک کردن انتخاب واحد" @click.stop="clear" @keydown.enter.stop.prevent="clear"><X :size="15"/></span>
 <ChevronDown :size="16" class="shrink-0 text-slate-500 transition-transform" :class="isOpen?'rotate-180':''"/>
 </button>
-<Teleport to="body">\n<div v-if="isOpen" ref="dropdownRef" :style="dropdownStyle" class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5" dir="rtl">
+<Teleport to="body">
+<div v-if="isOpen" ref="dropdownRef" :style="dropdownStyle" class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5" dir="rtl">
 <div class="border-b border-slate-100 p-2.5"><div class="relative"><Search :size="16" class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"/><input v-model="query" type="search" class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pr-9 pl-3 text-sm outline-none focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/10" placeholder="جستجوی واحد..." @keydown.esc="isOpen=false"/></div>
 <div class="mt-2 flex items-center justify-between px-1 text-xs text-slate-500"><span>{{nodes.length}} واحد در نمایش</span><span class="flex items-center gap-3"><button type="button" class="hover:text-indigo-700" @click="expandedIds=new Set(parentIds)">بازکردن همه</button><button type="button" class="hover:text-indigo-700" @click="expandedIds=new Set()">بستن همه</button></span></div></div>
 <div :style="listStyle" class="min-h-0 overflow-y-auto overscroll-contain p-1.5">
@@ -89,5 +90,6 @@ function clear(){if(props.multiple)emit('update:modelValues',[]);else emit('upda
 </div></div>
 <div v-if="multiple" class="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-3 py-2"><span class="text-xs text-slate-500">{{modelValues.length}} واحد انتخاب شده</span><button type="button" class="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700" @click="isOpen=false">تأیید انتخاب‌ها</button></div>
 </div>
+</Teleport>
 </div>
 </template>
