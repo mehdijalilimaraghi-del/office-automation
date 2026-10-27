@@ -221,7 +221,11 @@ const departmentTreeOptions = computed(() => {
     visit(null, 0, new Set<number>());
     return options;
 });
-function addCopyDepartment(value: number | string): void {
+function addCopyDepartment(value: number | string | null): void {
+    if (value === null || value === '') {
+        selectedCopyDepartmentId.value = '';
+        return;
+    }
     const id = Number(value);
     if (Number.isInteger(id) && id > 0 && !form.copy_department_ids.includes(id)) form.copy_department_ids = [...form.copy_department_ids, id];
     selectedCopyDepartmentId.value = '';
