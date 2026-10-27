@@ -26,7 +26,7 @@ class CreateDepartmentAction
                 'parent_id' => $data['parent_id'] ?? null,
                 'manager_id' => null,
                 'name' => $data['name'],
-                'code' => strtoupper(trim($data['code'])),
+                'code' => filled($data['code'] ?? null) ? strtoupper(trim((string) $data['code'])) : null,
                 'icon' => $data['icon'] ?? 'building-2',
                 'description' => $data['description'] ?? null,
                 'is_active' => $data['is_active'] ?? true,
