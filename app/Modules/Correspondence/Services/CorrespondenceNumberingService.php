@@ -100,7 +100,7 @@ class CorrespondenceNumberingService
     /** @return array{format: string, custom_order: string, separator: string, padding: int} */
     private function registrationConfiguration(): array
     {
-        $settings = $this->settings->get(['correspondence.registration_numbering.format'=>'year','correspondence.registration_numbering.custom_order'=>'year,department,sequence','correspondence.registration_numbering.separator'=>'/','correspondence.registration_numbering.padding'=>'6']);
+        $settings = $this->settings->get(['correspondence.registration_numbering.format'=>'simple','correspondence.registration_numbering.custom_order'=>'year,department,sequence','correspondence.registration_numbering.separator'=>'/','correspondence.registration_numbering.padding'=>'6']);
         return ['format'=>(string)$settings['correspondence.registration_numbering.format'],'custom_order'=>(string)$settings['correspondence.registration_numbering.custom_order'],'separator'=>(string)$settings['correspondence.registration_numbering.separator'],'padding'=>max(4,min(12,(int)$settings['correspondence.registration_numbering.padding']))];
     }
 
