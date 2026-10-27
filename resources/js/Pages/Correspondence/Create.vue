@@ -420,8 +420,8 @@ async function scanOriginalLetter(): Promise<void> {
                             <div v-else class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">{{ createdDepartment?.name ?? 'برای کاربر واحد فعالی تعیین نشده است' }}</div>
                             <InputError class="mt-1" :message="form.errors.created_department_id" />
                         </div>
-                        <div v-if="form.type === 'incoming' || form.type === 'internal'">
-                            <label for="recipient_department_id" class="mb-1.5 block text-sm font-semibold text-slate-700">واحد دریافت‌کننده</label>
+                        <div v-if="form.type === 'incoming' || form.type === 'internal'" class="lg:col-span-2">
+                            <label for="recipient_department_id" class="mb-1.5 block text-sm font-semibold text-slate-700">واحد دریافت‌کننده <span class="text-rose-600">*</span></label>
                             <DepartmentTreeSelect v-model="form.recipient_department_id" :departments="departments" placeholder="انتخاب واحد دریافت‌کننده" :clearable="false" />
                             <InputError class="mt-1" :message="form.errors.recipient_department_id" />
                         </div>
