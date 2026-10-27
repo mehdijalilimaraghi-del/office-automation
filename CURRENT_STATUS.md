@@ -1199,3 +1199,10 @@ Implementation has started for the agreed cross-department project model:
 - Replaced the static top-100 dropdown with a debounced server-side search endpoint. Results are limited to 20 per query and include subject, letter number, registration number, letter date, internal department names/codes, external organization/department names/codes, and external tracking registration number. Results remain constrained by the existing correspondence visibility service.
 - Outgoing correspondence now requires sent_at; incoming correspondence requires received_at, with required markers in the form. Backend validation enforces the requirement.
 - Added HTTP regression coverage for required dates and search result metadata. Validation pending locally: php artisan test --filter=CorrespondenceHttpTest, then npm run build. No migration required; development only, master unchanged.
+
+2026-10-27 — Related correspondence selector UI alignment (validation pending)
+
+- Expanded both «ارتباط با مکاتبات قبلی» and «رونوشت به» to `sm:col-span-2` so the two controls have matching widths in the two-column form grid.
+- Removed the separate empty-state panel that said «برای جستجو حداقل دو نویسه وارد کنید.»; the minimum query length is now communicated in the search input placeholder. Search results appear in a bordered, scrollable list only after at least two characters are entered.
+- Selected related letters now use a single removable list styled like the selected copy-recipient list, rather than nested bordered boxes. Backend behavior is unchanged.
+- Validation pending locally: `git pull origin development`, `php artisan test --filter=CorrespondenceHttpTest`, then `npm run build`. No tests/build have been run by the assistant; `master` unchanged.
