@@ -1259,3 +1259,10 @@ Implementation has started for the agreed cross-department project model:
 - Restored the outer rounded border and padding around «ارتباط با مکاتبات قبلی» to match «رونوشت به».
 - Search results now render as an absolutely positioned, white, shadowed dropdown anchored to the search input. They overlay the form instead of pushing the selected-letter list or lower fields down. The selected letters remain in their own list beneath the input.
 - Validation pending locally: `git pull origin development`, `php artisan test --filter=CorrespondenceHttpTest`, then `npm run build`. Assistant has not run tests/build; `master` unchanged.
+
+
+## 2026-10-27 — شماره نامه وارده و قالب مستقل شماره ثبت (در انتظار اعتبارسنجی)
+
+- شماره نامه وارده باید عیناً از روی اصل نامه وارد شود و خودکار تولید نمی‌شود؛ شماره ثبت دبیرخانه جداست و هنگام ثبت نهایی با قالب مستقل قابل تنظیم تولید می‌شود.
+- تنظیمات شماره ثبت شامل قالب ساده/سال/کد واحد/سفارشی، دو یا سه جزء، جداکننده و طول بخش ترتیبی است. شماره‌های تاریخی تغییر نمی‌کنند.
+- دبیرخانه فقط تا پیش از اقدام گردش می‌تواند پیش‌نویس را ویرایش یا حذف کند؛ بررسی مجوز در سرور و تراکنش انجام می‌شود. اعتبارسنجی محلی هنوز انجام نشده است.
