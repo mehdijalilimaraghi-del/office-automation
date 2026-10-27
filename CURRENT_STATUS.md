@@ -1177,3 +1177,10 @@ Implementation has started for the agreed cross-department project model:
 - Added an in-workflow copy endpoint. Only the manager of the correspondence's current responsible department may add one or more additional copy recipients, and only before the workflow is completed. Each newly attached copy continues through the existing workflow service and audit/action history; duplicates are ignored by the existing service.
 - Added HTTP regression tests for manager success with multiple copy recipients and denial for a non-manager.
 - Validation pending on the local Windows/SQL Server environment: pull development, run the focused CorrespondenceHttpTest, then run npm run build. No tests or build have been run by the assistant. No migration is required for this change. master unchanged.
+
+2026-10-27 — Related correspondence search and required dates (validation pending)
+
+- Renamed the optional relation field to «در ارتباط با مکاتبات قبلی» to cover both continuation and reply relationships.
+- Replaced the static top-100 dropdown with a debounced server-side search endpoint. Results are limited to 20 per query and include subject, letter number, registration number, letter date, internal department names/codes, external organization/department names/codes, and external tracking registration number. Results remain constrained by the existing correspondence visibility service.
+- Outgoing correspondence now requires sent_at; incoming correspondence requires received_at, with required markers in the form. Backend validation enforces the requirement.
+- Added HTTP regression coverage for required dates and search result metadata. Validation pending locally: php artisan test --filter=CorrespondenceHttpTest, then npm run build. No migration required; development only, master unchanged.
