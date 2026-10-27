@@ -23,7 +23,7 @@ class CorrespondenceNumberingService
         $this->assertFormatIsValid($config['format'], $config['custom_order']);
         $this->assertSeparator($config['separator']);
 
-        $sequence = DB::transaction(fn (): int => $this->incrementCounter());
+        $sequence = DB::transaction(fn (): int => $this->incrementLetterCounter());
         return $this->formatNumber($correspondence, $sequence, $config);
     }
 
@@ -53,11 +53,11 @@ class CorrespondenceNumberingService
             $this->assertFormatIsValid($config['format'], $config['custom_order']);
             $this->assertSeparator($config['separator']);
             $sequence = $this->incrementCounter();
-            $number = $this->formatNumber($locked, $sequence, $config);
+            $registrationNumber = 'REG'.$config['separator'].str_pad((string) $sequence, $config['padding'], '0', STR_PAD_LEFT);
 
             $locked->forceFill([
                 'status' => Correspondence::STATUS_REGISTERED,
-                'registration_number' => $number,
+                'registration_number' => $registrationNumber,
                 'registered_at' => now(),
                 'registered_by' => $registrar->id,
             ])->save();
@@ -86,6 +86,25 @@ class CorrespondenceNumberingService
         ];
     }
 
+    private function incrementLetterCounter(): int
+    {
+        $counter = DB::table('correspondence_letter_number_counters')
+            ->where('id', 1)
+            ->lockForUpdate()
+            ->first();
+
+        if ($counter === null) {
+            throw new \RuntimeException('Correspondence numbering counter is not initialized.');
+        }
+
+        $next = (int) $counter->last_number + 1;
+        DB::table('correspondence_number_counters')
+            ->where('id', 1)
+            ->update(['last_number' => $next, 'updated_at' => now()]);
+
+        return $next;
+    }
+
     private function incrementCounter(): int
     {
         $counter = DB::table('correspondence_number_counters')
@@ -94,7 +113,7 @@ class CorrespondenceNumberingService
             ->first();
 
         if ($counter === null) {
-            throw new \RuntimeException('Correspondence numbering counter is not initialized.');
+            throw new \\RuntimeException('Correspondence registration counter is not initialized.');
         }
 
         $next = (int) $counter->last_number + 1;
@@ -141,8 +160,10 @@ class CorrespondenceNumberingService
         if ($format === 'custom') {
             $tokens = array_map('trim', explode(',', $order));
             $allowed = ['year', 'department', 'sequence'];
-            if (count($tokens) !== 3 || count(array_unique($tokens)) !== 3 || array_diff($tokens, $allowed) !== []) {
-                throw new InvalidArgumentException('ترتیب سفارشی شماره نامه نامعتبر است.');
+            if (! in_array(count($tokens), [2, 3], true)
+                || count(array_unique($tokens)) !== count($tokens)
+                || array_diff($tokens, $allowed) !== []) {
+                throw new InvalidArgumentException('ترتیب سفارشی شماره نامه باید شامل دو یا سه جزء متفاوت باشد.');
             }
         }
     }
