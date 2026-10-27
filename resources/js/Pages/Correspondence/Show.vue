@@ -63,6 +63,8 @@ const props = defineProps<{
     trackableTasks: { id: number; title: string; status: string }[];
     canUpdateExternalTracking: boolean;
     workflowDepartments: { id: number; name: string }[];
+    copyDepartments: { id: number; name: string }[];
+    canAddCopies: boolean;
     canReturnToManager: boolean;
     canManageWorkflow: boolean;
 }>();
@@ -80,6 +82,19 @@ const actionLabels: Record<string, string> = {
     secretariat_initial_referral: 'ارجاع اولیه دبیرخانه',
     copy_added: 'ثبت رونوشت جهت اطلاع',
 };
+const copyForm = useForm({ department_ids: [] as number[] });
+function toggleCopyDepartment(departmentId: number, checked: boolean): void {
+    copyForm.department_ids = checked
+        ? [...new Set([...copyForm.department_ids, departmentId])]
+        : copyForm.department_ids.filter((id) => id !== departmentId);
+}
+function submitCopies(): void {
+    copyForm.post(route('correspondence.copies.store', props.correspondence.id), {
+        preserveScroll: true,
+        onSuccess: () => { copyForm.reset(); },
+    });
+}
+
 const actionForm = useForm({
     action_type: 'manager_refer',
     note: '',
@@ -183,6 +198,25 @@ function registerCorrespondence(): void {
                         <p class="mt-1 text-sm text-sky-800">{{ correspondence.copies.map(item => item.name).join('، ') }}</p>
                         <p class="mt-1 text-xs text-sky-700">واحدهای رونوشت‌گیرنده فقط امکان مشاهده نامه ثبت‌شده را دارند و نمی‌توانند در گردش آن اقدام کنند.</p>
                     </div>
+                    <form v-if="canAddCopies && copyDepartments.length" class="space-y-3 rounded-xl border border-sky-200 bg-sky-50/40 p-4" @submit.prevent="submitCopies">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900">افزودن رونوشت در ادامه گردش</h3>
+                            <p class="mt-1 text-xs leading-5 text-slate-600">مدیر واحد مسئول می‌تواند یک یا چند واحد دیگر را برای اطلاع اضافه کند. رونوشت به‌تنهایی مجوز اقدام در گردش ایجاد نمی‌کند.</p>
+                        </div>
+                        <div class="grid gap-2 sm:grid-cols-2">
+                            <label v-for="department in copyDepartments" :key="department.id" class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+                                <input
+                                    type="checkbox"
+                                    :checked="copyForm.department_ids.includes(department.id)"
+                                    class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                    @change="toggleCopyDepartment(department.id, ($event.target as HTMLInputElement).checked)"
+                                />
+                                <span class="text-sm text-slate-800">{{ department.name }}</span>
+                            </label>
+                        </div>
+                        <p v-if="copyForm.errors.department_ids" class="text-sm text-rose-700">{{ copyForm.errors.department_ids }}</p>
+                        <button type="submit" :disabled="copyForm.processing || copyForm.department_ids.length === 0" class="rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">افزودن رونوشت</button>
+                    </form>
                     <form v-if="canManageWorkflow || canReturnToManager" class="grid gap-3 rounded-xl border border-slate-200 p-4 sm:grid-cols-2" @submit.prevent="submitWorkflowAction">
                         <div v-if="canManageWorkflow">
                             <label class="mb-1 block text-sm font-medium text-slate-700">اقدام مدیر</label>
