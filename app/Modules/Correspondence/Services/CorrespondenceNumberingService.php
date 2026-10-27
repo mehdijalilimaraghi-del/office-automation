@@ -52,6 +52,11 @@ class CorrespondenceNumberingService
             $config = $this->configuration();
             $this->assertFormatIsValid($config['format'], $config['custom_order']);
             $this->assertSeparator($config['separator']);
+
+            if (blank($locked->letter_number)) {
+                $locked->letter_number = $this->formatNumber($locked, $this->incrementLetterCounter(), $config);
+            }
+
             $sequence = $this->incrementCounter();
             $registrationNumber = 'REG'.$config['separator'].str_pad((string) $sequence, $config['padding'], '0', STR_PAD_LEFT);
 
