@@ -53,12 +53,13 @@ class CorrespondenceNumberingService
             $this->assertFormatIsValid($config['format'], $config['custom_order']);
             $this->assertSeparator($config['separator']);
 
-            if (blank($locked->letter_number)) {
-                $locked->letter_number = $this->formatNumber($locked, $this->incrementLetterCounter(), $config);
-            }
-
+            if ($locked->type === Correspondence::TYPE_INCOMING && blank($locked->letter_number)) throw new InvalidArgumentException('شماره نامه وارده باید عیناً از روی نامه اصلی وارد شود.');
+            if ($locked->type !== Correspondence::TYPE_INCOMING && blank($locked->letter_number)) $locked->letter_number = $this->formatNumber($locked, $this->incrementLetterCounter(), $config);
+            $registrationConfig = $this->registrationConfiguration();
+            $this->assertFormatIsValid($registrationConfig['format'], $registrationConfig['custom_order']);
+            $this->assertSeparator($registrationConfig['separator']);
             $sequence = $this->incrementCounter();
-            $registrationNumber = 'REG'.$config['separator'].str_pad((string) $sequence, $config['padding'], '0', STR_PAD_LEFT);
+            $registrationNumber = $this->formatNumber($locked, $sequence, $registrationConfig);
 
             $locked->forceFill([
                 'status' => Correspondence::STATUS_REGISTERED,
@@ -89,6 +90,13 @@ class CorrespondenceNumberingService
             'separator' => (string) $settings['correspondence.numbering.separator'],
             'padding' => max(4, min(12, (int) $settings['correspondence.numbering.padding'])),
         ];
+    }
+
+    /** @return array{format: string, custom_order: string, separator: string, padding: int} */
+    private function registrationConfiguration(): array
+    {
+        $settings = $this->settings->get(['correspondence.registration_numbering.format'=>'year','correspondence.registration_numbering.custom_order'=>'year,department,sequence','correspondence.registration_numbering.separator'=>'/','correspondence.registration_numbering.padding'=>'6']);
+        return ['format'=>(string)$settings['correspondence.registration_numbering.format'],'custom_order'=>(string)$settings['correspondence.registration_numbering.custom_order'],'separator'=>(string)$settings['correspondence.registration_numbering.separator'],'padding'=>max(4,min(12,(int)$settings['correspondence.registration_numbering.padding']))];
     }
 
     private function incrementLetterCounter(): int
