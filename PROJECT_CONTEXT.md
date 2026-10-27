@@ -991,3 +991,12 @@ The active `SYSTEM_ADMIN` account is a special system capability and receives ev
 
 - Resolved the frontend build error in `resources/js/Pages/Cartable/Index.vue` by changing the template reference from `currentDepartment` to the declared `current_department` field.
 - This is a naming-only fix on `development`; `master` remains unchanged. Production build validation is pending.
+
+
+## 2026-10-27 — Correspondence numbering requirements (pending)
+
+- The letter's own `شماره نامه` and the secretariat's `شماره ثبت` must be separate concepts and fields.
+- The custom letter-number template in correspondence settings must support two or three fields.
+- Each department/unit must have a required configurable short code, such as `IT`; the template should use this code rather than the database department ID.
+- The correspondence list must show `registered_at` as a localized Persian/Jalali date and Tehran time with the label `ثبت نهایی`, not a raw ISO UTC string.
+- All items above are pending. Inspect existing schema and behavior before implementing; retain historical data and add regression tests. `development` only; `master` unchanged.
