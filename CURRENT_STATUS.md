@@ -1,3 +1,10 @@
+## 2026-10-27 — Shared selector coverage and Persian date consistency (validation pending)
+
+- Extended the shared department tree to organization settings, correspondence workflow referrals, department-parent selection, and external-party unit hierarchy. Inactive departments remain visible for existing settings but cannot be newly selected.
+- Replaced native Gregorian date inputs for external registration and dispatch dates with the shared Jalali date picker; the shared date picker now supports a disabled state.
+- A repository-wide Vue-page scan found no other native `type="date"` or `type="datetime-local"` inputs in the checked pages. Continue using the shared Jalali date/date-time components for all new fields.
+- Validation is still pending. Do not treat the branch as tested until the owner pulls `development`, runs the PHP suite and frontend build, and reports results. `master` unchanged.
+
 ## 2026-10-27 — Shared department tree selector rollout (validation pending)
 
 - Added the shared `DepartmentTreeSelect.vue` with department icons, a collapsible hierarchy, search, expand/collapse-all controls, and single/multiple selection.

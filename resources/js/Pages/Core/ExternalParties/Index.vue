@@ -3,6 +3,7 @@ import { computed, reactive, ref } from 'vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
+import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 
 type CustomField = {
     id: number;
@@ -198,12 +199,7 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
           <label class="block text-sm font-semibold text-slate-700">سازمان</label>
           <select v-model="depForm.external_organization_id" required class="w-full rounded-xl border border-slate-200 px-3 py-2.5"><option value="">سازمان *</option><option v-for="o in organizations" :key="o.id" :value="o.id">{{o.name}}</option></select>
           <label class="block text-sm font-semibold text-slate-700">واحد بالادست</label>
-          <select v-model="depForm.parent_id" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
-            <option value="">بدون واحد بالادست (واحد اصلی)</option>
-            <option v-for="d in departmentParentOptions" :key="d.id" :value="d.id">
-              {{ '　'.repeat(d.depth) }}{{ d.depth ? '└─ ' : '' }}{{ d.name }}
-            </option>
-          </select>
+          <DepartmentTreeSelect v-model="depForm.parent_id" :departments="departmentParentOptions" placeholder="بدون واحد بالادست (واحد اصلی)" />
           <label class="block text-sm font-semibold text-slate-700">نام واحد</label>
           <input v-model="depForm.name" required placeholder="نام واحد" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
           
@@ -245,7 +241,7 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
         <div class="space-y-3">
           <label class="block text-sm font-semibold text-slate-700">سازمان</label>
           <select v-model="contactForm.external_organization_id" required class="w-full rounded-xl border border-slate-200 px-3 py-2.5"><option value="">سازمان *</option><option v-for="o in organizations" :key="o.id" :value="o.id">{{o.name}}</option></select>
-          <select v-model="contactForm.external_department_id" class="w-full rounded-xl border border-slate-200 px-3 py-2.5"><option value="">واحد اختیاری</option><option v-for="d in departmentsForContact" :key="d.id" :value="d.id">{{d.name}}</option></select>
+          <DepartmentTreeSelect v-model="contactForm.external_department_id" :departments="departmentsForContact" placeholder="واحد اختیاری" />
           <label class="block text-sm font-semibold text-slate-700">نام و نام خانوادگی</label>
           <input v-model="contactForm.name" required placeholder="نام و نام خانوادگی" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
           <input v-model="contactForm.position" placeholder="سمت" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">

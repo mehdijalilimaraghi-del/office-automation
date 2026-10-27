@@ -9,10 +9,12 @@ const props = withDefaults(
         modelValue: string | null;
         placeholder?: string;
         required?: boolean;
+        disabled?: boolean;
     }>(),
     {
         placeholder: 'انتخاب تاریخ',
         required: false,
+        disabled: false,
     },
 );
 
@@ -64,6 +66,7 @@ const value = computed<string | undefined>({
         :default-date="defaultDate"
         :placeholder="placeholder"
         :required="required"
+        :disabled="disabled"
         class="jalali-date-picker"
     />
 </template>

@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import type { PageProps } from '@/types';
 import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
+import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 
 interface RelatedCorrespondence {
     id: number;
@@ -299,7 +300,7 @@ function registerCorrespondence(): void {
                     </div>
                     <div>
                         <label class="mb-1 block text-sm font-medium text-slate-700">تاریخ ثبت در سازمان مقصد</label>
-                        <input v-model="trackingForm.external_registered_at" :disabled="!canUpdateExternalTracking" type="date" class="w-full rounded-xl border-slate-300 text-sm" />
+                        <JalaliDatePicker v-model="trackingForm.external_registered_at" :disabled="!canUpdateExternalTracking" placeholder="انتخاب تاریخ ثبت خارجی" />
                     </div>
                     <div>
                         <label class="mb-1 block text-sm font-medium text-slate-700">روش ارسال</label>
@@ -314,7 +315,7 @@ function registerCorrespondence(): void {
                     </div>
                     <div>
                         <label class="mb-1 block text-sm font-medium text-slate-700">تاریخ ارسال</label>
-                        <input v-model="trackingForm.sent_at" :disabled="!canUpdateExternalTracking" type="date" class="w-full rounded-xl border-slate-300 text-sm" />
+                        <JalaliDatePicker v-model="trackingForm.sent_at" :disabled="!canUpdateExternalTracking" placeholder="انتخاب تاریخ ارسال" />
                     </div>
                     <div class="sm:col-span-2">
                         <label class="mb-1 block text-sm font-medium text-slate-700">توضیحات پیگیری</label>

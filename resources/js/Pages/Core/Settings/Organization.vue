@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
+import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 
 interface OrganizationSettings {
@@ -32,6 +33,7 @@ interface OrganizationSettings {
 interface OrganizationDepartment {
     id: number;
     name: string;
+    parent_id?: number | null;
     is_active: boolean;
 }
 
@@ -173,34 +175,19 @@ function submit(): void {
                             <div class="grid gap-5 md:grid-cols-2">
                                 <div>
                                     <label for="management_department_id" class="mb-2 block text-sm font-semibold text-slate-700">واحد مدیریتی</label>
-                                    <select id="management_department_id" v-model="form.management_department_id" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200">
-                                        <option value="">انتخاب نشده</option>
-                                        <option v-for="department in departments" :key="department.id" :value="String(department.id)" :disabled="!department.is_active">
-                                            {{ department.name }}{{ department.is_active ? '' : ' (غیرفعال)' }}
-                                        </option>
-                                    </select>
+                                    <DepartmentTreeSelect id="management_department_id" v-model="form.management_department_id" :departments="departments" placeholder="انتخاب نشده" />
                                     <InputError class="mt-1.5" :message="form.errors.management_department_id" />
                                 </div>
 
                                 <div>
                                     <label for="project_management_department_id" class="mb-2 block text-sm font-semibold text-slate-700">واحد مدیریت پروژه‌ها</label>
-                                    <select id="project_management_department_id" v-model="form.project_management_department_id" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200">
-                                        <option value="">انتخاب نشده</option>
-                                        <option v-for="department in departments" :key="department.id" :value="String(department.id)" :disabled="!department.is_active">
-                                            {{ department.name }}{{ department.is_active ? '' : ' (غیرفعال)' }}
-                                        </option>
-                                    </select>
+                                    <DepartmentTreeSelect id="project_management_department_id" v-model="form.project_management_department_id" :departments="departments" placeholder="انتخاب نشده" />
                                     <InputError class="mt-1.5" :message="form.errors.project_management_department_id" />
                                 </div>
 
                                 <div>
                                     <label for="secretariat_department_id" class="mb-2 block text-sm font-semibold text-slate-700">دبیرخانه</label>
-                                    <select id="secretariat_department_id" v-model="form.secretariat_department_id" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200">
-                                        <option value="">انتخاب نشده</option>
-                                        <option v-for="department in departments" :key="department.id" :value="String(department.id)" :disabled="!department.is_active">
-                                            {{ department.name }}{{ department.is_active ? '' : ' (غیرفعال)' }}
-                                        </option>
-                                    </select>
+                                    <DepartmentTreeSelect id="secretariat_department_id" v-model="form.secretariat_department_id" :departments="departments" placeholder="انتخاب نشده" />
                                     <InputError class="mt-1.5" :message="form.errors.secretariat_department_id" />
                                 </div>
                             </div>
