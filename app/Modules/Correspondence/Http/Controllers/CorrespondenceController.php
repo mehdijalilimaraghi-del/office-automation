@@ -421,7 +421,7 @@ class CorrespondenceController extends Controller
             'sent_at' => ['nullable', 'date'],
         ]);
 
-        if (array_key_exists('sent_at', $data) && $data['sent_at'] !== null) {
+        if (array_key_exists('sent_at', $data)) {
             abort_unless($access->isSecretariat($user) || $user->isSystemAdmin(), 403, 'ثبت ارسال نهایی فقط توسط دبیرخانه مجاز است.');
         }
 
