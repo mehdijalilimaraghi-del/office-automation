@@ -103,6 +103,7 @@ class CorrespondenceController extends Controller
                 'type' => $filters['type'] ?? '',
                 'status' => $filters['status'] ?? '',
                 'scope' => $scope,
+                'scope' => $scope,
             ],
             'canCreate' => $request->user()->hasPermission('correspondence.create'),
         ]);
