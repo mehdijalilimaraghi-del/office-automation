@@ -1143,3 +1143,9 @@ Implementation has started for the agreed cross-department project model:
 - **Branch:** `development` only; `master` unchanged.
 
 - Follow-up: scanner staging cache expiry is 30 minutes for both pending and ready states; inline document previews stream from the configured storage disk.
+
+
+## 2026-10-27 — Cartable TypeScript build fix
+
+- Fixed the casing mismatch in `resources/js/Pages/Cartable/Index.vue`: the template now reads `letter.current_department.name`, matching the declared `CorrespondenceItem` property.
+- Commit is on `development` only; `master` is unchanged. Validation pending: run `git pull origin development` and `npm run build`; report the actual result before proceeding.
