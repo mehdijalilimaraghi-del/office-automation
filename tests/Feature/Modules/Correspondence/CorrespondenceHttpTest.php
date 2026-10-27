@@ -180,6 +180,91 @@ class CorrespondenceHttpTest extends TestCase
             ->assertInertia(fn ($page) => $page->where('correspondence.subject', 'نامه محرمانه مرتبط'));
     }
 
+    public function test_current_department_manager_can_add_multiple_copy_recipients_during_workflow(): void
+    {
+        $manager = $this->userWithPermission('correspondence.view');
+        $currentDepartment = Department::query()->create([
+            'name' => 'واحد مسئول رونوشت '.Str::upper(Str::random(5)),
+            'code' => 'CUR-'.Str::upper(Str::random(6)),
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+        $firstCopyDepartment = Department::query()->create([
+            'name' => 'واحد رونوشت اول '.Str::upper(Str::random(5)),
+            'code' => 'CP1-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+        ]);
+        $secondCopyDepartment = Department::query()->create([
+            'name' => 'واحد رونوشت دوم '.Str::upper(Str::random(5)),
+            'code' => 'CP2-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+        ]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => 'افزودن رونوشت حین گردش',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'registration_number' => '1405/009992',
+            'created_by' => $manager->id,
+            'current_department_id' => $currentDepartment->id,
+            'workflow_state' => 'in_progress',
+        ]);
+
+        $this->actingAs($manager)
+            ->post(route('correspondence.copies.store', $letter), [
+                'department_ids' => [$firstCopyDepartment->id, $secondCopyDepartment->id],
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('correspondence_copies', [
+            'correspondence_id' => $letter->id,
+            'department_id' => $firstCopyDepartment->id,
+            'created_by' => $manager->id,
+        ]);
+        $this->assertDatabaseHas('correspondence_copies', [
+            'correspondence_id' => $letter->id,
+            'department_id' => $secondCopyDepartment->id,
+            'created_by' => $manager->id,
+        ]);
+        $this->assertDatabaseCount('correspondence_actions', 2);
+    }
+
+    public function test_user_who_is_not_current_department_manager_cannot_add_workflow_copies(): void
+    {
+        $manager = $this->userWithPermission('correspondence.view');
+        $otherUser = $this->userWithPermission('correspondence.view');
+        $currentDepartment = Department::query()->create([
+            'name' => 'واحد مدیر نامه '.Str::upper(Str::random(5)),
+            'code' => 'OWN-'.Str::upper(Str::random(6)),
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+        $copyDepartment = Department::query()->create([
+            'name' => 'واحد مقصد رونوشت '.Str::upper(Str::random(5)),
+            'code' => 'DST-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+        ]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => 'رونوشت غیرمجاز',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'registration_number' => '1405/009993',
+            'created_by' => $manager->id,
+            'current_department_id' => $currentDepartment->id,
+            'workflow_state' => 'in_progress',
+        ]);
+
+        $this->actingAs($otherUser)
+            ->post(route('correspondence.copies.store', $letter), [
+                'department_ids' => [$copyDepartment->id],
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('correspondence_copies', [
+            'correspondence_id' => $letter->id,
+            'department_id' => $copyDepartment->id,
+        ]);
+    }
+
     public function test_user_with_create_permission_can_create_editor_draft_and_unsafe_markup_is_removed(): void
     {
         $user = $this->userWithPermission('correspondence.create');
