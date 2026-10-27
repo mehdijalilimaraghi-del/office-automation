@@ -8,9 +8,11 @@ const props = withDefaults(
     defineProps<{
         modelValue: string | null;
         placeholder?: string;
+        required?: boolean;
     }>(),
     {
         placeholder: 'انتخاب تاریخ',
+        required: false,
     },
 );
 
@@ -61,6 +63,7 @@ const value = computed<string | undefined>({
         value-format="gregorian-iso"
         :default-date="defaultDate"
         :placeholder="placeholder"
+        :required="required"
         class="jalali-date-picker"
     />
 </template>
