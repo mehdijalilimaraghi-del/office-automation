@@ -2,6 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import type { PageProps } from '@/types';
+import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 
 interface RelatedCorrespondence {
     id: number;
@@ -237,10 +238,7 @@ function registerCorrespondence(): void {
                         </div>
                         <div v-if="canManageWorkflow && ['manager_refer', 'request_task', 'request_project', 'request_letter'].includes(actionForm.action_type)">
                             <label class="mb-1 block text-sm font-medium text-slate-700">واحد مقصد</label>
-                            <select v-model="actionForm.to_department_id" required class="w-full rounded-xl border-slate-300 text-sm">
-                                <option value="">انتخاب واحد مقصد</option>
-                                <option v-for="department in workflowDepartments" :key="department.id" :value="department.id">{{ department.name }}</option>
-                            </select>
+                            <DepartmentTreeSelect v-model="actionForm.to_department_id" :departments="workflowDepartments" placeholder="انتخاب واحد مقصد" :clearable="false" />
                         </div>
                         <div class="sm:col-span-2">
                             <label class="mb-1 block text-sm font-medium text-slate-700">توضیح / شرح اقدام</label>

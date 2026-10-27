@@ -1,3 +1,11 @@
+## 2026-10-27 — Shared department tree selector rollout (validation pending)
+
+- Added the shared `DepartmentTreeSelect.vue` with department icons, a collapsible hierarchy, search, expand/collapse-all controls, and single/multiple selection.
+- Migrated unit selectors in task creation/filtering, project section creation, project section management, correspondence creation/copy recipients, correspondence workflow referrals, user department membership/primary unit, and department-parent selection.
+- Added `parent_id` to the relevant task/project/correspondence selector data so the UI can render hierarchy instead of flattening names. Future selectors must reuse the shared component.
+- Documented the permanent department-selector and Jalali date-picker reuse standards in `CURRENT_STATUS.md`, `AI_CONTEXT.md`, and `PROJECT_CONTEXT.md`. Date fields must use `JalaliDatePicker.vue`; date/time fields must use `JalaliDateTimePicker.vue`, and visual changes belong in shared components.
+- **Validation pending:** pull `development`, inspect all migrated selectors, run the focused correspondence/task/project/user feature tests, `php artisan test`, and `npm run build`. Do not claim validation until the project owner reports results. `master` unchanged.
+
 ## استاندارد دائمی رابط کاربری: انتخاب واحد و تقویم شمسی
 
 - تمام انتخاب‌گرهای واحد در صفحات Vue باید از کامپوننت مشترک `resources/js/Components/DepartmentTreeSelect.vue` استفاده کنند؛ ساختن فهرست یا درخت واحد اختصاصی در یک صفحه مجاز نیست.

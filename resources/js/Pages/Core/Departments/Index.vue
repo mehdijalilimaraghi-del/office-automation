@@ -7,6 +7,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import UserAvatar from '@/Components/UserAvatar.vue';
 import DepartmentIcon from '@/Components/DepartmentIcon.vue';
+import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
 import { departmentIconOptions } from '@/Utils/departmentIcons';
 
@@ -995,15 +996,7 @@ watch(
 
                         <div>
                             <label class="mb-2 block text-sm font-semibold text-slate-700">واحد والد</label>
-                            <select
-                                v-model="form.parent_id"
-                                class="block min-h-11 w-full rounded-xl border-slate-300 bg-white text-sm text-slate-700 focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
-                            >
-                                <option :value="null">ریشه سازمان</option>
-                                <option v-for="department in parentOptions" :key="department.id" :value="department.id">
-                                    {{ department.name }}
-                                </option>
-                            </select>
+                            <DepartmentTreeSelect v-model="form.parent_id" :departments="parentOptions" placeholder="ریشه سازمان (بدون واحد والد)" />
                             <InputError class="mt-1.5" :message="form.errors.parent_id" />
                         </div>
 

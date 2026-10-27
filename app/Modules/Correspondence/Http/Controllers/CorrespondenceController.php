@@ -189,7 +189,7 @@ class CorrespondenceController extends Controller
                 ])
                 ->values(),
             'canRegister' => $access->canRegister($correspondence, $request->user()),
-            'workflowDepartments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'workflowDepartments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'parent_id']),
             'canReturnToManager' => $correspondence->workflow_state !== 'completed_with_result'
                 && $correspondence->status === Correspondence::STATUS_REGISTERED
                 && in_array($correspondence->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)
