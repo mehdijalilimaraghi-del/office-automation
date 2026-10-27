@@ -48,6 +48,9 @@ function formatRegisteredAt(value: string | null): string {
 function applyFilters(): void {
     router.get(route('correspondence.index'), { scope: scope.value || 'mine', search: search.value || undefined, type: type.value || undefined, status: status.value || undefined }, { preserveState: true, replace: true });
 }
+function confirmDelete(id: number): void {
+    if (window.confirm('این مکاتبه حذف شود؟ این عملیات قابل بازگشت نیست.')) router.delete(route('correspondence.destroy', id), { preserveScroll: true });
+}
 function register(id: number): void {
     if (window.confirm('در ثبت نهایی، شماره ثبت دبیرخانه تخصیص می‌یابد و شماره نامه فعلی ثابت می‌ماند. ادامه می‌دهید؟')) {
         router.post(route('correspondence.register', id), {}, { preserveScroll: true });
@@ -89,7 +92,7 @@ function register(id: number): void {
                                 <td class="px-5 py-4 text-slate-600"><div>{{ item.recipient_department?.name ?? item.created_department?.name ?? '—' }}</div><div v-if="item.external_organization" class="mt-1 text-xs text-teal-700">{{ item.external_organization.name }}<span v-if="item.external_department"> — {{ item.external_department.name }}</span></div></td>
                                 <td class="px-5 py-4 text-slate-600">{{ item.creator?.name ?? '—' }}</td>
                                 <td class="whitespace-nowrap px-5 py-4"><span :class="item.status === 'registered' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'" class="rounded-full px-2.5 py-1 text-xs font-semibold">{{ statusLabels[item.status] }}</span></td>
-                                <td class="whitespace-nowrap px-5 py-4"><div class="flex items-center gap-2"><button v-if="item.can_register && item.status === 'draft'" type="button" class="rounded-lg border border-indigo-200 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-50" @click="register(item.id)">ثبت نهایی</button><Link v-if="item.can_manage_before_action" :href="route('correspondence.edit', item.id)" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100">ویرایش</Link><button v-if="item.can_manage_before_action" type="button" class="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50" @click="window.confirm('این مکاتبه حذف شود؟ این عملیات قابل بازگشت نیست.') && router.delete(route('correspondence.destroy', item.id), { preserveScroll: true })">حذف</button><span v-if="!item.can_register && !item.can_manage_before_action" class="text-xs text-slate-400">—</span></div></td>
+                                <td class="whitespace-nowrap px-5 py-4"><div class="flex items-center gap-2"><button v-if="item.can_register && item.status === 'draft'" type="button" class="rounded-lg border border-indigo-200 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-50" @click="register(item.id)">ثبت نهایی</button><Link v-if="item.can_manage_before_action" :href="route('correspondence.edit', item.id)" class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100">ویرایش</Link><button v-if="item.can_manage_before_action" type="button" class="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50" @click="confirmDelete(item.id)">حذف</button><span v-if="!item.can_register && !item.can_manage_before_action" class="text-xs text-slate-400">—</span></div></td>
                             </tr>
                         </tbody>
                     </table>
