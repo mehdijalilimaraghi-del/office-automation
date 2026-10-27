@@ -427,12 +427,12 @@ async function scanOriginalLetter(): Promise<void> {
                             <InputError class="mt-1" :message="form.errors.recipient_department_id" />
                         </div>
                         <div v-if="form.type === 'outgoing'">
-                            <label for="sent_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ ارسال</label>
+                            <label for="sent_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ ارسال <span class="text-rose-600">*</span></label>
                             <JalaliDatePicker v-model="form.sent_at" placeholder="انتخاب تاریخ ارسال" required />
                             <InputError class="mt-1" :message="form.errors.sent_at" />
                         </div>
                         <div v-if="form.type === 'incoming'">
-                            <label for="received_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ دریافت</label>
+                            <label for="received_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ دریافت <span class="text-rose-600">*</span></label>
                             <JalaliDatePicker v-model="form.received_at" placeholder="انتخاب تاریخ دریافت" required />
                             <InputError class="mt-1" :message="form.errors.received_at" />
                         </div>
@@ -442,17 +442,9 @@ async function scanOriginalLetter(): Promise<void> {
                             <InputError class="mt-1" :message="form.errors.subject" />
                         </div>
                         <div class="sm:col-span-2">
-                            <div class="mb-1.5 flex items-center gap-1.5"><label for="related_correspondence_search" class="text-sm font-semibold text-slate-700">ارتباط با مکاتبات قبلی</label><details class="group relative"><summary aria-label="راهنمای ارتباط با مکاتبات قبلی" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-300">؟</summary><div class="absolute right-0 top-7 z-20 w-64 rounded-lg border border-slate-200 bg-white p-3 text-xs font-normal leading-6 text-slate-700 shadow-lg">در صورت ارتباط، نامه قبلی را جست‌وجو و انتخاب کنید؛ این ارتباط می‌تواند ادامه مکاتبه یا پاسخ به نامه قبلی باشد.</div></details></div>
-                            <div v-if="selectedRelatedLetters.length" class="mb-3 space-y-2">
-                                <div v-for="letter in selectedRelatedLetters" :key="letter.id" class="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50 p-3">
-                                    <div class="min-w-0">
-                                        <p class="text-sm font-semibold text-slate-900">{{ letter.subject }}</p>
-                                        <p class="mt-1 text-xs leading-5 text-slate-600">شماره نامه: {{ letter.letter_number ?? "—" }} | شماره ثبت: {{ letter.registration_number ?? "—" }} | تاریخ نامه: {{ formatRelatedLetterDate(letter.letter_date) }}</p>
-                                    </div>
-                                    <button type="button" class="text-sm font-semibold text-rose-700" @click="selectedRelatedLetters = selectedRelatedLetters.filter((item) => item.id !== letter.id); form.reply_to_ids = selectedRelatedLetters.map((item) => item.id); form.reply_to_id = selectedRelatedLetters[0]?.id ?? ''">حذف</button>
-                                </div>
-                            </div>
-                            <input id="related_correspondence_search" v-model="relatedSearchQuery" type="search" autocomplete="off" placeholder="جستجو..." class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @input="searchRelatedLetters" />
+                            <div class="mb-1.5 flex items-center gap-1.5"><label for="related_correspondence_search" class="text-sm font-semibold text-slate-700">ارتباط با مکاتبات قبلی</label>
+                                <details class="group relative"><summary aria-label="راهنمای ارتباط با مکاتبات قبلی" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 bg-white text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">؟</summary><span class="absolute right-0 top-7 z-30 w-64 rounded-lg bg-slate-900 p-3 text-xs font-normal leading-6 text-white shadow-lg">برای پیوند دادن این نامه به یک یا چند مکاتبه ثبت‌شده، موضوع یا شماره نامه را جست‌وجو و موارد موردنظر را انتخاب کنید.</span></details><details class="group relative"><summary aria-label="راهنمای ارتباط با مکاتبات قبلی" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-300">؟</summary><div class="absolute right-0 top-7 z-20 w-64 rounded-lg border border-slate-200 bg-white p-3 text-xs font-normal leading-6 text-slate-700 shadow-lg">در صورت ارتباط، نامه قبلی را جست‌وجو و انتخاب کنید؛ این ارتباط می‌تواند ادامه مکاتبه یا پاسخ به نامه قبلی باشد.</div></details></div>
+                            <input id="related_correspondence_search" v-model="relatedSearchQuery" type="search" autocomplete="off" placeholder="جستجو..." class="w-full shrink-0 rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @input="searchRelatedLetters" />
                             <p v-if="relatedSearchQuery.trim().length < 2" class="mt-1 text-xs text-slate-500">برای جستجو حداقل دو نویسه وارد کنید.</p>
                             <p v-else-if="relatedSearchLoading" class="mt-2 text-sm text-slate-500">در حال جستجوی مکاتبات...</p>
                             <p v-else-if="relatedSearchResults.length === 0" class="mt-2 text-sm text-slate-500">مکاتبه‌ای با این مشخصات پیدا نشد.</p>
@@ -463,17 +455,27 @@ async function scanOriginalLetter(): Promise<void> {
                                     <span class="mt-1 block text-xs leading-5 text-slate-500">{{ [item.created_department, item.created_department_code, item.recipient_department, item.recipient_department_code, item.external_organization, item.external_organization_code, item.external_department, item.external_department_code].filter(Boolean).join(" · ") || "واحد یا سازمان ثبت نشده" }}<span v-if="item.external_registration_number"> · شماره ثبت طرف مقابل: {{ item.external_registration_number }}</span></span>
                                 </button>
                             </div>
+                            <div class="mt-2 max-h-52 space-y-2 overflow-y-auto rounded-xl border border-slate-200 p-2">
+                            <div v-if="selectedRelatedLetters.length" class="mb-3 space-y-2">
+                                <div v-for="letter in selectedRelatedLetters" :key="letter.id" class="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50 p-3">
+                                    <div class="min-w-0">
+                                        <p class="text-sm font-semibold text-slate-900">{{ letter.subject }}</p>
+                                        <p class="mt-1 text-xs leading-5 text-slate-600">شماره نامه: {{ letter.letter_number ?? "—" }} | شماره ثبت: {{ letter.registration_number ?? "—" }} | تاریخ نامه: {{ formatRelatedLetterDate(letter.letter_date) }}</p>
+                                    </div>
+                                    <button type="button" class="text-sm font-semibold text-rose-700" @click="selectedRelatedLetters = selectedRelatedLetters.filter((item) => item.id !== letter.id); form.reply_to_ids = selectedRelatedLetters.map((item) => item.id); form.reply_to_id = selectedRelatedLetters[0]?.id ?? ''">حذف</button>
+                                </div>
+                            </div>
+                            </div>
                             <InputError class="mt-1" :message="form.errors.reply_to_id" />
                             <InputError class="mt-1" :message="form.errors.reply_to_ids" />
                         </div>
-                        <div class="sm:col-span-1 rounded-xl border border-slate-200 p-4">
-                            <div class="mb-1.5 flex items-center gap-1.5"><label for="copy_department_select" class="text-sm font-semibold text-slate-700">رونوشت به</label><span class="text-xs text-slate-400">(اختیاری)</span></div>
+                        <div class="sm:col-span-1 flex min-h-0 flex-col rounded-xl border border-slate-200 p-4">
+                            <div class="mb-1.5 flex items-center gap-1.5"><label for="copy_department_select" class="text-sm font-semibold text-slate-700">رونوشت به</label><details class="group relative"><summary aria-label="راهنمای رونوشت به" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 bg-white text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">؟</summary><span class="absolute right-0 top-7 z-30 w-64 rounded-lg bg-slate-900 p-3 text-xs font-normal leading-6 text-white shadow-lg">واحدهای انتخاب‌شده یک نسخه برای اطلاع دریافت می‌کنند و از طریق رونوشت امکان اقدام یا ارجاع ندارند.</span></details></div>
                             <select id="copy_department_select" v-model="selectedCopyDepartmentId" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @change="addCopyDepartment(selectedCopyDepartmentId)">
                                 <option value="">انتخاب واحد برای رونوشت</option>
                                 <option v-for="item in departmentTreeOptions" :key="item.id" :value="item.id" :disabled="form.copy_department_ids.includes(item.id)">{{ item.label }}</option>
                             </select>
-                            <p class="mt-1 text-xs leading-5 text-slate-500">واحدهای رونوشت‌گیرنده پس از ثبت نهایی نامه را برای اطلاع مشاهده می‌کنند و از طریق رونوشت امکان اقدام یا ارجاع ندارند.</p>
-                            <ul v-if="form.copy_department_ids.length" class="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-200">
+                            <ul v-if="form.copy_department_ids.length" class="mt-3 max-h-52 divide-y divide-slate-100 overflow-y-auto rounded-xl border border-slate-200">
                                 <li v-for="id in form.copy_department_ids" :key="id" class="flex items-center justify-between gap-3 px-3 py-2"><span class="text-sm text-slate-800">{{ departmentTreeOptions.find((item) => item.id === id)?.label ?? departments.find((item) => item.id === id)?.name }}</span><button type="button" class="text-xs font-semibold text-rose-700 hover:underline" @click="removeCopyDepartment(id)">حذف</button></li>
                             </ul>
                             <p v-else class="mt-2 text-xs text-slate-500">هنوز واحدی برای رونوشت انتخاب نشده است.</p>
