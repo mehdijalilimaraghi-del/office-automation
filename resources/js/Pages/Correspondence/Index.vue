@@ -48,7 +48,7 @@ function applyFilters(): void {
     router.get(route('correspondence.index'), { scope: scope.value || 'mine', search: search.value || undefined, type: type.value || undefined, status: status.value || undefined }, { preserveState: true, replace: true });
 }
 function register(id: number): void {
-    if (window.confirm('پس از ثبت نهایی، شماره مکاتبه ثابت خواهد شد. ادامه می‌دهید؟')) {
+    if (window.confirm('در ثبت نهایی، شماره ثبت دبیرخانه تخصیص می‌یابد و شماره نامه فعلی ثابت می‌ماند. ادامه می‌دهید؟')) {
         router.post(route('correspondence.register', id), {}, { preserveScroll: true });
     }
 }
