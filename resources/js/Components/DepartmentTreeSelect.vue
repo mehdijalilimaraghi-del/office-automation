@@ -24,7 +24,7 @@ function clear(){if(props.multiple)emit('update:modelValues',[]);else emit('upda
 <DepartmentIcon class="shrink-0 text-slate-500" :icon="selected[0]?.icon" :size="18"/>
 <span v-if="multiple&&selected.length" class="flex min-w-0 flex-1 flex-wrap gap-1"><span v-for="d in selected" :key="d.id" class="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-2 py-1 text-xs text-indigo-800"><DepartmentIcon :icon="d.icon" :size="14"/><span class="max-w-48 truncate">{{d.name}}</span></span></span>
 <span v-else class="min-w-0 flex-1 truncate" :class="selectedLabel?'text-slate-800':'text-slate-400'">{{selectedLabel||placeholder}}</span>
-<button v-if="clearable&&(multiple?modelValues.length>0:modelValue!==null&&modelValue!==undefined&&modelValue!=='')" type="button" class="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="پاک کردن انتخاب واحد" @click.stop="clear"><X :size="15"/></button>
+<span v-if="clearable&&(multiple?modelValues.length>0:modelValue!==null&&modelValue!==undefined&&modelValue!=='')" role="button" tabindex="0" class="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="پاک کردن انتخاب واحد" @click.stop="clear" @keydown.enter.stop.prevent="clear"><X :size="15"/></span>
 <ChevronDown :size="16" class="shrink-0 text-slate-500 transition-transform" :class="isOpen?'rotate-180':''"/>
 </button>
 <div v-if="isOpen" class="absolute inset-x-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5">

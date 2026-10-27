@@ -114,7 +114,7 @@ const search = ref(props.filters.search ?? '');
 const statusFilter = ref(props.filters.status_group === 'pending' ? '__pending' : (props.filters.status ?? ''));
 const priorityFilter = ref(props.filters.priority ?? '');
 const projectFilter = ref(props.filters.project_id?.toString() ?? '');
-const departmentFilter = ref(props.filters.department_id?.toString() ?? '');
+const departmentFilter = ref<string | number | null>(props.filters.department_id?.toString() ?? '');
 const scopeFilter = ref(props.filters.scope ?? '');
 const dueFilter = ref(props.filters.due ?? '');
 const reviewFilter = ref(props.filters.review ?? '');
