@@ -315,6 +315,9 @@ class CorrespondenceWorkflowService
                 ->value('actor_id'),
             default => null,
         };
+        if ($followUpUserId !== null) {
+            $followUpUserId = (int) $followUpUserId;
+        }
 
         if ($followUpUserId !== null && $followUpUserId !== (int) $actor->id && $followUpUserId !== $toUserId) {
             $followUpUser = User::query()->whereKey($followUpUserId)->where('status', 'active')->first();
