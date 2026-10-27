@@ -667,12 +667,7 @@ function currentUserId(): number | null {
                     <div><p class="text-xs font-semibold text-teal-600">ساختار سازمانی</p><h3 class="mt-1 text-lg font-bold text-slate-900">مدیریت واحدهای کاربر</h3><p class="mt-1 text-xs text-slate-500">{{ membershipUser.name }}</p></div>
                     <button type="button" class="rounded-lg p-2 text-xl text-slate-400 hover:bg-slate-100" @click="closeMembership">×</button>
                 </div>
-                <div class="mt-5 max-h-72 space-y-2 overflow-y-auto">
-                    <label v-for="department in props.departments" :key="department.id" class="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 hover:bg-slate-50">
-                        <input type="checkbox" :checked="membershipForm.department_ids.includes(department.id)" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" @change="toggleMembershipDepartment(department.id)" />
-                        <span class="text-sm text-slate-700">{{ department.name }}</span>
-                    </label>
-                </div>
+                <div class="mt-5"><DepartmentTreeSelect v-model:model-values="membershipForm.department_ids" :departments="props.departments" multiple placeholder="انتخاب واحدهای کاربر" /></div>
                 <p v-if="membershipForm.errors.department_ids" class="mt-2 text-xs text-red-600">{{ membershipForm.errors.department_ids }}</p>
                 <label class="mt-4 mb-1.5 block text-xs font-semibold text-slate-500">واحد اصلی</label>
                 <DepartmentTreeSelect v-model="membershipForm.primary_department_id" :departments="props.departments.filter(d => membershipForm.department_ids.includes(d.id))" placeholder="بدون واحد اصلی" />
