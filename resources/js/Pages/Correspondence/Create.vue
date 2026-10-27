@@ -441,19 +441,21 @@ async function scanOriginalLetter(): Promise<void> {
                             <input id="subject" v-model="form.subject" required maxlength="255" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
                             <InputError class="mt-1" :message="form.errors.subject" />
                         </div>
-                        <div class="sm:col-span-2 flex min-h-0 flex-col">
+                        <div class="sm:col-span-2 flex min-h-0 flex-col rounded-xl border border-slate-200 p-4">
                             <div class="mb-1.5 flex items-center gap-1.5"><label for="related_correspondence_search" class="text-sm font-semibold text-slate-700">ارتباط با مکاتبات قبلی</label>
                                 <details class="group relative"><summary aria-label="راهنمای ارتباط با مکاتبات قبلی" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 bg-white text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">؟</summary><span class="absolute right-0 top-7 z-30 w-64 rounded-lg bg-slate-900 p-3 text-xs font-normal leading-6 text-white shadow-lg">برای پیوند دادن این نامه به یک یا چند مکاتبه ثبت‌شده، موضوع یا شماره نامه را جست‌وجو و موارد موردنظر را انتخاب کنید.</span></details></div>
-                            <input id="related_correspondence_search" v-model="relatedSearchQuery" type="search" autocomplete="off" placeholder="جستجو (حداقل ۲ نویسه)..." class="w-full shrink-0 rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @input="searchRelatedLetters" />
-                            <div v-if="relatedSearchQuery.trim().length >= 2" class="mt-2 max-h-64 overflow-y-auto rounded-xl border border-slate-200">
-                                <p v-if="relatedSearchLoading" class="p-3 text-sm text-slate-500">در حال جستجوی مکاتبات...</p>
-                                <p v-else-if="relatedSearchResults.length === 0" class="p-3 text-sm text-slate-500">مکاتبه‌ای با این مشخصات پیدا نشد.</p>
-                                <div v-else class="divide-y divide-slate-100">
-                                    <button v-for="item in relatedSearchResults" :key="item.id" type="button" class="block w-full p-3 text-right transition hover:bg-indigo-50 disabled:cursor-default disabled:opacity-50" :disabled="selectedRelatedLetters.some((letter) => letter.id === item.id)" @click="selectRelatedLetter(item)">
-                                        <span class="block text-sm font-semibold text-slate-900">{{ item.subject }}</span>
-                                        <span class="mt-1 block text-xs leading-5 text-slate-600">شماره نامه: {{ item.letter_number ?? "—" }} | شماره ثبت: {{ item.registration_number ?? "—" }} | تاریخ نامه: {{ formatRelatedLetterDate(item.letter_date) }}</span>
-                                        <span class="mt-1 block text-xs leading-5 text-slate-500">{{ [item.created_department, item.created_department_code, item.recipient_department, item.recipient_department_code, item.external_organization, item.external_organization_code, item.external_department, item.external_department_code].filter(Boolean).join(" · ") || "واحد یا سازمان ثبت نشده" }}<span v-if="item.external_registration_number"> · شماره ثبت طرف مقابل: {{ item.external_registration_number }}</span></span>
-                                    </button>
+                            <div class="relative">
+                                <input id="related_correspondence_search" v-model="relatedSearchQuery" type="search" autocomplete="off" placeholder="جستجو (حداقل ۲ نویسه)..." class="w-full shrink-0 rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @input="searchRelatedLetters" />
+                                <div v-if="relatedSearchQuery.trim().length >= 2" class="absolute inset-x-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg">
+                                    <p v-if="relatedSearchLoading" class="p-3 text-sm text-slate-500">در حال جستجوی مکاتبات...</p>
+                                    <p v-else-if="relatedSearchResults.length === 0" class="p-3 text-sm text-slate-500">مکاتبه‌ای با این مشخصات پیدا نشد.</p>
+                                    <div v-else class="divide-y divide-slate-100">
+                                        <button v-for="item in relatedSearchResults" :key="item.id" type="button" class="block w-full p-3 text-right transition hover:bg-indigo-50 disabled:cursor-default disabled:opacity-50" :disabled="selectedRelatedLetters.some((letter) => letter.id === item.id)" @click="selectRelatedLetter(item)">
+                                            <span class="block text-sm font-semibold text-slate-900">{{ item.subject }}</span>
+                                            <span class="mt-1 block text-xs leading-5 text-slate-600">شماره نامه: {{ item.letter_number ?? "—" }} | شماره ثبت: {{ item.registration_number ?? "—" }} | تاریخ نامه: {{ formatRelatedLetterDate(item.letter_date) }}</span>
+                                            <span class="mt-1 block text-xs leading-5 text-slate-500">{{ [item.created_department, item.created_department_code, item.recipient_department, item.recipient_department_code, item.external_organization, item.external_organization_code, item.external_department, item.external_department_code].filter(Boolean).join(" · ") || "واحد یا سازمان ثبت نشده" }}<span v-if="item.external_registration_number"> · شماره ثبت طرف مقابل: {{ item.external_registration_number }}</span></span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             <ul v-if="selectedRelatedLetters.length" class="mt-3 max-h-52 divide-y divide-slate-100 overflow-y-auto rounded-xl border border-slate-200">
