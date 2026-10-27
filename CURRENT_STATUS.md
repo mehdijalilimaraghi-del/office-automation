@@ -1,3 +1,10 @@
+## 2026-10-27 — Department tree selector rollout checkpoint (validation pending)
+
+- The shared `DepartmentTreeSelect.vue` now renders department-specific icons where supplied, hierarchical indentation/connector lines, expandable branches, search, and single/multiple selection. Internal and external unit pickers use the shared UI instead of page-specific native selects.
+- Migrated selectors across Tasks, Projects, Correspondence, organization settings, department parent selection, user memberships, and external-party unit management. Backend selector payloads include `parent_id` and icon data where applicable.
+- Replaced native Gregorian date inputs found in correspondence tracking with `JalaliDatePicker.vue`; date-time inputs must use `JalaliDateTimePicker.vue`. Do not create page-specific calendars.
+- All related changes are committed on `development`; `master` remains untouched. **Validation pending**: the project owner must pull, run PHP tests and `npm run build`, and report the result. The assistant has not run the local test suite or frontend build.
+
 ## 2026-10-27 — Shared selector coverage and Persian date consistency (validation pending)
 
 - Extended the shared department tree to organization settings, correspondence workflow referrals, department-parent selection, and external-party unit hierarchy. Inactive departments remain visible for existing settings but cannot be newly selected.
