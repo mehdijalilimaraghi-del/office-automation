@@ -226,6 +226,62 @@ class CorrespondenceController extends Controller
         ]);
     }
 
+    public function searchRelated(Request $request, CorrespondenceAccessService $access): \Illuminate\Http\JsonResponse
+    {
+        $data = $request->validate([
+            'q' => ['required', 'string', 'min:2', 'max:150'],
+        ]);
+        $term = trim($data['q']);
+
+        $letters = $access->visibleToQuery(Correspondence::query(), $request->user())
+            ->where('status', Correspondence::STATUS_REGISTERED)
+            ->where(function ($query) use ($term): void {
+                $query->where('subject', 'like', '%'.$term.'%')
+                    ->orWhere('letter_number', 'like', '%'.$term.'%')
+                    ->orWhere('registration_number', 'like', '%'.$term.'%')
+                    ->orWhere('external_registration_number', 'like', '%'.$term.'%')
+                    ->orWhereHas('createdDepartment', fn ($department) => $department
+                        ->where('name', 'like', '%'.$term.'%')
+                        ->orWhere('code', 'like', '%'.$term.'%'))
+                    ->orWhereHas('recipientDepartment', fn ($department) => $department
+                        ->where('name', 'like', '%'.$term.'%')
+                        ->orWhere('code', 'like', '%'.$term.'%'))
+                    ->orWhereHas('externalOrganization', fn ($organization) => $organization
+                        ->where('name', 'like', '%'.$term.'%'))
+                    ->orWhereHas('externalDepartment', fn ($department) => $department
+                        ->where('name', 'like', '%'.$term.'%'));
+            })
+            ->with([
+                'createdDepartment:id,name,code',
+                'recipientDepartment:id,name,code',
+                'externalOrganization:id,name',
+                'externalDepartment:id,name',
+            ])
+            ->orderByDesc('registered_at')
+            ->limit(20)
+            ->get([
+                'id', 'letter_number', 'registration_number', 'external_registration_number',
+                'subject', 'type', 'sent_at', 'received_at', 'registered_at',
+                'created_department_id', 'recipient_department_id',
+                'external_organization_id', 'external_department_id',
+            ])
+            ->map(fn (Correspondence $letter): array => [
+                'id' => $letter->id,
+                'letter_number' => $letter->letter_number,
+                'registration_number' => $letter->registration_number,
+                'external_registration_number' => $letter->external_registration_number,
+                'subject' => $letter->subject,
+                'type' => $letter->type,
+                'letter_date' => ($letter->sent_at ?? $letter->received_at ?? $letter->registered_at)?->toIso8601String(),
+                'created_department' => $letter->createdDepartment?->name,
+                'recipient_department' => $letter->recipientDepartment?->name,
+                'external_organization' => $letter->externalOrganization?->name,
+                'external_department' => $letter->externalDepartment?->name,
+            ]);
+
+        return response()->json(['data' => $letters]);
+    }
+
     public function create(Request $request, CorrespondenceAccessService $access, SystemSettingsService $settings): Response
     {
         $types = array_values(array_filter([
@@ -314,8 +370,8 @@ class CorrespondenceController extends Controller
             'recipient_name' => ['nullable', 'string', 'max:255'],
             'external_organization_id' => ['nullable', 'integer', Rule::exists('external_organizations', 'id')->where('status', 'active')],
             'external_department_id' => ['nullable', 'integer', Rule::exists('external_departments', 'id')->where(fn ($query) => $query->where('status', 'active')->where('external_organization_id', $request->input('external_organization_id')))],
-            'received_at' => ['nullable', 'date'],
-            'sent_at' => ['nullable', 'date'],
+            'received_at' => ['nullable', 'required_if:type,'.Correspondence::TYPE_INCOMING, 'date'],
+            'sent_at' => ['nullable', 'required_if:type,'.Correspondence::TYPE_OUTGOING, 'date'],
             'recipient_department_id' => ['nullable', 'required_if:type,internal', 'required_if:type,incoming', 'integer', 'exists:departments,id'],
             'reply_to_id' => ['nullable', 'integer', Rule::exists('correspondences', 'id')->where('status', Correspondence::STATUS_REGISTERED)],
             'copy_department_ids' => ['nullable', 'array', 'max:20'],
