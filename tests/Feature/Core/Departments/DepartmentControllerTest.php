@@ -148,6 +148,7 @@ class DepartmentControllerTest extends TestCase
 
         $this->assertDatabaseHas('departments', [
             'name' => 'فناوری اطلاعات',
+            'code' => 'IT',
             'icon' => 'handshake',
         ]);
     }
