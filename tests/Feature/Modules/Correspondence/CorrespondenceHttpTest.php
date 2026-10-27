@@ -298,6 +298,25 @@ class CorrespondenceHttpTest extends TestCase
 
         $this->assertDatabaseMissing('correspondences', ['subject' => 'نامه صادره بدون تاریخ']);
         $this->assertDatabaseMissing('correspondences', ['subject' => 'نامه وارده بدون تاریخ']);
+
+        $this->actingAs($user)->from(route('correspondence.create'))->post(route('correspondence.store'), [
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => 'نامه داخلی بدون واحد دریافت‌کننده',
+            'composition_mode' => 'editor',
+            'body' => '<p>متن نامه</p>',
+        ])->assertRedirect(route('correspondence.create'))
+            ->assertSessionHasErrors('recipient_department_id');
+
+        $this->actingAs($secretariatUser)->from(route('correspondence.create'))->post(route('correspondence.store'), [
+            'type' => Correspondence::TYPE_INCOMING,
+            'received_at' => '2026-10-27',
+            'subject' => 'نامه وارده بدون واحد دریافت‌کننده',
+            'original_letters' => [UploadedFile::fake()->create('original.pdf', 10, 'application/pdf')],
+        ])->assertRedirect(route('correspondence.create'))
+            ->assertSessionHasErrors('recipient_department_id');
+
+        $this->assertDatabaseMissing('correspondences', ['subject' => 'نامه داخلی بدون واحد دریافت‌کننده']);
+        $this->assertDatabaseMissing('correspondences', ['subject' => 'نامه وارده بدون واحد دریافت‌کننده']);
     }
 
     public function test_related_correspondence_search_returns_numbers_dates_and_party_names(): void
