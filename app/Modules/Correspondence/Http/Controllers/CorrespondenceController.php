@@ -332,7 +332,7 @@ class CorrespondenceController extends Controller
                 ['value' => Correspondence::CLASSIFICATION_ORDINARY, 'label' => 'عادی'],
                 ['value' => Correspondence::CLASSIFICATION_CONFIDENTIAL, 'label' => 'محرمانه'],
             ],
-            'departments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'departments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'parent_id']),
         ]);
     }
 
@@ -375,6 +375,8 @@ class CorrespondenceController extends Controller
             'sent_at' => ['nullable', 'required_if:type,'.Correspondence::TYPE_OUTGOING, 'date'],
             'recipient_department_id' => ['nullable', 'required_if:type,internal', 'required_if:type,incoming', 'integer', 'exists:departments,id'],
             'reply_to_id' => ['nullable', 'integer', Rule::exists('correspondences', 'id')->where('status', Correspondence::STATUS_REGISTERED)],
+            'reply_to_ids' => ['nullable', 'array', 'max:20'],
+            'reply_to_ids.*' => ['integer', 'distinct', Rule::exists('correspondences', 'id')->where('status', Correspondence::STATUS_REGISTERED)],
             'copy_department_ids' => ['nullable', 'array', 'max:20'],
             'copy_department_ids.*' => ['integer', 'distinct', Rule::exists('departments', 'id')->where('is_active', true)],
             'scanner_upload_token' => ['nullable', 'string', 'max:100'],
@@ -443,8 +445,16 @@ class CorrespondenceController extends Controller
                     'recipient_department_id' => $data['recipient_department_id'] ?? null,
                     'external_organization_id' => $data['external_organization_id'] ?? null,
                     'external_department_id' => $data['external_department_id'] ?? null,
-                    'reply_to_id' => $data['reply_to_id'] ?? null,
+                    'reply_to_id' => ! empty($data['reply_to_ids']) ? (int) $data['reply_to_ids'][0] : ($data['reply_to_id'] ?? null),
                 ], $request->user());
+
+                $relatedLetterIds = array_values(array_unique(array_map('intval', $data['reply_to_ids'] ?? [])));
+                if ($relatedLetterIds !== []) {
+                    if (in_array((int) $correspondence->id, $relatedLetterIds, true)) {
+                        throw new InvalidArgumentException('یک مکاتبه نمی‌تواند به خودش مرتبط شود.');
+                    }
+                    $correspondence->relatedLetters()->sync($relatedLetterIds);
+                }
 
                 foreach ($originalLetters as $file) {
                     $documents->create(
