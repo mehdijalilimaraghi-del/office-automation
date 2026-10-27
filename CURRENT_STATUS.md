@@ -1169,3 +1169,11 @@ Implementation has started for the agreed cross-department project model:
 - Correspondence list/detail surfaces display letter number and registration number separately. The list formats registered_at as a Jalali date and Tehran local time and labels it «ثبت نهایی»; search includes both numbers.
 - Added/adjusted regression coverage for two-part templates, distinct registration numbers, draft letter-number assignment, and department code persistence.
 - Validation pending: pull development, run focused correspondence numbering/service and department tests, then full php artisan test and npm run build. No tests or build have been run by the assistant. master unchanged.
+
+2026-10-27 — Correspondence copy UX and workflow additions (validation pending)
+
+- Moved optional copy-recipient selection to the end of the correspondence creation form and replaced the native multi-select with a checkbox list that clearly supports selecting multiple departments.
+- Correspondence creation date fields now use the shared JalaliDatePicker component so the input follows the application font styling; the copy section no longer occupies a row near the top of the form.
+- Added an in-workflow copy endpoint. Only the manager of the correspondence's current responsible department may add one or more additional copy recipients, and only before the workflow is completed. Each newly attached copy continues through the existing workflow service and audit/action history; duplicates are ignored by the existing service.
+- Added HTTP regression tests for manager success with multiple copy recipients and denial for a non-manager.
+- Validation pending on the local Windows/SQL Server environment: pull development, run the focused CorrespondenceHttpTest, then run npm run build. No tests or build have been run by the assistant. No migration is required for this change. master unchanged.
