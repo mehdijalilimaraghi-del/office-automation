@@ -638,7 +638,7 @@ class CorrespondenceHttpTest extends TestCase
             'external_tracking_notes' => $privateNote,
         ]);
 
-        $audit = \\Illuminate\\Support\\Facades\\DB::table('audit_logs')
+        $audit = \Illuminate\Support\Facades\DB::table('audit_logs')
             ->where('event', 'correspondence.external_tracking.updated')
             ->where('auditable_type', $letter->getMorphClass())
             ->where('auditable_id', $letter->id)
