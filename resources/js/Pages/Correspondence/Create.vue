@@ -399,7 +399,7 @@ async function scanOriginalLetter(): Promise<void> {
             >
                 <section class="space-y-4">
                     <h3 class="text-base font-bold text-slate-900">مشخصات مکاتبه</h3>
-                    <div class="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-6">
+                    <div class="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-5">
                         <div>
                             <label for="type" class="mb-1.5 block text-sm font-semibold text-slate-700">نوع مکاتبه <span class="text-rose-600">*</span></label>
                             <select id="type" v-model="form.type" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -435,6 +435,8 @@ async function scanOriginalLetter(): Promise<void> {
                             <JalaliDatePicker v-model="form.received_at" placeholder="انتخاب تاریخ دریافت" required />
                             <InputError class="mt-1" :message="form.errors.received_at" />
                         </div>
+                    </div>
+                    <div class="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <div class="col-span-full">
                             <label for="subject" class="mb-1.5 block text-sm font-semibold text-slate-700">موضوع</label>
                             <input id="subject" v-model="form.subject" required maxlength="255" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
