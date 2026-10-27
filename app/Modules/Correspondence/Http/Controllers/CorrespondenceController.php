@@ -81,6 +81,7 @@ class CorrespondenceController extends Controller
                 $query->where(function ($query) use ($search): void {
                     $query->where('subject', 'like', '%'.$search.'%')
                         ->orWhere('registration_number', 'like', '%'.$search.'%')
+                        ->orWhere('letter_number', 'like', '%'.$search.'%')
                         ->orWhere('sender_name', 'like', '%'.$search.'%')
                         ->orWhere('recipient_name', 'like', '%'.$search.'%');
                 });
@@ -119,8 +120,8 @@ class CorrespondenceController extends Controller
             'recipientDepartment:id,name',
             'externalOrganization:id,name',
             'externalDepartment:id,name,external_organization_id',
-            'replyTo:id,subject,registration_number,type,status',
-            'replies:id,subject,registration_number,type,status,reply_to_id',
+            'replyTo:id,subject,letter_number,registration_number,type,status',
+            'replies:id,subject,letter_number,registration_number,type,status,reply_to_id',
             'task:id,title,status,assignee_id,created_by',
             'documents.document.latestVersion',
             'actions.actor:id,name',
@@ -137,6 +138,7 @@ class CorrespondenceController extends Controller
                 'subject' => $correspondence->subject,
                 'body' => $correspondence->body,
                 'status' => $correspondence->status,
+                'letter_number' => $correspondence->letter_number,
                 'registration_number' => $correspondence->registration_number,
                 'registered_at' => $correspondence->registered_at,
                 'created_at' => $correspondence->created_at,
