@@ -43,9 +43,12 @@ Route::middleware('auth')->group(function () {
     Route::prefix('correspondence')->name('correspondence.')->group(function (): void {
         Route::get('/', [CorrespondenceController::class, 'index'])->middleware('permission:correspondence.view')->name('index');
         Route::get('/create', [CorrespondenceController::class, 'create'])->middleware('permission:correspondence.create')->name('create');
+        Route::get('/{correspondence}/edit', [CorrespondenceController::class, 'edit'])->name('edit');
         Route::get('/related-search', [CorrespondenceController::class, 'searchRelated'])->middleware('permission:correspondence.create')->name('related-search');
         Route::get('/{correspondence}', [CorrespondenceController::class, 'show'])->middleware('permission:correspondence.view')->name('show');
         Route::post('/', [CorrespondenceController::class, 'store'])->middleware('permission:correspondence.create')->name('store');
+        Route::put('/{correspondence}', [CorrespondenceController::class, 'update'])->name('update');
+        Route::delete('/{correspondence}', [CorrespondenceController::class, 'destroy'])->name('destroy');
         Route::post('/scanner/start', [CorrespondenceScannerController::class, 'start'])->middleware('permission:correspondence.create')->name('scanner.start');
         Route::get('/scanner/status/{token}', [CorrespondenceScannerController::class, 'status'])->middleware('permission:correspondence.create')->name('scanner.status');
         Route::get('/scanner/preview/{token}', [CorrespondenceScannerController::class, 'preview'])->middleware('permission:correspondence.create')->name('scanner.preview');
