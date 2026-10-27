@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { ChevronDown, ChevronLeft, Search, X } from 'lucide-vue-next';
+import { ChevronDown, ChevronLeft, Search, X } from '@lucide/vue';
 import DepartmentIcon from '@/Components/DepartmentIcon.vue';
 interface DepartmentOption { id:number; name:string; parent_id?:number|null; tree_label?:string|null; icon?:string|null; manager?:{name:string}|null; manager_name?:string|null; is_active?:boolean; }
 const props=withDefaults(defineProps<{departments:DepartmentOption[];modelValue?:number|string|null;modelValues?:Array<number|string>;multiple?:boolean;placeholder?:string;disabled?:boolean;clearable?:boolean}>(),{modelValue:null,modelValues:()=>[],multiple:false,placeholder:'انتخاب واحد',disabled:false,clearable:true});
