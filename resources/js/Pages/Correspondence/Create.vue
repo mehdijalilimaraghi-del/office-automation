@@ -4,6 +4,7 @@ import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
+import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 import axios from 'axios';
 
 interface Department { id: number; name: string; parent_id: number | null; icon?: string | null; }
