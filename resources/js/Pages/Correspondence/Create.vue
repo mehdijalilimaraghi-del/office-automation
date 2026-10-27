@@ -3,9 +3,8 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { DatePicker } from '@jalali-js/vue';
+import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import axios from 'axios';
-import '@jalali-js/vue/date-picker.css';
 
 interface Department { id: number; name: string; }
 interface ExternalOrganization { id: number; name: string; }
@@ -149,6 +148,12 @@ function setEditorDirection(direction: TextDirection): void {
     if (block && target.contains(block)) block.setAttribute('dir', direction);
     target.setAttribute('dir', direction);
     syncBody();
+}
+
+function toggleCopyDepartment(departmentId: number, checked: boolean): void {
+    form.copy_department_ids = checked
+        ? [...new Set([...form.copy_department_ids, departmentId])]
+        : form.copy_department_ids.filter((id) => id !== departmentId);
 }
 
 function chooseFiles(event: Event): void {
@@ -342,22 +347,14 @@ async function scanOriginalLetter(): Promise<void> {
                             </select>
                             <InputError class="mt-1" :message="form.errors.recipient_department_id" />
                         </div>
-                        <div class="sm:col-span-2">
-                            <label for="copy_department_ids" class="mb-1.5 block text-sm font-semibold text-slate-700">رونوشت جهت اطلاع (اختیاری)</label>
-                            <select id="copy_department_ids" v-model="form.copy_department_ids" multiple size="4" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                <option v-for="item in departments" :key="item.id" :value="item.id">{{ item.name }}</option>
-                            </select>
-                            <p class="mt-1 text-xs leading-5 text-slate-500">واحدهای انتخاب‌شده پس از ثبت نهایی نامه آن را فقط برای اطلاع مشاهده می‌کنند و امکان اقدام یا ارجاع از طریق رونوشت ندارند.</p>
-                            <InputError class="mt-1" :message="form.errors.copy_department_ids" />
-                        </div>
                         <div v-if="form.type === 'outgoing'">
                             <label for="sent_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ ارسال</label>
-                            <DatePicker v-model="form.sent_at" system="jalali" locale="fa" value-format="gregorian-iso" />
+                            <JalaliDatePicker v-model="form.sent_at" placeholder="انتخاب تاریخ ارسال" />
                             <InputError class="mt-1" :message="form.errors.sent_at" />
                         </div>
                         <div v-if="form.type === 'incoming'">
                             <label for="received_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ دریافت</label>
-                            <DatePicker v-model="form.received_at" system="jalali" locale="fa" value-format="gregorian-iso" />
+                            <JalaliDatePicker v-model="form.received_at" placeholder="انتخاب تاریخ دریافت" />
                             <InputError class="mt-1" :message="form.errors.received_at" />
                         </div>
                         <div class="sm:col-span-2">
@@ -560,6 +557,28 @@ async function scanOriginalLetter(): Promise<void> {
                             <button type="button" class="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50" @click="removeFile(index)">حذف</button>
                         </li>
                     </ul>
+                </section>
+
+                <section class="space-y-3 border-t border-slate-100 pt-5">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">رونوشت جهت اطلاع (اختیاری)</h3>
+                        <p class="mt-1 text-sm leading-6 text-slate-500">می‌توانید چند واحد را انتخاب کنید. واحدهای رونوشت‌گیرنده پس از ثبت نهایی فقط برای اطلاع نامه را مشاهده می‌کنند و از طریق رونوشت امکان اقدام یا ارجاع ندارند.</p>
+                    </div>
+                    <div class="grid gap-2 sm:grid-cols-2">
+                        <label v-for="item in departments" :key="item.id" class="flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition" :class="form.copy_department_ids.includes(item.id) ? 'border-indigo-300 bg-indigo-50' : 'border-slate-200 hover:border-slate-300'">
+                            <input
+                                type="checkbox"
+                                :checked="form.copy_department_ids.includes(item.id)"
+                                class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                @change="toggleCopyDepartment(item.id, ($event.target as HTMLInputElement).checked)"
+                            />
+                            <span class="text-sm text-slate-800">{{ item.name }}</span>
+                        </label>
+                        <p v-if="departments.length === 0" class="text-sm text-slate-500">واحد فعالی برای انتخاب وجود ندارد.</p>
+                    </div>
+                    <p class="text-xs text-slate-500">تعداد واحدهای انتخاب‌شده: {{ form.copy_department_ids.length }}</p>
+                    <InputError class="mt-1" :message="form.errors.copy_department_ids" />
+                    <InputError v-for="(message, index) in Object.entries(form.errors).filter(([key]) => key.startsWith('copy_department_ids.')).map(([, message]) => message)" :key="index" :message="message" />
                 </section>
 
                 <div class="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-5">
