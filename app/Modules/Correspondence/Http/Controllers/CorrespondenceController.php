@@ -247,15 +247,17 @@ class CorrespondenceController extends Controller
                         ->where('name', 'like', '%'.$term.'%')
                         ->orWhere('code', 'like', '%'.$term.'%'))
                     ->orWhereHas('externalOrganization', fn ($organization) => $organization
-                        ->where('name', 'like', '%'.$term.'%'))
+                        ->where('name', 'like', '%'.$term.'%')
+                        ->orWhere('code', 'like', '%'.$term.'%'))
                     ->orWhereHas('externalDepartment', fn ($department) => $department
-                        ->where('name', 'like', '%'.$term.'%'));
+                        ->where('name', 'like', '%'.$term.'%')
+                        ->orWhere('code', 'like', '%'.$term.'%'));
             })
             ->with([
                 'createdDepartment:id,name,code',
                 'recipientDepartment:id,name,code',
-                'externalOrganization:id,name',
-                'externalDepartment:id,name',
+                'externalOrganization:id,name,code',
+                'externalDepartment:id,name,code',
             ])
             ->orderByDesc('registered_at')
             ->limit(20)
@@ -274,9 +276,13 @@ class CorrespondenceController extends Controller
                 'type' => $letter->type,
                 'letter_date' => ($letter->sent_at ?? $letter->received_at ?? $letter->registered_at)?->toIso8601String(),
                 'created_department' => $letter->createdDepartment?->name,
+                'created_department_code' => $letter->createdDepartment?->code,
                 'recipient_department' => $letter->recipientDepartment?->name,
+                'recipient_department_code' => $letter->recipientDepartment?->code,
                 'external_organization' => $letter->externalOrganization?->name,
+                'external_organization_code' => $letter->externalOrganization?->code,
                 'external_department' => $letter->externalDepartment?->name,
+                'external_department_code' => $letter->externalDepartment?->code,
             ]);
 
         return response()->json(['data' => $letters]);
