@@ -138,6 +138,26 @@ class Correspondence extends Model
         return $this->hasMany(self::class, 'reply_to_id');
     }
 
+    public function relatedLetters(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            self::class,
+            'correspondence_related_letters',
+            'correspondence_id',
+            'related_correspondence_id',
+        )->withTimestamps();
+    }
+
+    public function relatedFromLetters(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            self::class,
+            'correspondence_related_letters',
+            'related_correspondence_id',
+            'correspondence_id',
+        )->withTimestamps();
+    }
+
     public function authorizedUsers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'correspondence_user_access')
