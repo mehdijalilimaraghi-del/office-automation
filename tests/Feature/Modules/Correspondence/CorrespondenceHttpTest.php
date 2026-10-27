@@ -624,6 +624,10 @@ class CorrespondenceHttpTest extends TestCase
         $privateNote = 'جزئیات داخلی پیگیری که نباید در Audit ذخیره شود';
 
         $this->actingAs($user)->put(route('correspondence.external-tracking.update', $letter), [
+            'sent_at' => '2026-10-26',
+        ])->assertForbidden();
+
+        $this->actingAs($user)->put(route('correspondence.external-tracking.update', $letter), [
             'external_registration_number' => 'EXT-991',
             'external_registered_at' => '2026-10-25',
             'dispatch_method' => 'courier',
@@ -648,6 +652,47 @@ class CorrespondenceHttpTest extends TestCase
         $this->assertStringNotContainsString($privateNote, json_encode($audit, JSON_UNESCAPED_UNICODE));
         $this->assertNull($audit->old_values);
         $this->assertNull($audit->new_values);
+    }
+
+    public function test_cartable_includes_actionable_correspondence_but_not_copy_only_access(): void
+    {
+        $actor = $this->userWithPermission('correspondence.view');
+        $copyViewer = $this->userWithPermission('correspondence.view');
+        $currentDepartment = Department::query()->create([
+            'name' => 'واحد جاری '.Str::upper(Str::random(5)),
+            'code' => 'CUR-'.Str::upper(Str::random(6)),
+            'manager_id' => $actor->id,
+            'is_active' => true,
+        ]);
+        $copyDepartment = Department::query()->create([
+            'name' => 'واحد رونوشت '.Str::upper(Str::random(5)),
+            'code' => 'CPY-'.Str::upper(Str::random(6)),
+            'manager_id' => $copyViewer->id,
+            'is_active' => true,
+        ]);
+
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'classification' => Correspondence::CLASSIFICATION_CONFIDENTIAL,
+            'subject' => 'نامه نیازمند اقدام',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'registration_number' => '1405/008888',
+            'created_by' => $actor->id,
+            'current_department_id' => $currentDepartment->id,
+            'workflow_state' => 'in_progress',
+        ]);
+        $letter->copies()->attach($copyDepartment->id, [
+            'created_by' => $actor->id,
+            'note' => 'جهت اطلاع',
+        ]);
+
+        $actorCartable = app(\\App\\Modules\\Cartable\\Services\\CartableService::class)->for($actor);
+        $copyCartable = app(\\App\\Modules\\Cartable\\Services\\CartableService::class)->for($copyViewer);
+
+        $this->assertSame(1, $actorCartable['summary']['correspondence_referrals']);
+        $this->assertSame($letter->id, $actorCartable['correspondenceItems']->first()->id);
+        $this->assertSame(0, $copyCartable['summary']['correspondence_referrals']);
+        $this->assertCount(0, $copyCartable['correspondenceItems']);
     }
 
     public function test_outgoing_correspondence_can_select_an_existing_external_organization_and_department(): void
