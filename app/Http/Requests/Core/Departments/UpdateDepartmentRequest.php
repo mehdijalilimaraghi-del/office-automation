@@ -37,6 +37,7 @@ class UpdateDepartmentRequest extends FormRequest
                 'string',
                 'max:150',
             ],
+            'code' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z0-9_-]+$/', Rule::unique('departments', 'code')->ignore($department->id)],
 
             
             'icon' => [
@@ -65,6 +66,7 @@ class UpdateDepartmentRequest extends FormRequest
             'parent_id' => 'دپارتمان والد',
             'manager_id' => 'مدیر دپارتمان',
             'name' => 'نام دپارتمان',
+            'code' => 'کد واحد',
                         'icon' => 'آیکون واحد',
             'description' => 'توضیحات',
             'is_active' => 'وضعیت فعال بودن',
