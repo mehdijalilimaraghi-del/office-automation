@@ -628,7 +628,6 @@ class CorrespondenceHttpTest extends TestCase
             'external_registered_at' => '2026-10-25',
             'dispatch_method' => 'courier',
             'external_tracking_notes' => $privateNote,
-            'sent_at' => '2026-10-26',
         ])->assertRedirect();
 
         $this->assertDatabaseHas('correspondences', [
