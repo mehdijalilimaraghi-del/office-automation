@@ -6,7 +6,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import axios from 'axios';
 
-interface Department { id: number; name: string; }
+interface Department { id: number; name: string; parent_id: number | null; }
 interface ExternalOrganization { id: number; name: string; }
 interface ExternalDepartment { id: number; external_organization_id: number; name: string; }
 interface ReplyOption { id: number; letter_number: string | null; registration_number: string | null; external_registration_number: string | null; subject: string; type: string; letter_date: string | null; created_department: string | null; recipient_department: string | null; external_organization: string | null; external_organization_code: string | null; external_department: string | null; external_department_code: string | null; created_department_code: string | null; recipient_department_code: string | null; }
@@ -28,7 +28,7 @@ const props = defineProps<{
 const editor = ref<HTMLDivElement | null>(null);
 const relatedSearchQuery = ref('');
 const relatedSearchResults = ref<ReplyOption[]>([]);
-const selectedRelatedLetter = ref<ReplyOption | null>(null);
+const selectedRelatedLetters = ref<ReplyOption[]>([]);
 const relatedSearchLoading = ref(false);
 let relatedSearchTimer: number | undefined;
 let relatedSearchRequest = 0;
@@ -68,8 +68,11 @@ function searchRelatedLetters(): void {
 }
 
 function selectRelatedLetter(letter: ReplyOption): void {
-    selectedRelatedLetter.value = letter;
-    form.reply_to_id = letter.id;
+    if (!selectedRelatedLetters.value.some((item) => item.id === letter.id)) {
+        selectedRelatedLetters.value.push(letter);
+        form.reply_to_ids = selectedRelatedLetters.value.map((item) => item.id);
+        form.reply_to_id = selectedRelatedLetters.value[0]?.id ?? '';
+    }
     relatedSearchQuery.value = '';
     relatedSearchResults.value = [];
 }
@@ -103,6 +106,7 @@ const form = useForm({
     recipient_department_id: '' as number | '',
     copy_department_ids: [] as number[],
     reply_to_id: '' as number | '',
+    reply_to_ids: [] as number[],
     original_letters: [] as File[],
     scanner_upload_token: '',
     attachments: [] as File[],
@@ -196,6 +200,34 @@ function setEditorDirection(direction: TextDirection): void {
     syncBody();
 }
 
+const selectedCopyDepartmentId = ref<number | string>('');
+const departmentTreeOptions = computed(() => {
+    const byParent = new Map<number | null, Department[]>();
+    for (const department of props.departments) {
+        const parentId = department.parent_id ?? null;
+        byParent.set(parentId, [...(byParent.get(parentId) ?? []), department]);
+    }
+    const options: Array<{ id: number; label: string }> = [];
+    const visit = (parentId: number | null, depth: number, ancestors: Set<number>): void => {
+        const children = [...(byParent.get(parentId) ?? [])].sort((a, b) => a.name.localeCompare(b.name, 'fa'));
+        for (const department of children) {
+            if (ancestors.has(department.id)) continue;
+            options.push({ id: department.id, label: '　'.repeat(depth) + (depth ? '└ ' : '') + department.name });
+            const nextAncestors = new Set(ancestors); nextAncestors.add(department.id);
+            visit(department.id, depth + 1, nextAncestors);
+        }
+    };
+    visit(null, 0, new Set<number>());
+    return options;
+});
+function addCopyDepartment(value: number | string): void {
+    const id = Number(value);
+    if (Number.isInteger(id) && id > 0 && !form.copy_department_ids.includes(id)) form.copy_department_ids = [...form.copy_department_ids, id];
+    selectedCopyDepartmentId.value = '';
+}
+function removeCopyDepartment(departmentId: number): void {
+    form.copy_department_ids = form.copy_department_ids.filter((id) => id !== departmentId);
+}
 function toggleCopyDepartment(departmentId: number, checked: boolean): void {
     form.copy_department_ids = checked
         ? [...new Set([...form.copy_department_ids, departmentId])]
@@ -404,33 +436,48 @@ async function scanOriginalLetter(): Promise<void> {
                             <JalaliDatePicker v-model="form.received_at" placeholder="انتخاب تاریخ دریافت" required />
                             <InputError class="mt-1" :message="form.errors.received_at" />
                         </div>
-                        <div class="sm:col-span-2">
+                        <div class="col-span-full">
                             <label for="subject" class="mb-1.5 block text-sm font-semibold text-slate-700">موضوع</label>
                             <input id="subject" v-model="form.subject" required maxlength="255" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
                             <InputError class="mt-1" :message="form.errors.subject" />
                         </div>
                         <div class="sm:col-span-2">
-                            <div class="mb-1.5 flex items-center gap-1.5"><label for="related_correspondence_search" class="text-sm font-semibold text-slate-700">در ارتباط با مکاتبات قبلی</label><details class="group relative"><summary aria-label="راهنمای ارتباط با مکاتبات قبلی" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-300">؟</summary><div class="absolute right-0 top-7 z-20 w-64 rounded-lg border border-slate-200 bg-white p-3 text-xs font-normal leading-6 text-slate-700 shadow-lg">در صورت ارتباط، نامه قبلی را جست‌وجو و انتخاب کنید؛ این ارتباط می‌تواند ادامه مکاتبه یا پاسخ به نامه قبلی باشد.</div></details></div>
-                            <p class="mb-2 text-xs leading-5 text-slate-500">در صورت نیاز، نامه مرتبط را با شماره نامه، شماره ثبت، موضوع، واحد یا سازمان جست‌وجو کنید.</p>
-                            <div v-if="selectedRelatedLetter" class="mb-3 flex flex-wrap items-start justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50 p-3">
-                                <div class="min-w-0">
-                                    <p class="text-sm font-semibold text-slate-900">{{ selectedRelatedLetter.subject }}</p>
-                                    <p class="mt-1 text-xs leading-5 text-slate-600">شماره نامه: {{ selectedRelatedLetter.letter_number ?? "—" }} | شماره ثبت: {{ selectedRelatedLetter.registration_number ?? "—" }} | تاریخ نامه: {{ formatRelatedLetterDate(selectedRelatedLetter.letter_date) }}</p>
+                            <div class="mb-1.5 flex items-center gap-1.5"><label for="related_correspondence_search" class="text-sm font-semibold text-slate-700">ارتباط با مکاتبات قبلی</label><details class="group relative"><summary aria-label="راهنمای ارتباط با مکاتبات قبلی" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-300">؟</summary><div class="absolute right-0 top-7 z-20 w-64 rounded-lg border border-slate-200 bg-white p-3 text-xs font-normal leading-6 text-slate-700 shadow-lg">در صورت ارتباط، نامه قبلی را جست‌وجو و انتخاب کنید؛ این ارتباط می‌تواند ادامه مکاتبه یا پاسخ به نامه قبلی باشد.</div></details></div>
+                            <div v-if="selectedRelatedLetters.length" class="mb-3 space-y-2">
+                                <div v-for="letter in selectedRelatedLetters" :key="letter.id" class="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50 p-3">
+                                    <div class="min-w-0">
+                                        <p class="text-sm font-semibold text-slate-900">{{ letter.subject }}</p>
+                                        <p class="mt-1 text-xs leading-5 text-slate-600">شماره نامه: {{ letter.letter_number ?? "—" }} | شماره ثبت: {{ letter.registration_number ?? "—" }} | تاریخ نامه: {{ formatRelatedLetterDate(letter.letter_date) }}</p>
+                                    </div>
+                                    <button type="button" class="text-sm font-semibold text-rose-700" @click="selectedRelatedLetters = selectedRelatedLetters.filter((item) => item.id !== letter.id); form.reply_to_ids = selectedRelatedLetters.map((item) => item.id); form.reply_to_id = selectedRelatedLetters[0]?.id ?? ''">حذف</button>
                                 </div>
-                                <button type="button" class="text-sm font-semibold text-rose-700" @click="selectedRelatedLetter = null; form.reply_to_id = ''">حذف انتخاب</button>
                             </div>
-                            <input id="related_correspondence_search" v-model="relatedSearchQuery" type="search" autocomplete="off" placeholder="جستجو با شماره نامه، شماره ثبت، موضوع، واحد یا سازمان..." class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @input="searchRelatedLetters" />
+                            <input id="related_correspondence_search" v-model="relatedSearchQuery" type="search" autocomplete="off" placeholder="جستجو..." class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @input="searchRelatedLetters" />
                             <p v-if="relatedSearchQuery.trim().length < 2" class="mt-1 text-xs text-slate-500">برای جستجو حداقل دو نویسه وارد کنید.</p>
                             <p v-else-if="relatedSearchLoading" class="mt-2 text-sm text-slate-500">در حال جستجوی مکاتبات...</p>
                             <p v-else-if="relatedSearchResults.length === 0" class="mt-2 text-sm text-slate-500">مکاتبه‌ای با این مشخصات پیدا نشد.</p>
                             <div v-else class="mt-2 max-h-72 space-y-2 overflow-y-auto rounded-xl border border-slate-200 p-2">
-                                <button v-for="item in relatedSearchResults" :key="item.id" type="button" class="block w-full rounded-lg border border-slate-100 p-3 text-right transition hover:border-indigo-300 hover:bg-indigo-50" @click="selectRelatedLetter(item)">
+                                <button v-for="item in relatedSearchResults" :key="item.id" type="button" class="block w-full rounded-lg border border-slate-100 p-3 text-right transition hover:border-indigo-300 hover:bg-indigo-50 disabled:cursor-default disabled:opacity-50" :disabled="selectedRelatedLetters.some((letter) => letter.id === item.id)" @click="selectRelatedLetter(item)">
                                     <span class="block text-sm font-semibold text-slate-900">{{ item.subject }}</span>
                                     <span class="mt-1 block text-xs leading-5 text-slate-600">شماره نامه: {{ item.letter_number ?? "—" }} | شماره ثبت: {{ item.registration_number ?? "—" }} | تاریخ نامه: {{ formatRelatedLetterDate(item.letter_date) }}</span>
                                     <span class="mt-1 block text-xs leading-5 text-slate-500">{{ [item.created_department, item.created_department_code, item.recipient_department, item.recipient_department_code, item.external_organization, item.external_organization_code, item.external_department, item.external_department_code].filter(Boolean).join(" · ") || "واحد یا سازمان ثبت نشده" }}<span v-if="item.external_registration_number"> · شماره ثبت طرف مقابل: {{ item.external_registration_number }}</span></span>
                                 </button>
                             </div>
                             <InputError class="mt-1" :message="form.errors.reply_to_id" />
+                            <InputError class="mt-1" :message="form.errors.reply_to_ids" />
+                        </div>
+                        <div class="sm:col-span-1 rounded-xl border border-slate-200 p-4">
+                            <div class="mb-1.5 flex items-center gap-1.5"><label for="copy_department_select" class="text-sm font-semibold text-slate-700">رونوشت به</label><span class="text-xs text-slate-400">(اختیاری)</span></div>
+                            <select id="copy_department_select" v-model="selectedCopyDepartmentId" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @change="addCopyDepartment(selectedCopyDepartmentId)">
+                                <option value="">انتخاب واحد برای رونوشت</option>
+                                <option v-for="item in departmentTreeOptions" :key="item.id" :value="item.id" :disabled="form.copy_department_ids.includes(item.id)">{{ item.label }}</option>
+                            </select>
+                            <p class="mt-1 text-xs leading-5 text-slate-500">واحدهای رونوشت‌گیرنده پس از ثبت نهایی نامه را برای اطلاع مشاهده می‌کنند و از طریق رونوشت امکان اقدام یا ارجاع ندارند.</p>
+                            <ul v-if="form.copy_department_ids.length" class="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-200">
+                                <li v-for="id in form.copy_department_ids" :key="id" class="flex items-center justify-between gap-3 px-3 py-2"><span class="text-sm text-slate-800">{{ departmentTreeOptions.find((item) => item.id === id)?.label ?? departments.find((item) => item.id === id)?.name }}</span><button type="button" class="text-xs font-semibold text-rose-700 hover:underline" @click="removeCopyDepartment(id)">حذف</button></li>
+                            </ul>
+                            <p v-else class="mt-2 text-xs text-slate-500">هنوز واحدی برای رونوشت انتخاب نشده است.</p>
+                            <InputError class="mt-1" :message="form.errors.copy_department_ids" /><InputError class="mt-1" :message="form.errors['copy_department_ids.0']" />
                         </div>
                         <div v-if="form.type !== 'internal'" class="sm:col-span-2 lg:col-span-4 space-y-3 rounded-xl border border-teal-100 bg-teal-50/50 p-4">
                             <div class="flex items-center gap-2">
@@ -621,27 +668,6 @@ async function scanOriginalLetter(): Promise<void> {
                     </ul>
                 </section>
 
-                <section class="space-y-3 border-t border-slate-100 pt-5">
-                    <div>
-                        <h3 class="text-base font-bold text-slate-900">رونوشت جهت اطلاع (اختیاری)</h3>
-                        <p class="mt-1 text-sm leading-6 text-slate-500">می‌توانید چند واحد را انتخاب کنید. واحدهای رونوشت‌گیرنده پس از ثبت نهایی فقط برای اطلاع نامه را مشاهده می‌کنند و از طریق رونوشت امکان اقدام یا ارجاع ندارند.</p>
-                    </div>
-                    <div class="grid gap-2 sm:grid-cols-2">
-                        <label v-for="item in departments" :key="item.id" class="flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition" :class="form.copy_department_ids.includes(item.id) ? 'border-indigo-300 bg-indigo-50' : 'border-slate-200 hover:border-slate-300'">
-                            <input
-                                type="checkbox"
-                                :checked="form.copy_department_ids.includes(item.id)"
-                                class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                                @change="toggleCopyDepartment(item.id, ($event.target as HTMLInputElement).checked)"
-                            />
-                            <span class="text-sm text-slate-800">{{ item.name }}</span>
-                        </label>
-                        <p v-if="departments.length === 0" class="text-sm text-slate-500">واحد فعالی برای انتخاب وجود ندارد.</p>
-                    </div>
-                    <p class="text-xs text-slate-500">تعداد واحدهای انتخاب‌شده: {{ form.copy_department_ids.length }}</p>
-                    <InputError class="mt-1" :message="form.errors.copy_department_ids" />
-                    <InputError class="mt-1" :message="form.errors['copy_department_ids.0']" />
-                </section>
 
                 <div class="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-5">
                     <Link :href="route('correspondence.index')" class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">انصراف</Link>
