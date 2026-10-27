@@ -59,6 +59,7 @@ const form = useForm({
     numbering_order_first: customOrder[0] ?? 'year',
     numbering_order_second: customOrder[1] ?? 'department',
     numbering_order_third: customOrder[2] ?? 'sequence',
+    numbering_custom_fields_count: String(customOrder.length === 2 ? 2 : 3),
     numbering_separator: props.settings.numbering_separator ?? '/',
     numbering_padding: props.settings.numbering_padding ?? '6',
     composition_method: props.settings.composition_method ?? 'both',
@@ -234,16 +235,26 @@ function submit(): void {
                                     <InputError class="mt-1.5" :message="form.errors.numbering_padding" />
                                 </div>
                             </div>
-                            <div v-if="form.numbering_format === 'custom'" class="grid gap-5 md:grid-cols-3">
-                                <div v-for="(field, index) in (['numbering_order_first', 'numbering_order_second', 'numbering_order_third'] as const)" :key="field">
+                            <div v-if="form.numbering_format === 'custom'" class="space-y-4">
+                                <div class="max-w-xs">
+                                    <label for="numbering_custom_fields_count" class="mb-2 block text-sm font-semibold text-slate-700">تعداد اجزای قالب</label>
+                                    <select id="numbering_custom_fields_count" v-model="form.numbering_custom_fields_count" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200">
+                                        <option value="2">دو جزء</option>
+                                        <option value="3">سه جزء</option>
+                                    </select>
+                                    <InputError class="mt-1.5" :message="form.errors.numbering_custom_fields_count" />
+                                </div>
+                                <div class="grid gap-5 md:grid-cols-3">
+                                <div v-for="(field, index) in (['numbering_order_first', 'numbering_order_second', 'numbering_order_third'] as const)" v-if="form.numbering_custom_fields_count === '3' || index < 2" :key="field">
                                     <label :for="field" class="mb-2 block text-sm font-semibold text-slate-700">جزء {{ ['اول', 'دوم', 'سوم'][index] }}</label>
                                     <select :id="field" v-model="form[field]" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200">
                                         <option value="year">سال شمسی</option><option value="department">کد واحد</option><option value="sequence">شماره ترتیبی</option>
                                     </select>
                                     <InputError class="mt-1.5" :message="form.errors[field]" />
                                 </div>
+                                </div>
                             </div>
-                            <p class="rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-600">قالب‌های پیش‌فرض از سال شمسی، کد واحد و شمارنده استفاده می‌کنند. تغییر قالب فقط بر شماره‌های آینده اثر دارد.</p>
+                            <p class="rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-600">قالب شماره نامه هنگام ایجاد پیش‌نویس تعیین می‌شود. شماره ثبت دبیرخانه جداگانه و هنگام ثبت نهایی تخصیص می‌یابد.</p>
                             <div>
                                 <label for="correspondence_font_family" class="block text-sm font-semibold text-slate-700">قلم پیش‌فرض نامه‌ها</label>
                                 <select id="correspondence_font_family" v-model="form.correspondence_font_family" class="mt-2 block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200">
