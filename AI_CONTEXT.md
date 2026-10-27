@@ -322,3 +322,9 @@ Before making the first code change in a new conversation:
 - Removed the separate «برای جستجو حداقل دو نویسه وارد کنید.» panel; the minimum length is shown in the search placeholder. Search result rows appear in a bordered scroll region only after two characters are entered.
 - Selected related letters now display in a single removable list styled consistently with selected copy recipients; nested borders were removed. No backend behavior changed.
 - Local validation pending: pull `development`, run `php artisan test --filter=CorrespondenceHttpTest`, then `npm run build`. `master` unchanged.
+
+## 2026-10-27 — Related correspondence dropdown overlay correction (validation pending)
+
+- Restored the outer border/padding around the related-correspondence selector.
+- Search matches now appear in an absolute-positioned dropdown with a white background and shadow, overlaying following content instead of changing page layout. Selected letters remain in a separate list below the search input.
+- Local validation pending: pull `development`, run `php artisan test --filter=CorrespondenceHttpTest`, then `npm run build`. `master` unchanged.
