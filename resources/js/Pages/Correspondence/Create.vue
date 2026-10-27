@@ -410,11 +410,26 @@ async function scanOriginalLetter(): Promise<void> {
                             <InputError class="mt-1" :message="form.errors.subject" />
                         </div>
                         <div class="sm:col-span-2">
-                            <label for="reply_to_id" class="mb-1.5 block text-sm font-semibold text-slate-700">پاسخ به مکاتبه ثبت‌شده</label>
-                            <select id="reply_to_id" v-model="form.reply_to_id" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                <option value="">مکاتبه‌ای انتخاب نشده</option>
-                                <option v-for="item in repliesTo" :key="item.id" :value="item.id">{{ item.letter_number ?? item.registration_number ?? 'بدون شماره' }} — {{ item.subject }}</option>
-                            </select>
+                            <label for="related_correspondence_search" class="mb-1.5 block text-sm font-semibold text-slate-700">در ارتباط با مکاتبات قبلی (اختیاری)</label>
+                            <p class="mb-2 text-xs leading-5 text-slate-500">می‌توانید نامه مرتبط قبلی یا نامه‌ای را که این مکاتبه در ادامه یا پاسخ به آن است، جست‌وجو و انتخاب کنید.</p>
+                            <div v-if="selectedRelatedLetter" class="mb-3 flex flex-wrap items-start justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50 p-3">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-semibold text-slate-900">{{ selectedRelatedLetter.subject }}</p>
+                                    <p class="mt-1 text-xs leading-5 text-slate-600">شماره نامه: {{ selectedRelatedLetter.letter_number ?? "—" }} | شماره ثبت: {{ selectedRelatedLetter.registration_number ?? "—" }} | تاریخ نامه: {{ formatRelatedLetterDate(selectedRelatedLetter.letter_date) }}</p>
+                                </div>
+                                <button type="button" class="text-sm font-semibold text-rose-700" @click="selectedRelatedLetter = null; form.reply_to_id = ''">حذف انتخاب</button>
+                            </div>
+                            <input id="related_correspondence_search" v-model="relatedSearchQuery" type="search" autocomplete="off" placeholder="جستجو با شماره نامه، شماره ثبت، موضوع، واحد یا سازمان..." class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @input="searchRelatedLetters" />
+                            <p v-if="relatedSearchQuery.trim().length < 2" class="mt-1 text-xs text-slate-500">برای جستجو حداقل دو نویسه وارد کنید.</p>
+                            <p v-else-if="relatedSearchLoading" class="mt-2 text-sm text-slate-500">در حال جستجوی مکاتبات...</p>
+                            <p v-else-if="relatedSearchResults.length === 0" class="mt-2 text-sm text-slate-500">مکاتبه‌ای با این مشخصات پیدا نشد.</p>
+                            <div v-else class="mt-2 max-h-72 space-y-2 overflow-y-auto rounded-xl border border-slate-200 p-2">
+                                <button v-for="item in relatedSearchResults" :key="item.id" type="button" class="block w-full rounded-lg border border-slate-100 p-3 text-right transition hover:border-indigo-300 hover:bg-indigo-50" @click="selectRelatedLetter(item)">
+                                    <span class="block text-sm font-semibold text-slate-900">{{ item.subject }}</span>
+                                    <span class="mt-1 block text-xs leading-5 text-slate-600">شماره نامه: {{ item.letter_number ?? "—" }} | شماره ثبت: {{ item.registration_number ?? "—" }} | تاریخ نامه: {{ formatRelatedLetterDate(item.letter_date) }}</span>
+                                    <span class="mt-1 block text-xs leading-5 text-slate-500">{{ [item.created_department, item.recipient_department, item.external_organization, item.external_department].filter(Boolean).join(" · ") || "واحد یا سازمان ثبت نشده" }}<span v-if="item.external_registration_number"> · شماره ثبت طرف مقابل: {{ item.external_registration_number }}</span></span>
+                                </button>
+                            </div>
                             <InputError class="mt-1" :message="form.errors.reply_to_id" />
                         </div>
                         <div v-if="form.type !== 'internal'" class="sm:col-span-2 lg:col-span-4 space-y-3 rounded-xl border border-teal-100 bg-teal-50/50 p-4">
