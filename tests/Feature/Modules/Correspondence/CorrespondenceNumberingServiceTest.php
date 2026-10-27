@@ -110,7 +110,7 @@ class CorrespondenceNumberingServiceTest extends TestCase
         $this->assertNotEmpty($registered->letter_number);
         $this->assertNotEmpty($registered->registration_number);
         $this->assertNotSame($registered->letter_number, $registered->registration_number);
-        $this->assertStringStartsWith('REG/', $registered->registration_number);
+        $this->assertMatchesRegularExpression('/^\\d{4}\\/000001$/', $registered->registration_number);
         $this->assertSame((int) $registrar->id, (int) $registered->registered_by);
         $this->assertNotNull($registered->registered_at);
         $this->assertDatabaseHas('correspondences', [
@@ -150,6 +150,25 @@ class CorrespondenceNumberingServiceTest extends TestCase
             'status' => Correspondence::STATUS_DRAFT,
             'registration_number' => null,
         ]);
+    }
+
+    public function test_registration_number_uses_its_own_configurable_template(): void
+    {
+        $creator=User::factory()->create(['status'=>'active']); $registrar=$this->createSecretariatUser();
+        $letter=Correspondence::query()->create(['type'=>Correspondence::TYPE_INTERNAL,'subject'=>'قالب مستقل','status'=>Correspondence::STATUS_DRAFT,'letter_number'=>'INT-77','created_by'=>$creator->id]);
+        app(SystemSettingsService::class)->set(['correspondence.registration_numbering.format'=>'custom','correspondence.registration_numbering.custom_order'=>'sequence,year','correspondence.registration_numbering.separator'=>'-','correspondence.registration_numbering.padding'=>'4']);
+        $registered=app(CorrespondenceNumberingService::class)->register($letter,$registrar);
+        $this->assertMatchesRegularExpression('/^0001-\\d{4}$/',$registered->registration_number);
+        $this->assertSame('INT-77',$registered->letter_number);
+    }
+
+    public function test_incoming_registration_does_not_generate_missing_original_letter_number(): void
+    {
+        $registrar=$this->createSecretariatUser();
+        $letter=Correspondence::query()->create(['type'=>Correspondence::TYPE_INCOMING,'subject'=>'وارده بدون شماره اصلی','status'=>Correspondence::STATUS_DRAFT,'created_by'=>$registrar->id]);
+        try { app(CorrespondenceNumberingService::class)->register($letter,$registrar); $this->fail('Incoming letters must require original number.'); }
+        catch (InvalidArgumentException $exception) { $this->assertSame('شماره نامه وارده باید عیناً از روی نامه اصلی وارد شود.',$exception->getMessage()); }
+        $this->assertDatabaseHas('correspondences',['id'=>$letter->id,'letter_number'=>null,'registration_number'=>null]);
     }
 
     private function createSecretariatUser(): User
