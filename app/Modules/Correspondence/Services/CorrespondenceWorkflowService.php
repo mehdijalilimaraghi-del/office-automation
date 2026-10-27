@@ -10,6 +10,7 @@ use App\Core\Settings\Services\OrganizationDepartmentRoleService;
 use App\Models\User;
 use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Models\CorrespondenceAction;
+use App\Modules\Notifications\Services\NotificationService;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -183,11 +184,68 @@ class CorrespondenceWorkflowService
                 return;
             }
 
+            $targetDepartmentId = $letter->type === Correspondence::TYPE_OUTGOING
+                ? app(OrganizationDepartmentRoleService::class)->activeDepartmentId(OrganizationDepartmentRoleService::SECRETARIAT)
+                : ($letter->recipient_department_id === null ? null : (int) $letter->recipient_department_id);
+
             $letter->forceFill([
                 'workflow_state' => $letter->type === Correspondence::TYPE_OUTGOING ? 'awaiting_dispatch' : 'in_progress',
-                'current_department_id' => $letter->type === Correspondence::TYPE_OUTGOING
-                    ? app(OrganizationDepartmentRoleService::class)->activeDepartmentId(OrganizationDepartmentRoleService::SECRETARIAT)
-                    : $letter->recipient_department_id,
+                'current_department_id' => $targetDepartmentId,
+                'current_user_id' => null,
+            ])->save();
+
+            $managerId = $targetDepartmentId === null
+                ? null
+                : Department::query()->whereKey($targetDepartmentId)->value('manager_id');
+            if ($managerId !== null) {
+                $recipient = User::query()->whereKey($managerId)->where('status', 'active')->first();
+                if ($recipient !== null) {
+                    app(NotificationService::class)->correspondenceAction(
+                        $letter,
+                        $recipient,
+                        $letter->type === Correspondence::TYPE_OUTGOING ? 'correspondence.awaiting_dispatch' : 'correspondence.referred',
+                        $letter->type === Correspondence::TYPE_OUTGOING
+                            ? 'نامه صادره در انتظار ثبت ارسال دبیرخانه است'
+                            : 'نامه جدید به واحد شما ارجاع شد',
+                    );
+                }
+            }
+        });
+    }
+
+    public function onDispatched(Correspondence $correspondence, User $actor): void
+    {
+        DB::transaction(function () use ($correspondence, $actor): void {
+            $letter = Correspondence::query()->whereKey($correspondence->id)->lockForUpdate()->firstOrFail();
+
+            if ($letter->type !== Correspondence::TYPE_OUTGOING
+                || $letter->status !== Correspondence::STATUS_REGISTERED
+                || $letter->sent_at === null) {
+                throw new InvalidArgumentException('ثبت ارسال نهایی فقط برای نامه صادره ثبت‌شده مجاز است.');
+            }
+
+            if ($letter->workflow_state === 'dispatched') {
+                return;
+            }
+
+            if ($letter->workflow_state !== 'awaiting_dispatch') {
+                throw new InvalidArgumentException('این نامه در وضعیت انتظار برای ارسال دبیرخانه نیست.');
+            }
+
+            $this->record(
+                $letter,
+                $actor,
+                CorrespondenceAction::DISPATCHED,
+                'ارسال نهایی از دبیرخانه ثبت شد',
+                $letter->current_department_id === null ? null : (int) $letter->current_department_id,
+                null,
+                $actor->id,
+                (int) $letter->created_by,
+            );
+
+            $letter->forceFill([
+                'workflow_state' => 'dispatched',
+                'current_department_id' => null,
                 'current_user_id' => null,
             ])->save();
         });
@@ -227,5 +285,25 @@ class CorrespondenceWorkflowService
                 'to_user_id' => $toUserId,
             ],
         );
+
+        if ($toUserId !== null) {
+            $recipient = User::query()->whereKey($toUserId)->where('status', 'active')->first();
+            if ($recipient !== null) {
+                app(NotificationService::class)->correspondenceAction(
+                    $letter,
+                    $recipient,
+                    'correspondence.'.$type,
+                    match ($type) {
+                        CorrespondenceAction::SUBMIT_RESULT => 'نتیجه نامه برای بررسی شما ارسال شد',
+                        CorrespondenceAction::MANAGER_REFER => 'نامه‌ای برای اقدام به شما ارجاع شد',
+                        CorrespondenceAction::REQUEST_TASK => 'درخواست تسک مرتبط با نامه برای شما ارسال شد',
+                        CorrespondenceAction::REQUEST_PROJECT => 'درخواست پروژه مرتبط با نامه برای شما ارسال شد',
+                        CorrespondenceAction::REQUEST_LETTER => 'درخواست مکاتبه مرتبط برای شما ارسال شد',
+                        CorrespondenceAction::DISPATCHED => 'ارسال نهایی نامه ثبت شد',
+                        default => 'نامه‌ای نیازمند اقدام شماست',
+                    },
+                );
+            }
+        }
     }
 }
