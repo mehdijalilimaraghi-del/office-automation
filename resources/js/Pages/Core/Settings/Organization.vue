@@ -209,7 +209,7 @@ function submit(): void {
                         <section class="space-y-5 rounded-xl border border-slate-200 bg-slate-50 p-5">
                             <div>
                                 <h3 class="font-bold text-slate-900">تنظیمات مکاتبات</h3>
-                                <p class="mt-1 text-sm leading-6 text-slate-600">قالب شماره‌گذاری، روش نگارش و سیاست تأیید را برای کل سازمان تنظیم کنید. شماره نهایی هنگام ثبت رسمی تخصیص می‌یابد.</p>
+                                <p class="mt-1 text-sm leading-6 text-slate-600">قالب شماره نامه، روش نگارش و سیاست تأیید را برای کل سازمان تنظیم کنید. شماره نامه هنگام ایجاد پیش‌نویس و شماره ثبت دبیرخانه هنگام ثبت نهایی تخصیص می‌یابد.</p>
                             </div>
                             <div class="grid gap-5 md:grid-cols-2">
                                 <div>
