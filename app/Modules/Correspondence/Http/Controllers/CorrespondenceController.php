@@ -299,13 +299,13 @@ class CorrespondenceController extends Controller
         $createdDepartments = $request->user()->departments()
             ->where('departments.is_active', true)
             ->orderBy('departments.name')
-            ->get(['departments.id', 'departments.name'])
+            ->get(['departments.id', 'departments.name', 'departments.parent_id', 'departments.icon'])
             ->keyBy('id');
 
         $managedDepartments = $request->user()->managedDepartments()
             ->where('is_active', true)
             ->orderBy('name')
-            ->get(['id', 'name']);
+            ->get(['id', 'name', 'parent_id', 'icon']);
 
         foreach ($managedDepartments as $department) {
             $createdDepartments->put($department->id, $department);
