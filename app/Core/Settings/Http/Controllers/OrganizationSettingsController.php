@@ -94,7 +94,7 @@ class OrganizationSettingsController extends Controller
             'organization.website' => $data['website'] ?? null,
             'organization.address' => $data['address'] ?? null,
             'correspondence.numbering.format' => $data['numbering_format'],
-            'correspondence.numbering.custom_order' => implode(',', [$data['numbering_order_first'], $data['numbering_order_second'], $data['numbering_order_third']]),
+            'correspondence.numbering.custom_order' => implode(',', array_slice([$data['numbering_order_first'], $data['numbering_order_second'], $data['numbering_order_third'] ?? null], 0, (int) ($data['numbering_custom_fields_count'] ?? 3))),
             'correspondence.numbering.separator' => $data['numbering_separator'],
             'correspondence.numbering.padding' => (string) $data['numbering_padding'],
             'correspondence.composition.method' => $data['composition_method'],
