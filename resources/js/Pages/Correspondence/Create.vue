@@ -10,7 +10,7 @@ import '@jalali-js/vue/date-picker.css';
 interface Department { id: number; name: string; }
 interface ExternalOrganization { id: number; name: string; }
 interface ExternalDepartment { id: number; external_organization_id: number; name: string; }
-interface ReplyOption { id: number; registration_number: string | null; subject: string; }
+interface ReplyOption { id: number; letter_number: string | null; registration_number: string | null; subject: string; }
 interface CreatedDepartment { id: number; name: string; }
 type CompositionMode = 'editor' | 'file' | 'both';
 type TextDirection = 'rtl' | 'ltr';
@@ -369,7 +369,7 @@ async function scanOriginalLetter(): Promise<void> {
                             <label for="reply_to_id" class="mb-1.5 block text-sm font-semibold text-slate-700">پاسخ به مکاتبه ثبت‌شده</label>
                             <select id="reply_to_id" v-model="form.reply_to_id" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">مکاتبه‌ای انتخاب نشده</option>
-                                <option v-for="item in repliesTo" :key="item.id" :value="item.id">{{ item.registration_number ?? 'بدون شماره' }} — {{ item.subject }}</option>
+                                <option v-for="item in repliesTo" :key="item.id" :value="item.id">{{ item.letter_number ?? item.registration_number ?? 'بدون شماره' }} — {{ item.subject }}</option>
                             </select>
                             <InputError class="mt-1" :message="form.errors.reply_to_id" />
                         </div>
