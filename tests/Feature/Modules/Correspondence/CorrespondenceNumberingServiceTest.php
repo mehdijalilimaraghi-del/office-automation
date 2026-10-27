@@ -110,7 +110,7 @@ class CorrespondenceNumberingServiceTest extends TestCase
         $this->assertNotEmpty($registered->letter_number);
         $this->assertNotEmpty($registered->registration_number);
         $this->assertNotSame($registered->letter_number, $registered->registration_number);
-        $this->assertMatchesRegularExpression('/^\\d{4}\\/000001$/', $registered->registration_number);
+        $this->assertMatchesRegularExpression('/^000001$/', $registered->registration_number);
         $this->assertSame((int) $registrar->id, (int) $registered->registered_by);
         $this->assertNotNull($registered->registered_at);
         $this->assertDatabaseHas('correspondences', [
