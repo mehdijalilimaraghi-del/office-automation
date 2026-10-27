@@ -315,3 +315,10 @@ Before making the first code change in a new conversation:
 - Related correspondence is searched remotely via correspondence.related-search; query matches subject, letter number, registration number, external registration number, internal department name/code, and external organization/department name/code. Search is visibility-filtered and returns up to 20 results with subject, letter/registration numbers, date, and party details.
 - sent_at is required for outgoing and received_at is required for incoming, with matching UI markers and backend validation.
 - Focused tests added; local test/build validation pending. No database migration required. Do not modify master.
+
+## 2026-10-27 — Related correspondence selector UI alignment (validation pending)
+
+- Both related correspondence and copy-recipient controls now use `sm:col-span-2` for matching widths.
+- Removed the separate «برای جستجو حداقل دو نویسه وارد کنید.» panel; the minimum length is shown in the search placeholder. Search result rows appear in a bordered scroll region only after two characters are entered.
+- Selected related letters now display in a single removable list styled consistently with selected copy recipients; nested borders were removed. No backend behavior changed.
+- Local validation pending: pull `development`, run `php artisan test --filter=CorrespondenceHttpTest`, then `npm run build`. `master` unchanged.
