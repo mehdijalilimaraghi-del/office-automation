@@ -395,6 +395,7 @@ class CorrespondenceController extends Controller
         Request $request,
         Correspondence $correspondence,
         CorrespondenceAccessService $access,
+        CorrespondenceWorkflowService $workflow,
     ): RedirectResponse {
         if ($correspondence->type !== Correspondence::TYPE_OUTGOING) {
             return back()->withErrors([
@@ -420,6 +421,10 @@ class CorrespondenceController extends Controller
             'sent_at' => ['nullable', 'date'],
         ]);
 
+        if (array_key_exists('sent_at', $data) && $data['sent_at'] !== null) {
+            abort_unless($access->isSecretariat($user) || $user->isSystemAdmin(), 403, 'ثبت ارسال نهایی فقط توسط دبیرخانه مجاز است.');
+        }
+
         if (! $access->isSecretariat($user) && ! $user->isSystemAdmin() && ! empty($data['task_id'])) {
             $task = Task::query()->findOrFail($data['task_id']);
             abort_unless(
@@ -429,8 +434,9 @@ class CorrespondenceController extends Controller
             );
         }
 
-        DB::transaction(function () use ($correspondence, $data, $user, $access): void {
+        DB::transaction(function () use ($correspondence, $data, $user, $access, $workflow): void {
             $letter = Correspondence::query()->whereKey($correspondence->id)->lockForUpdate()->firstOrFail();
+            $wasSent = $letter->sent_at !== null;
             $canUpdateLocked = $user->isSystemAdmin()
                 || $access->isSecretariat($user)
                 || (int) $letter->created_by === (int) $user->id
@@ -446,6 +452,11 @@ class CorrespondenceController extends Controller
             }
 
             $letter->save();
+
+            if (! $wasSent && $letter->sent_at !== null) {
+                $workflow->onDispatched($letter, $user);
+            }
+
             app(AuditServiceInterface::class)->record(
                 'correspondence.external_tracking.updated',
                 $letter,
