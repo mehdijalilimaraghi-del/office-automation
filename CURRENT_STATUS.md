@@ -1149,3 +1149,13 @@ Implementation has started for the agreed cross-department project model:
 
 - Fixed the casing mismatch in `resources/js/Pages/Cartable/Index.vue`: the template now reads `letter.current_department.name`, matching the declared `CorrespondenceItem` property.
 - Commit is on `development` only; `master` is unchanged. Validation pending: run `git pull origin development` and `npm run build`; report the actual result before proceeding.
+
+
+## 2026-10-27 — Correspondence numbering and date display backlog
+
+- Pending UI correction in `resources/js/Pages/Correspondence/Index.vue`: display `registered_at` as a localized Persian/Jalali date and Tehran local time, label it `ثبت نهایی`, and do not show the raw ISO UTC timestamp.
+- Numbering requirements to design and implement after inspecting the existing correspondence settings and registration flow:
+  - `شماره نامه` and `شماره ثبت` are distinct fields with distinct purposes; registering a letter must not conflate or overwrite the letter's own number.
+  - In correspondence settings, a custom letter-number template must support either two or three fields (not force exactly three).
+  - Add a required, user-configurable code field for each organizational department/unit, entered by an authorized user when configuring that unit (e.g. IT department code `IT`). Use that code in the letter-number template instead of exposing the numeric database department ID.
+- Keep the existing workflow and historical data compatible; inspect schema, settings UI, number-generation logic, and tests before choosing migration/compatibility behavior. No implementation of these backlog items is claimed yet.
