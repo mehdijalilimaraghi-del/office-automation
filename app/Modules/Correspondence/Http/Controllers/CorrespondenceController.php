@@ -333,11 +333,6 @@ class CorrespondenceController extends Controller
                 ['value' => Correspondence::CLASSIFICATION_CONFIDENTIAL, 'label' => 'محرمانه'],
             ],
             'departments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
-            'repliesTo' => $access->visibleToQuery(Correspondence::query(), $request->user())
-                ->where('status', Correspondence::STATUS_REGISTERED)
-                ->orderByDesc('registered_at')
-                ->limit(100)
-                ->get(['id', 'letter_number', 'registration_number', 'subject']),
         ]);
     }
 
