@@ -32,6 +32,13 @@ class CorrespondenceNumberingServiceTest extends TestCase
         $settings->set(['correspondence.numbering.format' => 'simple']);
         $this->assertSame('000001', $service->nextNumber($correspondence));
 
+        $settings->set([
+            'correspondence.numbering.format' => 'custom',
+            'correspondence.numbering.custom_order' => 'year,sequence',
+            'correspondence.numbering.separator' => '-',
+        ]);
+        $this->assertMatchesRegularExpression('/^\\d{4}-000002$/', $service->nextNumber($correspondence));
+
         $settings->set(['correspondence.numbering.format' => 'year']);
         $this->assertStringEndsWith('/000002', $service->nextNumber($correspondence));
 
@@ -100,7 +107,10 @@ class CorrespondenceNumberingServiceTest extends TestCase
         $registered = app(CorrespondenceNumberingService::class)->register($correspondence, $registrar);
 
         $this->assertSame(Correspondence::STATUS_REGISTERED, $registered->status);
+        $this->assertNotEmpty($registered->letter_number);
         $this->assertNotEmpty($registered->registration_number);
+        $this->assertNotSame($registered->letter_number, $registered->registration_number);
+        $this->assertStringStartsWith('REG/', $registered->registration_number);
         $this->assertSame((int) $registrar->id, (int) $registered->registered_by);
         $this->assertNotNull($registered->registered_at);
         $this->assertDatabaseHas('correspondences', [
