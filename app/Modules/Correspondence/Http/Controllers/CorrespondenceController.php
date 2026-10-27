@@ -267,7 +267,7 @@ class CorrespondenceController extends Controller
                 ->where('status', Correspondence::STATUS_REGISTERED)
                 ->orderByDesc('registered_at')
                 ->limit(100)
-                ->get(['id', 'registration_number', 'subject']),
+                ->get(['id', 'letter_number', 'registration_number', 'subject']),
         ]);
     }
 
