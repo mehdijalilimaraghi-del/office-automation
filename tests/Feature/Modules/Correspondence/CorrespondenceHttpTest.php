@@ -360,6 +360,12 @@ class CorrespondenceHttpTest extends TestCase
         $this->assertDatabaseHas('correspondence_actions', ['correspondence_id' => $letter->id, 'action_type' => 'dispatched', 'actor_id' => $secretariatUser->id]);
         $this->assertDatabaseHas('audit_logs', ['event' => 'correspondence.action.dispatched', 'auditable_type' => $letter->getMorphClass(), 'auditable_id' => $letter->id]);
         $this->assertDatabaseHas('notifications', ['notifiable_id' => $outgoingCreator->id, 'type' => 'App\\Modules\\Notifications\\Notifications\\CorrespondenceNotification']);
+        $notification = \\Illuminate\\Support\\Facades\\DB::table('notifications')
+            ->where('notifiable_id', $outgoingCreator->id)
+            ->where('type', 'App\\Modules\\Notifications\\Notifications\\CorrespondenceNotification')
+            ->first();
+        $this->assertNotNull($notification);
+        $this->assertStringNotContainsString('پیش‌نویس صادره برای دبیرخانه', (string) $notification->data);
     }
     public function test_outgoing_correspondence_creator_can_update_tracking_but_cannot_finalize_dispatch(): void
     {
