@@ -27,7 +27,7 @@ class OrganizationSettingsController extends Controller
         'correspondence.numbering.custom_order' => 'year,department,sequence',
         'correspondence.numbering.separator' => '/',
         'correspondence.numbering.padding' => '6',
-        'correspondence.registration_numbering.format' => 'year',
+        'correspondence.registration_numbering.format' => 'simple',
         'correspondence.registration_numbering.custom_order' => 'year,department,sequence',
         'correspondence.registration_numbering.separator' => '/',
         'correspondence.registration_numbering.padding' => '6',
