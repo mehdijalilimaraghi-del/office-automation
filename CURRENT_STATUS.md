@@ -1206,3 +1206,9 @@ Implementation has started for the agreed cross-department project model:
 - Removed the separate empty-state panel that said «برای جستجو حداقل دو نویسه وارد کنید.»; the minimum query length is now communicated in the search input placeholder. Search results appear in a bordered, scrollable list only after at least two characters are entered.
 - Selected related letters now use a single removable list styled like the selected copy-recipient list, rather than nested bordered boxes. Backend behavior is unchanged.
 - Validation pending locally: `git pull origin development`, `php artisan test --filter=CorrespondenceHttpTest`, then `npm run build`. No tests/build have been run by the assistant; `master` unchanged.
+
+2026-10-27 — Related correspondence dropdown overlay correction (validation pending)
+
+- Restored the outer rounded border and padding around «ارتباط با مکاتبات قبلی» to match «رونوشت به».
+- Search results now render as an absolutely positioned, white, shadowed dropdown anchored to the search input. They overlay the form instead of pushing the selected-letter list or lower fields down. The selected letters remain in their own list beneath the input.
+- Validation pending locally: `git pull origin development`, `php artisan test --filter=CorrespondenceHttpTest`, then `npm run build`. Assistant has not run tests/build; `master` unchanged.
