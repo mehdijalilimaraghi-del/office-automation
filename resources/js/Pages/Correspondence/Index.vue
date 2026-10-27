@@ -23,17 +23,18 @@ interface CorrespondenceRow {
 interface PaginationLink { url: string | null; label: string; active: boolean; }
 const props = defineProps<{
     correspondences: { data: CorrespondenceRow[]; total: number; from: number | null; to: number | null; links: PaginationLink[] };
-    filters: { search: string; type: string; status: string };
+    filters: { search: string; type: string; status: string; scope: string };
     canCreate: boolean;
 }>();
 const search = ref(props.filters.search);
 const type = ref(props.filters.type);
 const status = ref(props.filters.status);
+const scope = ref(props.filters.scope);
 const typeLabels: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
 const statusLabels: Record<string, string> = { draft: 'پیش‌نویس', registered: 'ثبت‌شده' };
 const classificationLabels: Record<string, string> = { ordinary: 'عادی', confidential: 'محرمانه' };
 function applyFilters(): void {
-    router.get(route('correspondence.index'), { search: search.value || undefined, type: type.value || undefined, status: status.value || undefined }, { preserveState: true, replace: true });
+    router.get(route('correspondence.index'), { scope: scope.value || 'mine', search: search.value || undefined, type: type.value || undefined, status: status.value || undefined }, { preserveState: true, replace: true });
 }
 function register(id: number): void {
     if (window.confirm('پس از ثبت نهایی، شماره مکاتبه ثابت خواهد شد. ادامه می‌دهید؟')) {
@@ -53,7 +54,8 @@ function register(id: number): void {
         </template>
         <div class="space-y-5 p-4 sm:p-6">
             <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                    <select v-model="scope" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @change="applyFilters"><option value="mine">مکاتبات من</option><option value="department">مکاتبات واحد من</option><option value="all">همه مکاتبات مجاز</option></select>
                     <input v-model="search" type="search" placeholder="جست‌وجو در موضوع یا شماره ثبت" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @keydown.enter="applyFilters" />
                     <select v-model="type" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"><option value="">همه انواع</option><option value="incoming">وارده</option><option value="outgoing">صادره</option><option value="internal">داخلی</option></select>
                     <select v-model="status" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"><option value="">همه وضعیت‌ها</option><option value="draft">پیش‌نویس</option><option value="registered">ثبت‌شده</option></select>
@@ -61,7 +63,7 @@ function register(id: number): void {
                 </div>
             </section>
             <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4"><h3 class="font-bold text-slate-900">فهرست مکاتبات</h3><span class="text-xs text-slate-500">{{ correspondences.total }} مورد</span></div>
+                <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4"><h3 class="font-bold text-slate-900">{{ scope === 'mine' ? 'مکاتبات من' : scope === 'department' ? 'مکاتبات واحد من' : 'همه مکاتبات مجاز' }}</h3><span class="text-xs text-slate-500">{{ correspondences.total }} مورد</span></div>
                 <div v-if="correspondences.data.length" class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-100 text-right text-sm">
                         <thead class="bg-slate-50 text-xs font-semibold text-slate-500"><tr><th class="px-5 py-3">موضوع</th><th class="px-5 py-3">نوع</th><th class="px-5 py-3">طبقه‌بندی</th><th class="px-5 py-3">شماره ثبت</th><th class="px-5 py-3">واحد</th><th class="px-5 py-3">ایجادکننده</th><th class="px-5 py-3">وضعیت</th><th class="px-5 py-3">عملیات</th></tr></thead>
