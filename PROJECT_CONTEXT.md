@@ -985,3 +985,9 @@ The active `SYSTEM_ADMIN` account is a special system capability and receives ev
 - The manager-approval HTTP regression test checks that the Core Audit event is persisted.
 - Next priority after validation: audit remaining correspondence lifecycle transitions (draft creation/final registration/copy recipients/external dispatch tracking) and verify actionable Cartable + notification integration before starting Forms & Requests.
 - Keep work on development; do not change master. Follow the one-step-at-a-time local validation instruction in CURRENT_STATUS.md.
+
+
+## 2026-10-27 — Cartable TypeScript build fix
+
+- Resolved the frontend build error in `resources/js/Pages/Cartable/Index.vue` by changing the template reference from `currentDepartment` to the declared `current_department` field.
+- This is a naming-only fix on `development`; `master` remains unchanged. Production build validation is pending.
