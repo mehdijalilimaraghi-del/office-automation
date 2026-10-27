@@ -31,6 +31,11 @@ class CorrespondenceAccessService
             || ($type === Correspondence::TYPE_INCOMING && $this->isSecretariat($user));
     }
 
+    public function canManageBeforeAction(Correspondence $correspondence, User $user): bool
+    {
+        return $this->isSecretariat($user) && $correspondence->status === Correspondence::STATUS_DRAFT && ! $correspondence->actions()->exists();
+    }
+
     public function canRegister(Correspondence $correspondence, User $user): bool
     {
         if (! $user->isActive()) {
