@@ -1,3 +1,10 @@
+## 2026-10-27 — Full validation confirmed for correspondence audit slice
+
+- Project owner confirmed the full `php artisan test` suite passes and the frontend production build succeeds after the syntax correction in the external-tracking audit regression test.
+- Treat the latest registration, copy-recipient, and outgoing external-tracking audit changes as user-validated. No tests or build were independently executed by the assistant.
+- Next grouped review before Forms & Requests: inspect end-to-end incoming/outgoing/internal journeys, especially final dispatch audit, correspondence-specific notifications, and whether correspondence actions are correctly surfaced in the shared Cartable. Check the V2 acceptance gate in `ROADMAP.md`; do not assume these areas are complete from the audit tests alone.
+- Branch: `development`; `master` unchanged.
+
 ## 2026-10-26 — Correspondence audit coverage and validation
 
 - Project owner confirmed `php artisan test --filter=CorrespondenceHttpTest` passes after final-registration audit coverage was added. Registration now writes a `registered` business-history action and `correspondence.action.registered` Core Audit event; the note contains the registration number only.
