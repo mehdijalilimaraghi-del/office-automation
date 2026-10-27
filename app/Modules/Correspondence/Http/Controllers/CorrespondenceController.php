@@ -522,7 +522,9 @@ class CorrespondenceController extends Controller
     {
         abort_unless($access->canManageBeforeAction($correspondence, $request->user()), 403);
         return Inertia::render('Correspondence/Edit', [
-            'correspondence' => $correspondence->only(['id','type','classification','subject','letter_number','sender_name','recipient_name','received_at','sent_at','recipient_department_id','external_organization_id','external_department_id']),
+            'correspondence' => [
+                'id'=>$correspondence->id,'type'=>$correspondence->type,'classification'=>$correspondence->classification,'subject'=>$correspondence->subject,'letter_number'=>$correspondence->letter_number,'sender_name'=>$correspondence->sender_name,'recipient_name'=>$correspondence->recipient_name,'received_at'=>$correspondence->received_at?->toDateString(),'sent_at'=>$correspondence->sent_at?->toDateString(),'recipient_department_id'=>$correspondence->recipient_department_id,'external_organization_id'=>$correspondence->external_organization_id,'external_department_id'=>$correspondence->external_department_id,
+            ],
             'departments' => Department::query()->where('is_active',true)->orderBy('name')->get(['id','name','parent_id','icon']),
             'externalOrganizations' => ExternalOrganization::query()->where('status','active')->orderBy('name')->get(['id','name']),
             'externalDepartments' => ExternalDepartment::query()->where('status','active')->orderBy('name')->get(['id','external_organization_id','parent_id','name']),
