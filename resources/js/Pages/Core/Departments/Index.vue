@@ -91,6 +91,7 @@ const form = useForm({
     parent_id: null as number | null,
     manager_id: null as number | null,
     name: '',
+    code: '',
     icon: 'building-2',
     description: '',
     is_active: true,
@@ -234,6 +235,7 @@ const resetDepartmentForm = () => {
     form.reset();
     form.is_active = true;
     form.icon = 'building-2';
+    form.code = '';
     form.custom_fields = {};
     form.clearErrors();
 };
@@ -251,6 +253,7 @@ const openEdit = (department: Department) => {
     form.parent_id = department.parent_id;
     form.manager_id = department.manager_id;
     form.name = department.name;
+    form.code = department.code ?? '';
     form.icon = department.icon ?? 'building-2';
     form.description = department.description ?? '';
     form.is_active = department.is_active;
@@ -950,6 +953,12 @@ watch(
                             <label class="mb-2 block text-sm font-semibold text-slate-700">نام واحد</label>
                             <TextInput v-model="form.name" class="block min-h-11 w-full rounded-xl text-right" required maxlength="150" />
                             <InputError class="mt-1.5" :message="form.errors.name" />
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-semibold text-slate-700">کد کوتاه واحد</label>
+                            <TextInput v-model="form.code" dir="ltr" class="block min-h-11 w-full rounded-xl text-left uppercase" required maxlength="20" placeholder="IT" />
+                            <p class="mt-1 text-xs text-slate-400">کد یکتا و انگلیسی؛ در قالب شماره نامه استفاده می‌شود.</p>
+                            <InputError class="mt-1.5" :message="form.errors.code" />
                         </div>
 
                         <div class="md:col-span-2">
