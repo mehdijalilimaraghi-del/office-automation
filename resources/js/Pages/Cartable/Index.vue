@@ -216,7 +216,7 @@ function formatDate(value: string | null | undefined): string {
                                     <p class="mt-1 text-xs text-slate-500">
                                         {{ correspondenceTypeLabels[letter.type] || letter.type }}
                                         <span v-if="letter.registration_number"> · شماره {{ letter.registration_number }}</span>
-                                        <span v-if="letter.current_department"> · {{ letter.currentDepartment.name }}</span>
+                                        <span v-if="letter.current_department"> · {{ letter.current_department.name }}</span>
                                     </p>
                                 </div>
                                 <span class="shrink-0 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-800">{{ correspondenceStateLabels[letter.workflow_state || ''] || letter.workflow_state || 'نیازمند پیگیری' }}</span>
