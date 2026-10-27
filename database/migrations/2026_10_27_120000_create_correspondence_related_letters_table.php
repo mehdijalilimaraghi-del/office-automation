@@ -12,8 +12,8 @@ return new class extends Migration
     {
         Schema::create('correspondence_related_letters', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('correspondence_id')->constrained('correspondences')->cascadeOnDelete();
-            $table->foreignId('related_correspondence_id')->constrained('correspondences')->cascadeOnDelete();
+            $table->foreignId('correspondence_id')->constrained('correspondences')->noActionOnDelete();
+            $table->foreignId('related_correspondence_id')->constrained('correspondences')->noActionOnDelete();
             $table->timestamps();
             $table->unique(['correspondence_id', 'related_correspondence_id'], 'correspondence_related_letters_pair_unique');
             $table->index('related_correspondence_id', 'correspondence_related_letters_related_index');
