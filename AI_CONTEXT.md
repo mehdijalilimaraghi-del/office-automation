@@ -263,3 +263,9 @@ Before making the first code change in a new conversation:
 - Extended the existing manager-approval HTTP regression test to assert the matching audit_logs row.
 - Code is committed to development; master is unchanged. Local test execution is pending. Run the exact focused PowerShell command in CURRENT_STATUS.md after pulling.
 - Next: validate this slice, then audit registration/copy/dispatch transitions and the Cartable/notification integration contract. Do not start Forms & Requests until the remaining V2 acceptance gate is reviewed.
+
+
+## 2026-10-27 — Cartable TypeScript build fix
+
+- Corrected the Cartable template to use `letter.current_department.name`, consistent with the `CorrespondenceItem` TypeScript interface. No application behavior or backend logic was changed.
+- Committed to `development` only. Run `npm run build` after pulling and confirm the result; do not claim validation until reported.
