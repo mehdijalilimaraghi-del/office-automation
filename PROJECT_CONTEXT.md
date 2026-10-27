@@ -1089,3 +1089,10 @@ The active `SYSTEM_ADMIN` account is a special system capability and receives ev
 ## 2026-10-27 — Correspondence number policy and secretariat pre-action management
 
 Incoming letter numbers are captured from the original document, never auto-generated. Secretariat registration numbers have a separate configurable template and counter. The secretariat can edit/delete draft correspondence only before any action exists; server-side transactional checks enforce this. Regression tests and local build/test validation are pending.
+
+
+### اصلاح بر اساس گزارش تست 2026-10-27
+
+- خطای نحوی آرایه اعتبارسنجی در `CorrespondenceController::update` شناسایی و اصلاح شد؛ این خطا علت بیشتر خطاهای 500 در گزارش قبلی بود.
+- قالب پیش‌فرض شماره ثبت به «شماره ترتیبی» تغییر کرد تا با قالب پیش‌فرض شماره نامه تداخل نداشته باشد. تست انتظار شماره ثبت نیز به‌روزرسانی شد.
+- تست‌های محلی هنوز پس از این اصلاحات دوباره اجرا نشده‌اند؛ نتیجه قبلی دیگر معیار وضعیت فعلی نیست.
