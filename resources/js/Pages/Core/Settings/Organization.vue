@@ -70,7 +70,7 @@ const form = useForm({
     numbering_custom_fields_count: String(customOrder.length === 2 ? 2 : 3),
     numbering_separator: props.settings.numbering_separator ?? '/',
     numbering_padding: props.settings.numbering_padding ?? '6',
-    registration_numbering_format: props.settings.registration_numbering_format ?? 'year',
+    registration_numbering_format: props.settings.registration_numbering_format ?? 'simple',
     registration_numbering_order_first: registrationCustomOrder[0] ?? 'year',
     registration_numbering_order_second: registrationCustomOrder[1] ?? 'department',
     registration_numbering_order_third: registrationCustomOrder[2] ?? 'sequence',
