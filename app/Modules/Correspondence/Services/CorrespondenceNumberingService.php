@@ -49,12 +49,17 @@ class CorrespondenceNumberingService
                 throw new InvalidArgumentException('این نامه باید پیش از ثبت نهایی توسط مدیر واحد تأیید شود.');
             }
 
-            $config = $this->configuration();
-            $this->assertFormatIsValid($config['format'], $config['custom_order']);
-            $this->assertSeparator($config['separator']);
-
-            if ($locked->type === Correspondence::TYPE_INCOMING && blank($locked->letter_number)) throw new InvalidArgumentException('شماره نامه وارده باید عیناً از روی نامه اصلی وارد شود.');
-            if ($locked->type !== Correspondence::TYPE_INCOMING && blank($locked->letter_number)) $locked->letter_number = $this->formatNumber($locked, $this->incrementLetterCounter(), $config);
+            if ($locked->type === Correspondence::TYPE_INCOMING && blank($locked->letter_number)) {
+                throw new InvalidArgumentException('شماره نامه وارده باید عیناً از روی نامه اصلی وارد شود.');
+            }
+            if ($locked->type !== Correspondence::TYPE_INCOMING) {
+                $config = $this->configuration();
+                $this->assertFormatIsValid($config['format'], $config['custom_order']);
+                $this->assertSeparator($config['separator']);
+                if (blank($locked->letter_number)) {
+                    $locked->letter_number = $this->formatNumber($locked, $this->incrementLetterCounter(), $config);
+                }
+            }
             $registrationConfig = $this->registrationConfiguration();
             $this->assertFormatIsValid($registrationConfig['format'], $registrationConfig['custom_order']);
             $this->assertSeparator($registrationConfig['separator']);
