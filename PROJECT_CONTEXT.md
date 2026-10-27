@@ -1046,3 +1046,9 @@ The active `SYSTEM_ADMIN` account is a special system capability and receives ev
 - Minimum search length is communicated inside the related-search input placeholder rather than a separate helper panel. Results appear only after two characters are entered.
 - Selected related letters are shown in one removable list, visually aligned with the copy-recipient selection list; redundant nested bordered containers were removed. Backend behavior is unchanged.
 - Local validation pending; run `php artisan test --filter=CorrespondenceHttpTest` and `npm run build` after pulling `development`. `master` unchanged.
+
+## 2026-10-27 — Related correspondence dropdown overlay correction (validation pending)
+
+- Restored the outer border and padding of «ارتباط با مکاتبات قبلی» to visually match «رونوشت به».
+- Search results use an anchored absolute dropdown with a white background and shadow, so opening results overlays the form rather than pushing selected items and subsequent fields down. Selected letters stay in a separate list below the search field.
+- Local validation pending; run `php artisan test --filter=CorrespondenceHttpTest` and `npm run build` after pulling `development`. `master` unchanged.
