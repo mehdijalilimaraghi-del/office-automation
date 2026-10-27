@@ -23,6 +23,10 @@ interface OrganizationSettings {
     numbering_custom_order: string | null;
     numbering_separator: string | null;
     numbering_padding: string | null;
+    registration_numbering_format: string | null;
+    registration_numbering_custom_order: string | null;
+    registration_numbering_separator: string | null;
+    registration_numbering_padding: string | null;
     composition_method: string | null;
     correspondence_font_family: string | null;
     approval_incoming: string | null;
@@ -44,6 +48,7 @@ const props = defineProps<{
 }>();
 
 const customOrder = (props.settings.numbering_custom_order ?? 'year,department,sequence').split(',');
+const registrationCustomOrder = (props.settings.registration_numbering_custom_order ?? 'year,department,sequence').split(',');
 
 const form = useForm({
     name: props.settings.name ?? '',
@@ -65,6 +70,13 @@ const form = useForm({
     numbering_custom_fields_count: String(customOrder.length === 2 ? 2 : 3),
     numbering_separator: props.settings.numbering_separator ?? '/',
     numbering_padding: props.settings.numbering_padding ?? '6',
+    registration_numbering_format: props.settings.registration_numbering_format ?? 'year',
+    registration_numbering_order_first: registrationCustomOrder[0] ?? 'year',
+    registration_numbering_order_second: registrationCustomOrder[1] ?? 'department',
+    registration_numbering_order_third: registrationCustomOrder[2] ?? 'sequence',
+    registration_numbering_custom_fields_count: String(registrationCustomOrder.length === 2 ? 2 : 3),
+    registration_numbering_separator: props.settings.registration_numbering_separator ?? '/',
+    registration_numbering_padding: props.settings.registration_numbering_padding ?? '6',
     composition_method: props.settings.composition_method ?? 'both',
     correspondence_font_family: props.settings.correspondence_font_family ?? 'Vazirmatn',
     approval_incoming: props.settings.approval_incoming ?? 'approval',
@@ -242,7 +254,7 @@ function submit(): void {
                                 </div>
                                 </div>
                             </div>
-                            <p class="rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-600">قالب شماره نامه هنگام ایجاد پیش‌نویس تعیین می‌شود. شماره ثبت دبیرخانه جداگانه و هنگام ثبت نهایی تخصیص می‌یابد.</p>
+<section class="space-y-4 rounded-xl border border-teal-200 bg-white p-4"><h4 class="font-bold text-slate-900">قالب شماره ثبت دبیرخانه</h4><p class="text-sm text-slate-600">قالب مستقل از شماره نامه؛ هنگام ثبت نهایی مکاتبه استفاده می‌شود.</p><div class="grid gap-4 md:grid-cols-3"><div><label for="registration_numbering_format" class="mb-2 block text-sm font-semibold">قالب شماره ثبت</label><select id="registration_numbering_format" v-model="form.registration_numbering_format" class="block min-h-11 w-full rounded-xl border-slate-300 text-sm"><option value="simple">شماره ترتیبی</option><option value="year">سال + شماره</option><option value="year_department">سال + کد واحد + شماره</option><option value="custom">سفارشی</option></select><InputError :message="form.errors.registration_numbering_format"/></div><div><label for="registration_numbering_separator" class="mb-2 block text-sm font-semibold">جداکننده</label><TextInput id="registration_numbering_separator" v-model="form.registration_numbering_separator" maxlength="5" class="block min-h-11 w-full rounded-xl text-right"/><InputError :message="form.errors.registration_numbering_separator"/></div><div><label for="registration_numbering_padding" class="mb-2 block text-sm font-semibold">طول شماره ترتیبی</label><select id="registration_numbering_padding" v-model="form.registration_numbering_padding" class="block min-h-11 w-full rounded-xl border-slate-300 text-sm"><option v-for="length in 9" :key="length" :value="String(length+3)">{{length+3}} رقم</option></select><InputError :message="form.errors.registration_numbering_padding"/></div></div><div v-if="form.registration_numbering_format==='custom'" class="space-y-4"><div><label for="registration_numbering_custom_fields_count" class="mb-2 block text-sm font-semibold">تعداد اجزا</label><select id="registration_numbering_custom_fields_count" v-model="form.registration_numbering_custom_fields_count" class="block min-h-11 rounded-xl border-slate-300 text-sm"><option value="2">دو جزء</option><option value="3">سه جزء</option></select><InputError :message="form.errors.registration_numbering_custom_fields_count"/></div><div class="grid gap-4 md:grid-cols-3"><div v-for="(field,index) in (['registration_numbering_order_first','registration_numbering_order_second','registration_numbering_order_third'] as const)" v-show="form.registration_numbering_custom_fields_count==='3'||index<2" :key="field"><label :for="field" class="mb-2 block text-sm font-semibold">جزء {{['اول','دوم','سوم'][index]}}</label><select :id="field" v-model="form[field]" class="block min-h-11 w-full rounded-xl border-slate-300 text-sm"><option value="year">سال شمسی</option><option value="department">کد واحد</option><option value="sequence">شماره ترتیبی</option></select><InputError :message="form.errors[field]"/></div></div></div></section>                            <p class="rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-600">قالب شماره نامه هنگام ایجاد پیش‌نویس تعیین می‌شود. شماره ثبت دبیرخانه جداگانه و هنگام ثبت نهایی تخصیص می‌یابد.</p>
                             <div>
                                 <label for="correspondence_font_family" class="block text-sm font-semibold text-slate-700">قلم پیش‌فرض نامه‌ها</label>
                                 <select id="correspondence_font_family" v-model="form.correspondence_font_family" class="mt-2 block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200">
