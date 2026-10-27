@@ -70,6 +70,7 @@ class CorrespondenceHttpTest extends TestCase
             'registration_number' => '1405/009990',
             'created_by' => $otherUser->id,
             'created_department_id' => $department->id,
+            'current_department_id' => $department->id,
         ]);
         Correspondence::query()->create([
             'type' => Correspondence::TYPE_OUTGOING,
@@ -78,6 +79,7 @@ class CorrespondenceHttpTest extends TestCase
             'status' => Correspondence::STATUS_REGISTERED,
             'registration_number' => '1405/009991',
             'created_by' => $otherUser->id,
+            'created_department_id' => $department->id,
         ]);
 
         $this->actingAs($user)->get(route('correspondence.index'))
