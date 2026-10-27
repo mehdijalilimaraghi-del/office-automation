@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Button } from '@/Components/ui/button';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
+import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
 import { ref } from 'vue';
 
@@ -14,7 +15,8 @@ interface Manager {
 interface Department {
     id: number;
     name: string;
-    tree_label: string;
+    parent_id?: number | null;
+    tree_label?: string;
 }
 
 interface SectionForm {
@@ -439,10 +441,7 @@ function submit(): void {
                                 </div>
                                 <div class="space-y-2">
                                     <label :for="'section-department-' + index" class="text-sm font-medium">واحد انجام‌دهنده</label>
-                                    <select :id="'section-department-' + index" v-model="section.department_id" required class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                                        <option value="">انتخاب واحد مسئول</option>
-                                        <option v-for="department in props.departments" :key="department.id" :value="String(department.id)">{{ department.tree_label || department.name }}</option>
-                                    </select>
+                                    <DepartmentTreeSelect v-model="section.department_id" :departments="props.departments" placeholder="انتخاب واحد مسئول" :clearable="false" />
                                     <p v-if="sectionError('sections.' + index + '.department_id')" class="text-xs text-destructive">{{ sectionError('sections.' + index + '.department_id') }}</p>
                                 </div>
                             </div>

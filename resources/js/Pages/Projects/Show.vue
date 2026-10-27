@@ -5,6 +5,7 @@ import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { formatPersianDate, formatPersianDateTime } from '@/Utils/date';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
+import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 
 interface Task {
     id: number;
@@ -499,7 +500,7 @@ const deleteTask = (task: Task): void => {
                 <div class="flex items-start justify-between gap-4 border-b bg-muted/20 p-5"><div><h3 id="section-editor-title" class="text-lg font-semibold">{{ editingSectionId ? 'ویرایش بخش پروژه' : 'افزودن بخش پروژه' }}</h3><p class="mt-1 text-sm text-muted-foreground">واحد مسئول، مالک اجرایی این بخش و دستورکارهای آن است.</p></div><Button type="button" variant="outline" size="sm" @click="showSectionEditor = false">بستن</Button></div>
                 <form class="space-y-4 p-5" @submit.prevent="submitSection">
                     <div class="space-y-1"><label for="section-name" class="text-sm font-medium">عنوان بخش</label><input id="section-name" v-model="sectionForm.name" required maxlength="150" class="w-full rounded-md border bg-background px-3 py-2 text-sm" /><p v-if="sectionForm.errors.name" class="text-xs text-destructive">{{ sectionForm.errors.name }}</p></div>
-                    <div class="space-y-1"><label for="section-department" class="text-sm font-medium">واحد مسئول</label><select id="section-department" v-model="sectionForm.department_id" required class="w-full rounded-md border bg-background px-3 py-2 text-sm"><option value="">انتخاب واحد</option><option v-for="department in sectionDepartmentOptions" :key="department.id" :value="department.id.toString()">{{ department.name }} — {{ department.manager?.name ?? 'بدون مدیر' }}</option></select><p v-if="sectionForm.errors.department_id" class="text-xs text-destructive">{{ sectionForm.errors.department_id }}</p></div>
+                    <div class="space-y-1"><label for="section-department" class="text-sm font-medium">واحد مسئول</label><DepartmentTreeSelect v-model="sectionForm.department_id" :departments="sectionDepartmentOptions" placeholder="انتخاب واحد مسئول" :clearable="false" /><p v-if="sectionForm.errors.department_id" class="text-xs text-destructive">{{ sectionForm.errors.department_id }}</p></div>
                     <div class="space-y-1"><label for="section-description" class="text-sm font-medium">توضیحات</label><textarea id="section-description" v-model="sectionForm.description" rows="3" class="w-full rounded-md border bg-background px-3 py-2 text-sm" /><p v-if="sectionForm.errors.description" class="text-xs text-destructive">{{ sectionForm.errors.description }}</p></div>
                     <label class="flex items-center gap-2 text-sm"><input v-model="sectionForm.manager_can_create_tasks" type="checkbox" class="rounded border-input" /> مدیر واحد بتواند در این بخش دستورکار ایجاد کند</label>
                     <div class="flex justify-end gap-2 border-t pt-4"><Button type="button" variant="outline" @click="showSectionEditor = false">انصراف</Button><Button type="submit" :disabled="sectionForm.processing">{{ sectionForm.processing ? 'در حال ذخیره...' : 'ذخیره بخش' }}</Button></div>

@@ -2,6 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
+import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
 import { computed, ref } from 'vue';
 
@@ -34,6 +35,7 @@ interface ProjectOption {
 interface DepartmentOption {
     id: number;
     name: string;
+    parent_id?: number | null;
 }
 interface ExternalOrganizationOption { id: number; name: string; }
 interface ExternalDepartmentOption { id: number; external_organization_id: number; name: string; }
@@ -342,11 +344,7 @@ const handleSectionChange = (): void => {
 
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">واحد مسئول</label>
-                        <select v-model="createForm.department_id" :disabled="createForm.section_id !== null"
-                            class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
-                            <option :value="null">بدون واحد</option>
-                            <option v-for="department in formOptions.departments" :key="department.id" :value="department.id">{{ department.name }}</option>
-                        </select>
+                        <DepartmentTreeSelect v-model="createForm.department_id" :departments="formOptions.departments" :disabled="createForm.section_id !== null" placeholder="بدون واحد" />
                     </div>
 
                     <div v-if="createForm.section_id === null">
@@ -546,10 +544,7 @@ const handleSectionChange = (): void => {
                     </div>
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">واحد</label>
-                        <select v-model="departmentFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
-                            <option value="">همه واحدها</option>
-                            <option v-for="department in filterOptions.departments" :key="department.id" :value="department.id">{{ department.name }}</option>
-                        </select>
+                        <DepartmentTreeSelect v-model="departmentFilter" :departments="filterOptions.departments" placeholder="همه واحدها" />
                     </div>
                 </div>
                 <div class="mt-4 border-t border-gray-100 pt-4">

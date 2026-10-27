@@ -3,12 +3,14 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, ref } from 'vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
+import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 import UserAvatar from '@/Components/UserAvatar.vue';
 import { Eye, EyeOff } from '@lucide/vue';
 
 interface Department {
     id: number;
     name: string;
+    parent_id?: number | null;
     code: string | null;
     is_active: boolean;
     pivot?: {
@@ -672,10 +674,7 @@ function currentUserId(): number | null {
                 </div>
                 <p v-if="membershipForm.errors.department_ids" class="mt-2 text-xs text-red-600">{{ membershipForm.errors.department_ids }}</p>
                 <label class="mt-4 mb-1.5 block text-xs font-semibold text-slate-500">واحد اصلی</label>
-                <select v-model="membershipForm.primary_department_id" class="w-full rounded-xl border-slate-200 text-sm focus:border-teal-500 focus:ring-teal-500">
-                    <option :value="null">بدون واحد اصلی</option>
-                    <option v-for="department in props.departments.filter(d => membershipForm.department_ids.includes(d.id))" :key="department.id" :value="department.id">{{ department.name }}</option>
-                </select>
+                <DepartmentTreeSelect v-model="membershipForm.primary_department_id" :departments="props.departments.filter(d => membershipForm.department_ids.includes(d.id))" placeholder="بدون واحد اصلی" />
                 <p v-if="membershipForm.errors.primary_department_id" class="mt-1 text-xs text-red-600">{{ membershipForm.errors.primary_department_id }}</p>
                 <div class="mt-6 flex justify-end gap-3 border-t border-slate-200 pt-4">
                     <button type="button" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700" @click="closeMembership">انصراف</button>

@@ -239,7 +239,7 @@ class ProjectController extends Controller
                 ->where('is_active', true)
                 ->whereHas('manager', fn ($query) => $query->where('status', 'active'))
                 ->orderBy('name')
-                ->get(['id', 'name', 'manager_id']),
+                ->get(['id', 'name', 'manager_id', 'parent_id']),
             'canUpdate' => Gate::allows('update', $project),
             'canDeleteProject' => Gate::allows('delete', $project),
             'canManageMembers' => $canManageMembers,

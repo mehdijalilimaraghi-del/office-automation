@@ -10,7 +10,7 @@ interface Department { id: number; name: string; parent_id: number | null; }
 interface ExternalOrganization { id: number; name: string; }
 interface ExternalDepartment { id: number; external_organization_id: number; name: string; }
 interface ReplyOption { id: number; letter_number: string | null; registration_number: string | null; external_registration_number: string | null; subject: string; type: string; letter_date: string | null; created_department: string | null; recipient_department: string | null; external_organization: string | null; external_organization_code: string | null; external_department: string | null; external_department_code: string | null; created_department_code: string | null; recipient_department_code: string | null; }
-interface CreatedDepartment { id: number; name: string; }
+interface CreatedDepartment { id: number; name: string; parent_id?: number | null; }
 type CompositionMode = 'editor' | 'file' | 'both';
 type TextDirection = 'rtl' | 'ltr';
 
@@ -411,10 +411,7 @@ async function scanOriginalLetter(): Promise<void> {
                         </div>
                         <div v-if="form.type !== 'incoming'">
                             <div class="mb-1.5 flex items-center gap-1.5"><label for="created_department_id" class="text-sm font-semibold text-slate-700">واحد ایجادکننده <span v-if="createdDepartments.length > 1" class="text-rose-600">*</span></label><details class="group relative"><summary aria-label="راهنمای واحد ایجادکننده" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-300">؟</summary><div class="absolute right-0 top-7 z-20 w-64 rounded-lg border border-slate-200 bg-white p-3 text-xs font-normal leading-6 text-slate-700 shadow-lg">واحدی را انتخاب کنید که نامه از طرف آن ایجاد و شماره‌گذاری می‌شود.</div></details></div>
-                            <select v-if="createdDepartments.length > 1" id="created_department_id" v-model="form.created_department_id" :required="createdDepartments.length > 1" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                <option value="">انتخاب واحدی که از طرف آن نامه ایجاد می‌شود</option>
-                                <option v-for="item in createdDepartments" :key="item.id" :value="item.id">{{ item.name }}</option>
-                            </select>
+                            <DepartmentTreeSelect v-if="createdDepartments.length > 1" v-model="form.created_department_id" :departments="createdDepartments" placeholder="انتخاب واحدی که از طرف آن نامه ایجاد می‌شود" :clearable="false" />
                             <div v-else class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">{{ createdDepartment?.name ?? 'برای کاربر واحد فعالی تعیین نشده است' }}</div>
                             <InputError class="mt-1" :message="form.errors.created_department_id" />
                         </div>

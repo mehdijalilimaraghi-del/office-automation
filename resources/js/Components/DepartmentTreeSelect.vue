@@ -1,0 +1,41 @@
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue';
+import { ChevronDown, ChevronLeft, Search, X } from 'lucide-vue-next';
+import DepartmentIcon from '@/Components/DepartmentIcon.vue';
+interface DepartmentOption { id:number; name:string; parent_id?:number|null; tree_label?:string|null; manager?:{name:string}|null; manager_name?:string|null; }
+const props=withDefaults(defineProps<{departments:DepartmentOption[];modelValue?:number|string|null;modelValues?:Array<number|string>;multiple?:boolean;placeholder?:string;disabled?:boolean;clearable?:boolean}>(),{modelValue:null,modelValues:()=>[],multiple:false,placeholder:'انتخاب واحد',disabled:false,clearable:true});
+const emit=defineEmits<{ 'update:modelValue':[value:number|string|null]; 'update:modelValues':[value:Array<number|string>] }>();
+const isOpen=ref(false), query=ref(''), expandedIds=ref<Set<number>>(new Set());
+const departments=computed(()=>{const list=[...props.departments],ids=new Set(list.map(x=>x.id));return list.map(x=>({...x,parent_id:x.parent_id!=null&&ids.has(Number(x.parent_id))?Number(x.parent_id):null}));});
+const children=computed(()=>{const map=new Map<number|null,DepartmentOption[]>();for(const d of departments.value){const p=d.parent_id??null;map.set(p,[...(map.get(p)??[]),d]);}for(const [p,items] of map)map.set(p,items.sort((a,b)=>a.name.localeCompare(b.name,'fa')));return map;});
+const parentIds=computed(()=>departments.value.filter(d=>(children.value.get(d.id)?.length??0)>0).map(d=>d.id));
+watch(()=>props.departments,()=>{expandedIds.value=new Set(departments.value.filter(d=>d.parent_id===null).map(d=>d.id));},{immediate:true});
+const matches=computed(()=>{const term=query.value.trim().toLocaleLowerCase('fa');if(!term)return null;const byId=new Map(departments.value.map(d=>[d.id,d]));const ids=new Set<number>();for(const d of departments.value){if(!d.name.toLocaleLowerCase('fa').includes(term))continue;let current:DepartmentOption|undefined=d;while(current&&!ids.has(current.id)){ids.add(current.id);current=current.parent_id==null?undefined:byId.get(current.parent_id);}}return ids;});
+const nodes=computed(()=>{const rows:Array<{department:DepartmentOption;depth:number;hasChildren:boolean}>=[];const visit=(parentId:number|null,depth:number,ancestors:Set<number>)=>{const list=(children.value.get(parentId)??[]).filter(d=>!matches.value||matches.value.has(d.id));for(const d of list){if(ancestors.has(d.id))continue;const has=(children.value.get(d.id)?.length??0)>0;rows.push({department:d,depth,hasChildren:has});if(has&&(matches.value||expandedIds.value.has(d.id))){const next=new Set(ancestors);next.add(d.id);visit(d.id,depth+1,next);}}};visit(null,0,new Set());if(!rows.length&&departments.value.length)return departments.value.filter(d=>!matches.value||matches.value.has(d.id)).sort((a,b)=>a.name.localeCompare(b.name,'fa')).map(department=>({department,depth:0,hasChildren:false}));return rows;});
+const selected=computed(()=>{const ids=props.multiple?props.modelValues.map(Number):(props.modelValue==null||props.modelValue===''?[]:[Number(props.modelValue)]);return departments.value.filter(d=>ids.includes(d.id));});
+const selectedLabel=computed(()=>selected.value[0]?.name??'');
+function toggle(id:number){const next=new Set(expandedIds.value);next.has(id)?next.delete(id):next.add(id);expandedIds.value=next;}
+function choose(d:DepartmentOption){if(props.multiple){const ids=props.modelValues.map(Number);emit('update:modelValues',ids.includes(d.id)?props.modelValues.filter(id=>Number(id)!==d.id):[...props.modelValues,d.id]);return;}emit('update:modelValue',typeof props.modelValue==='string'?String(d.id):d.id);isOpen.value=false;query.value='';}
+function clear(){if(props.multiple)emit('update:modelValues',[]);else emit('update:modelValue',null);}
+</script>
+<template>
+<div class="relative w-full" dir="rtl">
+<button type="button" :disabled="disabled" class="flex min-h-11 w-full items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-right text-sm shadow-sm transition hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:bg-slate-100" :aria-expanded="isOpen" @click="isOpen=!isOpen">
+<DepartmentIcon class="shrink-0 text-slate-500" :size="18"/>
+<span v-if="multiple&&selected.length" class="flex min-w-0 flex-1 flex-wrap gap-1"><span v-for="d in selected" :key="d.id" class="inline-flex items-center rounded-md bg-indigo-50 px-2 py-1 text-xs text-indigo-800"><span class="max-w-48 truncate">{{d.name}}</span></span></span>
+<span v-else class="min-w-0 flex-1 truncate" :class="selectedLabel?'text-slate-800':'text-slate-400'">{{selectedLabel||placeholder}}</span>
+<button v-if="clearable&&(multiple?modelValues.length>0:modelValue!==null&&modelValue!==undefined&&modelValue!=='')" type="button" class="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="پاک کردن انتخاب واحد" @click.stop="clear"><X :size="15"/></button>
+<ChevronDown :size="16" class="shrink-0 text-slate-500 transition-transform" :class="isOpen?'rotate-180':''"/>
+</button>
+<div v-if="isOpen" class="absolute inset-x-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5">
+<div class="border-b border-slate-100 p-2.5"><div class="relative"><Search :size="16" class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"/><input v-model="query" type="search" class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pr-9 pl-3 text-sm outline-none focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/10" placeholder="جستجوی واحد..." @keydown.esc="isOpen=false"/></div>
+<div class="mt-2 flex items-center justify-between px-1 text-xs text-slate-500"><span>{{nodes.length}} واحد در نمایش</span><span class="flex items-center gap-3"><button type="button" class="hover:text-indigo-700" @click="expandedIds=new Set(parentIds)">بازکردن همه</button><button type="button" class="hover:text-indigo-700" @click="expandedIds=new Set()">بستن همه</button></span></div></div>
+<div class="max-h-72 overflow-y-auto p-1.5">
+<div v-if="!nodes.length" class="px-3 py-8 text-center text-sm text-slate-500">واحدی با این عبارت پیدا نشد.</div>
+<div v-for="node in nodes" :key="node.department.id" class="group flex min-h-9 items-center gap-1 rounded-lg px-1.5 text-sm transition hover:bg-indigo-50" :class="selected.some(d=>d.id===node.department.id)?'bg-indigo-50 font-semibold text-indigo-900':'text-slate-700'" :style="{paddingRight:(6+node.depth*20)+'px'}" role="treeitem" :aria-level="node.depth+1" :aria-selected="selected.some(d=>d.id===node.department.id)">
+<button type="button" class="flex h-7 w-6 shrink-0 items-center justify-center rounded text-slate-400 hover:bg-slate-200 hover:text-slate-700" :class="node.hasChildren?'':'invisible'" :aria-label="expandedIds.has(node.department.id)?'بستن زیرواحدها':'بازکردن زیرواحدها'" @click="toggle(node.department.id)"><ChevronDown v-if="matches||expandedIds.has(node.department.id)" :size="14"/><ChevronLeft v-else :size="14"/></button>
+<button type="button" class="flex min-w-0 flex-1 items-center gap-2 py-1 text-right" @click="choose(node.department)"><DepartmentIcon :size="17" class="shrink-0 text-amber-600"/><span class="min-w-0 flex-1 truncate">{{node.department.name}}</span><span v-if="node.department.manager_name||node.department.manager?.name" class="max-w-28 truncate text-[11px] font-normal text-slate-400">{{node.department.manager_name||node.department.manager?.name}}</span><span v-if="selected.some(d=>d.id===node.department.id)" class="shrink-0 text-xs text-indigo-700">✓</span></button>
+</div></div>
+<div v-if="multiple" class="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-3 py-2"><span class="text-xs text-slate-500">{{modelValues.length}} واحد انتخاب شده</span><button type="button" class="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700" @click="isOpen=false">تأیید انتخاب‌ها</button></div>
+</div></div>
+</template>
