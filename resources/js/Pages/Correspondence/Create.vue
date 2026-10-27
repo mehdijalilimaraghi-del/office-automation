@@ -8,7 +8,7 @@ import axios from 'axios';
 
 interface Department { id: number; name: string; parent_id: number | null; }
 interface ExternalOrganization { id: number; name: string; }
-interface ExternalDepartment { id: number; external_organization_id: number; name: string; }
+interface ExternalDepartment { id: number; external_organization_id: number; parent_id?: number | null; name: string; }
 interface ReplyOption { id: number; letter_number: string | null; registration_number: string | null; external_registration_number: string | null; subject: string; type: string; letter_date: string | null; created_department: string | null; recipient_department: string | null; external_organization: string | null; external_organization_code: string | null; external_department: string | null; external_department_code: string | null; created_department_code: string | null; recipient_department_code: string | null; }
 interface CreatedDepartment { id: number; name: string; parent_id?: number | null; }
 type CompositionMode = 'editor' | 'file' | 'both';
@@ -417,10 +417,7 @@ async function scanOriginalLetter(): Promise<void> {
                         </div>
                         <div v-if="form.type === 'incoming' || form.type === 'internal'">
                             <label for="recipient_department_id" class="mb-1.5 block text-sm font-semibold text-slate-700">واحد دریافت‌کننده</label>
-                            <select id="recipient_department_id" v-model="form.recipient_department_id" required class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                <option value="">انتخاب واحد دریافت‌کننده</option>
-                                <option v-for="item in departments" :key="item.id" :value="item.id">{{ item.name }}</option>
-                            </select>
+                            <DepartmentTreeSelect v-model="form.recipient_department_id" :departments="departments" placeholder="انتخاب واحد دریافت‌کننده" :clearable="false" />
                             <InputError class="mt-1" :message="form.errors.recipient_department_id" />
                         </div>
                         <div v-if="form.type === 'outgoing'">
@@ -469,10 +466,7 @@ async function scanOriginalLetter(): Promise<void> {
                         </div>
                         <div class="sm:col-span-2 flex min-h-0 flex-col rounded-xl border border-slate-200 p-4">
                             <div class="mb-1.5 flex items-center gap-1.5"><label for="copy_department_select" class="text-sm font-semibold text-slate-700">رونوشت به</label><details class="group relative"><summary aria-label="راهنمای رونوشت به" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 bg-white text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">؟</summary><span class="absolute right-0 top-7 z-30 w-64 rounded-lg bg-slate-900 p-3 text-xs font-normal leading-6 text-white shadow-lg">واحدهای انتخاب‌شده یک نسخه برای اطلاع دریافت می‌کنند و از طریق رونوشت امکان اقدام یا ارجاع ندارند.</span></details></div>
-                            <select id="copy_department_select" v-model="selectedCopyDepartmentId" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @change="addCopyDepartment(selectedCopyDepartmentId)">
-                                <option value="">انتخاب واحد برای رونوشت</option>
-                                <option v-for="item in departmentTreeOptions" :key="item.id" :value="item.id" :disabled="form.copy_department_ids.includes(item.id)">{{ item.label }}</option>
-                            </select>
+                            <DepartmentTreeSelect :model-value="selectedCopyDepartmentId" :departments="departments.filter(item => !form.copy_department_ids.includes(item.id))" placeholder="انتخاب واحد برای رونوشت" @update:model-value="addCopyDepartment" />
                             <ul v-if="form.copy_department_ids.length" class="mt-3 max-h-52 divide-y divide-slate-100 overflow-y-auto rounded-xl border border-slate-200">
                                 <li v-for="id in form.copy_department_ids" :key="id" class="flex items-center justify-between gap-3 px-3 py-2"><span class="text-sm text-slate-800">{{ departmentTreeOptions.find((item) => item.id === id)?.label ?? departments.find((item) => item.id === id)?.name }}</span><button type="button" class="text-xs font-semibold text-rose-700 hover:underline" @click="removeCopyDepartment(id)">حذف</button></li>
                             </ul>
@@ -495,10 +489,7 @@ async function scanOriginalLetter(): Promise<void> {
                                 </div>
                                 <div>
                                     <label for="external_department_id" class="mb-1.5 block text-sm font-semibold text-slate-700">{{ form.type === 'incoming' ? 'واحد فرستنده' : 'واحد مخاطب بیرونی' }}</label>
-                                    <select id="external_department_id" v-model="form.external_department_id" :disabled="!form.external_organization_id" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-slate-100">
-                                        <option value="">انتخاب واحد بیرونی (اختیاری)</option>
-                                        <option v-for="item in externalDepartmentsForOrganization" :key="item.id" :value="item.id">{{ item.name }}</option>
-                                    </select>
+                                    <DepartmentTreeSelect id="external_department_id" v-model="form.external_department_id" :departments="externalDepartmentsForOrganization" :disabled="!form.external_organization_id" placeholder="انتخاب واحد بیرونی (اختیاری)" />
                                     <InputError class="mt-1" :message="form.errors.external_department_id" />
                                 </div>
                                 <div v-if="form.type === 'incoming'">

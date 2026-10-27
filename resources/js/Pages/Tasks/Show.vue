@@ -3,13 +3,14 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
 import JalaliDateTimePicker from '@/Components/JalaliDateTimePicker.vue';
+import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 import { formatPersianDate, formatPersianDateTime } from '@/Utils/date';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
 interface User { id: number; name: string; email?: string | null; mobile?: string | null; phone?: string | null; extension?: string | null; }
 interface ExternalOrganizationOption { id: number; name: string; }
-interface ExternalDepartmentOption { id: number; external_organization_id: number; name: string; }
+interface ExternalDepartmentOption { id: number; external_organization_id: number; parent_id?: number | null; name: string; }
 interface ExternalContactOption { id: number; external_organization_id: number; external_department_id: number | null; name: string; position: string | null; mobile: string | null; phone: string | null; extension: string | null; email: string | null; organization?: { id: number; name: string } | null; department?: { id: number; name: string } | null; pivot?: { external_organization_id: number | null; external_department_id: number | null }; }
 interface ExternalPartyOptions { external_organizations: ExternalOrganizationOption[]; external_departments: ExternalDepartmentOption[]; external_contacts: ExternalContactOption[]; }
 
@@ -892,7 +893,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                     <div class="flex items-center justify-between"><div><h3 class="font-semibold text-gray-900">{{ editingExternalContactId ? 'ویرایش ارتباط و پیگیری بیرونی' : 'افزودن ارتباط و پیگیری بیرونی' }}</h3><p class="mt-1 text-sm text-muted-foreground">{{ editingExternalContactId ? 'اطلاعات این ارتباط را ویرایش کنید.' : 'یک یا چند شخص را به‌عنوان ارتباط و پیگیری بیرونی اضافه کنید.' }}</p></div><button type="button" class="text-gray-500 hover:text-gray-900" @click="showExternalModal = false; editingExternalContactId = null">×</button></div>
                     <form class="mt-5 space-y-4" @submit.prevent="submitExternal">
                         <select v-model="externalForm.external_organization_id" @change="handleExternalOrganizationChange" class="h-10 w-full rounded-lg border px-3 text-sm"><option :value="null">بدون سازمان خارجی</option><option v-for="item in externalPartyOptions.external_organizations" :key="item.id" :value="item.id">{{ item.name }}</option></select>
-                        <select v-model="externalForm.external_department_id" :disabled="externalForm.external_organization_id === null" @change="handleExternalDepartmentChange" class="h-10 w-full rounded-lg border px-3 text-sm"><option :value="null">بدون واحد خارجی</option><option v-for="item in externalDepartments" :key="item.id" :value="item.id">{{ item.name }}</option></select>
+                        <DepartmentTreeSelect v-model="externalForm.external_department_id" :departments="externalDepartments" :disabled="externalForm.external_organization_id === null" placeholder="بدون واحد خارجی" @update:model-value="handleExternalDepartmentChange" />
                         <div>
                             <div class="mb-2 flex items-center justify-between">
                                 <label class="text-sm font-medium text-gray-700">اشخاص خارجی</label>

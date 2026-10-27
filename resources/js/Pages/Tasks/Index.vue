@@ -38,7 +38,7 @@ interface DepartmentOption {
     parent_id?: number | null;
 }
 interface ExternalOrganizationOption { id: number; name: string; }
-interface ExternalDepartmentOption { id: number; external_organization_id: number; name: string; }
+interface ExternalDepartmentOption { id: number; external_organization_id: number; parent_id?: number | null; name: string; }
 interface ExternalContactOption { id: number; external_organization_id: number; external_department_id: number | null; name: string; position: string | null; mobile: string | null; phone: string | null; extension: string | null; }
 
 interface FormOptions {
@@ -401,7 +401,7 @@ const handleSectionChange = (): void => {
                         </div>
                         <div class="grid gap-4 md:grid-cols-3">
                             <select v-model="createForm.external_organization_id" @change="handleExternalOrganizationChange" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm"><option :value="null">بدون پیگیری خارجی</option><option v-for="item in formOptions.external_organizations" :key="item.id" :value="item.id">{{ item.name }}</option></select>
-                            <select v-model="createForm.external_department_id" :disabled="createForm.external_organization_id === null" @change="handleExternalDepartmentChange" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm"><option :value="null">بدون واحد خارجی</option><option v-for="item in externalDepartments" :key="item.id" :value="item.id">{{ item.name }}</option></select>
+                            <DepartmentTreeSelect v-model="createForm.external_department_id" :departments="externalDepartments" :disabled="createForm.external_organization_id === null" placeholder="بدون واحد خارجی" @update:model-value="handleExternalDepartmentChange" />
                             <select v-model="createForm.external_contact_id" :disabled="createForm.external_organization_id === null" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm"><option :value="null">بدون شخص مشخص</option><option v-for="item in externalContacts" :key="item.id" :value="item.id">{{ item.name }}{{ item.position ? ' — ' + item.position : '' }}</option></select>
                         </div>
                     </div>

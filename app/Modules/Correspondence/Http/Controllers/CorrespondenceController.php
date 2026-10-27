@@ -326,7 +326,7 @@ class CorrespondenceController extends Controller
             'createdDepartment' => $createdDepartment,
             'createdDepartments' => $createdDepartments,
             'externalOrganizations' => ExternalOrganization::query()->where('status', 'active')->orderBy('name')->get(['id', 'name']),
-            'externalDepartments' => ExternalDepartment::query()->where('status', 'active')->orderBy('name')->get(['id', 'external_organization_id', 'name']),
+            'externalDepartments' => ExternalDepartment::query()->where('status', 'active')->orderBy('name')->get(['id', 'external_organization_id', 'parent_id', 'name']),
             'types' => $types,
             'classifications' => [
                 ['value' => Correspondence::CLASSIFICATION_ORDINARY, 'label' => 'عادی'],
