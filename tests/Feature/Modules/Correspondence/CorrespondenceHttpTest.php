@@ -46,6 +46,59 @@ class CorrespondenceHttpTest extends TestCase
                 ->where('correspondences.data.0.subject', 'نامه آزمایشی'));
     }
 
+    public function test_correspondence_index_supports_mine_department_and_all_scopes(): void
+    {
+        $user = $this->userWithPermission('correspondence.view');
+        $otherUser = $this->userWithPermission('correspondence.view');
+        $department = Department::query()->create([
+            'name' => 'واحد فیلتر مکاتبات '.Str::upper(Str::random(5)),
+            'code' => 'FLT-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+        ]);
+        $user->departments()->attach($department->id, ['is_primary' => true, 'joined_at' => now()]);
+
+        Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => 'مکاتبه شخصی',
+            'status' => Correspondence::STATUS_DRAFT,
+            'created_by' => $user->id,
+        ]);
+        Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => 'مکاتبه واحد',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'registration_number' => '1405/009990',
+            'created_by' => $otherUser->id,
+            'created_department_id' => $department->id,
+        ]);
+        Correspondence::query()->create([
+            'type' => Correspondence::TYPE_OUTGOING,
+            'classification' => Correspondence::CLASSIFICATION_ORDINARY,
+            'subject' => 'مکاتبه عمومی ثبت‌شده',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'registration_number' => '1405/009991',
+            'created_by' => $otherUser->id,
+        ]);
+
+        $this->actingAs($user)->get(route('correspondence.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('filters.scope', 'mine')
+                ->where('correspondences.total', 1));
+
+        $this->actingAs($user)->get(route('correspondence.index', ['scope' => 'department']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('filters.scope', 'department')
+                ->where('correspondences.total', 2));
+
+        $this->actingAs($user)->get(route('correspondence.index', ['scope' => 'all']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('filters.scope', 'all')
+                ->where('correspondences.total', 3));
+    }
+
     public function test_user_with_view_permission_can_open_correspondence_details(): void
     {
         $user = $this->userWithPermission('correspondence.view');
@@ -79,7 +132,7 @@ class CorrespondenceHttpTest extends TestCase
             'created_by' => $creator->id,
         ]);
 
-        $this->actingAs($viewer)->get(route('correspondence.index'))
+        $this->actingAs($viewer)->get(route('correspondence.index', ['scope' => 'all']))
             ->assertOk()
             ->assertInertia(fn ($page) => $page->where('correspondences.total', 1));
         $this->actingAs($viewer)->get(route('correspondence.show', $letter))->assertOk();
