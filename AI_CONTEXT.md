@@ -286,3 +286,10 @@ Before making the first code change in a new conversation:
 - Correspondence list/detail surfaces display letter number and registration number separately. The list formats registered_at as a Jalali date and Tehran local time and labels it «ثبت نهایی»; search includes both numbers.
 - Added/adjusted regression coverage for two-part templates, distinct registration numbers, draft letter-number assignment, and department code persistence.
 - Validation pending: pull development, run focused correspondence numbering/service and department tests, then full php artisan test and npm run build. No tests or build have been run by the assistant. master unchanged.
+
+2026-10-27 — Correspondence copy recipient UX and ongoing workflow
+
+- The creation form now places optional copy recipients at the bottom and uses a checkbox multi-select list; users can select multiple departments.
+- Correspondence create date inputs now use the shared JalaliDatePicker component for consistent Persian font styling.
+- Added POST `correspondence.copies.store`: an active user must be able to view the letter and be the manager of its current responsible department; the workflow must not be completed. One or more active departments may be added as copies. Existing `CorrespondenceWorkflowService::addCopies()` handles idempotent attachment and action/audit recording.
+- Added focused HTTP coverage for manager authorization and multiple recipients. Local validation is pending: `php artisan test --filter=CorrespondenceHttpTest`, then `npm run build`. No database migration is required; `master` remains unchanged.
