@@ -60,7 +60,7 @@ class UpdateDepartmentAction
                 'parent_id' => $parentId,
                 'manager_id' => $managerId,
                 'name' => $data['name'],
-                'code' => strtoupper(trim($data['code'])),
+                'code' => array_key_exists('code', $data) ? (filled($data['code']) ? strtoupper(trim((string) $data['code'])) : null) : $department->code,
                 'icon' => $data['icon'] ?? 'building-2',
                 'description' => $data['description'] ?? null,
                 'is_active' => $data['is_active'] ?? true,
