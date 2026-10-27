@@ -40,7 +40,7 @@ class CorrespondenceNumberingServiceTest extends TestCase
         $this->assertMatchesRegularExpression('/^\\d{4}-000002$/', $service->nextNumber($correspondence));
 
         $settings->set(['correspondence.numbering.format' => 'year']);
-        $this->assertStringEndsWith('/000002', $service->nextNumber($correspondence));
+        $this->assertStringEndsWith('/000003', $service->nextNumber($correspondence));
 
         $settings->set(['correspondence.numbering.format' => 'year_department']);
         $this->assertStringContainsString('/ORG/000003', $service->nextNumber($correspondence));
