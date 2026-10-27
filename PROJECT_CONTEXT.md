@@ -1017,3 +1017,10 @@ The active `SYSTEM_ADMIN` account is a special system capability and receives ev
 - The correspondence creation date fields use the shared JalaliDatePicker component to align date input typography with the rest of the Persian RTL UI.
 - A department manager can add additional copy recipients while the correspondence is in their department's active workflow, provided the workflow has not completed. Backend authorization is authoritative; the existing workflow service records each newly attached copy in correspondence action history and Core Audit, while duplicate recipients are ignored.
 - Added HTTP regression tests for multiple-copy success and non-manager denial. Validation is pending in the user's local environment; no migration is required for this UI/controller change. Development only, master unchanged.
+
+## 2026-10-27 — Related correspondence search and date validation
+
+- The optional correspondence relation field now uses the broader label «در ارتباط با مکاتبات قبلی» and supports server-side search instead of loading a fixed list of the latest 100 letters.
+- Search covers letter number, registration number, subject, external tracking registration number, internal department names/codes, and external organization/department names/codes. Result rows show subject, letter number, registration number, letter date, and related party names/codes; results are visibility-filtered and capped at 20.
+- Incoming receipt date and outgoing sent date are required in both UI and backend validation.
+- HTTP regression tests were added. Local validation pending; no migration required. Changes are on development only; master unchanged.
