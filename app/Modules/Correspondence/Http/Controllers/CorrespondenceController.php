@@ -93,6 +93,7 @@ class CorrespondenceController extends Controller
         $correspondences = $query->paginate(15)->withQueryString();
         $correspondences->getCollection()->transform(function (Correspondence $correspondence) use ($access, $request): Correspondence {
             $correspondence->setAttribute('can_register', $access->canRegister($correspondence, $request->user()));
+            $correspondence->setAttribute('can_manage_before_action', $access->canManageBeforeAction($correspondence, $request->user()));
 
             return $correspondence;
         });
@@ -365,6 +366,7 @@ class CorrespondenceController extends Controller
             'created_department_id' => $createdDepartmentRules,
             'classification' => ['sometimes', 'required', Rule::in([Correspondence::CLASSIFICATION_ORDINARY, Correspondence::CLASSIFICATION_CONFIDENTIAL])],
             'subject' => ['required', 'string', 'max:255'],
+            'letter_number' => ['nullable', 'required_if:type,'.Correspondence::TYPE_INCOMING, 'string', 'max:100'],
             'composition_mode' => [Rule::requiredIf($request->input('type') !== Correspondence::TYPE_INCOMING), 'nullable', Rule::in(['editor', 'file', 'both'])],
             'body' => ['nullable', 'string', 'max:100000'],
             'sender_name' => ['nullable', 'string', 'max:255'],
@@ -447,6 +449,7 @@ class CorrespondenceController extends Controller
                     'type' => $data['type'],
                     'classification' => $data['classification'] ?? Correspondence::CLASSIFICATION_ORDINARY,
                     'subject' => $data['subject'],
+                    'letter_number' => $data['letter_number'] ?? null,
                     'body' => $mode === 'file' ? null : $body,
                     'sender_name' => $data['sender_name'] ?? null,
                     'recipient_name' => $data['recipient_name'] ?? null,
@@ -514,6 +517,32 @@ class CorrespondenceController extends Controller
             ->with('success', 'پیش‌نویس مکاتبه و پیوست‌های آن با موفقیت ذخیره شد.');
     }
 
+
+    public function edit(Request $request, Correspondence $correspondence, CorrespondenceAccessService $access): Response
+    {
+        abort_unless($access->canManageBeforeAction($correspondence, $request->user()), 403);
+        return Inertia::render('Correspondence/Edit', [
+            'correspondence' => $correspondence->only(['id','type','classification','subject','letter_number','sender_name','recipient_name','received_at','sent_at','recipient_department_id','external_organization_id','external_department_id']),
+            'departments' => Department::query()->where('is_active',true)->orderBy('name')->get(['id','name','parent_id','icon']),
+            'externalOrganizations' => ExternalOrganization::query()->where('status','active')->orderBy('name')->get(['id','name']),
+            'externalDepartments' => ExternalDepartment::query()->where('status','active')->orderBy('name')->get(['id','external_organization_id','parent_id','name']),
+        ]);
+    }
+
+    public function update(Request $request, Correspondence $correspondence, CorrespondenceAccessService $access): RedirectResponse
+    {
+        abort_unless($access->canManageBeforeAction($correspondence,$request->user()),403);
+        $data=$request->validate(['subject'=>['required','string','max:255'],'classification'=>['required',Rule::in([Correspondence::CLASSIFICATION_ORDINARY,Correspondence::CLASSIFICATION_CONFIDENTIAL])],'letter_number'=>['nullable','required_if:type,'.Correspondence::TYPE_INCOMING,'string','max:100'],'sender_name'=>['nullable','string','max:255'],'recipient_name'=>['nullable','string','max:255'],'received_at'=>['nullable','required_if:type,'.Correspondence::TYPE_INCOMING,'date'],'sent_at'=>['nullable','required_if:type,'.Correspondence::TYPE_OUTGOING,'date'],'recipient_department_id'=>['nullable','required_if:type,incoming,internal','integer','exists:departments,id'],'external_organization_id'=>['nullable','integer',Rule::exists('external_organizations','id')->where('status','active')],'external_department_id'=>['nullable','integer',Rule::exists('external_departments','id')->where(fn($q)=>$q->where('status','active')->where('external_organization_id',$request->input('external_organization_id')))]);
+        DB::transaction(function()use($correspondence,$data,$access,$request):void{$locked=Correspondence::query()->whereKey($correspondence->id)->lockForUpdate()->firstOrFail();abort_unless($access->canManageBeforeAction($locked,$request->user()),403);if($locked->type!==Correspondence::TYPE_INCOMING)unset($data['letter_number']);$locked->fill($data)->save();app(AuditServiceInterface::class)->record('correspondence.updated_before_action',$locked,null,null,['changed_fields'=>array_keys($locked->getChanges())]);});
+        return redirect()->route('correspondence.index')->with('success','اطلاعات مکاتبه ویرایش شد.');
+    }
+
+    public function destroy(Request $request, Correspondence $correspondence, CorrespondenceAccessService $access): RedirectResponse
+    {
+        abort_unless($access->canManageBeforeAction($correspondence,$request->user()),403);
+        DB::transaction(function()use($correspondence,$access,$request):void{$locked=Correspondence::query()->whereKey($correspondence->id)->lockForUpdate()->firstOrFail();abort_unless($access->canManageBeforeAction($locked,$request->user()),403);$locked->documents()->delete();$id=(int)$locked->id;$subject=$locked->subject;$locked->relatedLetters()->detach();$locked->relatedFromLetters()->detach();$locked->copies()->detach();$locked->authorizedUsers()->detach();$locked->delete();app(AuditServiceInterface::class)->record('correspondence.deleted_before_action',null,null,null,['correspondence_id'=>$id,'subject'=>$subject]);});
+        return redirect()->route('correspondence.index')->with('success','مکاتبه حذف شد.');
+    }
 
     public function updateExternalTracking(
         Request $request,
