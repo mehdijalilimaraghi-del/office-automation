@@ -1039,3 +1039,10 @@ The active `SYSTEM_ADMIN` account is a special system capability and receives ev
 - Search covers letter number, registration number, subject, external tracking registration number, internal department names/codes, and external organization/department names/codes. Result rows show subject, letter number, registration number, letter date, and related party names/codes; results are visibility-filtered and capped at 20.
 - Incoming receipt date and outgoing sent date are required in both UI and backend validation.
 - HTTP regression tests were added. Local validation pending; no migration required. Changes are on development only; master unchanged.
+
+## 2026-10-27 — Related correspondence selector UI alignment (validation pending)
+
+- Related correspondence and copy-recipient controls both span two columns at the `sm` breakpoint, aligning their widths.
+- Minimum search length is communicated inside the related-search input placeholder rather than a separate helper panel. Results appear only after two characters are entered.
+- Selected related letters are shown in one removable list, visually aligned with the copy-recipient selection list; redundant nested bordered containers were removed. Backend behavior is unchanged.
+- Local validation pending; run `php artisan test --filter=CorrespondenceHttpTest` and `npm run build` after pulling `development`. `master` unchanged.
