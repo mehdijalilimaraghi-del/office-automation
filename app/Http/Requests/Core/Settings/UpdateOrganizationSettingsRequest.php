@@ -28,8 +28,9 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'address' => ['nullable', 'string', 'max:1000'],
             'numbering_format' => ['required', 'string', Rule::in(['simple', 'year', 'year_department', 'custom'])],
             'numbering_order_first' => ['required', 'string', Rule::in(['year', 'department', 'sequence'])],
+            'numbering_custom_fields_count' => ['nullable', 'integer', Rule::in([2, 3])],
             'numbering_order_second' => ['required', 'string', Rule::in(['year', 'department', 'sequence'])],
-            'numbering_order_third' => ['required', 'string', Rule::in(['year', 'department', 'sequence'])],
+            'numbering_order_third' => ['nullable', 'required_if:numbering_custom_fields_count,3', 'string', Rule::in(['year', 'department', 'sequence'])],
             'numbering_separator' => ['required', 'string', 'max:5'],
             'numbering_padding' => ['required', 'integer', 'min:4', 'max:12'],
             'composition_method' => ['required', 'string', Rule::in(['editor', 'word', 'both'])],
@@ -46,9 +47,10 @@ class UpdateOrganizationSettingsRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
-            $order = [$this->input('numbering_order_first'), $this->input('numbering_order_second'), $this->input('numbering_order_third')];
-            if (count(array_unique($order)) !== 3) {
-                $validator->errors()->add('numbering_order_third', 'هر جزء شماره نامه باید فقط یک‌بار در ترتیب سفارشی انتخاب شود.');
+            $fieldCount = (int) ($this->input('numbering_custom_fields_count') ?: 3);
+            $order = array_slice([$this->input('numbering_order_first'), $this->input('numbering_order_second'), $this->input('numbering_order_third')], 0, $fieldCount);
+            if ($this->input('numbering_format') === 'custom' && (count(array_unique($order)) !== $fieldCount || in_array(null, $order, true) || in_array('', $order, true))) {
+                $validator->errors()->add('numbering_order_second', 'هر جزء شماره نامه باید فقط یک‌بار در ترتیب سفارشی انتخاب شود.');
             }
             $managementId = $this->input('management_department_id');
             $projectManagementId = $this->input('project_management_department_id');
@@ -92,6 +94,7 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'address' => 'نشانی',
             'numbering_format' => 'قالب شماره نامه',
             'numbering_order_first' => 'جزء اول شماره نامه',
+            'numbering_custom_fields_count' => 'تعداد اجزای قالب سفارشی',
             'numbering_order_second' => 'جزء دوم شماره نامه',
             'numbering_order_third' => 'جزء سوم شماره نامه',
             'numbering_separator' => 'جداکننده شماره نامه',
