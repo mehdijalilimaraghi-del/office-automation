@@ -1,3 +1,11 @@
+## 2026-10-27 — Correspondence create-form UX and multi-link support (validation pending)
+
+- The correspondence create form now gives Subject the full row; related correspondence and copy recipients sit side by side beneath it.
+- Removed the redundant related-letter search helper sentence and renamed the field to «ارتباط با مکاتبات قبلی». The picker supports selecting multiple registered, visible letters and removing any selection.
+- Added the `correspondence_related_letters` pivot table with backfill from legacy `reply_to_id`; the legacy field continues to point to the first related letter for compatibility. Server-side visibility checks protect confidential related letters.
+- Replaced the copy-recipient checkbox grid with a single-select combo box that displays departments in hierarchy order and a removable selected-unit list. Label is now «رونوشت به».
+- Migration and frontend/backend changes are on `development`; validation is pending. Run the migration, targeted correspondence tests, full `php artisan test`, and `npm run build`. Do not claim validation until the owner reports results. `master` unchanged.
+
 ## 2026-10-27 — Correspondence list scopes (validation pending)
 
 - Added a server-side scope filter to the correspondence index: `mine` (default), `department`, and `all`.
