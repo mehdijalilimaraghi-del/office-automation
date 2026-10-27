@@ -468,6 +468,7 @@ class CorrespondenceHttpTest extends TestCase
 
         $this->actingAs($user)->from(route('correspondence.create'))->post(route('correspondence.store'), [
             'type' => Correspondence::TYPE_INCOMING,
+            'letter_number' => 'IN-1405-TEST',
             'received_at' => '2026-10-24',
             'subject' => 'نامه وارده بدون اصل نامه',
             'recipient_department_id' => $this->recipientDepartmentId(),
