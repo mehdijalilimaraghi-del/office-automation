@@ -399,7 +399,7 @@ async function scanOriginalLetter(): Promise<void> {
             >
                 <section class="space-y-4">
                     <h3 class="text-base font-bold text-slate-900">مشخصات مکاتبه</h3>
-                    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                    <div class="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-6">
                         <div>
                             <label for="type" class="mb-1.5 block text-sm font-semibold text-slate-700">نوع مکاتبه <span class="text-rose-600">*</span></label>
                             <select id="type" v-model="form.type" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -420,17 +420,17 @@ async function scanOriginalLetter(): Promise<void> {
                             <div v-else class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">{{ createdDepartment?.name ?? 'برای کاربر واحد فعالی تعیین نشده است' }}</div>
                             <InputError class="mt-1" :message="form.errors.created_department_id" />
                         </div>
-                        <div v-if="form.type === 'incoming' || form.type === 'internal'" class="lg:col-span-2">
+                        <div v-if="form.type === 'incoming' || form.type === 'internal'" class="min-w-0 lg:col-span-2">
                             <label for="recipient_department_id" class="mb-1.5 block text-sm font-semibold text-slate-700">واحد دریافت‌کننده <span class="text-rose-600">*</span></label>
                             <DepartmentTreeSelect v-model="form.recipient_department_id" :departments="departments" placeholder="انتخاب واحد دریافت‌کننده" :clearable="false" />
                             <InputError class="mt-1" :message="form.errors.recipient_department_id" />
                         </div>
-                        <div v-if="form.type === 'outgoing'">
+                        <div v-if="form.type === 'outgoing'" class="min-w-0">
                             <label for="sent_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ ارسال <span class="text-rose-600">*</span></label>
                             <JalaliDatePicker v-model="form.sent_at" placeholder="انتخاب تاریخ ارسال" required />
                             <InputError class="mt-1" :message="form.errors.sent_at" />
                         </div>
-                        <div v-if="form.type === 'incoming'">
+                        <div v-if="form.type === 'incoming'" class="min-w-0">
                             <label for="received_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ دریافت <span class="text-rose-600">*</span></label>
                             <JalaliDatePicker v-model="form.received_at" placeholder="انتخاب تاریخ دریافت" required />
                             <InputError class="mt-1" :message="form.errors.received_at" />
