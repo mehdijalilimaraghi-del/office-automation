@@ -1,60 +1,11 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { ChevronDown, ChevronLeft, Search, X } from '@lucide/vue';
 import DepartmentIcon from '@/Components/DepartmentIcon.vue';
 interface DepartmentOption { id:number; name:string; parent_id?:number|null; tree_label?:string|null; icon?:string|null; manager?:{name:string}|null; manager_name?:string|null; is_active?:boolean; }
 const props=withDefaults(defineProps<{departments:DepartmentOption[];modelValue?:number|string|null;modelValues?:Array<number|string>;multiple?:boolean;placeholder?:string;disabled?:boolean;clearable?:boolean}>(),{modelValue:null,modelValues:()=>[],multiple:false,placeholder:'انتخاب واحد',disabled:false,clearable:true});
 const emit=defineEmits<{ 'update:modelValue':[value:number|string|null]; 'update:modelValues':[value:Array<number|string>] }>();
 const isOpen=ref(false), query=ref(''), expandedIds=ref<Set<number>>(new Set());
-const triggerRef=ref<HTMLButtonElement|null>(null);
-const dropdownRef=ref<HTMLDivElement|null>(null);
-const dropdownStyle=ref<Record<string,string>>({});
-const listStyle=ref<Record<string,string>>({});
-function updateDropdownPosition():void {
-    const trigger=triggerRef.value;
-    if(!trigger)return;
-    const rect=trigger.getBoundingClientRect();
-    const viewportHeight=window.innerHeight;
-    const below=viewportHeight-rect.bottom-8;
-    const above=rect.top-8;
-    const estimatedHeight=Math.min(420,viewportHeight-16);
-    const openAbove=below<estimatedHeight&&above>below;
-    const available=Math.max(180,Math.min(estimatedHeight,openAbove?above:below));
-    dropdownStyle.value={
-        position:'fixed',
-        left:`${rect.left}px`,
-        width:`${rect.width}px`,
-        top:openAbove?`${Math.max(8,rect.top-available)}px`:`${rect.bottom+4}px`,
-        maxHeight:`${available}px`,
-        zIndex:'9999',
-    };
-    listStyle.value={maxHeight:`${Math.max(96,Math.min(288,available-104))}px`};
-}
-function handleViewportChange(event?:Event):void {
-    if(!isOpen.value)return;
-    const target=event?.target;
-    if(target instanceof Node&&dropdownRef.value?.contains(target))return;
-    if(event?.type==='scroll'){
-        isOpen.value=false;
-        return;
-    }
-    updateDropdownPosition();
-}
-watch(isOpen,async(open)=>{
-    if(open){
-        await nextTick();
-        updateDropdownPosition();
-        window.addEventListener('resize',handleViewportChange);
-        window.addEventListener('scroll',handleViewportChange,true);
-    }else{
-        window.removeEventListener('resize',handleViewportChange);
-        window.removeEventListener('scroll',handleViewportChange,true);
-    }
-});
-onBeforeUnmount(()=>{
-    window.removeEventListener('resize',handleViewportChange);
-    window.removeEventListener('scroll',handleViewportChange,true);
-});
 const departments=computed(()=>{const list=[...props.departments],ids=new Set(list.map(x=>x.id));return list.map(x=>({...x,parent_id:x.parent_id!=null&&ids.has(Number(x.parent_id))?Number(x.parent_id):null}));});
 const children=computed(()=>{const map=new Map<number|null,DepartmentOption[]>();for(const d of departments.value){const p=d.parent_id??null;map.set(p,[...(map.get(p)??[]),d]);}for(const [p,items] of map)map.set(p,items.sort((a,b)=>a.name.localeCompare(b.name,'fa')));return map;});
 const parentIds=computed(()=>departments.value.filter(d=>(children.value.get(d.id)?.length??0)>0).map(d=>d.id));
@@ -76,11 +27,10 @@ function clear(){if(props.multiple)emit('update:modelValues',[]);else emit('upda
 <span v-if="clearable&&(multiple?modelValues.length>0:modelValue!==null&&modelValue!==undefined&&modelValue!=='')" role="button" tabindex="0" class="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="پاک کردن انتخاب واحد" @click.stop="clear" @keydown.enter.stop.prevent="clear"><X :size="15"/></span>
 <ChevronDown :size="16" class="shrink-0 text-slate-500 transition-transform" :class="isOpen?'rotate-180':''"/>
 </button>
-<Teleport to="body">
-<div v-if="isOpen" ref="dropdownRef" :style="dropdownStyle" class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5" dir="rtl">
+<div v-if="isOpen" class="absolute inset-x-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5" dir="rtl">
 <div class="border-b border-slate-100 p-2.5"><div class="relative"><Search :size="16" class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"/><input v-model="query" type="search" class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pr-9 pl-3 text-sm outline-none focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/10" placeholder="جستجوی واحد..." @keydown.esc="isOpen=false"/></div>
 <div class="mt-2 flex items-center justify-between px-1 text-xs text-slate-500"><span>{{nodes.length}} واحد در نمایش</span><span class="flex items-center gap-3"><button type="button" class="hover:text-indigo-700" @click="expandedIds=new Set(parentIds)">بازکردن همه</button><button type="button" class="hover:text-indigo-700" @click="expandedIds=new Set()">بستن همه</button></span></div></div>
-<div :style="listStyle" class="min-h-0 overflow-y-auto overscroll-contain p-1.5">
+<div class="max-h-72 min-h-0 overflow-y-auto overscroll-contain p-1.5">
 <div v-if="!nodes.length" class="px-3 py-8 text-center text-sm text-slate-500">واحدی با این عبارت پیدا نشد.</div>
 <div v-for="node in nodes" :key="node.department.id" class="group relative flex min-h-9 items-center gap-1 rounded-lg px-1.5 text-sm transition hover:bg-indigo-50" :class="[node.department.is_active===false?'opacity-50':'', selected.some(d=>d.id===node.department.id)?'bg-indigo-50 font-semibold text-indigo-900':'text-slate-700']" :style="{paddingRight:(6+node.depth*20)+'px'}" role="treeitem" :aria-level="node.depth+1" :aria-selected="selected.some(d=>d.id===node.department.id)">
 <span v-for="level in node.depth" :key="level" aria-hidden="true" class="pointer-events-none absolute inset-y-0 border-r border-dashed border-slate-200" :style="{ right: (15 + (level - 1) * 20) + 'px' }"></span><span v-if="node.depth" aria-hidden="true" class="pointer-events-none absolute top-1/2 border-t border-slate-200" :style="{ right: (15 + (node.depth - 1) * 20) + 'px', width: '12px' }"></span><button type="button" class="relative z-10 flex h-7 w-6 shrink-0 items-center justify-center rounded text-slate-400 hover:bg-slate-200 hover:text-slate-700" :class="node.hasChildren?'':'invisible'" :aria-label="expandedIds.has(node.department.id)?'بستن زیرواحدها':'بازکردن زیرواحدها'" @click="toggle(node.department.id)"><ChevronDown v-if="matches||expandedIds.has(node.department.id)" :size="14"/><ChevronLeft v-else :size="14"/></button>
@@ -88,6 +38,5 @@ function clear(){if(props.multiple)emit('update:modelValues',[]);else emit('upda
 </div></div>
 <div v-if="multiple" class="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-3 py-2"><span class="text-xs text-slate-500">{{modelValues.length}} واحد انتخاب شده</span><button type="button" class="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700" @click="isOpen=false">تأیید انتخاب‌ها</button></div>
 </div>
-</Teleport>
 </div>
 </template>
