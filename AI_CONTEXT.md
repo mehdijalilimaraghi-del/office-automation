@@ -269,3 +269,10 @@ Before making the first code change in a new conversation:
 
 - Corrected the Cartable template to use `letter.current_department.name`, consistent with the `CorrespondenceItem` TypeScript interface. No application behavior or backend logic was changed.
 - Committed to `development` only. Run `npm run build` after pulling and confirm the result; do not claim validation until reported.
+
+
+## 2026-10-27 — Open correspondence UX and numbering requirements
+
+- Open UI fix: correspondence index should render `registered_at` in Persian/Jalali date and Tehran local time, labeled `ثبت نهایی`, rather than exposing raw ISO UTC.
+- Numbering design requirements: keep `شماره نامه` separate from the secretariat-assigned `شماره ثبت`; custom letter-number formats should allow two or three fields; each organizational department needs a required configurable short code (e.g. `IT`) to use in the letter-number format instead of its numeric database ID.
+- Before implementation, inspect existing settings, department model/form, number generation, database constraints, and feature tests. Preserve compatibility with existing records. These are backlog requirements, not completed changes.
