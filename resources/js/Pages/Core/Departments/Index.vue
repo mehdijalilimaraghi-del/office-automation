@@ -616,7 +616,7 @@ watch(
                                                     dir="ltr"
                                                     class="rounded-full bg-white/10 px-2.5 py-1 text-[11px] text-slate-300"
                                                 >
-                                                    <span class="sr-only">کد سیستمی: </span>{{ selectedDepartment.code }}
+                                                    <span class="sr-only">کد واحد: </span>{{ selectedDepartment.code }}
                                                 </span>
                                             </div>
 
