@@ -65,6 +65,18 @@ class CorrespondenceWorkflowService
     {
         DB::transaction(function () use ($correspondence, $actor, $data): void {
             $letter = Correspondence::query()->whereKey($correspondence->id)->lockForUpdate()->firstOrFail();
+
+            // Secretariat registration of incoming mail does not grant workflow authority,
+            // even if the same user also manages the destination department.
+            if ($letter->type === Correspondence::TYPE_INCOMING
+                && (int) $letter->registered_by === (int) $actor->id
+                && app(OrganizationDepartmentRoleService::class)->userBelongsTo(
+                    $actor,
+                    OrganizationDepartmentRoleService::SECRETARIAT,
+                )) {
+                abort(403, 'ثبت‌کننده دبیرخانه برای نامه وارده فقط مجوز مشاهده دارد.');
+            }
+
             $type = (string) $data['action_type'];
             $note = trim((string) ($data['note'] ?? ''));
 
