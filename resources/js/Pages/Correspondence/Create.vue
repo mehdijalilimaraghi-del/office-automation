@@ -99,7 +99,6 @@ const scannerPreparing = ref(false);
 const compositionModes: Array<{ value: CompositionMode; label: string; description: string }> = [
     { value: 'editor', label: 'ویرایشگر داخلی', description: 'نامه را داخل سامانه بنویسید.' },
     { value: 'file', label: 'پیوست فایل', description: 'فایل نهایی نامه را بارگذاری کنید و توضیح آن را بنویسید.' },
-    { value: 'both', label: 'متن و فایل', description: 'متن نامه را بنویسید و فایل هم پیوست کنید.' },
 ];
 
 const existing = props.correspondence;
