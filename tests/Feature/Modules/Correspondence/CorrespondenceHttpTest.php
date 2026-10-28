@@ -140,6 +140,28 @@ class CorrespondenceHttpTest extends TestCase
         $this->actingAs($viewer)->get(route('correspondence.show', $letter))->assertOk();
     }
 
+    public function test_drafts_are_visible_only_to_the_creator_and_secretariat(): void
+    {
+        $creator = $this->userWithPermission('correspondence.view');
+        $otherUser = $this->userWithPermission('correspondence.view');
+        $draft = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => 'پیش‌نویس خصوصی',
+            'status' => Correspondence::STATUS_DRAFT,
+            'created_by' => $creator->id,
+        ]);
+
+        $this->actingAs($otherUser)->get(route('correspondence.index', ['scope' => 'all']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('correspondences.total', 0));
+        $this->actingAs($otherUser)->get(route('correspondence.show', $draft))->assertForbidden();
+
+        $this->actingAs($creator)->get(route('correspondence.index', ['scope' => 'all']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('correspondences.total', 1));
+        $this->actingAs($creator)->get(route('correspondence.show', $draft))->assertOk();
+    }
+
     public function test_unrelated_viewer_cannot_open_confidential_letter(): void
     {
         $creator = $this->userWithPermission('correspondence.create');
