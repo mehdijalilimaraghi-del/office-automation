@@ -1180,3 +1180,8 @@ Incoming letter numbers are captured from the original document, never auto-gene
 
 - Adjusted the create/edit form grid in `resources/js/Pages/Correspondence/Create.vue`: for outgoing and internal correspondence, “واحد ایجادکننده” spans two columns; outgoing “موضوع” spans three columns so it shares its row with the send date; internal “موضوع” spans two columns so it can share its row with the related-correspondence section. No backend behavior changed.
 - Validation pending: pull `development` and run `npm run build`. `master` remains unchanged.
+
+## 2026-10-28 — Internal correspondence subject placement correction
+
+- Moved the internal-correspondence “موضوع” field into the first details grid beside “واحد دریافت‌کننده”, with both fields spanning two columns. The internal subject is no longer rendered in the following grid; outgoing and incoming subject placement is unchanged.
+- Validation pending: pull `development` and run `npm run build`. `master` remains unchanged.
