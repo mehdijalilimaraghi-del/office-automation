@@ -596,8 +596,10 @@ class CorrespondenceController extends Controller
             'original_letters' => ['nullable', 'array', 'max:10'], 'original_letters.*' => ['file', 'max:20480', 'mimes:pdf,jpg,jpeg,png'],
             'attachments' => ['nullable', 'array', 'max:10'], 'attachments.*' => ['file', 'max:20480', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,txt,csv,zip'],
         ]);
-        $mode = $correspondence->type === Correspondence::TYPE_INCOMING ? 'file' : ($data['composition_mode'] ?? (filled($data['body'] ?? null) ? 'editor' : 'file'));
-        $body = $mode === 'file' ? null : $this->sanitizeBody((string) ($data['body'] ?? ''));
+        $mode = $correspondence->type === Correspondence::TYPE_INCOMING
+            ? 'file'
+            : ($data['composition_mode'] ?? (filled($data['body'] ?? $correspondence->body) ? 'editor' : 'file'));
+        $body = $mode === 'file' ? null : $this->sanitizeBody((string) ($data['body'] ?? $correspondence->body ?? ''));
         if ($correspondence->type !== Correspondence::TYPE_INCOMING && in_array($mode, ['editor', 'both'], true) && trim(strip_tags((string) $body)) === '') {
             return back()->withErrors(['body' => 'متن نامه را وارد کنید.'])->withInput();
         }
