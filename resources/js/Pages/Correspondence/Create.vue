@@ -436,7 +436,7 @@ async function scanOriginalLetter(): Promise<void> {
                             </select>
                             <InputError class="mt-1" :message="form.errors.classification" />
                         </div>
-                        <div v-if="form.type !== 'incoming'">
+                        <div v-if="form.type !== 'incoming'" :class="form.type === 'outgoing' || form.type === 'internal' ? 'lg:col-span-2' : ''">
                             <div class="mb-1.5 flex items-center gap-1.5"><label for="created_department_id" class="text-sm font-semibold text-slate-700">واحد ایجادکننده <span v-if="createdDepartments.length > 1" class="text-rose-600">*</span></label><details class="group relative"><summary aria-label="راهنمای واحد ایجادکننده" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-300">؟</summary><div class="absolute right-0 top-7 z-20 w-64 rounded-lg border border-slate-200 bg-white p-3 text-xs font-normal leading-6 text-slate-700 shadow-lg">واحدی را انتخاب کنید که نامه از طرف آن ایجاد و شماره‌گذاری می‌شود.</div></details></div>
                             <DepartmentTreeSelect v-if="createdDepartments.length > 1" v-model="form.created_department_id" :departments="createdDepartments" placeholder="انتخاب واحدی که از طرف آن نامه ایجاد می‌شود" :clearable="false" />
                             <div v-else class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">{{ createdDepartment?.name ?? 'برای کاربر واحد فعالی تعیین نشده است' }}</div>
@@ -450,7 +450,7 @@ async function scanOriginalLetter(): Promise<void> {
 
                     </div>
                     <div class="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <div :class="form.type === 'incoming' || form.type === 'outgoing' ? 'lg:col-span-2' : 'col-span-full'">
+                        <div :class="form.type === 'outgoing' ? 'lg:col-span-3' : form.type === 'incoming' || form.type === 'internal' ? 'lg:col-span-2' : 'col-span-full'">
                             <label for="subject" class="mb-1.5 block text-sm font-semibold text-slate-700">موضوع</label>
                             <input id="subject" v-model="form.subject" required maxlength="255" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
                             <InputError class="mt-1" :message="form.errors.subject" />
