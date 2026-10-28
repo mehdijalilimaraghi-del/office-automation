@@ -411,7 +411,9 @@ class CorrespondenceController extends Controller
         $mode = $data['type'] === Correspondence::TYPE_INCOMING
             ? 'file'
             : ($data['composition_mode'] ?? 'editor');
-        $body = $mode === 'file' ? '' : $this->sanitizeBody((string) ($data['body'] ?? ''));
+        $body = $data['type'] === Correspondence::TYPE_INCOMING
+            ? trim(strip_tags((string) ($data['body'] ?? '')))
+            : ($mode === 'file' ? '' : $this->sanitizeBody((string) ($data['body'] ?? '')));
 
         if ($data['type'] !== Correspondence::TYPE_INCOMING && in_array($mode, ['editor', 'both'], true) && trim(strip_tags($body)) === '') {
             return back()->withErrors(['body' => 'متن نامه را وارد کنید.'])->withInput();
@@ -453,7 +455,7 @@ class CorrespondenceController extends Controller
                     'classification' => $data['classification'] ?? Correspondence::CLASSIFICATION_ORDINARY,
                     'subject' => $data['subject'],
                     'letter_number' => $data['letter_number'] ?? null,
-                    'body' => $mode === 'file' ? null : $body,
+                    'body' => $data['type'] === Correspondence::TYPE_INCOMING ? ($body !== '' ? $body : null) : ($mode === 'file' ? null : $body),
                     'sender_name' => $data['sender_name'] ?? null,
                     'recipient_name' => $data['recipient_name'] ?? null,
                     'received_at' => $data['received_at'] ?? null,
@@ -600,7 +602,9 @@ class CorrespondenceController extends Controller
         $mode = $correspondence->type === Correspondence::TYPE_INCOMING
             ? 'file'
             : ($data['composition_mode'] ?? (filled($data['body'] ?? $correspondence->body) ? 'editor' : 'file'));
-        $body = $mode === 'file' ? null : $this->sanitizeBody((string) ($data['body'] ?? $correspondence->body ?? ''));
+        $body = $correspondence->type === Correspondence::TYPE_INCOMING
+            ? trim(strip_tags((string) ($data['body'] ?? $correspondence->body ?? '')))
+            : ($mode === 'file' ? null : $this->sanitizeBody((string) ($data['body'] ?? $correspondence->body ?? '')));
         if ($correspondence->type !== Correspondence::TYPE_INCOMING && in_array($mode, ['editor', 'both'], true) && trim(strip_tags((string) $body)) === '') {
             return back()->withErrors(['body' => 'متن نامه را وارد کنید.'])->withInput();
         }
