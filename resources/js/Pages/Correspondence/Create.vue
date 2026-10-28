@@ -98,7 +98,7 @@ const scannerSession = ref<{ token: string; uploadUrl: string; statusUrl: string
 const scannerPreparing = ref(false);
 const compositionModes: Array<{ value: CompositionMode; label: string; description: string }> = [
     { value: 'editor', label: 'ویرایشگر داخلی', description: 'نامه را داخل سامانه بنویسید.' },
-    { value: 'file', label: 'پیوست فایل', description: 'فایل آماده نامه را بارگذاری کنید.' },
+    { value: 'file', label: 'پیوست فایل', description: 'فایل نهایی نامه را بارگذاری کنید و توضیح آن را بنویسید.' },
     { value: 'both', label: 'متن و فایل', description: 'متن نامه را بنویسید و فایل هم پیوست کنید.' },
 ];
 
@@ -526,8 +526,8 @@ async function scanOriginalLetter(): Promise<void> {
                             </div>
                             <div class="grid gap-4 sm:grid-cols-2">
                                 <div>
-                                    <label for="external_organization_id" class="mb-1.5 block text-sm font-semibold text-slate-700">{{ form.type === 'incoming' ? 'سازمان مبدأ نامه' : 'سازمان مخاطب' }}</label>
-                                    <select id="external_organization_id" v-model="form.external_organization_id" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    <label for="external_organization_id" class="mb-1.5 block text-sm font-semibold text-slate-700">{{ form.type === 'incoming' ? 'سازمان مبدأ نامه' : 'سازمان مخاطب' }}<span v-if="form.type === 'outgoing'" class="text-rose-600"> *</span></label>
+                                    <select id="external_organization_id" v-model="form.external_organization_id" :required="form.type === 'outgoing'" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                                         <option value="">انتخاب سازمان بیرونی</option>
                                         <option v-for="item in externalOrganizations" :key="item.id" :value="item.id">{{ item.name }}</option>
                                     </select>
@@ -590,6 +590,15 @@ async function scanOriginalLetter(): Promise<void> {
                         placeholder="توضیحات یا خلاصه نامه را بنویسید..."
                         :disabled="form.processing"
                     ></textarea>
+                    <InputError :message="form.errors.body" />
+                </section>
+
+                <section v-if="form.type === 'outgoing' && form.composition_mode === 'file'" class="space-y-3 border-t border-slate-100 pt-5">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">توضیحات فایل نامه <span class="text-rose-600">*</span></h3>
+                        <p class="mt-1 text-sm leading-6 text-slate-500">موضوع یا توضیح مختصری درباره فایل نهایی نامه را وارد کنید؛ متن اصلی در فایل بارگذاری‌شده قرار دارد.</p>
+                    </div>
+                    <textarea id="outgoing_file_description" v-model="form.body" rows="4" maxlength="100000" required class="w-full rounded-xl border-slate-300 text-sm leading-7 focus:border-indigo-500 focus:ring-indigo-500" placeholder="توضیحی درباره محتوای فایل نامه بنویسید..."></textarea>
                     <InputError :message="form.errors.body" />
                 </section>
 
@@ -707,8 +716,8 @@ async function scanOriginalLetter(): Promise<void> {
 
                 <section class="space-y-3 border-t border-slate-100 pt-5">
                     <div>
-                        <h3 class="text-base font-bold text-slate-900">فایل‌های پیوست</h3>
-                        <p class="mt-1 text-sm text-slate-500">PDF، Word، Excel، PowerPoint، تصویر و فایل متنی؛ حداکثر ۲۰ مگابایت برای هر فایل و ۱۰ فایل.</p>
+                        <h3 class="text-base font-bold text-slate-900">{{ form.type === 'outgoing' && form.composition_mode === 'file' ? 'فایل نامه' : 'فایل‌های پیوست' }}</h3>
+                        <p class="mt-1 text-sm text-slate-500">{{ form.type === 'outgoing' && form.composition_mode === 'file' ? 'فایل نهایی نامه را بارگذاری کنید. این فایل همراه با توضیحات فایل نامه ثبت می‌شود. PDF، Word و تصویر پذیرفته می‌شود؛ حداکثر ۲۰ مگابایت برای هر فایل و ۱۰ فایل.' : 'PDF، Word، Excel، PowerPoint، تصویر و فایل متنی؛ حداکثر ۲۰ مگابایت برای هر فایل و ۱۰ فایل.' }}</p>
                     </div>
                     <label for="attachments" class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-7 text-center transition hover:border-indigo-400 hover:bg-indigo-50/50">
                         <span class="text-sm font-semibold text-slate-800">انتخاب فایل از رایانه</span>
