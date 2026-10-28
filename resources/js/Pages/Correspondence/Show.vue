@@ -73,6 +73,8 @@ const props = defineProps<{
 
 const page = usePage<PageProps<{ errors: Record<string, string>; flash?: { success?: string } }>>();
 
+const referralActions = props.correspondence.actions.filter((item) => Boolean(item.to_department) || ['manager_refer', 'secretariat_initial_referral', 'request_task', 'request_project', 'request_letter'].includes(item.action_type));
+
 const actionLabels: Record<string, string> = {
     submit_result: 'ثبت نتیجه بررسی و ارسال به مدیر',
     manager_approve: 'تأیید مدیر برای ثبت نهایی',
@@ -181,45 +183,70 @@ function registerCorrespondence(): void {
             <div v-if="page.props.flash?.success" class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-800" role="status">
                 {{ page.props.flash.success }}
             </div>
-            <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-xs font-medium text-slate-500">شماره ثبت</p><p class="mt-2 font-semibold text-slate-900">{{ correspondence.registration_number ?? 'پس از ثبت نهایی مشخص می‌شود' }}</p></div>
-                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-xs font-medium text-slate-500">واحد ایجادکننده</p><p class="mt-2 font-semibold text-slate-900">{{ correspondence.created_department?.name ?? 'تعیین نشده' }}</p></div>
-                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-xs font-medium text-slate-500">واحد گیرنده</p><p class="mt-2 font-semibold text-slate-900">{{ correspondence.recipient_department?.name ?? 'هنوز تعیین نشده' }}</p></div>
-                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-xs font-medium text-slate-500">ایجادکننده</p><p class="mt-2 font-semibold text-slate-900">{{ correspondence.creator?.name ?? 'نامشخص' }}</p></div>
-                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-xs font-medium text-slate-500">تاریخ ایجاد</p><p class="mt-2 font-semibold text-slate-900">{{ formatDateTime(correspondence.created_at) }}</p></div>
+<div class="grid items-start gap-5 xl:grid-cols-[minmax(280px,0.9fr)_minmax(0,1.7fr)]">
+                <div class="min-w-0 space-y-5">
+                    <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">اطلاعات مکاتبه</h2></div>
+                <dl class="grid gap-x-5 gap-y-4 p-5 sm:grid-cols-2">
+                    <div><dt class="text-xs text-slate-500">نوع نامه</dt><dd class="mt-1 text-sm font-semibold text-slate-900">{{ typeLabels[correspondence.type] }}</dd></div>
+                    <div><dt class="text-xs text-slate-500">وضعیت</dt><dd class="mt-1 text-sm font-semibold text-slate-900">{{ statusLabels[correspondence.status] }}</dd></div>
+                    <div><dt class="text-xs text-slate-500">شماره نامه</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.letter_number ?? '—' }}</dd></div>
+                    <div><dt class="text-xs text-slate-500">شماره ثبت</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.registration_number ?? 'پس از ثبت نهایی مشخص می‌شود' }}</dd></div>
+                    <div><dt class="text-xs text-slate-500">تاریخ ثبت نهایی</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ formatDateTime(correspondence.registered_at) }}</dd></div>
+                    <div><dt class="text-xs text-slate-500">تاریخ ایجاد</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ formatDateTime(correspondence.created_at) }}</dd></div>
+                    <div><dt class="text-xs text-slate-500">واحد ایجادکننده</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.created_department?.name ?? 'تعیین نشده' }}</dd></div>
+                    <div><dt class="text-xs text-slate-500">واحد گیرنده</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.recipient_department?.name ?? 'هنوز تعیین نشده' }}</dd></div>
+                    <div><dt class="text-xs text-slate-500">ایجادکننده</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.creator?.name ?? 'نامشخص' }}</dd></div>
+                    <div><dt class="text-xs text-slate-500">ثبت‌کننده</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.registrar?.name ?? '—' }}</dd></div>
+                    <div><dt class="text-xs text-slate-500">فرستنده</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.sender_name ?? '—' }}</dd></div>
+                    <div><dt class="text-xs text-slate-500">گیرنده</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.recipient_name ?? '—' }}</dd></div>
+                    <div v-if="correspondence.external_organization"><dt class="text-xs text-slate-500">سازمان بیرونی</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.external_organization.name }}</dd></div>
+                    <div v-if="correspondence.external_department"><dt class="text-xs text-slate-500">واحد بیرونی</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.external_department.name }}</dd></div>
+                    <div><dt class="text-xs text-slate-500">تاریخ دریافت</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ formatDate(correspondence.received_at) }}</dd></div>
+                    <div><dt class="text-xs text-slate-500">تاریخ ارسال</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ formatDate(correspondence.sent_at) }}</dd></div>
+                </dl>
             </section>
-
-            <section class="rounded-2xl border border-indigo-100 bg-white shadow-sm">
+                                <section v-if="correspondence.type === 'incoming' || originalLetters.length" class="rounded-2xl border border-indigo-100 bg-white shadow-sm">
+                <div class="flex items-center justify-between border-b border-indigo-100 px-5 py-4"><h2 class="font-bold text-slate-900">پیوست‌های نامه</h2><span class="text-xs text-slate-500">{{ originalLetters.length }} فایل</span></div>
+                <div v-if="originalLetters.length" class="divide-y divide-slate-100">
+                    <div v-for="file in originalLetters" :key="file.id" class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+                        <div class="flex min-w-0 items-center gap-3">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg></span>
+                            <div class="min-w-0"><p class="truncate text-sm font-semibold text-slate-900">{{ file.title || file.file_name }}</p><p class="mt-1 truncate text-xs text-slate-500">{{ file.file_name }} · {{ formatSize(file.size) }}</p></div>
+                        </div>
+                        <div class="flex flex-wrap gap-2"><a :href="route('documents.download', file.id) + '?inline=1'" target="_blank" rel="noopener" class="rounded-lg border border-indigo-200 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50">مشاهده</a><a :href="route('documents.download', file.id)" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">دریافت فایل</a></div>
+                    </div>
+                </div>
+                <div v-else class="px-5 py-6 text-sm text-slate-500">فایل اصل نامه‌ای برای این مکاتبه ثبت نشده است.</div>
+            </section>
+                                <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">پیوست‌ها</h2><span class="text-xs text-slate-500">{{ attachments.length }} فایل</span></div>
+                <div v-if="attachments.length" class="divide-y divide-slate-100">
+                    <div v-for="file in attachments" :key="file.id" class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+                        <div class="flex min-w-0 items-center gap-3">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg></span>
+                            <div class="min-w-0"><p class="truncate text-sm font-semibold text-slate-900">{{ file.title || file.file_name }}</p><p class="mt-1 truncate text-xs text-slate-500">{{ file.file_name }} · {{ formatSize(file.size) }}</p></div>
+                        </div>
+                        <div class="flex flex-wrap gap-2"><a :href="route('documents.download', file.id) + '?inline=1'" target="_blank" rel="noopener" class="rounded-lg border border-indigo-200 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50">مشاهده</a><a :href="route('documents.download', file.id)" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">دریافت فایل</a></div>
+                    </div>
+                </div>
+                <div v-else class="px-5 py-8 text-center text-sm text-slate-500">برای این مکاتبه پیوستی ثبت نشده است.</div>
+            </section>
+                </div>
+                <div class="min-w-0 space-y-5">
+                                <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">{{ correspondence.type === 'incoming' ? 'توضیحات نامه' : 'متن نامه' }}</h2></div>
+                <div v-if="correspondence.type === 'incoming' && correspondence.body" class="whitespace-pre-wrap p-5 text-sm leading-8 text-slate-800" dir="rtl">{{ correspondence.body }}</div>
+                <div v-else-if="correspondence.type !== 'incoming' && correspondence.body" class="correspondence-body p-5 text-sm leading-8 text-slate-800" dir="rtl" :style="{ fontFamily: correspondenceFontFamily }" v-html="correspondence.body"></div>
+                <div v-else class="p-5 text-sm text-slate-500">{{ correspondence.type === 'incoming' ? 'توضیحی برای این نامه ثبت نشده است.' : 'متن داخلی ثبت نشده است؛ محتوای نامه در فایل پیوست قرار دارد.' }}</div>
+            </section>
+                                <section class="rounded-2xl border border-indigo-100 bg-white shadow-sm">
                 <div class="border-b border-indigo-100 px-5 py-4">
-                    <h2 class="font-bold text-slate-900">گردش و ارجاعات نامه</h2>
+                    <h2 class="font-bold text-slate-900">اقدامات نامه</h2>
                     <p class="mt-1 text-sm text-slate-600">وضعیت فعلی: {{ workflowStateLabels[correspondence.workflow_state] ?? correspondence.workflow_state }} <span v-if="correspondence.current_department"> · واحد مسئول: {{ correspondence.current_department.name }}</span></p>
                 </div>
                 <div class="space-y-4 p-5">
-                    <div v-if="correspondence.copies.length" class="rounded-xl bg-sky-50 p-4">
-                        <p class="text-sm font-semibold text-sky-900">رونوشت جهت اطلاع</p>
-                        <p class="mt-1 text-sm text-sky-800">{{ correspondence.copies.map(item => item.name).join('، ') }}</p>
-                        <p class="mt-1 text-xs text-sky-700">واحدهای رونوشت‌گیرنده فقط امکان مشاهده نامه ثبت‌شده را دارند و نمی‌توانند در گردش آن اقدام کنند.</p>
-                    </div>
-                    <form v-if="canAddCopies && copyDepartments.length" class="space-y-3 rounded-xl border border-sky-200 bg-sky-50/40 p-4" @submit.prevent="submitCopies">
-                        <div>
-                            <h3 class="text-sm font-bold text-slate-900">افزودن رونوشت در ادامه گردش</h3>
-                            <p class="mt-1 text-xs leading-5 text-slate-600">مدیر واحد مسئول می‌تواند یک یا چند واحد دیگر را برای اطلاع اضافه کند. رونوشت به‌تنهایی مجوز اقدام در گردش ایجاد نمی‌کند.</p>
-                        </div>
-                        <div class="grid gap-2 sm:grid-cols-2">
-                            <label v-for="department in copyDepartments" :key="department.id" class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
-                                <input
-                                    type="checkbox"
-                                    :checked="copyForm.department_ids.includes(department.id)"
-                                    class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                                    @change="toggleCopyDepartment(department.id, ($event.target as HTMLInputElement).checked)"
-                                />
-                                <span class="text-sm text-slate-800">{{ department.name }}</span>
-                            </label>
-                        </div>
-                        <p v-if="copyForm.errors.department_ids" class="text-sm text-rose-700">{{ copyForm.errors.department_ids }}</p>
-                        <button type="submit" :disabled="copyForm.processing || copyForm.department_ids.length === 0" class="rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">افزودن رونوشت</button>
-                    </form>
-                    <form v-if="canManageWorkflow || canReturnToManager" class="grid gap-3 rounded-xl border border-slate-200 p-4 sm:grid-cols-2" @submit.prevent="submitWorkflowAction">
+                                        <form v-if="canManageWorkflow || canReturnToManager" class="grid gap-3 rounded-xl border border-slate-200 p-4 sm:grid-cols-2" @submit.prevent="submitWorkflowAction">
                         <div v-if="canManageWorkflow">
                             <label class="mb-1 block text-sm font-medium text-slate-700">اقدام مدیر</label>
                             <select v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
@@ -264,22 +291,9 @@ function registerCorrespondence(): void {
                     <p v-else class="text-sm text-slate-500">هنوز اقدامی در تاریخچه گردش نامه ثبت نشده است.</p>
                 </div>
             </section>
-
-            <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">مشخصات مکاتبه</h2></div>
-                <dl class="grid gap-x-8 gap-y-5 p-5 sm:grid-cols-2 lg:grid-cols-3">
-                    <div><dt class="text-xs text-slate-500">فرستنده</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.sender_name ?? '—' }}</dd></div>
-                    <div><dt class="text-xs text-slate-500">گیرنده</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.recipient_name ?? '—' }}</dd></div>
-                    <div v-if="correspondence.external_organization"><dt class="text-xs text-slate-500">سازمان بیرونی</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.external_organization.name }}</dd></div>
-                    <div v-if="correspondence.external_department"><dt class="text-xs text-slate-500">واحد بیرونی</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.external_department.name }}</dd></div>
-                    <div><dt class="text-xs text-slate-500">ثبت‌کننده</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.registrar?.name ?? '—' }}</dd></div>
-                    <div><dt class="text-xs text-slate-500">تاریخ دریافت</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ formatDate(correspondence.received_at) }}</dd></div>
-                    <div><dt class="text-xs text-slate-500">تاریخ ارسال</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ formatDate(correspondence.sent_at) }}</dd></div>
-                    <div><dt class="text-xs text-slate-500">تاریخ ثبت نهایی</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ formatDateTime(correspondence.registered_at) }}</dd></div>
-                </dl>
-            </section>
-
-            <section v-if="correspondence.type === 'outgoing'" class="rounded-2xl border border-indigo-100 bg-white shadow-sm">
+                </div>
+            </div>
+                        <section v-if="correspondence.type === 'outgoing'" class="rounded-2xl border border-indigo-100 bg-white shadow-sm">
                 <div class="border-b border-indigo-100 px-5 py-4">
                     <h2 class="font-bold text-slate-900">پیگیری نامه صادره</h2>
                     <p class="mt-1 text-sm text-slate-500">اطلاعات ارسال و شماره ثبت نامه در سازمان مقصد مستقل از وضعیت تکمیل تسک نگهداری می‌شود.</p>
@@ -328,42 +342,46 @@ function registerCorrespondence(): void {
                     <p v-else class="sm:col-span-2 text-xs text-slate-500">برای تغییر اطلاعات پیگیری، دسترسی دبیرخانه، ایجادکننده نامه یا مسئول تسک لازم است.</p>
                 </form>
             </section>
-
-            
-
-            <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">{{ correspondence.type === 'incoming' ? 'توضیحات نامه' : 'متن نامه' }}</h2></div>
-                <div v-if="correspondence.type === 'incoming' && correspondence.body" class="whitespace-pre-wrap p-5 text-sm leading-8 text-slate-800" dir="rtl">{{ correspondence.body }}</div>
-                <div v-else-if="correspondence.type !== 'incoming' && correspondence.body" class="correspondence-body p-5 text-sm leading-8 text-slate-800" dir="rtl" :style="{ fontFamily: correspondenceFontFamily }" v-html="correspondence.body"></div>
-                <div v-else class="p-5 text-sm text-slate-500">{{ correspondence.type === 'incoming' ? 'توضیحی برای این نامه ثبت نشده است.' : 'متن داخلی ثبت نشده است؛ محتوای نامه در فایل پیوست قرار دارد.' }}</div>
-            </section>
-
-            <section v-if="correspondence.type === 'incoming' || originalLetters.length" class="rounded-2xl border border-indigo-100 bg-white shadow-sm">
-                <div class="flex items-center justify-between border-b border-indigo-100 px-5 py-4"><h2 class="font-bold text-slate-900">اصل نامه دریافتی</h2><span class="text-xs text-slate-500">{{ originalLetters.length }} فایل</span></div>
-                <div v-if="originalLetters.length" class="divide-y divide-slate-100">
-                    <div v-for="file in originalLetters" :key="file.id" class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-                        <div class="flex min-w-0 items-center gap-3">
-                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg></span>
-                            <div class="min-w-0"><p class="truncate text-sm font-semibold text-slate-900">{{ file.title || file.file_name }}</p><p class="mt-1 truncate text-xs text-slate-500">{{ file.file_name }} · {{ formatSize(file.size) }}</p></div>
+            <section class="grid gap-5 lg:grid-cols-2">
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">لیست ارجاعات</h2></div>
+                    <div v-if="referralActions.length" class="divide-y divide-slate-100">
+                        <div v-for="item in referralActions" :key="item.id" class="px-5 py-4">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <p class="text-sm font-semibold text-slate-900">{{ actionLabels[item.action_type] ?? item.action_type }}</p>
+                                <span class="text-xs text-slate-500">{{ formatDateTime(item.created_at) }}</span>
+                            </div>
+                            <p class="mt-1 text-sm text-slate-700"><span v-if="item.from_department">از {{ item.from_department.name }}</span><span v-if="item.from_department && item.to_department"> ← </span><span v-if="item.to_department">به {{ item.to_department.name }}</span><span v-if="!item.from_department && !item.to_department">واحد مبدأ یا مقصد مشخص نشده</span></p>
+                            <p class="mt-1 text-xs text-slate-500">ثبت‌کننده: {{ item.actor?.name ?? 'کاربر حذف‌شده' }}</p>
+                            <p v-if="item.note" class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700">{{ item.note }}</p>
                         </div>
-                        <div class="flex flex-wrap gap-2"><a :href="route('documents.download', file.id) + '?inline=1'" target="_blank" rel="noopener" class="rounded-lg border border-indigo-200 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50">مشاهده</a><a :href="route('documents.download', file.id)" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">دریافت فایل</a></div>
                     </div>
+                    <p v-else class="px-5 py-6 text-sm text-slate-500">هنوز ارجاعی برای این نامه ثبت نشده است.</p>
                 </div>
-                <div v-else class="px-5 py-6 text-sm text-slate-500">فایل اصل نامه‌ای برای این مکاتبه ثبت نشده است.</div>
-            </section>
-
-            <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">پیوست‌ها</h2><span class="text-xs text-slate-500">{{ attachments.length }} فایل</span></div>
-                <div v-if="attachments.length" class="divide-y divide-slate-100">
-                    <div v-for="file in attachments" :key="file.id" class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-                        <div class="flex min-w-0 items-center gap-3">
-                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-700"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-5 w-5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg></span>
-                            <div class="min-w-0"><p class="truncate text-sm font-semibold text-slate-900">{{ file.title || file.file_name }}</p><p class="mt-1 truncate text-xs text-slate-500">{{ file.file_name }} · {{ formatSize(file.size) }}</p></div>
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">لیست رونوشت‌ها</h2></div>
+                    <div v-if="correspondence.copies.length" class="divide-y divide-slate-100">
+                        <div v-for="copy in correspondence.copies" :key="copy.id" class="px-5 py-4">
+                            <p class="text-sm font-semibold text-slate-900">{{ copy.name }}</p>
+                            <p class="mt-1 text-xs text-slate-500">دریافت‌کننده رونوشت جهت اطلاع؛ مجوز اقدام در گردش ایجاد نمی‌کند.</p>
                         </div>
-                        <div class="flex flex-wrap gap-2"><a :href="route('documents.download', file.id) + '?inline=1'" target="_blank" rel="noopener" class="rounded-lg border border-indigo-200 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50">مشاهده</a><a :href="route('documents.download', file.id)" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">دریافت فایل</a></div>
                     </div>
+                    <p v-else class="px-5 py-6 text-sm text-slate-500">برای این نامه رونوشتی ثبت نشده است.</p>
+                    <form v-if="canAddCopies && copyDepartments.length" class="space-y-3 border-t border-slate-100 p-4" @submit.prevent="submitCopies">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900">افزودن رونوشت در ادامه گردش</h3>
+                            <p class="mt-1 text-xs leading-5 text-slate-600">واحدهای موردنظر را برای اطلاع انتخاب کنید.</p>
+                        </div>
+                        <div class="grid gap-2 sm:grid-cols-2">
+                            <label v-for="department in copyDepartments" :key="department.id" class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+                                <input type="checkbox" :checked="copyForm.department_ids.includes(department.id)" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" @change="toggleCopyDepartment(department.id, ($event.target as HTMLInputElement).checked)" />
+                                <span class="text-sm text-slate-800">{{ department.name }}</span>
+                            </label>
+                        </div>
+                        <p v-if="copyForm.errors.department_ids" class="text-sm text-rose-700">{{ copyForm.errors.department_ids }}</p>
+                        <button type="submit" :disabled="copyForm.processing || copyForm.department_ids.length === 0" class="rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">افزودن رونوشت</button>
+                    </form>
                 </div>
-                <div v-else class="px-5 py-8 text-center text-sm text-slate-500">برای این مکاتبه پیوستی ثبت نشده است.</div>
             </section>
 
             <section v-if="correspondence.reply_to || correspondence.replies.length" class="rounded-2xl border border-slate-200 bg-white shadow-sm">
