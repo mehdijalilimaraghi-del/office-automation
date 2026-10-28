@@ -936,6 +936,7 @@ class CorrespondenceHttpTest extends TestCase
         $this->actingAs($creator)->put(route('correspondence.update', $letter), [
             'subject' => 'نامه صادره اصلاح‌شده',
             'classification' => 'ordinary',
+            'sent_at' => '2026-10-27',
         ])->assertRedirect(route('correspondence.index'));
         $this->assertDatabaseHas('correspondences', ['id' => $letter->id, 'subject' => 'نامه صادره اصلاح‌شده']);
 
