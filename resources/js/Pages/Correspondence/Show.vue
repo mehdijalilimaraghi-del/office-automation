@@ -223,7 +223,7 @@ function registerCorrespondence(): void {
                 <div dir="rtl" class="min-w-0 space-y-5">
                                 <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">{{ correspondence.type === 'incoming' ? 'توضیحات نامه' : (correspondence.type === 'outgoing' && correspondence.body && !correspondence.body.includes('<') ? 'توضیحات فایل نامه' : 'متن نامه') }}</h2></div>
-                <div v-if="correspondence.type === 'incoming' && correspondence.body" class="whitespace-pre-wrap p-5 text-sm leading-8 text-slate-800" dir="rtl">{{ correspondence.body }}</div>
+                <div v-if="(correspondence.type === 'incoming' || (correspondence.type === 'outgoing' && correspondence.body && !correspondence.body.includes('<'))) && correspondence.body" class="whitespace-pre-wrap p-5 text-sm leading-8 text-slate-800" dir="rtl">{{ correspondence.body }}</div>
                 <div v-else-if="correspondence.type !== 'incoming' && correspondence.body" class="correspondence-body p-5 text-sm leading-8 text-slate-800" dir="rtl" :style="{ fontFamily: correspondenceFontFamily }" v-html="correspondence.body"></div>
                 <div v-else class="p-5 text-sm text-slate-500">{{ correspondence.type === 'incoming' ? 'توضیحی برای این نامه ثبت نشده است.' : 'متن داخلی ثبت نشده است؛ محتوای نامه در فایل پیوست قرار دارد.' }}</div>
             </section>
