@@ -2,7 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 import axios from 'axios';
@@ -15,6 +15,15 @@ interface CreatedDepartment { id: number; name: string; parent_id?: number | nul
 type CompositionMode = 'editor' | 'file' | 'both';
 type TextDirection = 'rtl' | 'ltr';
 
+interface ExistingCorrespondence {
+    id: number; type: 'incoming' | 'outgoing' | 'internal'; classification: string;
+    subject: string; letter_number: string | null; body: string | null;
+    sender_name: string | null; recipient_name: string | null; received_at: string | null; sent_at: string | null;
+    created_department_id: number | null; recipient_department_id: number | null;
+    external_organization_id: number | null; external_department_id: number | null;
+    related_letters: ReplyOption[]; copy_department_ids: number[];
+    original_documents: Array<{ id: number; title: string }>;
+}
 const props = defineProps<{
     types: Array<{ value: string; label: string }>;
     classifications: Array<{ value: string; label: string }>;
@@ -24,6 +33,8 @@ const props = defineProps<{
     createdDepartment: CreatedDepartment | null;
     createdDepartments: CreatedDepartment[];
     correspondenceFontFamily: string;
+    isEditing?: boolean;
+    correspondence?: ExistingCorrespondence | null;
 }>();
 
 const editor = ref<HTMLDivElement | null>(null);
@@ -91,28 +102,30 @@ const compositionModes: Array<{ value: CompositionMode; label: string; descripti
     { value: 'both', label: 'متن و فایل', description: 'متن نامه را بنویسید و فایل هم پیوست کنید.' },
 ];
 
+const existing = props.correspondence;
 const form = useForm({
-    type: props.types[0]?.value ?? 'internal',
-    created_department_id: props.createdDepartment?.id ?? '' as number | '',
-    classification: 'ordinary',
-    subject: '',
-    letter_number: '',
-    composition_mode: (props.types[0]?.value === 'incoming' ? 'file' : 'editor') as CompositionMode,
-    body: '',
-    sender_name: '',
-    recipient_name: '',
-    external_organization_id: '' as number | '',
-    external_department_id: '' as number | '',
-    received_at: '',
-    sent_at: '',
-    recipient_department_id: '' as number | '',
-    copy_department_ids: [] as number[],
-    reply_to_id: '' as number | '',
-    reply_to_ids: [] as number[],
+    type: existing?.type ?? props.types[0]?.value ?? 'internal',
+    created_department_id: existing?.created_department_id ?? props.createdDepartment?.id ?? '' as number | '',
+    classification: existing?.classification ?? 'ordinary',
+    subject: existing?.subject ?? '',
+    letter_number: existing?.letter_number ?? '',
+    composition_mode: (existing?.type === 'incoming' ? 'file' : (existing?.body ? 'editor' : 'file')) as CompositionMode,
+    body: existing?.body ?? '',
+    sender_name: existing?.sender_name ?? '',
+    recipient_name: existing?.recipient_name ?? '',
+    external_organization_id: existing?.external_organization_id ?? '' as number | '',
+    external_department_id: existing?.external_department_id ?? '' as number | '',
+    received_at: existing?.received_at ?? '',
+    sent_at: existing?.sent_at ?? '',
+    recipient_department_id: existing?.recipient_department_id ?? '' as number | '',
+    copy_department_ids: existing?.copy_department_ids ?? [] as number[],
+    reply_to_id: existing?.related_letters?.[0]?.id ?? '' as number | '',
+    reply_to_ids: existing?.related_letters?.map((letter) => letter.id) ?? [] as number[],
     original_letters: [] as File[],
     scanner_upload_token: '',
     attachments: [] as File[],
 });
+selectedRelatedLetters.value = existing?.related_letters ?? [];
 
 
 watch(() => form.type, (type, previousType) => {
@@ -317,7 +330,13 @@ async function prepareScannerSession(): Promise<void> {
 }
 
 onMounted(() => {
-    if (form.type === 'incoming') void prepareScannerSession();
+    if (editor.value && form.body) editor.value.innerHTML = form.body;
+    if (!props.isEditing && form.type === 'incoming') void prepareScannerSession();
+});
+
+watch(() => form.composition_mode, async () => {
+    await nextTick();
+    if (editor.value && form.body) editor.value.innerHTML = form.body;
 });
 
 onBeforeUnmount(() => {
@@ -382,12 +401,12 @@ async function scanOriginalLetter(): Promise<void> {
 </script>
 
 <template>
-    <Head title="ایجاد مکاتبه" />
+    <Head :title="isEditing ? 'ویرایش مکاتبه' : 'ایجاد مکاتبه'" />
     <AuthenticatedLayout>
         <template #header>
             <div>
-                <h2 class="text-xl font-bold text-slate-900">ایجاد مکاتبه</h2>
-                <p class="mt-1 text-sm text-slate-500">پیش‌نویس ایجاد می‌شود و شماره رسمی پس از ثبت نهایی اختصاص می‌یابد.</p>
+                <h2 class="text-xl font-bold text-slate-900">{{ isEditing ? 'ویرایش مکاتبه' : 'ایجاد مکاتبه' }}</h2>
+                <p class="mt-1 text-sm text-slate-500">{{ isEditing ? 'اطلاعات مکاتبه را در همان فرم ثبت اولیه اصلاح کنید.' : 'پیش‌نویس ایجاد می‌شود و شماره رسمی پس از ثبت نهایی اختصاص می‌یابد.' }}</p>
             </div>
         </template>
 
@@ -397,14 +416,14 @@ async function scanOriginalLetter(): Promise<void> {
             <form
                 class="mx-auto max-w-5xl space-y-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"
                 enctype="multipart/form-data"
-                @submit.prevent="form.post(route('correspondence.store'), { forceFormData: true })"
+                @submit.prevent="isEditing ? form.transform((data) => ({ ...data, _method: 'put' })).post(route('correspondence.update', correspondence!.id), { forceFormData: true }) : form.post(route('correspondence.store'), { forceFormData: true })"
             >
                 <section class="space-y-4">
                     <h3 class="text-base font-bold text-slate-900">مشخصات مکاتبه</h3>
                     <div class="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <div>
                             <label for="type" class="mb-1.5 block text-sm font-semibold text-slate-700">نوع مکاتبه <span class="text-rose-600">*</span></label>
-                            <select id="type" v-model="form.type" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <select id="type" v-model="form.type" :disabled="isEditing" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-slate-100 disabled:text-slate-500">
                                 <option v-for="item in types" :key="item.value" :value="item.value">{{ item.label }}</option>
                             </select>
                             <InputError class="mt-1" :message="form.errors.type" />
@@ -436,8 +455,14 @@ async function scanOriginalLetter(): Promise<void> {
                             <InputError class="mt-1" :message="form.errors.subject" />
                         </div>
                         <div v-if="form.type === 'incoming'" class="min-w-0">
-                            <label for="letter_number" class="mb-1.5 block text-sm font-semibold text-slate-700">شماره نامه روی اصل نامه <span class="text-rose-600">*</span></label>
-                            <input id="letter_number" v-model="form.letter_number" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm focus:border-indigo-500 focus:ring-indigo-500" maxlength="100" required :disabled="form.processing" placeholder="شماره نامه"/>
+                            <div class="mb-1.5 flex items-center gap-1.5">
+                                <label for="letter_number" class="text-sm font-semibold text-slate-700">شماره نامه وارده <span class="text-rose-600">*</span></label>
+                                <details class="group relative">
+                                    <summary aria-label="راهنمای شماره نامه وارده" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-300">؟</summary>
+                                    <span class="absolute right-0 top-7 z-20 w-64 rounded-lg border border-slate-200 bg-white p-3 text-xs font-normal leading-6 text-slate-700 shadow-lg">شماره نامه درج‌شده روی اصل نامه وارده را وارد کنید.</span>
+                                </details>
+                            </div>
+                            <input id="letter_number" v-model="form.letter_number" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm focus:border-indigo-500 focus:ring-indigo-500" maxlength="100" required :disabled="form.processing" placeholder="شماره درج‌شده روی اصل نامه"/>
                             <InputError class="mt-1.5" :message="form.errors.letter_number"/>
                         </div>
                         <div v-if="form.type === 'incoming'" class="min-w-0">
@@ -619,8 +644,11 @@ async function scanOriginalLetter(): Promise<void> {
 
                 <section v-if="form.type === 'incoming'" class="space-y-3 border-t border-slate-100 pt-5">
                     <div>
-                        <h3 class="text-base font-bold text-slate-900">اصل نامه دریافتی <span class="text-rose-600">*</span></h3>
-                        <p class="mt-1 text-sm leading-6 text-slate-500">تصویر اسکن‌شده یا PDF اصل نامه را بارگذاری کنید. این فایل‌ها جدا از پیوست‌های همراه نامه نگهداری می‌شوند. حداکثر ۱۰ فایل، هرکدام تا ۲۰ مگابایت.</p>
+                        <h3 class="text-base font-bold text-slate-900">اصل نامه دریافتی <span v-if="!isEditing" class="text-rose-600">*</span></h3>
+                        <p class="mt-1 text-sm leading-6 text-slate-500">{{ isEditing ? 'فایل‌های فعلی حفظ می‌شوند؛ در صورت نیاز می‌توانید فایل دیگری اضافه کنید.' : 'تصویر اسکن‌شده یا PDF اصل نامه را بارگذاری کنید. این فایل‌ها جدا از پیوست‌های همراه نامه نگهداری می‌شوند. حداکثر ۱۰ فایل، هرکدام تا ۲۰ مگابایت.' }}</p>
+                        <ul v-if="isEditing && correspondence?.original_documents.length" class="space-y-1 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
+                            <li v-for="document in correspondence.original_documents" :key="document.id">فایل فعلی: {{ document.title }}</li>
+                        </ul>
                     </div>
                     <div class="grid gap-3 sm:grid-cols-2">
                         <label for="original_letters" class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/40 px-5 py-7 text-center transition hover:border-indigo-400 hover:bg-indigo-50">
@@ -678,7 +706,7 @@ async function scanOriginalLetter(): Promise<void> {
                 <div class="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-5">
                     <Link :href="route('correspondence.index')" class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">انصراف</Link>
                     <button type="submit" :disabled="form.processing" class="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
-                        {{ form.processing ? 'در حال ذخیره...' : 'ذخیره پیش‌نویس' }}
+                        {{ form.processing ? 'در حال ذخیره...' : (isEditing ? 'ذخیره تغییرات' : 'ذخیره پیش‌نویس') }}
                     </button>
                 </div>
             </form>
