@@ -94,6 +94,7 @@ class CorrespondenceController extends Controller
         $correspondences->getCollection()->transform(function (Correspondence $correspondence) use ($access, $request): Correspondence {
             $correspondence->setAttribute('can_register', $access->canRegister($correspondence, $request->user()));
             $correspondence->setAttribute('can_manage_before_action', $access->canManageBeforeAction($correspondence, $request->user()));
+            $correspondence->setAttribute('can_delete', $access->canDelete($correspondence, $request->user()));
 
             return $correspondence;
         });
@@ -651,9 +652,35 @@ class CorrespondenceController extends Controller
 
     public function destroy(Request $request, Correspondence $correspondence, CorrespondenceAccessService $access): RedirectResponse
     {
-        abort_unless($access->canManageBeforeAction($correspondence,$request->user()),403);
-        DB::transaction(function()use($correspondence,$access,$request):void{$locked=Correspondence::query()->whereKey($correspondence->id)->lockForUpdate()->firstOrFail();abort_unless($access->canManageBeforeAction($locked,$request->user()),403);$locked->documents()->delete();$id=(int)$locked->id;$subject=$locked->subject;app(AuditServiceInterface::class)->record('correspondence.deleted_before_action',$locked,null,null,['correspondence_id'=>$id,'subject'=>$subject]);$locked->relatedLetters()->detach();$locked->relatedFromLetters()->detach();$locked->copies()->detach();$locked->authorizedUsers()->detach();$locked->actions()->delete();$locked->delete();});
-        return redirect()->route('correspondence.index')->with('success','مکاتبه حذف شد.');
+        abort_unless($access->canDelete($correspondence, $request->user()), 403);
+
+        DB::transaction(function () use ($correspondence, $access, $request): void {
+            $locked = Correspondence::query()->whereKey($correspondence->id)->lockForUpdate()->firstOrFail();
+            abort_unless($access->canDelete($locked, $request->user()), 403);
+
+            $id = (int) $locked->id;
+            $subject = $locked->subject;
+
+            app(AuditServiceInterface::class)->record(
+                'correspondence.deleted_before_action',
+                $locked,
+                null,
+                null,
+                ['correspondence_id' => $id, 'subject' => $subject, 'deleted_by_system_admin' => $request->user()->isSystemAdmin()],
+            );
+
+            // Keep replies as separate records, but remove their pointer to the deleted letter.
+            $locked->replies()->update(['reply_to_id' => null]);
+            $locked->documents()->delete();
+            $locked->relatedLetters()->detach();
+            $locked->relatedFromLetters()->detach();
+            $locked->copies()->detach();
+            $locked->authorizedUsers()->detach();
+            $locked->actions()->delete();
+            $locked->delete();
+        });
+
+        return redirect()->route('correspondence.index')->with('success', 'مکاتبه حذف شد.');
     }
 
     public function updateExternalTracking(
