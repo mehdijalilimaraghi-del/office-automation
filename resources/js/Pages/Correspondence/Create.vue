@@ -131,7 +131,7 @@ selectedRelatedLetters.value = existing?.related_letters ?? [];
 watch(() => form.type, (type, previousType) => {
     if (type === 'incoming') {
         form.composition_mode = 'file';
-        form.body = '';
+        if (previousType !== 'incoming') form.body = '';
         void prepareScannerSession();
     } else if (previousType === 'incoming') {
         form.composition_mode = 'editor';
@@ -568,6 +568,23 @@ async function scanOriginalLetter(): Promise<void> {
                         </label>
                     </div>
                     <InputError :message="form.errors.composition_mode" />
+                </section>
+
+                <section v-if="form.type === 'incoming'" class="space-y-3 border-t border-slate-100 pt-5">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">توضیحات نامه</h3>
+                        <p class="mt-1 text-sm leading-6 text-slate-500">خلاصه یا توضیحی درباره موضوع و محتوای نامه وارده را وارد کنید. این توضیح جایگزین فایل اصل نامه نیست.</p>
+                    </div>
+                    <textarea
+                        id="incoming_description"
+                        v-model="form.body"
+                        rows="5"
+                        maxlength="100000"
+                        class="w-full rounded-xl border-slate-300 text-sm leading-7 focus:border-indigo-500 focus:ring-indigo-500"
+                        placeholder="توضیحات یا خلاصه نامه را بنویسید..."
+                        :disabled="form.processing"
+                    ></textarea>
+                    <InputError :message="form.errors.body" />
                 </section>
 
                 <section v-if="form.type !== 'incoming' && form.composition_mode !== 'file'" class="space-y-3 border-t border-slate-100 pt-5">
