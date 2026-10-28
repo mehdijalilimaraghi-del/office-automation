@@ -882,6 +882,27 @@ class CorrespondenceHttpTest extends TestCase
         \App\Modules\Correspondence\Models\CorrespondenceAction::query()->create(['correspondence_id'=>$blocked->id,'actor_id'=>$secretariat->id,'action_type'=>'manager_approve','note'=>'اقدام آزمایشی']);
         $this->actingAs($secretariat)->delete(route('correspondence.destroy',$blocked))->assertForbidden();
         $this->assertDatabaseHas('correspondences',['id'=>$blocked->id]);
+
+        $registered = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'subject' => 'نامه ثبت نهایی‌شده',
+            'letter_number' => 'IN-126',
+            'registration_number' => 'REG-126',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'created_by' => $secretariat->id,
+            'registered_by' => $secretariat->id,
+            'recipient_department_id' => $recipient,
+            'received_at' => '2026-10-27',
+        ]);
+        $this->actingAs($secretariat)->put(route('correspondence.update',$registered), [
+            'subject' => 'تغییر غیرمجاز',
+            'classification' => 'ordinary',
+            'letter_number' => 'IN-127',
+            'received_at' => '2026-10-27',
+            'recipient_department_id' => $recipient,
+        ])->assertForbidden();
+        $this->actingAs($secretariat)->delete(route('correspondence.destroy',$registered))->assertForbidden();
+        $this->assertDatabaseHas('correspondences',['id'=>$registered->id,'subject'=>'نامه ثبت نهایی‌شده']);
     }
 
     private function userWithPermission(string $permissionCode): User
