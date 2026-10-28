@@ -232,7 +232,7 @@ function registerCorrespondence(): void {
                 <div v-else class="px-5 py-8 text-center text-sm text-slate-500">برای این مکاتبه پیوستی ثبت نشده است.</div>
             </section>
                 </div>
-                <div class="min-w-0 space-y-5">
+                <div dir="rtl" class="min-w-0 space-y-5">
                                 <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">{{ correspondence.type === 'incoming' ? 'توضیحات نامه' : (correspondence.type === 'outgoing' && correspondence.body && !correspondence.body.includes('<') ? 'توضیحات فایل نامه' : 'متن نامه') }}</h2></div>
                 <div v-if="correspondence.type === 'incoming' && correspondence.body" class="whitespace-pre-wrap p-5 text-sm leading-8 text-slate-800" dir="rtl">{{ correspondence.body }}</div>
