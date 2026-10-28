@@ -943,6 +943,42 @@ class CorrespondenceHttpTest extends TestCase
         $this->assertDatabaseHas('correspondences', ['id' => $blocked->id]);
     }
 
+    public function test_system_admin_can_delete_correspondence_after_workflow_actions(): void
+    {
+        $admin = User::factory()->create(['status' => 'active']);
+        $adminRole = Role::query()->firstOrCreate(
+            ['code' => 'SYSTEM_ADMIN'],
+            [
+                'name' => 'مدیر سیستم',
+                'description' => 'System administrator role for tests',
+                'is_active' => true,
+                'is_system' => true,
+            ],
+        );
+        $admin->roles()->syncWithoutDetaching([$adminRole->id]);
+
+        $creator = $this->userWithPermission('correspondence.create');
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => 'نامه آزمایشی دارای گردش',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'registration_number' => 'REG-ADMIN-DELETE-001',
+            'created_by' => $creator->id,
+        ]);
+        \\App\\Modules\\Correspondence\\Models\\CorrespondenceAction::query()->create([
+            'correspondence_id' => $letter->id,
+            'actor_id' => $admin->id,
+            'action_type' => 'manager_approve',
+            'note' => 'اقدام گردش آزمایشی',
+        ]);
+
+        $this->actingAs($admin)->delete(route('correspondence.destroy', $letter))
+            ->assertRedirect(route('correspondence.index'));
+
+        $this->assertDatabaseMissing('correspondences', ['id' => $letter->id]);
+        $this->assertDatabaseMissing('correspondence_actions', ['correspondence_id' => $letter->id]);
+    }
+
     public function test_creator_can_manage_registered_outgoing_correspondence_until_first_action(): void
     {
         $creator = $this->userWithPermission('correspondence.create');
