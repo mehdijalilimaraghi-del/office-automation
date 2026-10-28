@@ -450,6 +450,7 @@ class CorrespondenceHttpTest extends TestCase
             'external_organization_id' => $organization->id,
             'subject' => 'نامه صادره',
             'composition_mode' => 'file',
+            'body' => 'توضیحات فایل نامه آزمایشی',
         ])->assertRedirect(route('correspondence.create'))
             ->assertSessionHasErrors('attachments');
 
@@ -1031,6 +1032,7 @@ class CorrespondenceHttpTest extends TestCase
         $letter = Correspondence::query()->create([
             'type' => Correspondence::TYPE_OUTGOING,
             'subject' => 'نامه صادره اولیه',
+            'body' => '<p>متن اولیه نامه</p>',
             'status' => Correspondence::STATUS_REGISTERED,
             'registration_number' => 'REG-OUT-123',
             'external_organization_id' => $organization->id,
@@ -1042,6 +1044,8 @@ class CorrespondenceHttpTest extends TestCase
             'classification' => 'ordinary',
             'sent_at' => '2026-10-27',
             'external_organization_id' => $organization->id,
+            'composition_mode' => 'editor',
+            'body' => '<p>متن اصلاح‌شده نامه</p>',
         ])->assertRedirect(route('correspondence.index'));
         $this->assertDatabaseHas('correspondences', ['id' => $letter->id, 'subject' => 'نامه صادره اصلاح‌شده']);
 
