@@ -439,10 +439,15 @@ class CorrespondenceHttpTest extends TestCase
     public function test_file_mode_requires_at_least_one_attachment(): void
     {
         $user = $this->userWithPermission('correspondence.create');
+        $organization = ExternalOrganization::query()->create([
+            'name' => 'سازمان مخاطب '.Str::upper(Str::random(5)),
+            'status' => 'active',
+        ]);
 
         $this->actingAs($user)->from(route('correspondence.create'))->post(route('correspondence.store'), [
             'type' => 'outgoing',
             'sent_at' => '2026-10-24',
+            'external_organization_id' => $organization->id,
             'subject' => 'نامه صادره',
             'composition_mode' => 'file',
         ])->assertRedirect(route('correspondence.create'))
@@ -581,7 +586,11 @@ class CorrespondenceHttpTest extends TestCase
         $this->actingAs($user)->get(route('correspondence.create'))->assertOk()->assertInertia(fn ($page) => $page->where('types', [['value' => Correspondence::TYPE_OUTGOING, 'label' => 'صادره'], ['value' => Correspondence::TYPE_INTERNAL, 'label' => 'داخلی']]));
         $this->actingAs($user)->post(route('correspondence.store'), ['type' => Correspondence::TYPE_INCOMING, 'subject' => 'نامه وارده غیرمجاز', 'composition_mode' => 'editor', 'body' => '<p>متن</p>'])->assertForbidden();
         $this->assertDatabaseCount('correspondences', 0);
-        $this->actingAs($user)->post(route('correspondence.store'), ['type' => Correspondence::TYPE_OUTGOING, 'sent_at' => '2026-10-24', 'subject' => 'پیش‌نویس صادره مجاز', 'composition_mode' => 'editor', 'body' => '<p>متن</p>'])->assertRedirect(route('correspondence.index'));
+        $organization = ExternalOrganization::query()->create([
+            'name' => 'سازمان مخاطب '.Str::upper(Str::random(5)),
+            'status' => 'active',
+        ]);
+        $this->actingAs($user)->post(route('correspondence.store'), ['type' => Correspondence::TYPE_OUTGOING, 'sent_at' => '2026-10-24', 'external_organization_id' => $organization->id, 'subject' => 'پیش‌نویس صادره مجاز', 'composition_mode' => 'editor', 'body' => '<p>متن</p>'])->assertRedirect(route('correspondence.index'));
         $this->actingAs($user)->post(route('correspondence.store'), ['type' => Correspondence::TYPE_INTERNAL, 'recipient_department_id' => $this->recipientDepartmentId(), 'subject' => 'نامه داخلی مجاز', 'composition_mode' => 'editor', 'body' => '<p>متن</p>'])->assertRedirect(route('correspondence.index'));
         $this->assertDatabaseCount('correspondences', 2);
     }
@@ -1015,11 +1024,16 @@ class CorrespondenceHttpTest extends TestCase
     {
         $creator = $this->userWithPermission('correspondence.create');
         $otherUser = $this->userWithPermission('correspondence.create');
+        $organization = ExternalOrganization::query()->create([
+            'name' => 'سازمان مخاطب '.Str::upper(Str::random(5)),
+            'status' => 'active',
+        ]);
         $letter = Correspondence::query()->create([
             'type' => Correspondence::TYPE_OUTGOING,
             'subject' => 'نامه صادره اولیه',
             'status' => Correspondence::STATUS_REGISTERED,
             'registration_number' => 'REG-OUT-123',
+            'external_organization_id' => $organization->id,
             'created_by' => $creator->id,
         ]);
 
@@ -1027,6 +1041,7 @@ class CorrespondenceHttpTest extends TestCase
             'subject' => 'نامه صادره اصلاح‌شده',
             'classification' => 'ordinary',
             'sent_at' => '2026-10-27',
+            'external_organization_id' => $organization->id,
         ])->assertRedirect(route('correspondence.index'));
         $this->assertDatabaseHas('correspondences', ['id' => $letter->id, 'subject' => 'نامه صادره اصلاح‌شده']);
 
