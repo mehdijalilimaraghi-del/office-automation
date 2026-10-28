@@ -181,27 +181,27 @@ function registerCorrespondence(): void {
             <div v-if="page.props.flash?.success" class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-800" role="status">
                 {{ page.props.flash.success }}
             </div>
-<div dir="ltr" class="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.65fr)]">
+<div dir="ltr" class="grid items-start gap-5 xl:grid-cols-[minmax(0,0.7fr)_minmax(0,1.65fr)]">
                 <div dir="rtl" class="min-w-0 space-y-5">
                     <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">اطلاعات مکاتبه</h2></div>
-                <dl class="grid gap-x-5 gap-y-4 p-5 sm:grid-cols-2">
-                    <div><dt class="text-xs text-slate-500">نوع نامه</dt><dd class="mt-1 text-sm font-semibold text-slate-900">{{ typeLabels[correspondence.type] }}</dd></div>
-                    <div><dt class="text-xs text-slate-500">وضعیت</dt><dd class="mt-1 text-sm font-semibold text-slate-900">{{ statusLabels[correspondence.status] }}</dd></div>
-                    <div><dt class="text-xs text-slate-500">شماره نامه</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.letter_number ?? '—' }}</dd></div>
-                    <div><dt class="text-xs text-slate-500">شماره ثبت</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.registration_number ?? 'پس از ثبت نهایی مشخص می‌شود' }}</dd></div>
-                    <div><dt class="text-xs text-slate-500">تاریخ ثبت نهایی</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ formatDateTime(correspondence.registered_at) }}</dd></div>
-                    <div><dt class="text-xs text-slate-500">تاریخ ایجاد</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ formatDateTime(correspondence.created_at) }}</dd></div>
-                    <div><dt class="text-xs text-slate-500">واحد ایجادکننده</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.created_department?.name ?? 'تعیین نشده' }}</dd></div>
-                    <div><dt class="text-xs text-slate-500">واحد گیرنده</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.recipient_department?.name ?? 'هنوز تعیین نشده' }}</dd></div>
-                    <div><dt class="text-xs text-slate-500">ایجادکننده</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.creator?.name ?? 'نامشخص' }}</dd></div>
-                    <div><dt class="text-xs text-slate-500">ثبت‌کننده</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.registrar?.name ?? '—' }}</dd></div>
-                    <div><dt class="text-xs text-slate-500">فرستنده</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.sender_name ?? '—' }}</dd></div>
-                    <div><dt class="text-xs text-slate-500">گیرنده</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.recipient_name ?? '—' }}</dd></div>
-                    <div v-if="correspondence.external_organization"><dt class="text-xs text-slate-500">سازمان بیرونی</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.external_organization.name }}</dd></div>
-                    <div v-if="correspondence.external_department"><dt class="text-xs text-slate-500">واحد بیرونی</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ correspondence.external_department.name }}</dd></div>
-                    <div><dt class="text-xs text-slate-500">تاریخ دریافت</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ formatDate(correspondence.received_at) }}</dd></div>
-                    <div><dt class="text-xs text-slate-500">تاریخ ارسال</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ formatDate(correspondence.sent_at) }}</dd></div>
+                <dl class="divide-y divide-slate-100 p-5">
+                    <div class="flex items-start justify-between gap-4 py-3"><dt class="shrink-0 text-xs text-slate-500">نوع نامه</dt><dd class="min-w-0 text-left text-sm font-medium text-slate-800">{{ typeLabels[correspondence.type] }}</dd></div>
+                    <div class="flex items-start justify-between gap-4 py-3"><dt class="shrink-0 text-xs text-slate-500">وضعیت</dt><dd class="min-w-0 text-left text-sm font-medium text-slate-800">{{ statusLabels[correspondence.status] }}</dd></div>
+                    <div class="flex items-start justify-between gap-4 py-3"><dt class="shrink-0 text-xs text-slate-500">شماره نامه</dt><dd class="min-w-0 text-left text-sm font-medium text-slate-800">{{ correspondence.letter_number ?? '—' }}</dd></div>
+                    <div class="flex items-start justify-between gap-4 py-3"><dt class="shrink-0 text-xs text-slate-500">شماره ثبت</dt><dd class="min-w-0 text-left text-sm font-medium text-slate-800">{{ correspondence.registration_number ?? 'پس از ثبت نهایی مشخص می‌شود' }}</dd></div>
+                    <div class="flex items-start justify-between gap-4 py-3"><dt class="shrink-0 text-xs text-slate-500">تاریخ ثبت نهایی</dt><dd class="min-w-0 text-left text-sm font-medium text-slate-800">{{ formatDateTime(correspondence.registered_at) }}</dd></div>
+                    <div class="flex items-start justify-between gap-4 py-3"><dt class="shrink-0 text-xs text-slate-500">تاریخ ایجاد</dt><dd class="min-w-0 text-left text-sm font-medium text-slate-800">{{ formatDateTime(correspondence.created_at) }}</dd></div>
+                    <div class="flex items-start justify-between gap-4 py-3"><dt class="shrink-0 text-xs text-slate-500">واحد ایجادکننده</dt><dd class="min-w-0 text-left text-sm font-medium text-slate-800">{{ correspondence.created_department?.name ?? 'تعیین نشده' }}</dd></div>
+                    <div class="flex items-start justify-between gap-4 py-3"><dt class="shrink-0 text-xs text-slate-500">واحد گیرنده</dt><dd class="min-w-0 text-left text-sm font-medium text-slate-800">{{ correspondence.recipient_department?.name ?? 'هنوز تعیین نشده' }}</dd></div>
+                    <div class="flex items-start justify-between gap-4 py-3"><dt class="shrink-0 text-xs text-slate-500">ایجادکننده</dt><dd class="min-w-0 text-left text-sm font-medium text-slate-800">{{ correspondence.creator?.name ?? 'نامشخص' }}</dd></div>
+                    <div class="flex items-start justify-between gap-4 py-3"><dt class="shrink-0 text-xs text-slate-500">ثبت‌کننده</dt><dd class="min-w-0 text-left text-sm font-medium text-slate-800">{{ correspondence.registrar?.name ?? '—' }}</dd></div>
+                    <div class="flex items-start justify-between gap-4 py-3"><dt class="shrink-0 text-xs text-slate-500">فرستنده</dt><dd class="min-w-0 text-left text-sm font-medium text-slate-800">{{ correspondence.sender_name ?? '—' }}</dd></div>
+                    <div class="flex items-start justify-between gap-4 py-3"><dt class="shrink-0 text-xs text-slate-500">گیرنده</dt><dd class="min-w-0 text-left text-sm font-medium text-slate-800">{{ correspondence.recipient_name ?? '—' }}</dd></div>
+                    <div v-if="correspondence.external_organization" class="flex items-start justify-between gap-4 py-3"><dt class="shrink-0 text-xs text-slate-500">سازمان بیرونی</dt><dd class="min-w-0 text-left text-sm font-medium text-slate-800">{{ correspondence.external_organization.name }}</dd></div>
+                    <div v-if="correspondence.external_department" class="flex items-start justify-between gap-4 py-3"><dt class="shrink-0 text-xs text-slate-500">واحد بیرونی</dt><dd class="min-w-0 text-left text-sm font-medium text-slate-800">{{ correspondence.external_department.name }}</dd></div>
+                    <div class="flex items-start justify-between gap-4 py-3"><dt class="shrink-0 text-xs text-slate-500">تاریخ دریافت</dt><dd class="min-w-0 text-left text-sm font-medium text-slate-800">{{ formatDate(correspondence.received_at) }}</dd></div>
+                    <div class="flex items-start justify-between gap-4 py-3"><dt class="shrink-0 text-xs text-slate-500">تاریخ ارسال</dt><dd class="min-w-0 text-left text-sm font-medium text-slate-800">{{ formatDate(correspondence.sent_at) }}</dd></div>
                 </dl>
             </section>
                                         
