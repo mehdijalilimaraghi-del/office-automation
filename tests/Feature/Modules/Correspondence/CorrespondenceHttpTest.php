@@ -892,6 +892,17 @@ class CorrespondenceHttpTest extends TestCase
             'received_at' => '2026-10-27',
         ]);
 
+        // These records are created as part of registration/copy bookkeeping and
+        // must not count as the first user workflow action.
+        foreach (['registered', 'secretariat_initial_referral', 'copy_added'] as $actionType) {
+            \App\Modules\Correspondence\Models\CorrespondenceAction::query()->create([
+                'correspondence_id' => $letter->id,
+                'actor_id' => $secretariat->id,
+                'action_type' => $actionType,
+                'note' => 'ثبت سیستمی',
+            ]);
+        }
+
         $this->actingAs($secretariat)->put(route('correspondence.update', $letter), [
             'subject' => 'موضوع اصلاح‌شده',
             'classification' => 'ordinary',
