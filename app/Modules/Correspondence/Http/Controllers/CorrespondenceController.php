@@ -613,7 +613,11 @@ class CorrespondenceController extends Controller
         }
         $originalLetters = array_values(array_filter((array) $request->file('original_letters', [])));
         $attachments = array_values(array_filter((array) $request->file('attachments', [])));
-        if (count($originalLetters) + $correspondence->documents()->where('purpose', 'correspondence_original')->count() > 10) return back()->withErrors(['original_letters' => 'حداکثر ۱۰ فایل برای اصل نامه قابل نگهداری است.'])->withInput();
+        $existingOriginalCount = $correspondence->documents()->where('purpose', 'correspondence_original')->count();
+        if ($correspondence->type === Correspondence::TYPE_INCOMING && count($originalLetters) + $existingOriginalCount === 0) {
+            return back()->withErrors(['original_letters' => 'برای نامه وارده باید تصویر یا PDF اصل نامه پیوست باشد.'])->withInput();
+        }
+        if (count($originalLetters) + $existingOriginalCount > 10) return back()->withErrors(['original_letters' => 'حداکثر ۱۰ فایل برای اصل نامه قابل نگهداری است.'])->withInput();
         if (count($attachments) + $correspondence->documents()->where('purpose', 'correspondence_attachment')->count() > 10) return back()->withErrors(['attachments' => 'حداکثر ۱۰ فایل پیوست قابل نگهداری است.'])->withInput();
 
         DB::transaction(function () use ($correspondence, $data, $body, $relatedLetterIds, $originalLetters, $attachments, $documents, $access, $request): void {
