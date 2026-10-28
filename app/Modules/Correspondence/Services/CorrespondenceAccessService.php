@@ -56,6 +56,12 @@ class CorrespondenceAccessService
             && (int) $correspondence->created_by === (int) $user->id;
     }
 
+    public function canDelete(Correspondence $correspondence, User $user): bool
+    {
+        return $user->isActive()
+            && ($user->isSystemAdmin() || $this->canManageBeforeAction($correspondence, $user));
+    }
+
     public function canRegister(Correspondence $correspondence, User $user): bool
     {
         if (! $user->isActive()) {
