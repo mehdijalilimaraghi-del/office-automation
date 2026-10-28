@@ -475,6 +475,38 @@ class CorrespondenceHttpTest extends TestCase
         $this->actingAs($otherUser)->get(route('correspondence.scanner.status', $token))->assertNotFound();
     }
 
+    public function test_incoming_correspondence_can_store_a_description_separately_from_original_letter(): void
+    {
+        Storage::fake('local');
+        $secretariat = User::factory()->create(['status' => 'active']);
+        $department = Department::query()->create([
+            'name' => 'دبیرخانه توضیحات '.Str::upper(Str::random(5)),
+            'code' => 'DESC-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $secretariat->id,
+        ]);
+        app(SystemSettingsService::class)->set([
+            OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT) => (string) $department->id,
+        ]);
+
+        $description = 'خلاصه نامه درباره درخواست بررسی قرارداد';
+        $this->actingAs($secretariat)->post(route('correspondence.store'), [
+            'type' => Correspondence::TYPE_INCOMING,
+            'letter_number' => 'IN-DESC-001',
+            'received_at' => '2026-10-28',
+            'subject' => 'نامه وارده با توضیح',
+            'recipient_department_id' => $this->recipientDepartmentId(),
+            'body' => $description,
+            'original_letters' => [UploadedFile::fake()->create('original.pdf', 10, 'application/pdf')],
+        ])->assertRedirect(route('correspondence.index'));
+
+        $this->assertDatabaseHas('correspondences', [
+            'subject' => 'نامه وارده با توضیح',
+            'body' => $description,
+            'letter_number' => 'IN-DESC-001',
+        ]);
+    }
+
     public function test_incoming_correspondence_requires_an_original_letter_file_even_if_body_is_provided(): void
     {
         $user = User::factory()->create(['status' => 'active']);
