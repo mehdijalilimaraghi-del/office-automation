@@ -911,7 +911,7 @@ class CorrespondenceHttpTest extends TestCase
             'status' => Correspondence::STATUS_REGISTERED,
             'created_by' => $secretariat->id,
         ]);
-        \App\\Modules\\Correspondence\\Models\\CorrespondenceAction::query()->create([
+        \App\Modules\Correspondence\Models\CorrespondenceAction::query()->create([
             'correspondence_id' => $blocked->id,
             'actor_id' => $secretariat->id,
             'action_type' => 'manager_approve',
