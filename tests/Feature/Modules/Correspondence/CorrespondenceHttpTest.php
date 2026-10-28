@@ -892,6 +892,17 @@ class CorrespondenceHttpTest extends TestCase
             'received_at' => '2026-10-27',
         ]);
 
+        // Incoming correspondence must retain its original scanned letter even
+        // when editing other metadata; give this fixture a valid original file.
+        Storage::fake('local');
+        app(DocumentService::class)->create(
+            data: ['title' => 'اصل نامه آزمایشی', 'document_type' => 'correspondence_original'],
+            file: UploadedFile::fake()->create('original.pdf', 10, 'application/pdf'),
+            creator: $secretariat,
+            linkable: $letter,
+            purpose: 'correspondence_original',
+        );
+
         // These records are created as part of registration/copy bookkeeping and
         // must not count as the first user workflow action.
         foreach (['registered', 'secretariat_initial_referral', 'copy_added'] as $actionType) {
