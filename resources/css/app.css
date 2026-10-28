@@ -83,8 +83,10 @@
      * Required-field marker convention:
      * - Native required inputs/selects/textareas get the red asterisk from this ::after rule.
      * - Do NOT add a manual "*" inside a label covered by these selectors, or it will appear twice.
-     * - For custom controls not matched here, add one explicit marker in the label OR extend this selector.
+     * - For custom layouts that separate a label from its required control, add the
+     *   `required-field-label` class to the label.
      */
+    label.required-field-label::after,
     label:has(+ :is(input, select, textarea):required)::after,
     label:has(+ div :is(input, select, textarea):required)::after,
     label:has(+ .jalali-date-picker[data-required])::after,
