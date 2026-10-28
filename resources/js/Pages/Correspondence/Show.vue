@@ -219,7 +219,7 @@ function registerCorrespondence(): void {
             </section>
             
                                 <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">پیوست‌های همراه نامه</h2><span class="text-xs text-slate-500">{{ attachments.length }} فایل</span></div>
+                <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">{{ correspondence.type === 'outgoing' && correspondence.body && !correspondence.body.includes('<') ? 'فایل نامه' : 'پیوست‌های همراه نامه' }}</h2><span class="text-xs text-slate-500">{{ attachments.length }} فایل</span></div>
                 <div v-if="attachments.length" class="divide-y divide-slate-100">
                     <div v-for="file in attachments" :key="file.id" class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
                         <div class="flex min-w-0 items-center gap-3">
