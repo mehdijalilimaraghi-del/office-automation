@@ -182,7 +182,7 @@ function registerCorrespondence(): void {
                 {{ page.props.flash.success }}
             </div>
 <div dir="ltr" class="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.65fr)]">
-                <div class="min-w-0 space-y-5">
+                <div dir="rtl" class="min-w-0 space-y-5">
                     <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">اطلاعات مکاتبه</h2></div>
                 <dl class="grid gap-x-5 gap-y-4 p-5 sm:grid-cols-2">
@@ -204,8 +204,8 @@ function registerCorrespondence(): void {
                     <div><dt class="text-xs text-slate-500">تاریخ ارسال</dt><dd class="mt-1 text-sm font-medium text-slate-800">{{ formatDate(correspondence.sent_at) }}</dd></div>
                 </dl>
             </section>
-                                <section v-if="correspondence.type === 'incoming' || originalLetters.length" class="rounded-2xl border border-indigo-100 bg-white shadow-sm">
-                <div class="flex items-center justify-between border-b border-indigo-100 px-5 py-4"><h2 class="font-bold text-slate-900">پیوست‌های نامه</h2><span class="text-xs text-slate-500">{{ originalLetters.length }} فایل</span></div>
+                                        <section v-if="correspondence.type === 'incoming' || originalLetters.length" class="rounded-2xl border border-indigo-100 bg-white shadow-sm">
+                <div class="flex items-center justify-between border-b border-indigo-100 px-5 py-4"><h2 class="font-bold text-slate-900">فایل نامه</h2><span class="text-xs text-slate-500">{{ originalLetters.length }} فایل</span></div>
                 <div v-if="originalLetters.length" class="divide-y divide-slate-100">
                     <div v-for="file in originalLetters" :key="file.id" class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
                         <div class="flex min-w-0 items-center gap-3">
@@ -215,10 +215,11 @@ function registerCorrespondence(): void {
                         <div class="flex flex-wrap gap-2"><a :href="route('documents.download', file.id) + '?inline=1'" target="_blank" rel="noopener" class="rounded-lg border border-indigo-200 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50">مشاهده</a><a :href="route('documents.download', file.id)" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">دریافت فایل</a></div>
                     </div>
                 </div>
-                <div v-else class="px-5 py-6 text-sm text-slate-500">فایل اصل نامه‌ای برای این مکاتبه ثبت نشده است.</div>
+                <div v-else class="px-5 py-6 text-sm text-slate-500">فایلی برای نامه ثبت نشده است.</div>
             </section>
+            
                                 <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">پیوست‌ها</h2><span class="text-xs text-slate-500">{{ attachments.length }} فایل</span></div>
+                <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">پیوست‌های همراه نامه</h2><span class="text-xs text-slate-500">{{ attachments.length }} فایل</span></div>
                 <div v-if="attachments.length" class="divide-y divide-slate-100">
                     <div v-for="file in attachments" :key="file.id" class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
                         <div class="flex min-w-0 items-center gap-3">
@@ -233,7 +234,7 @@ function registerCorrespondence(): void {
                 </div>
                 <div class="min-w-0 space-y-5">
                                 <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">{{ correspondence.type === 'incoming' ? 'توضیحات نامه' : 'متن نامه' }}</h2></div>
+                <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">{{ correspondence.type === 'incoming' ? 'توضیحات نامه' : (correspondence.type === 'outgoing' && correspondence.body && !correspondence.body.includes('<') ? 'توضیحات فایل نامه' : 'متن نامه') }}</h2></div>
                 <div v-if="correspondence.type === 'incoming' && correspondence.body" class="whitespace-pre-wrap p-5 text-sm leading-8 text-slate-800" dir="rtl">{{ correspondence.body }}</div>
                 <div v-else-if="correspondence.type !== 'incoming' && correspondence.body" class="correspondence-body p-5 text-sm leading-8 text-slate-800" dir="rtl" :style="{ fontFamily: correspondenceFontFamily }" v-html="correspondence.body"></div>
                 <div v-else class="p-5 text-sm text-slate-500">{{ correspondence.type === 'incoming' ? 'توضیحی برای این نامه ثبت نشده است.' : 'متن داخلی ثبت نشده است؛ محتوای نامه در فایل پیوست قرار دارد.' }}</div>
