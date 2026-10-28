@@ -867,42 +867,81 @@ class CorrespondenceHttpTest extends TestCase
         $this->assertDatabaseMissing('correspondences',['subject'=>'وارده بدون شماره اصلی']);
     }
 
-    public function test_secretariat_can_edit_and_delete_only_before_any_action(): void
+    public function test_incoming_correspondence_can_be_managed_by_secretariat_after_registration_until_first_action(): void
     {
-        $secretariat=User::factory()->create(['status'=>'active']);
-        $department=Department::query()->create(['name'=>'دبیرخانه ویرایش '.Str::upper(Str::random(5)),'code'=>'ED-'.Str::upper(Str::random(5)),'is_active'=>true,'manager_id'=>$secretariat->id]);
-        app(SystemSettingsService::class)->set([OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT)=>(string)$department->id]);
-        $recipient=$this->recipientDepartmentId();
-        $letter=Correspondence::query()->create(['type'=>Correspondence::TYPE_INCOMING,'subject'=>'موضوع اولیه','letter_number'=>'IN-123','status'=>Correspondence::STATUS_DRAFT,'created_by'=>$secretariat->id,'recipient_department_id'=>$recipient,'received_at'=>'2026-10-27']);
-        $this->actingAs($secretariat)->put(route('correspondence.update',$letter),['subject'=>'موضوع اصلاح‌شده','classification'=>'ordinary','letter_number'=>'IN-124','received_at'=>'2026-10-27','recipient_department_id'=>$recipient])->assertRedirect(route('correspondence.index'));
-        $this->assertDatabaseHas('correspondences',['id'=>$letter->id,'subject'=>'موضوع اصلاح‌شده','letter_number'=>'IN-124']);
-        $this->actingAs($secretariat)->delete(route('correspondence.destroy',$letter))->assertRedirect(route('correspondence.index'));
-        $this->assertDatabaseMissing('correspondences',['id'=>$letter->id]);
-        $blocked=Correspondence::query()->create(['type'=>Correspondence::TYPE_INCOMING,'subject'=>'نامه دارای اقدام','letter_number'=>'IN-125','status'=>Correspondence::STATUS_DRAFT,'created_by'=>$secretariat->id]);
-        \App\Modules\Correspondence\Models\CorrespondenceAction::query()->create(['correspondence_id'=>$blocked->id,'actor_id'=>$secretariat->id,'action_type'=>'manager_approve','note'=>'اقدام آزمایشی']);
-        $this->actingAs($secretariat)->delete(route('correspondence.destroy',$blocked))->assertForbidden();
-        $this->assertDatabaseHas('correspondences',['id'=>$blocked->id]);
-
-        $registered = Correspondence::query()->create([
+        $secretariat = User::factory()->create(['status' => 'active']);
+        $department = Department::query()->create([
+            'name' => 'دبیرخانه اصلاح مکاتبه '.Str::upper(Str::random(5)),
+            'code' => 'ED-'.Str::upper(Str::random(5)),
+            'is_active' => true,
+            'manager_id' => $secretariat->id,
+        ]);
+        app(SystemSettingsService::class)->set([
+            OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT) => (string) $department->id,
+        ]);
+        $recipient = $this->recipientDepartmentId();
+        $letter = Correspondence::query()->create([
             'type' => Correspondence::TYPE_INCOMING,
-            'subject' => 'نامه ثبت نهایی‌شده',
-            'letter_number' => 'IN-126',
-            'registration_number' => 'REG-126',
+            'subject' => 'موضوع اولیه',
+            'letter_number' => 'IN-123',
+            'registration_number' => 'REG-123',
             'status' => Correspondence::STATUS_REGISTERED,
-            'created_by' => $secretariat->id,
             'registered_by' => $secretariat->id,
+            'created_by' => $secretariat->id,
             'recipient_department_id' => $recipient,
             'received_at' => '2026-10-27',
         ]);
-        $this->actingAs($secretariat)->put(route('correspondence.update',$registered), [
-            'subject' => 'تغییر غیرمجاز',
+
+        $this->actingAs($secretariat)->put(route('correspondence.update', $letter), [
+            'subject' => 'موضوع اصلاح‌شده',
             'classification' => 'ordinary',
-            'letter_number' => 'IN-127',
+            'letter_number' => 'IN-124',
             'received_at' => '2026-10-27',
             'recipient_department_id' => $recipient,
-        ])->assertForbidden();
-        $this->actingAs($secretariat)->delete(route('correspondence.destroy',$registered))->assertForbidden();
-        $this->assertDatabaseHas('correspondences',['id'=>$registered->id,'subject'=>'نامه ثبت نهایی‌شده']);
+        ])->assertRedirect(route('correspondence.index'));
+        $this->assertDatabaseHas('correspondences', ['id' => $letter->id, 'subject' => 'موضوع اصلاح‌شده', 'letter_number' => 'IN-124']);
+
+        $this->actingAs($secretariat)->delete(route('correspondence.destroy', $letter))->assertRedirect(route('correspondence.index'));
+        $this->assertDatabaseMissing('correspondences', ['id' => $letter->id]);
+
+        $blocked = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'subject' => 'نامه دارای ارجاع',
+            'letter_number' => 'IN-125',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'created_by' => $secretariat->id,
+        ]);
+        \\App\\Modules\\Correspondence\\Models\\CorrespondenceAction::query()->create([
+            'correspondence_id' => $blocked->id,
+            'actor_id' => $secretariat->id,
+            'action_type' => 'manager_approve',
+            'note' => 'اقدام آزمایشی',
+        ]);
+        $this->actingAs($secretariat)->delete(route('correspondence.destroy', $blocked))->assertForbidden();
+        $this->assertDatabaseHas('correspondences', ['id' => $blocked->id]);
+    }
+
+    public function test_creator_can_manage_registered_outgoing_correspondence_until_first_action(): void
+    {
+        $creator = $this->userWithPermission('correspondence.create');
+        $otherUser = $this->userWithPermission('correspondence.create');
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_OUTGOING,
+            'subject' => 'نامه صادره اولیه',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'registration_number' => 'REG-OUT-123',
+            'created_by' => $creator->id,
+        ]);
+
+        $this->actingAs($creator)->put(route('correspondence.update', $letter), [
+            'subject' => 'نامه صادره اصلاح‌شده',
+            'classification' => 'ordinary',
+        ])->assertRedirect(route('correspondence.index'));
+        $this->assertDatabaseHas('correspondences', ['id' => $letter->id, 'subject' => 'نامه صادره اصلاح‌شده']);
+
+        $this->actingAs($otherUser)->delete(route('correspondence.destroy', $letter))->assertForbidden();
+        $this->actingAs($creator)->delete(route('correspondence.destroy', $letter))->assertRedirect(route('correspondence.index'));
+        $this->assertDatabaseMissing('correspondences', ['id' => $letter->id]);
     }
 
     private function userWithPermission(string $permissionCode): User
