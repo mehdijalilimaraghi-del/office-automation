@@ -109,7 +109,7 @@ const form = useForm({
     classification: existing?.classification ?? 'ordinary',
     subject: existing?.subject ?? '',
     letter_number: existing?.letter_number ?? '',
-    composition_mode: (existing?.type === 'incoming' ? 'file' : (existing?.body ? 'editor' : 'file')) as CompositionMode,
+    composition_mode: (existing?.type === 'incoming' ? 'file' : (existing?.body && existing.body.includes('<') ? 'editor' : 'file')) as CompositionMode,
     body: existing?.body ?? '',
     sender_name: existing?.sender_name ?? '',
     recipient_name: existing?.recipient_name ?? '',
