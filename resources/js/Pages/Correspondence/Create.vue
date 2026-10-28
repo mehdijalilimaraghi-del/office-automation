@@ -447,10 +447,15 @@ async function scanOriginalLetter(): Promise<void> {
                             <DepartmentTreeSelect v-model="form.recipient_department_id" :departments="departments" placeholder="انتخاب واحد دریافت‌کننده" :clearable="false" />
                             <InputError class="mt-1" :message="form.errors.recipient_department_id" />
                         </div>
+                        <div v-if="form.type === 'internal'" class="min-w-0 lg:col-span-2">
+                            <label for="subject" class="mb-1.5 block text-sm font-semibold text-slate-700">موضوع</label>
+                            <input id="subject" v-model="form.subject" required maxlength="255" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                            <InputError class="mt-1" :message="form.errors.subject" />
+                        </div>
 
                     </div>
                     <div class="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <div :class="form.type === 'outgoing' ? 'lg:col-span-3' : form.type === 'incoming' || form.type === 'internal' ? 'lg:col-span-2' : 'col-span-full'">
+                        <div v-if="form.type !== 'internal'" :class="form.type === 'outgoing' ? 'lg:col-span-3' : form.type === 'incoming' ? 'lg:col-span-2' : 'col-span-full'">
                             <label for="subject" class="mb-1.5 block text-sm font-semibold text-slate-700">موضوع</label>
                             <input id="subject" v-model="form.subject" required maxlength="255" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
                             <InputError class="mt-1" :message="form.errors.subject" />
