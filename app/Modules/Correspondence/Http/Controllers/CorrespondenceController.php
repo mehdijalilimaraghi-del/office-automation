@@ -374,7 +374,7 @@ class CorrespondenceController extends Controller
             'body' => ['nullable', 'string', 'max:100000'],
             'sender_name' => ['nullable', 'string', 'max:255'],
             'recipient_name' => ['nullable', 'string', 'max:255'],
-            'external_organization_id' => ['nullable', 'integer', Rule::exists('external_organizations', 'id')->where('status', 'active')],
+            'external_organization_id' => ['nullable', Rule::requiredIf($request->input('type') === Correspondence::TYPE_OUTGOING), 'integer', Rule::exists('external_organizations', 'id')->where('status', 'active')],
             'external_department_id' => ['nullable', 'integer', Rule::exists('external_departments', 'id')->where(fn ($query) => $query->where('status', 'active')->where('external_organization_id', $request->input('external_organization_id')))],
             'received_at' => ['nullable', 'required_if:type,'.Correspondence::TYPE_INCOMING, 'date'],
             'sent_at' => ['nullable', 'required_if:type,'.Correspondence::TYPE_OUTGOING, 'date'],
@@ -411,12 +411,15 @@ class CorrespondenceController extends Controller
         $mode = $data['type'] === Correspondence::TYPE_INCOMING
             ? 'file'
             : ($data['composition_mode'] ?? 'editor');
-        $body = $data['type'] === Correspondence::TYPE_INCOMING
+        $body = $data['type'] === Correspondence::TYPE_INCOMING || ($data['type'] === Correspondence::TYPE_OUTGOING && $mode === 'file')
             ? trim(strip_tags((string) ($data['body'] ?? '')))
             : ($mode === 'file' ? '' : $this->sanitizeBody((string) ($data['body'] ?? '')));
 
         if ($data['type'] !== Correspondence::TYPE_INCOMING && in_array($mode, ['editor', 'both'], true) && trim(strip_tags($body)) === '') {
             return back()->withErrors(['body' => 'متن نامه را وارد کنید.'])->withInput();
+        }
+        if ($data['type'] === Correspondence::TYPE_OUTGOING && $mode === 'file' && $body === '') {
+            return back()->withErrors(['body' => 'توضیحات فایل نامه را وارد کنید.'])->withInput();
         }
 
         $originalLetters = array_values(array_filter((array) $request->file('original_letters', [])));
@@ -455,7 +458,7 @@ class CorrespondenceController extends Controller
                     'classification' => $data['classification'] ?? Correspondence::CLASSIFICATION_ORDINARY,
                     'subject' => $data['subject'],
                     'letter_number' => $data['letter_number'] ?? null,
-                    'body' => $data['type'] === Correspondence::TYPE_INCOMING ? ($body !== '' ? $body : null) : ($mode === 'file' ? null : $body),
+                    'body' => $body !== '' ? $body : null,
                     'sender_name' => $data['sender_name'] ?? null,
                     'recipient_name' => $data['recipient_name'] ?? null,
                     'received_at' => $data['received_at'] ?? null,
@@ -591,7 +594,7 @@ class CorrespondenceController extends Controller
             'received_at' => [Rule::requiredIf($correspondence->type === Correspondence::TYPE_INCOMING), 'nullable', 'date'],
             'sent_at' => [Rule::requiredIf($correspondence->type === Correspondence::TYPE_OUTGOING), 'nullable', 'date'],
             'recipient_department_id' => [Rule::requiredIf(in_array($correspondence->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)), 'nullable', 'integer', 'exists:departments,id'],
-            'external_organization_id' => ['nullable', 'integer', Rule::exists('external_organizations', 'id')->where('status', 'active')],
+            'external_organization_id' => ['nullable', Rule::requiredIf($correspondence->type === Correspondence::TYPE_OUTGOING), 'integer', Rule::exists('external_organizations', 'id')->where('status', 'active')],
             'external_department_id' => ['nullable', 'integer', Rule::exists('external_departments', 'id')->where(fn ($query) => $query->where('status', 'active')->where('external_organization_id', $request->input('external_organization_id')))],
             'reply_to_id' => ['nullable', 'integer', Rule::exists('correspondences', 'id')->where('status', Correspondence::STATUS_REGISTERED)],
             'reply_to_ids' => ['nullable', 'array', 'max:20'], 'reply_to_ids.*' => ['integer', 'distinct', Rule::exists('correspondences', 'id')->where('status', Correspondence::STATUS_REGISTERED)],
@@ -602,11 +605,14 @@ class CorrespondenceController extends Controller
         $mode = $correspondence->type === Correspondence::TYPE_INCOMING
             ? 'file'
             : ($data['composition_mode'] ?? (filled($data['body'] ?? $correspondence->body) ? 'editor' : 'file'));
-        $body = $correspondence->type === Correspondence::TYPE_INCOMING
+        $body = $correspondence->type === Correspondence::TYPE_INCOMING || ($correspondence->type === Correspondence::TYPE_OUTGOING && $mode === 'file')
             ? trim(strip_tags((string) ($data['body'] ?? $correspondence->body ?? '')))
             : ($mode === 'file' ? null : $this->sanitizeBody((string) ($data['body'] ?? $correspondence->body ?? '')));
         if ($correspondence->type !== Correspondence::TYPE_INCOMING && in_array($mode, ['editor', 'both'], true) && trim(strip_tags((string) $body)) === '') {
             return back()->withErrors(['body' => 'متن نامه را وارد کنید.'])->withInput();
+        }
+        if ($correspondence->type === Correspondence::TYPE_OUTGOING && $mode === 'file' && $body === '') {
+            return back()->withErrors(['body' => 'توضیحات فایل نامه را وارد کنید.'])->withInput();
         }
         $relatedLetterIds = array_values(array_unique(array_map('intval', $data['reply_to_ids'] ?? (isset($data['reply_to_id']) ? [$data['reply_to_id']] : []))));
         if (in_array((int) $correspondence->id, $relatedLetterIds, true)) {
@@ -631,7 +637,7 @@ class CorrespondenceController extends Controller
             $locked->fill([
                 'subject' => $data['subject'], 'classification' => $data['classification'],
                 'letter_number' => $locked->type === Correspondence::TYPE_INCOMING ? $data['letter_number'] : $locked->letter_number,
-                'body' => $body, 'sender_name' => $data['sender_name'] ?? null, 'recipient_name' => $data['recipient_name'] ?? null,
+                'body' => $body !== '' ? $body : null, 'sender_name' => $data['sender_name'] ?? null, 'recipient_name' => $data['recipient_name'] ?? null,
                 'received_at' => $data['received_at'] ?? null, 'sent_at' => $data['sent_at'] ?? null,
                 'created_department_id' => $data['created_department_id'] ?? $locked->created_department_id,
                 'recipient_department_id' => $data['recipient_department_id'] ?? null,
