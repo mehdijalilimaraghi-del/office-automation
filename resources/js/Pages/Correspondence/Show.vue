@@ -164,9 +164,7 @@ function registerCorrespondence(): void {
                 <div>
                     <div class="flex flex-wrap items-center gap-2">
                         <h1 class="text-xl font-bold text-slate-900">{{ correspondence.subject }}</h1>
-                        <span class="rounded-full px-2.5 py-1 text-xs font-semibold" :class="correspondence.status === 'registered' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">{{ statusLabels[correspondence.status] }}</span>
                     </div>
-                    <p class="mt-1 text-sm text-slate-500">{{ typeLabels[correspondence.type] }} <span v-if="correspondence.letter_number">· شماره نامه {{ correspondence.letter_number }}</span><span v-if="correspondence.registration_number"> · شماره ثبت {{ correspondence.registration_number }}</span></p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                     <Link :href="route('correspondence.index')" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">بازگشت به فهرست</Link>
@@ -175,7 +173,7 @@ function registerCorrespondence(): void {
             </div>
         </template>
 
-        <div class="mx-auto max-w-6xl space-y-5 p-4 sm:p-6">
+        <div class="mx-auto max-w-screen-2xl space-y-5 p-4 sm:p-6">
             <div v-if="page.props.errors?.registration" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-800" role="alert">
                 <p class="font-bold">ثبت نهایی انجام نشد</p>
                 <p class="mt-1">{{ page.props.errors.registration }}</p>
@@ -183,7 +181,7 @@ function registerCorrespondence(): void {
             <div v-if="page.props.flash?.success" class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-800" role="status">
                 {{ page.props.flash.success }}
             </div>
-<div class="grid items-start gap-5 xl:grid-cols-[minmax(280px,0.9fr)_minmax(0,1.7fr)]">
+<div dir="ltr" class="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.65fr)]">
                 <div class="min-w-0 space-y-5">
                     <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">اطلاعات مکاتبه</h2></div>
