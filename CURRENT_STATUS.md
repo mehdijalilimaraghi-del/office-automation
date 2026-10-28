@@ -1389,3 +1389,11 @@ Implementation has started for the agreed cross-department project model:
 - Updated the file-mode attachment validation test to include the required plain-text file description, so the request reaches the missing-attachment assertion instead of failing earlier on the description rule.
 - Updated the registered outgoing correspondence edit fixture/request to use editor mode with a body, so the test exercises edit permissions and metadata updates rather than triggering the file-mode description validation.
 - Validation pending: run `php artisan test --filter=CorrespondenceHttpTest` locally. No test result is claimed; `master` remains unchanged.
+
+
+## 2026-10-28 — Correspondence details layout and incoming registrar permissions
+
+- Reduced the correspondence metadata column width by changing the desktop grid ratio from 1:1.65 to 0.7:1.65. Metadata is now a single vertical list with one label/value pair per row.
+- For incoming correspondence, the creator department is set to the configured active Secretariat department rather than inferred from the registering user's other department memberships.
+- A user who registered an incoming letter as Secretariat staff is view-only for that letter's workflow, even if that user also manages the recipient department. Workflow actions and adding copies are hidden in the UI and rejected by server-side authorization. Other eligible recipient-department managers retain their existing workflow permissions.
+- Validation pending in the local environment: run `php artisan test --filter=CorrespondenceHttpTest` and `npm run build`, then verify a Secretariat registrar who also manages the recipient department can view but cannot act or add copies. No test/build result is claimed; `master` remains unchanged.
