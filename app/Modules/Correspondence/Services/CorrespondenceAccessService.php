@@ -33,7 +33,17 @@ class CorrespondenceAccessService
 
     public function canManageBeforeAction(Correspondence $correspondence, User $user): bool
     {
-        if (! $user->isActive() || $correspondence->actions()->exists()
+        // Registration, the automatic initial routing that follows it, and copy-recipient
+        // bookkeeping are not user workflow actions and must not lock the correspondence.
+        $hasWorkflowAction = $correspondence->actions()
+            ->whereNotIn('action_type', [
+                \App\Modules\Correspondence\Models\CorrespondenceAction::REGISTERED,
+                \App\Modules\Correspondence\Models\CorrespondenceAction::SECRETARIAT_INITIAL_REFERRAL,
+                \App\Modules\Correspondence\Models\CorrespondenceAction::COPY_ADDED,
+            ])
+            ->exists();
+
+        if (! $user->isActive() || $hasWorkflowAction
             || $correspondence->replies()->exists() || $correspondence->task_id !== null) {
             return false;
         }
