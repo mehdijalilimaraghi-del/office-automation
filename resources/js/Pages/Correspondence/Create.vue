@@ -135,6 +135,7 @@ watch(() => form.type, (type, previousType) => {
         void prepareScannerSession();
     } else if (previousType === 'incoming') {
         form.composition_mode = 'editor';
+        form.body = '';
         form.original_letters = [];
         form.scanner_upload_token = '';
         scannerFileName.value = '';
