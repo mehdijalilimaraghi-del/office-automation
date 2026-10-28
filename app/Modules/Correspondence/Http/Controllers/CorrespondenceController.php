@@ -18,6 +18,7 @@ use App\Modules\Correspondence\Services\CorrespondenceService;
 use App\Modules\Correspondence\Services\CorrespondenceWorkflowService;
 use App\Modules\Correspondence\Http\Controllers\CorrespondenceScannerController;
 use App\Core\Settings\Services\SystemSettingsService;
+use App\Core\Settings\Services\OrganizationDepartmentRoleService;
 use App\Modules\Documents\Services\DocumentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -200,9 +201,15 @@ class CorrespondenceController extends Controller
                 && ($request->user()->departments()->where('departments.id', $correspondence->current_department_id)->exists()
                     || $request->user()->managedDepartments()->whereKey($correspondence->current_department_id)->exists()),
             'canManageWorkflow' => $correspondence->workflow_state !== 'completed_with_result'
+                && ! ($correspondence->type === Correspondence::TYPE_INCOMING
+                    && (int) $correspondence->registered_by === (int) $request->user()->id
+                    && $access->isSecretariat($request->user()))
                 && $correspondence->current_department_id !== null
                 && (int) Department::query()->whereKey($correspondence->current_department_id)->value('manager_id') === (int) $request->user()->id,
             'canAddCopies' => $correspondence->workflow_state !== 'completed_with_result'
+                && ! ($correspondence->type === Correspondence::TYPE_INCOMING
+                    && (int) $correspondence->registered_by === (int) $request->user()->id
+                    && $access->isSecretariat($request->user()))
                 && $correspondence->current_department_id !== null
                 && (int) Department::query()->whereKey($correspondence->current_department_id)->value('manager_id') === (int) $request->user()->id,
             'copyDepartments' => Department::query()
@@ -463,7 +470,9 @@ class CorrespondenceController extends Controller
                     'recipient_name' => $data['recipient_name'] ?? null,
                     'received_at' => $data['received_at'] ?? null,
                     'sent_at' => $data['sent_at'] ?? null,
-                    'created_department_id' => $data['created_department_id'] ?? null,
+                    'created_department_id' => $data['type'] === Correspondence::TYPE_INCOMING
+                        ? app(OrganizationDepartmentRoleService::class)->activeDepartmentId(OrganizationDepartmentRoleService::SECRETARIAT)
+                        : ($data['created_department_id'] ?? null),
                     'recipient_department_id' => $data['recipient_department_id'] ?? null,
                     'external_organization_id' => $data['external_organization_id'] ?? null,
                     'external_department_id' => $data['external_department_id'] ?? null,
@@ -780,12 +789,17 @@ class CorrespondenceController extends Controller
         abort_unless($access->canView($correspondence, $request->user()), 403);
 
         $currentDepartmentId = $correspondence->current_department_id;
+        $isSecretariatRegistrarForIncoming = $correspondence->type === Correspondence::TYPE_INCOMING
+            && (int) $correspondence->registered_by === (int) $request->user()->id
+            && $access->isSecretariat($request->user());
+
         abort_unless(
-            $correspondence->workflow_state !== 'completed_with_result'
+            ! $isSecretariatRegistrarForIncoming
+                && $correspondence->workflow_state !== 'completed_with_result'
                 && $currentDepartmentId !== null
                 && (int) Department::query()->whereKey($currentDepartmentId)->value('manager_id') === (int) $request->user()->id,
             403,
-            'افزودن رونوشت در ادامه گردش فقط توسط مدیر واحد مسئول نامه مجاز است.',
+            'افزودن رونوشت در ادامه گردش فقط توسط مدیر مجاز واحد مسئول نامه انجام می‌شود.',
         );
 
         $data = $request->validate([
