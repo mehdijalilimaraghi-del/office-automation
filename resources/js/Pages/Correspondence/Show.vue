@@ -293,7 +293,48 @@ function registerCorrespondence(): void {
             </section>
                 </div>
             </div>
-                        <section v-if="correspondence.type === 'outgoing'" class="rounded-2xl border border-indigo-100 bg-white shadow-sm">
+                        <section class="grid gap-5 lg:grid-cols-2">
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">لیست ارجاعات</h2></div>
+                    <div v-if="referralActions.length" class="divide-y divide-slate-100">
+                        <div v-for="item in referralActions" :key="item.id" class="px-5 py-4">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <p class="text-sm font-semibold text-slate-900">{{ actionLabels[item.action_type] ?? item.action_type }}</p>
+                                <span class="text-xs text-slate-500">{{ formatDateTime(item.created_at) }}</span>
+                            </div>
+                            <p class="mt-1 text-sm text-slate-700"><span v-if="item.from_department">از {{ item.from_department.name }}</span><span v-if="item.from_department && item.to_department"> ← </span><span v-if="item.to_department">به {{ item.to_department.name }}</span><span v-if="!item.from_department && !item.to_department">واحد مبدأ یا مقصد مشخص نشده</span></p>
+                            <p class="mt-1 text-xs text-slate-500">ثبت‌کننده: {{ item.actor?.name ?? 'کاربر حذف‌شده' }}</p>
+                            <p v-if="item.note" class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700">{{ item.note }}</p>
+                        </div>
+                    </div>
+                    <p v-else class="px-5 py-6 text-sm text-slate-500">هنوز ارجاعی برای این نامه ثبت نشده است.</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">لیست رونوشت‌ها</h2></div>
+                    <div v-if="correspondence.copies.length" class="divide-y divide-slate-100">
+                        <div v-for="copy in correspondence.copies" :key="copy.id" class="px-5 py-4">
+                            <p class="text-sm font-semibold text-slate-900">{{ copy.name }}</p>
+                            <p class="mt-1 text-xs text-slate-500">دریافت‌کننده رونوشت جهت اطلاع؛ مجوز اقدام در گردش ایجاد نمی‌کند.</p>
+                        </div>
+                    </div>
+                    <p v-else class="px-5 py-6 text-sm text-slate-500">برای این نامه رونوشتی ثبت نشده است.</p>
+                    <form v-if="canAddCopies && copyDepartments.length" class="space-y-3 border-t border-slate-100 p-4" @submit.prevent="submitCopies">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-900">افزودن رونوشت در ادامه گردش</h3>
+                            <p class="mt-1 text-xs leading-5 text-slate-600">واحدهای موردنظر را برای اطلاع انتخاب کنید.</p>
+                        </div>
+                        <div class="grid gap-2 sm:grid-cols-2">
+                            <label v-for="department in copyDepartments" :key="department.id" class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
+                                <input type="checkbox" :checked="copyForm.department_ids.includes(department.id)" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" @change="toggleCopyDepartment(department.id, ($event.target as HTMLInputElement).checked)" />
+                                <span class="text-sm text-slate-800">{{ department.name }}</span>
+                            </label>
+                        </div>
+                        <p v-if="copyForm.errors.department_ids" class="text-sm text-rose-700">{{ copyForm.errors.department_ids }}</p>
+                        <button type="submit" :disabled="copyForm.processing || copyForm.department_ids.length === 0" class="rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">افزودن رونوشت</button>
+                    </form>
+                </div>
+            </section>
+            <section v-if="correspondence.type === 'outgoing'" class="rounded-2xl border border-indigo-100 bg-white shadow-sm">
                 <div class="border-b border-indigo-100 px-5 py-4">
                     <h2 class="font-bold text-slate-900">پیگیری نامه صادره</h2>
                     <p class="mt-1 text-sm text-slate-500">اطلاعات ارسال و شماره ثبت نامه در سازمان مقصد مستقل از وضعیت تکمیل تسک نگهداری می‌شود.</p>
@@ -341,47 +382,6 @@ function registerCorrespondence(): void {
                     </div>
                     <p v-else class="sm:col-span-2 text-xs text-slate-500">برای تغییر اطلاعات پیگیری، دسترسی دبیرخانه، ایجادکننده نامه یا مسئول تسک لازم است.</p>
                 </form>
-            </section>
-            <section class="grid gap-5 lg:grid-cols-2">
-                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">لیست ارجاعات</h2></div>
-                    <div v-if="referralActions.length" class="divide-y divide-slate-100">
-                        <div v-for="item in referralActions" :key="item.id" class="px-5 py-4">
-                            <div class="flex flex-wrap items-center justify-between gap-2">
-                                <p class="text-sm font-semibold text-slate-900">{{ actionLabels[item.action_type] ?? item.action_type }}</p>
-                                <span class="text-xs text-slate-500">{{ formatDateTime(item.created_at) }}</span>
-                            </div>
-                            <p class="mt-1 text-sm text-slate-700"><span v-if="item.from_department">از {{ item.from_department.name }}</span><span v-if="item.from_department && item.to_department"> ← </span><span v-if="item.to_department">به {{ item.to_department.name }}</span><span v-if="!item.from_department && !item.to_department">واحد مبدأ یا مقصد مشخص نشده</span></p>
-                            <p class="mt-1 text-xs text-slate-500">ثبت‌کننده: {{ item.actor?.name ?? 'کاربر حذف‌شده' }}</p>
-                            <p v-if="item.note" class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700">{{ item.note }}</p>
-                        </div>
-                    </div>
-                    <p v-else class="px-5 py-6 text-sm text-slate-500">هنوز ارجاعی برای این نامه ثبت نشده است.</p>
-                </div>
-                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">لیست رونوشت‌ها</h2></div>
-                    <div v-if="correspondence.copies.length" class="divide-y divide-slate-100">
-                        <div v-for="copy in correspondence.copies" :key="copy.id" class="px-5 py-4">
-                            <p class="text-sm font-semibold text-slate-900">{{ copy.name }}</p>
-                            <p class="mt-1 text-xs text-slate-500">دریافت‌کننده رونوشت جهت اطلاع؛ مجوز اقدام در گردش ایجاد نمی‌کند.</p>
-                        </div>
-                    </div>
-                    <p v-else class="px-5 py-6 text-sm text-slate-500">برای این نامه رونوشتی ثبت نشده است.</p>
-                    <form v-if="canAddCopies && copyDepartments.length" class="space-y-3 border-t border-slate-100 p-4" @submit.prevent="submitCopies">
-                        <div>
-                            <h3 class="text-sm font-bold text-slate-900">افزودن رونوشت در ادامه گردش</h3>
-                            <p class="mt-1 text-xs leading-5 text-slate-600">واحدهای موردنظر را برای اطلاع انتخاب کنید.</p>
-                        </div>
-                        <div class="grid gap-2 sm:grid-cols-2">
-                            <label v-for="department in copyDepartments" :key="department.id" class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5">
-                                <input type="checkbox" :checked="copyForm.department_ids.includes(department.id)" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" @change="toggleCopyDepartment(department.id, ($event.target as HTMLInputElement).checked)" />
-                                <span class="text-sm text-slate-800">{{ department.name }}</span>
-                            </label>
-                        </div>
-                        <p v-if="copyForm.errors.department_ids" class="text-sm text-rose-700">{{ copyForm.errors.department_ids }}</p>
-                        <button type="submit" :disabled="copyForm.processing || copyForm.department_ids.length === 0" class="rounded-xl bg-sky-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">افزودن رونوشت</button>
-                    </form>
-                </div>
             </section>
 
             <section v-if="correspondence.reply_to || correspondence.replies.length" class="rounded-2xl border border-slate-200 bg-white shadow-sm">
