@@ -456,7 +456,7 @@ async function scanOriginalLetter(): Promise<void> {
                         </div>
                         <div v-if="form.type === 'incoming'" class="min-w-0">
                             <div class="mb-1.5 flex items-center gap-1.5">
-                                <label for="letter_number" class="text-sm font-semibold text-slate-700">شماره نامه وارده <span class="text-rose-600">*</span></label>
+                                <label for="letter_number" class="text-sm font-semibold text-slate-700">شماره نامه وارده</label>
                                 <details class="group relative">
                                     <summary aria-label="راهنمای شماره نامه وارده" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-300">؟</summary>
                                     <span class="absolute right-0 top-7 z-20 w-64 rounded-lg border border-slate-200 bg-white p-3 text-xs font-normal leading-6 text-slate-700 shadow-lg">شماره نامه درج‌شده روی اصل نامه وارده را وارد کنید.</span>
