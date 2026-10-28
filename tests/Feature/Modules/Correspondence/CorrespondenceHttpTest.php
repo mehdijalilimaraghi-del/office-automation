@@ -965,7 +965,7 @@ class CorrespondenceHttpTest extends TestCase
             'registration_number' => 'REG-ADMIN-DELETE-001',
             'created_by' => $creator->id,
         ]);
-        \\App\\Modules\\Correspondence\\Models\\CorrespondenceAction::query()->create([
+        \App\Modules\Correspondence\Models\CorrespondenceAction::query()->create([
             'correspondence_id' => $letter->id,
             'actor_id' => $admin->id,
             'action_type' => 'manager_approve',
