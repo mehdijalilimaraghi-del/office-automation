@@ -33,9 +33,17 @@ class CorrespondenceAccessService
 
     public function canManageBeforeAction(Correspondence $correspondence, User $user): bool
     {
-        return $this->isSecretariat($user)
-            && $correspondence->status === Correspondence::STATUS_DRAFT
-            && ! $correspondence->actions()->exists();
+        if (! $user->isActive() || $correspondence->actions()->exists()
+            || $correspondence->replies()->exists() || $correspondence->task_id !== null) {
+            return false;
+        }
+
+        if ($correspondence->type === Correspondence::TYPE_INCOMING) {
+            return $this->isSecretariat($user);
+        }
+
+        return $user->hasPermission('correspondence.create')
+            && (int) $correspondence->created_by === (int) $user->id;
     }
 
     public function canRegister(Correspondence $correspondence, User $user): bool
