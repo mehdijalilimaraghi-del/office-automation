@@ -67,11 +67,19 @@ class CorrespondenceAccessService
                     ->where('status', Correspondence::STATUS_REGISTERED);
             });
 
+            // Drafts are private to their creator and the Secretariat only.
+            $visible->orWhere(function (Builder $draft) use ($user, $isRegistrar): void {
+                $draft->where('status', Correspondence::STATUS_DRAFT);
+
+                if (! $isRegistrar) {
+                    $draft->where('created_by', $user->id);
+                }
+            });
+
+            // Registered confidential correspondence remains visible only to related users and the Secretariat.
             $visible->orWhere(function (Builder $private) use ($user, $isRegistrar): void {
-                $private->where(function (Builder $classification): void {
-                    $classification->where('classification', Correspondence::CLASSIFICATION_CONFIDENTIAL)
-                        ->orWhere('status', Correspondence::STATUS_DRAFT);
-                });
+                $private->where('classification', Correspondence::CLASSIFICATION_CONFIDENTIAL)
+                    ->where('status', Correspondence::STATUS_REGISTERED);
 
                 if ($isRegistrar) {
                     return;
@@ -84,14 +92,11 @@ class CorrespondenceAccessService
                         ->orWhereHas('currentDepartment.members', fn (Builder $members) => $members->where('users.id', $user->id))
                         ->orWhereHas('currentDepartment', fn (Builder $departments) => $departments->where('manager_id', $user->id))
                         ->orWhereHas('authorizedUsers', fn (Builder $users) => $users->where('users.id', $user->id))
-                        ->orWhere(function (Builder $copy) use ($user): void {
-                            $copy->where('status', Correspondence::STATUS_REGISTERED)
-                                ->whereHas('copies', function (Builder $departments) use ($user): void {
-                                    $departments->where(function (Builder $member) use ($user): void {
-                                        $member->whereHas('members', fn (Builder $members) => $members->where('users.id', $user->id))
-                                            ->orWhere('manager_id', $user->id);
-                                    });
-                                });
+                        ->orWhereHas('copies', function (Builder $departments) use ($user): void {
+                            $departments->where(function (Builder $member) use ($user): void {
+                                $member->whereHas('members', fn (Builder $members) => $members->where('users.id', $user->id))
+                                    ->orWhere('manager_id', $user->id);
+                            });
                         });
                 });
             });
@@ -106,6 +111,10 @@ class CorrespondenceAccessService
 
         if ($this->isSecretariat($user)) {
             return true;
+        }
+
+        if ($correspondence->status === Correspondence::STATUS_DRAFT) {
+            return (int) $correspondence->created_by === (int) $user->id;
         }
 
         if ($correspondence->status === Correspondence::STATUS_REGISTERED
