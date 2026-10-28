@@ -323,6 +323,8 @@ class CorrespondenceController extends Controller
         }
 
         return Inertia::render('Correspondence/Create', [
+            'isEditing' => false,
+            'correspondence' => null,
             'correspondenceFontFamily' => $settings->get(['correspondence.composition.font_family' => 'Vazirmatn'])['correspondence.composition.font_family'],
             'createdDepartment' => $createdDepartment,
             'createdDepartments' => $createdDepartments,
@@ -518,25 +520,127 @@ class CorrespondenceController extends Controller
     }
 
 
-    public function edit(Request $request, Correspondence $correspondence, CorrespondenceAccessService $access): Response
+    public function edit(Request $request, Correspondence $correspondence, CorrespondenceAccessService $access, SystemSettingsService $settings): Response
     {
         abort_unless($access->canManageBeforeAction($correspondence, $request->user()), 403);
-        return Inertia::render('Correspondence/Edit', [
-            'correspondence' => [
-                'id'=>$correspondence->id,'type'=>$correspondence->type,'classification'=>$correspondence->classification,'subject'=>$correspondence->subject,'letter_number'=>$correspondence->letter_number,'sender_name'=>$correspondence->sender_name,'recipient_name'=>$correspondence->recipient_name,'received_at'=>$correspondence->received_at?->toDateString(),'sent_at'=>$correspondence->sent_at?->toDateString(),'recipient_department_id'=>$correspondence->recipient_department_id,'external_organization_id'=>$correspondence->external_organization_id,'external_department_id'=>$correspondence->external_department_id,
+        $createdDepartments = $request->user()->departments()->where('departments.is_active', true)->orderBy('departments.name')
+            ->get(['departments.id', 'departments.name', 'departments.parent_id', 'departments.icon'])->keyBy('id');
+        foreach ($request->user()->managedDepartments()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'parent_id', 'icon']) as $department) {
+            $createdDepartments->put($department->id, $department);
+        }
+        $createdDepartments = $createdDepartments->sortBy('name')->values();
+        $createdDepartment = $createdDepartments->firstWhere('id', $correspondence->created_department_id)
+            ?? $request->user()->departments()->wherePivot('is_primary', true)->where('departments.is_active', true)->first(['departments.id', 'departments.name'])
+            ?? ($createdDepartments->count() === 1 ? $createdDepartments->first() : null);
+        $correspondence->load(['relatedLetters.createdDepartment', 'relatedLetters.recipientDepartment', 'relatedLetters.externalOrganization', 'relatedLetters.externalDepartment', 'copies', 'documents.document']);
+        return Inertia::render('Correspondence/Create', [
+            'isEditing' => true,
+            'correspondenceFontFamily' => $settings->get(['correspondence.composition.font_family' => 'Vazirmatn'])['correspondence.composition.font_family'],
+            'createdDepartment' => $createdDepartment,
+            'createdDepartments' => $createdDepartments,
+            'externalOrganizations' => ExternalOrganization::query()->where('status', 'active')->orderBy('name')->get(['id', 'name']),
+            'externalDepartments' => ExternalDepartment::query()->where('status', 'active')->orderBy('name')->get(['id', 'external_organization_id', 'parent_id', 'name']),
+            'types' => [
+                ['value' => Correspondence::TYPE_INCOMING, 'label' => 'وارده'],
+                ['value' => Correspondence::TYPE_OUTGOING, 'label' => 'صادره'],
+                ['value' => Correspondence::TYPE_INTERNAL, 'label' => 'داخلی'],
             ],
-            'departments' => Department::query()->where('is_active',true)->orderBy('name')->get(['id','name','parent_id','icon']),
-            'externalOrganizations' => ExternalOrganization::query()->where('status','active')->orderBy('name')->get(['id','name']),
-            'externalDepartments' => ExternalDepartment::query()->where('status','active')->orderBy('name')->get(['id','external_organization_id','parent_id','name']),
+            'classifications' => [
+                ['value' => Correspondence::CLASSIFICATION_ORDINARY, 'label' => 'عادی'],
+                ['value' => Correspondence::CLASSIFICATION_CONFIDENTIAL, 'label' => 'محرمانه'],
+            ],
+            'departments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'parent_id', 'icon']),
+            'correspondence' => [
+                'id' => $correspondence->id, 'type' => $correspondence->type, 'classification' => $correspondence->classification,
+                'subject' => $correspondence->subject, 'letter_number' => $correspondence->letter_number, 'body' => $correspondence->body,
+                'sender_name' => $correspondence->sender_name, 'recipient_name' => $correspondence->recipient_name,
+                'received_at' => $correspondence->received_at?->toDateString(), 'sent_at' => $correspondence->sent_at?->toDateString(),
+                'created_department_id' => $correspondence->created_department_id, 'recipient_department_id' => $correspondence->recipient_department_id,
+                'external_organization_id' => $correspondence->external_organization_id, 'external_department_id' => $correspondence->external_department_id,
+                'related_letters' => $correspondence->relatedLetters->map(fn (Correspondence $letter): array => [
+                    'id' => $letter->id, 'letter_number' => $letter->letter_number, 'registration_number' => $letter->registration_number,
+                    'external_registration_number' => $letter->external_registration_number, 'subject' => $letter->subject, 'type' => $letter->type,
+                    'letter_date' => ($letter->received_at ?? $letter->sent_at ?? $letter->created_at)?->toISOString(),
+                    'created_department' => $letter->createdDepartment?->name, 'recipient_department' => $letter->recipientDepartment?->name,
+                    'external_organization' => $letter->externalOrganization?->name, 'external_organization_code' => $letter->externalOrganization?->code,
+                    'external_department' => $letter->externalDepartment?->name, 'external_department_code' => $letter->externalDepartment?->code,
+                    'created_department_code' => $letter->createdDepartment?->code, 'recipient_department_code' => $letter->recipientDepartment?->code,
+                ])->values(),
+                'copy_department_ids' => $correspondence->copies->pluck('id')->map(fn ($id): int => (int) $id)->all(),
+                'original_documents' => $correspondence->documents->where('purpose', 'correspondence_original')
+                    ->map(fn ($link): array => ['id' => $link->id, 'title' => $link->document?->title ?? 'فایل پیوست‌شده'])->values(),
+            ],
         ]);
     }
 
-    public function update(Request $request, Correspondence $correspondence, CorrespondenceAccessService $access): RedirectResponse
+    public function update(Request $request, Correspondence $correspondence, CorrespondenceAccessService $access, DocumentService $documents): RedirectResponse
     {
-        abort_unless($access->canManageBeforeAction($correspondence,$request->user()),403);
-        $data=$request->validate(['subject'=>['required','string','max:255'],'classification'=>['required',Rule::in([Correspondence::CLASSIFICATION_ORDINARY,Correspondence::CLASSIFICATION_CONFIDENTIAL])],'letter_number'=>[Rule::requiredIf($correspondence->type===Correspondence::TYPE_INCOMING),'nullable','string','max:100'],'sender_name'=>['nullable','string','max:255'],'recipient_name'=>['nullable','string','max:255'],'received_at'=>[Rule::requiredIf($correspondence->type===Correspondence::TYPE_INCOMING),'nullable','date'],'sent_at'=>[Rule::requiredIf($correspondence->type===Correspondence::TYPE_OUTGOING),'nullable','date'],'recipient_department_id'=>[Rule::requiredIf(in_array($correspondence->type,[Correspondence::TYPE_INCOMING,Correspondence::TYPE_INTERNAL],true)),'nullable','integer','exists:departments,id'],'external_organization_id'=>['nullable','integer',Rule::exists('external_organizations','id')->where('status','active')],'external_department_id'=>['nullable','integer',Rule::exists('external_departments','id')->where(fn($q)=>$q->where('status','active')->where('external_organization_id',$request->input('external_organization_id')))] ]);
-        DB::transaction(function()use($correspondence,$data,$access,$request):void{$locked=Correspondence::query()->whereKey($correspondence->id)->lockForUpdate()->firstOrFail();abort_unless($access->canManageBeforeAction($locked,$request->user()),403);if($locked->type!==Correspondence::TYPE_INCOMING)unset($data['letter_number']);$locked->fill($data)->save();app(AuditServiceInterface::class)->record('correspondence.updated_before_action',$locked,null,null,['changed_fields'=>array_keys($locked->getChanges())]);});
-        return redirect()->route('correspondence.index')->with('success','اطلاعات مکاتبه ویرایش شد.');
+        abort_unless($access->canManageBeforeAction($correspondence, $request->user()), 403);
+        $allowedCreatedDepartmentIds = $request->user()->departments()->where('departments.is_active', true)->pluck('departments.id')
+            ->merge($request->user()->managedDepartments()->where('is_active', true)->pluck('id'))->unique()->values()->all();
+        $data = $request->validate([
+            'created_department_id' => ['nullable', 'integer', Rule::in($allowedCreatedDepartmentIds)],
+            'subject' => ['required', 'string', 'max:255'],
+            'classification' => ['required', Rule::in([Correspondence::CLASSIFICATION_ORDINARY, Correspondence::CLASSIFICATION_CONFIDENTIAL])],
+            'letter_number' => [Rule::requiredIf($correspondence->type === Correspondence::TYPE_INCOMING), 'nullable', 'string', 'max:100'],
+            'body' => ['nullable', 'string', 'max:100000'], 'composition_mode' => ['nullable', Rule::in(['editor', 'file', 'both'])],
+            'sender_name' => ['nullable', 'string', 'max:255'], 'recipient_name' => ['nullable', 'string', 'max:255'],
+            'received_at' => [Rule::requiredIf($correspondence->type === Correspondence::TYPE_INCOMING), 'nullable', 'date'],
+            'sent_at' => [Rule::requiredIf($correspondence->type === Correspondence::TYPE_OUTGOING), 'nullable', 'date'],
+            'recipient_department_id' => [Rule::requiredIf(in_array($correspondence->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)), 'nullable', 'integer', 'exists:departments,id'],
+            'external_organization_id' => ['nullable', 'integer', Rule::exists('external_organizations', 'id')->where('status', 'active')],
+            'external_department_id' => ['nullable', 'integer', Rule::exists('external_departments', 'id')->where(fn ($query) => $query->where('status', 'active')->where('external_organization_id', $request->input('external_organization_id')))],
+            'reply_to_id' => ['nullable', 'integer', Rule::exists('correspondences', 'id')->where('status', Correspondence::STATUS_REGISTERED)],
+            'reply_to_ids' => ['nullable', 'array', 'max:20'], 'reply_to_ids.*' => ['integer', 'distinct', Rule::exists('correspondences', 'id')->where('status', Correspondence::STATUS_REGISTERED)],
+            'copy_department_ids' => ['nullable', 'array', 'max:20'], 'copy_department_ids.*' => ['integer', 'distinct', Rule::exists('departments', 'id')->where('is_active', true)],
+            'original_letters' => ['nullable', 'array', 'max:10'], 'original_letters.*' => ['file', 'max:20480', 'mimes:pdf,jpg,jpeg,png'],
+            'attachments' => ['nullable', 'array', 'max:10'], 'attachments.*' => ['file', 'max:20480', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,txt,csv,zip'],
+        ]);
+        $mode = $correspondence->type === Correspondence::TYPE_INCOMING ? 'file' : ($data['composition_mode'] ?? (filled($data['body'] ?? null) ? 'editor' : 'file'));
+        $body = $mode === 'file' ? null : $this->sanitizeBody((string) ($data['body'] ?? ''));
+        if ($correspondence->type !== Correspondence::TYPE_INCOMING && in_array($mode, ['editor', 'both'], true) && trim(strip_tags((string) $body)) === '') {
+            return back()->withErrors(['body' => 'متن نامه را وارد کنید.'])->withInput();
+        }
+        $relatedLetterIds = array_values(array_unique(array_map('intval', $data['reply_to_ids'] ?? (isset($data['reply_to_id']) ? [$data['reply_to_id']] : []))));
+        if (in_array((int) $correspondence->id, $relatedLetterIds, true)) {
+            return back()->withErrors(['reply_to_ids' => 'یک مکاتبه نمی‌تواند به خودش مرتبط شود.'])->withInput();
+        }
+        if ($relatedLetterIds !== []) {
+            $visibleRelatedCount = $access->visibleToQuery(Correspondence::query(), $request->user())->where('status', Correspondence::STATUS_REGISTERED)->whereIn('id', $relatedLetterIds)->count();
+            if ($visibleRelatedCount !== count($relatedLetterIds)) return back()->withErrors(['reply_to_ids' => 'یک یا چند مکاتبه انتخاب‌شده قابل دسترسی نیست.'])->withInput();
+        }
+        $originalLetters = array_values(array_filter((array) $request->file('original_letters', [])));
+        $attachments = array_values(array_filter((array) $request->file('attachments', [])));
+        if (count($originalLetters) + $correspondence->documents()->where('purpose', 'correspondence_original')->count() > 10) return back()->withErrors(['original_letters' => 'حداکثر ۱۰ فایل برای اصل نامه قابل نگهداری است.'])->withInput();
+        if (count($attachments) + $correspondence->documents()->where('purpose', 'correspondence_attachment')->count() > 10) return back()->withErrors(['attachments' => 'حداکثر ۱۰ فایل پیوست قابل نگهداری است.'])->withInput();
+
+        DB::transaction(function () use ($correspondence, $data, $body, $relatedLetterIds, $originalLetters, $attachments, $documents, $access, $request): void {
+            $locked = Correspondence::query()->whereKey($correspondence->id)->lockForUpdate()->firstOrFail();
+            abort_unless($access->canManageBeforeAction($locked, $request->user()), 403);
+            $locked->fill([
+                'subject' => $data['subject'], 'classification' => $data['classification'],
+                'letter_number' => $locked->type === Correspondence::TYPE_INCOMING ? $data['letter_number'] : $locked->letter_number,
+                'body' => $body, 'sender_name' => $data['sender_name'] ?? null, 'recipient_name' => $data['recipient_name'] ?? null,
+                'received_at' => $data['received_at'] ?? null, 'sent_at' => $data['sent_at'] ?? null,
+                'created_department_id' => $data['created_department_id'] ?? $locked->created_department_id,
+                'recipient_department_id' => $data['recipient_department_id'] ?? null,
+                'external_organization_id' => $data['external_organization_id'] ?? null,
+                'external_department_id' => $data['external_department_id'] ?? null, 'reply_to_id' => $relatedLetterIds[0] ?? null,
+            ])->save();
+            $locked->relatedLetters()->sync($relatedLetterIds);
+            $locked->copies()->syncWithPivotValues(array_map('intval', $data['copy_department_ids'] ?? []), ['created_by' => $request->user()->id]);
+            foreach ($originalLetters as $file) {
+                $documents->create(data: ['title' => Str::limit(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME), 255, ''), 'document_type' => 'correspondence_original'], file: $file, creator: $request->user(), linkable: $locked, purpose: 'correspondence_original');
+            }
+            foreach ($attachments as $file) {
+                $documents->create(data: ['title' => Str::limit(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME), 255, ''), 'document_type' => 'correspondence_attachment'], file: $file, creator: $request->user(), linkable: $locked, purpose: 'correspondence_attachment');
+            }
+            app(AuditServiceInterface::class)->record('correspondence.updated_before_action', $locked, null, null, [
+                'changed_fields' => array_keys($locked->getChanges()), 'related_letter_ids' => $relatedLetterIds,
+                'copy_department_ids' => array_map('intval', $data['copy_department_ids'] ?? []),
+            ]);
+        });
+        return redirect()->route('correspondence.index')->with('success', 'اطلاعات مکاتبه و پیوست‌های آن ویرایش شد.');
     }
 
     public function destroy(Request $request, Correspondence $correspondence, CorrespondenceAccessService $access): RedirectResponse
