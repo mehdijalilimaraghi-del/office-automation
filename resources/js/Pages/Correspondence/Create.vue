@@ -401,7 +401,7 @@ async function scanOriginalLetter(): Promise<void> {
             >
                 <section class="space-y-4">
                     <h3 class="text-base font-bold text-slate-900">مشخصات مکاتبه</h3>
-                    <div class="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                    <div class="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <div>
                             <label for="type" class="mb-1.5 block text-sm font-semibold text-slate-700">نوع مکاتبه <span class="text-rose-600">*</span></label>
                             <select id="type" v-model="form.type" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -427,23 +427,29 @@ async function scanOriginalLetter(): Promise<void> {
                             <DepartmentTreeSelect v-model="form.recipient_department_id" :departments="departments" placeholder="انتخاب واحد دریافت‌کننده" :clearable="false" />
                             <InputError class="mt-1" :message="form.errors.recipient_department_id" />
                         </div>
-                        <div v-if="form.type === 'outgoing'" class="min-w-0">
-                            <label for="sent_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ ارسال <span class="text-rose-600">*</span></label>
-                            <JalaliDatePicker v-model="form.sent_at" placeholder="انتخاب تاریخ ارسال" required />
-                            <InputError class="mt-1" :message="form.errors.sent_at" />
+
+                    </div>
+                    <div class="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <div :class="form.type === 'incoming' || form.type === 'outgoing' ? 'lg:col-span-2' : 'col-span-full'">
+                            <label for="subject" class="mb-1.5 block text-sm font-semibold text-slate-700">موضوع</label>
+                            <input id="subject" v-model="form.subject" required maxlength="255" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                            <InputError class="mt-1" :message="form.errors.subject" />
+                        </div>
+                        <div v-if="form.type === 'incoming'" class="min-w-0">
+                            <label for="letter_number" class="mb-1.5 block text-sm font-semibold text-slate-700">شماره نامه روی اصل نامه <span class="text-rose-600">*</span></label>
+                            <input id="letter_number" v-model="form.letter_number" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm focus:border-indigo-500 focus:ring-indigo-500" maxlength="100" required :disabled="form.processing" placeholder="شماره نامه"/>
+                            <InputError class="mt-1.5" :message="form.errors.letter_number"/>
                         </div>
                         <div v-if="form.type === 'incoming'" class="min-w-0">
                             <label for="received_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ دریافت <span class="text-rose-600">*</span></label>
                             <JalaliDatePicker v-model="form.received_at" placeholder="انتخاب تاریخ دریافت" required />
                             <InputError class="mt-1" :message="form.errors.received_at" />
                         </div>
-                    </div>
-                    <div class="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <div class="col-span-full">
-                            <label for="subject" class="mb-1.5 block text-sm font-semibold text-slate-700">موضوع</label>
-                            <input id="subject" v-model="form.subject" required maxlength="255" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
-                            <InputError class="mt-1" :message="form.errors.subject" />
-                        </div><div v-if="form.type === 'incoming'" class="sm:col-span-2"><label for="letter_number" class="mb-2 block text-sm font-semibold text-slate-700">شماره نامه روی اصل نامه <span class="text-rose-600">*</span></label><input id="letter_number" v-model="form.letter_number" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm focus:border-indigo-500 focus:ring-indigo-500" maxlength="100" required :disabled="form.processing" placeholder="شماره درج‌شده روی نامه دریافتی"/><InputError class="mt-1.5" :message="form.errors.letter_number"/><p class="mt-1 text-xs text-slate-500">شماره را عیناً از روی نامه وارد کنید؛ شماره ثبت دبیرخانه هنگام ثبت نهایی جداگانه ساخته می‌شود.</p></div>
+                        <div v-if="form.type === 'outgoing'" class="min-w-0">
+                            <label for="sent_at" class="mb-1.5 block text-sm font-semibold text-slate-700">تاریخ ارسال <span class="text-rose-600">*</span></label>
+                            <JalaliDatePicker v-model="form.sent_at" placeholder="انتخاب تاریخ ارسال" required />
+                            <InputError class="mt-1" :message="form.errors.sent_at" />
+                        </div>
                         <div class="sm:col-span-2 flex min-h-0 flex-col rounded-xl border border-slate-200 p-4">
                             <div class="mb-1.5 flex items-center gap-1.5"><label for="related_correspondence_search" class="text-sm font-semibold text-slate-700">ارتباط با مکاتبات قبلی</label>
                                 <details class="group relative"><summary aria-label="راهنمای ارتباط با مکاتبات قبلی" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 bg-white text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">؟</summary><span class="absolute right-0 top-7 z-30 w-64 rounded-lg bg-slate-900 p-3 text-xs font-normal leading-6 text-white shadow-lg">برای پیوند دادن این نامه به یک یا چند مکاتبه ثبت‌شده، موضوع یا شماره نامه را جست‌وجو و موارد موردنظر را انتخاب کنید.</span></details></div>
