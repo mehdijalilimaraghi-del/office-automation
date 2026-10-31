@@ -1237,3 +1237,11 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - This state is required by the employee-result guard: only the specifically assigned employee may submit the documented result; another member of the same department must be denied. After submission, the state advances to `result_pending_manager`.
 - The failing HTTP test had a stale expectation of `in_progress` after employee referral. Corrected the regression assertion to `assigned_to_employee`; no production workflow behavior or schema changed.
 - Validation pending: owner to pull `development` and run the focused `CorrespondenceHttpTest` once. `master` remains unchanged.
+
+## 2026-10-31 — Correspondence department routing audience
+
+- When correspondence is referred to a department, only that department's manager receives the actionable Cartable item. Ordinary-letter organization-wide read visibility is a separate policy and must not imply workflow-action rights.
+- After the manager explicitly refers the letter to an employee, only the assigned employee may submit the result; enforce this in both the backend workflow service and frontend action availability. The manager retains their manager workflow capability.
+- Cartable must not include all current-department members as actionable recipients. Include manager-owned correspondence and explicitly assigned employee states.
+- Manager's action label is «ارجاع به»; destination options are «واحد دیگر» and «کارمند همین واحد».
+- Shared DepartmentTreeSelect positioning was hardened for viewport edges and nested scrolling. Validation is pending; branch `development`, `master` unchanged.
