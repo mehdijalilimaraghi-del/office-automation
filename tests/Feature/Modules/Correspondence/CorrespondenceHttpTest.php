@@ -276,6 +276,35 @@ class CorrespondenceHttpTest extends TestCase
                 ->where('correspondences.data', fn ($rows) => collect($rows)->pluck('id')->sort()->values()->all() === collect([$resultPendingManager->id, $awaitingManager->id])->sort()->values()->all()));
     }
 
+    public function test_project_requested_letter_is_actionable_for_current_department_manager(): void
+    {
+        $manager = $this->userWithPermission('correspondence.view');
+        $creator = $this->userWithPermission('correspondence.view');
+        $department = Department::query()->create([
+            'name' => 'مدیریت پروژه آزمون '.Str::upper(Str::random(5)),
+            'code' => 'PRJ-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'subject' => 'درخواست پروژه در انتظار مدیر',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'project_requested',
+            'current_department_id' => $department->id,
+            'current_user_id' => null,
+            'created_by' => $creator->id,
+        ]);
+
+        $this->actingAs($manager)->get(route('correspondence.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('filters.action_filter', 'needs_action')
+                ->where('correspondences.total', 1)
+                ->where('correspondences.data.0.id', $letter->id));
+    }
+
     public function test_department_filter_uses_department_module_data_and_never_bypasses_visibility(): void
     {
         $user = $this->userWithPermission('correspondence.view');
