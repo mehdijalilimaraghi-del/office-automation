@@ -228,6 +228,67 @@ class CorrespondenceHttpTest extends TestCase
                 ->where('correspondences.data.0.id', $registeredByMe->id));
     }
 
+    public function test_needs_action_includes_department_routing_for_managers_of_multiple_departments(): void
+    {
+        $manager = $this->userWithPermission('correspondence.view');
+        $creator = $this->userWithPermission('correspondence.view');
+        $employee = $this->userWithPermission('correspondence.view');
+
+        $firstDepartment = Department::query()->create([
+            'name' => 'واحد اول مدیر چندواحدی '.Str::upper(Str::random(5)),
+            'code' => 'M1-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+        $secondDepartment = Department::query()->create([
+            'name' => 'واحد دوم مدیر چندواحدی '.Str::upper(Str::random(5)),
+            'code' => 'M2-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+
+        $departmentReferral = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'subject' => 'ارجاع به واحد تحت مدیریت دوم',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'in_progress',
+            'current_department_id' => $secondDepartment->id,
+            'current_user_id' => null,
+            'created_by' => $creator->id,
+        ]);
+        CorrespondenceAction::query()->create([
+            'correspondence_id' => $departmentReferral->id,
+            'actor_id' => $creator->id,
+            'action_type' => CorrespondenceAction::MANAGER_REFER,
+            'to_department_id' => $secondDepartment->id,
+            'to_user_id' => null,
+        ]);
+
+        $assignedToEmployee = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'subject' => 'ارجاع‌شده به کارمند واحد دوم',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'assigned_to_employee',
+            'current_department_id' => $secondDepartment->id,
+            'current_user_id' => $employee->id,
+            'created_by' => $creator->id,
+        ]);
+        CorrespondenceAction::query()->create([
+            'correspondence_id' => $assignedToEmployee->id,
+            'actor_id' => $manager->id,
+            'action_type' => CorrespondenceAction::MANAGER_REFER,
+            'to_department_id' => $secondDepartment->id,
+            'to_user_id' => $employee->id,
+        ]);
+
+        $this->actingAs($manager)->get(route('correspondence.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('filters.action_filter', 'needs_action')
+                ->where('correspondences.total', 1)
+                ->where('correspondences.data.0.id', $departmentReferral->id));
+    }
+
     public function test_user_with_view_permission_can_open_correspondence_details(): void
     {
         $user = $this->userWithPermission('correspondence.view');
