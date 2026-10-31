@@ -1283,3 +1283,8 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - The `scope=mine` closure in `CorrespondenceController::index()` now captures `$managedDepartmentIds` because its query references that collection to include active correspondence in departments managed by the user.
 - The missing capture caused `Undefined variable $managedDepartmentIds` and HTTP 500 responses across correspondence index tests. No workflow authorization or filter behavior was otherwise changed.
 - Validation pending: `php artisan test --filter=CorrespondenceHttpTest`. PHP-only change; no frontend build required. `master` unchanged.
+
+## 2026-10-31 — Nested correspondence scope closure correction
+
+- Corrected the inner `where(function ($mine) ...)` closure in `CorrespondenceController::index()` to capture `$managedDepartmentIds` as well. The earlier fix captured the variable only in the surrounding `when(scope=mine)` closure; PHP closures do not implicitly inherit variables from an enclosing closure, so the nested query still raised `Undefined variable $managedDepartmentIds` at the `orWhereIn` condition.
+- No query semantics or authorization rules changed. Validation pending: pull `development` and run `php artisan test --filter=CorrespondenceHttpTest`. PHP/documentation-only change; no frontend build required. `master` unchanged.
