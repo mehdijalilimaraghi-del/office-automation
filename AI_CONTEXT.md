@@ -562,3 +562,8 @@ Before making the first code change in a new conversation:
 
 - `CorrespondenceController::index()` now captures `$managedDepartmentIds` in the `scope=mine` query closure, fixing the undefined-variable error raised when the correspondence list was requested.
 - This is a closure-scope correction only; personal scope and manager pending-action semantics are unchanged. The focused `CorrespondenceHttpTest` run is pending on the project owner's SQL Server environment. Branch: `development`; `master` unchanged.
+
+## 2026-10-31 — Nested correspondence scope closure correction
+
+- Corrected the inner `where(function ($mine) ...)` closure in `CorrespondenceController::index()` to capture `$managedDepartmentIds` as well. The earlier fix captured the variable only in the surrounding `when(scope=mine)` closure; PHP closures do not implicitly inherit variables from an enclosing closure, so the nested query still raised `Undefined variable $managedDepartmentIds` at the `orWhereIn` condition.
+- No query semantics or authorization rules changed. Validation pending: pull `development` and run `php artisan test --filter=CorrespondenceHttpTest`. PHP/documentation-only change; no frontend build required. `master` unchanged.
