@@ -22,6 +22,8 @@ class CorrespondenceAction extends Model
     public const COPY_ADDED = 'copy_added';
     public const REGISTERED = 'registered';
     public const DISPATCHED = 'dispatched';
+    public const SECRETARIAT_RETURN = 'secretariat_return';
+    public const RESUBMIT_TO_SECRETARIAT = 'resubmit_to_secretariat';
 
     protected $fillable = [
         'correspondence_id',
