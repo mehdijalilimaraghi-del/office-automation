@@ -49,7 +49,7 @@ class CorrespondenceAccessService
             && $correspondence->status === Correspondence::STATUS_REGISTERED
             && $correspondence->workflow_state === 'returned_for_correction'
             && (int) $correspondence->created_by === (int) $user->id
-            && $correspondence->actions()->where('action_type', \\App\\Modules\\Correspondence\\Models\\CorrespondenceAction::SECRETARIAT_RETURN)->exists();
+            && $correspondence->actions()->where('action_type', CorrespondenceAction::SECRETARIAT_RETURN)->exists();
 
         if (! $user->isActive() || ($hasWorkflowAction && ! $isReturnedForCorrection)
             || $correspondence->replies()->exists() || $correspondence->task_id !== null) {
