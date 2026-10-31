@@ -1446,3 +1446,9 @@ Implementation has started for the agreed cross-department project model:
 - «اقدام قبلی ثبت‌شده توسط من» matches an action authored by the user after the latest referral to that user. A later referral to the same user resets it to pending until another action is recorded.
 - «ثبت‌شده توسط من» includes correspondence created by the user (created_by) or finally registered by the user (registered_by). «همه مکاتبات» preserves the existing personal-relevance scope; the first scope selector still controls personal, department, or all-visible scope.
 - Extended HTTP regression coverage for default pending filter, prior actions, assignment retained after an action, creator/registrar filter, and all-related mode. Validation pending: pull development, run php artisan test --filter=CorrespondenceHttpTest, then npm run build. master unchanged.
+
+
+## 2026-10-31 — Draft visibility test and independent correspondence filters
+
+- Updated the draft visibility index test to explicitly select `action_filter=all` while retaining `scope=all`. The test concerns draft visibility authorization, not the default «نیاز به اقدام» filter; the explicit filter keeps those concerns independent.
+- No production code, visibility policy, or workflow authorization changed. Validation pending: pull `development` and rerun `php artisan test --filter=CorrespondenceHttpTest`. If the suite passes, run `npm run build` because the correspondence index Vue component changed in the preceding work. `master` unchanged.
