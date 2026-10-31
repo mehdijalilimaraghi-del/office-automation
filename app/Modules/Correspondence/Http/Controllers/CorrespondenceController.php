@@ -56,15 +56,15 @@ class CorrespondenceController extends Controller
             ->values();
         $defaultDepartmentFilter = $scope === 'all' ? 'all' : 'mine';
         $departmentFilter = (string) ($filters['department_filter'] ?? $defaultDepartmentFilter);
-        $allActiveDepartments = $departmentService->list()->where('is_active', true);
-        $filterableDepartmentIds = $scope === 'all' ? $allActiveDepartments->modelKeys() : $departmentIds->all();
+        $allDepartments = $departmentService->list();
+        $filterableDepartmentIds = $scope === 'all' ? $allDepartments->modelKeys() : $departmentIds->all();
 
         if ($departmentFilter !== $defaultDepartmentFilter
             && (! ctype_digit($departmentFilter) || ! in_array((int) $departmentFilter, $filterableDepartmentIds, true))) {
             $departmentFilter = $defaultDepartmentFilter;
         }
 
-        $departmentOptions = $allActiveDepartments
+        $departmentOptions = $allDepartments
             ->filter(fn (Department $department): bool => in_array((int) $department->id, $filterableDepartmentIds, true))
             ->map(fn (Department $department): array => [
                 'id' => (int) $department->id,
@@ -114,7 +114,10 @@ class CorrespondenceController extends Controller
                                 'result_pending_manager',
                                 'awaiting_manager_approval',
                             ])->whereHas('currentDepartment', fn ($currentDepartment) => $currentDepartment
-                                ->where('manager_id', $user->id));
+                                ->where('manager_id', $user->id))
+                                ->where(function ($assignment) use ($user): void {
+                                    $assignment->whereNull('current_user_id')->orWhere('current_user_id', $user->id);
+                                });
                         });
                 });
             })
