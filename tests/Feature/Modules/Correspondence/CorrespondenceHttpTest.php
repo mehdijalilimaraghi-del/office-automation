@@ -914,6 +914,57 @@ class CorrespondenceHttpTest extends TestCase
         ]);
     }
 
+    public function test_manager_can_refer_to_another_department_after_employee_submits_result(): void
+    {
+        $manager = $this->userWithPermission('correspondence.view');
+        $employee = $this->userWithPermission('correspondence.view');
+        $currentDepartment = Department::query()->create([
+            'name' => 'واحد نتیجه و ارجاع مجدد '.Str::upper(Str::random(5)),
+            'code' => 'RER-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+        $employee->departments()->attach($currentDepartment->id, ['is_primary' => true, 'joined_at' => now()]);
+        $targetDepartment = Department::query()->create([
+            'name' => 'واحد ارجاع پس از نتیجه '.Str::upper(Str::random(5)),
+            'code' => 'NXT-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+        ]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'subject' => 'نامه نیازمند ارجاع مجدد پس از نتیجه',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'in_progress',
+            'current_department_id' => $currentDepartment->id,
+            'current_user_id' => $manager->id,
+            'created_by' => $manager->id,
+        ]);
+
+        $this->actingAs($employee)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => 'submit_result',
+            'note' => 'بررسی اولیه انجام شد و نیاز به نظر واحد دیگری وجود دارد.',
+        ])->assertRedirect();
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => 'manager_refer',
+            'target_type' => 'department',
+            'to_department_id' => $targetDepartment->id,
+            'note' => 'پس از بررسی کارمند، برای بررسی تخصصی ارجاع می‌شود.',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $letter->id,
+            'current_department_id' => $targetDepartment->id,
+            'workflow_state' => 'in_progress',
+        ]);
+        $this->assertDatabaseHas('correspondence_actions', [
+            'correspondence_id' => $letter->id,
+            'action_type' => 'manager_refer',
+            'from_department_id' => $currentDepartment->id,
+            'to_department_id' => $targetDepartment->id,
+        ]);
+    }
+
     public function test_secretariat_member_who_manages_current_department_can_still_act_as_its_manager(): void
     {
         $manager = $this->userWithPermission('correspondence.view');
