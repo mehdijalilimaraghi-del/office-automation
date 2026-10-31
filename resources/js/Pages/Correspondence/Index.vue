@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 
@@ -26,7 +27,8 @@ interface CorrespondenceRow {
 interface PaginationLink { url: string | null; label: string; active: boolean; }
 const props = defineProps<{
     correspondences: { data: CorrespondenceRow[]; total: number; from: number | null; to: number | null; links: PaginationLink[] };
-    filters: { search: string; type: string; status: string; scope: string; action_filter: string };
+    filters: { search: string; type: string; status: string; scope: string; action_filter: string; department_filter: string };
+    departments: Array<{ id: number; name: string; parent_id: number | null; icon: string | null; is_active: boolean }>;
     canCreate: boolean;
 }>();
 const search = ref(props.filters.search);
@@ -34,6 +36,10 @@ const type = ref(props.filters.type);
 const status = ref(props.filters.status);
 const scope = ref(props.filters.scope);
 const actionFilter = ref(props.filters.action_filter || 'needs_action');
+const departmentFilter = ref<string | number>(props.filters.department_filter || (props.filters.scope === 'all' ? 'all' : 'mine'));
+const departmentSpecialOptions = computed(() => scope.value === 'all'
+    ? [{ value: 'all', label: 'همه واحدها' }]
+    : [{ value: 'mine', label: 'من' }]);
 
 const typeLabels: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
 const statusLabels: Record<string, string> = { draft: 'پیش‌نویس', registered: 'ثبت‌شده' };
@@ -48,10 +54,11 @@ function formatRegisteredAt(value: string | null): string {
     }).format(date);
 }
 function applyFilters(): void {
-    router.get(route('correspondence.index'), { scope: scope.value || 'mine', action_filter: scope.value === 'mine' ? (actionFilter.value || 'needs_action') : 'all', search: search.value || undefined, type: type.value || undefined, status: status.value || undefined }, { preserveState: true, replace: true });
+    router.get(route('correspondence.index'), { scope: scope.value || 'mine', action_filter: scope.value === 'mine' ? (actionFilter.value || 'needs_action') : 'all', department_filter: departmentFilter.value, search: search.value || undefined, type: type.value || undefined, status: status.value || undefined }, { preserveState: true, replace: true });
 }
 
-watch([scope, actionFilter, type, status], () => applyFilters());
+watch(scope, (nextScope) => { departmentFilter.value = nextScope === 'all' ? 'all' : 'mine'; });
+watch([scope, actionFilter, departmentFilter, type, status], () => applyFilters());
 watch(search, (_value, _oldValue, onCleanup) => {
     const timeout = setTimeout(() => applyFilters(), 350);
     onCleanup(() => clearTimeout(timeout));
@@ -80,6 +87,7 @@ function register(id: number): void {
                 <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
                     <select v-model="scope" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"><option value="mine">مکاتبات من</option><option value="department">مکاتبات واحد من</option><option value="all">همه مکاتبات مجاز</option></select>
                     <select v-if="scope === 'mine'" v-model="actionFilter" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"><option value="needs_action">نیاز به اقدام</option><option value="acted_by_me">اقدام قبلی ثبت‌شده</option><option value="created_by_me">ثبت‌شده توسط من</option><option value="all">همه مکاتبات</option></select>
+                    <DepartmentTreeSelect v-model="departmentFilter" :departments="departments" :special-options="departmentSpecialOptions" :placeholder="scope === 'all' ? 'همه واحدها' : 'من'" :clearable="false" />
                     <input v-model="search" type="search" placeholder="جست‌وجو در موضوع یا شماره نامه/ثبت" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
                     <select v-model="type" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"><option value="">همه انواع</option><option value="incoming">وارده</option><option value="outgoing">صادره</option><option value="internal">داخلی</option></select>
                     <select v-model="status" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"><option value="">همه وضعیت‌ها</option><option value="draft">پیش‌نویس</option><option value="registered">ثبت‌شده</option></select>
