@@ -47,8 +47,9 @@ class CorrespondenceController extends Controller
         $actionFilter = $filters['action_filter'] ?? 'needs_action';
 
         $user = $request->user();
+        $managedDepartmentIds = $user->managedDepartments()->pluck('departments.id')->unique()->values();
         $departmentIds = $user->departments()->pluck('departments.id')
-            ->merge($user->managedDepartments()->pluck('departments.id'))
+            ->merge($managedDepartmentIds)
             ->unique()
             ->values();
 
@@ -58,6 +59,7 @@ class CorrespondenceController extends Controller
                     $mine->where('created_by', $user->id)
                         ->orWhere('registered_by', $user->id)
                         ->orWhere('current_user_id', $user->id)
+                        ->orWhereIn('current_department_id', $managedDepartmentIds)
                         ->orWhereHas('authorizedUsers', fn ($users) => $users->where('users.id', $user->id))
                         ->orWhereHas('actions', fn ($actions) => $actions->where('to_user_id', $user->id));
                 });
@@ -79,28 +81,53 @@ class CorrespondenceController extends Controller
                             ->orWhereIn('to_department_id', $departmentIds));
                 });
             })
-            ->when($actionFilter === 'needs_action', function ($query) use ($user): void {
-                $query->where('current_user_id', $user->id)
-                    ->whereExists(function ($referral) use ($user): void {
-                        $referral->selectRaw('1')
-                            ->from('correspondence_actions as referral')
-                            ->whereColumn('referral.correspondence_id', 'correspondences.id')
-                            ->where('referral.to_user_id', $user->id)
-                            ->whereRaw(
-                                'referral.id = (SELECT MAX(latest_referral.id) FROM correspondence_actions AS latest_referral WHERE latest_referral.correspondence_id = correspondences.id AND latest_referral.to_user_id = ?)',
-                                [$user->id],
-                            );
-                    })
-                    ->whereNotExists(function ($action) use ($user): void {
-                        $action->selectRaw('1')
-                            ->from('correspondence_actions as my_action')
-                            ->whereColumn('my_action.correspondence_id', 'correspondences.id')
-                            ->where('my_action.actor_id', $user->id)
-                            ->whereRaw(
-                                'my_action.id > (SELECT MAX(latest_referral.id) FROM correspondence_actions AS latest_referral WHERE latest_referral.correspondence_id = correspondences.id AND latest_referral.to_user_id = ?)',
-                                [$user->id],
-                            );
+            ->when($actionFilter === 'needs_action', function ($query) use ($user, $managedDepartmentIds): void {
+                $query->where(function ($pending) use ($user, $managedDepartmentIds): void {
+                    $pending->where(function ($direct) use ($user): void {
+                        $direct->where('current_user_id', $user->id)
+                            ->whereExists(function ($referral) use ($user): void {
+                                $referral->selectRaw('1')
+                                    ->from('correspondence_actions as referral')
+                                    ->whereColumn('referral.correspondence_id', 'correspondences.id')
+                                    ->where('referral.to_user_id', $user->id)
+                                    ->whereRaw(
+                                        'referral.id = (SELECT MAX(latest_referral.id) FROM correspondence_actions AS latest_referral WHERE latest_referral.correspondence_id = correspondences.id AND latest_referral.to_user_id = ?)',
+                                        [$user->id],
+                                    );
+                            })
+                            ->whereNotExists(function ($action) use ($user): void {
+                                $action->selectRaw('1')
+                                    ->from('correspondence_actions as my_action')
+                                    ->whereColumn('my_action.correspondence_id', 'correspondences.id')
+                                    ->where('my_action.actor_id', $user->id)
+                                    ->whereRaw(
+                                        'my_action.id > (SELECT MAX(latest_referral.id) FROM correspondence_actions AS latest_referral WHERE latest_referral.correspondence_id = correspondences.id AND latest_referral.to_user_id = ?)',
+                                        [$user->id],
+                                    );
+                            });
+                    })->orWhere(function ($department) use ($user, $managedDepartmentIds): void {
+                        $department->whereIn('current_department_id', $managedDepartmentIds)
+                            ->whereIn('workflow_state', ['in_progress', 'result_pending_manager', 'awaiting_manager_approval'])
+                            ->whereExists(function ($referral): void {
+                                $referral->selectRaw('1')
+                                    ->from('correspondence_actions as referral')
+                                    ->whereColumn('referral.correspondence_id', 'correspondences.id')
+                                    ->whereColumn('referral.to_department_id', 'correspondences.current_department_id')
+                                    ->whereRaw(
+                                        'referral.id = (SELECT MAX(latest_referral.id) FROM correspondence_actions AS latest_referral WHERE latest_referral.correspondence_id = correspondences.id AND latest_referral.to_department_id = correspondences.current_department_id)',
+                                    );
+                            })
+                            ->whereNotExists(function ($action) use ($user): void {
+                                $action->selectRaw('1')
+                                    ->from('correspondence_actions as my_action')
+                                    ->whereColumn('my_action.correspondence_id', 'correspondences.id')
+                                    ->where('my_action.actor_id', $user->id)
+                                    ->whereRaw(
+                                        'my_action.id > (SELECT MAX(latest_referral.id) FROM correspondence_actions AS latest_referral WHERE latest_referral.correspondence_id = correspondences.id AND latest_referral.to_department_id = correspondences.current_department_id)',
+                                    );
+                            });
                     });
+                });
             })
             ->when($actionFilter === 'acted_by_me', function ($query) use ($user): void {
                 $query->whereExists(function ($referral) use ($user): void {
