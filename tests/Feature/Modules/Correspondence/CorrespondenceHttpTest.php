@@ -145,6 +145,26 @@ class CorrespondenceHttpTest extends TestCase
             'to_user_id' => $otherUser->id,
         ]);
 
+        $actedWhileStillAssigned = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => 'ارجاع‌شده و اقدام‌شده با وجود باقی‌ماندن مسئولیت',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'in_progress',
+            'current_user_id' => $user->id,
+            'created_by' => $creator->id,
+        ]);
+        CorrespondenceAction::query()->create([
+            'correspondence_id' => $actedWhileStillAssigned->id,
+            'actor_id' => $referrer->id,
+            'action_type' => CorrespondenceAction::MANAGER_REFER,
+            'to_user_id' => $user->id,
+        ]);
+        CorrespondenceAction::query()->create([
+            'correspondence_id' => $actedWhileStillAssigned->id,
+            'actor_id' => $user->id,
+            'action_type' => CorrespondenceAction::REQUEST_TASK,
+        ]);
+
         $referredByUser = Correspondence::query()->create([
             'type' => Correspondence::TYPE_INTERNAL,
             'subject' => 'ارجاع‌شده توسط من به شخص دیگر',
@@ -160,11 +180,32 @@ class CorrespondenceHttpTest extends TestCase
             'to_user_id' => $otherUser->id,
         ]);
 
+        $createdByMe = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => 'مکاتبه ایجادشده توسط من',
+            'status' => Correspondence::STATUS_DRAFT,
+            'created_by' => $user->id,
+        ]);
+        $registeredByMe = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'subject' => 'مکاتبه ثبت نهایی‌شده توسط من',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'registered_by' => $user->id,
+            'created_by' => $creator->id,
+        ]);
+
         $this->actingAs($user)->get(route('correspondence.index'))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
+                ->where('filters.action_filter', 'needs_action')
+                ->where('correspondences.total', 1)
+                ->where('correspondences.data.0.id', $pending->id));
+
+        $this->actingAs($user)->get(route('correspondence.index', ['action_filter' => 'all']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
                 ->where('filters.action_filter', 'all')
-                ->where('correspondences.total', 2));
+                ->where('correspondences.total', 5));
 
         $this->actingAs($user)->get(route('correspondence.index', ['action_filter' => 'needs_action']))
             ->assertOk()
@@ -177,8 +218,14 @@ class CorrespondenceHttpTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->where('filters.action_filter', 'acted_by_me')
-                ->where('correspondences.total', 1)
-                ->where('correspondences.data.0.id', $acted->id));
+                ->where('correspondences.total', 2));
+
+        $this->actingAs($user)->get(route('correspondence.index', ['action_filter' => 'created_by_me']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('filters.action_filter', 'created_by_me')
+                ->where('correspondences.total', 2)
+                ->where('correspondences.data.0.id', $registeredByMe->id));
     }
 
     public function test_user_with_view_permission_can_open_correspondence_details(): void
