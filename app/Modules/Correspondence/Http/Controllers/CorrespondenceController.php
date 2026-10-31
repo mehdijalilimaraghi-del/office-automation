@@ -44,7 +44,7 @@ class CorrespondenceController extends Controller
         ]);
 
         $scope = $filters['scope'] ?? 'mine';
-        $actionFilter = $filters['action_filter'] ?? 'needs_action';
+        $actionFilter = $scope === 'mine' ? ($filters['action_filter'] ?? 'needs_action') : 'all';
 
         $user = $request->user();
         $managedDepartmentIds = $user->managedDepartments()->pluck('departments.id')->unique()->values();
