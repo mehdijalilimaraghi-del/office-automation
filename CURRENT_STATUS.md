@@ -1422,3 +1422,9 @@ Implementation has started for the agreed cross-department project model:
 - Simplified the manager action label to «ارجاع به» and removed repeated wording from the destination choices.
 - Corrected shared `DepartmentTreeSelect.vue` viewport positioning: clamp horizontal placement, choose the side with sufficient vertical space, and recalculate on nested/window scrolling while the trigger remains visible.
 - Added regression coverage for Cartable audience and for blocking result submission before explicit employee assignment. Validation pending: pull `development`, run the focused correspondence test and Cartable test, then run `npm run build`. No migration/schema changes. `master` unchanged.
+
+## 2026-10-31 — Follow-up test scenario alignment
+
+- The first focused correspondence test run exposed one remaining stale test scenario: it attempted employee result submission while the letter was still assigned to the department manager (`in_progress`).
+- Updated that test to model the complete valid flow: manager explicitly refers to employee (`assigned_to_employee`), employee submits result (`result_pending_manager`), then manager refers to another department.
+- No production authorization was weakened or changed for this follow-up. Validation pending rerun of `CorrespondenceHttpTest`; frontend build remains required for the earlier Vue changes.
