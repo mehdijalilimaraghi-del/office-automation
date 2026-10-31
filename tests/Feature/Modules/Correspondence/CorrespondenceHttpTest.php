@@ -886,7 +886,7 @@ class CorrespondenceHttpTest extends TestCase
             'id' => $letter->id,
             'current_department_id' => $department->id,
             'current_user_id' => $employee->id,
-            'workflow_state' => 'in_progress',
+            'workflow_state' => 'assigned_to_employee',
         ]);
         $this->assertDatabaseHas('correspondence_actions', [
             'correspondence_id' => $letter->id,
