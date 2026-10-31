@@ -515,3 +515,11 @@ Before making the first code change in a new conversation:
 - This state is required by the employee-result guard: only the specifically assigned employee may submit the documented result; another member of the same department must be denied. After submission, the state advances to `result_pending_manager`.
 - The failing HTTP test had a stale expectation of `in_progress` after employee referral. Corrected the regression assertion to `assigned_to_employee`; no production workflow behavior or schema changed.
 - Validation pending: owner to pull `development` and run the focused `CorrespondenceHttpTest` once. `master` remains unchanged.
+
+## 2026-10-31 — Correspondence department assignment audience
+
+- Department-level correspondence routing belongs to the current department manager until that manager explicitly assigns it to an employee. Do not surface actionable correspondence to every member of the department.
+- Cartable includes correspondence assigned to the current user and manager-owned items; it must not use current-department membership as an actionable audience. Add `assigned_to_employee` to its supported states so the specifically assigned employee receives the item.
+- Backend `submit_result` authorization and the Show-page action flag must both require `workflow_state=assigned_to_employee` and `current_user_id=actor.id`. Department membership alone is never enough.
+- The shared department tree selector is teleported to body; keep its viewport positioning clamped and responsive to scroll/resize.
+- Implementation committed on `development`; focused correspondence/Cartable tests and frontend build pending owner validation. `master` unchanged.
