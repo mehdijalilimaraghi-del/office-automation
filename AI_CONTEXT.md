@@ -541,3 +541,10 @@ Before making the first code change in a new conversation:
 - Previously acted-on means the user recorded an action after the latest referral to them. A newer referral resets the correspondence to pending until another action is recorded.
 - Created/registered by me includes both created_by and registered_by. All correspondence retains the existing personal-relevance scope.
 - Regression coverage added for default pending, prior actions, assignment retained after action, creator/registrar, and all-related mode. Validation pending: pull development, run php artisan test --filter=CorrespondenceHttpTest, then npm run build. master unchanged.
+
+
+## 2026-10-31 — Draft visibility test and independent correspondence filters
+
+- Tests that assert draft visibility through the correspondence index must pass both `scope=all` and `action_filter=all`. The default action filter is `needs_action`, which intentionally excludes drafts that are not currently assigned to the viewer.
+- Keep authorization/visibility assertions separate from action-filter assertions; do not change production draft visibility rules to satisfy a test that omitted the independent action filter.
+- Test fixture alignment committed on `development`; focused `CorrespondenceHttpTest` rerun pending. `master` unchanged.
