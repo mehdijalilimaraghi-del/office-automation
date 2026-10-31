@@ -84,6 +84,7 @@ const actionLabels: Record<string, string> = {
     manager_refer: 'ارجاع',
     secretariat_return: 'برگشت برای اصلاح توسط دبیرخانه',
     resubmit_to_secretariat: 'ارسال مجدد به دبیرخانه',
+    dispatched: 'ثبت ارسال نهایی',
     request_task: 'درخواست شروع تسک',
     request_project: 'درخواست شروع پروژه',
     request_letter: 'درخواست تهیه نامه جدید',
