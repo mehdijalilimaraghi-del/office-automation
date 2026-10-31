@@ -95,7 +95,8 @@ class CorrespondenceWorkflowService
 
             if ($type === CorrespondenceAction::SUBMIT_RESULT) {
                 abort_unless($canRecordResult && $isDepartmentMember && ! $isManager
-                    && ($letter->workflow_state !== 'assigned_to_employee' || (int) $letter->current_user_id === (int) $actor->id), 403);
+                    && $letter->workflow_state === 'assigned_to_employee'
+                    && (int) $letter->current_user_id === (int) $actor->id, 403);
                 if ($note === '') {
                     throw new InvalidArgumentException('برای ثبت نتیجه، شرح بررسی و نتیجه یا علت انجام‌نشدن درخواست الزامی است.');
                 }
