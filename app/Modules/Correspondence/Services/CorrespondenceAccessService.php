@@ -7,7 +7,6 @@ namespace App\Modules\Correspondence\Services;
 use App\Core\Settings\Services\OrganizationDepartmentRoleService;
 use App\Models\User;
 use App\Modules\Correspondence\Models\CorrespondenceAction;
-use App\Modules\Correspondence\Models\CorrespondenceAction;
 use App\Modules\Correspondence\Models\Correspondence;
 use Illuminate\Database\Eloquent\Builder;
 
