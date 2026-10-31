@@ -197,7 +197,7 @@ class CorrespondenceController extends Controller
             'workflowUsers' => $correspondence->current_department_id === null
                 ? collect()
                 : (Department::query()->whereKey($correspondence->current_department_id)->first()?->members()
-                    ->where('users.status', 'active')->orderBy('users.name')->get(['users.id', 'users.name']) ?? collect()),
+                    ->where('users.status', 'active')->where('users.id', '<>', $request->user()->id)->orderBy('users.name')->get(['users.id', 'users.name']) ?? collect()),
             'canReturnToManager' => $correspondence->workflow_state !== 'completed_with_result'
                 && $correspondence->status === Correspondence::STATUS_REGISTERED
                 && in_array($correspondence->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)
