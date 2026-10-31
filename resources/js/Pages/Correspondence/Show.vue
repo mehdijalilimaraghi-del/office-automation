@@ -271,6 +271,18 @@ function registerCorrespondence(): void {
                                 <option value="submit_result">ثبت نتیجه بررسی و ارسال به مدیر</option>
                             </select>
                         </div>
+                        <div v-else-if="canSecretariatReturn">
+                            <label class="mb-1 block text-sm font-medium text-slate-700">اقدام دبیرخانه</label>
+                            <select v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
+                                <option value="secretariat_return">برگشت نامه برای اصلاح</option>
+                            </select>
+                        </div>
+                        <div v-else>
+                            <label class="mb-1 block text-sm font-medium text-slate-700">اقدام</label>
+                            <select v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
+                                <option value="resubmit_to_secretariat">ارسال مجدد به دبیرخانه</option>
+                            </select>
+                        </div>
 <template v-if="canManageWorkflow && actionForm.action_type === 'manager_refer'">
                             <div>
                                 <label class="mb-1 block text-sm font-medium text-slate-700">نوع ارجاع</label>
@@ -293,7 +305,7 @@ function registerCorrespondence(): void {
                         </template>
                         <div class="sm:col-span-2">
                             <label class="mb-1 block text-sm font-medium text-slate-700">توضیح / شرح اقدام</label>
-                            <textarea v-model="actionForm.note" rows="3" maxlength="10000" class="w-full rounded-xl border-slate-300 text-sm"  :required="['submit_result', 'confirm_result', 'secretariat_return'].includes(actionForm.action_type)" placeholder="شرح بررسی، نتیجه یا علت انجام‌نشدن درخواست را وارد کنید"></textarea>
+                            <textarea v-model="actionForm.note" rows="3" maxlength="10000" class="w-full rounded-xl border-slate-300 text-sm"  :required="['submit_result', 'confirm_result', 'secretariat_return'].includes(actionForm.action_type)" placeholder="شرح بررسی، نتیجه یا علت برگشت/ارجاع را وارد کنید"></textarea>
                             <p v-if="page.props.errors?.workflow_action" class="mt-1 text-sm text-rose-700">{{ page.props.errors.workflow_action }}</p>
                         </div>
                         <div class="sm:col-span-2 flex justify-end">
