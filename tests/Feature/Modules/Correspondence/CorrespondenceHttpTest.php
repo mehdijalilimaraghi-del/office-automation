@@ -14,6 +14,7 @@ use App\Core\Settings\Services\OrganizationDepartmentRoleService;
 use App\Core\Settings\Services\SystemSettingsService;
 use App\Models\User;
 use App\Modules\Correspondence\Models\Correspondence;
+use App\Modules\Correspondence\Models\CorrespondenceAction;
 use App\Modules\Documents\Models\Document;
 use App\Modules\Documents\Services\DocumentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -99,6 +100,85 @@ class CorrespondenceHttpTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->where('filters.scope', 'all')
                 ->where('correspondences.total', 3));
+    }
+
+    public function test_correspondence_action_filter_distinguishes_pending_and_previously_acted_referrals(): void
+    {
+        $user = $this->userWithPermission('correspondence.view');
+        $referrer = $this->userWithPermission('correspondence.view');
+        $otherUser = $this->userWithPermission('correspondence.view');
+        $creator = $this->userWithPermission('correspondence.view');
+
+        $pending = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => 'ارجاع مستقیم بدون اقدام',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'assigned_to_employee',
+            'current_user_id' => $user->id,
+            'created_by' => $creator->id,
+        ]);
+        CorrespondenceAction::query()->create([
+            'correspondence_id' => $pending->id,
+            'actor_id' => $referrer->id,
+            'action_type' => CorrespondenceAction::MANAGER_REFER,
+            'to_user_id' => $user->id,
+        ]);
+
+        $acted = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => 'ارجاع‌شده و اقدام‌شده توسط من',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'in_progress',
+            'current_user_id' => $otherUser->id,
+            'created_by' => $creator->id,
+        ]);
+        CorrespondenceAction::query()->create([
+            'correspondence_id' => $acted->id,
+            'actor_id' => $referrer->id,
+            'action_type' => CorrespondenceAction::MANAGER_REFER,
+            'to_user_id' => $user->id,
+        ]);
+        CorrespondenceAction::query()->create([
+            'correspondence_id' => $acted->id,
+            'actor_id' => $user->id,
+            'action_type' => CorrespondenceAction::MANAGER_REFER,
+            'to_user_id' => $otherUser->id,
+        ]);
+
+        $referredByUser = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => 'ارجاع‌شده توسط من به شخص دیگر',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'in_progress',
+            'current_user_id' => $otherUser->id,
+            'created_by' => $creator->id,
+        ]);
+        CorrespondenceAction::query()->create([
+            'correspondence_id' => $referredByUser->id,
+            'actor_id' => $user->id,
+            'action_type' => CorrespondenceAction::MANAGER_REFER,
+            'to_user_id' => $otherUser->id,
+        ]);
+
+        $this->actingAs($user)->get(route('correspondence.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('filters.action_filter', 'all')
+                ->where('correspondences.total', 2));
+
+        $this->actingAs($user)->get(route('correspondence.index', ['action_filter' => 'needs_action']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('filters.action_filter', 'needs_action')
+                ->where('correspondences.total', 1)
+                ->where('correspondences.data.0.id', $pending->id));
+
+        $this->actingAs($user)->get(route('correspondence.index', ['action_filter' => 'acted_by_me']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('filters.action_filter', 'acted_by_me')
+                ->where('correspondences.total', 1)
+                ->where('correspondences.data.0.id', $acted->id));
     }
 
     public function test_user_with_view_permission_can_open_correspondence_details(): void
