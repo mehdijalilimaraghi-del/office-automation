@@ -894,6 +894,24 @@ class CorrespondenceHttpTest extends TestCase
             'to_user_id' => $employee->id,
             'to_department_id' => $department->id,
         ]);
+
+        $otherEmployee = $this->userWithPermission('correspondence.view');
+        $otherEmployee->departments()->attach($department->id, ['is_primary' => true, 'joined_at' => now()]);
+        $this->actingAs($otherEmployee)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => 'submit_result',
+            'note' => 'نباید بتواند به نامه ارجاع‌شده به کاربر دیگر اقدام کند.',
+        ])->assertForbidden();
+
+        $this->actingAs($employee)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => 'submit_result',
+            'note' => 'بررسی کارمند ارجاع‌شده انجام شد.',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $letter->id,
+            'workflow_state' => 'result_pending_manager',
+            'current_user_id' => $manager->id,
+        ]);
     }
 
     public function test_secretariat_member_who_manages_current_department_can_still_act_as_its_manager(): void
