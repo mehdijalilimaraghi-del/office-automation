@@ -40,9 +40,11 @@ class CorrespondenceController extends Controller
             'type' => ['nullable', Rule::in(Correspondence::allowedTypes())],
             'status' => ['nullable', Rule::in([Correspondence::STATUS_DRAFT, Correspondence::STATUS_REGISTERED])],
             'scope' => ['nullable', Rule::in(['mine', 'department', 'all'])],
+            'action_filter' => ['nullable', Rule::in(['all', 'needs_action', 'acted_by_me'])],
         ]);
 
         $scope = $filters['scope'] ?? 'mine';
+        $actionFilter = $filters['action_filter'] ?? 'all';
 
         $user = $request->user();
         $departmentIds = $user->departments()->pluck('departments.id')
@@ -57,7 +59,7 @@ class CorrespondenceController extends Controller
                         ->orWhere('registered_by', $user->id)
                         ->orWhere('current_user_id', $user->id)
                         ->orWhereHas('authorizedUsers', fn ($users) => $users->where('users.id', $user->id))
-                        ->orWhereHas('actions', fn ($actions) => $actions->where('actor_id', $user->id));
+                        ->orWhereHas('actions', fn ($actions) => $actions->where('to_user_id', $user->id));
                 });
             })
             ->when($scope === 'department', function ($query) use ($departmentIds): void {
@@ -76,6 +78,15 @@ class CorrespondenceController extends Controller
                             ->whereIn('from_department_id', $departmentIds)
                             ->orWhereIn('to_department_id', $departmentIds));
                 });
+            })
+            ->when($actionFilter === 'needs_action', fn ($query) => $query->where('current_user_id', $user->id))
+            ->when($actionFilter === 'acted_by_me', function ($query) use ($user): void {
+                $query->where(function ($assignment) use ($user): void {
+                    $assignment->whereNull('current_user_id')
+                        ->orWhere('current_user_id', '!=', $user->id);
+                })
+                    ->whereHas('actions', fn ($actions) => $actions->where('actor_id', $user->id))
+                    ->whereHas('actions', fn ($actions) => $actions->where('to_user_id', $user->id));
             })
             ->with(['creator:id,name', 'createdDepartment:id,name', 'recipientDepartment:id,name', 'externalOrganization:id,name', 'externalDepartment:id,name,external_organization_id', 'registrar:id,name'])
             ->when($filters['search'] ?? null, function ($query, string $search): void {
@@ -107,6 +118,7 @@ class CorrespondenceController extends Controller
                 'type' => $filters['type'] ?? '',
                 'status' => $filters['status'] ?? '',
                 'scope' => $scope,
+                'action_filter' => $actionFilter,
             ],
             'canCreate' => $request->user()->hasPermission('correspondence.create'),
         ]);
