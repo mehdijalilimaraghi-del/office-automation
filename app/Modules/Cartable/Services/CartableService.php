@@ -84,14 +84,14 @@ class CartableService
                 'result_pending_manager',
                 'awaiting_dispatch',
                 'in_progress',
+                'assigned_to_employee',
                 'task_requested',
                 'project_requested',
                 'letter_requested',
             ])
             ->where(function (Builder $query) use ($user): void {
                 $query->where('current_user_id', $user->id)
-                    ->orWhereHas('currentDepartment', fn (Builder $department) => $department->where('manager_id', $user->id))
-                    ->orWhereHas('currentDepartment.members', fn (Builder $members) => $members->where('users.id', $user->id));
+                    ->orWhereHas('currentDepartment', fn (Builder $department) => $department->where('manager_id', $user->id));
             });
     }
 
