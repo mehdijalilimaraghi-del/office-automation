@@ -1452,3 +1452,11 @@ Implementation has started for the agreed cross-department project model:
 
 - Updated the draft visibility index test to explicitly select `action_filter=all` while retaining `scope=all`. The test concerns draft visibility authorization, not the default «نیاز به اقدام» filter; the explicit filter keeps those concerns independent.
 - No production code, visibility policy, or workflow authorization changed. Validation pending: pull `development` and rerun `php artisan test --filter=CorrespondenceHttpTest`. If the suite passes, run `npm run build` because the correspondence index Vue component changed in the preceding work. `master` unchanged.
+
+
+## 2026-10-31 — Pending correspondence for multi-department managers
+
+- Fixed «نیاز به اقدام» so a user who manages multiple departments also receives active correspondence routed to any of those departments, including legacy/department referrals whose action has a null to_user_id.
+- The manager branch is based on current department ownership (departments.manager_id via managedDepartments), current department routing history, and actionable workflow states. It excludes items explicitly assigned to an employee and items on which the manager has already acted after the latest routing to that department.
+- The personal «مکاتبات من» scope now includes active correspondence in departments managed by the user. Ordinary department membership does not grant this manager-specific inclusion.
+- Added regression coverage for a multi-department manager, a department referral without to_user_id, and exclusion of an employee-assigned item. Validation pending: pull development, run php artisan test --filter=CorrespondenceHttpTest. No frontend files changed; npm build is not required for this fix. master unchanged.
