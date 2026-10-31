@@ -1428,3 +1428,12 @@ Implementation has started for the agreed cross-department project model:
 - The first focused correspondence test run exposed one remaining stale test scenario: it attempted employee result submission while the letter was still assigned to the department manager (`in_progress`).
 - Updated that test to model the complete valid flow: manager explicitly refers to employee (`assigned_to_employee`), employee submits result (`result_pending_manager`), then manager refers to another department.
 - No production authorization was weakened or changed for this follow-up. Validation pending rerun of `CorrespondenceHttpTest`; frontend build remains required for the earlier Vue changes.
+
+
+## 2026-10-31 — Correspondence personal ownership and action filters
+
+- Added a second independent filter to the correspondence list: «همه مکاتبات»، «نیاز به اقدام»، and «اقدام قبلی ثبت‌شده توسط من». It composes with the existing «مکاتبات من / مکاتبات واحد من / همه مکاتبات مجاز» scope and preserves other search filters and pagination query parameters.
+- «نیاز به اقدام» is based on the current assignment (current_user_id equals the signed-in user). «اقدام قبلی ثبت‌شده توسط من» requires both a historical referral addressed to that user (correspondence_actions.to_user_id) and an action authored by that user (actor_id), and excludes letters currently assigned back to that user so pending work takes precedence.
+- Corrected the «مکاتبات من» ownership scope: an action authored by the user is no longer sufficient by itself. Historical referrals addressed to the user remain included; merely referring a letter to another user/department does not make it the referrer's personal correspondence.
+- Added feature regression coverage for pending referrals, previously acted-on referrals, and letters merely referred onward by the current user. No database migration or workflow authorization changes.
+- Validation pending: pull development, run php artisan test --filter=CorrespondenceHttpTest, then npm run build. master remains unchanged.
