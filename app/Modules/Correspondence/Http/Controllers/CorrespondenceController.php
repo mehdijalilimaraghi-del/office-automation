@@ -128,6 +128,7 @@ class CorrespondenceController extends Controller
             'task:id,title,status,assignee_id,created_by',
             'documents.document.latestVersion',
             'actions.actor:id,name',
+            'actions.toUser:id,name',
             'actions.fromDepartment:id,name',
             'actions.toDepartment:id,name',
             'copies:id,name',
@@ -193,10 +194,11 @@ class CorrespondenceController extends Controller
                 ->values(),
             'canRegister' => $access->canRegister($correspondence, $request->user()),
             'workflowDepartments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'parent_id', 'icon']),
+            'workflowUsers' => $correspondence->current_department_id === null
+                ? collect()
+                : (Department::query()->whereKey($correspondence->current_department_id)->first()?->members()
+                    ->where('users.status', 'active')->orderBy('users.name')->get(['users.id', 'users.name']) ?? collect()),
             'canReturnToManager' => $correspondence->workflow_state !== 'completed_with_result'
-                && ! ($correspondence->type === Correspondence::TYPE_INCOMING
-                    && (int) $correspondence->registered_by === (int) $request->user()->id
-                    && $access->isSecretariat($request->user()))
                 && $correspondence->status === Correspondence::STATUS_REGISTERED
                 && in_array($correspondence->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)
                 && $correspondence->current_department_id !== null
@@ -204,17 +206,21 @@ class CorrespondenceController extends Controller
                 && ($request->user()->departments()->where('departments.id', $correspondence->current_department_id)->exists()
                     || $request->user()->managedDepartments()->whereKey($correspondence->current_department_id)->exists()),
             'canManageWorkflow' => $correspondence->workflow_state !== 'completed_with_result'
-                && ! ($correspondence->type === Correspondence::TYPE_INCOMING
-                    && (int) $correspondence->registered_by === (int) $request->user()->id
-                    && $access->isSecretariat($request->user()))
                 && $correspondence->current_department_id !== null
                 && (int) Department::query()->whereKey($correspondence->current_department_id)->value('manager_id') === (int) $request->user()->id,
             'canAddCopies' => $correspondence->workflow_state !== 'completed_with_result'
-                && ! ($correspondence->type === Correspondence::TYPE_INCOMING
-                    && (int) $correspondence->registered_by === (int) $request->user()->id
-                    && $access->isSecretariat($request->user()))
                 && $correspondence->current_department_id !== null
                 && (int) Department::query()->whereKey($correspondence->current_department_id)->value('manager_id') === (int) $request->user()->id,
+            'canSecretariatReturn' => $correspondence->type === Correspondence::TYPE_OUTGOING
+                && $correspondence->status === Correspondence::STATUS_REGISTERED
+                && $correspondence->workflow_state === 'awaiting_dispatch'
+                && $access->isSecretariat($request->user()),
+            'canResubmitToSecretariat' => $correspondence->type === Correspondence::TYPE_OUTGOING
+                && $correspondence->status === Correspondence::STATUS_REGISTERED
+                && $correspondence->workflow_state === 'returned_for_correction'
+                && ((int) $correspondence->created_by === (int) $request->user()->id
+                    || ($correspondence->created_department_id !== null
+                        && (int) Department::query()->whereKey($correspondence->created_department_id)->value('manager_id') === (int) $request->user()->id)),
             'copyDepartments' => Department::query()
                 ->where('is_active', true)
                 ->whereNotIn('id', $correspondence->copies()->select('departments.id'))
@@ -833,12 +839,13 @@ class CorrespondenceController extends Controller
                 CorrespondenceAction::MANAGER_APPROVE,
                 CorrespondenceAction::CONFIRM_RESULT,
                 CorrespondenceAction::MANAGER_REFER,
-                CorrespondenceAction::REQUEST_TASK,
-                CorrespondenceAction::REQUEST_PROJECT,
-                CorrespondenceAction::REQUEST_LETTER,
+                CorrespondenceAction::SECRETARIAT_RETURN,
+                CorrespondenceAction::RESUBMIT_TO_SECRETARIAT,
             ])],
             'note' => ['nullable', 'string', 'max:10000'],
+            'target_type' => ['nullable', Rule::in(['department', 'user'])],
             'to_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')->where('is_active', true)],
+            'to_user_id' => ['nullable', 'integer', Rule::exists('users', 'id')->where('status', 'active')],
         ]);
 
         try {
