@@ -39,7 +39,7 @@ class CorrespondenceHttpTest extends TestCase
             'created_by' => $user->id,
         ]);
 
-        $this->actingAs($user)->get(route('correspondence.index'))
+        $this->actingAs($user)->get(route('correspondence.index', ['action_filter' => 'all']))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('Correspondence/Index')
@@ -83,19 +83,19 @@ class CorrespondenceHttpTest extends TestCase
             'created_department_id' => $department->id,
         ]);
 
-        $this->actingAs($user)->get(route('correspondence.index'))
+        $this->actingAs($user)->get(route('correspondence.index', ['action_filter' => 'all']))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->where('filters.scope', 'mine')
                 ->where('correspondences.total', 1));
 
-        $this->actingAs($user)->get(route('correspondence.index', ['scope' => 'department']))
+        $this->actingAs($user)->get(route('correspondence.index', ['scope' => 'department', 'action_filter' => 'all']))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->where('filters.scope', 'department')
                 ->where('correspondences.total', 2));
 
-        $this->actingAs($user)->get(route('correspondence.index', ['scope' => 'all']))
+        $this->actingAs($user)->get(route('correspondence.index', ['scope' => 'all', 'action_filter' => 'all']))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->where('filters.scope', 'all')
@@ -302,7 +302,7 @@ class CorrespondenceHttpTest extends TestCase
             'created_by' => $creator->id,
         ]);
 
-        $this->actingAs($viewer)->get(route('correspondence.index'))
+        $this->actingAs($viewer)->get(route('correspondence.index', ['scope' => 'all', 'action_filter' => 'all']))
             ->assertOk()
             ->assertInertia(fn ($page) => $page->where('correspondences.total', 0));
         $this->actingAs($viewer)->get(route('correspondence.show', $letter))->assertForbidden();
