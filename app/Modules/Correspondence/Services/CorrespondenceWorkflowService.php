@@ -66,17 +66,6 @@ class CorrespondenceWorkflowService
         DB::transaction(function () use ($correspondence, $actor, $data): void {
             $letter = Correspondence::query()->whereKey($correspondence->id)->lockForUpdate()->firstOrFail();
 
-            // Secretariat registration of incoming mail does not grant workflow authority,
-            // even if the same user also manages the destination department.
-            if ($letter->type === Correspondence::TYPE_INCOMING
-                && (int) $letter->registered_by === (int) $actor->id
-                && app(OrganizationDepartmentRoleService::class)->userBelongsTo(
-                    $actor,
-                    OrganizationDepartmentRoleService::SECRETARIAT,
-                )) {
-                abort(403, 'ثبت‌کننده دبیرخانه برای نامه وارده فقط مجوز مشاهده دارد.');
-            }
-
             $type = (string) $data['action_type'];
             $note = trim((string) ($data['note'] ?? ''));
 
@@ -84,6 +73,10 @@ class CorrespondenceWorkflowService
                 throw new InvalidArgumentException('گردش این نامه پس از تأیید نتیجه خاتمه یافته است و اقدام جدیدی نمی‌پذیرد.');
             }
             $targetDepartmentId = isset($data['to_department_id']) ? (int) $data['to_department_id'] : null;
+            $targetUserId = isset($data['to_user_id']) ? (int) $data['to_user_id'] : null;
+            $targetType = (string) ($data['target_type'] ?? 'department');
+            $roles = app(OrganizationDepartmentRoleService::class);
+            $isSecretariat = $actor->isSystemAdmin() || $roles->userBelongsTo($actor, OrganizationDepartmentRoleService::SECRETARIAT);
             $currentDepartmentId = $letter->current_department_id === null ? null : (int) $letter->current_department_id;
             $isManager = $currentDepartmentId !== null
                 && (int) Department::query()->whereKey($currentDepartmentId)->value('manager_id') === (int) $actor->id;
@@ -115,6 +108,50 @@ class CorrespondenceWorkflowService
                 return;
             }
 
+            if ($type === CorrespondenceAction::SECRETARIAT_RETURN) {
+                abort_unless($isSecretariat
+                    && $letter->type === Correspondence::TYPE_OUTGOING
+                    && $letter->status === Correspondence::STATUS_REGISTERED
+                    && $letter->workflow_state === 'awaiting_dispatch', 403,
+                    'برگشت برای اصلاح فقط توسط دبیرخانه و پیش از ثبت ارسال نهایی مجاز است.');
+                if ($note === '') {
+                    throw new InvalidArgumentException('برای برگشت نامه، شرح ایراد و علت برگشت الزامی است.');
+                }
+                $originDepartmentId = $letter->created_department_id === null ? null : (int) $letter->created_department_id;
+                if ($originDepartmentId === null) {
+                    throw new InvalidArgumentException('واحد ایجادکننده نامه مشخص نیست؛ امکان برگشت برای اصلاح وجود ندارد.');
+                }
+                $this->record($letter, $actor, $type, $note, $currentDepartmentId, $originDepartmentId, $actor->id, (int) $letter->created_by);
+                $letter->forceFill([
+                    'current_department_id' => $originDepartmentId,
+                    'current_user_id' => (int) $letter->created_by,
+                    'workflow_state' => 'returned_for_correction',
+                ])->save();
+                return;
+            }
+
+            if ($type === CorrespondenceAction::RESUBMIT_TO_SECRETARIAT) {
+                abort_unless($letter->type === Correspondence::TYPE_OUTGOING
+                    && $letter->status === Correspondence::STATUS_REGISTERED
+                    && $letter->workflow_state === 'returned_for_correction'
+                    && ((int) $letter->created_by === (int) $actor->id
+                        || ($letter->created_department_id !== null
+                            && (int) Department::query()->whereKey($letter->created_department_id)->value('manager_id') === (int) $actor->id)),
+                    403, 'ارسال مجدد برای بررسی فقط توسط ایجادکننده نامه یا مدیر واحد ایجادکننده مجاز است.');
+                $secretariatDepartmentId = $roles->activeDepartmentId(OrganizationDepartmentRoleService::SECRETARIAT);
+                if ($secretariatDepartmentId === null) {
+                    throw new InvalidArgumentException('واحد فعال دبیرخانه در تنظیمات مشخص نشده است.');
+                }
+                $secretariatManagerId = Department::query()->whereKey($secretariatDepartmentId)->value('manager_id');
+                $this->record($letter, $actor, $type, $note, $currentDepartmentId, (int) $secretariatDepartmentId, $actor->id, $secretariatManagerId === null ? null : (int) $secretariatManagerId);
+                $letter->forceFill([
+                    'current_department_id' => (int) $secretariatDepartmentId,
+                    'current_user_id' => $secretariatManagerId === null ? null : (int) $secretariatManagerId,
+                    'workflow_state' => 'awaiting_dispatch',
+                ])->save();
+                return;
+            }
+
             abort_unless($isManager, 403);
 
             if ($type === CorrespondenceAction::MANAGER_APPROVE) {
@@ -139,32 +176,43 @@ class CorrespondenceWorkflowService
                 return;
             }
 
-            if (in_array($type, [CorrespondenceAction::MANAGER_REFER, CorrespondenceAction::REQUEST_TASK, CorrespondenceAction::REQUEST_PROJECT, CorrespondenceAction::REQUEST_LETTER], true)) {
+            if ($type === CorrespondenceAction::MANAGER_REFER && $targetType === 'user') {
+                if ($targetUserId === null) {
+                    throw new InvalidArgumentException('کاربر مقصد را انتخاب کنید.');
+                }
+                $targetUser = User::query()->whereKey($targetUserId)->where('status', 'active')->first();
+                $isTargetMember = $targetUser !== null && (
+                    $targetUser->departments()->where('departments.id', $currentDepartmentId)->exists()
+                    || $targetUser->managedDepartments()->whereKey($currentDepartmentId)->exists()
+                );
+                if (! $isTargetMember) {
+                    throw new InvalidArgumentException('کاربر انتخاب‌شده عضو واحد مسئول فعلی نیست یا فعال نمی‌باشد.');
+                }
+                $this->record($letter, $actor, $type, $note, $currentDepartmentId, $currentDepartmentId, $actor->id, $targetUserId);
+                $letter->forceFill([
+                    'current_department_id' => $currentDepartmentId,
+                    'current_user_id' => $targetUserId,
+                    'workflow_state' => 'in_progress',
+                ])->save();
+                return;
+            }
+
+            if ($type === CorrespondenceAction::MANAGER_REFER && $targetType === 'department') {
                 if ($targetDepartmentId === null) {
-                    throw new InvalidArgumentException('برای ارجاع یا ثبت درخواست، واحد مقصد را انتخاب کنید.');
+                    throw new InvalidArgumentException('واحد مقصد را انتخاب کنید.');
                 }
                 $target = Department::query()->whereKey($targetDepartmentId)->where('is_active', true)->first();
                 if ($target === null) {
                     throw new InvalidArgumentException('واحد مقصد فعال نیست یا وجود ندارد.');
                 }
-                if ($type === CorrespondenceAction::REQUEST_PROJECT) {
-                    abort_unless(app(OrganizationDepartmentRoleService::class)->isAssigned($target, OrganizationDepartmentRoleService::PROJECT_MANAGEMENT), 403);
-                }
-
-                $this->record($letter, $actor, $type, $note, $currentDepartmentId, $targetDepartmentId, $actor->id, null);
+                $this->record($letter, $actor, $type, $note, $currentDepartmentId, $targetDepartmentId, $actor->id, $target->manager_id === null ? null : (int) $target->manager_id);
                 $letter->forceFill([
                     'current_department_id' => $targetDepartmentId,
                     'current_user_id' => $target->manager_id,
-                    'workflow_state' => match ($type) {
-                        CorrespondenceAction::REQUEST_TASK => 'task_requested',
-                        CorrespondenceAction::REQUEST_PROJECT => 'project_requested',
-                        CorrespondenceAction::REQUEST_LETTER => 'letter_requested',
-                        CorrespondenceAction::MANAGER_REFER => $letter->status === Correspondence::STATUS_DRAFT
-                            && app(CorrespondenceCompositionSettings::class)->requiresApproval($letter->type)
-                            ? 'awaiting_manager_approval'
-                            : 'in_progress',
-                        default => 'in_progress',
-                    },
+                    'workflow_state' => $letter->status === Correspondence::STATUS_DRAFT
+                        && app(CorrespondenceCompositionSettings::class)->requiresApproval($letter->type)
+                        ? 'awaiting_manager_approval'
+                        : 'in_progress',
                 ])->save();
                 return;
             }
@@ -312,6 +360,8 @@ class CorrespondenceWorkflowService
                         CorrespondenceAction::REQUEST_PROJECT => 'درخواست پروژه مرتبط با نامه برای شما ارسال شد',
                         CorrespondenceAction::REQUEST_LETTER => 'درخواست مکاتبه مرتبط برای شما ارسال شد',
                         CorrespondenceAction::DISPATCHED => 'ارسال نهایی نامه ثبت شد',
+                        CorrespondenceAction::SECRETARIAT_RETURN => 'نامه صادره برای اصلاح به واحد ایجادکننده برگشت داده شد',
+                        CorrespondenceAction::RESUBMIT_TO_SECRETARIAT => 'نامه اصلاح‌شده برای بررسی مجدد به دبیرخانه ارسال شد',
                         default => 'نامه‌ای نیازمند اقدام شماست',
                     },
                 );
