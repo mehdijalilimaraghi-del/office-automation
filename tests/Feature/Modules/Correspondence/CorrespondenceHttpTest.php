@@ -281,6 +281,13 @@ class CorrespondenceHttpTest extends TestCase
             'to_user_id' => $employee->id,
         ]);
 
+        $this->actingAs($manager)->get(route('correspondence.index', ['scope' => 'department', 'action_filter' => 'needs_action']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('filters.scope', 'department')
+                ->where('filters.action_filter', 'all')
+                ->where('correspondences.total', 2));
+
         $this->actingAs($manager)->get(route('correspondence.index'))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
