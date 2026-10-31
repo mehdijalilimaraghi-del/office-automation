@@ -105,7 +105,7 @@ function submitCopies(): void {
 }
 
 const actionForm = useForm({
-    action_type: props.canManageWorkflow ? 'manager_refer' : props.canSecretariatReturn ? 'secretariat_return' : props.canResubmitToSecretariat ? 'resubmit_to_secretariat' : 'submit_result',
+    action_type: props.canSecretariatReturn ? 'secretariat_return' : props.canResubmitToSecretariat ? 'resubmit_to_secretariat' : props.canManageWorkflow ? 'manager_refer' : 'submit_result',
     note: '',
     target_type: 'department' as 'department' | 'user',
     to_department_id: '' as number | '',
