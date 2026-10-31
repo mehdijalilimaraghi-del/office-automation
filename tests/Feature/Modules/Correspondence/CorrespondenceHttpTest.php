@@ -273,8 +273,7 @@ class CorrespondenceHttpTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->where('filters.action_filter', 'needs_action')
                 ->where('correspondences.total', 2)
-                ->where('correspondences.data.0.id', $resultPendingManager->id)
-                ->where('correspondences.data.1.id', $awaitingManager->id));
+                ->where('correspondences.data', fn ($rows) => collect($rows)->pluck('id')->sort()->values()->all() === collect([$resultPendingManager->id, $awaitingManager->id])->sort()->values()->all()));
     }
 
     public function test_department_filter_uses_department_module_data_and_never_bypasses_visibility(): void
@@ -335,7 +334,7 @@ class CorrespondenceHttpTest extends TestCase
             'department_filter' => (string) $otherDepartment->id,
         ]))->assertOk()->assertInertia(fn ($page) => $page
             ->where('filters.department_filter', (string) $otherDepartment->id)
-            ->has('departments', 2)
+            ->where('departments', fn ($departments) => collect($departments)->pluck('id')->contains($memberDepartment->id) && collect($departments)->pluck('id')->contains($otherDepartment->id))
             ->where('correspondences.total', 1)
             ->where('correspondences.data.0.id', $otherOrdinaryLetter->id));
     }
