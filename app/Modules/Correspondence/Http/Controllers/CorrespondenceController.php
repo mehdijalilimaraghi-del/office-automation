@@ -106,7 +106,27 @@ class CorrespondenceController extends Controller
             ->when($actionFilter === 'needs_action', function ($query) use ($user): void {
                 $query->where(function ($pending) use ($user): void {
                     // Current assignment is authoritative; historical action rows may be incomplete.
-                    $pending->where('current_user_id', $user->id)
+                    $pending->where(function ($direct) use ($user): void {
+                        $direct->where('current_user_id', $user->id)
+                            ->where(function ($assignment) use ($user): void {
+                                // Legacy/current assignments without a referral row remain actionable.
+                                $assignment->whereNotExists(function ($referral) use ($user): void {
+                                    $referral->selectRaw('1')
+                                        ->from('correspondence_actions as referral')
+                                        ->whereColumn('referral.correspondence_id', 'correspondences.id')
+                                        ->where('referral.to_user_id', $user->id);
+                                })->orWhereNotExists(function ($action) use ($user): void {
+                                    $action->selectRaw('1')
+                                        ->from('correspondence_actions as my_action')
+                                        ->whereColumn('my_action.correspondence_id', 'correspondences.id')
+                                        ->where('my_action.actor_id', $user->id)
+                                        ->whereRaw(
+                                            'my_action.id > (SELECT MAX(latest_referral.id) FROM correspondence_actions AS latest_referral WHERE latest_referral.correspondence_id = correspondences.id AND latest_referral.to_user_id = ?)',
+                                            [$user->id],
+                                        );
+                                });
+                            });
+                    })
                         // A department referral belongs to its manager until assigned to an employee.
                         ->orWhere(function ($department) use ($user): void {
                             $department->whereIn('workflow_state', [
