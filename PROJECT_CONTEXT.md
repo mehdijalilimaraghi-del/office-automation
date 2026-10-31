@@ -1308,3 +1308,9 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - Renamed the action option to «اقدام قبلی ثبت‌شده» (removed redundant «توسط من» wording).
 - All select filters now apply automatically; text search applies after a 350 ms debounce. Removed the manual «اعمال فیلتر» button.
 - Added a regression assertion that `scope=department` ignores `action_filter=needs_action` and returns the full department-scope set. Validation pending: `php artisan test --filter=CorrespondenceHttpTest` and `npm run build`. `master` unchanged.
+
+## 2026-10-31 — Project-requested correspondence in manager action list
+
+- Included `project_requested` in the actionable workflow states for the manager of the current department. A letter routed to a project department must appear in that department manager's `needs_action` list until it is assigned to an employee or transitions to another state.
+- Added a Correspondence HTTP regression test for a registered incoming letter in `project_requested`, with `current_user_id = NULL`, confirming it appears in the current manager's default list. Existing access filtering and the `assigned_to_employee` exclusion are unchanged.
+- Validation pending: run `php artisan test --filter=CorrespondenceHttpTest`; `master` unchanged.
