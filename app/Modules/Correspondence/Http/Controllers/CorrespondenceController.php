@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Correspondence\Http\Controllers;
 
 use App\Core\Audit\Contracts\AuditServiceInterface;
+use App\Core\Departments\Contracts\DepartmentServiceInterface;
 use App\Core\Departments\Models\Department;
 use App\Core\ExternalParties\Models\ExternalOrganization;
 use App\Core\ExternalParties\Models\ExternalDepartment;
@@ -33,7 +34,7 @@ use InvalidArgumentException;
 
 class CorrespondenceController extends Controller
 {
-    public function index(Request $request, CorrespondenceAccessService $access): Response
+    public function index(Request $request, CorrespondenceAccessService $access, DepartmentServiceInterface $departmentService): Response
     {
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:150'],
@@ -41,6 +42,7 @@ class CorrespondenceController extends Controller
             'status' => ['nullable', Rule::in([Correspondence::STATUS_DRAFT, Correspondence::STATUS_REGISTERED])],
             'scope' => ['nullable', Rule::in(['mine', 'department', 'all'])],
             'action_filter' => ['nullable', Rule::in(['all', 'needs_action', 'acted_by_me', 'created_by_me'])],
+            'department_filter' => ['nullable', 'string', 'max:20'],
         ]);
 
         $scope = $filters['scope'] ?? 'mine';
@@ -51,6 +53,26 @@ class CorrespondenceController extends Controller
         $departmentIds = $user->departments()->pluck('departments.id')
             ->merge($managedDepartmentIds)
             ->unique()
+            ->values();
+        $defaultDepartmentFilter = $scope === 'all' ? 'all' : 'mine';
+        $departmentFilter = (string) ($filters['department_filter'] ?? $defaultDepartmentFilter);
+        $allActiveDepartments = $departmentService->list()->where('is_active', true);
+        $filterableDepartmentIds = $scope === 'all' ? $allActiveDepartments->modelKeys() : $departmentIds->all();
+
+        if ($departmentFilter !== $defaultDepartmentFilter
+            && (! ctype_digit($departmentFilter) || ! in_array((int) $departmentFilter, $filterableDepartmentIds, true))) {
+            $departmentFilter = $defaultDepartmentFilter;
+        }
+
+        $departmentOptions = $allActiveDepartments
+            ->filter(fn (Department $department): bool => in_array((int) $department->id, $filterableDepartmentIds, true))
+            ->map(fn (Department $department): array => [
+                'id' => (int) $department->id,
+                'name' => $department->name,
+                'parent_id' => $department->parent_id,
+                'icon' => $department->icon,
+                'is_active' => (bool) $department->is_active,
+            ])
             ->values();
 
         $query = $access->visibleToQuery(Correspondence::query(), $user)
@@ -81,52 +103,31 @@ class CorrespondenceController extends Controller
                             ->orWhereIn('to_department_id', $departmentIds));
                 });
             })
-            ->when($actionFilter === 'needs_action', function ($query) use ($user, $managedDepartmentIds): void {
-                $query->where(function ($pending) use ($user, $managedDepartmentIds): void {
-                    $pending->where(function ($direct) use ($user): void {
-                        $direct->where('current_user_id', $user->id)
-                            ->whereExists(function ($referral) use ($user): void {
-                                $referral->selectRaw('1')
-                                    ->from('correspondence_actions as referral')
-                                    ->whereColumn('referral.correspondence_id', 'correspondences.id')
-                                    ->where('referral.to_user_id', $user->id)
-                                    ->whereRaw(
-                                        'referral.id = (SELECT MAX(latest_referral.id) FROM correspondence_actions AS latest_referral WHERE latest_referral.correspondence_id = correspondences.id AND latest_referral.to_user_id = ?)',
-                                        [$user->id],
-                                    );
-                            })
-                            ->whereNotExists(function ($action) use ($user): void {
-                                $action->selectRaw('1')
-                                    ->from('correspondence_actions as my_action')
-                                    ->whereColumn('my_action.correspondence_id', 'correspondences.id')
-                                    ->where('my_action.actor_id', $user->id)
-                                    ->whereRaw(
-                                        'my_action.id > (SELECT MAX(latest_referral.id) FROM correspondence_actions AS latest_referral WHERE latest_referral.correspondence_id = correspondences.id AND latest_referral.to_user_id = ?)',
-                                        [$user->id],
-                                    );
-                            });
-                    })->orWhere(function ($department) use ($user, $managedDepartmentIds): void {
-                        $department->whereIn('current_department_id', $managedDepartmentIds)
-                            ->whereIn('workflow_state', ['in_progress', 'result_pending_manager', 'awaiting_manager_approval'])
-                            ->whereExists(function ($referral): void {
-                                $referral->selectRaw('1')
-                                    ->from('correspondence_actions as referral')
-                                    ->whereColumn('referral.correspondence_id', 'correspondences.id')
-                                    ->whereColumn('referral.to_department_id', 'correspondences.current_department_id')
-                                    ->whereRaw(
-                                        'referral.id = (SELECT MAX(latest_referral.id) FROM correspondence_actions AS latest_referral WHERE latest_referral.correspondence_id = correspondences.id AND latest_referral.to_department_id = correspondences.current_department_id)',
-                                    );
-                            })
-                            ->whereNotExists(function ($action) use ($user): void {
-                                $action->selectRaw('1')
-                                    ->from('correspondence_actions as my_action')
-                                    ->whereColumn('my_action.correspondence_id', 'correspondences.id')
-                                    ->where('my_action.actor_id', $user->id)
-                                    ->whereRaw(
-                                        'my_action.id > (SELECT MAX(latest_referral.id) FROM correspondence_actions AS latest_referral WHERE latest_referral.correspondence_id = correspondences.id AND latest_referral.to_department_id = correspondences.current_department_id)',
-                                    );
-                            });
-                    });
+            ->when($actionFilter === 'needs_action', function ($query) use ($user): void {
+                $query->where(function ($pending) use ($user): void {
+                    // Current assignment is authoritative; historical action rows may be incomplete.
+                    $pending->where('current_user_id', $user->id)
+                        // A department referral belongs to its manager until assigned to an employee.
+                        ->orWhere(function ($department) use ($user): void {
+                            $department->whereIn('workflow_state', [
+                                'in_progress',
+                                'result_pending_manager',
+                                'awaiting_manager_approval',
+                            ])->whereHas('currentDepartment', fn ($currentDepartment) => $currentDepartment
+                                ->where('manager_id', $user->id));
+                        });
+                });
+            })
+            ->when(ctype_digit($departmentFilter), function ($query) use ($departmentFilter): void {
+                $departmentId = (int) $departmentFilter;
+                $query->where(function ($related) use ($departmentId): void {
+                    $related->where('created_department_id', $departmentId)
+                        ->orWhere('recipient_department_id', $departmentId)
+                        ->orWhere('current_department_id', $departmentId)
+                        ->orWhereHas('copies', fn ($copies) => $copies->where('departments.id', $departmentId))
+                        ->orWhereHas('actions', fn ($actions) => $actions
+                            ->where('from_department_id', $departmentId)
+                            ->orWhere('to_department_id', $departmentId));
                 });
             })
             ->when($actionFilter === 'acted_by_me', function ($query) use ($user): void {
@@ -187,7 +188,9 @@ class CorrespondenceController extends Controller
                 'status' => $filters['status'] ?? '',
                 'scope' => $scope,
                 'action_filter' => $actionFilter,
+                'department_filter' => $departmentFilter,
             ],
+            'departments' => $departmentOptions,
             'canCreate' => $request->user()->hasPermission('correspondence.create'),
         ]);
     }
