@@ -261,7 +261,7 @@ class CorrespondenceHttpTest extends TestCase
             'created_by' => $creator->id,
         ]);
 
-        $this->actingAs($viewer)->get(route('correspondence.index', ['scope' => 'all']))
+        $this->actingAs($viewer)->get(route('correspondence.index', ['scope' => 'all', 'action_filter' => 'all']))
             ->assertOk()
             ->assertInertia(fn ($page) => $page->where('correspondences.total', 1));
         $this->actingAs($viewer)->get(route('correspondence.show', $letter))->assertOk();
