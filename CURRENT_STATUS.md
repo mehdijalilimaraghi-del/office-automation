@@ -1395,7 +1395,7 @@ Implementation has started for the agreed cross-department project model:
 
 - Reduced the correspondence metadata column width by changing the desktop grid ratio from 1:1.65 to 0.7:1.65. Metadata is now a single vertical list with one label/value pair per row.
 - For incoming correspondence, the creator department is set to the configured active Secretariat department rather than inferred from the registering user's other department memberships.
-- A user who registered an incoming letter as Secretariat staff is view-only for that letter's workflow, even if that user also manages the recipient department. Workflow actions and adding copies are hidden in the UI and rejected by server-side authorization. Other eligible recipient-department managers retain their existing workflow permissions.
+- Historical rule superseded on 2026-10-31: the blanket view-only restriction for a Secretariat registrar who also manages the current department was removed. Workflow permissions are now evaluated by the current department/action context so overlapping roles can be used without switching roles.
 - Validation pending in the local environment: run `php artisan test --filter=CorrespondenceHttpTest` and `npm run build`, then verify a Secretariat registrar who also manages the recipient department can view but cannot act or add copies. No test/build result is claimed; `master` remains unchanged.
 
 
