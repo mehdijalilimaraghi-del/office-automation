@@ -993,10 +993,29 @@ class CorrespondenceHttpTest extends TestCase
             'created_by' => $manager->id,
         ]);
 
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => 'manager_refer',
+            'target_type' => 'user',
+            'to_user_id' => $employee->id,
+            'note' => 'برای بررسی اولیه و اعلام نتیجه.',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $letter->id,
+            'workflow_state' => 'assigned_to_employee',
+            'current_user_id' => $employee->id,
+        ]);
+
         $this->actingAs($employee)->post(route('correspondence.actions.store', $letter), [
             'action_type' => 'submit_result',
             'note' => 'بررسی اولیه انجام شد و نیاز به نظر واحد دیگری وجود دارد.',
         ])->assertRedirect();
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $letter->id,
+            'workflow_state' => 'result_pending_manager',
+            'current_user_id' => $manager->id,
+        ]);
 
         $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
             'action_type' => 'manager_refer',
