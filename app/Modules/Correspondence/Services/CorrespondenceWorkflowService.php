@@ -94,7 +94,8 @@ class CorrespondenceWorkflowService
                 && in_array($letter->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true);
 
             if ($type === CorrespondenceAction::SUBMIT_RESULT) {
-                abort_unless($canRecordResult && $isDepartmentMember && ! $isManager, 403);
+                abort_unless($canRecordResult && $isDepartmentMember && ! $isManager
+                    && ($letter->workflow_state !== 'assigned_to_employee' || (int) $letter->current_user_id === (int) $actor->id), 403);
                 if ($note === '') {
                     throw new InvalidArgumentException('برای ثبت نتیجه، شرح بررسی و نتیجه یا علت انجام‌نشدن درخواست الزامی است.');
                 }
@@ -192,7 +193,7 @@ class CorrespondenceWorkflowService
                 $letter->forceFill([
                     'current_department_id' => $currentDepartmentId,
                     'current_user_id' => $targetUserId,
-                    'workflow_state' => 'in_progress',
+                    'workflow_state' => 'assigned_to_employee',
                 ])->save();
                 return;
             }
