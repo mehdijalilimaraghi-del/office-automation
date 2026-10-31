@@ -1276,3 +1276,10 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - The department path relies on current department manager ownership and the latest routing action to that department. It includes active manager states, excludes explicit employee assignment, and excludes a manager's own later action after the latest department routing.
 - The personal scope also includes active correspondence in managed departments. Ordinary membership alone does not qualify.
 - Added a focused regression test for a user managing multiple departments. Validation pending on the project owner's environment; no frontend change; master unchanged.
+
+
+## 2026-10-31 — Correspondence index closure fix (validation pending)
+
+- The `scope=mine` closure in `CorrespondenceController::index()` now captures `$managedDepartmentIds` because its query references that collection to include active correspondence in departments managed by the user.
+- The missing capture caused `Undefined variable $managedDepartmentIds` and HTTP 500 responses across correspondence index tests. No workflow authorization or filter behavior was otherwise changed.
+- Validation pending: `php artisan test --filter=CorrespondenceHttpTest`. PHP-only change; no frontend build required. `master` unchanged.
