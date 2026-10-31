@@ -55,7 +55,7 @@ class CorrespondenceController extends Controller
 
         $query = $access->visibleToQuery(Correspondence::query(), $user)
             ->when($scope === 'mine', function ($query) use ($user, $managedDepartmentIds): void {
-                $query->where(function ($mine) use ($user): void {
+                $query->where(function ($mine) use ($user, $managedDepartmentIds): void {
                     $mine->where('created_by', $user->id)
                         ->orWhere('registered_by', $user->id)
                         ->orWhere('current_user_id', $user->id)
