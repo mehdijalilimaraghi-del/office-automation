@@ -260,7 +260,7 @@ function registerCorrespondence(): void {
                             <label class="mb-1 block text-sm font-medium text-slate-700">اقدام مدیر</label>
                             <select v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
                                 <option v-if="correspondence.status === 'draft' && correspondence.workflow_state === 'awaiting_manager_approval'" value="manager_approve">تأیید برای ثبت نهایی</option>
-                                <option v-if="correspondence.status === 'registered' && correspondence.type !== 'outgoing'" value="manager_refer">ارجاع به واحد یا کارمند</option>
+                                <option v-if="correspondence.status === 'registered' && correspondence.type !== 'outgoing'" value="manager_refer">ارجاع به</option>
                                 <option v-if="canSecretariatReturn" value="secretariat_return">برگشت برای اصلاح</option>
                                 <option v-if="canResubmitToSecretariat" value="resubmit_to_secretariat">ارسال مجدد به دبیرخانه</option>
                                 <option v-if="correspondence.workflow_state === 'result_pending_manager' && ['incoming', 'internal'].includes(correspondence.type)" value="confirm_result">تأیید نتیجه و خاتمه گردش</option>
@@ -288,8 +288,8 @@ function registerCorrespondence(): void {
                             <div>
                                 <label class="mb-1 block text-sm font-medium text-slate-700">نوع ارجاع</label>
                                 <select v-model="actionForm.target_type" class="w-full rounded-xl border-slate-300 text-sm">
-                                    <option value="department">ارجاع به واحد دیگر</option>
-                                    <option value="user">ارجاع به کارمند همین واحد</option>
+                                    <option value="department">واحد دیگر</option>
+                                    <option value="user">کارمند همین واحد</option>
                                 </select>
                             </div>
                             <div v-if="actionForm.target_type === 'department'">
