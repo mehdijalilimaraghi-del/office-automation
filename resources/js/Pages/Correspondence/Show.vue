@@ -45,7 +45,7 @@ interface CorrespondenceDetail {
     workflow_state: string;
     current_department: { id: number; name: string } | null;
     current_user_id: number | null;
-    actions: Array<{ id: number; action_type: string; note: string | null; created_at: string; actor: { id: number; name: string } | null; from_department: { id: number; name: string } | null; to_department: { id: number; name: string } | null }>;
+    actions: Array<{ id: number; action_type: string; note: string | null; created_at: string; actor: { id: number; name: string } | null; from_department: { id: number; name: string } | null; to_department: { id: number; name: string } | null; to_user?: { id: number; name: string } | null }>;
     copies: Array<{ id: number; name: string }>;
 }
 
@@ -65,10 +65,13 @@ const props = defineProps<{
     trackableTasks: { id: number; title: string; status: string }[];
     canUpdateExternalTracking: boolean;
     workflowDepartments: { id: number; name: string }[];
+    workflowUsers: { id: number; name: string }[];
     copyDepartments: { id: number; name: string }[];
     canAddCopies: boolean;
     canReturnToManager: boolean;
     canManageWorkflow: boolean;
+    canSecretariatReturn: boolean;
+    canResubmitToSecretariat: boolean;
 }>();
 
 const page = usePage<PageProps<{ errors: Record<string, string>; flash?: { success?: string } }>>();
@@ -78,7 +81,9 @@ const referralActions = props.correspondence.actions.filter((item) => Boolean(it
 const actionLabels: Record<string, string> = {
     submit_result: 'ثبت نتیجه بررسی و ارسال به مدیر',
     manager_approve: 'تأیید مدیر برای ثبت نهایی',
-    manager_refer: 'ارجاع به واحد دیگر',
+    manager_refer: 'ارجاع',
+    secretariat_return: 'برگشت برای اصلاح توسط دبیرخانه',
+    resubmit_to_secretariat: 'ارسال مجدد به دبیرخانه',
     request_task: 'درخواست شروع تسک',
     request_project: 'درخواست شروع پروژه',
     request_letter: 'درخواست تهیه نامه جدید',
@@ -100,9 +105,11 @@ function submitCopies(): void {
 }
 
 const actionForm = useForm({
-    action_type: 'manager_refer',
+    action_type: props.canManageWorkflow ? 'manager_refer' : props.canSecretariatReturn ? 'secretariat_return' : props.canResubmitToSecretariat ? 'resubmit_to_secretariat' : 'submit_result',
     note: '',
+    target_type: 'department' as 'department' | 'user',
     to_department_id: '' as number | '',
+    to_user_id: '' as number | '',
 });
 function submitWorkflowAction(): void {
     actionForm.post(route('correspondence.actions.store', props.correspondence.id), {
@@ -110,6 +117,7 @@ function submitWorkflowAction(): void {
         onSuccess: () => {
             actionForm.note = '';
             actionForm.to_department_id = '';
+            actionForm.to_user_id = '';
         },
     });
 }
@@ -117,7 +125,7 @@ function submitWorkflowAction(): void {
 const typeLabels: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
 const statusLabels: Record<string, string> = { draft: 'پیش‌نویس', registered: 'ثبت‌شده' };
 const workflowStateLabels: Record<string, string> = {
-    draft: 'پیش‌نویس', awaiting_registration: 'در انتظار ثبت نهایی', awaiting_manager_approval: 'در انتظار تأیید مدیر', approved_for_registration: 'تأییدشده برای ثبت نهایی', manager_review: 'در انتظار تصمیم مدیر', result_pending_manager: 'نتیجه ثبت شده؛ در انتظار تصمیم مدیر', completed_with_result: 'خاتمه‌یافته با نتیجه ثبت‌شده', in_progress: 'در حال گردش', awaiting_dispatch: 'در انتظار ارسال', task_requested: 'درخواست تسک ارجاع شده', project_requested: 'درخواست پروژه ارجاع شده', letter_requested: 'درخواست تهیه نامه ارجاع شده',
+    draft: 'پیش‌نویس', awaiting_registration: 'در انتظار ثبت نهایی', awaiting_manager_approval: 'در انتظار تأیید مدیر', approved_for_registration: 'تأییدشده برای ثبت نهایی', manager_review: 'در انتظار تصمیم مدیر', result_pending_manager: 'نتیجه ثبت شده؛ در انتظار تصمیم مدیر', completed_with_result: 'خاتمه‌یافته با نتیجه ثبت‌شده', in_progress: 'در حال گردش', awaiting_dispatch: 'در انتظار بررسی دبیرخانه و ارسال', returned_for_correction: 'برگشت برای اصلاح', dispatched: 'ارسال نهایی‌شده',
 };
 const formatDate = (value: string | null) => value
     ? new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium' }).format(new Date(value))
@@ -246,31 +254,46 @@ function registerCorrespondence(): void {
                     <p class="mt-1 text-sm text-slate-600">وضعیت فعلی: {{ workflowStateLabels[correspondence.workflow_state] ?? correspondence.workflow_state }} <span v-if="correspondence.current_department"> · واحد مسئول: {{ correspondence.current_department.name }}</span></p>
                 </div>
                 <div class="space-y-4 p-5">
-                                        <form v-if="canManageWorkflow || canReturnToManager" class="grid gap-3 rounded-xl border border-slate-200 p-4 sm:grid-cols-2" @submit.prevent="submitWorkflowAction">
+                                        <form v-if="canManageWorkflow || canReturnToManager || canSecretariatReturn || canResubmitToSecretariat" class="grid gap-3 rounded-xl border border-slate-200 p-4 sm:grid-cols-2" @submit.prevent="submitWorkflowAction">
                         <div v-if="canManageWorkflow">
                             <label class="mb-1 block text-sm font-medium text-slate-700">اقدام مدیر</label>
                             <select v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
                                 <option v-if="correspondence.status === 'draft' && correspondence.workflow_state === 'awaiting_manager_approval'" value="manager_approve">تأیید برای ثبت نهایی</option>
-                                <option value="manager_refer">ارجاع به واحد دیگر</option>
-                                <option value="request_task">درخواست شروع تسک</option>
-                                <option value="request_project">درخواست شروع پروژه</option>
-                                <option value="request_letter">درخواست تهیه نامه جدید</option>
+                                <option v-if="correspondence.status === 'registered' && correspondence.type !== 'outgoing'" value="manager_refer">ارجاع به واحد یا کارمند</option>
+                                <option v-if="canSecretariatReturn" value="secretariat_return">برگشت برای اصلاح</option>
+                                <option v-if="canResubmitToSecretariat" value="resubmit_to_secretariat">ارسال مجدد به دبیرخانه</option>
                                 <option v-if="correspondence.workflow_state === 'result_pending_manager' && ['incoming', 'internal'].includes(correspondence.type)" value="confirm_result">تأیید نتیجه و خاتمه گردش</option>
                             </select>
                         </div>
-                        <div v-else>
+                        <div v-else-if="canReturnToManager">
                             <label class="mb-1 block text-sm font-medium text-slate-700">اقدام</label>
                             <select v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
                                 <option value="submit_result">ثبت نتیجه بررسی و ارسال به مدیر</option>
                             </select>
                         </div>
-                        <div v-if="canManageWorkflow && ['manager_refer', 'request_task', 'request_project', 'request_letter'].includes(actionForm.action_type)">
-                            <label class="mb-1 block text-sm font-medium text-slate-700">واحد مقصد</label>
-                            <DepartmentTreeSelect v-model="actionForm.to_department_id" :departments="workflowDepartments" placeholder="انتخاب واحد مقصد" :clearable="false" />
-                        </div>
+<template v-if="canManageWorkflow && actionForm.action_type === 'manager_refer'">
+                            <div>
+                                <label class="mb-1 block text-sm font-medium text-slate-700">نوع ارجاع</label>
+                                <select v-model="actionForm.target_type" class="w-full rounded-xl border-slate-300 text-sm">
+                                    <option value="department">ارجاع به واحد دیگر</option>
+                                    <option value="user">ارجاع به کارمند همین واحد</option>
+                                </select>
+                            </div>
+                            <div v-if="actionForm.target_type === 'department'">
+                                <label class="mb-1 block text-sm font-medium text-slate-700">واحد مقصد</label>
+                                <DepartmentTreeSelect v-model="actionForm.to_department_id" :departments="workflowDepartments" placeholder="انتخاب واحد مقصد" :clearable="false" />
+                            </div>
+                            <div v-else>
+                                <label class="mb-1 block text-sm font-medium text-slate-700">کارمند مقصد</label>
+                                <select v-model="actionForm.to_user_id" class="w-full rounded-xl border-slate-300 text-sm">
+                                    <option value="">انتخاب کارمند</option>
+                                    <option v-for="user in workflowUsers" :key="user.id" :value="String(user.id)">{{ user.name }}</option>
+                                </select>
+                            </div>
+                        </template>
                         <div class="sm:col-span-2">
                             <label class="mb-1 block text-sm font-medium text-slate-700">توضیح / شرح اقدام</label>
-                            <textarea v-model="actionForm.note" rows="3" maxlength="10000" class="w-full rounded-xl border-slate-300 text-sm"  :required="actionForm.action_type === 'submit_result' || actionForm.action_type === 'confirm_result'" placeholder="شرح بررسی، نتیجه یا علت انجام‌نشدن درخواست را وارد کنید"></textarea>
+                            <textarea v-model="actionForm.note" rows="3" maxlength="10000" class="w-full rounded-xl border-slate-300 text-sm"  :required="['submit_result', 'confirm_result', 'secretariat_return'].includes(actionForm.action_type)" placeholder="شرح بررسی، نتیجه یا علت انجام‌نشدن درخواست را وارد کنید"></textarea>
                             <p v-if="page.props.errors?.workflow_action" class="mt-1 text-sm text-rose-700">{{ page.props.errors.workflow_action }}</p>
                         </div>
                         <div class="sm:col-span-2 flex justify-end">
@@ -284,7 +307,7 @@ function registerCorrespondence(): void {
                                 <p class="text-sm font-semibold text-slate-900">{{ actionLabels[item.action_type] ?? item.action_type }}</p>
                                 <span class="text-xs text-slate-500">{{ formatDateTime(item.created_at) }}</span>
                             </div>
-                            <p class="mt-1 text-xs text-slate-500">ثبت‌کننده: {{ item.actor?.name ?? 'کاربر حذف‌شده' }}<span v-if="item.from_department"> · از {{ item.from_department.name }}</span><span v-if="item.to_department"> · به {{ item.to_department.name }}</span></p>
+                            <p class="mt-1 text-xs text-slate-500">ثبت‌کننده: {{ item.actor?.name ?? 'کاربر حذف‌شده' }}<span v-if="item.from_department"> · از {{ item.from_department.name }}</span><span v-if="item.to_department"> · به {{ item.to_department.name }}</span><span v-if="item.to_user"> · کاربر مقصد: {{ item.to_user.name }}</span></p>
                             <p v-if="item.note" class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700">{{ item.note }}</p>
                         </div>
                     </div>
@@ -302,7 +325,7 @@ function registerCorrespondence(): void {
                                 <p class="text-sm font-semibold text-slate-900">{{ actionLabels[item.action_type] ?? item.action_type }}</p>
                                 <span class="text-xs text-slate-500">{{ formatDateTime(item.created_at) }}</span>
                             </div>
-                            <p class="mt-1 text-sm text-slate-700"><span v-if="item.from_department">از {{ item.from_department.name }}</span><span v-if="item.from_department && item.to_department"> ← </span><span v-if="item.to_department">به {{ item.to_department.name }}</span><span v-if="!item.from_department && !item.to_department">واحد مبدأ یا مقصد مشخص نشده</span></p>
+                            <p class="mt-1 text-sm text-slate-700"><span v-if="item.from_department">از {{ item.from_department.name }}</span><span v-if="item.from_department && item.to_department"> ← </span><span v-if="item.to_department">به {{ item.to_department.name }}</span><span v-if="item.to_user">به کاربر {{ item.to_user.name }}</span><span v-if="!item.from_department && !item.to_department && !item.to_user">واحد مبدأ یا مقصد مشخص نشده</span></p>
                             <p class="mt-1 text-xs text-slate-500">ثبت‌کننده: {{ item.actor?.name ?? 'کاربر حذف‌شده' }}</p>
                             <p v-if="item.note" class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700">{{ item.note }}</p>
                         </div>
