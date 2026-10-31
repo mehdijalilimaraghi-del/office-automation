@@ -900,7 +900,9 @@ class CorrespondenceHttpTest extends TestCase
     {
         $secretariat = User::factory()->create(['status' => 'active']);
         $creator = $this->userWithPermission('correspondence.create');
-        $creator->givePermissionTo('correspondence.view');
+        $viewRoleUser = $this->userWithPermission('correspondence.view');
+        $creator->roles()->attach($viewRoleUser->roles()->firstOrFail()->id);
+        $creator = $creator->fresh();
         $secretariatDepartment = Department::query()->create([
             'name' => 'دبیرخانه برگشت '.Str::upper(Str::random(5)),
             'code' => 'RET-'.Str::upper(Str::random(6)),
