@@ -1414,3 +1414,11 @@ Implementation has started for the agreed cross-department project model:
 - This state is required by the employee-result guard: only the specifically assigned employee may submit the documented result; another member of the same department must be denied. After submission, the state advances to `result_pending_manager`.
 - The failing HTTP test had a stale expectation of `in_progress` after employee referral. Corrected the regression assertion to `assigned_to_employee`; no production workflow behavior or schema changed.
 - Validation pending: owner to pull `development` and run the focused `CorrespondenceHttpTest` once. `master` remains unchanged.
+
+## 2026-10-31 — Correspondence department assignment and selector correction
+
+- Fixed the shared Cartable audience for correspondence: a department referral is actionable by the current department manager, not every department member. The explicitly assigned employee becomes eligible once workflow state is `assigned_to_employee`; that state is now included in Cartable.
+- Tightened result submission in `CorrespondenceWorkflowService`: a non-manager may submit a result only when the letter is explicitly assigned to that user. Being a member of the current department is not sufficient. The Show page now exposes the result action under the same condition.
+- Simplified the manager action label to «ارجاع به» and removed repeated wording from the destination choices.
+- Corrected shared `DepartmentTreeSelect.vue` viewport positioning: clamp horizontal placement, choose the side with sufficient vertical space, and recalculate on nested/window scrolling while the trigger remains visible.
+- Added regression coverage for Cartable audience and for blocking result submission before explicit employee assignment. Validation pending: pull `development`, run the focused correspondence test and Cartable test, then run `npm run build`. No migration/schema changes. `master` unchanged.
