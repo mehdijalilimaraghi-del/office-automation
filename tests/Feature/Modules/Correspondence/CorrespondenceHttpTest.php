@@ -278,12 +278,12 @@ class CorrespondenceHttpTest extends TestCase
             'created_by' => $creator->id,
         ]);
 
-        $this->actingAs($otherUser)->get(route('correspondence.index', ['scope' => 'all']))
+        $this->actingAs($otherUser)->get(route('correspondence.index', ['scope' => 'all', 'action_filter' => 'all']))
             ->assertOk()
             ->assertInertia(fn ($page) => $page->where('correspondences.total', 0));
         $this->actingAs($otherUser)->get(route('correspondence.show', $draft))->assertForbidden();
 
-        $this->actingAs($creator)->get(route('correspondence.index', ['scope' => 'all']))
+        $this->actingAs($creator)->get(route('correspondence.index', ['scope' => 'all', 'action_filter' => 'all']))
             ->assertOk()
             ->assertInertia(fn ($page) => $page->where('correspondences.total', 1));
         $this->actingAs($creator)->get(route('correspondence.show', $draft))->assertOk();
