@@ -1437,3 +1437,12 @@ Implementation has started for the agreed cross-department project model:
 - Corrected the «مکاتبات من» ownership scope: an action authored by the user is no longer sufficient by itself. Historical referrals addressed to the user remain included; merely referring a letter to another user/department does not make it the referrer's personal correspondence.
 - Added feature regression coverage for pending referrals, previously acted-on referrals, and letters merely referred onward by the current user. No database migration or workflow authorization changes.
 - Validation pending: pull development, run php artisan test --filter=CorrespondenceHttpTest, then npm run build. master remains unchanged.
+
+
+## 2026-10-31 — Correspondence list action-filter semantics
+
+- Set the second correspondence filter's default to «نیاز به اقدام»; its options are now pending action, previously acted-on by me, created/registered by me, and all correspondence related to me. The existing first scope filter remains independent.
+- «نیاز به اقدام» now requires the latest referral addressed to the user to remain the current assignment and no action by that user after that referral. This prevents an item already acted on from remaining in the pending-action filter even if the workflow retains the same current assignee.
+- «اقدام قبلی ثبت‌شده توسط من» matches an action authored by the user after the latest referral to that user. A later referral to the same user resets it to pending until another action is recorded.
+- «ثبت‌شده توسط من» includes correspondence created by the user (created_by) or finally registered by the user (registered_by). «همه مکاتبات» preserves the existing personal-relevance scope; the first scope selector still controls personal, department, or all-visible scope.
+- Extended HTTP regression coverage for default pending filter, prior actions, assignment retained after an action, creator/registrar filter, and all-related mode. Validation pending: pull development, run php artisan test --filter=CorrespondenceHttpTest, then npm run build. master unchanged.
