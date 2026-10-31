@@ -532,3 +532,12 @@ Before making the first code change in a new conversation:
 - Corrected the «مکاتبات من» ownership scope: an action authored by the user is no longer sufficient by itself. Historical referrals addressed to the user remain included; merely referring a letter to another user/department does not make it the referrer's personal correspondence.
 - Added feature regression coverage for pending referrals, previously acted-on referrals, and letters merely referred onward by the current user. No database migration or workflow authorization changes.
 - Validation pending: pull development, run php artisan test --filter=CorrespondenceHttpTest, then npm run build. master remains unchanged.
+
+
+## 2026-10-31 — Correspondence list action-filter semantics
+
+- The second correspondence filter defaults to «نیاز به اقدام» and offers «اقدام قبلی ثبت‌شده توسط من»، «ثبت‌شده توسط من»، and «همه مکاتبات». It composes with the first scope selector (personal, department, or all visible).
+- Pending action is based on the latest action referral addressed to the user: the correspondence must still be assigned to that user, and the user must not have recorded a later action. This handles actions that leave current assignment unchanged and repeated referrals to the same user.
+- Previously acted-on means the user recorded an action after the latest referral to them. A newer referral resets the correspondence to pending until another action is recorded.
+- Created/registered by me includes both created_by and registered_by. All correspondence retains the existing personal-relevance scope.
+- Regression coverage added for default pending, prior actions, assignment retained after action, creator/registrar, and all-related mode. Validation pending: pull development, run php artisan test --filter=CorrespondenceHttpTest, then npm run build. master unchanged.
