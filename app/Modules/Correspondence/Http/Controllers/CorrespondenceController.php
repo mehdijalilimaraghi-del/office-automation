@@ -209,8 +209,15 @@ class CorrespondenceController extends Controller
                     || (int) $correspondence->current_user_id === (int) $request->user()->id),
             'canManageWorkflow' => $correspondence->workflow_state !== 'completed_with_result'
                 && $correspondence->current_department_id !== null
-                && (int) Department::query()->whereKey($correspondence->current_department_id)->value('manager_id') === (int) $request->user()->id,
-            'canAddCopies' => $correspondence->workflow_state !== 'completed_with_result'
+                && (int) Department::query()->whereKey($correspondence->current_department_id)->value('manager_id') === (int) $request->user()->id
+                && (($correspondence->status === Correspondence::STATUS_DRAFT
+                        && $correspondence->workflow_state === 'awaiting_manager_approval')
+                    || ($correspondence->status === Correspondence::STATUS_REGISTERED
+                        && $correspondence->type !== Correspondence::TYPE_OUTGOING)
+                    || ($correspondence->type === Correspondence::TYPE_OUTGOING
+                        && $correspondence->workflow_state === 'returned_for_correction')),
+            'canAddCopies' => $correspondence->status === Correspondence::STATUS_REGISTERED
+                && $correspondence->workflow_state !== 'completed_with_result'
                 && $correspondence->current_department_id !== null
                 && (int) Department::query()->whereKey($correspondence->current_department_id)->value('manager_id') === (int) $request->user()->id,
             'canSecretariatReturn' => $correspondence->type === Correspondence::TYPE_OUTGOING
