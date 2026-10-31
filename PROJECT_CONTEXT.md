@@ -1254,3 +1254,11 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - Corrected the «مکاتبات من» ownership scope: an action authored by the user is no longer sufficient by itself. Historical referrals addressed to the user remain included; merely referring a letter to another user/department does not make it the referrer's personal correspondence.
 - Added feature regression coverage for pending referrals, previously acted-on referrals, and letters merely referred onward by the current user. No database migration or workflow authorization changes.
 - Validation pending: pull development, run php artisan test --filter=CorrespondenceHttpTest, then npm run build. master remains unchanged.
+
+
+## 2026-10-31 — Correspondence list action-filter semantics
+
+- The correspondence list now has an independent second filter, defaulting to «نیاز به اقدام», alongside the existing personal/department/all-visible scope selector.
+- «نیاز به اقدام» means the latest referral addressed to the current user remains the current assignment and no action by that user exists after that referral. «اقدام قبلی ثبت‌شده توسط من» means an action by the user exists after their latest referral; a newer referral resets the item to pending.
+- «ثبت‌شده توسط من» includes correspondence created by the user or finally registered by the user. «همه مکاتبات» preserves the current personal-relevance set rather than broadening access beyond the existing visibility policy.
+- Validation pending: pull development, run php artisan test --filter=CorrespondenceHttpTest, then npm run build. master unchanged.
