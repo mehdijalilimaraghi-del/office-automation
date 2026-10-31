@@ -896,6 +896,54 @@ class CorrespondenceHttpTest extends TestCase
         ]);
     }
 
+    public function test_secretariat_member_who_manages_current_department_can_still_act_as_its_manager(): void
+    {
+        $manager = $this->userWithPermission('correspondence.view');
+        $secretariatDepartment = Department::query()->create([
+            'name' => 'دبیرخانه نقش ترکیبی '.Str::upper(Str::random(5)),
+            'code' => 'MIX-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+        $currentDepartment = Department::query()->create([
+            'name' => 'واحد تحت مدیریت چندگانه '.Str::upper(Str::random(5)),
+            'code' => 'MGR-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+        $targetDepartment = Department::query()->create([
+            'name' => 'واحد مقصد نقش ترکیبی '.Str::upper(Str::random(5)),
+            'code' => 'DST-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+        ]);
+        app(SystemSettingsService::class)->set([
+            OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT) => (string) $secretariatDepartment->id,
+        ]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'subject' => 'نامه وارده با نقش ترکیبی',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'in_progress',
+            'current_department_id' => $currentDepartment->id,
+            'current_user_id' => $manager->id,
+            'registered_by' => $manager->id,
+            'created_by' => $manager->id,
+        ]);
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => 'manager_refer',
+            'target_type' => 'department',
+            'to_department_id' => $targetDepartment->id,
+            'note' => 'ارجاع از سمت مدیر واحد.',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $letter->id,
+            'current_department_id' => $targetDepartment->id,
+            'workflow_state' => 'in_progress',
+        ]);
+    }
+
     public function test_secretariat_can_return_outgoing_letter_for_correction_and_creator_can_resubmit(): void
     {
         $secretariat = User::factory()->create(['status' => 'active']);
