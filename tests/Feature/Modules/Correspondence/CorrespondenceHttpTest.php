@@ -228,6 +228,118 @@ class CorrespondenceHttpTest extends TestCase
                 ->where('correspondences.data.0.id', $registeredByMe->id));
     }
 
+    public function test_needs_action_uses_current_department_manager_even_without_referral_history(): void
+    {
+        $manager = $this->userWithPermission('correspondence.view');
+        $creator = $this->userWithPermission('correspondence.view');
+        $employee = $this->userWithPermission('correspondence.view');
+        $department = Department::query()->create([
+            'name' => 'واحد ارجاع مستقیم مدیر '.Str::upper(Str::random(5)),
+            'code' => 'MGR-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+
+        $awaitingManager = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'subject' => 'ارجاع به واحد مدیر بدون تاریخچه',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'in_progress',
+            'current_department_id' => $department->id,
+            'current_user_id' => null,
+            'created_by' => $creator->id,
+        ]);
+        Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'subject' => 'ارجاع‌شده به کارمند و خارج از اقدام مدیر',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'assigned_to_employee',
+            'current_department_id' => $department->id,
+            'current_user_id' => $employee->id,
+            'created_by' => $creator->id,
+        ]);
+        $resultPendingManager = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'subject' => 'نتیجه کارمند در انتظار مدیر',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'result_pending_manager',
+            'current_department_id' => $department->id,
+            'current_user_id' => $manager->id,
+            'created_by' => $creator->id,
+        ]);
+
+        $this->actingAs($manager)->get(route('correspondence.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('filters.action_filter', 'needs_action')
+                ->where('correspondences.total', 2)
+                ->where('correspondences.data.0.id', $resultPendingManager->id)
+                ->where('correspondences.data.1.id', $awaitingManager->id));
+    }
+
+    public function test_department_filter_uses_department_module_data_and_never_bypasses_visibility(): void
+    {
+        $user = $this->userWithPermission('correspondence.view');
+        $creator = $this->userWithPermission('correspondence.view');
+        $memberDepartment = Department::query()->create([
+            'name' => 'واحد عضو فیلتر '.Str::upper(Str::random(5)),
+            'code' => 'DM-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+        ]);
+        $otherDepartment = Department::query()->create([
+            'name' => 'واحد دیگر فیلتر '.Str::upper(Str::random(5)),
+            'code' => 'DO-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+        ]);
+        $user->departments()->attach($memberDepartment->id, ['is_primary' => true, 'joined_at' => now()]);
+
+        $memberLetter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => 'نامه واحد عضو',
+            'classification' => Correspondence::CLASSIFICATION_ORDINARY,
+            'status' => Correspondence::STATUS_REGISTERED,
+            'registration_number' => '1405/DM-001',
+            'created_by' => $creator->id,
+            'current_department_id' => $memberDepartment->id,
+        ]);
+        $otherOrdinaryLetter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => 'نامه عادی واحد دیگر',
+            'classification' => Correspondence::CLASSIFICATION_ORDINARY,
+            'status' => Correspondence::STATUS_REGISTERED,
+            'registration_number' => '1405/DO-001',
+            'created_by' => $creator->id,
+            'current_department_id' => $otherDepartment->id,
+        ]);
+        Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => 'نامه محرمانه واحد دیگر',
+            'classification' => Correspondence::CLASSIFICATION_CONFIDENTIAL,
+            'status' => Correspondence::STATUS_REGISTERED,
+            'registration_number' => '1405/DO-002',
+            'created_by' => $creator->id,
+            'current_department_id' => $otherDepartment->id,
+        ]);
+
+        $this->actingAs($user)->get(route('correspondence.index', [
+            'scope' => 'department',
+            'department_filter' => 'mine',
+        ]))->assertOk()->assertInertia(fn ($page) => $page
+            ->where('filters.department_filter', 'mine')
+            ->where('departments.0.id', $memberDepartment->id)
+            ->where('correspondences.total', 1)
+            ->where('correspondences.data.0.id', $memberLetter->id));
+
+        $this->actingAs($user)->get(route('correspondence.index', [
+            'scope' => 'all',
+            'department_filter' => (string) $otherDepartment->id,
+        ]))->assertOk()->assertInertia(fn ($page) => $page
+            ->where('filters.department_filter', (string) $otherDepartment->id)
+            ->has('departments', 2)
+            ->where('correspondences.total', 1)
+            ->where('correspondences.data.0.id', $otherOrdinaryLetter->id));
+    }
+
     public function test_needs_action_includes_department_routing_for_managers_of_multiple_departments(): void
     {
         $manager = $this->userWithPermission('correspondence.view');
