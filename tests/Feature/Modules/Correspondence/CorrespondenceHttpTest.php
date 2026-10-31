@@ -1015,7 +1015,7 @@ class CorrespondenceHttpTest extends TestCase
 
     public function test_secretariat_can_return_outgoing_letter_for_correction_and_creator_can_resubmit(): void
     {
-        $secretariat = User::factory()->create(['status' => 'active']);
+        $secretariat = $this->userWithPermission('correspondence.view');
         $creator = $this->userWithPermission('correspondence.create');
         $viewRoleUser = $this->userWithPermission('correspondence.view');
         $creator->roles()->attach($viewRoleUser->roles()->firstOrFail()->id);
