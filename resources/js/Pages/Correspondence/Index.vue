@@ -33,7 +33,7 @@ const search = ref(props.filters.search);
 const type = ref(props.filters.type);
 const status = ref(props.filters.status);
 const scope = ref(props.filters.scope);
-const actionFilter = ref(props.filters.action_filter || 'all');
+const actionFilter = ref(props.filters.action_filter || 'needs_action');
 
 const typeLabels: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
 const statusLabels: Record<string, string> = { draft: 'پیش‌نویس', registered: 'ثبت‌شده' };
@@ -73,7 +73,7 @@ function register(id: number): void {
             <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
                     <select v-model="scope" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @change="applyFilters"><option value="mine">مکاتبات من</option><option value="department">مکاتبات واحد من</option><option value="all">همه مکاتبات مجاز</option></select>
-                    <select v-model="actionFilter" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @change="applyFilters"><option value="all">همه مکاتبات</option><option value="needs_action">نیاز به اقدام</option><option value="acted_by_me">اقدام قبلی ثبت‌شده توسط من</option></select>
+                    <select v-model="actionFilter" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @change="applyFilters"><option value="needs_action">نیاز به اقدام</option><option value="acted_by_me">اقدام قبلی ثبت‌شده توسط من</option><option value="created_by_me">ثبت‌شده توسط من</option><option value="all">همه مکاتبات</option></select>
                     <input v-model="search" type="search" placeholder="جست‌وجو در موضوع یا شماره نامه/ثبت" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @keydown.enter="applyFilters" />
                     <select v-model="type" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"><option value="">همه انواع</option><option value="incoming">وارده</option><option value="outgoing">صادره</option><option value="internal">داخلی</option></select>
                     <select v-model="status" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"><option value="">همه وضعیت‌ها</option><option value="draft">پیش‌نویس</option><option value="registered">ثبت‌شده</option></select>
