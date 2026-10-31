@@ -548,3 +548,11 @@ Before making the first code change in a new conversation:
 - Tests that assert draft visibility through the correspondence index must pass both `scope=all` and `action_filter=all`. The default action filter is `needs_action`, which intentionally excludes drafts that are not currently assigned to the viewer.
 - Keep authorization/visibility assertions separate from action-filter assertions; do not change production draft visibility rules to satisfy a test that omitted the independent action filter.
 - Test fixture alignment committed on `development`; focused `CorrespondenceHttpTest` rerun pending. `master` unchanged.
+
+
+## 2026-10-31 — Multi-department manager pending filter
+
+- «نیاز به اقدام» must support both direct user referrals and department-level assignments to any department currently managed by the user.
+- For department routing, use current_department_id matched against the user's managedDepartments, and confirm the latest routing action targets that current department. Include manager-actionable states (in_progress, result_pending_manager, awaiting_manager_approval); exclude assigned_to_employee so department membership/management does not override explicit employee assignment.
+- The «مکاتبات من» scope includes current correspondence in departments the user manages. Do not broaden this to ordinary department members.
+- Regression test added for managers of multiple departments, null to_user_id department referral, and employee assignment exclusion. Focused test pending; no frontend change. master unchanged.
