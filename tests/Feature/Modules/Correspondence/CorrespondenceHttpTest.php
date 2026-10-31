@@ -788,6 +788,43 @@ class CorrespondenceHttpTest extends TestCase
         ])->assertForbidden();
     }
 
+    public function test_correspondence_cartable_only_shows_department_routing_to_manager_until_employee_assignment(): void
+    {
+        $manager = $this->userWithPermission('correspondence.view');
+        $employee = $this->userWithPermission('correspondence.view');
+        $department = Department::query()->create([
+            'name' => 'واحد کارتابل مکاتبات '.Str::upper(Str::random(5)),
+            'code' => 'CCB-'.Str::upper(Str::random(6)),
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+        $employee->departments()->attach($department->id, ['is_primary' => true, 'joined_at' => now()]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'classification' => Correspondence::CLASSIFICATION_ORDINARY,
+            'subject' => 'نامه ارجاع‌شده به واحد',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'in_progress',
+            'current_department_id' => $department->id,
+            'current_user_id' => $manager->id,
+            'created_by' => $manager->id,
+        ]);
+
+        $managerCartable = app(\App\Modules\Cartable\Services\CartableService::class)->for($manager);
+        $employeeCartable = app(\App\Modules\Cartable\Services\CartableService::class)->for($employee);
+
+        $this->assertContains($letter->id, $managerCartable['correspondenceItems']->pluck('id')->all());
+        $this->assertNotContains($letter->id, $employeeCartable['correspondenceItems']->pluck('id')->all());
+
+        $letter->forceFill([
+            'workflow_state' => 'assigned_to_employee',
+            'current_user_id' => $employee->id,
+        ])->save();
+
+        $employeeCartable = app(\App\Modules\Cartable\Services\CartableService::class)->for($employee);
+        $this->assertContains($letter->id, $employeeCartable['correspondenceItems']->pluck('id')->all());
+    }
+
     public function test_employee_must_submit_a_documented_result_and_manager_confirms_it_before_completion(): void
     {
         $manager = $this->userWithPermission('correspondence.view');
@@ -810,15 +847,31 @@ class CorrespondenceHttpTest extends TestCase
             'created_by' => $manager->id,
         ]);
 
+        $this->actingAs($employee)->get(route('correspondence.show', $letter))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('canReturnToManager', false));
+
         $this->actingAs($employee)->post(route('correspondence.actions.store', $letter), [
             'action_type' => 'submit_result',
-            'note' => '',
-        ])->assertSessionHasErrors('workflow_action');
+            'note' => 'کارمند هنوز از طرف مدیر مسئول بررسی نشده است.',
+        ])->assertForbidden();
 
         $this->assertDatabaseHas('correspondences', [
             'id' => $letter->id,
             'workflow_state' => 'in_progress',
+            'current_user_id' => $manager->id,
         ]);
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => 'manager_refer',
+            'target_type' => 'user',
+            'to_user_id' => $employee->id,
+            'note' => 'برای بررسی و اعلام نتیجه.',
+        ])->assertRedirect();
+
+        $this->actingAs($employee)->get(route('correspondence.show', $letter))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('canReturnToManager', true));
 
         $this->actingAs($employee)->post(route('correspondence.actions.store', $letter), [
             'action_type' => 'submit_result',
