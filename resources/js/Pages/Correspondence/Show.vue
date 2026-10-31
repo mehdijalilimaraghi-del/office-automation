@@ -125,7 +125,7 @@ function submitWorkflowAction(): void {
 const typeLabels: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
 const statusLabels: Record<string, string> = { draft: 'پیش‌نویس', registered: 'ثبت‌شده' };
 const workflowStateLabels: Record<string, string> = {
-    draft: 'پیش‌نویس', awaiting_registration: 'در انتظار ثبت نهایی', awaiting_manager_approval: 'در انتظار تأیید مدیر', approved_for_registration: 'تأییدشده برای ثبت نهایی', manager_review: 'در انتظار تصمیم مدیر', result_pending_manager: 'نتیجه ثبت شده؛ در انتظار تصمیم مدیر', completed_with_result: 'خاتمه‌یافته با نتیجه ثبت‌شده', in_progress: 'در حال گردش', awaiting_dispatch: 'در انتظار بررسی دبیرخانه و ارسال', returned_for_correction: 'برگشت برای اصلاح', dispatched: 'ارسال نهایی‌شده',
+    draft: 'پیش‌نویس', awaiting_registration: 'در انتظار ثبت نهایی', awaiting_manager_approval: 'در انتظار تأیید مدیر', approved_for_registration: 'تأییدشده برای ثبت نهایی', manager_review: 'در انتظار تصمیم مدیر', result_pending_manager: 'نتیجه ثبت شده؛ در انتظار تصمیم مدیر', completed_with_result: 'خاتمه‌یافته با نتیجه ثبت‌شده', in_progress: 'در حال گردش', assigned_to_employee: 'ارجاع‌شده به کارمند', awaiting_dispatch: 'در انتظار بررسی دبیرخانه و ارسال', returned_for_correction: 'برگشت برای اصلاح', dispatched: 'ارسال نهایی‌شده',
 };
 const formatDate = (value: string | null) => value
     ? new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium' }).format(new Date(value))
