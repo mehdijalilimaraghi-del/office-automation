@@ -6,6 +6,7 @@ namespace App\Modules\Correspondence\Services;
 
 use App\Core\Settings\Services\OrganizationDepartmentRoleService;
 use App\Models\User;
+use App\Modules\Correspondence\Models\CorrespondenceAction;
 use App\Modules\Correspondence\Models\Correspondence;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -68,7 +69,7 @@ class CorrespondenceAccessService
 
     public function canDelete(Correspondence $correspondence, User $user): bool
     {
-        if ($correspondence->workflow_state === 'returned_for_correction') {
+        if ($correspondence->workflow_state === 'returned_for_correction' && ! $user->isSystemAdmin()) {
             return false;
         }
 
