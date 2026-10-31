@@ -1466,3 +1466,8 @@ Implementation has started for the agreed cross-department project model:
 
 - Fixed the correspondence index `mine` scope closure to capture `$managedDepartmentIds`, which it uses when including current correspondence owned by the user's managed departments. The missing capture caused an undefined-variable HTTP 500 on correspondence index requests and cascaded into several focused tests.
 - No filter semantics or authorization rules changed. The manager multi-department regression test remains in place. Validation pending: run `php artisan test --filter=CorrespondenceHttpTest`; no frontend build is required. `master` unchanged.
+
+## 2026-10-31 — Nested correspondence scope closure correction
+
+- Corrected the inner `where(function ($mine) ...)` closure in `CorrespondenceController::index()` to capture `$managedDepartmentIds` as well. The earlier fix captured the variable only in the surrounding `when(scope=mine)` closure; PHP closures do not implicitly inherit variables from an enclosing closure, so the nested query still raised `Undefined variable $managedDepartmentIds` at the `orWhereIn` condition.
+- No query semantics or authorization rules changed. Validation pending: pull `development` and run `php artisan test --filter=CorrespondenceHttpTest`. PHP/documentation-only change; no frontend build required. `master` unchanged.
