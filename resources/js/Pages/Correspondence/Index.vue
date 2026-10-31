@@ -48,7 +48,7 @@ function formatRegisteredAt(value: string | null): string {
     }).format(date);
 }
 function applyFilters(): void {
-    router.get(route('correspondence.index'), { scope: scope.value || 'mine', action_filter: actionFilter.value || 'all', search: search.value || undefined, type: type.value || undefined, status: status.value || undefined }, { preserveState: true, replace: true });
+    router.get(route('correspondence.index'), { scope: scope.value || 'mine', action_filter: actionFilter.value || 'needs_action', search: search.value || undefined, type: type.value || undefined, status: status.value || undefined }, { preserveState: true, replace: true });
 }
 function confirmDelete(id: number): void {
     if (window.confirm('این مکاتبه حذف شود؟ این عملیات قابل بازگشت نیست.')) router.delete(route('correspondence.destroy', id), { preserveScroll: true });
