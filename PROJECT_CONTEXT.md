@@ -1262,3 +1262,9 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - «نیاز به اقدام» means the latest referral addressed to the current user remains the current assignment and no action by that user exists after that referral. «اقدام قبلی ثبت‌شده توسط من» means an action by the user exists after their latest referral; a newer referral resets the item to pending.
 - «ثبت‌شده توسط من» includes correspondence created by the user or finally registered by the user. «همه مکاتبات» preserves the current personal-relevance set rather than broadening access beyond the existing visibility policy.
 - Validation pending: pull development, run php artisan test --filter=CorrespondenceHttpTest, then npm run build. master unchanged.
+
+
+## 2026-10-31 — Draft visibility test and independent correspondence filters
+
+- The draft visibility regression test now explicitly selects `action_filter=all` in addition to `scope=all`, because the default second filter is `needs_action`. This preserves the intended test of creator/secretariat draft visibility without conflating it with the action filter.
+- No production authorization or visibility logic changed. Focused correspondence test rerun pending; `master` unchanged.
