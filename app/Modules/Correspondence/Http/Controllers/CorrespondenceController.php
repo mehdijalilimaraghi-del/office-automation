@@ -800,13 +800,9 @@ class CorrespondenceController extends Controller
         abort_unless($access->canView($correspondence, $request->user()), 403);
 
         $currentDepartmentId = $correspondence->current_department_id;
-        $isSecretariatRegistrarForIncoming = $correspondence->type === Correspondence::TYPE_INCOMING
-            && (int) $correspondence->registered_by === (int) $request->user()->id
-            && $access->isSecretariat($request->user());
 
         abort_unless(
-            ! $isSecretariatRegistrarForIncoming
-                && $correspondence->workflow_state !== 'completed_with_result'
+            $correspondence->workflow_state !== 'completed_with_result'
                 && $currentDepartmentId !== null
                 && (int) Department::query()->whereKey($currentDepartmentId)->value('manager_id') === (int) $request->user()->id,
             403,
