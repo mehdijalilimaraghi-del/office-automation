@@ -556,3 +556,9 @@ Before making the first code change in a new conversation:
 - For department routing, use current_department_id matched against the user's managedDepartments, and confirm the latest routing action targets that current department. Include manager-actionable states (in_progress, result_pending_manager, awaiting_manager_approval); exclude assigned_to_employee so department membership/management does not override explicit employee assignment.
 - The «مکاتبات من» scope includes current correspondence in departments the user manages. Do not broaden this to ordinary department members.
 - Regression test added for managers of multiple departments, null to_user_id department referral, and employee assignment exclusion. Focused test pending; no frontend change. master unchanged.
+
+
+## 2026-10-31 — Correspondence index closure fix (validation pending)
+
+- `CorrespondenceController::index()` now captures `$managedDepartmentIds` in the `scope=mine` query closure, fixing the undefined-variable error raised when the correspondence list was requested.
+- This is a closure-scope correction only; personal scope and manager pending-action semantics are unchanged. The focused `CorrespondenceHttpTest` run is pending on the project owner's SQL Server environment. Branch: `development`; `master` unchanged.
