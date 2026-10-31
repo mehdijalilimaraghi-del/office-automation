@@ -43,9 +43,19 @@ class CorrespondenceAccessService
             ])
             ->exists();
 
-        if (! $user->isActive() || $hasWorkflowAction
+        $isReturnedForCorrection = $correspondence->type === Correspondence::TYPE_OUTGOING
+            && $correspondence->status === Correspondence::STATUS_REGISTERED
+            && $correspondence->workflow_state === 'returned_for_correction'
+            && (int) $correspondence->created_by === (int) $user->id
+            && $correspondence->actions()->where('action_type', \\App\\Modules\\Correspondence\\Models\\CorrespondenceAction::SECRETARIAT_RETURN)->exists();
+
+        if (! $user->isActive() || ($hasWorkflowAction && ! $isReturnedForCorrection)
             || $correspondence->replies()->exists() || $correspondence->task_id !== null) {
             return false;
+        }
+
+        if ($isReturnedForCorrection) {
+            return $user->hasPermission('correspondence.create');
         }
 
         if ($correspondence->type === Correspondence::TYPE_INCOMING) {
@@ -58,6 +68,10 @@ class CorrespondenceAccessService
 
     public function canDelete(Correspondence $correspondence, User $user): bool
     {
+        if ($correspondence->workflow_state === 'returned_for_correction') {
+            return false;
+        }
+
         return $user->isActive()
             && ($user->isSystemAdmin() || $this->canManageBeforeAction($correspondence, $user));
     }
