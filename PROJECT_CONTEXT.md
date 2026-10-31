@@ -1268,3 +1268,11 @@ Incoming letter numbers are captured from the original document, never auto-gene
 
 - The draft visibility regression test now explicitly selects `action_filter=all` in addition to `scope=all`, because the default second filter is `needs_action`. This preserves the intended test of creator/secretariat draft visibility without conflating it with the action filter.
 - No production authorization or visibility logic changed. Focused correspondence test rerun pending; `master` unchanged.
+
+
+## 2026-10-31 — Multi-department manager pending correspondence correction
+
+- The default «نیاز به اقدام» filter now recognizes department-level referrals for every department managed by the signed-in user, not only referrals whose to_user_id is set to that user.
+- The department path relies on current department manager ownership and the latest routing action to that department. It includes active manager states, excludes explicit employee assignment, and excludes a manager's own later action after the latest department routing.
+- The personal scope also includes active correspondence in managed departments. Ordinary membership alone does not qualify.
+- Added a focused regression test for a user managing multiple departments. Validation pending on the project owner's environment; no frontend change; master unchanged.
