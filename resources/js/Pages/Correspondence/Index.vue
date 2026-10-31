@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 interface CorrespondenceRow {
     id: number;
@@ -48,8 +48,14 @@ function formatRegisteredAt(value: string | null): string {
     }).format(date);
 }
 function applyFilters(): void {
-    router.get(route('correspondence.index'), { scope: scope.value || 'mine', action_filter: actionFilter.value || 'needs_action', search: search.value || undefined, type: type.value || undefined, status: status.value || undefined }, { preserveState: true, replace: true });
+    router.get(route('correspondence.index'), { scope: scope.value || 'mine', action_filter: scope.value === 'mine' ? (actionFilter.value || 'needs_action') : 'all', search: search.value || undefined, type: type.value || undefined, status: status.value || undefined }, { preserveState: true, replace: true });
 }
+
+watch([scope, actionFilter, type, status], () => applyFilters());
+watch(search, (_value, _oldValue, onCleanup) => {
+    const timeout = setTimeout(() => applyFilters(), 350);
+    onCleanup(() => clearTimeout(timeout));
+});
 function confirmDelete(id: number): void {
     if (window.confirm('این مکاتبه حذف شود؟ این عملیات قابل بازگشت نیست.')) router.delete(route('correspondence.destroy', id), { preserveScroll: true });
 }
@@ -72,12 +78,11 @@ function register(id: number): void {
         <div class="space-y-5 p-4 sm:p-6">
             <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-                    <select v-model="scope" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @change="applyFilters"><option value="mine">مکاتبات من</option><option value="department">مکاتبات واحد من</option><option value="all">همه مکاتبات مجاز</option></select>
-                    <select v-model="actionFilter" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @change="applyFilters"><option value="needs_action">نیاز به اقدام</option><option value="acted_by_me">اقدام قبلی ثبت‌شده توسط من</option><option value="created_by_me">ثبت‌شده توسط من</option><option value="all">همه مکاتبات</option></select>
-                    <input v-model="search" type="search" placeholder="جست‌وجو در موضوع یا شماره نامه/ثبت" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @keydown.enter="applyFilters" />
+                    <select v-model="scope" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"><option value="mine">مکاتبات من</option><option value="department">مکاتبات واحد من</option><option value="all">همه مکاتبات مجاز</option></select>
+                    <select v-if="scope === 'mine'" v-model="actionFilter" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"><option value="needs_action">نیاز به اقدام</option><option value="acted_by_me">اقدام قبلی ثبت‌شده</option><option value="created_by_me">ثبت‌شده توسط من</option><option value="all">همه مکاتبات</option></select>
+                    <input v-model="search" type="search" placeholder="جست‌وجو در موضوع یا شماره نامه/ثبت" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
                     <select v-model="type" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"><option value="">همه انواع</option><option value="incoming">وارده</option><option value="outgoing">صادره</option><option value="internal">داخلی</option></select>
                     <select v-model="status" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"><option value="">همه وضعیت‌ها</option><option value="draft">پیش‌نویس</option><option value="registered">ثبت‌شده</option></select>
-                    <button type="button" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700" @click="applyFilters">اعمال فیلتر</button>
                 </div>
             </section>
             <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
