@@ -205,8 +205,8 @@ class CorrespondenceController extends Controller
                 && (int) Department::query()->whereKey($correspondence->current_department_id)->value('manager_id') !== (int) $request->user()->id
                 && ($request->user()->departments()->where('departments.id', $correspondence->current_department_id)->exists()
                     || $request->user()->managedDepartments()->whereKey($correspondence->current_department_id)->exists())
-                && ($correspondence->workflow_state !== 'assigned_to_employee'
-                    || (int) $correspondence->current_user_id === (int) $request->user()->id),
+                && $correspondence->workflow_state === 'assigned_to_employee'
+                && (int) $correspondence->current_user_id === (int) $request->user()->id,
             'canManageWorkflow' => $correspondence->workflow_state !== 'completed_with_result'
                 && $correspondence->current_department_id !== null
                 && (int) Department::query()->whereKey($correspondence->current_department_id)->value('manager_id') === (int) $request->user()->id
