@@ -1460,3 +1460,9 @@ Implementation has started for the agreed cross-department project model:
 - The manager branch is based on current department ownership (departments.manager_id via managedDepartments), current department routing history, and actionable workflow states. It excludes items explicitly assigned to an employee and items on which the manager has already acted after the latest routing to that department.
 - The personal «مکاتبات من» scope now includes active correspondence in departments managed by the user. Ordinary department membership does not grant this manager-specific inclusion.
 - Added regression coverage for a multi-department manager, a department referral without to_user_id, and exclusion of an employee-assigned item. Validation pending: pull development, run php artisan test --filter=CorrespondenceHttpTest. No frontend files changed; npm build is not required for this fix. master unchanged.
+
+
+## 2026-10-31 — Managed-department scope closure fix
+
+- Fixed the correspondence index `mine` scope closure to capture `$managedDepartmentIds`, which it uses when including current correspondence owned by the user's managed departments. The missing capture caused an undefined-variable HTTP 500 on correspondence index requests and cascaded into several focused tests.
+- No filter semantics or authorization rules changed. The manager multi-department regression test remains in place. Validation pending: run `php artisan test --filter=CorrespondenceHttpTest`; no frontend build is required. `master` unchanged.
