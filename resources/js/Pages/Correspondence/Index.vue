@@ -26,13 +26,14 @@ interface CorrespondenceRow {
 interface PaginationLink { url: string | null; label: string; active: boolean; }
 const props = defineProps<{
     correspondences: { data: CorrespondenceRow[]; total: number; from: number | null; to: number | null; links: PaginationLink[] };
-    filters: { search: string; type: string; status: string; scope: string };
+    filters: { search: string; type: string; status: string; scope: string; action_filter: string };
     canCreate: boolean;
 }>();
 const search = ref(props.filters.search);
 const type = ref(props.filters.type);
 const status = ref(props.filters.status);
 const scope = ref(props.filters.scope);
+const actionFilter = ref(props.filters.action_filter || 'all');
 
 const typeLabels: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
 const statusLabels: Record<string, string> = { draft: 'پیش‌نویس', registered: 'ثبت‌شده' };
@@ -47,7 +48,7 @@ function formatRegisteredAt(value: string | null): string {
     }).format(date);
 }
 function applyFilters(): void {
-    router.get(route('correspondence.index'), { scope: scope.value || 'mine', search: search.value || undefined, type: type.value || undefined, status: status.value || undefined }, { preserveState: true, replace: true });
+    router.get(route('correspondence.index'), { scope: scope.value || 'mine', action_filter: actionFilter.value || 'all', search: search.value || undefined, type: type.value || undefined, status: status.value || undefined }, { preserveState: true, replace: true });
 }
 function confirmDelete(id: number): void {
     if (window.confirm('این مکاتبه حذف شود؟ این عملیات قابل بازگشت نیست.')) router.delete(route('correspondence.destroy', id), { preserveScroll: true });
@@ -70,8 +71,9 @@ function register(id: number): void {
         </template>
         <div class="space-y-5 p-4 sm:p-6">
             <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
                     <select v-model="scope" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @change="applyFilters"><option value="mine">مکاتبات من</option><option value="department">مکاتبات واحد من</option><option value="all">همه مکاتبات مجاز</option></select>
+                    <select v-model="actionFilter" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @change="applyFilters"><option value="all">همه مکاتبات</option><option value="needs_action">نیاز به اقدام</option><option value="acted_by_me">اقدام قبلی ثبت‌شده توسط من</option></select>
                     <input v-model="search" type="search" placeholder="جست‌وجو در موضوع یا شماره نامه/ثبت" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" @keydown.enter="applyFilters" />
                     <select v-model="type" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"><option value="">همه انواع</option><option value="incoming">وارده</option><option value="outgoing">صادره</option><option value="internal">داخلی</option></select>
                     <select v-model="status" class="rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"><option value="">همه وضعیت‌ها</option><option value="draft">پیش‌نویس</option><option value="registered">ثبت‌شده</option></select>
