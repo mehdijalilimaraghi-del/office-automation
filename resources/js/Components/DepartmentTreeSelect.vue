@@ -14,29 +14,36 @@ function updateDropdownPosition():void {
     const trigger=triggerRef.value;
     if(!trigger)return;
     const rect=trigger.getBoundingClientRect();
+    const margin=8;
+    const viewportWidth=window.innerWidth;
     const viewportHeight=window.innerHeight;
-    const maxHeight=Math.min(420,viewportHeight-16);
-    const below=viewportHeight-rect.bottom-8;
-    const above=rect.top-8;
-    const openAbove=below<Math.min(320,maxHeight)&&above>below;
-    const available=Math.max(160,Math.min(maxHeight,openAbove?above:below));
+    const width=Math.min(rect.width,Math.max(0,viewportWidth-margin*2));
+    const left=Math.min(Math.max(margin,rect.left),Math.max(margin,viewportWidth-width-margin));
+    const above=Math.max(0,rect.top-margin);
+    const below=Math.max(0,viewportHeight-rect.bottom-margin);
+    const openAbove=below<Math.min(320,420)&&above>below;
+    const available=Math.max(80,Math.min(420,openAbove?above:below));
+    const top=openAbove
+        ? Math.max(margin,rect.top-available)
+        : Math.min(rect.bottom+4,Math.max(margin,viewportHeight-available-margin));
+
     dropdownStyle.value={
         position:'fixed',
-        left:`${rect.left}px`,
-        width:`${rect.width}px`,
-        top:openAbove?`${Math.max(8,rect.top-available)}px`:`${rect.bottom+4}px`,
+        left:`${left}px`,
+        width:`${width}px`,
+        top:`${top}px`,
         maxHeight:`${available}px`,
         zIndex:'9999',
     };
-    listStyle.value={maxHeight:`${Math.max(80,Math.min(288,available-104))}px`};
+    listStyle.value={maxHeight:`${Math.max(48,Math.min(288,available-104))}px`};
 }
 function handleViewportChange(event?:Event):void {
     if(!isOpen.value)return;
     const target=event?.target;
     if(target instanceof Node&&dropdownRef.value?.contains(target))return;
-    if(event?.type==='scroll') {
-        // The dropdown is teleported outside clipping ancestors. Close it when
-        // the page scrolls so it never drifts away from its trigger.
+    const rect=triggerRef.value?.getBoundingClientRect();
+    if(event?.type==='scroll'&&rect
+        && (rect.bottom<0||rect.top>window.innerHeight||rect.right<0||rect.left>window.innerWidth)) {
         isOpen.value=false;
         return;
     }
