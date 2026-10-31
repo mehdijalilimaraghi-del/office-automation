@@ -1057,6 +1057,9 @@ class CorrespondenceHttpTest extends TestCase
             'current_department_id' => $originDepartment->id,
             'current_user_id' => $creator->id,
         ]);
+        $this->actingAs($creator)->get(route('correspondence.edit', $letter))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->component('Correspondence/Create'));
 
         $this->actingAs($creator)->post(route('correspondence.actions.store', $letter), [
             'action_type' => 'resubmit_to_secretariat',
