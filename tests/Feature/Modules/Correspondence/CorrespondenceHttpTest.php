@@ -854,6 +854,111 @@ class CorrespondenceHttpTest extends TestCase
         ]);
     }
 
+    public function test_current_department_manager_can_refer_to_an_employee_in_the_same_department(): void
+    {
+        $manager = $this->userWithPermission('correspondence.view');
+        $employee = $this->userWithPermission('correspondence.view');
+        $department = Department::query()->create([
+            'name' => 'واحد ارجاع کارمند '.Str::upper(Str::random(5)),
+            'code' => 'USR-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+        $employee->departments()->attach($department->id, ['is_primary' => true, 'joined_at' => now()]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'subject' => 'نامه ارجاع به کارمند',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'in_progress',
+            'current_department_id' => $department->id,
+            'current_user_id' => $manager->id,
+            'created_by' => $manager->id,
+        ]);
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => 'manager_refer',
+            'target_type' => 'user',
+            'to_user_id' => $employee->id,
+            'note' => 'برای بررسی و اعلام نتیجه.',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $letter->id,
+            'current_department_id' => $department->id,
+            'current_user_id' => $employee->id,
+            'workflow_state' => 'in_progress',
+        ]);
+        $this->assertDatabaseHas('correspondence_actions', [
+            'correspondence_id' => $letter->id,
+            'action_type' => 'manager_refer',
+            'to_user_id' => $employee->id,
+            'to_department_id' => $department->id,
+        ]);
+    }
+
+    public function test_secretariat_can_return_outgoing_letter_for_correction_and_creator_can_resubmit(): void
+    {
+        $secretariat = User::factory()->create(['status' => 'active']);
+        $creator = $this->userWithPermission('correspondence.view', 'correspondence.create');
+        $secretariatDepartment = Department::query()->create([
+            'name' => 'دبیرخانه برگشت '.Str::upper(Str::random(5)),
+            'code' => 'RET-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $secretariat->id,
+        ]);
+        $originDepartment = Department::query()->create([
+            'name' => 'واحد ایجادکننده '.Str::upper(Str::random(5)),
+            'code' => 'ORG-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+        ]);
+        $creator->departments()->attach($originDepartment->id, ['is_primary' => true, 'joined_at' => now()]);
+        app(SystemSettingsService::class)->set([
+            OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT) => (string) $secretariatDepartment->id,
+        ]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_OUTGOING,
+            'subject' => 'نامه صادره دارای ایراد',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'awaiting_dispatch',
+            'current_department_id' => $secretariatDepartment->id,
+            'created_department_id' => $originDepartment->id,
+            'created_by' => $creator->id,
+            'registered_by' => $secretariat->id,
+        ]);
+
+        $this->actingAs($secretariat)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => 'secretariat_return',
+            'note' => 'نام سازمان مخاطب با متن نامه مطابقت ندارد.',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $letter->id,
+            'workflow_state' => 'returned_for_correction',
+            'current_department_id' => $originDepartment->id,
+            'current_user_id' => $creator->id,
+        ]);
+
+        $this->actingAs($creator)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => 'resubmit_to_secretariat',
+            'note' => 'اصلاحات انجام شد.',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $letter->id,
+            'workflow_state' => 'awaiting_dispatch',
+            'current_department_id' => $secretariatDepartment->id,
+        ]);
+        $this->assertDatabaseHas('correspondence_actions', [
+            'correspondence_id' => $letter->id,
+            'action_type' => 'secretariat_return',
+            'note' => 'نام سازمان مخاطب با متن نامه مطابقت ندارد.',
+        ]);
+        $this->assertDatabaseHas('correspondence_actions', [
+            'correspondence_id' => $letter->id,
+            'action_type' => 'resubmit_to_secretariat',
+        ]);
+    }
+
     public function test_legacy_reject_and_close_without_result_actions_are_not_accepted(): void
     {
         $manager = $this->userWithPermission('correspondence.view');
