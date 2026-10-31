@@ -1245,3 +1245,12 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - Cartable must not include all current-department members as actionable recipients. Include manager-owned correspondence and explicitly assigned employee states.
 - Manager's action label is «ارجاع به»; destination options are «واحد دیگر» and «کارمند همین واحد».
 - Shared DepartmentTreeSelect positioning was hardened for viewport edges and nested scrolling. Validation is pending; branch `development`, `master` unchanged.
+
+
+## 2026-10-31 — Correspondence personal ownership and action filters
+
+- Added a second independent filter to the correspondence list: «همه مکاتبات»، «نیاز به اقدام»، and «اقدام قبلی ثبت‌شده توسط من». It composes with the existing «مکاتبات من / مکاتبات واحد من / همه مکاتبات مجاز» scope and preserves other search filters and pagination query parameters.
+- «نیاز به اقدام» is based on the current assignment (current_user_id equals the signed-in user). «اقدام قبلی ثبت‌شده توسط من» requires both a historical referral addressed to that user (correspondence_actions.to_user_id) and an action authored by that user (actor_id), and excludes letters currently assigned back to that user so pending work takes precedence.
+- Corrected the «مکاتبات من» ownership scope: an action authored by the user is no longer sufficient by itself. Historical referrals addressed to the user remain included; merely referring a letter to another user/department does not make it the referrer's personal correspondence.
+- Added feature regression coverage for pending referrals, previously acted-on referrals, and letters merely referred onward by the current user. No database migration or workflow authorization changes.
+- Validation pending: pull development, run php artisan test --filter=CorrespondenceHttpTest, then npm run build. master remains unchanged.
