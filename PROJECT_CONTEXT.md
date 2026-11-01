@@ -1370,3 +1370,11 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - Manager task instructions reuse the existing Tasks form in the organization's general project and the matching department Section. Correspondence context is passed through the form; the backend validates it and stores the task-to-letter relation.
 - Manager-side execution of letter requests and real workflow-request execution remain incomplete. New focused tests were added but not run; task-link tests, full feature tests, frontend build and SQL Server validation remain pending.
 - `master` unchanged.
+
+
+## 2026-11-01 — General correspondence workflow expanded
+
+- Letter request supports manager-led letter creation or assignment of draft preparation to the same employee; draft is linked to the source correspondence and returned to manager review.
+- Workflow request uses the existing `WorkflowDefinition` and `WorkflowService` to create a real instance and its task steps, linked by `correspondences.workflow_instance_id`.
+- Manager task instruction reuses the current Tasks create form in the organization's general project and the current department Section; it persists `task_id` on the source letter.
+- Focused Feature tests were added for request/rejection, letter draft delegation and real workflow start, but not executed. Build, task-link integration tests, full regression and SQL Server validation remain pending.
