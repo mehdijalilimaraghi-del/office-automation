@@ -65,6 +65,7 @@ const props = defineProps<{
     canRegister: boolean;
     canCreateProject: boolean;
     responseDepartments: { id: number; name: string; manager_id: number }[];
+    responseDepartmentDefaultId: string | number | null;
     correspondenceFontFamily: string;
     trackableTasks: { id: number; title: string; status: string }[];
     canUpdateExternalTracking: boolean;
@@ -121,7 +122,7 @@ function submitCopies(): void {
 const projectForm = useForm({
     name: 'پاسخ به نامه: ' + props.correspondence.subject,
     description: '',
-    response_department_id: '' as number | '',
+    response_department_id: props.responseDepartmentDefaultId ? Number(props.responseDepartmentDefaultId) : '' as number | '',
 });
 function createResponseProject(): void {
     projectForm.post(route('correspondence.create-project', props.correspondence.id), { preserveScroll: true });
