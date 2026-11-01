@@ -36,6 +36,7 @@ class OrganizationSettingsController extends Controller
         'correspondence.approval.incoming' => 'approval',
         'correspondence.approval.outgoing' => 'approval',
         'correspondence.approval.internal' => 'direct',
+        'projects.response_department.default' => null,
     ];
 
     public function __construct(
@@ -79,6 +80,7 @@ class OrganizationSettingsController extends Controller
                 'management_department_id' => $roleSettings[OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::MANAGEMENT)],
                 'project_management_department_id' => $roleSettings[OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::PROJECT_MANAGEMENT)],
                 'secretariat_department_id' => $roleSettings[OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT)],
+                'default_response_department_id' => $stored['projects.response_department.default'],
             ],
             'departments' => Department::query()
                 ->orderBy('name')
@@ -117,6 +119,7 @@ class OrganizationSettingsController extends Controller
             OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::MANAGEMENT) => $data['management_department_id'] ?? null,
             OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::PROJECT_MANAGEMENT) => $data['project_management_department_id'] ?? null,
             OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT) => $data['secretariat_department_id'] ?? null,
+            'projects.response_department.default' => $data['default_response_department_id'] ?? null,
         ]);
 
         return back()->with('success', 'تنظیمات سازمان با موفقیت ذخیره شد.');
