@@ -1322,3 +1322,13 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - Removed the legacy `project_requested` workflow state from the manager `needs_action` filter. A state label alone must not represent a completed project-request process; the project request flow must be implemented with explicit actions and project creation/linkage. Updated the regression test to assert that the legacy state is not actionable.
 - This is an incremental first slice only. The project-specific approval flow, project creation with a selected response department/section/task, and source-letter linkage are not yet implemented.
 - Validation has not been run in this editing environment. Pull `development`, run `php artisan test --filter=CorrespondenceHttpTest`, then run `npm run build` before accepting this slice. `master` unchanged.
+
+
+## 2026-11-01 — Project request, response ownership and task-correspondence links
+
+- The authoritative functional specification and implementation-stage matrix are in `CORRESPONDENCE_PROJECT_WORKFLOW.md`.
+- Project Management employee actions are requests only; all four require feedback. The PM manager makes a separate final decision. Manager rejection of an employee's requested action returns it to the same PM employee; approval of reject/return routes the letter to the origin; approval of referral routes to the selected department; approval of project request enables project creation.
+- Each created project selects its response department at creation time. Organization settings may provide an editable default only. Create the response section and response task only for the selected department inside the new project; do not auto-create an origin-department section/task.
+- The response task links to the new project and source incoming correspondence. A response letter created from the task must link to the task, project and source correspondence. Task/correspondence navigation must work in both directions.
+- Actual implementation checkpoint (2026-11-01): task detail already offers «ایجاد نامه جدید» to the current assignee with correspondence-create permission, and backend stores the task relation. The project-specific request/approval flow, per-project response department, response section/task creation, source-letter/project propagation and bidirectional detail links remain incomplete. Do not describe them as implemented.
+- Stage-by-stage status and acceptance criteria are maintained in the reference document. `master` remains unchanged.
