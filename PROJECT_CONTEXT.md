@@ -1381,3 +1381,6 @@ Incoming letter numbers are captured from the original document, never auto-gene
 
 
 - Workflow instance task links are bidirectional: correspondence detail lists authorized workflow tasks, and task detail resolves the source correspondence through the workflow instance with correspondence visibility filtering.
+
+
+- Workflow completion propagates `workflow_completed` to linked correspondence. Confidential letter visibility recognizes users assigned to or creating its direct task or workflow-instance tasks; Feature coverage was added but not run.
