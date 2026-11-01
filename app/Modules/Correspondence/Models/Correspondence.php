@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Modules\Documents\Models\DocumentLink;
 use App\Modules\Workflows\Models\WorkflowInstance;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Projects\Models\Project;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -131,7 +132,7 @@ class Correspondence extends Model
 
     public function project(): BelongsTo
     {
-        return $this->belongsTo(\\App\\Modules\\Projects\\Models\\Project::class);
+        return $this->belongsTo(Project::class);
     }
 
     public function replyTo(): BelongsTo
