@@ -619,4 +619,10 @@ Before making the first code change in a new conversation:
 - Employee requests require a non-empty note, are restricted to the currently assigned employee in the configured Project Management department, and route only to that department's manager. Employee referral target is stored in action metadata; it is not routed until manager approval.
 - Manager rejection returns the letter to the same requesting employee. Manager approval executes the requested branch: referral to selected department, return/reject to the original recipient department, or `project_request_approved` as the handoff to the project-creation phase. The approved-project state does not create a project yet.
 - New pending states are included in the manager cartable and correspondence needs-action list. UI actions are shown from server-computed assignment/department-role conditions.
-- Two focused HTTP tests were added. **Do not treat this stage as accepted until the project owner runs the focused CorrespondenceHttpTest and npm build locally.** The next work after validation is stage 2: create project with editable response-department selection.
+- Two focused HTTP tests were added. **Owner validation received 2026-11-01: tests passed and frontend build succeeded; Stage 1 is accepted.** The next work after validation is stage 2: create project with editable response-department selection.
+
+
+## 2026-11-01 — Validation and next step
+
+- Owner confirmed focused tests pass and frontend build succeeds for Stage 1; treat it as accepted.
+- Next: implement Stage 2 project creation from `project_request_approved`, editable response-department selection with configurable organization default, and source-letter linkage. Then Stage 3 provisions exactly one response Section and response task for that department; Stage 4 adds bidirectional detail navigation.
