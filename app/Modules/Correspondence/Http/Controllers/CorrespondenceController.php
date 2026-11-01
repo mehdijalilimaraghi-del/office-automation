@@ -83,6 +83,12 @@ class CorrespondenceController extends Controller
                 $query->where(function ($mine) use ($user, $managedDepartmentIds): void {
                     $mine->where('created_by', $user->id)
                         ->orWhere('registered_by', $user->id)
+                        // A department manager's "mine" scope includes letters registered
+                        // by employees of the managed department, even after dispatch.
+                        ->orWhereIn('registered_by', \\App\\Models\\User::query()
+                            ->whereHas('departments', fn ($departments) => $departments
+                                ->whereIn('departments.id', $managedDepartmentIds))
+                            ->select('users.id'))
                         ->orWhere('current_user_id', $user->id)
                         ->orWhereIn('current_department_id', $managedDepartmentIds)
                         ->orWhereHas('authorizedUsers', fn ($users) => $users->where('users.id', $user->id))
