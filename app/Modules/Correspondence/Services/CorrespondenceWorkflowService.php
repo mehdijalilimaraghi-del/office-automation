@@ -230,6 +230,9 @@ class CorrespondenceWorkflowService
                 }
 
                 if ($type === CorrespondenceAction::MANAGER_REJECT_EMPLOYEE_REQUEST) {
+                    if ($requestAction->action_type === CorrespondenceAction::EMPLOYEE_REQUEST_NONE) {
+                        throw new InvalidArgumentException('برای درخواست «بدون درخواست»، مدیر باید نامه را ارجاع دهد؛ رد درخواست کاربرد ندارد.');
+                    }
                     $this->record(
                         $letter, $actor, $type, $note,
                         $currentDepartmentId, $currentDepartmentId,
@@ -249,7 +252,8 @@ class CorrespondenceWorkflowService
                 $projectDepartment = $projectDepartmentId === null
                     ? null
                     : Department::query()->whereKey($projectDepartmentId)->where('is_active', true)->first();
-                if ($projectDepartment === null || $projectDepartment->manager_id === null) {
+                if ($projectDepartment === null || $projectDepartment->manager_id === null
+                    || ! User::query()->whereKey($projectDepartment->manager_id)->where('status', 'active')->exists()) {
                     throw new InvalidArgumentException('واحد فعال و مدیر واحد مدیریت پروژه‌ها در تنظیمات سازمان مشخص نشده است.');
                 }
                 $this->record(
