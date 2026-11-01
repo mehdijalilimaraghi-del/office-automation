@@ -2381,4 +2381,173 @@ class CorrespondenceHttpTest extends TestCase
     }
 
 
+
+
+    public function test_manager_can_recall_an_unacted_employee_referral(): void
+    {
+        $manager = $this->userWithPermission('correspondence.view');
+        $employee = $this->userWithPermission('correspondence.view');
+        $department = Department::query()->create([
+            'name' => 'واحد پس گرفتن ارجاع '.Str::upper(Str::random(5)),
+            'code' => 'RC-'.Str::upper(Str::random(6)),
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+        $employee->departments()->attach($department->id, ['is_primary' => true, 'joined_at' => now()]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'classification' => Correspondence::CLASSIFICATION_ORDINARY,
+            'subject' => 'نامه با ارجاع در انتظار اقدام',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'in_progress',
+            'current_department_id' => $department->id,
+            'current_user_id' => $manager->id,
+            'created_by' => $manager->id,
+        ]);
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::MANAGER_REFER,
+            'target_type' => 'user',
+            'to_user_id' => $employee->id,
+            'note' => 'برای بررسی ارجاع شد.',
+        ])->assertRedirect();
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::MANAGER_REFER,
+            'target_type' => 'user',
+            'to_user_id' => $employee->id,
+            'note' => 'ارجاع مجدد نباید مجاز باشد.',
+        ])->assertSessionHasErrors('workflow_action');
+
+        $this->actingAs($manager)->get(route('correspondence.show', $letter))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('canRecallReferral', true));
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::MANAGER_RECALL_REFERRAL,
+            'note' => 'برای اصلاح نحوه ارجاع، نامه به مدیر بازگردانده می‌شود.',
+        ])->assertRedirect();
+
+        $letter->refresh();
+        $this->assertSame('in_progress', $letter->workflow_state);
+        $this->assertSame((int) $manager->id, (int) $letter->current_user_id);
+        $this->assertDatabaseHas('correspondence_actions', [
+            'correspondence_id' => $letter->id,
+            'action_type' => CorrespondenceAction::MANAGER_RECALL_REFERRAL,
+            'actor_id' => $manager->id,
+            'to_user_id' => $manager->id,
+        ]);
+    }
+
+    public function test_employee_can_request_a_shared_project_task_and_manager_can_open_existing_task_form(): void
+    {
+        $manager = $this->userWithPermission('correspondence.view');
+        $employee = $this->userWithPermission('correspondence.view');
+        $taskCreator = $this->userWithPermission('tasks.create');
+        $taskViewer = $this->userWithPermission('tasks.view');
+        $manager->roles()->attach([
+            $taskCreator->roles()->first()->id,
+            $taskViewer->roles()->first()->id,
+        ]);
+        $department = Department::query()->create([
+            'name' => 'واحد درخواست دستورکار '.Str::upper(Str::random(5)),
+            'code' => 'TQ-'.Str::upper(Str::random(6)),
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+        $employee->departments()->attach($department->id, ['is_primary' => true, 'joined_at' => now()]);
+        $project = Project::query()->where('is_system_default', true)->where('is_active', true)->orderBy('id')->first();
+        if ($project === null) {
+            $project = Project::query()->create([
+                'name' => 'پروژه عمومی سازمان',
+                'code' => 'GEN-'.Str::upper(Str::random(6)),
+                'status' => 'active',
+                'manager_id' => null,
+                'created_by' => null,
+                'is_active' => true,
+                'is_system_default' => true,
+            ]);
+        }
+        $section = ProjectSection::query()->firstOrCreate([
+            'project_id' => $project->id,
+            'department_id' => $department->id,
+        ], [
+            'name' => $department->name,
+            'manager_can_create_tasks' => true,
+            'sort_order' => 1,
+        ]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'classification' => Correspondence::CLASSIFICATION_ORDINARY,
+            'subject' => 'درخواست دستورکار در پروژه عمومی',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'assigned_to_employee',
+            'recipient_department_id' => $department->id,
+            'current_department_id' => $department->id,
+            'current_user_id' => $employee->id,
+            'created_by' => $manager->id,
+        ]);
+
+        $this->actingAs($employee)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
+            'note' => 'برای پیگیری نامه به یک دستورکار در بخش واحد نیاز است.',
+        ])->assertRedirect();
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::MANAGER_CREATE_TASK,
+            'note' => 'درخواست دستورکار تأیید شد؛ از فرم موجود وظایف استفاده می‌شود.',
+        ])->assertRedirect();
+
+        $letter->refresh();
+        $this->assertSame('in_progress', $letter->workflow_state);
+        $this->assertSame((int) $manager->id, (int) $letter->current_user_id);
+        $this->actingAs($manager)->get(route('correspondence.show', $letter))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('taskInstructionUrl', fn ($url) => is_string($url)
+                    && str_contains($url, 'create_for_correspondence='.$letter->id)
+                    && str_contains($url, 'project_id='.$project->id)
+                    && str_contains($url, 'section_id='.$section->id)));
+    }
+
+    public function test_manager_sees_employee_request_in_needs_action_filter(): void
+    {
+        $manager = $this->userWithPermission('correspondence.view');
+        $employee = $this->userWithPermission('correspondence.view');
+        $department = Department::query()->create([
+            'name' => 'واحد فیلتر درخواست مدیر '.Str::upper(Str::random(5)),
+            'code' => 'MF-'.Str::upper(Str::random(6)),
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+        $employee->departments()->attach($department->id, ['is_primary' => true, 'joined_at' => now()]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'classification' => Correspondence::CLASSIFICATION_ORDINARY,
+            'subject' => 'درخواست در انتظار اقدام مدیر',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'general_review_pending_manager',
+            'recipient_department_id' => $department->id,
+            'current_department_id' => $department->id,
+            'current_user_id' => $manager->id,
+            'created_by' => $employee->id,
+        ]);
+        CorrespondenceAction::query()->create([
+            'correspondence_id' => $letter->id,
+            'actor_id' => $employee->id,
+            'action_type' => CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
+            'from_department_id' => $department->id,
+            'to_department_id' => $department->id,
+            'from_user_id' => $employee->id,
+            'to_user_id' => $manager->id,
+        ]);
+
+        $this->actingAs($manager)->get(route('correspondence.index', ['scope' => 'mine', 'action_filter' => 'needs_action']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('filters.action_filter', 'needs_action')
+                ->where('correspondences.total', 1)
+                ->where('correspondences.data.0.id', $letter->id));
+    }
+
 }
