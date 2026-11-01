@@ -27,6 +27,7 @@ class CorrespondenceAction extends Model
     public const MANAGER_ASSIGN_LETTER_DRAFT = 'manager_assign_letter_draft';
     public const MANAGER_START_REQUESTED_WORKFLOW = 'manager_start_requested_workflow';
     public const REQUESTED_LETTER_DRAFT_CREATED = 'requested_letter_draft_created';
+    public const REQUESTED_LETTER_REGISTERED = 'requested_letter_registered';
     public const PM_REQUEST_REFER = 'pm_request_refer';
     public const PM_REQUEST_PROJECT = 'pm_request_project';
     public const PM_REQUEST_REJECT = 'pm_request_reject';
