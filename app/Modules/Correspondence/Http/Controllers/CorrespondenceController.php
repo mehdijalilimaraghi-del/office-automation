@@ -470,6 +470,7 @@ class CorrespondenceController extends Controller
                 && $correspondence->current_department_id !== null
                 && (int) $correspondence->current_department_id === (int) app(OrganizationDepartmentRoleService::class)->activeDepartmentId(OrganizationDepartmentRoleService::PROJECT_MANAGEMENT)
                 && (int) Department::query()->whereKey($correspondence->current_department_id)->value('manager_id') !== (int) $request->user()->id,
+            'isProjectManagementDepartment' => $isCurrentProjectDepartment,
             'canReviewProjectRequest' => $correspondence->status === Correspondence::STATUS_REGISTERED
                 && in_array($correspondence->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)
                 && $correspondence->workflow_state === 'project_review_pending_manager'
