@@ -314,6 +314,7 @@ class CorrespondenceController extends Controller
                 && $correspondence->project_id === null
                 && $request->user()->hasPermission('projects.create')
                 && app(OrganizationDepartmentRoleService::class)->userBelongsTo($request->user(), OrganizationDepartmentRoleService::PROJECT_MANAGEMENT),
+            'responseDepartmentDefaultId' => $settings->get(['projects.response_department.default' => null])['projects.response_department.default'],
             'responseDepartments' => Department::query()
                 ->with('manager:id,name,status')
                 ->where('is_active', true)
