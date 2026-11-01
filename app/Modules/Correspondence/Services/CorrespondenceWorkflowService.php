@@ -72,7 +72,7 @@ class CorrespondenceWorkflowService
             $type = (string) $data['action_type'];
             $note = trim((string) ($data['note'] ?? ''));
 
-            if ($letter->workflow_state === 'completed_with_result') {
+            if (in_array($letter->workflow_state, ['completed_with_result', 'workflow_completed', 'letter_draft_pending_manager', 'letter_registered'], true)) {
                 throw new InvalidArgumentException('گردش این نامه پس از تأیید نتیجه خاتمه یافته است و اقدام جدیدی نمی‌پذیرد.');
             }
             $targetDepartmentId = isset($data['to_department_id']) ? (int) $data['to_department_id'] : null;
@@ -618,6 +618,27 @@ class CorrespondenceWorkflowService
                 $actor->id,
                 null,
             );
+
+            if ($letter->reply_to_id !== null) {
+                $source = Correspondence::query()->whereKey($letter->reply_to_id)->lockForUpdate()->first();
+                if ($source !== null && $source->workflow_state === 'letter_draft_pending_manager') {
+                    $this->record(
+                        $source,
+                        $actor,
+                        CorrespondenceAction::REQUESTED_LETTER_REGISTERED,
+                        'نامه پاسخ مرتبط با شماره '.$letter->registration_number.' ثبت نهایی شد.',
+                        $source->current_department_id === null ? null : (int) $source->current_department_id,
+                        null,
+                        $actor->id,
+                        null,
+                        ['reply_correspondence_id' => (int) $letter->id],
+                    );
+                    $source->forceFill([
+                        'workflow_state' => 'letter_registered',
+                        'current_user_id' => null,
+                    ])->save();
+                }
+            }
 
             if ($letter->type === Correspondence::TYPE_INCOMING && $letter->recipient_department_id !== null) {
                 $targetId = (int) $letter->recipient_department_id;
