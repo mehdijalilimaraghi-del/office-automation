@@ -162,6 +162,9 @@ class CorrespondenceWorkflowService
                     if ($requestAction->action_type !== CorrespondenceAction::EMPLOYEE_REQUEST_LETTER) {
                         throw new InvalidArgumentException('این تصمیم فقط برای درخواست ثبت نامه قابل استفاده است.');
                     }
+                    if ($type === CorrespondenceAction::MANAGER_CREATE_REQUESTED_LETTER && ! $actor->hasPermission('correspondence.create')) {
+                        throw new InvalidArgumentException('برای ایجاد نامه، مجوز ثبت مکاتبه لازم است.');
+                    }
                     if ($type === CorrespondenceAction::MANAGER_CREATE_REQUESTED_LETTER) {
                         $this->record(
                             $letter, $actor, $type, $note,
