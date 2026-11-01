@@ -23,6 +23,8 @@ use App\Modules\Workflows\Services\WorkflowService;
 use App\Modules\Workflows\Models\WorkflowInstanceStep;
 use App\Modules\Workflows\Models\WorkflowInstance;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Projects\Models\Project;
+use App\Modules\Projects\Models\ProjectSection;
 use App\Modules\Documents\Models\Document;
 use App\Modules\Documents\Services\DocumentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -2287,6 +2289,80 @@ class CorrespondenceHttpTest extends TestCase
             ->whereKey($letter->id)->count());
         $this->assertSame(0, $access->visibleToQuery(Correspondence::query(), $unrelated)
             ->whereKey($letter->id)->count());
+    }
+
+
+
+    public function test_manager_creates_general_task_from_correspondence_and_links_it(): void
+    {
+        $manager = $this->userWithPermission('correspondence.view');
+        $taskCreator = $this->userWithPermission('tasks.create');
+        $taskViewer = $this->userWithPermission('tasks.view');
+        $manager->roles()->attach([
+            $taskCreator->roles()->first()->id,
+            $taskViewer->roles()->first()->id,
+        ]);
+        $department = Department::query()->create([
+            'name' => 'واحد دستورکار عمومی '.Str::upper(Str::random(5)),
+            'code' => 'GT-'.Str::upper(Str::random(6)),
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+        $project = Project::query()->create([
+            'name' => 'پروژه عمومی سازمان',
+            'code' => 'GEN-'.Str::upper(Str::random(6)),
+            'status' => 'active',
+            'manager_id' => null,
+            'created_by' => null,
+            'is_active' => true,
+            'is_system_default' => true,
+        ]);
+        $section = ProjectSection::query()->create([
+            'project_id' => $project->id,
+            'department_id' => $department->id,
+            'name' => $department->name,
+            'manager_can_create_tasks' => true,
+            'sort_order' => 1,
+        ]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'classification' => Correspondence::CLASSIFICATION_ORDINARY,
+            'subject' => 'نامه برای ایجاد دستورکار عمومی',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'in_progress',
+            'current_department_id' => $department->id,
+            'current_user_id' => $manager->id,
+            'recipient_department_id' => $department->id,
+            'created_by' => $manager->id,
+        ]);
+
+        $this->actingAs($manager)->get(route('correspondence.show', $letter))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Correspondence/Show')
+                ->where('taskInstructionUrl', fn ($value) => is_string($value) && str_contains($value, 'create_for_correspondence='.$letter->id)));
+
+        $this->actingAs($manager)->post(route('tasks.store'), [
+            'correspondence_id' => $letter->id,
+            'project_id' => $project->id,
+            'section_id' => $section->id,
+            'department_id' => $department->id,
+            'title' => 'پیگیری نامه و تهیه پاسخ',
+            'priority' => 'normal',
+            'delegate_to_employee' => false,
+        ])->assertRedirect(route('correspondence.show', $letter));
+
+        $letter->refresh();
+        $task = Task::query()->findOrFail($letter->task_id);
+        $this->assertSame((int) $project->id, (int) $task->project_id);
+        $this->assertSame((int) $section->id, (int) $task->section_id);
+        $this->assertSame((int) $department->id, (int) $task->department_id);
+        $this->assertSame((int) $manager->id, (int) $task->assignee_id);
+        $this->assertDatabaseHas('correspondence_actions', [
+            'correspondence_id' => $letter->id,
+            'action_type' => 'manager_create_task',
+            'actor_id' => $manager->id,
+        ]);
     }
 
 
