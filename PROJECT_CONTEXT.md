@@ -1396,3 +1396,12 @@ Incoming letter numbers are captured from the original document, never auto-gene
 
 
 - The source-letter manager can view the delegated employee draft only through the reply relationship while the source is awaiting manager review; unrelated draft privacy remains enforced. Test added, not run.
+
+
+## 2026-11-01 — Final general correspondence implementation checkpoint
+
+- Documented actual state mapping and final behavior in `CORRESPONDENCE_GENERAL_WORKFLOW.md`.
+- Reply drafts remain in the source department, source manager can view them via reply relation, and the source request closes only after the exact linked reply is finally registered.
+- Workflow choices exclude definitions with no active steps or project-only/unsupported actors; correspondence workflow runs without a project.
+- General project/department Section options are available to department managers in the existing task form with Project-scoped create permission. Task/workflow links are bidirectional and access-filtered.
+- Code/docs are on `development`; tests/build not run; `master` unchanged.
