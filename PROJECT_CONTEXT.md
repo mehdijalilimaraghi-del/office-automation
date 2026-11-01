@@ -1384,3 +1384,6 @@ Incoming letter numbers are captured from the original document, never auto-gene
 
 
 - Workflow completion propagates `workflow_completed` to linked correspondence. Confidential letter visibility recognizes users assigned to or creating its direct task or workflow-instance tasks; Feature coverage was added but not run.
+
+
+- Final registration of a requested reply closes the source request as `letter_registered`; completed workflow/reply states are blocked from further workflow actions.
