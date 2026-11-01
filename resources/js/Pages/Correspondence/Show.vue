@@ -97,6 +97,7 @@ const props = defineProps<{
     canManageWorkflow: boolean;
     canProjectEmployeeReview: boolean;
     canReviewProjectRequest: boolean;
+    isProjectManagementDepartment: boolean;
     canSecretariatReturn: boolean;
     canResubmitToSecretariat: boolean;
 }>();
@@ -165,7 +166,7 @@ function createResponseProject(): void {
 const actionForm = useForm({
     action_type: props.canSubmitGeneralRequest ? 'employee_request_none' : props.canReviewGeneralRequest ? (props.generalRequestType === 'employee_request_none' ? 'manager_refer' : props.generalRequestType === 'employee_request_task' ? 'manager_create_task' : props.generalRequestType === 'employee_request_project' ? 'manager_refer_project_management' : props.generalRequestType === 'employee_request_workflow' && props.workflowDefinitions.length ? 'manager_start_requested_workflow' : props.generalRequestType === 'employee_request_letter' && props.canManagerCreateRequestedLetter ? 'manager_create_requested_letter' : props.generalRequestType === 'employee_request_letter' && props.canDelegateLetterDraft ? 'manager_assign_letter_draft' : 'manager_reject_employee_request') : props.canRecallReferral ? 'manager_recall_referral' : props.canProjectEmployeeReview ? 'pm_request_project' : props.canReviewProjectRequest ? 'pm_manager_approve_request' : props.canSecretariatReturn ? 'secretariat_return' : props.canResubmitToSecretariat ? 'resubmit_to_secretariat' : props.canManageWorkflow ? 'manager_refer' : 'submit_result',
     note: '',
-    target_type: 'department' as 'department' | 'user',
+    target_type: props.isProjectManagementDepartment ? 'user' as 'department' | 'user' : 'department' as 'department' | 'user',
     to_department_id: '' as number | '',
     to_user_id: '' as number | '',
     workflow_definition_id: '' as number | '',
@@ -459,7 +460,7 @@ function registerCorrespondence(): void {
                             <div>
                                 <label class="mb-1 block text-sm font-medium text-slate-700">نوع ارجاع</label>
                                 <select v-model="actionForm.target_type" class="w-full rounded-xl border-slate-300 text-sm">
-                                    <option value="department">واحد دیگر</option>
+                                    <option v-if="!isProjectManagementDepartment" value="department">واحد دیگر</option>
                                     <option value="user">کارمند همین واحد</option>
                                 </select>
                             </div>
