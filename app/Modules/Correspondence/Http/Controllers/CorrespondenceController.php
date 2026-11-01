@@ -565,12 +565,20 @@ class CorrespondenceController extends Controller
         ]);
 
         abort_unless($access->canCreateType($data['type'], $request->user()), 403);
+        $linkedTask = null;
         if (! empty($data['task_id'])) {
             $linkedTask = Task::query()->findOrFail((int) $data['task_id']);
             abort_unless($request->user()->can('update', $linkedTask), 403);
             abort_unless((int) $linkedTask->assignee_id === (int) $request->user()->id, 403,
                 'فقط مسئول فعلی دستورکار می‌تواند از داخل آن نامه ایجاد کند.');
         }
+
+        $sourceProjectCorrespondence = $linkedTask === null
+            ? null
+            : Correspondence::query()->where('task_id', $linkedTask->id)->whereNotNull('project_id')->orderBy('id')->first();
+        $sourceProjectCorrespondenceId = $sourceProjectCorrespondence !== null && $access->canView($sourceProjectCorrespondence, $request->user())
+            ? (int) $sourceProjectCorrespondence->id
+            : null;
 
         $relatedLetterIds = array_values(array_unique(array_map('intval', $data['reply_to_ids'] ?? [])));
         if ($relatedLetterIds !== []) {
@@ -627,7 +635,7 @@ class CorrespondenceController extends Controller
         }
 
         try {
-            $correspondence = DB::transaction(function () use ($data, $mode, $body, $originalLetters, $attachments, $service, $documents, $request): Correspondence {
+            $correspondence = DB::transaction(function () use ($data, $mode, $body, $originalLetters, $attachments, $service, $documents, $request, $linkedTask, $sourceProjectCorrespondenceId): Correspondence {
                 $correspondence = $service->createDraft([
                     'type' => $data['type'],
                     'classification' => $data['classification'] ?? Correspondence::CLASSIFICATION_ORDINARY,
@@ -644,8 +652,9 @@ class CorrespondenceController extends Controller
                     'recipient_department_id' => $data['recipient_department_id'] ?? null,
                     'external_organization_id' => $data['external_organization_id'] ?? null,
                     'external_department_id' => $data['external_department_id'] ?? null,
-                    'reply_to_id' => ! empty($data['reply_to_ids']) ? (int) $data['reply_to_ids'][0] : ($data['reply_to_id'] ?? null),
+                    'reply_to_id' => ! empty($data['reply_to_ids']) ? (int) $data['reply_to_ids'][0] : (($data['reply_to_id'] ?? null) ?: $sourceProjectCorrespondenceId),
                     'task_id' => $data['task_id'] ?? null,
+                    'project_id' => $linkedTask?->project_id,
                 ], $request->user());
 
                 $relatedLetterIds = array_values(array_unique(array_map('intval', $data['reply_to_ids'] ?? [])));
