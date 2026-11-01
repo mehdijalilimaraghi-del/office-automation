@@ -671,3 +671,6 @@ Before making the first code change in a new conversation:
 
 
 - Once the requested reply letter is finally registered, the source correspondence is marked `letter_registered` and locked from further workflow actions. `workflow_completed`, `letter_draft_pending_manager`, and `letter_registered` are backend-protected from new actions.
+
+
+- Regression tests added for correspondence-linked task creation in the organization's general project/department Section, request/rejection, delegated letter draft and final registration, real WorkflowInstance start/completion, and confidential workflow task-assignee access. None have been run; build/SQL Server validation remains pending.
