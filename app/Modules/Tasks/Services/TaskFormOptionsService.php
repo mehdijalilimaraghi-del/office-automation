@@ -131,7 +131,8 @@ class TaskFormOptionsService
 
         if ($managedDepartmentIds !== []) {
             $projectsQuery->orWhere(function ($sharedProjectQuery) use ($managedDepartmentIds): void {
-                $sharedProjectQuery->where('projects.is_system_default', true)
+                $sharedProjectQuery->where('projects.is_active', true)
+                    ->where('projects.is_system_default', true)
                     ->whereNull('projects.department_id')
                     ->whereHas('sections', fn ($sectionQuery) => $sectionQuery
                         ->whereIn('department_id', $managedDepartmentIds)
