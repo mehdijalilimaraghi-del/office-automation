@@ -2504,6 +2504,7 @@ class CorrespondenceHttpTest extends TestCase
         $this->actingAs($manager)->get(route('correspondence.show', $letter))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
+                ->where('canCreateTaskInstruction', true)
                 ->where('taskInstructionUrl', fn ($url) => is_string($url)
                     && str_contains($url, 'create_for_correspondence='.$letter->id)
                     && str_contains($url, 'project_id='.$project->id)
