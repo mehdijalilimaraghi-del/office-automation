@@ -1393,3 +1393,6 @@ Incoming letter numbers are captured from the original document, never auto-gene
 
 
 - Department managers can see the shared general project and their department Section in the existing task form, including with Project-scoped `tasks.create`. Integration test added, not run.
+
+
+- The source-letter manager can view the delegated employee draft only through the reply relationship while the source is awaiting manager review; unrelated draft privacy remains enforced. Test added, not run.
