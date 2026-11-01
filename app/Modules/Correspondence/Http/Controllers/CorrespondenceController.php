@@ -258,27 +258,33 @@ class CorrespondenceController extends Controller
         $currentDepartmentId = $correspondence->current_department_id === null ? null : (int) $correspondence->current_department_id;
         $isCurrentDepartmentManager = $currentDepartmentId !== null
             && (int) Department::query()->whereKey($currentDepartmentId)->value('manager_id') === (int) $request->user()->id;
-        if ($isCurrentDepartmentManager
+        $generalProject = Project::query()
+            ->where('is_system_default', true)
+            ->where('is_active', true)
+            ->whereNull('department_id')
+            ->orderBy('id')
+            ->first();
+        $departmentSection = $generalProject === null ? null : ProjectSection::query()
+            ->where('project_id', $generalProject->id)
+            ->where('department_id', $currentDepartmentId)
+            ->where('manager_can_create_tasks', true)
+            ->first();
+        $canCreateTaskInstruction = $isCurrentDepartmentManager
             && $request->user()->hasPermission('tasks.create')
             && $request->user()->hasPermission('tasks.view')
-            && ($correspondence->current_user_id === null || (int) $correspondence->current_user_id === (int) $request->user()->id)
             && $correspondence->status === Correspondence::STATUS_REGISTERED
             && in_array($correspondence->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)
-            && $correspondence->workflow_state === 'in_progress'
-            && $correspondence->task_id === null) {
-            $generalProject = Project::query()->where('is_system_default', true)->where('is_active', true)->orderBy('id')->first();
-            $departmentSection = $generalProject === null ? null : ProjectSection::query()
-                ->where('project_id', $generalProject->id)
-                ->where('department_id', $currentDepartmentId)
-                ->where('manager_can_create_tasks', true)
-                ->first();
-            if ($generalProject !== null && $departmentSection !== null) {
-                $taskInstructionUrl = route('tasks.index', [
-                    'create_for_correspondence' => $correspondence->id,
-                    'project_id' => $generalProject->id,
-                    'section_id' => $departmentSection->id,
-                ]);
-            }
+            && $correspondence->task_id === null
+            && $generalProject !== null
+            && $departmentSection !== null;
+        if ($canCreateTaskInstruction
+            && ($correspondence->current_user_id === null || (int) $correspondence->current_user_id === (int) $request->user()->id)
+            && $correspondence->workflow_state === 'in_progress') {
+            $taskInstructionUrl = route('tasks.index', [
+                'create_for_correspondence' => $correspondence->id,
+                'project_id' => $generalProject->id,
+                'section_id' => $departmentSection->id,
+            ]);
         }
 
         $generalRequestTypes = [
@@ -406,6 +412,7 @@ class CorrespondenceController extends Controller
                 ->values(),
             'canRegister' => $access->canRegister($correspondence, $request->user()),
             'taskInstructionUrl' => $taskInstructionUrl,
+            'canCreateTaskInstruction' => $canCreateTaskInstruction,
             'canSubmitGeneralRequest' => $canSubmitGeneralRequest,
             'canReviewGeneralRequest' => $canReviewGeneralRequest,
             'canRecallReferral' => $canRecallReferral,
