@@ -7,6 +7,7 @@ use App\Core\CustomFields\Models\CustomFieldValue;
 use App\Models\Concerns\HasSystemCode;
 use App\Models\User;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Documents\Models\DocumentLink;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -95,6 +96,11 @@ class Project extends Model
     public function tasks(): HasMany
     {
         return $this->hasMany(Task::class, 'project_id');
+    }
+
+    public function sourceCorrespondence(): \Illuminate\\Database\\Eloquent\\Relations\\HasOne
+    {
+        return $this->hasOne(Correspondence::class, 'project_id');
     }
 
     public function documents(): MorphMany
