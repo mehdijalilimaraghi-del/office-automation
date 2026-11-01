@@ -910,3 +910,10 @@ Status: correspondence list/draft/registration HTTP flow and editor/file/both co
 - Manager rejection returns to the same employee; manager approval routes to the selected department, returns the letter to its original recipient department for approved reject/return requests, or sets `project_request_approved` for the next project-creation phase.
 - Added manager cartable/index visibility, UI controls and two focused HTTP regression tests.
 - **Status:** initial implementation committed on `development`; focused tests and frontend build await local validation. Project creation/response task integration remains pending. `master` unchanged.
+
+
+## 2026-11-01 — Stage 1 validated; Stage 2 is next
+
+- Project owner confirmed that the focused test run passed and the frontend production build succeeded for the Project Management request/review flow.
+- Stage 1 is accepted. Next implementation target is Stage 2: create a real project from a correspondence in `project_request_approved`, require an explicitly selected response department (pre-filled from an organization default that remains editable), and link the project to the source letter.
+- Stage 3 response Section/task provisioning and Stage 4 bidirectional task/correspondence links remain separate follow-up stages. `master` unchanged.
