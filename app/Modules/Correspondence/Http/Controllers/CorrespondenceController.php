@@ -133,6 +133,7 @@ class CorrespondenceController extends Controller
                                 'in_progress',
                                 'result_pending_manager',
                                 'awaiting_manager_approval',
+                                'project_review_pending_manager',
                             ])->whereHas('currentDepartment', fn ($currentDepartment) => $currentDepartment
                                 ->where('manager_id', $user->id))
                                 ->where(function ($assignment) use ($user): void {
