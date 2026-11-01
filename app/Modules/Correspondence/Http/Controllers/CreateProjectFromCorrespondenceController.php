@@ -51,7 +51,7 @@ class CreateProjectFromCorrespondenceController extends Controller
                 && $correspondence->type === Correspondence::TYPE_INCOMING
                 && $correspondence->workflow_state === 'project_request_approved'
                 && (int) $correspondence->current_department_id === (int) $projectManagementDepartmentId
-                && (int) Department::query()->whereKey($projectManagementDepartmentId)->value('manager_id') === (int) $actor->id,
+                && (int) $correspondence->current_department_id === (int) $projectManagementDepartmentId,
             403,
             'این نامه در وضعیت مجاز برای ایجاد پروژه نیست یا شما مدیر واحد مدیریت پروژه نیستید.'
         );
