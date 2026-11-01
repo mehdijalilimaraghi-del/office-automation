@@ -133,6 +133,7 @@ const actionLabels: Record<string, string> = {
     manager_create_requested_letter: 'مدیر: ایجاد نامه در پاسخ به درخواست',
     manager_assign_letter_draft: 'ارجاع برای تهیه پیش‌نویس نامه',
     requested_letter_draft_created: 'ایجاد پیش‌نویس نامه مرتبط',
+    requested_letter_registered: 'ثبت نهایی نامه پاسخ مرتبط',
     manager_start_requested_workflow: 'شروع گردش کار درخواستی',
 };
 const copyForm = useForm({ department_ids: [] as number[] });
@@ -179,7 +180,7 @@ function submitWorkflowAction(): void {
 const typeLabels: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
 const statusLabels: Record<string, string> = { draft: 'پیش‌نویس', registered: 'ثبت‌شده' };
 const workflowStateLabels: Record<string, string> = {
-    draft: 'پیش‌نویس', awaiting_registration: 'در انتظار ثبت نهایی', awaiting_manager_approval: 'در انتظار تأیید مدیر', approved_for_registration: 'تأییدشده برای ثبت نهایی', manager_review: 'در انتظار تصمیم مدیر', project_review_pending_manager: 'در انتظار تصمیم مدیر واحد پروژه‌ها', project_request_approved: 'درخواست پروژه تأیید شده؛ در انتظار ایجاد پروژه', result_pending_manager: 'نتیجه ثبت شده؛ در انتظار تصمیم مدیر', general_review_pending_manager: 'در انتظار بررسی درخواست کارمند توسط مدیر', letter_creation_by_manager: 'در انتظار ایجاد نامه توسط مدیر', letter_draft_pending_employee: 'در انتظار تهیه پیش‌نویس توسط کارمند', letter_draft_pending_manager: 'پیش‌نویس ایجاد شده؛ در انتظار بررسی مدیر', workflow_started: 'گردش کار مرتبط آغاز شده', workflow_completed: 'گردش کار مرتبط تکمیل شده', completed_with_result: 'خاتمه‌یافته با نتیجه ثبت‌شده', in_progress: 'در حال گردش', assigned_to_employee: 'ارجاع‌شده به کارمند', awaiting_dispatch: 'در انتظار بررسی دبیرخانه و ارسال', returned_for_correction: 'برگشت برای اصلاح', project_created: 'پروژه و تسک پاسخ ایجاد شده', dispatched: 'ارسال نهایی‌شده',
+    draft: 'پیش‌نویس', awaiting_registration: 'در انتظار ثبت نهایی', awaiting_manager_approval: 'در انتظار تأیید مدیر', approved_for_registration: 'تأییدشده برای ثبت نهایی', manager_review: 'در انتظار تصمیم مدیر', project_review_pending_manager: 'در انتظار تصمیم مدیر واحد پروژه‌ها', project_request_approved: 'درخواست پروژه تأیید شده؛ در انتظار ایجاد پروژه', result_pending_manager: 'نتیجه ثبت شده؛ در انتظار تصمیم مدیر', general_review_pending_manager: 'در انتظار بررسی درخواست کارمند توسط مدیر', letter_creation_by_manager: 'در انتظار ایجاد نامه توسط مدیر', letter_draft_pending_employee: 'در انتظار تهیه پیش‌نویس توسط کارمند', letter_draft_pending_manager: 'پیش‌نویس ایجاد شده؛ در انتظار بررسی مدیر', workflow_started: 'گردش کار مرتبط آغاز شده', workflow_completed: 'گردش کار مرتبط تکمیل شده', letter_registered: 'نامه پاسخ مرتبط ثبت نهایی شده', completed_with_result: 'خاتمه‌یافته با نتیجه ثبت‌شده', in_progress: 'در حال گردش', assigned_to_employee: 'ارجاع‌شده به کارمند', awaiting_dispatch: 'در انتظار بررسی دبیرخانه و ارسال', returned_for_correction: 'برگشت برای اصلاح', project_created: 'پروژه و تسک پاسخ ایجاد شده', dispatched: 'ارسال نهایی‌شده',
 };
 const formatDate = (value: string | null) => value
     ? new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium' }).format(new Date(value))
