@@ -680,3 +680,12 @@ Before making the first code change in a new conversation:
 
 
 - A delegated employee's draft is visible to the source-letter manager while the source is in `letter_draft_pending_manager`, using the explicit reply relationship; ordinary draft privacy remains unchanged for unrelated users. A focused test was added but not run.
+
+
+## 2026-11-01 — Final implementation checkpoint for general correspondence workflow
+
+- State map is documented in `CORRESPONDENCE_GENERAL_WORKFLOW.md`: `general_review_pending_manager`, `letter_creation_by_manager`, `letter_draft_pending_employee`, `letter_draft_pending_manager`, `letter_registered`, `workflow_started`, and `workflow_completed`.
+- Reply drafts must remain in the source department, are visible to the responsible source manager through the reply link, and close the source request only when the exact requested draft is finally registered.
+- Active workflow choices are filtered to definitions with active steps and no project-only/unsupported actors because this correspondence workflow starts without a project.
+- Task form options include the shared general project/department Section for managers with project-scoped task-create permission. Task and workflow correspondence links are bidirectional and confidentiality-filtered.
+- Latest code and docs are committed to `development`; tests/build have not been executed. `master` remains untouched.
