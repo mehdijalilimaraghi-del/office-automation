@@ -101,6 +101,7 @@ class CorrespondenceWorkflowService
 
             $generalEmployeeRequestActions = [
                 CorrespondenceAction::EMPLOYEE_REQUEST_NONE,
+                CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
                 CorrespondenceAction::EMPLOYEE_REQUEST_LETTER,
                 CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
                 CorrespondenceAction::EMPLOYEE_REQUEST_PROJECT,
@@ -138,6 +139,7 @@ class CorrespondenceWorkflowService
 
             if (in_array($type, [
                 CorrespondenceAction::MANAGER_REJECT_EMPLOYEE_REQUEST,
+                CorrespondenceAction::MANAGER_CREATE_TASK,
                 CorrespondenceAction::MANAGER_REFER_PROJECT_MANAGEMENT,
                 CorrespondenceAction::MANAGER_CREATE_REQUESTED_LETTER,
                 CorrespondenceAction::MANAGER_ASSIGN_LETTER_DRAFT,
@@ -153,6 +155,22 @@ class CorrespondenceWorkflowService
                     ->first();
                 if ($requestAction === null || (int) $requestAction->to_user_id !== (int) $actor->id) {
                     throw new InvalidArgumentException('درخواست معتبری از کارمند برای بررسی مدیر وجود ندارد.');
+                }
+
+                if ($type === CorrespondenceAction::MANAGER_CREATE_TASK) {
+                    if ($requestAction->action_type !== CorrespondenceAction::EMPLOYEE_REQUEST_TASK) {
+                        throw new InvalidArgumentException('ایجاد دستورکار فقط برای درخواست دستورکار کارمند مجاز است.');
+                    }
+                    $this->record(
+                        $letter, $actor, $type, $note,
+                        $currentDepartmentId, $currentDepartmentId,
+                        $actor->id, null,
+                    );
+                    $letter->forceFill([
+                        'current_user_id' => (int) $actor->id,
+                        'workflow_state' => 'in_progress',
+                    ])->save();
+                    return;
                 }
 
                 if (in_array($type, [
@@ -465,6 +483,46 @@ class CorrespondenceWorkflowService
                 }
                 $this->record($letter, $actor, $type, $note, $currentDepartmentId, null, $actor->id, null);
                 $letter->forceFill(['workflow_state' => 'completed_with_result', 'current_user_id' => null])->save();
+                return;
+            }
+
+            if ($type === CorrespondenceAction::MANAGER_REFER
+                && $isProjectDepartment
+                && $targetType === 'department') {
+                throw new InvalidArgumentException('ارجاع نامه درخواست پروژه به واحد دیگر فقط پس از ثبت درخواست ارجاع توسط کارمند واحد پروژه‌ها و تأیید مدیر مجاز است.');
+            }
+
+            if ($type === CorrespondenceAction::MANAGER_REFER
+                && $letter->workflow_state === 'assigned_to_employee') {
+                throw new InvalidArgumentException('نامه در حال حاضر به کارمند ارجاع شده است؛ برای بازگرداندن آن به مدیر از اقدام «پس گرفتن ارجاع» استفاده کنید.');
+            }
+
+            if ($type === CorrespondenceAction::MANAGER_RECALL_REFERRAL) {
+                abort_unless($isManager
+                    && $letter->workflow_state === 'assigned_to_employee'
+                    && $letter->current_user_id !== null
+                    && (int) $letter->current_user_id !== (int) $actor->id, 403);
+                if ($note === '') {
+                    throw new InvalidArgumentException('برای پس گرفتن ارجاع، ثبت دلیل الزامی است.');
+                }
+                $latestReferral = $letter->actions()
+                    ->where('action_type', CorrespondenceAction::MANAGER_REFER)
+                    ->where('to_user_id', (int) $letter->current_user_id)
+                    ->latest('id')
+                    ->first();
+                if ($latestReferral === null || (int) $latestReferral->from_department_id !== $currentDepartmentId) {
+                    throw new InvalidArgumentException('ارجاع فعالی برای پس گرفتن در این واحد پیدا نشد.');
+                }
+                $this->record(
+                    $letter, $actor, $type, $note,
+                    $currentDepartmentId, $currentDepartmentId,
+                    (int) $letter->current_user_id, (int) $actor->id,
+                    ['recalled_action_id' => (int) $latestReferral->id],
+                );
+                $letter->forceFill([
+                    'current_user_id' => (int) $actor->id,
+                    'workflow_state' => 'in_progress',
+                ])->save();
                 return;
             }
 
