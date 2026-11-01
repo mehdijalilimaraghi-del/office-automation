@@ -1416,3 +1416,12 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - Root cause: `TaskController@index` only supplies `formOptions` when `TaskPolicy::create($user, null)` succeeds. Project-scoped department managers were denied at the null-project check even though `TaskFormOptionsService` deliberately exposes the shared default project and their enabled department sections.
 - Updated `TaskPolicy::create`: project-scoped managers can open the task form only when they manage an active department with `manager_can_create_tasks=true` in the active shared system-default project. For a specified project ID, creation is permitted only for that shared default project under the same department-section condition; all other project scope checks remain unchanged. Correspondence store still validates the exact selected section against the correspondence's current department.
 - Added regression coverage via the existing `manager creates general task from correspondence and links it` feature test. User-reported pre-fix result: 1 failed, 459 passed (2,002 assertions). Assistant has not executed tests/build; verification remains pending. `master` unchanged.
+
+
+## به‌روزرسانی قرارداد گردش مکاتبات — 2026-11-01
+
+- درخواست کارمند برای «دستورکار» یک نوع مستقل از درخواست «گردش کار» است. درخواست دستورکار به‌تنهایی Task نمی‌سازد؛ مدیر آن را بررسی می‌کند و با اقدام manager_create_task، مسیر فرم فعلی Tasks در پروژه عمومی سازمان و Section همان واحد فعال می‌شود.
+- general_review_pending_manager باید در فیلتر نیازمند اقدام مدیر واحد محاسبه شود.
+- ارجاع مدیر به کارمند تا پیش از اقدام کارمند قابل پس گرفتن است. پس گرفتن باید دلیل، actor، مقصد قبلی و ارجاع مبنا را در تاریخچه ثبت کند و مالکیت را به مدیر برگرداند. ارجاع مجدد مستقیم در وضعیت assigned_to_employee مجاز نیست.
+- درخواست پروژه در واحد مدیریت پروژه‌ها: مدیر می‌تواند کارمند را در همان واحد مسئول بررسی کند؛ انتقال به واحد دیگر فقط پس از ثبت درخواست ارجاع توسط کارمند پروژه‌ها و تأیید مدیر انجام می‌شود، نه با ارجاع عمومی مدیر.
+- تست‌های این قرارداد اضافه شده‌اند؛ اجرای تست، build و اعتبارسنجی SQL Server هنوز تأیید نشده است.
