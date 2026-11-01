@@ -306,6 +306,9 @@ class CorrespondenceController extends Controller
             && $latestGeneralRequest !== null
             && (int) $latestGeneralRequest->to_user_id === (int) $request->user()->id;
 
+        $canDelegateLetterDraft = $latestGeneralRequest !== null
+            && $latestGeneralRequest->action_type === CorrespondenceAction::EMPLOYEE_REQUEST_LETTER
+            && (bool) $latestGeneralRequest->actor()->first()?->hasPermission('correspondence.create');
         $canCreateRequestedLetter = $request->user()->hasPermission('correspondence.create')
             && $correspondence->workflow_state === 'letter_creation_by_manager'
             && $isCurrentDepartmentManager
@@ -406,6 +409,7 @@ class CorrespondenceController extends Controller
             ],
             'canCreateRequestedLetter' => $canCreateRequestedLetter,
             'canManagerCreateRequestedLetter' => $request->user()->hasPermission('correspondence.create'),
+            'canDelegateLetterDraft' => $canDelegateLetterDraft,
             'canPrepareRequestedLetterDraft' => $canPrepareRequestedLetterDraft,
             'workflowDepartments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'parent_id', 'icon']),
             'workflowUsers' => $correspondence->current_department_id === null
