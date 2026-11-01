@@ -714,3 +714,5 @@ Before making the first code change in a new conversation:
 - تست‌های جدید: test_manager_can_recall_an_unacted_employee_referral, test_employee_can_request_a_shared_project_task_and_manager_can_open_existing_task_form, test_manager_sees_employee_request_in_needs_action_filter.
 - **عدم ادعای اعتبارسنجی:** هیچ‌یک از تست‌ها و build توسط دستیار اجرا نشده‌اند؛ پس از pull باید اجرا شوند. وضعیت SQL Server نیز pending است.
 - فیلتر scope=mine برای مدیر واحد علاوه بر ثبت‌های شخصی، نامه‌های ثبت‌شده توسط اعضای واحد تحت مدیریت او را نیز نگه می‌دارد؛ پس از ارجاع نامه به واحد گیرنده، این مورد در action_filter=all قابل مشاهده است اما نباید صرفاً به دلیل ثبت توسط تیم دبیرخانه در needs_action مدیر دبیرخانه ظاهر شود.
+- پذیرش employee_request_task در UI و backend به مجوزهای tasks.create/tasks.view و وجود پروژه عمومی فعال بدون department_id و Section فعال واحد با manager_can_create_tasks=true وابسته است؛ در غیر این صورت پیام تنظیمات ناقص نمایش داده می‌شود و state نامه تغییر نمی‌کند.
+- برای مدیر واحد مدیریت پروژه‌ها، target_type ارجاع عمومی به صورت پیش‌فرض user است و گزینه واحد دیگر پنهان شده؛ انتقال بین‌واحدی فقط با PM_REQUEST_REFER + PM_MANAGER_APPROVE_REQUEST ممکن است.
