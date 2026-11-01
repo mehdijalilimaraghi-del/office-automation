@@ -23,6 +23,8 @@ use App\Http\Requests\Modules\Tasks\UpdateTaskParticipantsRequest;
 use App\Models\User;
 use App\Modules\Tasks\Contracts\TaskServiceContract;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Correspondence\Models\Correspondence;
+use App\Modules\Correspondence\Services\CorrespondenceAccessService;
 use App\Modules\Tasks\Models\TaskReminder;
 use App\Modules\Tasks\Services\TaskFormOptionsService;
 use Illuminate\Http\RedirectResponse;
@@ -102,7 +104,7 @@ class TaskController extends Controller
         return back()->with('success', 'تسک با موفقیت ایجاد شد.');
     }
 
-    public function show(Request $request, Task $task): Response
+    public function show(Request $request, Task $task, CorrespondenceAccessService $correspondenceAccess): Response
     {
         Gate::authorize('view', $task);
 
@@ -132,7 +134,14 @@ class TaskController extends Controller
             }
         }
 
+        $linkedCorrespondences = $task->correspondences()
+            ->get()
+            ->filter(fn (Correspondence $letter): bool => $correspondenceAccess->canView($letter, $request->user()))
+            ->map(fn (Correspondence $letter): array => $letter->only(['id', 'subject', 'letter_number', 'type']))
+            ->values();
+
         return Inertia::render('Tasks/Show', [
+            'linkedCorrespondences' => $linkedCorrespondences,
             'task' => $task->load([
                 'project.department',
                 'documents.document.latestVersion',
