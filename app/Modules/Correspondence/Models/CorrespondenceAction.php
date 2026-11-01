@@ -17,6 +17,12 @@ class CorrespondenceAction extends Model
     public const REQUEST_TASK = 'request_task';
     public const REQUEST_PROJECT = 'request_project';
     public const REQUEST_LETTER = 'request_letter';
+    public const EMPLOYEE_REQUEST_NONE = 'employee_request_none';
+    public const EMPLOYEE_REQUEST_LETTER = 'employee_request_letter';
+    public const EMPLOYEE_REQUEST_WORKFLOW = 'employee_request_workflow';
+    public const EMPLOYEE_REQUEST_PROJECT = 'employee_request_project';
+    public const MANAGER_REJECT_EMPLOYEE_REQUEST = 'manager_reject_employee_request';
+    public const MANAGER_REFER_PROJECT_MANAGEMENT = 'manager_refer_project_management';
     public const PM_REQUEST_REFER = 'pm_request_refer';
     public const PM_REQUEST_PROJECT = 'pm_request_project';
     public const PM_REQUEST_REJECT = 'pm_request_reject';
