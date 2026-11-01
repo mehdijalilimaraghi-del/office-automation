@@ -1083,6 +1083,8 @@ class CorrespondenceController extends Controller
                 CorrespondenceAction::EMPLOYEE_REQUEST_PROJECT,
                 CorrespondenceAction::MANAGER_REJECT_EMPLOYEE_REQUEST,
                 CorrespondenceAction::MANAGER_REFER_PROJECT_MANAGEMENT,
+                CorrespondenceAction::MANAGER_CREATE_REQUESTED_LETTER,
+                CorrespondenceAction::MANAGER_ASSIGN_LETTER_DRAFT,
             ])],
             'note' => ['nullable', 'string', 'max:10000'],
             'target_type' => ['nullable', Rule::in(['department', 'user'])],
