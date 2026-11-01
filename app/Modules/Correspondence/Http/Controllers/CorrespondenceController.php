@@ -85,7 +85,7 @@ class CorrespondenceController extends Controller
                         ->orWhere('registered_by', $user->id)
                         // A department manager's "mine" scope includes letters registered
                         // by employees of the managed department, even after dispatch.
-                        ->orWhereIn('registered_by', \\App\\Models\\User::query()
+                        ->orWhereIn('registered_by', \App\Models\User::query()
                             ->whereHas('departments', fn ($departments) => $departments
                                 ->whereIn('departments.id', $managedDepartmentIds))
                             ->select('users.id'))
