@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Tasks\Policies;
 
 use App\Models\User;
+use App\Core\Permissions\Enums\PermissionScope;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskReminder;
@@ -35,10 +36,35 @@ class TaskPolicy
 
         $scopes = $user->permissionScopes('tasks.create');
 
+        $managedDepartmentIds = $user->managedDepartments()
+            ->where('departments.is_active', true)
+            ->pluck('departments.id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
+
+        $canCreateInSharedDepartmentSection = $managedDepartmentIds !== []
+            && Project::query()
+                ->where('is_active', true)
+                ->where('is_system_default', true)
+                ->whereNull('department_id')
+                ->whereHas('sections', fn ($sectionQuery) => $sectionQuery
+                    ->whereIn('department_id', $managedDepartmentIds)
+                    ->where('manager_can_create_tasks', true))
+                ->when($projectId !== null, fn ($query) => $query->whereKey($projectId))
+                ->exists();
+
         if ($projectId === null) {
-            // Unlinked work orders are organization-level records. A project or
-            // department manager must choose a resource within their scope.
-            return in_array(\App\Core\Permissions\Enums\PermissionScope::Organization->value, $scopes, true);
+            // Department managers may open the form only if an enabled section
+            // exists for one of their managed departments in the shared project.
+            return in_array(PermissionScope::Organization->value, $scopes, true)
+                || (
+                    in_array(PermissionScope::Project->value, $scopes, true)
+                    && $canCreateInSharedDepartmentSection
+                );
+        }
+
+        if ($canCreateInSharedDepartmentSection) {
+            return true;
         }
 
         if (in_array(\App\Core\Permissions\Enums\PermissionScope::Organization->value, $scopes, true)) {
