@@ -1352,3 +1352,12 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - Stage 1 is accepted per owner confirmation (focused tests passed; frontend build succeeded).
 - New approved-project correspondence action creates a project with one response-department Section and one response task, links the source correspondence to both, and records a project_created action. The UI exposes explicit response-department selection.
 - This slice is not validated locally. Organization-level default response department is now configurable in Organization Settings and pre-fills the correspondence project form; user can change it per project. Bidirectional project/task/correspondence detail links remain pending; response letters created from a linked task now inherit the project and source-letter reply link (when visible to the creator).
+
+
+## 2026-11-01 — تأیید build و تست مکاتبات برای مرحله ۴
+
+- مالک پروژه اعلام کرد پس از دریافت آخرین تغییرات مرحله ۴، دستور `php artisan test --filter=CorrespondenceHttpTest` پاس شده و `npm run build` نیز موفق بوده است.
+- این تأیید، صحت تست‌های موجود مکاتبات و build فرانت‌اند را پوشش می‌دهد؛ اما به معنی اجرای تست اختصاصی کنترل محرمانگی در صفحات جزئیات پروژه/تسک، تست مسیر ایجاد پروژه یا اعتبارسنجی migration روی SQL Server نیست.
+- مرحله ۴ از نظر پیاده‌سازی نمایش ارتباط نامه مبدأ در جزئیات پروژه و مکاتبات مرتبط در جزئیات تسک، و انتقال ارتباط پروژه/نامه مبدأ به نامه پاسخ، پیاده‌سازی شده است؛ **اعتبارسنجی اختصاصی روابط و محرمانگی هنوز در انتظار است**.
+- مراحل ۲ و ۳ نیز همچنان به تست مسیر ایجاد پروژه، انتخاب واحد پاسخ‌گو، ساخت Section/Task و اعتبارسنجی SQL Server نیاز دارند. مرحله ۵ (سناریوی انتها‌به‌انتها و پذیرش دستی) باز است.
+- شاخه `development`؛ `master` بدون تغییر.
