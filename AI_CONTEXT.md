@@ -674,3 +674,6 @@ Before making the first code change in a new conversation:
 
 
 - Regression tests added for correspondence-linked task creation in the organization's general project/department Section, request/rejection, delegated letter draft and final registration, real WorkflowInstance start/completion, and confidential workflow task-assignee access. None have been run; build/SQL Server validation remains pending.
+
+
+- Task form options now include the shared general project and matching Sections for department managers with `tasks.create`, including Project-scoped permission assignments. The integration test asserts this option and the resulting task-letter link; it has not been run.
