@@ -18,6 +18,7 @@ use App\Modules\Correspondence\Models\CorrespondenceAction;
 use App\Modules\Correspondence\Services\CorrespondenceAccessService;
 use App\Modules\Workflows\Models\WorkflowDefinition;
 use App\Modules\Workflows\Models\WorkflowStep;
+use App\Modules\Workflows\Services\WorkflowService;
 use App\Modules\Workflows\Models\WorkflowInstanceStep;
 use App\Modules\Workflows\Models\WorkflowInstance;
 use App\Modules\Tasks\Models\Task;
@@ -2194,6 +2195,12 @@ class CorrespondenceHttpTest extends TestCase
             'workflow_instance_id' => $letter->workflow_instance_id,
             'status' => 'active',
         ]);
+
+        $workflowTask = Task::query()->whereHas('workflowInstanceSteps', fn ($query) => $query
+            ->where('workflow_instance_id', $letter->workflow_instance_id))->firstOrFail();
+        app(WorkflowService::class)->advanceAfterTaskApproval($workflowTask);
+        $letter->refresh();
+        $this->assertSame('workflow_completed', $letter->workflow_state);
     }
 
 
