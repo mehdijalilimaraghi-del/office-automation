@@ -194,3 +194,29 @@
 - Root cause: `TaskController@index` only supplies `formOptions` when `TaskPolicy::create($user, null)` succeeds. Project-scoped department managers were denied at the null-project check even though `TaskFormOptionsService` deliberately exposes the shared default project and their enabled department sections.
 - Updated `TaskPolicy::create`: project-scoped managers can open the task form only when they manage an active department with `manager_can_create_tasks=true` in the active shared system-default project. For a specified project ID, creation is permitted only for that shared default project under the same department-section condition; all other project scope checks remain unchanged. Correspondence store still validates the exact selected section against the correspondence's current department.
 - Added regression coverage via the existing `manager creates general task from correspondence and links it` feature test. User-reported pre-fix result: 1 failed, 459 passed (2,002 assertions). Assistant has not executed tests/build; verification remains pending. `master` unchanged.
+
+
+## ۹. اصلاح قرارداد بر اساس آزمون مسیرها — 2026-11-01
+
+### درخواست دستورکار، مستقل از Workflow
+- در فهرست درخواست‌های کارمند، گزینه مستقل «درخواست ایجاد دستورکار» با action employee_request_task وجود دارد.
+- این درخواست معادل employee_request_workflow نیست و به WorkflowDefinition فعال نیاز ندارد.
+- مدیر پس از بررسی با action manager_create_task درخواست را می‌پذیرد. نامه در اختیار مدیر همان واحد می‌ماند و لینک فرم موجود ایجاد Task در ماژول Tasks فعال می‌شود.
+- Task فقط از فرم و endpoint موجود Tasks ایجاد می‌شود؛ مقصد آن پروژه عمومی سازمان و Section همان واحد است و پس از ذخیره به نامه متصل می‌شود.
+- employee_request_workflow همچنان مسیر مستقل شروع Workflow واقعی است و در صورت نبود Workflow فعال، امکان شروع آن وجود ندارد.
+
+### پس گرفتن ارجاع
+- در وضعیت assigned_to_employee، مدیر نمی‌تواند نامه را با manager_refer دوباره به کارمند یا واحد دیگری ارجاع دهد.
+- اگر کارمند هنوز هیچ اقدامی ثبت نکرده باشد، مدیر واحد می‌تواند با action manager_recall_referral ارجاع فعال را پس بگیرد.
+- پس گرفتن نیازمند ثبت دلیل است، در تاریخچه ثبت می‌شود و نامه با وضعیت in_progress و مالکیت مدیر به او بازمی‌گردد.
+- پس گرفتن فقط وقتی مجاز است که آخرین ارجاع ثبت‌شده به همان کارمند از همان واحد جاری باشد. پس از اقدام کارمند، مسیر عادی بررسی نتیجه توسط مدیر ادامه می‌یابد.
+
+### ارجاع در واحد مدیریت پروژه‌ها
+- ارجاع عمومی مدیر پروژه‌ها به واحد دیگر مسدود است.
+- مدیر می‌تواند نامه را به کارمند همان واحد مدیریت پروژه‌ها بسپارد تا بررسی کند.
+- اگر کارمند پروژه‌ها درخواست ارجاع به واحد دیگری ثبت کند، مدیر باید همان درخواست را بررسی و تأیید کند؛ تنها در آن صورت نامه به واحد مقصد منتقل می‌شود.
+- ایجاد پروژه جدید همچنان فقط پس از تأیید درخواست پروژه و در وضعیت project_request_approved انجام می‌شود.
+
+### کارتابل مدیر
+- state general_review_pending_manager در فیلتر «نیاز به اقدام» برای مدیر واحد لحاظ می‌شود.
+- تست‌های Feature برای درخواست دستورکار، پس گرفتن ارجاع و نمایش درخواست در کارتابل مدیر اضافه شده‌اند؛ اجرای تست‌ها/build و اعتبارسنجی SQL Server هنوز pending است.
