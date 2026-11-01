@@ -64,6 +64,7 @@ interface Project {
     sections: ProjectSection[];
     is_system_default: boolean;
     department: { id: number; name: string } | null;
+    source_correspondence: { id: number; subject: string; letter_number: string | null; type: string } | null;
 }
 
 const props = defineProps<{
@@ -453,6 +454,13 @@ const deleteTask = (task: Task): void => {
                 </div>
 
                 <aside class="space-y-6">
+                    <section v-if="project.source_correspondence" class="rounded-2xl border border-sky-200 bg-sky-50/50 p-5 shadow-sm">
+                        <p class="text-xs font-semibold text-sky-700">مکاتبه مبدأ</p>
+                        <h3 class="mt-1 font-bold text-slate-900">{{ project.source_correspondence.subject }}</h3>
+                        <p class="mt-2 text-xs text-muted-foreground">{{ project.source_correspondence.letter_number ? `شماره ${project.source_correspondence.letter_number}` : 'نامه ثبت‌شده مرتبط با پروژه' }}</p>
+                        <Link :href="route('correspondence.show', project.source_correspondence.id)" class="mt-3 inline-flex text-sm font-semibold text-sky-700 hover:underline">مشاهده نامه مبدأ</Link>
+                    </section>
+
                     <section class="rounded-2xl border bg-card p-5 shadow-sm">
                         <div class="flex items-center justify-between gap-3">
                             <div><p class="text-xs font-semibold text-primary">اطلاعات پایه</p><h3 class="mt-1 font-bold">شناسنامه پروژه</h3></div>
