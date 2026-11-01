@@ -1361,3 +1361,12 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - مرحله ۴ از نظر پیاده‌سازی نمایش ارتباط نامه مبدأ در جزئیات پروژه و مکاتبات مرتبط در جزئیات تسک، و انتقال ارتباط پروژه/نامه مبدأ به نامه پاسخ، پیاده‌سازی شده است؛ **اعتبارسنجی اختصاصی روابط و محرمانگی هنوز در انتظار است**.
 - مراحل ۲ و ۳ نیز همچنان به تست مسیر ایجاد پروژه، انتخاب واحد پاسخ‌گو، ساخت Section/Task و اعتبارسنجی SQL Server نیاز دارند. مرحله ۵ (سناریوی انتها‌به‌انتها و پذیرش دستی) باز است.
 - شاخه `development`؛ `master` بدون تغییر.
+
+
+## 2026-11-01 — General incoming correspondence workflow implementation
+
+- Authoritative behavior is documented in `CORRESPONDENCE_GENERAL_WORKFLOW.md`; keep it separate from `CORRESPONDENCE_PROJECT_WORKFLOW.md`.
+- General employee requests (none/letter/workflow/project), mandatory feedback, manager review, manager rejection to the same employee, and manager referral of project requests to the configured active Project Management department have an initial implementation on `development`.
+- Manager task instructions reuse the existing Tasks form in the organization's general project and the matching department Section. Correspondence context is passed through the form; the backend validates it and stores the task-to-letter relation.
+- Manager-side execution of letter requests and real workflow-request execution remain incomplete. New focused tests were added but not run; task-link tests, full feature tests, frontend build and SQL Server validation remain pending.
+- `master` unchanged.
