@@ -16,6 +16,8 @@ use App\Core\Users\Contracts\UserServiceInterface;
 use App\Modules\Projects\Contracts\ProjectMemberServiceContract;
 use App\Modules\Projects\Contracts\ProjectServiceContract;
 use App\Modules\Projects\Models\Project;
+use App\Modules\Correspondence\Models\Correspondence;
+use App\Modules\Correspondence\Services\CorrespondenceAccessService;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Documents\Models\Document;
 use App\Modules\Documents\Services\DocumentService;
@@ -189,7 +191,7 @@ class ProjectController extends Controller
         return back()->with('success', 'پروژه با موفقیت ایجاد شد.');
     }
 
-    public function show(Request $request, Project $project): Response
+    public function show(Request $request, Project $project, CorrespondenceAccessService $correspondenceAccess): Response
     {
         Gate::authorize('view', $project);
 
@@ -201,6 +203,12 @@ class ProjectController extends Controller
             || (int) $project->created_by === (int) $user->id;
         $canUploadProjectDocuments = $isProjectOwner || $hasOrganizationProjectScope;
         $projectDetails = $this->projectService->show($project);
+
+        $sourceCorrespondence = $project->sourceCorrespondence()->first();
+        if ($sourceCorrespondence !== null && ! $correspondenceAccess->canView($sourceCorrespondence, $user)) {
+            $sourceCorrespondence = null;
+        }
+        $projectDetails->setAttribute('source_correspondence', $sourceCorrespondence?->only(['id', 'subject', 'letter_number', 'type']));
 
         // Project visibility does not grant blanket access to every task in it.
         // Apply the task policy before serializing any project-level or section-level task list.
