@@ -1339,3 +1339,9 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - Initial stage-1 implementation exists on `development`: four employee request actions, mandatory feedback, separate manager approval/rejection, manager cartable visibility, and UI controls.
 - Employee requests do not route or create a project by themselves. Manager rejection returns to the same employee; manager approval performs the requested referral/return or moves to `project_request_approved`.
 - Two focused HTTP regression tests have been added; local test and frontend build validation are pending. Stage 2 project creation and response Section/Task provisioning are not implemented yet.
+
+
+## 2026-11-01 — Owner validation confirmation
+
+- The project owner confirmed the Project Management request/review focused tests passed and frontend build succeeded. Stage 1 is accepted.
+- Stage 2 remains unimplemented: create a project from an approved source incoming letter, choose the response department in the creation form (organization default is only a prefill and can be changed), and link the new project to the source letter. Stage 3 response Section/task and Stage 4 bidirectional links remain pending.
