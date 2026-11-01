@@ -661,3 +661,6 @@ Before making the first code change in a new conversation:
 - Workflow request: manager selects an active `WorkflowDefinition`; existing `WorkflowService::start` creates the real `WorkflowInstance` and step tasks. The instance ID is attached to the correspondence and visible step tasks are linked from its detail page.
 - Manager task instruction reuses the existing Tasks form in the organization's general project and matching department Section; backend validates context and attaches the created task to the correspondence.
 - Focused Feature tests were added for general request/rejection, delegated letter draft, and workflow instance creation. They have **not** been run; no build validation has been run. The task-instruction linkage test, full regression, SQL Server and build validation remain pending.
+
+
+- Workflow task navigation is bidirectional: correspondence detail lists only workflow tasks the current user can view; task detail resolves linked correspondence through WorkflowInstance and filters each letter with `CorrespondenceAccessService::canView`.
