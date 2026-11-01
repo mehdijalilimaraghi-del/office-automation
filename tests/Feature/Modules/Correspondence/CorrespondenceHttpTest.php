@@ -15,8 +15,12 @@ use App\Core\Settings\Services\SystemSettingsService;
 use App\Models\User;
 use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Models\CorrespondenceAction;
+use App\Modules\Correspondence\Services\CorrespondenceAccessService;
 use App\Modules\Workflows\Models\WorkflowDefinition;
 use App\Modules\Workflows\Models\WorkflowStep;
+use App\Modules\Workflows\Models\WorkflowInstanceStep;
+use App\Modules\Workflows\Models\WorkflowInstance;
+use App\Modules\Tasks\Models\Task;
 use App\Modules\Documents\Models\Document;
 use App\Modules\Documents\Services\DocumentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -2190,6 +2194,82 @@ class CorrespondenceHttpTest extends TestCase
             'workflow_instance_id' => $letter->workflow_instance_id,
             'status' => 'active',
         ]);
+    }
+
+
+
+    public function test_confidential_correspondence_is_visible_to_assignees_of_linked_workflow_tasks(): void
+    {
+        $manager = $this->userWithPermission('correspondence.view');
+        $assignee = $this->userWithPermission('correspondence.view');
+        $unrelated = $this->userWithPermission('correspondence.view');
+        $department = Department::query()->create([
+            'name' => 'واحد محرمانگی گردش '.Str::upper(Str::random(5)),
+            'code' => 'SC-'.Str::upper(Str::random(6)),
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+        $definition = WorkflowDefinition::query()->create([
+            'name' => 'فرآیند محرمانگی',
+            'code' => 'SC-'.Str::upper(Str::random(8)),
+            'created_by' => $manager->id,
+            'is_active' => true,
+        ]);
+        $step = WorkflowStep::query()->create([
+            'workflow_definition_id' => $definition->id,
+            'step_order' => 1,
+            'name' => 'اقدام محرمانه',
+            'task_title' => 'اقدام روی نامه محرمانه',
+            'actor_type' => 'specific_user',
+            'actor_id' => $assignee->id,
+            'department_id' => $department->id,
+            'review_required' => true,
+            'priority' => 'normal',
+            'is_active' => true,
+        ]);
+        $instance = WorkflowInstance::query()->create([
+            'workflow_definition_id' => $definition->id,
+            'initiated_by' => $manager->id,
+            'department_id' => $department->id,
+            'status' => 'running',
+            'started_at' => now(),
+        ]);
+        $task = Task::query()->create([
+            'department_id' => $department->id,
+            'title' => 'اقدام روی نامه محرمانه',
+            'status' => 'todo',
+            'priority' => 'normal',
+            'review_required' => true,
+            'review_status' => 'not_started',
+            'assignee_id' => $assignee->id,
+            'created_by' => $manager->id,
+            'is_active' => true,
+        ]);
+        WorkflowInstanceStep::query()->create([
+            'workflow_instance_id' => $instance->id,
+            'workflow_step_id' => $step->id,
+            'task_id' => $task->id,
+            'status' => 'active',
+            'started_at' => now(),
+        ]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'classification' => Correspondence::CLASSIFICATION_CONFIDENTIAL,
+            'subject' => 'نامه محرمانه مرتبط با گردش کار',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'workflow_started',
+            'workflow_instance_id' => $instance->id,
+            'created_by' => $manager->id,
+            'registered_by' => $manager->id,
+        ]);
+
+        $access = app(CorrespondenceAccessService::class);
+        $this->assertTrue($access->canView($letter, $assignee));
+        $this->assertFalse($access->canView($letter, $unrelated));
+        $this->assertSame(1, $access->visibleToQuery(Correspondence::query(), $assignee)
+            ->whereKey($letter->id)->count());
+        $this->assertSame(0, $access->visibleToQuery(Correspondence::query(), $unrelated)
+            ->whereKey($letter->id)->count());
     }
 
 
