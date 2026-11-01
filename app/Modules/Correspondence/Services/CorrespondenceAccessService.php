@@ -111,7 +111,12 @@ class CorrespondenceAccessService
                 $draft->where('status', Correspondence::STATUS_DRAFT);
 
                 if (! $isRegistrar) {
-                    $draft->where('created_by', $user->id);
+                    $draft->where(function (Builder $owner) use ($user): void {
+                        $owner->where('created_by', $user->id)
+                            ->orWhereHas('replyTo', fn (Builder $source) => $source
+                                ->where('workflow_state', 'letter_draft_pending_manager')
+                                ->where('current_user_id', $user->id));
+                    });
                 }
             });
 
@@ -159,7 +164,11 @@ class CorrespondenceAccessService
         }
 
         if ($correspondence->status === Correspondence::STATUS_DRAFT) {
-            return (int) $correspondence->created_by === (int) $user->id;
+            return (int) $correspondence->created_by === (int) $user->id
+                || $correspondence->replyTo()
+                    ->where('workflow_state', 'letter_draft_pending_manager')
+                    ->where('current_user_id', $user->id)
+                    ->exists();
         }
 
         if ($correspondence->status === Correspondence::STATUS_REGISTERED
