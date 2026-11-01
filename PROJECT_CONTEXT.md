@@ -1390,3 +1390,6 @@ Incoming letter numbers are captured from the original document, never auto-gene
 
 
 - Feature tests now cover correspondence-linked general task creation, general employee requests/rejection, delegated letter draft/final registration, workflow start/completion, and confidential workflow-task access. Tests have not been run; build and SQL Server validation remain pending.
+
+
+- Department managers can see the shared general project and their department Section in the existing task form, including with Project-scoped `tasks.create`. Integration test added, not run.
