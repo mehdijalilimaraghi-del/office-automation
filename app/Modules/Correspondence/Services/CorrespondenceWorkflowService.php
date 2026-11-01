@@ -573,6 +573,8 @@ class CorrespondenceWorkflowService
             $managerId = $departmentId === null ? null : Department::query()->whereKey($departmentId)->value('manager_id');
 
             if ($draft->id === $letter->id || (int) $draft->reply_to_id !== (int) $letter->id
+                || (int) $draft->created_by !== (int) $actor->id
+                || $draft->status !== Correspondence::STATUS_DRAFT
                 || $managerId === null || (int) $letter->current_user_id !== (int) $actor->id) {
                 abort(403, 'پیش‌نویس باید از مسیر درخواست همین نامه و توسط مسئول فعلی ایجاد شود.');
             }
@@ -621,7 +623,13 @@ class CorrespondenceWorkflowService
 
             if ($letter->reply_to_id !== null) {
                 $source = Correspondence::query()->whereKey($letter->reply_to_id)->lockForUpdate()->first();
-                if ($source !== null && $source->workflow_state === 'letter_draft_pending_manager') {
+                $requestedDraftAction = $source?->actions()
+                    ->where('action_type', CorrespondenceAction::REQUESTED_LETTER_DRAFT_CREATED)
+                    ->latest('id')
+                    ->first();
+                $isRequestedDraft = $requestedDraftAction !== null
+                    && (int) ($requestedDraftAction->metadata['draft_correspondence_id'] ?? 0) === (int) $letter->id;
+                if ($source !== null && $source->workflow_state === 'letter_draft_pending_manager' && $isRequestedDraft) {
                     $this->record(
                         $source,
                         $actor,
