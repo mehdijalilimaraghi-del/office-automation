@@ -250,6 +250,8 @@ class CorrespondenceController extends Controller
             && (int) Department::query()->whereKey($currentDepartmentId)->value('manager_id') === (int) $request->user()->id;
         if ($isCurrentDepartmentManager
             && $request->user()->hasPermission('tasks.create')
+            && $request->user()->hasPermission('tasks.view')
+            && ($correspondence->current_user_id === null || (int) $correspondence->current_user_id === (int) $request->user()->id)
             && $correspondence->status === Correspondence::STATUS_REGISTERED
             && in_array($correspondence->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)
             && $correspondence->workflow_state === 'in_progress'
