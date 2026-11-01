@@ -391,6 +391,9 @@ class CorrespondenceController extends Controller
             'requestedLetterCreateUrl' => $requestedLetterCreateUrl,
             'workflowDefinitions' => WorkflowDefinition::query()->where('is_active', true)
                 ->whereHas('steps', fn ($steps) => $steps->where('is_active', true))
+                ->whereDoesntHave('steps', fn ($steps) => $steps
+                    ->where('is_active', true)
+                    ->whereNotIn('actor_type', ['workflow_initiator', 'specific_user', 'department_manager']))
                 ->orderBy('name')->get(['id', 'name']),
             'workflowInstance' => $correspondence->workflowInstance === null ? null : [
                 'id' => (int) $correspondence->workflowInstance->id,
