@@ -76,6 +76,7 @@ const props = defineProps<{
     generalRequestType: string | null;
     requestedLetterCreateUrl: string | null;
     canCreateRequestedLetter: boolean;
+    canManagerCreateRequestedLetter: boolean;
     canPrepareRequestedLetterDraft: boolean;
     workflowDefinitions: Array<{ id: number; name: string }>;
     workflowInstance: WorkflowInstanceView | null;
@@ -385,7 +386,7 @@ function registerCorrespondence(): void {
                                 <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_none'" value="manager_refer">ارجاع نامه</option>
                                 <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_project'" value="manager_refer_project_management">ارجاع به مدیریت پروژه‌ها</option>
                                 <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_workflow' && workflowDefinitions.length" value="manager_start_requested_workflow">ثبت گردش کار</option>
-                                <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_letter'" value="manager_create_requested_letter">مدیر خودش نامه را ایجاد کند</option>
+                                <option v-if="canReviewGeneralRequest && canManagerCreateRequestedLetter && generalRequestType === 'employee_request_letter'" value="manager_create_requested_letter">مدیر خودش نامه را ایجاد کند</option>
                                 <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_letter'" value="manager_assign_letter_draft">ارجاع به کارمند برای تهیه پیش‌نویس</option>
                                 <option v-if="canReviewGeneralRequest" value="manager_reject_employee_request">رد درخواست و بازگشت به کارمند</option>
                                 <option v-if="!canReviewProjectRequest && !canReviewGeneralRequest && correspondence.status === 'registered' && correspondence.type !== 'outgoing'" value="manager_refer">ارجاع به</option>
@@ -430,7 +431,8 @@ function registerCorrespondence(): void {
                                 <option value="resubmit_to_secretariat">ارسال مجدد به دبیرخانه</option>
                             </select>
                         </div>
-<div v-if="canReviewGeneralRequest && actionForm.action_type === 'manager_start_requested_workflow'" class="sm:col-span-2">
+<p v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_workflow' && !workflowDefinitions.length" class="sm:col-span-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">هیچ گردش کار فعالی تعریف نشده است؛ ابتدا باید یک Workflow فعال در سامانه تعریف شود.</p>
+                        <div v-if="canReviewGeneralRequest && actionForm.action_type === 'manager_start_requested_workflow'" class="sm:col-span-2">
                             <label class="mb-1 block text-sm font-medium text-slate-700">گردش کار فعال *</label>
                             <select v-model="actionForm.workflow_definition_id" required class="w-full rounded-xl border-slate-300 text-sm">
                                 <option value="">انتخاب گردش کار</option>
