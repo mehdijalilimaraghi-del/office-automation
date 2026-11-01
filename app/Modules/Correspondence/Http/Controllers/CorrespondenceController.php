@@ -389,7 +389,9 @@ class CorrespondenceController extends Controller
             'canReviewGeneralRequest' => $canReviewGeneralRequest,
             'generalRequestType' => $latestGeneralRequest?->action_type,
             'requestedLetterCreateUrl' => $requestedLetterCreateUrl,
-            'workflowDefinitions' => WorkflowDefinition::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'workflowDefinitions' => WorkflowDefinition::query()->where('is_active', true)
+                ->whereHas('steps', fn ($steps) => $steps->where('is_active', true))
+                ->orderBy('name')->get(['id', 'name']),
             'workflowInstance' => $correspondence->workflowInstance === null ? null : [
                 'id' => (int) $correspondence->workflowInstance->id,
                 'status' => $correspondence->workflowInstance->status,
