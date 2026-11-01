@@ -643,3 +643,12 @@ Before making the first code change in a new conversation:
 - مرحله ۴ از نظر پیاده‌سازی نمایش ارتباط نامه مبدأ در جزئیات پروژه و مکاتبات مرتبط در جزئیات تسک، و انتقال ارتباط پروژه/نامه مبدأ به نامه پاسخ، پیاده‌سازی شده است؛ **اعتبارسنجی اختصاصی روابط و محرمانگی هنوز در انتظار است**.
 - مراحل ۲ و ۳ نیز همچنان به تست مسیر ایجاد پروژه، انتخاب واحد پاسخ‌گو، ساخت Section/Task و اعتبارسنجی SQL Server نیاز دارند. مرحله ۵ (سناریوی انتها‌به‌انتها و پذیرش دستی) باز است.
 - شاخه `development`؛ `master` بدون تغییر.
+
+
+## 2026-11-01 — General correspondence workflow implementation checkpoint
+
+- Read `CORRESPONDENCE_GENERAL_WORKFLOW.md` before changing ordinary incoming correspondence; it is distinct from the Project Management department's project-request workflow.
+- Initial general employee requests now exist for no request, letter, workflow and project. Feedback is mandatory; the letter returns to the current department manager in `general_review_pending_manager`. Manager rejection returns it to the same employee with a required note. Project requests can be referred by the manager to the configured active Project Management department.
+- Existing task creation is reused: correspondence detail opens `tasks.index` with the general project, matching department Section and correspondence context preselected. Task store validates the manager/current department/default project/Section and links the created task to the source letter. No parallel task feature.
+- Still incomplete: manager handling for letter requests (manager creates a letter or delegates draft to the same employee), real workflow-request execution, and full acceptance tests. The task-link feature has not yet been test-run. Do not claim build/tests passed.
+- Keep `master` unchanged.
