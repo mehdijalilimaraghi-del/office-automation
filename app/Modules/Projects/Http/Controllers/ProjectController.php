@@ -204,7 +204,7 @@ class ProjectController extends Controller
         $canUploadProjectDocuments = $isProjectOwner || $hasOrganizationProjectScope;
         $projectDetails = $this->projectService->show($project);
 
-        $sourceCorrespondence = $project->sourceCorrespondence()->first();
+        $sourceCorrespondence = $project->sourceCorrespondence()->where('type', Correspondence::TYPE_INCOMING)->first();
         if ($sourceCorrespondence !== null && ! $correspondenceAccess->canView($sourceCorrespondence, $user)) {
             $sourceCorrespondence = null;
         }
