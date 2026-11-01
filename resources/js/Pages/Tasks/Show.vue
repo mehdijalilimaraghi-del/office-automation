@@ -117,8 +117,11 @@ interface TaskDocument {
     } | null;
 }
 
+interface LinkedCorrespondence { id: number; subject: string; letter_number: string | null; type: string; }
+
 const props = defineProps<{
     task: Task;
+    linkedCorrespondences: LinkedCorrespondence[];
     timeline: TimelineItem[];
     currentUserId: number;
     canCreateCorrespondence: boolean;
@@ -745,6 +748,17 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                         <div class="mt-5 border-t pt-4">
                             <p class="text-xs text-muted-foreground">توضیحات</p>
                             <p class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-700">{{ task.description || 'توضیحی برای این دستورکار ثبت نشده است.' }}</p>
+                        </div>
+                    </section>
+
+                    <section v-if="linkedCorrespondences.length" class="rounded-xl border border-sky-200 bg-sky-50/50 p-5 shadow-sm">
+                        <h3 class="font-semibold text-slate-900">مکاتبات مرتبط</h3>
+                        <div class="mt-3 space-y-3">
+                            <div v-for="letter in linkedCorrespondences" :key="letter.id" class="border-t border-sky-100 pt-3 first:border-0 first:pt-0">
+                                <p class="text-sm font-medium">{{ letter.subject }}</p>
+                                <p class="mt-1 text-xs text-muted-foreground">{{ letter.letter_number ? `شماره ${letter.letter_number}` : 'مکاتبه ثبت‌شده' }}</p>
+                                <Link :href="route('correspondence.show', letter.id)" class="mt-2 inline-flex text-xs font-semibold text-sky-700 hover:underline">مشاهده مکاتبه</Link>
+                            </div>
                         </div>
                     </section>
 
