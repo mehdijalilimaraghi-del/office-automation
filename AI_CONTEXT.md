@@ -677,3 +677,6 @@ Before making the first code change in a new conversation:
 
 
 - Task form options now include the shared general project and matching Sections for department managers with `tasks.create`, including Project-scoped permission assignments. The integration test asserts this option and the resulting task-letter link; it has not been run.
+
+
+- A delegated employee's draft is visible to the source-letter manager while the source is in `letter_draft_pending_manager`, using the explicit reply relationship; ordinary draft privacy remains unchanged for unrelated users. A focused test was added but not run.
