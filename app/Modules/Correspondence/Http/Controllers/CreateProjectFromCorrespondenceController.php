@@ -75,7 +75,7 @@ class CreateProjectFromCorrespondenceController extends Controller
         }
 
         try {
-            $project = DB::transaction(function () use ($data, $actor, $department, $correspondence, $createProject, $createTask): \App\Modules\Projects\Models\Project {
+            $project = DB::transaction(function () use ($data, $actor, $department, $correspondence, $projectManagementDepartmentId, $createProject, $createTask): \App\Modules\Projects\Models\Project {
                 $project = $createProject->execute([
                     'department_id' => null,
                     'name' => $data['name'],
@@ -115,7 +115,7 @@ class CreateProjectFromCorrespondenceController extends Controller
                     'actor_id' => $actor->id,
                     'action_type' => 'project_created',
                     'note' => 'پروژه و تسک پاسخ برای واحد '.$department->name.' ایجاد شد.',
-                    'from_department_id' => $project->department_id,
+                    'from_department_id' => $projectManagementDepartmentId,
                     'to_department_id' => $department->id,
                     'from_user_id' => $actor->id,
                     'to_user_id' => $department->manager_id,
