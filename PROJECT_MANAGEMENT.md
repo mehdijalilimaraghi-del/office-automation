@@ -49,3 +49,10 @@ The authoritative workflow contract is `CORRESPONDENCE_PROJECT_WORKFLOW.md`.
 - The response Task is linked to both the new Project and the original incoming Correspondence. A response Correspondence created from that Task must preserve all three links: Task, Project and source Correspondence.
 - Use existing Projects, Tasks and Correspondence modules and their authorization/workflow contracts; do not introduce parallel task or workflow structures.
 - Implementation status is tracked in `CORRESPONDENCE_PROJECT_WORKFLOW.md`; documentation is complete, while the project-request workflow and project/response-task integration are not yet implemented.
+
+
+## Project-request review workflow checkpoint — 2026-11-01
+
+- The first workflow slice is implemented on `development`: Project Management employees submit one of four requests with mandatory feedback; the manager separately approves or rejects the employee request.
+- Employee request actions never route the letter or create a project by themselves. Manager rejection returns the letter to the same employee. Manager approval applies the requested referral/return or sets `project_request_approved` for the separate project-creation stage.
+- The implementation and test checkpoint is tracked in `CORRESPONDENCE_PROJECT_WORKFLOW.md`. Focused HTTP tests and frontend build still require local validation. Project creation with response-department selection and response Section/Task provisioning remain pending.
