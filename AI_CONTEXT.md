@@ -634,3 +634,12 @@ Before making the first code change in a new conversation:
 - The transaction creates a project, exactly one response Section, and a response task using existing CreateProjectAction and CreateTaskAction; the source letter receives project_id and task_id, and a project_created history action is recorded.
 - Explicit response department selection is in the correspondence detail UI. Configurable organization default is wired through Organization Settings and pre-fills the form, while remaining editable. No local migration/test/build validation has been performed for this slice; do not mark stages 2/3 accepted.
 - Remaining: configurable default and prefill; show correspondence/project/task links from both project and task details; show correspondence/project/task links from both project and task details; add focused authorization/rollback/SQL Server tests.
+
+
+## 2026-11-01 — تأیید build و تست مکاتبات برای مرحله ۴
+
+- مالک پروژه اعلام کرد پس از دریافت آخرین تغییرات مرحله ۴، دستور `php artisan test --filter=CorrespondenceHttpTest` پاس شده و `npm run build` نیز موفق بوده است.
+- این تأیید، صحت تست‌های موجود مکاتبات و build فرانت‌اند را پوشش می‌دهد؛ اما به معنی اجرای تست اختصاصی کنترل محرمانگی در صفحات جزئیات پروژه/تسک، تست مسیر ایجاد پروژه یا اعتبارسنجی migration روی SQL Server نیست.
+- مرحله ۴ از نظر پیاده‌سازی نمایش ارتباط نامه مبدأ در جزئیات پروژه و مکاتبات مرتبط در جزئیات تسک، و انتقال ارتباط پروژه/نامه مبدأ به نامه پاسخ، پیاده‌سازی شده است؛ **اعتبارسنجی اختصاصی روابط و محرمانگی هنوز در انتظار است**.
+- مراحل ۲ و ۳ نیز همچنان به تست مسیر ایجاد پروژه، انتخاب واحد پاسخ‌گو، ساخت Section/Task و اعتبارسنجی SQL Server نیاز دارند. مرحله ۵ (سناریوی انتها‌به‌انتها و پذیرش دستی) باز است.
+- شاخه `development`؛ `master` بدون تغییر.
