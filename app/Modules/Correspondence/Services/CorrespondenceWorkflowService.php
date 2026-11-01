@@ -10,6 +10,7 @@ use App\Core\Settings\Services\OrganizationDepartmentRoleService;
 use App\Models\User;
 use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Models\CorrespondenceAction;
+use App\Modules\Tasks\Models\Task;
 use App\Modules\Notifications\Services\NotificationService;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -334,6 +335,58 @@ class CorrespondenceWorkflowService
             }
 
             throw new InvalidArgumentException('اقدام انتخاب‌شده پشتیبانی نمی‌شود.');
+        });
+    }
+
+    public function attachTaskInstruction(Correspondence $correspondence, Task $task, User $actor): void
+    {
+        DB::transaction(function () use ($correspondence, $task, $actor): void {
+            $letter = Correspondence::query()->whereKey($correspondence->id)->lockForUpdate()->firstOrFail();
+            $task->loadMissing(['project', 'section']);
+
+            $departmentId = $letter->current_department_id === null ? null : (int) $letter->current_department_id;
+            $isManager = $departmentId !== null
+                && (int) Department::query()->whereKey($departmentId)->value('manager_id') === (int) $actor->id;
+
+            if (! $isManager
+                || $letter->status !== Correspondence::STATUS_REGISTERED
+                || ! in_array($letter->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)
+                || $letter->workflow_state !== 'in_progress'
+                || ($letter->current_user_id !== null && (int) $letter->current_user_id !== (int) $actor->id)) {
+                abort(403, 'فقط مدیر مسئول نامه در مرحله بررسی اولیه می‌تواند دستورکار مرتبط ایجاد کند.');
+            }
+
+            if ($letter->task_id !== null) {
+                throw new InvalidArgumentException('برای این نامه قبلاً دستورکار ثبت شده است.');
+            }
+
+            if ((int) $task->created_by !== (int) $actor->id
+                || ! $task->project?->is_system_default
+                || $task->section === null
+                || (int) $task->section->department_id !== $departmentId
+                || (int) $task->department_id !== $departmentId
+                || (int) $task->project_id !== (int) $task->section->project_id
+                || $task->assignee_id === null) {
+                throw new InvalidArgumentException('دستورکار باید در پروژه عمومی و بخش واحد مسئول همین نامه ایجاد شده و دقیقاً یک مسئول داشته باشد.');
+            }
+
+            $this->record(
+                $letter,
+                $actor,
+                'manager_create_task',
+                'ایجاد دستورکار عمومی مرتبط با نامه',
+                $departmentId,
+                $departmentId,
+                $actor->id,
+                (int) $task->assignee_id,
+                [
+                    'task_id' => (int) $task->id,
+                    'project_id' => (int) $task->project_id,
+                    'section_id' => (int) $task->section_id,
+                ],
+            );
+
+            $letter->forceFill(['task_id' => (int) $task->id])->save();
         });
     }
 
