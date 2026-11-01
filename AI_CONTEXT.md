@@ -664,3 +664,7 @@ Before making the first code change in a new conversation:
 
 
 - Workflow task navigation is bidirectional: correspondence detail lists only workflow tasks the current user can view; task detail resolves linked correspondence through WorkflowInstance and filters each letter with `CorrespondenceAccessService::canView`.
+
+
+- Workflow completion updates linked source correspondence to `workflow_completed`. Confidential correspondence visibility includes the creator/current assignee of directly linked tasks and the assignees/creators of tasks belonging to its WorkflowInstance; both direct checks and visibility queries enforce this.
+- Feature coverage was added for confidential workflow-task access and completion propagation; tests have not been run.
