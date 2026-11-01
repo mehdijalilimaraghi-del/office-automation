@@ -626,3 +626,11 @@ Before making the first code change in a new conversation:
 
 - Owner confirmed focused tests pass and frontend build succeeds for Stage 1; treat it as accepted.
 - Next: implement Stage 2 project creation from `project_request_approved`, editable response-department selection with configurable organization default, and source-letter linkage. Then Stage 3 provisions exactly one response Section and response task for that department; Stage 4 adds bidirectional detail navigation.
+
+
+## 2026-11-01 — Stage 2/3 implementation checkpoint
+
+- Initial code path exists for creating a project from a registered incoming correspondence in project_request_approved. It is restricted to the Project Management department manager with projects.create.
+- The transaction creates a project, exactly one response Section, and a response task using existing CreateProjectAction and CreateTaskAction; the source letter receives project_id and task_id, and a project_created history action is recorded.
+- Explicit response department selection is in the correspondence detail UI. Configurable organization default is still missing. No local migration/test/build validation has been performed for this slice; do not mark stages 2/3 accepted.
+- Remaining: configurable default and prefill; show correspondence/project/task links from both project and task details; carry project and source letter links onto reply letters; add focused authorization/rollback/SQL Server tests.
