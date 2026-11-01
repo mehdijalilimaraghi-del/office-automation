@@ -70,6 +70,8 @@ const props = defineProps<{
     canAddCopies: boolean;
     canReturnToManager: boolean;
     canManageWorkflow: boolean;
+    canProjectEmployeeReview: boolean;
+    canReviewProjectRequest: boolean;
     canSecretariatReturn: boolean;
     canResubmitToSecretariat: boolean;
 }>();
@@ -88,6 +90,12 @@ const actionLabels: Record<string, string> = {
     request_task: 'درخواست شروع تسک',
     request_project: 'درخواست شروع پروژه',
     request_letter: 'درخواست تهیه نامه جدید',
+    pm_request_refer: 'درخواست ارجاع به واحد دیگر',
+    pm_request_project: 'درخواست پروژه',
+    pm_request_reject: 'رد درخواست',
+    pm_request_return: 'برگشت جهت اصلاح',
+    pm_manager_approve_request: 'تأیید درخواست کارمند',
+    pm_manager_reject_request: 'عدم تأیید درخواست کارمند و بازگشت برای بررسی مجدد',
     confirm_result: 'تأیید نتیجه و خاتمه گردش',
     secretariat_initial_referral: 'ارجاع اولیه دبیرخانه',
     copy_added: 'ثبت رونوشت جهت اطلاع',
@@ -106,7 +114,7 @@ function submitCopies(): void {
 }
 
 const actionForm = useForm({
-    action_type: props.canSecretariatReturn ? 'secretariat_return' : props.canResubmitToSecretariat ? 'resubmit_to_secretariat' : props.canManageWorkflow ? 'manager_refer' : 'submit_result',
+    action_type: props.canProjectEmployeeReview ? 'pm_request_project' : props.canReviewProjectRequest ? 'pm_manager_approve_request' : props.canSecretariatReturn ? 'secretariat_return' : props.canResubmitToSecretariat ? 'resubmit_to_secretariat' : props.canManageWorkflow ? 'manager_refer' : 'submit_result',
     note: '',
     target_type: 'department' as 'department' | 'user',
     to_department_id: '' as number | '',
@@ -255,15 +263,26 @@ function registerCorrespondence(): void {
                     <p class="mt-1 text-sm text-slate-600">وضعیت فعلی: {{ workflowStateLabels[correspondence.workflow_state] ?? correspondence.workflow_state }} <span v-if="correspondence.current_department"> · واحد مسئول: {{ correspondence.current_department.name }}</span></p>
                 </div>
                 <div class="space-y-4 p-5">
-                                        <form v-if="canManageWorkflow || canReturnToManager || canSecretariatReturn || canResubmitToSecretariat" class="grid gap-3 rounded-xl border border-slate-200 p-4 sm:grid-cols-2" @submit.prevent="submitWorkflowAction">
+                                        <form v-if="canManageWorkflow || canReturnToManager || canProjectEmployeeReview || canReviewProjectRequest || canSecretariatReturn || canResubmitToSecretariat" class="grid gap-3 rounded-xl border border-slate-200 p-4 sm:grid-cols-2" @submit.prevent="submitWorkflowAction">
                         <div v-if="canManageWorkflow">
                             <label class="mb-1 block text-sm font-medium text-slate-700">اقدام مدیر</label>
                             <select v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
                                 <option v-if="correspondence.status === 'draft' && correspondence.workflow_state === 'awaiting_manager_approval'" value="manager_approve">تأیید برای ثبت نهایی</option>
-                                <option v-if="correspondence.status === 'registered' && correspondence.type !== 'outgoing'" value="manager_refer">ارجاع به</option>
+                                <option v-if="canReviewProjectRequest" value="pm_manager_approve_request">تأیید درخواست کارمند</option>
+                                <option v-if="canReviewProjectRequest" value="pm_manager_reject_request">عدم تأیید و بازگشت به کارمند</option>
+                                <option v-if="!canReviewProjectRequest && correspondence.status === 'registered' && correspondence.type !== 'outgoing'" value="manager_refer">ارجاع به</option>
                                 <option v-if="canSecretariatReturn" value="secretariat_return">برگشت برای اصلاح</option>
                                 <option v-if="canResubmitToSecretariat" value="resubmit_to_secretariat">ارسال مجدد به دبیرخانه</option>
                                 <option v-if="correspondence.workflow_state === 'result_pending_manager' && ['incoming', 'internal'].includes(correspondence.type)" value="confirm_result">تأیید نتیجه و خاتمه گردش</option>
+                            </select>
+                        </div>
+                        <div v-else-if="canProjectEmployeeReview">
+                            <label class="mb-1 block text-sm font-medium text-slate-700">درخواست اقدام کارمند واحد پروژه‌ها</label>
+                            <select v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
+                                <option value="pm_request_refer">درخواست ارجاع به واحد دیگر</option>
+                                <option value="pm_request_project">درخواست پروژه</option>
+                                <option value="pm_request_reject">رد درخواست</option>
+                                <option value="pm_request_return">برگشت جهت اصلاح</option>
                             </select>
                         </div>
                         <div v-else-if="canReturnToManager">
@@ -284,7 +303,13 @@ function registerCorrespondence(): void {
                                 <option value="resubmit_to_secretariat">ارسال مجدد به دبیرخانه</option>
                             </select>
                         </div>
-<template v-if="canManageWorkflow && actionForm.action_type === 'manager_refer'">
+<template v-if="canProjectEmployeeReview && actionForm.action_type === 'pm_request_refer'">
+                            <div class="sm:col-span-2">
+                                <label class="mb-1 block text-sm font-medium text-slate-700">واحد مقصد درخواست ارجاع</label>
+                                <DepartmentTreeSelect v-model="actionForm.to_department_id" :departments="workflowDepartments" placeholder="انتخاب واحد مقصد" :clearable="false" />
+                            </div>
+                        </template>
+                        <template v-if="canManageWorkflow && actionForm.action_type === 'manager_refer'">
                             <div>
                                 <label class="mb-1 block text-sm font-medium text-slate-700">نوع ارجاع</label>
                                 <select v-model="actionForm.target_type" class="w-full rounded-xl border-slate-300 text-sm">
@@ -306,7 +331,7 @@ function registerCorrespondence(): void {
                         </template>
                         <div class="sm:col-span-2">
                             <label class="mb-1 block text-sm font-medium text-slate-700">توضیح / شرح اقدام</label>
-                            <textarea v-model="actionForm.note" rows="3" maxlength="10000" class="w-full rounded-xl border-slate-300 text-sm"  :required="['submit_result', 'confirm_result', 'secretariat_return'].includes(actionForm.action_type)" placeholder="شرح بررسی، نتیجه یا علت برگشت/ارجاع را وارد کنید"></textarea>
+                            <textarea v-model="actionForm.note" rows="3" maxlength="10000" class="w-full rounded-xl border-slate-300 text-sm"   :required="['submit_result', 'confirm_result', 'secretariat_return', 'pm_request_refer', 'pm_request_project', 'pm_request_reject', 'pm_request_return', 'pm_manager_approve_request', 'pm_manager_reject_request'].includes(actionForm.action_type)" placeholder="شرح بررسی، نتیجه یا علت برگشت/ارجاع را وارد کنید"></textarea>
                             <p v-if="page.props.errors?.workflow_action" class="mt-1 text-sm text-rose-700">{{ page.props.errors.workflow_action }}</p>
                         </div>
                         <div class="sm:col-span-2 flex justify-end">
