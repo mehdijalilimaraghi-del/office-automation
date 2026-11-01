@@ -169,8 +169,15 @@ class TaskController extends Controller
             }
         }
 
+        $workflowCorrespondences = $task->workflowInstanceSteps()
+            ->with('instance.correspondences')
+            ->get()
+            ->flatMap(fn ($step) => $step->instance?->correspondences ?? collect());
+
         $linkedCorrespondences = $task->correspondences()
             ->get()
+            ->merge($workflowCorrespondences)
+            ->unique('id')
             ->filter(fn (Correspondence $letter): bool => $correspondenceAccess->canView($letter, $request->user()))
             ->map(fn (Correspondence $letter): array => $letter->only(['id', 'subject', 'letter_number', 'type']))
             ->values();
