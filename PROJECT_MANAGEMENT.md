@@ -37,3 +37,15 @@
 - Task assignees, delegates, and next-activity assignees must be active members of the section's responsible department or that department's active manager.
 - The project detail page no longer presents legacy project members. Existing membership rows are retained for historical compatibility, but are not used to authorize project visibility or task assignment.
 - Project deletion is blocked when task or document history is attached, to avoid cascading loss of operational records.
+
+
+## Correspondence-driven project creation and response task
+
+The authoritative workflow contract is `CORRESPONDENCE_PROJECT_WORKFLOW.md`.
+
+- The four Project Management employee actions are requests with mandatory feedback, not final workflow transitions. The PM manager's decision is a separate step and must be authorized independently.
+- The response department is selected per project during creation. An organization-level default may prefill the field but must remain overridable by an authorized creator.
+- The new project's response Section and response Task belong only to the selected response department. Do not provision an automatic Section or response Task for the origin/requesting department.
+- The response Task is linked to both the new Project and the original incoming Correspondence. A response Correspondence created from that Task must preserve all three links: Task, Project and source Correspondence.
+- Use existing Projects, Tasks and Correspondence modules and their authorization/workflow contracts; do not introduce parallel task or workflow structures.
+- Implementation status is tracked in `CORRESPONDENCE_PROJECT_WORKFLOW.md`; documentation is complete, while the project-request workflow and project/response-task integration are not yet implemented.
