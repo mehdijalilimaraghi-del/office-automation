@@ -131,7 +131,6 @@ class CorrespondenceController extends Controller
                         ->orWhere(function ($department) use ($user): void {
                             $department->whereIn('workflow_state', [
                                 'in_progress',
-                                'project_requested',
                                 'result_pending_manager',
                                 'awaiting_manager_approval',
                             ])->whereHas('currentDepartment', fn ($currentDepartment) => $currentDepartment

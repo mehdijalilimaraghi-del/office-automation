@@ -161,6 +161,7 @@ class TaskController extends Controller
             ]),
             'timeline' => $this->taskService->timeline($task),
             'currentUserId' => (int) $request->user()->id,
+            'canCreateCorrespondence' => $request->user()->hasPermission('correspondence.create'),
             'abilities' => [
                 'refer' => Gate::allows('refer', $task),
                 'comment' => Gate::allows('comment', $task),

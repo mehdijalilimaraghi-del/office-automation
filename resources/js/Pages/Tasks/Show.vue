@@ -121,6 +121,7 @@ const props = defineProps<{
     task: Task;
     timeline: TimelineItem[];
     currentUserId: number;
+    canCreateCorrespondence: boolean;
     abilities: Abilities;
     assigneeOptions: User[];
     externalPartyOptions: ExternalPartyOptions;
@@ -583,7 +584,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                     <p class="mt-1 text-sm text-muted-foreground">مدیریت، پیگیری و ثبت سوابق دستورکار</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <Link v-if="canEditTaskContent" :href="route('correspondence.create', { task_id: task.id })" class="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100">ایجاد نامه جدید</Link>
+                    <Link v-if="canCreateCorrespondence && canEditTaskContent" :href="route('correspondence.create', { task_id: task.id })" class="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100">ایجاد نامه جدید</Link>
                     <button v-if="abilities.submit && !isFinalized && !isReviewLocked && ['todo', 'observed', 'in_progress'].includes(task.status)" type="button" :disabled="reviewForm.processing" class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 disabled:opacity-50" @click="submitForReview">{{ reviewForm.processing ? 'در حال ارسال...' : 'ارسال برای بررسی مدیر' }}</button>
                     <button v-if="abilities.review && task.review_status === 'pending' && task.sub_status === 'manager_review'" type="button" :disabled="reviewForm.processing" class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800 disabled:opacity-50" @click="approveReview">{{ reviewForm.processing ? 'در حال ثبت...' : 'تأیید و تکمیل دستورکار' }}</button>
                     <button v-if="abilities.review && task.review_status === 'pending' && task.sub_status === 'manager_review'" type="button" :disabled="reviewForm.processing" class="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-50" @click="showReturnReviewModal = true">برگشت برای اصلاح</button>

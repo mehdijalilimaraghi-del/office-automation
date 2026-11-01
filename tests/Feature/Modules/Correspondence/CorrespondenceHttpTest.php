@@ -276,7 +276,7 @@ class CorrespondenceHttpTest extends TestCase
                 ->where('correspondences.data', fn ($rows) => collect($rows)->pluck('id')->sort()->values()->all() === collect([$resultPendingManager->id, $awaitingManager->id])->sort()->values()->all()));
     }
 
-    public function test_project_requested_letter_is_actionable_for_current_department_manager(): void
+    public function test_legacy_project_requested_state_is_not_actionable_for_current_department_manager(): void
     {
         $manager = $this->userWithPermission('correspondence.view');
         $creator = $this->userWithPermission('correspondence.view');
@@ -301,8 +301,7 @@ class CorrespondenceHttpTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->where('filters.action_filter', 'needs_action')
-                ->where('correspondences.total', 1)
-                ->where('correspondences.data.0.id', $letter->id));
+                ->where('correspondences.total', 0));
     }
 
     public function test_department_filter_uses_department_module_data_and_never_bypasses_visibility(): void
