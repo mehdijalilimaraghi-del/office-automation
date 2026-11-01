@@ -51,6 +51,13 @@ interface CorrespondenceDetail {
     copies: Array<{ id: number; name: string }>;
 }
 
+interface WorkflowInstanceView {
+    id: number;
+    status: string;
+    definition: { id: number; name: string } | null;
+    steps: Array<{ id: number; status: string; task: { id: number; title: string; status: string; assignee: { id: number; name: string } | null } }>;
+}
+
 interface Attachment {
     id: number;
     title: string;
@@ -70,6 +77,8 @@ const props = defineProps<{
     requestedLetterCreateUrl: string | null;
     canCreateRequestedLetter: boolean;
     canPrepareRequestedLetterDraft: boolean;
+    workflowDefinitions: Array<{ id: number; name: string }>;
+    workflowInstance: WorkflowInstanceView | null;
     canCreateProject: boolean;
     responseDepartments: { id: number; name: string; manager_id: number }[];
     responseDepartmentDefaultId: string | number | null;
@@ -122,6 +131,7 @@ const actionLabels: Record<string, string> = {
     manager_create_requested_letter: 'مدیر: ایجاد نامه در پاسخ به درخواست',
     manager_assign_letter_draft: 'ارجاع برای تهیه پیش‌نویس نامه',
     requested_letter_draft_created: 'ایجاد پیش‌نویس نامه مرتبط',
+    manager_start_requested_workflow: 'شروع گردش کار درخواستی',
 };
 const copyForm = useForm({ department_ids: [] as number[] });
 function toggleCopyDepartment(departmentId: number, checked: boolean): void {
@@ -151,6 +161,7 @@ const actionForm = useForm({
     target_type: 'department' as 'department' | 'user',
     to_department_id: '' as number | '',
     to_user_id: '' as number | '',
+    workflow_definition_id: '' as number | '',
 });
 function submitWorkflowAction(): void {
     actionForm.post(route('correspondence.actions.store', props.correspondence.id), {
@@ -166,7 +177,7 @@ function submitWorkflowAction(): void {
 const typeLabels: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
 const statusLabels: Record<string, string> = { draft: 'پیش‌نویس', registered: 'ثبت‌شده' };
 const workflowStateLabels: Record<string, string> = {
-    draft: 'پیش‌نویس', awaiting_registration: 'در انتظار ثبت نهایی', awaiting_manager_approval: 'در انتظار تأیید مدیر', approved_for_registration: 'تأییدشده برای ثبت نهایی', manager_review: 'در انتظار تصمیم مدیر', project_review_pending_manager: 'در انتظار تصمیم مدیر واحد پروژه‌ها', project_request_approved: 'درخواست پروژه تأیید شده؛ در انتظار ایجاد پروژه', result_pending_manager: 'نتیجه ثبت شده؛ در انتظار تصمیم مدیر', general_review_pending_manager: 'در انتظار بررسی درخواست کارمند توسط مدیر', letter_creation_by_manager: 'در انتظار ایجاد نامه توسط مدیر', letter_draft_pending_employee: 'در انتظار تهیه پیش‌نویس توسط کارمند', letter_draft_pending_manager: 'پیش‌نویس ایجاد شده؛ در انتظار بررسی مدیر', completed_with_result: 'خاتمه‌یافته با نتیجه ثبت‌شده', in_progress: 'در حال گردش', assigned_to_employee: 'ارجاع‌شده به کارمند', awaiting_dispatch: 'در انتظار بررسی دبیرخانه و ارسال', returned_for_correction: 'برگشت برای اصلاح', project_created: 'پروژه و تسک پاسخ ایجاد شده', dispatched: 'ارسال نهایی‌شده',
+    draft: 'پیش‌نویس', awaiting_registration: 'در انتظار ثبت نهایی', awaiting_manager_approval: 'در انتظار تأیید مدیر', approved_for_registration: 'تأییدشده برای ثبت نهایی', manager_review: 'در انتظار تصمیم مدیر', project_review_pending_manager: 'در انتظار تصمیم مدیر واحد پروژه‌ها', project_request_approved: 'درخواست پروژه تأیید شده؛ در انتظار ایجاد پروژه', result_pending_manager: 'نتیجه ثبت شده؛ در انتظار تصمیم مدیر', general_review_pending_manager: 'در انتظار بررسی درخواست کارمند توسط مدیر', letter_creation_by_manager: 'در انتظار ایجاد نامه توسط مدیر', letter_draft_pending_employee: 'در انتظار تهیه پیش‌نویس توسط کارمند', letter_draft_pending_manager: 'پیش‌نویس ایجاد شده؛ در انتظار بررسی مدیر', workflow_started: 'گردش کار مرتبط آغاز شده', completed_with_result: 'خاتمه‌یافته با نتیجه ثبت‌شده', in_progress: 'در حال گردش', assigned_to_employee: 'ارجاع‌شده به کارمند', awaiting_dispatch: 'در انتظار بررسی دبیرخانه و ارسال', returned_for_correction: 'برگشت برای اصلاح', project_created: 'پروژه و تسک پاسخ ایجاد شده', dispatched: 'ارسال نهایی‌شده',
 };
 const formatDate = (value: string | null) => value
     ? new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium' }).format(new Date(value))
@@ -253,6 +264,24 @@ function registerCorrespondence(): void {
                     </div>
                 </form>
                 <p v-if="page.props.errors?.project" class="mt-2 text-sm text-rose-700">{{ page.props.errors?.project }}</p>
+            </section>
+            <section v-if="workflowInstance" class="rounded-2xl border border-slate-200 bg-white p-4">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h2 class="font-bold text-slate-900">گردش کار مرتبط</h2>
+                        <p class="mt-1 text-sm text-slate-600">{{ workflowInstance.definition?.name ?? 'گردش کار' }} · وضعیت: {{ workflowInstance.status }}</p>
+                    </div>
+                    <span class="text-xs text-slate-500">شناسه گردش: #{{ workflowInstance.id }}</span>
+                </div>
+                <div v-if="workflowInstance.steps.length" class="mt-3 space-y-2">
+                    <div v-for="step in workflowInstance.steps" :key="step.id" class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-100 p-3">
+                        <div>
+                            <p class="text-sm font-semibold text-slate-800">{{ step.task.title }}</p>
+                            <p class="mt-1 text-xs text-slate-500">وضعیت: {{ step.task.status }} · مسئول: {{ step.task.assignee?.name ?? 'تعیین‌نشده' }}</p>
+                        </div>
+                        <Link :href="route('tasks.show', step.task.id)" class="text-sm font-semibold text-indigo-700 hover:underline">مشاهده تسک</Link>
+                    </div>
+                </div>
             </section>
             <section v-if="correspondence.project" class="rounded-2xl border border-slate-200 bg-white p-4">
                 <div class="flex flex-wrap items-center justify-between gap-3">
@@ -355,6 +384,7 @@ function registerCorrespondence(): void {
                                 <option v-if="canReviewProjectRequest" value="pm_manager_reject_request">عدم تأیید و بازگشت به کارمند</option>
                                 <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_none'" value="manager_refer">ارجاع نامه</option>
                                 <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_project'" value="manager_refer_project_management">ارجاع به مدیریت پروژه‌ها</option>
+                                <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_workflow' && workflowDefinitions.length" value="manager_start_requested_workflow">ثبت گردش کار</option>
                                 <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_letter'" value="manager_create_requested_letter">مدیر خودش نامه را ایجاد کند</option>
                                 <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_letter'" value="manager_assign_letter_draft">ارجاع به کارمند برای تهیه پیش‌نویس</option>
                                 <option v-if="canReviewGeneralRequest" value="manager_reject_employee_request">رد درخواست و بازگشت به کارمند</option>
@@ -400,7 +430,14 @@ function registerCorrespondence(): void {
                                 <option value="resubmit_to_secretariat">ارسال مجدد به دبیرخانه</option>
                             </select>
                         </div>
-<template v-if="canProjectEmployeeReview && actionForm.action_type === 'pm_request_refer'">
+<div v-if="canReviewGeneralRequest && actionForm.action_type === 'manager_start_requested_workflow'" class="sm:col-span-2">
+                            <label class="mb-1 block text-sm font-medium text-slate-700">گردش کار فعال *</label>
+                            <select v-model="actionForm.workflow_definition_id" required class="w-full rounded-xl border-slate-300 text-sm">
+                                <option value="">انتخاب گردش کار</option>
+                                <option v-for="definition in workflowDefinitions" :key="definition.id" :value="definition.id">{{ definition.name }}</option>
+                            </select>
+                        </div>
+                        <template v-if="canProjectEmployeeReview && actionForm.action_type === 'pm_request_refer'">
                             <div class="sm:col-span-2">
                                 <label class="mb-1 block text-sm font-medium text-slate-700">واحد مقصد درخواست ارجاع</label>
                                 <DepartmentTreeSelect v-model="actionForm.to_department_id" :departments="workflowDepartments" placeholder="انتخاب واحد مقصد" :clearable="false" />
@@ -428,7 +465,7 @@ function registerCorrespondence(): void {
                         </template>
                         <div class="sm:col-span-2">
                             <label class="mb-1 block text-sm font-medium text-slate-700">توضیح / شرح اقدام</label>
-                            <textarea v-model="actionForm.note" rows="3" maxlength="10000" class="w-full rounded-xl border-slate-300 text-sm"   :required="['submit_result', 'confirm_result', 'secretariat_return', 'pm_request_refer', 'pm_request_project', 'pm_request_reject', 'pm_request_return', 'pm_manager_approve_request', 'pm_manager_reject_request', 'employee_request_none', 'employee_request_letter', 'employee_request_workflow', 'employee_request_project', 'manager_reject_employee_request', 'manager_refer_project_management', 'manager_create_requested_letter', 'manager_assign_letter_draft'].includes(actionForm.action_type)" placeholder="شرح بررسی، نتیجه یا علت برگشت/ارجاع را وارد کنید"></textarea>
+                            <textarea v-model="actionForm.note" rows="3" maxlength="10000" class="w-full rounded-xl border-slate-300 text-sm"   :required="['submit_result', 'confirm_result', 'secretariat_return', 'pm_request_refer', 'pm_request_project', 'pm_request_reject', 'pm_request_return', 'pm_manager_approve_request', 'pm_manager_reject_request', 'employee_request_none', 'employee_request_letter', 'employee_request_workflow', 'employee_request_project', 'manager_reject_employee_request', 'manager_refer_project_management', 'manager_create_requested_letter', 'manager_assign_letter_draft', 'manager_start_requested_workflow'].includes(actionForm.action_type)" placeholder="شرح بررسی، نتیجه یا علت برگشت/ارجاع را وارد کنید"></textarea>
                             <p v-if="page.props.errors?.workflow_action" class="mt-1 text-sm text-rose-700">{{ page.props.errors.workflow_action }}</p>
                         </div>
                         <div class="sm:col-span-2 flex justify-end">
