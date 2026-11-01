@@ -73,6 +73,7 @@ const props = defineProps<{
     taskInstructionUrl: string | null;
     canSubmitGeneralRequest: boolean;
     canReviewGeneralRequest: boolean;
+    canRecallReferral: boolean;
     generalRequestType: string | null;
     requestedLetterCreateUrl: string | null;
     canCreateRequestedLetter: boolean;
@@ -107,6 +108,7 @@ const actionLabels: Record<string, string> = {
     submit_result: 'ثبت نتیجه بررسی و ارسال به مدیر',
     manager_approve: 'تأیید مدیر برای ثبت نهایی',
     manager_refer: 'ارجاع',
+    manager_recall_referral: 'پس گرفتن ارجاع',
     secretariat_return: 'برگشت برای اصلاح توسط دبیرخانه',
     resubmit_to_secretariat: 'ارسال مجدد به دبیرخانه',
     dispatched: 'ثبت ارسال نهایی',
@@ -124,6 +126,7 @@ const actionLabels: Record<string, string> = {
     copy_added: 'ثبت رونوشت جهت اطلاع',
     project_created: 'ایجاد پروژه و تسک پاسخ',
     employee_request_none: 'درخواست کارمند: بدون درخواست',
+    employee_request_task: 'درخواست کارمند: ایجاد دستورکار',
     employee_request_letter: 'درخواست کارمند: ثبت نامه',
     employee_request_workflow: 'درخواست کارمند: ثبت گردش کار',
     employee_request_project: 'درخواست کارمند: ایجاد پروژه',
@@ -159,7 +162,7 @@ function createResponseProject(): void {
 }
 
 const actionForm = useForm({
-    action_type: props.canSubmitGeneralRequest ? 'employee_request_none' : props.canReviewGeneralRequest ? (props.generalRequestType === 'employee_request_none' ? 'manager_refer' : props.generalRequestType === 'employee_request_project' ? 'manager_refer_project_management' : props.generalRequestType === 'employee_request_workflow' && props.workflowDefinitions.length ? 'manager_start_requested_workflow' : props.generalRequestType === 'employee_request_letter' && props.canManagerCreateRequestedLetter ? 'manager_create_requested_letter' : props.generalRequestType === 'employee_request_letter' && props.canDelegateLetterDraft ? 'manager_assign_letter_draft' : 'manager_reject_employee_request') : props.canProjectEmployeeReview ? 'pm_request_project' : props.canReviewProjectRequest ? 'pm_manager_approve_request' : props.canSecretariatReturn ? 'secretariat_return' : props.canResubmitToSecretariat ? 'resubmit_to_secretariat' : props.canManageWorkflow ? 'manager_refer' : 'submit_result',
+    action_type: props.canSubmitGeneralRequest ? 'employee_request_none' : props.canReviewGeneralRequest ? (props.generalRequestType === 'employee_request_none' ? 'manager_refer' : props.generalRequestType === 'employee_request_task' ? 'manager_create_task' : props.generalRequestType === 'employee_request_project' ? 'manager_refer_project_management' : props.generalRequestType === 'employee_request_workflow' && props.workflowDefinitions.length ? 'manager_start_requested_workflow' : props.generalRequestType === 'employee_request_letter' && props.canManagerCreateRequestedLetter ? 'manager_create_requested_letter' : props.generalRequestType === 'employee_request_letter' && props.canDelegateLetterDraft ? 'manager_assign_letter_draft' : 'manager_reject_employee_request') : props.canRecallReferral ? 'manager_recall_referral' : props.canProjectEmployeeReview ? 'pm_request_project' : props.canReviewProjectRequest ? 'pm_manager_approve_request' : props.canSecretariatReturn ? 'secretariat_return' : props.canResubmitToSecretariat ? 'resubmit_to_secretariat' : props.canManageWorkflow ? 'manager_refer' : 'submit_result',
     note: '',
     target_type: 'department' as 'department' | 'user',
     to_department_id: '' as number | '',
@@ -386,6 +389,8 @@ function registerCorrespondence(): void {
                                 <option v-if="canReviewProjectRequest" value="pm_manager_approve_request">تأیید درخواست کارمند</option>
                                 <option v-if="canReviewProjectRequest" value="pm_manager_reject_request">عدم تأیید و بازگشت به کارمند</option>
                                 <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_none'" value="manager_refer">ارجاع نامه</option>
+                                <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_task'" value="manager_create_task">ایجاد دستورکار در پروژه عمومی</option>
+                                <option v-if="canRecallReferral" value="manager_recall_referral">پس گرفتن ارجاع از کارمند</option>
                                 <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_project'" value="manager_refer_project_management">ارجاع به مدیریت پروژه‌ها</option>
                                 <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_workflow' && workflowDefinitions.length" value="manager_start_requested_workflow">ثبت گردش کار</option>
                                 <option v-if="canReviewGeneralRequest && canManagerCreateRequestedLetter && generalRequestType === 'employee_request_letter'" value="manager_create_requested_letter">مدیر خودش نامه را ایجاد کند</option>
@@ -401,6 +406,7 @@ function registerCorrespondence(): void {
                             <label class="mb-1 block text-sm font-medium text-slate-700">نوع درخواست کارمند</label>
                             <select v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
                                 <option value="employee_request_none">بدون درخواست</option>
+                                <option value="employee_request_task">درخواست ایجاد دستورکار</option>
                                 <option value="employee_request_letter">درخواست ثبت نامه</option>
                                 <option value="employee_request_workflow">درخواست ثبت گردش کار</option>
                                 <option value="employee_request_project">درخواست پروژه</option>
@@ -469,7 +475,7 @@ function registerCorrespondence(): void {
                         </template>
                         <div class="sm:col-span-2">
                             <label class="mb-1 block text-sm font-medium text-slate-700">توضیح / شرح اقدام</label>
-                            <textarea v-model="actionForm.note" rows="3" maxlength="10000" class="w-full rounded-xl border-slate-300 text-sm"   :required="['submit_result', 'confirm_result', 'secretariat_return', 'pm_request_refer', 'pm_request_project', 'pm_request_reject', 'pm_request_return', 'pm_manager_approve_request', 'pm_manager_reject_request', 'employee_request_none', 'employee_request_letter', 'employee_request_workflow', 'employee_request_project', 'manager_reject_employee_request', 'manager_refer_project_management', 'manager_create_requested_letter', 'manager_assign_letter_draft', 'manager_start_requested_workflow'].includes(actionForm.action_type)" placeholder="شرح بررسی، نتیجه یا علت برگشت/ارجاع را وارد کنید"></textarea>
+                            <textarea v-model="actionForm.note" rows="3" maxlength="10000" class="w-full rounded-xl border-slate-300 text-sm"   :required="['submit_result', 'confirm_result', 'secretariat_return', 'pm_request_refer', 'pm_request_project', 'pm_request_reject', 'pm_request_return', 'pm_manager_approve_request', 'pm_manager_reject_request', 'employee_request_none', 'employee_request_task', 'employee_request_letter', 'employee_request_workflow', 'employee_request_project', 'manager_reject_employee_request', 'manager_create_task', 'manager_refer_project_management', 'manager_create_requested_letter', 'manager_assign_letter_draft', 'manager_start_requested_workflow'].includes(actionForm.action_type)" placeholder="شرح بررسی، نتیجه یا علت برگشت/ارجاع را وارد کنید"></textarea>
                             <p v-if="page.props.errors?.workflow_action" class="mt-1 text-sm text-rose-700">{{ page.props.errors.workflow_action }}</p>
                         </div>
                         <div class="sm:col-span-2 flex justify-end">
