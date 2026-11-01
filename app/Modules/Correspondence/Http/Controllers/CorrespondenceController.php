@@ -455,8 +455,15 @@ class CorrespondenceController extends Controller
             $createdDepartment = $createdDepartments->first();
         }
 
+        $taskId = $request->integer('task_id') ?: null;
+        if ($taskId !== null) {
+            $task = Task::query()->findOrFail($taskId);
+            abort_unless($request->user()->can('view', $task), 403);
+        }
+
         return Inertia::render('Correspondence/Create', [
             'isEditing' => false,
+            'taskId' => $taskId,
             'correspondence' => null,
             'correspondenceFontFamily' => $settings->get(['correspondence.composition.font_family' => 'Vazirmatn'])['correspondence.composition.font_family'],
             'createdDepartment' => $createdDepartment,
@@ -512,6 +519,7 @@ class CorrespondenceController extends Controller
             'sent_at' => ['nullable', 'required_if:type,'.Correspondence::TYPE_OUTGOING, 'date'],
             'recipient_department_id' => ['nullable', 'required_if:type,internal', 'required_if:type,incoming', 'integer', 'exists:departments,id'],
             'reply_to_id' => ['nullable', 'integer', Rule::exists('correspondences', 'id')->where('status', Correspondence::STATUS_REGISTERED)],
+            'task_id' => ['nullable', 'integer', 'exists:tasks,id'],
             'reply_to_ids' => ['nullable', 'array', 'max:20'],
             'reply_to_ids.*' => ['integer', 'distinct', Rule::exists('correspondences', 'id')->where('status', Correspondence::STATUS_REGISTERED)],
             'copy_department_ids' => ['nullable', 'array', 'max:20'],
@@ -528,6 +536,12 @@ class CorrespondenceController extends Controller
         ]);
 
         abort_unless($access->canCreateType($data['type'], $request->user()), 403);
+        if (! empty($data['task_id'])) {
+            $linkedTask = Task::query()->findOrFail((int) $data['task_id']);
+            abort_unless($request->user()->can('update', $linkedTask), 403);
+            abort_unless((int) $linkedTask->assignee_id === (int) $request->user()->id, 403,
+                'فقط مسئول فعلی دستورکار می‌تواند از داخل آن نامه ایجاد کند.');
+        }
 
         $relatedLetterIds = array_values(array_unique(array_map('intval', $data['reply_to_ids'] ?? [])));
         if ($relatedLetterIds !== []) {
@@ -602,6 +616,7 @@ class CorrespondenceController extends Controller
                     'external_organization_id' => $data['external_organization_id'] ?? null,
                     'external_department_id' => $data['external_department_id'] ?? null,
                     'reply_to_id' => ! empty($data['reply_to_ids']) ? (int) $data['reply_to_ids'][0] : ($data['reply_to_id'] ?? null),
+                    'task_id' => $data['task_id'] ?? null,
                 ], $request->user());
 
                 $relatedLetterIds = array_values(array_unique(array_map('intval', $data['reply_to_ids'] ?? [])));

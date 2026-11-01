@@ -35,6 +35,7 @@ const props = defineProps<{
     correspondenceFontFamily: string;
     isEditing?: boolean;
     correspondence?: ExistingCorrespondence | null;
+    taskId?: number | null;
 }>();
 
 const editor = ref<HTMLDivElement | null>(null);
@@ -120,6 +121,7 @@ const form = useForm({
     copy_department_ids: existing?.copy_department_ids ?? [] as number[],
     reply_to_id: existing?.related_letters?.[0]?.id ?? '' as number | '',
     reply_to_ids: existing?.related_letters?.map((letter) => letter.id) ?? [] as number[],
+    task_id: props.taskId ?? '' as number | '',
     original_letters: [] as File[],
     scanner_upload_token: '',
     attachments: [] as File[],
