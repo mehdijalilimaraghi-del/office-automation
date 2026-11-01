@@ -1539,3 +1539,9 @@ Implementation has started for the agreed cross-department project model:
 - مسیر backend و فرم ایجاد پروژه از نامه وارده با وضعیت `project_request_approved` اضافه شد؛ فقط مدیر واحد مدیریت پروژه با مجوز ایجاد پروژه می‌تواند آن را اجرا کند.
 - در یک تراکنش پروژه، Section واحد پاسخ‌گو، تسک پاسخ، پیوند نامه مبدأ به پروژه/تسک و رکورد تاریخچه ایجاد می‌شود.
 - **اعتبارسنجی مرحله ۲/۳ انجام نشده است.** تنظیم واحد پیش‌فرض سازمانی به تنظیمات سازمان متصل و در فرم پیش‌پر می‌شود؛ انتخاب در هر پروژه قابل تغییر است. نمایش دوطرفه روابط و انتقال ارتباط به نامه پاسخ نیز باقی است. قبل از ادعای تکمیل، migration و تست‌های HTTP روی SQL Server و build باید اجرا شوند.
+
+
+## 2026-11-01 — Fix Vue typing for project creation errors
+
+- Corrected the correspondence project-creation form to render the server's general `project` validation error from shared Inertia page errors (`page.props.errors`) rather than `projectForm.errors`. The form's typed payload contains only `name`, `description`, and `response_department_id`, so accessing `projectForm.errors.project` caused `vue-tsc` TS2339.
+- This is a frontend TypeScript correction only; workflow behavior and backend validation are unchanged. Build has not yet been rerun; owner validation remains pending. Branch: `development`; `master` unchanged.
