@@ -131,6 +131,12 @@ class CorrespondenceAccessService
                         ->orWhereHas('currentDepartment.members', fn (Builder $members) => $members->where('users.id', $user->id))
                         ->orWhereHas('currentDepartment', fn (Builder $departments) => $departments->where('manager_id', $user->id))
                         ->orWhereHas('authorizedUsers', fn (Builder $users) => $users->where('users.id', $user->id))
+                        ->orWhereHas('task', fn (Builder $tasks) => $tasks
+                            ->where('assignee_id', $user->id)
+                            ->orWhere('created_by', $user->id))
+                        ->orWhereHas('workflowInstance.steps.task', fn (Builder $tasks) => $tasks
+                            ->where('assignee_id', $user->id)
+                            ->orWhere('created_by', $user->id))
                         ->orWhereHas('copies', function (Builder $departments) use ($user): void {
                             $departments->where(function (Builder $member) use ($user): void {
                                 $member->whereHas('members', fn (Builder $members) => $members->where('users.id', $user->id))
@@ -168,6 +174,12 @@ class CorrespondenceAccessService
                 && ($correspondence->currentDepartment()->whereHas('members', fn ($members) => $members->where('users.id', $user->id))->exists()
                     || (int) $correspondence->currentDepartment()->value('manager_id') === (int) $user->id))
             || $correspondence->authorizedUsers()->where('users.id', $user->id)->exists()
+            || $correspondence->task()->where(function ($tasks) use ($user): void {
+                $tasks->where('assignee_id', $user->id)->orWhere('created_by', $user->id);
+            })->exists()
+            || $correspondence->workflowInstance()->whereHas('steps.task', function ($tasks) use ($user): void {
+                $tasks->where('assignee_id', $user->id)->orWhere('created_by', $user->id);
+            })->exists()
             || ($correspondence->status === Correspondence::STATUS_REGISTERED
                 && $correspondence->copies()->where(function ($departments) use ($user): void {
                     $departments->whereHas('members', fn ($members) => $members->where('users.id', $user->id))
