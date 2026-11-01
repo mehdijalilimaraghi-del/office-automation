@@ -1995,4 +1995,59 @@ class CorrespondenceHttpTest extends TestCase
     }
 
 
+
+    public function test_general_department_employee_can_submit_request_and_manager_can_return_it_for_revision(): void
+    {
+        $manager = $this->userWithPermission('correspondence.view');
+        $employee = $this->userWithPermission('correspondence.view');
+        $department = Department::query()->create([
+            'name' => 'واحد گردش عمومی '.Str::upper(Str::random(5)),
+            'code' => 'GW-'.Str::upper(Str::random(6)),
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+        $employee->departments()->attach($department->id, ['is_primary' => true, 'joined_at' => now()]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'classification' => Correspondence::CLASSIFICATION_ORDINARY,
+            'subject' => 'نامه برای درخواست کارمند',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'assigned_to_employee',
+            'recipient_department_id' => $department->id,
+            'current_department_id' => $department->id,
+            'current_user_id' => $employee->id,
+            'created_by' => $manager->id,
+        ]);
+
+        $this->actingAs($employee)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::EMPLOYEE_REQUEST_LETTER,
+            'note' => '',
+        ])->assertSessionHasErrors('workflow_action');
+
+        $this->actingAs($employee)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::EMPLOYEE_REQUEST_LETTER,
+            'note' => 'برای پاسخ‌گویی به نامه، تهیه نامه رسمی لازم است.',
+        ])->assertRedirect();
+
+        $letter->refresh();
+        $this->assertSame('general_review_pending_manager', $letter->workflow_state);
+        $this->assertSame((int) $manager->id, (int) $letter->current_user_id);
+        $this->assertDatabaseHas('correspondence_actions', [
+            'correspondence_id' => $letter->id,
+            'action_type' => CorrespondenceAction::EMPLOYEE_REQUEST_LETTER,
+            'actor_id' => $employee->id,
+            'to_user_id' => $manager->id,
+        ]);
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::MANAGER_REJECT_EMPLOYEE_REQUEST,
+            'note' => 'ابتدا پیش‌نویس پاسخ را با اطلاعات تکمیلی اصلاح کنید.',
+        ])->assertRedirect();
+
+        $letter->refresh();
+        $this->assertSame('assigned_to_employee', $letter->workflow_state);
+        $this->assertSame((int) $employee->id, (int) $letter->current_user_id);
+    }
+
+
 }
