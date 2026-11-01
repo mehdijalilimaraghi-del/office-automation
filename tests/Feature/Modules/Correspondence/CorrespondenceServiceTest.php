@@ -27,6 +27,7 @@ class CorrespondenceServiceTest extends TestCase
             'subject' => '  درخواست رسمی  ',
             'body' => 'متن نامه',
             'sender_name' => 'سازمان فرستنده',
+            'letter_number' => 'IN-1405-001',
         ], $creator);
 
         $this->assertDatabaseHas('correspondences', [
@@ -35,7 +36,7 @@ class CorrespondenceServiceTest extends TestCase
             'subject' => 'درخواست رسمی',
             'status' => Correspondence::STATUS_DRAFT,
             'registration_number' => null,
-            'letter_number' => $correspondence->letter_number,
+            'letter_number' => 'IN-1405-001',
             'created_by' => $creator->id,
         ]);
         $this->assertSame((int) $creator->id, (int) $correspondence->creator->id);
