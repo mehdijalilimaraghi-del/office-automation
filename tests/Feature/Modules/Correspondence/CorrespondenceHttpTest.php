@@ -2129,6 +2129,9 @@ class CorrespondenceHttpTest extends TestCase
             'to_user_id' => $manager->id,
         ]);
         $this->assertSame((int) $letter->id, (int) $draft->reply_to_id);
+        $this->actingAs($manager)->get(route('correspondence.show', $draft))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->component('Correspondence/Show'));
         $draft->forceFill(['status' => Correspondence::STATUS_REGISTERED, 'registration_number' => 'TEST-LETTER-'.Str::upper(Str::random(5)), 'registered_by' => $manager->id])->save();
         app(CorrespondenceWorkflowService::class)->onRegistered($draft, $manager);
         $letter->refresh();
