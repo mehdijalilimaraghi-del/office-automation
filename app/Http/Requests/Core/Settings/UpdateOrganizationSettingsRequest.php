@@ -48,6 +48,7 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'management_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')],
             'project_management_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')],
             'secretariat_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')],
+            'default_response_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')->where(fn ($query) => $query->where('is_active', true)->whereNotNull('manager_id'))],
         ];
     }
 
