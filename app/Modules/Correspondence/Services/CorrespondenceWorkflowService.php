@@ -154,6 +154,120 @@ class CorrespondenceWorkflowService
                 return;
             }
 
+            $projectDepartmentId = $roles->activeDepartmentId(OrganizationDepartmentRoleService::PROJECT_MANAGEMENT);
+            $isProjectDepartment = $projectDepartmentId !== null && $currentDepartmentId === $projectDepartmentId;
+            $projectEmployeeActions = [
+                CorrespondenceAction::PM_REQUEST_REFER,
+                CorrespondenceAction::PM_REQUEST_PROJECT,
+                CorrespondenceAction::PM_REQUEST_REJECT,
+                CorrespondenceAction::PM_REQUEST_RETURN,
+            ];
+
+            if (in_array($type, $projectEmployeeActions, true)) {
+                abort_unless($canRecordResult && $isProjectDepartment && ! $isManager
+                    && $letter->workflow_state === 'assigned_to_employee'
+                    && (int) $letter->current_user_id === (int) $actor->id, 403);
+                if ($note === '') {
+                    throw new InvalidArgumentException('ثبت بازخورد برای درخواست اقدام در واحد پروژه‌ها الزامی است.');
+                }
+                $managerId = Department::query()->whereKey($currentDepartmentId)->value('manager_id');
+                if ($managerId === null) {
+                    throw new InvalidArgumentException('برای واحد پروژه‌ها مدیر فعال مشخص نشده است.');
+                }
+                $target = null;
+                if ($type === CorrespondenceAction::PM_REQUEST_REFER) {
+                    $target = $targetDepartmentId === null ? null : Department::query()
+                        ->whereKey($targetDepartmentId)->where('is_active', true)->first();
+                    if ($target === null || (int) $target->id === $currentDepartmentId) {
+                        throw new InvalidArgumentException('برای درخواست ارجاع، یک واحد فعال و متفاوت انتخاب کنید.');
+                    }
+                }
+                $this->record(
+                    $letter, $actor, $type, $note, $currentDepartmentId, null,
+                    $actor->id, (int) $managerId,
+                    $target === null ? null : ['requested_department_id' => (int) $target->id],
+                );
+                $letter->forceFill([
+                    'current_user_id' => (int) $managerId,
+                    'workflow_state' => 'project_review_pending_manager',
+                ])->save();
+                return;
+            }
+
+            if (in_array($type, [
+                CorrespondenceAction::PM_MANAGER_APPROVE_REQUEST,
+                CorrespondenceAction::PM_MANAGER_REJECT_REQUEST,
+            ], true)) {
+                abort_unless($isManager && $isProjectDepartment
+                    && $letter->workflow_state === 'project_review_pending_manager', 403);
+                if ($note === '') {
+                    throw new InvalidArgumentException('ثبت توضیح مدیر برای تصمیم درباره درخواست کارمند الزامی است.');
+                }
+                $requestAction = $letter->actions()
+                    ->whereIn('action_type', $projectEmployeeActions)
+                    ->latest('id')
+                    ->first();
+                if ($requestAction === null || (int) $requestAction->to_user_id !== (int) $actor->id) {
+                    throw new InvalidArgumentException('درخواست معتبری برای بررسی مدیر واحد پروژه‌ها وجود ندارد.');
+                }
+                if ($type === CorrespondenceAction::PM_MANAGER_REJECT_REQUEST) {
+                    $this->record($letter, $actor, $type, $note, $currentDepartmentId, $currentDepartmentId, $actor->id, (int) $requestAction->actor_id);
+                    $letter->forceFill([
+                        'current_user_id' => (int) $requestAction->actor_id,
+                        'workflow_state' => 'assigned_to_employee',
+                    ])->save();
+                    return;
+                }
+
+                $requestedType = (string) $requestAction->action_type;
+                if ($requestedType === CorrespondenceAction::PM_REQUEST_PROJECT) {
+                    $this->record($letter, $actor, $type, $note, $currentDepartmentId, null, $actor->id, null);
+                    $letter->forceFill([
+                        'current_user_id' => (int) $actor->id,
+                        'workflow_state' => 'project_request_approved',
+                    ])->save();
+                    return;
+                }
+
+                if (in_array($requestedType, [CorrespondenceAction::PM_REQUEST_REJECT, CorrespondenceAction::PM_REQUEST_RETURN], true)) {
+                    $originDepartmentId = $letter->recipient_department_id === null ? null : (int) $letter->recipient_department_id;
+                    if ($originDepartmentId === null) {
+                        throw new InvalidArgumentException('واحد مبدأ نامه مشخص نیست و امکان بازگشت وجود ندارد.');
+                    }
+                    $origin = Department::query()->whereKey($originDepartmentId)->where('is_active', true)->first();
+                    if ($origin === null) {
+                        throw new InvalidArgumentException('واحد مبدأ نامه غیرفعال است یا وجود ندارد.');
+                    }
+                    $originManagerId = $origin->manager_id === null ? null : (int) $origin->manager_id;
+                    $this->record($letter, $actor, $type, $note, $currentDepartmentId, $originDepartmentId, $actor->id, $originManagerId);
+                    $letter->forceFill([
+                        'current_department_id' => $originDepartmentId,
+                        'current_user_id' => $originManagerId,
+                        'workflow_state' => 'in_progress',
+                    ])->save();
+                    return;
+                }
+
+                if ($requestedType === CorrespondenceAction::PM_REQUEST_REFER) {
+                    $requestedDepartmentId = (int) ($requestAction->metadata['requested_department_id'] ?? 0);
+                    $target = $requestedDepartmentId > 0
+                        ? Department::query()->whereKey($requestedDepartmentId)->where('is_active', true)->first()
+                        : null;
+                    if ($target === null) {
+                        throw new InvalidArgumentException('واحد مقصد درخواست ارجاع دیگر فعال نیست؛ کارمند باید درخواست را اصلاح کند.');
+                    }
+                    $targetManagerId = $target->manager_id === null ? null : (int) $target->manager_id;
+                    $this->record($letter, $actor, $type, $note, $currentDepartmentId, (int) $target->id, $actor->id, $targetManagerId);
+                    $letter->forceFill([
+                        'current_department_id' => (int) $target->id,
+                        'current_user_id' => $targetManagerId,
+                        'workflow_state' => 'in_progress',
+                    ])->save();
+                    return;
+                }
+                throw new InvalidArgumentException('نوع درخواست ثبت‌شده برای تصمیم مدیر معتبر نیست.');
+            }
+
             abort_unless($isManager, 403);
 
             if ($type === CorrespondenceAction::MANAGER_APPROVE) {
@@ -322,6 +436,7 @@ class CorrespondenceWorkflowService
         ?int $toDepartmentId,
         ?int $fromUserId,
         ?int $toUserId,
+        ?array $metadata = null,
     ): void {
         $action = CorrespondenceAction::query()->create([
             'correspondence_id' => $letter->id,
@@ -332,6 +447,7 @@ class CorrespondenceWorkflowService
             'to_department_id' => $toDepartmentId,
             'from_user_id' => $fromUserId,
             'to_user_id' => $toUserId,
+            'metadata' => $metadata,
         ]);
 
         app(AuditServiceInterface::class)->record(
