@@ -306,7 +306,8 @@ class CorrespondenceController extends Controller
         $canCreateRequestedLetter = $correspondence->workflow_state === 'letter_creation_by_manager'
             && $isCurrentDepartmentManager
             && (int) $correspondence->current_user_id === (int) $request->user()->id;
-        $canPrepareRequestedLetterDraft = $correspondence->workflow_state === 'letter_draft_pending_employee'
+        $canPrepareRequestedLetterDraft = $request->user()->hasPermission('correspondence.create')
+            && $correspondence->workflow_state === 'letter_draft_pending_employee'
             && $correspondence->current_user_id !== null
             && (int) $correspondence->current_user_id === (int) $request->user()->id
             && $currentDepartmentId !== null
