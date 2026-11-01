@@ -4,7 +4,7 @@ import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 const showCreateModal = ref(false);
 
@@ -123,6 +123,7 @@ const assigneeFilter = ref(props.filters.assignee_id?.toString() ?? '');
 const dueFromFilter = ref(props.filters.due_from ?? '');
 const dueToFilter = ref(props.filters.due_to ?? '');
 const createForm = useForm({
+    correspondence_id: null as number | null,
     project_id: null as number | null,
     section_id: null as number | null,
     department_id: null as number | null,
@@ -271,6 +272,24 @@ const handleSectionChange = (): void => {
     createForm.delegate_assignee_id = null;
     createForm.delegate_to_employee = false;
 };
+
+onMounted(() => {
+    const params = new URLSearchParams(window.location.search);
+    const correspondenceId = Number(params.get('create_for_correspondence'));
+    const projectId = Number(params.get('project_id'));
+    const sectionId = Number(params.get('section_id'));
+    if (!correspondenceId || !projectId || !sectionId || !props.formOptions) return;
+
+    const project = props.formOptions.projects.find((item) => item.id === projectId);
+    const section = project?.sections.find((item) => item.id === sectionId);
+    if (!project || !section || !section.department_id) return;
+
+    createForm.correspondence_id = correspondenceId;
+    createForm.project_id = projectId;
+    createForm.section_id = sectionId;
+    createForm.department_id = section.department_id;
+    showCreateModal.value = true;
+});
 </script>
 
 <template>
