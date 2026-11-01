@@ -2050,4 +2050,76 @@ class CorrespondenceHttpTest extends TestCase
     }
 
 
+
+    public function test_manager_can_delegate_letter_draft_to_assigned_employee_and_receive_the_created_draft(): void
+    {
+        $manager = $this->userWithPermission('correspondence.view');
+        $employee = $this->userWithPermission('correspondence.view');
+        $letterCreator = $this->userWithPermission('correspondence.create');
+        $employee->roles()->attach($letterCreator->roles()->first()->id);
+
+        $department = Department::query()->create([
+            'name' => 'واحد تهیه پیش‌نویس '.Str::upper(Str::random(5)),
+            'code' => 'LD-'.Str::upper(Str::random(6)),
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+        $employee->departments()->attach($department->id, ['is_primary' => true, 'joined_at' => now()]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'classification' => Correspondence::CLASSIFICATION_ORDINARY,
+            'subject' => 'درخواست تهیه نامه پاسخ',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'assigned_to_employee',
+            'recipient_department_id' => $department->id,
+            'current_department_id' => $department->id,
+            'current_user_id' => $employee->id,
+            'created_by' => $manager->id,
+        ]);
+
+        $this->actingAs($employee)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::EMPLOYEE_REQUEST_LETTER,
+            'note' => 'برای پاسخ رسمی به این مکاتبه نیاز به تهیه نامه داریم.',
+        ])->assertRedirect();
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::MANAGER_ASSIGN_LETTER_DRAFT,
+            'note' => 'پیش‌نویس پاسخ را تهیه و برای بررسی ارسال کنید.',
+        ])->assertRedirect();
+
+        $letter->refresh();
+        $this->assertSame('letter_draft_pending_employee', $letter->workflow_state);
+        $this->assertSame((int) $employee->id, (int) $letter->current_user_id);
+
+        $this->actingAs($employee)->get(route('correspondence.create', ['source_correspondence_id' => $letter->id]))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Correspondence/Create')
+                ->where('sourceCorrespondenceId', $letter->id)
+                ->where('sourceCorrespondence.id', $letter->id));
+
+        $this->actingAs($employee)->post(route('correspondence.store'), [
+            'source_correspondence_id' => $letter->id,
+            'type' => Correspondence::TYPE_INTERNAL,
+            'created_department_id' => $department->id,
+            'recipient_department_id' => $department->id,
+            'subject' => 'پیش‌نویس پاسخ به نامه',
+            'composition_mode' => 'editor',
+            'body' => '<p>متن پیش‌نویس پاسخ</p>',
+        ])->assertRedirect(route('correspondence.show', $letter));
+
+        $letter->refresh();
+        $draft = Correspondence::query()->where('reply_to_id', $letter->id)->firstOrFail();
+        $this->assertSame('letter_draft_pending_manager', $letter->workflow_state);
+        $this->assertSame((int) $manager->id, (int) $letter->current_user_id);
+        $this->assertDatabaseHas('correspondence_actions', [
+            'correspondence_id' => $letter->id,
+            'action_type' => CorrespondenceAction::REQUESTED_LETTER_DRAFT_CREATED,
+            'actor_id' => $employee->id,
+            'to_user_id' => $manager->id,
+        ]);
+        $this->assertSame((int) $letter->id, (int) $draft->reply_to_id);
+    }
+
+
 }
