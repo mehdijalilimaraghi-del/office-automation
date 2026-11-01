@@ -1351,4 +1351,4 @@ Incoming letter numbers are captured from the original document, never auto-gene
 
 - Stage 1 is accepted per owner confirmation (focused tests passed; frontend build succeeded).
 - New approved-project correspondence action creates a project with one response-department Section and one response task, links the source correspondence to both, and records a project_created action. The UI exposes explicit response-department selection.
-- This slice is not validated locally. Organization-level default response department is not wired yet. Bidirectional project/task/correspondence detail links and response-letter propagation remain pending.
+- This slice is not validated locally. Organization-level default response department is now configurable in Organization Settings and pre-fills the correspondence project form; user can change it per project. Bidirectional project/task/correspondence detail links and response-letter propagation remain pending.
