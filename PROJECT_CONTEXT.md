@@ -1345,3 +1345,10 @@ Incoming letter numbers are captured from the original document, never auto-gene
 
 - The project owner confirmed the Project Management request/review focused tests passed and frontend build succeeded. Stage 1 is accepted.
 - Stage 2 remains unimplemented: create a project from an approved source incoming letter, choose the response department in the creation form (organization default is only a prefill and can be changed), and link the new project to the source letter. Stage 3 response Section/task and Stage 4 bidirectional links remain pending.
+
+
+## 2026-11-01 — Initial approved-project creation slice
+
+- Stage 1 is accepted per owner confirmation (focused tests passed; frontend build succeeded).
+- New approved-project correspondence action creates a project with one response-department Section and one response task, links the source correspondence to both, and records a project_created action. The UI exposes explicit response-department selection.
+- This slice is not validated locally. Organization-level default response department is not wired yet. Bidirectional project/task/correspondence detail links and response-letter propagation remain pending.
