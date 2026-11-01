@@ -36,6 +36,8 @@ const props = defineProps<{
     isEditing?: boolean;
     correspondence?: ExistingCorrespondence | null;
     taskId?: number | null;
+    sourceCorrespondenceId?: number | null;
+    sourceCorrespondence?: ReplyOption | null;
 }>();
 
 const editor = ref<HTMLDivElement | null>(null);
@@ -104,6 +106,7 @@ const compositionModes: Array<{ value: CompositionMode; label: string; descripti
 
 const existing = props.correspondence;
 const form = useForm({
+    source_correspondence_id: props.sourceCorrespondenceId ?? null,
     type: existing?.type ?? props.types[0]?.value ?? 'internal',
     created_department_id: existing?.created_department_id ?? props.createdDepartment?.id ?? '' as number | '',
     classification: existing?.classification ?? 'ordinary',
@@ -119,14 +122,14 @@ const form = useForm({
     sent_at: existing?.sent_at ?? '',
     recipient_department_id: existing?.recipient_department_id ?? '' as number | '',
     copy_department_ids: existing?.copy_department_ids ?? [] as number[],
-    reply_to_id: existing?.related_letters?.[0]?.id ?? '' as number | '',
-    reply_to_ids: existing?.related_letters?.map((letter) => letter.id) ?? [] as number[],
+    reply_to_id: existing?.related_letters?.[0]?.id ?? props.sourceCorrespondence?.id ?? '' as number | '',
+    reply_to_ids: existing?.related_letters?.map((letter) => letter.id) ?? (props.sourceCorrespondence ? [props.sourceCorrespondence.id] : []) as number[],
     task_id: props.taskId ?? '' as number | '',
     original_letters: [] as File[],
     scanner_upload_token: '',
     attachments: [] as File[],
 });
-selectedRelatedLetters.value = existing?.related_letters ?? [];
+selectedRelatedLetters.value = existing?.related_letters ?? (props.sourceCorrespondence ? [props.sourceCorrespondence] : []);
 
 
 watch(() => form.type, (type, previousType) => {
