@@ -25,6 +25,8 @@ use App\Modules\Tasks\Contracts\TaskServiceContract;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Services\CorrespondenceAccessService;
+use App\Modules\Correspondence\Services\CorrespondenceWorkflowService;
+use Illuminate\Support\Facades\DB;
 use App\Modules\Tasks\Models\TaskReminder;
 use App\Modules\Tasks\Services\TaskFormOptionsService;
 use Illuminate\Http\RedirectResponse;
@@ -91,14 +93,47 @@ class TaskController extends Controller
         ]);
     }
 
-    public function store(StoreTaskRequest $request): RedirectResponse
-    {
+    public function store(
+        StoreTaskRequest $request,
+        CorrespondenceAccessService $correspondenceAccess,
+        CorrespondenceWorkflowService $correspondenceWorkflow,
+    ): RedirectResponse {
         $data = $request->validated();
+        $correspondenceId = isset($data['correspondence_id']) ? (int) $data['correspondence_id'] : null;
+        unset($data['correspondence_id']);
 
         try {
-            $this->taskService->create(data: $data, creator: $request->user());
+            $task = DB::transaction(function () use ($data, $correspondenceId, $request, $correspondenceAccess, $correspondenceWorkflow): Task {
+                $letter = null;
+
+                if ($correspondenceId !== null) {
+                    $letter = Correspondence::query()->findOrFail($correspondenceId);
+                    abort_unless($correspondenceAccess->canView($letter, $request->user()), 403);
+                    $section = isset($data['section_id'])
+                        ? \\App\\Modules\\Projects\\Models\\ProjectSection::query()->with('project')->find($data['section_id'])
+                        : null;
+                    abort_unless($section !== null
+                        && $section->project?->is_system_default
+                        && $letter->current_department_id !== null
+                        && (int) $section->department_id === (int) $letter->current_department_id, 403,
+                        'دستورکار مرتبط باید در بخش واحد مسئول نامه از پروژه عمومی سازمان ایجاد شود.');
+                }
+
+                $task = $this->taskService->create(data: $data, creator: $request->user());
+
+                if ($letter !== null) {
+                    $correspondenceWorkflow->attachTaskInstruction($letter, $task, $request->user());
+                }
+
+                return $task;
+            });
         } catch (InvalidArgumentException $exception) {
             throw ValidationException::withMessages(['task' => $exception->getMessage()]);
+        }
+
+        if ($correspondenceId !== null) {
+            return redirect()->route('correspondence.show', $correspondenceId)
+                ->with('success', 'دستورکار در پروژه عمومی ایجاد و به نامه متصل شد.');
         }
 
         return back()->with('success', 'تسک با موفقیت ایجاد شد.');
