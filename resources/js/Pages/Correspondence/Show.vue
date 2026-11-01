@@ -391,7 +391,7 @@ function registerCorrespondence(): void {
                                 <option v-if="canReviewGeneralRequest && canManagerCreateRequestedLetter && generalRequestType === 'employee_request_letter'" value="manager_create_requested_letter">مدیر خودش نامه را ایجاد کند</option>
                                 <option v-if="canReviewGeneralRequest && canDelegateLetterDraft && generalRequestType === 'employee_request_letter'" value="manager_assign_letter_draft">ارجاع به کارمند برای تهیه پیش‌نویس</option>
                                 <option v-if="canReviewGeneralRequest && generalRequestType !== 'employee_request_none'" value="manager_reject_employee_request">رد درخواست و بازگشت به کارمند</option>
-                                <option v-if="!canReviewProjectRequest && !canReviewGeneralRequest && correspondence.status === 'registered' && correspondence.type !== 'outgoing'" value="manager_refer">ارجاع به</option>
+                                <option v-if="!canReviewProjectRequest && !canReviewGeneralRequest && !canRecallReferral && correspondence.status === 'registered' && correspondence.type !== 'outgoing'" value="manager_refer">ارجاع به</option>
                                 <option v-if="canSecretariatReturn" value="secretariat_return">برگشت برای اصلاح</option>
                                 <option v-if="canResubmitToSecretariat" value="resubmit_to_secretariat">ارسال مجدد به دبیرخانه</option>
                                 <option v-if="correspondence.workflow_state === 'result_pending_manager' && ['incoming', 'internal'].includes(correspondence.type)" value="confirm_result">تأیید نتیجه و خاتمه گردش</option>
