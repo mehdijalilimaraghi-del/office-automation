@@ -917,3 +917,9 @@ Status: correspondence list/draft/registration HTTP flow and editor/file/both co
 - Project owner confirmed that the focused test run passed and the frontend production build succeeded for the Project Management request/review flow.
 - Stage 1 is accepted. Next implementation target is Stage 2: create a real project from a correspondence in `project_request_approved`, require an explicitly selected response department (pre-filled from an organization default that remains editable), and link the project to the source letter.
 - Stage 3 response Section/task provisioning and Stage 4 bidirectional task/correspondence links remain separate follow-up stages. `master` unchanged.
+
+
+## 2026-11-01 — Initial approved-project creation slice
+
+- Added a transaction-backed path from an approved incoming letter to a new project, one response Section and one response task for the selected active department. The source correspondence is linked to the project and task.
+- Organization default response-department setting and bidirectional detail links remain pending. Migration, focused HTTP tests and frontend build validation are pending.
