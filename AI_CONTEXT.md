@@ -700,3 +700,16 @@ Before making the first code change in a new conversation:
 - Root cause: `TaskController@index` only supplies `formOptions` when `TaskPolicy::create($user, null)` succeeds. Project-scoped department managers were denied at the null-project check even though `TaskFormOptionsService` deliberately exposes the shared default project and their enabled department sections.
 - Updated `TaskPolicy::create`: project-scoped managers can open the task form only when they manage an active department with `manager_can_create_tasks=true` in the active shared system-default project. For a specified project ID, creation is permitted only for that shared default project under the same department-section condition; all other project scope checks remain unchanged. Correspondence store still validates the exact selected section against the correspondence's current department.
 - Added regression coverage via the existing `manager creates general task from correspondence and links it` feature test. User-reported pre-fix result: 1 failed, 459 passed (2,002 assertions). Assistant has not executed tests/build; verification remains pending. `master` unchanged.
+
+
+## یادداشت ادامه توسعه — مسیرهای مکاتبات (2026-11-01)
+
+آخرین تغییرات روی development:
+- action جدید employee_request_task برای درخواست دستورکار توسط کارمند؛ این action با employee_request_workflow متفاوت است.
+- action جدید manager_create_task تصمیم مدیر برای پذیرش درخواست دستورکار است. نامه در in_progress و در اختیار مدیر می‌ماند تا لینک فرم موجود Tasks در پروژه عمومی سازمان و Section واحد فعال شود. ذخیره Task همچنان از TaskController و CorrespondenceWorkflowService::attachTaskInstruction انجام می‌شود.
+- general_review_pending_manager در شاخه مدیرِ فیلتر needs_action اضافه شد.
+- manager_recall_referral برای پس گرفتن ارجاع کارمند پیش از هر اقدام او اضافه شد. ارجاع فعال باید آخرین ارجاع مدیر به همان کارمند در همان واحد باشد؛ پس گرفتن با دلیل اجباری و ثبت تاریخچه انجام می‌شود.
+- ارجاع مجدد عمومی در state assigned_to_employee ممنوع شد؛ مدیر باید ابتدا ارجاع را پس بگیرد یا منتظر ثبت نتیجه کارمند بماند.
+- مدیر مدیریت پروژه‌ها اجازه ارجاع عمومی بین‌واحدی ندارد؛ این مسیر فقط از PM employee request + PM manager approval عبور می‌کند. ارجاع مدیر به کارمند داخل همان واحد مجاز است.
+- تست‌های جدید: test_manager_can_recall_an_unacted_employee_referral, test_employee_can_request_a_shared_project_task_and_manager_can_open_existing_task_form, test_manager_sees_employee_request_in_needs_action_filter.
+- **عدم ادعای اعتبارسنجی:** هیچ‌یک از تست‌ها و build توسط دستیار اجرا نشده‌اند؛ پس از pull باید اجرا شوند. وضعیت SQL Server نیز pending است.
