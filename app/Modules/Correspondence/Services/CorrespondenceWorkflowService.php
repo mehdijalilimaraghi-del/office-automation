@@ -94,6 +94,9 @@ class CorrespondenceWorkflowService
             $canRecordResult = $letter->status === Correspondence::STATUS_REGISTERED
                 && in_array($letter->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true);
 
+            $projectDepartmentId = $roles->activeDepartmentId(OrganizationDepartmentRoleService::PROJECT_MANAGEMENT);
+            $isProjectDepartment = $projectDepartmentId !== null && $currentDepartmentId === $projectDepartmentId;
+
             $generalEmployeeRequestActions = [
                 CorrespondenceAction::EMPLOYEE_REQUEST_NONE,
                 CorrespondenceAction::EMPLOYEE_REQUEST_LETTER,
