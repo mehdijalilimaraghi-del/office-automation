@@ -713,3 +713,4 @@ Before making the first code change in a new conversation:
 - مدیر مدیریت پروژه‌ها اجازه ارجاع عمومی بین‌واحدی ندارد؛ این مسیر فقط از PM employee request + PM manager approval عبور می‌کند. ارجاع مدیر به کارمند داخل همان واحد مجاز است.
 - تست‌های جدید: test_manager_can_recall_an_unacted_employee_referral, test_employee_can_request_a_shared_project_task_and_manager_can_open_existing_task_form, test_manager_sees_employee_request_in_needs_action_filter.
 - **عدم ادعای اعتبارسنجی:** هیچ‌یک از تست‌ها و build توسط دستیار اجرا نشده‌اند؛ پس از pull باید اجرا شوند. وضعیت SQL Server نیز pending است.
+- فیلتر scope=mine برای مدیر واحد علاوه بر ثبت‌های شخصی، نامه‌های ثبت‌شده توسط اعضای واحد تحت مدیریت او را نیز نگه می‌دارد؛ پس از ارجاع نامه به واحد گیرنده، این مورد در action_filter=all قابل مشاهده است اما نباید صرفاً به دلیل ثبت توسط تیم دبیرخانه در needs_action مدیر دبیرخانه ظاهر شود.
