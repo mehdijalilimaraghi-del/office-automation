@@ -895,3 +895,10 @@ Status: correspondence list/draft/registration HTTP flow and editor/file/both co
 - Corrected the «مکاتبات من» ownership scope: an action authored by the user is no longer sufficient by itself. Historical referrals addressed to the user remain included; merely referring a letter to another user/department does not make it the referrer's personal correspondence.
 - Added feature regression coverage for pending referrals, previously acted-on referrals, and letters merely referred onward by the current user. No database migration or workflow authorization changes.
 - Validation pending: pull development, run php artisan test --filter=CorrespondenceHttpTest, then npm run build. master remains unchanged.
+
+
+## 2026-11-01 — Formalized correspondence-driven project workflow scope
+
+- Added `CORRESPONDENCE_PROJECT_WORKFLOW.md` as the functional source of truth for Project Management's four employee requests, separate manager decisions, per-project response ownership, response Section/Task creation and generic task-correspondence linking.
+- This is a documentation/status correction, not a feature-completion claim. The existing task-to-new-correspondence entry point is only a first slice. The project-specific approval flow and project/response-task/source-letter propagation remain pending.
+- Stage-by-stage implementation status and acceptance criteria are maintained in the new reference document. No tests or frontend build were run for this documentation-only change; `master` unchanged.
