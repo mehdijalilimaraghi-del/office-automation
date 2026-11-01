@@ -689,3 +689,8 @@ Before making the first code change in a new conversation:
 - Active workflow choices are filtered to definitions with active steps and no project-only/unsupported actors because this correspondence workflow starts without a project.
 - Task form options include the shared general project/department Section for managers with project-scoped task-create permission. Task and workflow correspondence links are bidirectional and confidentiality-filtered.
 - Latest code and docs are committed to `development`; tests/build have not been executed. `master` remains untouched.
+
+## 2026-11-01 — Fix incoming correspondence service test fixture
+
+- `CorrespondenceService::createDraft()` intentionally requires an incoming letter's original `letter_number`; the failing test created an incoming draft without that required field. Updated the test fixture to provide `IN-1405-001` and assert that exact source number is persisted. Production validation is unchanged.
+- User-reported suite result before this fix: 1 failed, 454 passed (1,921 assertions). The fix has been committed to `development`; rerun the targeted test and full suite to verify. No claim that tests were run by the assistant. `master` unchanged.
