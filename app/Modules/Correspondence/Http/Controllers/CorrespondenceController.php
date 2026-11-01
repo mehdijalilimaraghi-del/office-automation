@@ -688,8 +688,8 @@ class CorrespondenceController extends Controller
             abort_unless($isManagerDraft || $isEmployeeDraft, 403, 'درخواست تهیه نامه دیگر در اختیار شما نیست.');
             $data['reply_to_id'] = $sourceCorrespondenceId;
             $data['reply_to_ids'] = array_values(array_unique(array_merge(
-                array_map('intval', $data['reply_to_ids'] ?? []),
                 [$sourceCorrespondenceId],
+                array_map('intval', $data['reply_to_ids'] ?? []),
             )));
         }
         $linkedTask = null;
