@@ -549,6 +549,27 @@ class CorrespondenceController extends Controller
             $createdDepartment = $createdDepartments->first();
         }
 
+        $sourceCorrespondenceId = $request->integer('source_correspondence_id') ?: null;
+        $sourceCorrespondence = null;
+        if ($sourceCorrespondenceId !== null) {
+            $sourceCorrespondence = Correspondence::query()
+                ->with(['createdDepartment:id,name,code', 'recipientDepartment:id,name,code', 'externalOrganization:id,name,code', 'externalDepartment:id,name,code'])
+                ->findOrFail($sourceCorrespondenceId);
+            abort_unless($access->canView($sourceCorrespondence, $request->user()), 403);
+            $sourceDepartmentId = $sourceCorrespondence->current_department_id === null ? null : (int) $sourceCorrespondence->current_department_id;
+            $sourceManagerId = $sourceDepartmentId === null ? null : (int) Department::query()->whereKey($sourceDepartmentId)->value('manager_id');
+            $isManagerDraft = $sourceCorrespondence->workflow_state === 'letter_creation_by_manager'
+                && $sourceManagerId === (int) $request->user()->id;
+            $isEmployeeDraft = $sourceCorrespondence->workflow_state === 'letter_draft_pending_employee'
+                && $sourceCorrespondence->current_user_id !== null
+                && (int) $sourceCorrespondence->current_user_id === (int) $request->user()->id
+                && $sourceManagerId !== (int) $request->user()->id;
+            abort_unless($sourceCorrespondence->status === Correspondence::STATUS_REGISTERED
+                && in_array($sourceCorrespondence->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)
+                && ($isManagerDraft || $isEmployeeDraft), 403,
+                'فقط مسئول فعلی مجاز به تهیه نامه در پاسخ به درخواست ثبت‌شده است.');
+        }
+
         $taskId = $request->integer('task_id') ?: null;
         if ($taskId !== null) {
             $task = Task::query()->findOrFail($taskId);
@@ -558,6 +579,24 @@ class CorrespondenceController extends Controller
         return Inertia::render('Correspondence/Create', [
             'isEditing' => false,
             'taskId' => $taskId,
+            'sourceCorrespondenceId' => $sourceCorrespondenceId,
+            'sourceCorrespondence' => $sourceCorrespondence === null ? null : [
+                'id' => (int) $sourceCorrespondence->id,
+                'letter_number' => $sourceCorrespondence->letter_number,
+                'registration_number' => $sourceCorrespondence->registration_number,
+                'external_registration_number' => $sourceCorrespondence->external_registration_number,
+                'subject' => $sourceCorrespondence->subject,
+                'type' => $sourceCorrespondence->type,
+                'letter_date' => ($sourceCorrespondence->sent_at ?? $sourceCorrespondence->received_at ?? $sourceCorrespondence->registered_at)?->toIso8601String(),
+                'created_department' => $sourceCorrespondence->createdDepartment?->name,
+                'created_department_code' => $sourceCorrespondence->createdDepartment?->code,
+                'recipient_department' => $sourceCorrespondence->recipientDepartment?->name,
+                'recipient_department_code' => $sourceCorrespondence->recipientDepartment?->code,
+                'external_organization' => $sourceCorrespondence->externalOrganization?->name,
+                'external_organization_code' => $sourceCorrespondence->externalOrganization?->code,
+                'external_department' => $sourceCorrespondence->externalDepartment?->name,
+                'external_department_code' => $sourceCorrespondence->externalDepartment?->code,
+            ],
             'correspondence' => null,
             'correspondenceFontFamily' => $settings->get(['correspondence.composition.font_family' => 'Vazirmatn'])['correspondence.composition.font_family'],
             'createdDepartment' => $createdDepartment,
