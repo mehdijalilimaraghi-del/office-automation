@@ -11,6 +11,8 @@ use App\Models\User;
 use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Models\CorrespondenceAction;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Workflows\Models\WorkflowDefinition;
+use App\Modules\Workflows\Services\WorkflowService;
 use App\Modules\Notifications\Services\NotificationService;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -139,6 +141,7 @@ class CorrespondenceWorkflowService
                 CorrespondenceAction::MANAGER_REFER_PROJECT_MANAGEMENT,
                 CorrespondenceAction::MANAGER_CREATE_REQUESTED_LETTER,
                 CorrespondenceAction::MANAGER_ASSIGN_LETTER_DRAFT,
+                CorrespondenceAction::MANAGER_START_REQUESTED_WORKFLOW,
             ], true)) {
                 abort_unless($isManager && $letter->workflow_state === 'general_review_pending_manager', 403);
                 if ($note === '') {
@@ -184,6 +187,41 @@ class CorrespondenceWorkflowService
                     $letter->forceFill([
                         'current_user_id' => (int) $requestAction->actor_id,
                         'workflow_state' => 'letter_draft_pending_employee',
+                    ])->save();
+                    return;
+                }
+
+                if ($type === CorrespondenceAction::MANAGER_START_REQUESTED_WORKFLOW) {
+                    if ($requestAction->action_type !== CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW) {
+                        throw new InvalidArgumentException('شروع گردش کار فقط برای درخواست گردش کار کارمند مجاز است.');
+                    }
+                    $definitionId = isset($data['workflow_definition_id']) ? (int) $data['workflow_definition_id'] : 0;
+                    $definition = $definitionId > 0
+                        ? WorkflowDefinition::query()->whereKey($definitionId)->where('is_active', true)->first()
+                        : null;
+                    if ($definition === null) {
+                        throw new InvalidArgumentException('یک گردش کار فعال و معتبر انتخاب کنید.');
+                    }
+                    $department = Department::query()->whereKey($currentDepartmentId)->where('is_active', true)->first();
+                    if ($department === null) {
+                        throw new InvalidArgumentException('واحد مسئول برای شروع گردش کار فعال نیست.');
+                    }
+                    $instance = app(WorkflowService::class)->start($definition, $actor, null, $department);
+                    $taskIds = $instance->steps->pluck('task_id')->filter()->map(fn ($id): int => (int) $id)->values()->all();
+                    $this->record(
+                        $letter, $actor, $type, $note,
+                        $currentDepartmentId, $currentDepartmentId,
+                        $actor->id, null,
+                        [
+                            'workflow_instance_id' => (int) $instance->id,
+                            'workflow_definition_id' => (int) $definition->id,
+                            'task_ids' => $taskIds,
+                        ],
+                    );
+                    $letter->forceFill([
+                        'workflow_instance_id' => (int) $instance->id,
+                        'current_user_id' => null,
+                        'workflow_state' => 'workflow_started',
                     ])->save();
                     return;
                 }
