@@ -137,6 +137,7 @@ class CorrespondenceController extends Controller
                                 'result_pending_manager',
                                 'awaiting_manager_approval',
                                 'project_review_pending_manager',
+                                'general_review_pending_manager',
                             ])->whereHas('currentDepartment', fn ($currentDepartment) => $currentDepartment
                                 ->where('manager_id', $user->id))
                                 ->where(function ($assignment) use ($user): void {
@@ -276,6 +277,7 @@ class CorrespondenceController extends Controller
 
         $generalRequestTypes = [
             CorrespondenceAction::EMPLOYEE_REQUEST_NONE,
+            CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
             CorrespondenceAction::EMPLOYEE_REQUEST_LETTER,
             CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
             CorrespondenceAction::EMPLOYEE_REQUEST_PROJECT,
@@ -305,6 +307,19 @@ class CorrespondenceController extends Controller
             && $isCurrentDepartmentManager
             && $latestGeneralRequest !== null
             && (int) $latestGeneralRequest->to_user_id === (int) $request->user()->id;
+
+        $latestEmployeeReferral = $correspondence->actions()
+            ->where('action_type', CorrespondenceAction::MANAGER_REFER)
+            ->where('to_user_id', $correspondence->current_user_id)
+            ->latest('id')
+            ->first();
+        $canRecallReferral = $correspondence->status === Correspondence::STATUS_REGISTERED
+            && $correspondence->workflow_state === 'assigned_to_employee'
+            && $isCurrentDepartmentManager
+            && $correspondence->current_user_id !== null
+            && (int) $correspondence->current_user_id !== (int) $request->user()->id
+            && $latestEmployeeReferral !== null
+            && (int) $latestEmployeeReferral->from_department_id === (int) $currentDepartmentId;
 
         $canDelegateLetterDraft = $latestGeneralRequest !== null
             && $latestGeneralRequest->action_type === CorrespondenceAction::EMPLOYEE_REQUEST_LETTER
@@ -387,6 +402,7 @@ class CorrespondenceController extends Controller
             'taskInstructionUrl' => $taskInstructionUrl,
             'canSubmitGeneralRequest' => $canSubmitGeneralRequest,
             'canReviewGeneralRequest' => $canReviewGeneralRequest,
+            'canRecallReferral' => $canRecallReferral,
             'generalRequestType' => $latestGeneralRequest?->action_type,
             'requestedLetterCreateUrl' => $requestedLetterCreateUrl,
             'workflowDefinitions' => WorkflowDefinition::query()->where('is_active', true)
@@ -1188,6 +1204,7 @@ class CorrespondenceController extends Controller
                 CorrespondenceAction::MANAGER_APPROVE,
                 CorrespondenceAction::CONFIRM_RESULT,
                 CorrespondenceAction::MANAGER_REFER,
+                CorrespondenceAction::MANAGER_RECALL_REFERRAL,
                 CorrespondenceAction::SECRETARIAT_RETURN,
                 CorrespondenceAction::RESUBMIT_TO_SECRETARIAT,
                 CorrespondenceAction::PM_REQUEST_REFER,
@@ -1197,10 +1214,12 @@ class CorrespondenceController extends Controller
                 CorrespondenceAction::PM_MANAGER_APPROVE_REQUEST,
                 CorrespondenceAction::PM_MANAGER_REJECT_REQUEST,
                 CorrespondenceAction::EMPLOYEE_REQUEST_NONE,
+                CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
                 CorrespondenceAction::EMPLOYEE_REQUEST_LETTER,
                 CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
                 CorrespondenceAction::EMPLOYEE_REQUEST_PROJECT,
                 CorrespondenceAction::MANAGER_REJECT_EMPLOYEE_REQUEST,
+                CorrespondenceAction::MANAGER_CREATE_TASK,
                 CorrespondenceAction::MANAGER_REFER_PROJECT_MANAGEMENT,
                 CorrespondenceAction::MANAGER_CREATE_REQUESTED_LETTER,
                 CorrespondenceAction::MANAGER_ASSIGN_LETTER_DRAFT,
