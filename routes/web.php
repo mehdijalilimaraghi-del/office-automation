@@ -21,6 +21,7 @@ use App\Modules\Dashboard\Http\Controllers\DashboardController;
 use App\Modules\Cartable\Http\Controllers\CartableController;
 use App\Modules\Notifications\Http\Controllers\NotificationController;
 use App\Modules\Correspondence\Http\Controllers\CorrespondenceController;
+use App\Modules\Correspondence\Http\Controllers\CreateProjectFromCorrespondenceController;
 use App\Modules\Correspondence\Http\Controllers\CorrespondenceScannerController;
 use Illuminate\Support\Facades\Route;
 
@@ -54,6 +55,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/scanner/preview/{token}', [CorrespondenceScannerController::class, 'preview'])->middleware('permission:correspondence.create')->name('scanner.preview');
         Route::post('/{correspondence}/copies', [CorrespondenceController::class, 'addCopies'])->name('copies.store');
         Route::post('/{correspondence}/actions', [CorrespondenceController::class, 'action'])->name('actions.store');
+        Route::post('/{correspondence}/create-project', CreateProjectFromCorrespondenceController::class)->middleware('permission:projects.create')->name('create-project');
         Route::put('/{correspondence}/external-tracking', [CorrespondenceController::class, 'updateExternalTracking'])->name('external-tracking.update');
         Route::post('/{correspondence}/register', [CorrespondenceController::class, 'register'])->name('register');
     });
