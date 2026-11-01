@@ -1640,3 +1640,13 @@ Implementation has started for the agreed cross-department project model:
 - Root cause: `TaskController@index` only supplies `formOptions` when `TaskPolicy::create($user, null)` succeeds. Project-scoped department managers were denied at the null-project check even though `TaskFormOptionsService` deliberately exposes the shared default project and their enabled department sections.
 - Updated `TaskPolicy::create`: project-scoped managers can open the task form only when they manage an active department with `manager_can_create_tasks=true` in the active shared system-default project. For a specified project ID, creation is permitted only for that shared default project under the same department-section condition; all other project scope checks remain unchanged. Correspondence store still validates the exact selected section against the correspondence's current department.
 - Added regression coverage via the existing `manager creates general task from correspondence and links it` feature test. User-reported pre-fix result: 1 failed, 459 passed (2,002 assertions). Assistant has not executed tests/build; verification remains pending. `master` unchanged.
+
+
+## اصلاحات مسیرهای مکاتبات — 2026-11-01
+
+- درخواست «ایجاد دستورکار» از درخواست «گردش کار» جدا شد. کارمند می‌تواند درخواست دستورکار بدهد؛ مدیر پس از تأیید، مالک اقدام باقی می‌ماند و لینک فرم موجود Tasks برای ایجاد دستورکار در پروژه عمومی و Section همان واحد نمایش داده می‌شود. ایجاد Task همچنان از مسیر و اعتبارسنجی ماژول Tasks انجام می‌شود.
+- وضعیت general_review_pending_manager به فیلتر «نیاز به اقدام» مدیر واحد اضافه شد تا درخواست‌های برگشتی از کارمند در کارتابل مدیر دیده شوند.
+- اقدام «پس گرفتن ارجاع» اضافه شد. مدیر واحد فقط تا زمانی که کارمند مقصد اقدامی ثبت نکرده باشد می‌تواند ارجاع فعال را پس بگیرد؛ عملیات در تاریخچه ثبت و مالک نامه به مدیر برمی‌گردد. ارجاع مجدد در وضعیت assigned_to_employee مسدود شده است.
+- مدیر واحد مدیریت پروژه‌ها نمی‌تواند با ارجاع عمومی، درخواست پروژه را مستقیم به واحد دیگری منتقل کند؛ ارجاع بین‌واحدی باید از درخواست صریح کارمند پروژه‌ها و تأیید مدیر عبور کند. ارجاع داخلی مدیر به کارمند همان واحد همچنان مجاز است.
+- تست‌های Feature برای پس گرفتن ارجاع، درخواست دستورکار در پروژه عمومی و فیلتر درخواست‌های در انتظار مدیر اضافه شده‌اند.
+- **وضعیت اعتبارسنجی:** تست‌ها و build در محیط توسعه اجرا نشده‌اند؛ بررسی نهایی SQL Server و سناریوی UI پس از pull توسط کاربر لازم است.
