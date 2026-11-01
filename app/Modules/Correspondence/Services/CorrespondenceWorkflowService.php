@@ -538,6 +538,7 @@ class CorrespondenceWorkflowService
             if ((int) $task->created_by !== (int) $actor->id
                 || ! $task->project?->is_system_default
                 || $task->section === null
+                || ! $task->section->manager_can_create_tasks
                 || (int) $task->section->department_id !== $departmentId
                 || (int) $task->department_id !== $departmentId
                 || (int) $task->project_id !== (int) $task->section->project_id
