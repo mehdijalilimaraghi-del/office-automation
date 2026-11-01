@@ -12,6 +12,7 @@ use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectSection;
 use App\Modules\Documents\Models\DocumentLink;
 use App\Modules\Correspondence\Models\Correspondence;
+use App\Modules\Workflows\Models\WorkflowInstanceStep;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -105,6 +106,7 @@ class Task extends Model
     public function statusHistory(): HasMany { return $this->hasMany(TaskStatusHistory::class); }
     public function documents(): MorphMany { return $this->morphMany(DocumentLink::class, 'linkable'); }
     public function correspondences(): HasMany { return $this->hasMany(Correspondence::class, 'task_id'); }
+    public function workflowInstanceSteps(): HasMany { return $this->hasMany(WorkflowInstanceStep::class, 'task_id'); }
     public function dependencies(): HasMany { return $this->hasMany(TaskDependency::class, 'successor_task_id'); }
     public function predecessors(): BelongsToMany
     {
