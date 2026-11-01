@@ -2550,4 +2550,51 @@ class CorrespondenceHttpTest extends TestCase
                 ->where('correspondences.data.0.id', $letter->id));
     }
 
+
+
+    public function test_department_manager_sees_letters_registered_by_team_without_owning_the_next_action(): void
+    {
+        $secretariatManager = $this->userWithPermission('correspondence.view');
+        $registrar = $this->userWithPermission('correspondence.view');
+        $recipientManager = $this->userWithPermission('correspondence.view');
+        $secretariat = Department::query()->create([
+            'name' => 'واحد دبیرخانه کارتابل '.Str::upper(Str::random(5)),
+            'code' => 'SM-'.Str::upper(Str::random(6)),
+            'manager_id' => $secretariatManager->id,
+            'is_active' => true,
+        ]);
+        $registrar->departments()->attach($secretariat->id, ['is_primary' => true, 'joined_at' => now()]);
+        $recipient = Department::query()->create([
+            'name' => 'واحد گیرنده کارتابل '.Str::upper(Str::random(5)),
+            'code' => 'RM-'.Str::upper(Str::random(6)),
+            'manager_id' => $recipientManager->id,
+            'is_active' => true,
+        ]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'classification' => Correspondence::CLASSIFICATION_ORDINARY,
+            'subject' => 'نامه ثبت‌شده توسط کارمند دبیرخانه',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'in_progress',
+            'registered_by' => $registrar->id,
+            'current_department_id' => $recipient->id,
+            'current_user_id' => $recipientManager->id,
+            'recipient_department_id' => $recipient->id,
+            'created_by' => $registrar->id,
+        ]);
+
+        $this->actingAs($secretariatManager)->get(route('correspondence.index', [
+            'scope' => 'mine',
+            'action_filter' => 'all',
+        ]))->assertOk()->assertInertia(fn ($page) => $page
+            ->where('correspondences.total', 1)
+            ->where('correspondences.data.0.id', $letter->id));
+
+        $this->actingAs($secretariatManager)->get(route('correspondence.index', [
+            'scope' => 'mine',
+            'action_filter' => 'needs_action',
+        ]))->assertOk()->assertInertia(fn ($page) => $page
+            ->where('correspondences.total', 0));
+    }
+
 }
