@@ -81,6 +81,8 @@ class CartableService
             ->whereIn('status', [Correspondence::STATUS_DRAFT, Correspondence::STATUS_REGISTERED])
             ->whereIn('workflow_state', [
                 'awaiting_manager_approval',
+                'project_review_pending_manager',
+                'project_request_approved',
                 'result_pending_manager',
                 'awaiting_dispatch',
                 'in_progress',
