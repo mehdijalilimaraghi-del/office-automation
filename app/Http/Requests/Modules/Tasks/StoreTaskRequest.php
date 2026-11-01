@@ -84,6 +84,7 @@ class StoreTaskRequest extends FormRequest
     {
         return [
             'project_id' => ['nullable', 'integer', 'exists:projects,id'],
+            'correspondence_id' => ['nullable', 'integer', 'exists:correspondences,id'],
             'section_id' => [Rule::requiredIf(fn (): bool => $this->filled('project_id')), 'nullable', 'integer', 'exists:project_sections,id'],
             'department_id' => ['nullable', 'integer', 'exists:departments,id'],
             'external_organization_id' => ['nullable', 'integer', 'exists:external_organizations,id'],
