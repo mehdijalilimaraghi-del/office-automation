@@ -63,6 +63,7 @@ const props = defineProps<{
     originalLetters: Attachment[];
     attachments: Attachment[];
     canRegister: boolean;
+    taskInstructionUrl: string | null;
     canCreateProject: boolean;
     responseDepartments: { id: number; name: string; manager_id: number }[];
     responseDepartmentDefaultId: string | number | null;
@@ -311,7 +312,16 @@ function registerCorrespondence(): void {
                     <p class="mt-1 text-sm text-slate-600">وضعیت فعلی: {{ workflowStateLabels[correspondence.workflow_state] ?? correspondence.workflow_state }} <span v-if="correspondence.current_department"> · واحد مسئول: {{ correspondence.current_department.name }}</span></p>
                 </div>
                 <div class="space-y-4 p-5">
-                                        <form v-if="canManageWorkflow || canReturnToManager || canProjectEmployeeReview || canReviewProjectRequest || canSecretariatReturn || canResubmitToSecretariat" class="grid gap-3 rounded-xl border border-slate-200 p-4 sm:grid-cols-2" @submit.prevent="submitWorkflowAction">
+                    <div v-if="taskInstructionUrl" class="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-900">ثبت دستورکار برای این نامه</h3>
+                                <p class="mt-1 text-xs leading-5 text-slate-600">فرم فعلی ایجاد دستورکار باز می‌شود و دستورکار در پروژه عمومی، بخش همین واحد ایجاد و به این نامه متصل خواهد شد.</p>
+                            </div>
+                            <Link :href="taskInstructionUrl" class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">ایجاد دستورکار مرتبط</Link>
+                        </div>
+                    </div>
+                    <form v-if="canManageWorkflow || canReturnToManager || canProjectEmployeeReview || canReviewProjectRequest || canSecretariatReturn || canResubmitToSecretariat" class="grid gap-3 rounded-xl border border-slate-200 p-4 sm:grid-cols-2" @submit.prevent="submitWorkflowAction">
                         <div v-if="canManageWorkflow">
                             <label class="mb-1 block text-sm font-medium text-slate-700">اقدام مدیر</label>
                             <select v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
