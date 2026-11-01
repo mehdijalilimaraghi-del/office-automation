@@ -1688,6 +1688,130 @@ class CorrespondenceHttpTest extends TestCase
         $this->assertDatabaseMissing('correspondences', ['id' => $letter->id]);
     }
 
+    public function test_project_management_employee_request_requires_manager_decision_and_can_be_returned_for_revision(): void
+    {
+        $manager = $this->userWithPermission('correspondence.view');
+        $employee = $this->userWithPermission('correspondence.view');
+        $projectDepartment = Department::query()->create([
+            'name' => 'واحد پروژه‌های آزمون '.Str::upper(Str::random(5)),
+            'code' => 'PM-'.Str::upper(Str::random(6)),
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+        $employee->departments()->attach($projectDepartment->id, ['is_primary' => true, 'joined_at' => now()]);
+        app(SystemSettingsService::class)->set([
+            'organization.department_roles.project_management' => (string) $projectDepartment->id,
+        ]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'classification' => Correspondence::CLASSIFICATION_ORDINARY,
+            'subject' => 'درخواست پروژه برای بررسی مرحله‌ای',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'assigned_to_employee',
+            'recipient_department_id' => $projectDepartment->id,
+            'current_department_id' => $projectDepartment->id,
+            'current_user_id' => $employee->id,
+            'created_by' => $manager->id,
+        ]);
+
+        $this->actingAs($employee)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::PM_REQUEST_PROJECT,
+            'note' => '',
+        ])->assertSessionHasErrors('workflow_action');
+
+        $this->actingAs($employee)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::PM_REQUEST_PROJECT,
+            'note' => 'با توجه به حجم کار، ایجاد پروژه مستقل پیشنهاد می‌شود.',
+        ])->assertRedirect();
+
+        $letter->refresh();
+        $this->assertSame('project_review_pending_manager', $letter->workflow_state);
+        $this->assertSame((int) $manager->id, (int) $letter->current_user_id);
+        $this->assertDatabaseHas('correspondence_actions', [
+            'correspondence_id' => $letter->id,
+            'action_type' => CorrespondenceAction::PM_REQUEST_PROJECT,
+            'actor_id' => $employee->id,
+            'to_user_id' => $manager->id,
+        ]);
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::PM_MANAGER_REJECT_REQUEST,
+            'note' => 'اطلاعات تکمیلی برای تصمیم لازم است.',
+        ])->assertRedirect();
+
+        $letter->refresh();
+        $this->assertSame('assigned_to_employee', $letter->workflow_state);
+        $this->assertSame((int) $employee->id, (int) $letter->current_user_id);
+
+        $this->actingAs($employee)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::PM_REQUEST_PROJECT,
+            'note' => 'نسخه تکمیلی درخواست پروژه.',
+        ])->assertRedirect();
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::PM_MANAGER_APPROVE_REQUEST,
+            'note' => 'درخواست پروژه تأیید می‌شود.',
+        ])->assertRedirect();
+
+        $letter->refresh();
+        $this->assertSame('project_request_approved', $letter->workflow_state);
+        $this->assertSame((int) $manager->id, (int) $letter->current_user_id);
+    }
+
+    public function test_project_management_referral_request_does_not_route_until_manager_approves_it(): void
+    {
+        $manager = $this->userWithPermission('correspondence.view');
+        $employee = $this->userWithPermission('correspondence.view');
+        $targetManager = $this->userWithPermission('correspondence.view');
+        $projectDepartment = Department::query()->create([
+            'name' => 'واحد پروژه‌های ارجاع آزمون '.Str::upper(Str::random(5)),
+            'code' => 'PMR-'.Str::upper(Str::random(6)),
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+        $targetDepartment = Department::query()->create([
+            'name' => 'واحد مقصد ارجاع آزمون '.Str::upper(Str::random(5)),
+            'code' => 'TGT-'.Str::upper(Str::random(6)),
+            'manager_id' => $targetManager->id,
+            'is_active' => true,
+        ]);
+        $employee->departments()->attach($projectDepartment->id, ['is_primary' => true, 'joined_at' => now()]);
+        app(SystemSettingsService::class)->set([
+            'organization.department_roles.project_management' => (string) $projectDepartment->id,
+        ]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'classification' => Correspondence::CLASSIFICATION_ORDINARY,
+            'subject' => 'درخواست ارجاع واحد پروژه‌ها',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'assigned_to_employee',
+            'recipient_department_id' => $projectDepartment->id,
+            'current_department_id' => $projectDepartment->id,
+            'current_user_id' => $employee->id,
+            'created_by' => $manager->id,
+        ]);
+
+        $this->actingAs($employee)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::PM_REQUEST_REFER,
+            'to_department_id' => $targetDepartment->id,
+            'note' => 'این موضوع در حوزه تخصصی واحد مقصد است.',
+        ])->assertRedirect();
+
+        $letter->refresh();
+        $this->assertSame((int) $projectDepartment->id, (int) $letter->current_department_id);
+        $this->assertSame('project_review_pending_manager', $letter->workflow_state);
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::PM_MANAGER_APPROVE_REQUEST,
+            'note' => 'ارجاع به واحد تخصصی تأیید شد.',
+        ])->assertRedirect();
+
+        $letter->refresh();
+        $this->assertSame((int) $targetDepartment->id, (int) $letter->current_department_id);
+        $this->assertSame((int) $targetManager->id, (int) $letter->current_user_id);
+        $this->assertSame('in_progress', $letter->workflow_state);
+    }
+
     private function userWithPermission(string $permissionCode): User
     {
         $permission = Permission::query()->firstOrCreate(
