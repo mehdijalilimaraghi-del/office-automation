@@ -14,10 +14,13 @@ class CorrespondenceAction extends Model
     public const SUBMIT_RESULT = 'submit_result';
     public const MANAGER_APPROVE = 'manager_approve';
     public const MANAGER_REFER = 'manager_refer';
+    public const MANAGER_RECALL_REFERRAL = 'manager_recall_referral';
+    public const MANAGER_CREATE_TASK = 'manager_create_task';
     public const REQUEST_TASK = 'request_task';
     public const REQUEST_PROJECT = 'request_project';
     public const REQUEST_LETTER = 'request_letter';
     public const EMPLOYEE_REQUEST_NONE = 'employee_request_none';
+    public const EMPLOYEE_REQUEST_TASK = 'employee_request_task';
     public const EMPLOYEE_REQUEST_LETTER = 'employee_request_letter';
     public const EMPLOYEE_REQUEST_WORKFLOW = 'employee_request_workflow';
     public const EMPLOYEE_REQUEST_PROJECT = 'employee_request_project';
