@@ -15,6 +15,7 @@ use App\Modules\Correspondence\Models\CorrespondenceAction;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectSection;
+use App\Modules\Workflows\Models\WorkflowDefinition;
 use App\Modules\Correspondence\Services\CorrespondenceNumberingService;
 use App\Modules\Correspondence\Services\CorrespondenceAccessService;
 use App\Modules\Correspondence\Services\CorrespondenceService;
@@ -237,6 +238,8 @@ class CorrespondenceController extends Controller
             'task:id,title,status,assignee_id,created_by',
             'project:id,name,code',
             'documents.document.latestVersion',
+            'workflowInstance.definition:id,name',
+            'workflowInstance.steps.task.assignee:id,name',
             'actions.actor:id,name',
             'actions.toUser:id,name',
             'actions.fromDepartment:id,name',
@@ -382,6 +385,24 @@ class CorrespondenceController extends Controller
             'canReviewGeneralRequest' => $canReviewGeneralRequest,
             'generalRequestType' => $latestGeneralRequest?->action_type,
             'requestedLetterCreateUrl' => $requestedLetterCreateUrl,
+            'workflowDefinitions' => WorkflowDefinition::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'workflowInstance' => $correspondence->workflowInstance === null ? null : [
+                'id' => (int) $correspondence->workflowInstance->id,
+                'status' => $correspondence->workflowInstance->status,
+                'definition' => $correspondence->workflowInstance->definition?->only(['id', 'name']),
+                'steps' => $correspondence->workflowInstance->steps
+                    ->filter(fn ($step) => $step->task !== null && $request->user()->can('view', $step->task))
+                    ->map(fn ($step): array => [
+                        'id' => (int) $step->id,
+                        'status' => $step->status,
+                        'task' => [
+                            'id' => (int) $step->task->id,
+                            'title' => $step->task->title,
+                            'status' => $step->task->status,
+                            'assignee' => $step->task->assignee?->only(['id', 'name']),
+                        ],
+                    ])->values(),
+            ],
             'canCreateRequestedLetter' => $canCreateRequestedLetter,
             'canPrepareRequestedLetterDraft' => $canPrepareRequestedLetterDraft,
             'workflowDepartments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'parent_id', 'icon']),
@@ -1172,11 +1193,13 @@ class CorrespondenceController extends Controller
                 CorrespondenceAction::MANAGER_REFER_PROJECT_MANAGEMENT,
                 CorrespondenceAction::MANAGER_CREATE_REQUESTED_LETTER,
                 CorrespondenceAction::MANAGER_ASSIGN_LETTER_DRAFT,
+                CorrespondenceAction::MANAGER_START_REQUESTED_WORKFLOW,
             ])],
             'note' => ['nullable', 'string', 'max:10000'],
             'target_type' => ['nullable', Rule::in(['department', 'user'])],
             'to_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')->where('is_active', true)],
             'to_user_id' => ['nullable', 'integer', Rule::exists('users', 'id')->where('status', 'active')],
+            'workflow_definition_id' => ['nullable', 'integer', Rule::exists('workflow_definitions', 'id')->where('is_active', true)],
         ]);
 
         try {
