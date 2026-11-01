@@ -1387,3 +1387,6 @@ Incoming letter numbers are captured from the original document, never auto-gene
 
 
 - Final registration of a requested reply closes the source request as `letter_registered`; completed workflow/reply states are blocked from further workflow actions.
+
+
+- Feature tests now cover correspondence-linked general task creation, general employee requests/rejection, delegated letter draft/final registration, workflow start/completion, and confidential workflow-task access. Tests have not been run; build and SQL Server validation remain pending.
