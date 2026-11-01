@@ -601,3 +601,13 @@ Before making the first code change in a new conversation:
 - Removed the legacy `project_requested` workflow state from the manager `needs_action` filter. A state label alone must not represent a completed project-request process; the project request flow must be implemented with explicit actions and project creation/linkage. Updated the regression test to assert that the legacy state is not actionable.
 - This is an incremental first slice only. The project-specific approval flow, project creation with a selected response department/section/task, and source-letter linkage are not yet implemented.
 - Validation has not been run in this editing environment. Pull `development`, run `php artisan test --filter=CorrespondenceHttpTest`, then run `npm run build` before accepting this slice. `master` unchanged.
+
+
+## 2026-11-01 — مرجع الزامی گردش کار درخواست پروژه و اتصال تسک/مکاتبه
+
+- قبل از هر تغییر مرتبط، `CORRESPONDENCE_PROJECT_WORKFLOW.md` را بخوان؛ این سند مرجع نیازمندی‌ها و معیارهای پذیرش است.
+- چهار اقدام کارمند واحد پروژه‌ها باید صرفاً «درخواست» باشند و هر چهار مورد بازخورد اجباری داشته باشند. تصمیم مدیر مرحله‌ای مستقل است؛ رد درخواست کارمند باید به همان کارمند برای بررسی مجدد برگردد و با رد درخواست پروژه اشتباه نشود.
+- ایجاد پروژه فقط پس از تأیید مدیر مجاز است. مسئول پاسخ‌گویی در هر پروژه انتخاب می‌شود؛ تنظیمات فقط واحد پیش‌فرض قابل‌تغییر را فراهم می‌کند. در پروژه جدید فقط Section واحد پاسخ‌گو و تسک تهیه پاسخ ساخته می‌شود؛ برای واحد درخواست‌کننده Section/تسک خودکار نساز.
+- تسک پاسخ به نامه مبدأ و پروژه مرتبط است. نامه‌ای که از داخل تسک ایجاد می‌شود باید ارتباط تسک، پروژه و نامه مبدأ را حفظ کند و روابط از جزئیات تسک و مکاتبه قابل پیمایش باشند.
+- وضعیت واقعی در تاریخ 2026-11-01: ورودی ایجاد نامه از جزئیات تسک و ذخیره `task_id` برای مسئول فعلی دارای مجوز موجود است؛ مراحل ۱ تا ۳ و تست انتها‌به‌انتها انجام‌نشده‌اند؛ مرحله ۴ اتصال دوسویه/انتقال روابط ناقص است. جدول مرحله‌ها در سند مرجع نگهداری می‌شود.
+- پس از هر مرحله، وضعیت را در سند مرجع و فایل‌های وضعیت پروژه ثبت کن. مستندسازی به‌تنهایی هرگز به معنی تکمیل قابلیت نیست. `master` تغییر نکند.
