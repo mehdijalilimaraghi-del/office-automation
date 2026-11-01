@@ -122,6 +122,23 @@ class TaskFormOptionsService
             });
         }
 
+        $managedDepartmentIds = $user->managedDepartments()
+            ->where('is_active', true)
+            ->pluck('departments.id')
+            ->map(fn ($id): int => (int) $id)
+            ->values()
+            ->all();
+
+        if ($managedDepartmentIds !== []) {
+            $projectsQuery->orWhere(function ($sharedProjectQuery) use ($managedDepartmentIds): void {
+                $sharedProjectQuery->where('projects.is_system_default', true)
+                    ->whereNull('projects.department_id')
+                    ->whereHas('sections', fn ($sectionQuery) => $sectionQuery
+                        ->whereIn('department_id', $managedDepartmentIds)
+                        ->where('manager_can_create_tasks', true));
+            });
+        }
+
         $projects = $projectsQuery
             ->orderBy('projects.name')
             ->get()
