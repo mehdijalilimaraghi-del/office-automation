@@ -304,6 +304,20 @@ class CorrespondenceController extends Controller
                 ? collect()
                 : (Department::query()->whereKey($correspondence->current_department_id)->first()?->members()
                     ->where('users.status', 'active')->where('users.id', '<>', $request->user()->id)->orderBy('users.name')->get(['users.id', 'users.name']) ?? collect()),
+            'canProjectEmployeeReview' => $correspondence->status === Correspondence::STATUS_REGISTERED
+                && in_array($correspondence->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)
+                && $correspondence->workflow_state === 'assigned_to_employee'
+                && $correspondence->current_user_id !== null
+                && (int) $correspondence->current_user_id === (int) $request->user()->id
+                && $correspondence->current_department_id !== null
+                && (int) $correspondence->current_department_id === (int) app(OrganizationDepartmentRoleService::class)->activeDepartmentId(OrganizationDepartmentRoleService::PROJECT_MANAGEMENT)
+                && (int) Department::query()->whereKey($correspondence->current_department_id)->value('manager_id') !== (int) $request->user()->id,
+            'canReviewProjectRequest' => $correspondence->status === Correspondence::STATUS_REGISTERED
+                && in_array($correspondence->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)
+                && $correspondence->workflow_state === 'project_review_pending_manager'
+                && $correspondence->current_department_id !== null
+                && (int) $correspondence->current_department_id === (int) app(OrganizationDepartmentRoleService::class)->activeDepartmentId(OrganizationDepartmentRoleService::PROJECT_MANAGEMENT)
+                && (int) Department::query()->whereKey($correspondence->current_department_id)->value('manager_id') === (int) $request->user()->id,
             'canReturnToManager' => $correspondence->workflow_state !== 'completed_with_result'
                 && $correspondence->status === Correspondence::STATUS_REGISTERED
                 && in_array($correspondence->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)
