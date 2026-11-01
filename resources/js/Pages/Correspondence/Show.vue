@@ -71,6 +71,7 @@ const props = defineProps<{
     attachments: Attachment[];
     canRegister: boolean;
     taskInstructionUrl: string | null;
+    canCreateTaskInstruction: boolean;
     canSubmitGeneralRequest: boolean;
     canReviewGeneralRequest: boolean;
     canRecallReferral: boolean;
@@ -389,7 +390,7 @@ function registerCorrespondence(): void {
                                 <option v-if="canReviewProjectRequest" value="pm_manager_approve_request">تأیید درخواست کارمند</option>
                                 <option v-if="canReviewProjectRequest" value="pm_manager_reject_request">عدم تأیید و بازگشت به کارمند</option>
                                 <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_none'" value="manager_refer">ارجاع نامه</option>
-                                <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_task'" value="manager_create_task">ایجاد دستورکار در پروژه عمومی</option>
+                                <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_task' && canCreateTaskInstruction" value="manager_create_task">ایجاد دستورکار در پروژه عمومی</option>
                                 <option v-if="canRecallReferral" value="manager_recall_referral">پس گرفتن ارجاع از کارمند</option>
                                 <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_project'" value="manager_refer_project_management">ارجاع به مدیریت پروژه‌ها</option>
                                 <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_workflow' && workflowDefinitions.length" value="manager_start_requested_workflow">ثبت گردش کار</option>
@@ -439,7 +440,8 @@ function registerCorrespondence(): void {
                                 <option value="resubmit_to_secretariat">ارسال مجدد به دبیرخانه</option>
                             </select>
                         </div>
-<p v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_workflow' && !workflowDefinitions.length" class="sm:col-span-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">هیچ گردش کار فعالی تعریف نشده است؛ ابتدا باید یک Workflow فعال در سامانه تعریف شود.</p>
+<p v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_task' && !canCreateTaskInstruction" class="sm:col-span-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">برای این واحد، پروژه عمومی فعال یا بخش مجاز ایجاد دستورکار تعریف نشده است؛ ابتدا تنظیمات پروژه عمومی و بخش واحد را بررسی کنید.</p>
+                        <p v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_workflow' && !workflowDefinitions.length" class="sm:col-span-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">هیچ گردش کار فعالی تعریف نشده است؛ ابتدا باید یک Workflow فعال در سامانه تعریف شود.</p>
                         <div v-if="canReviewGeneralRequest && actionForm.action_type === 'manager_start_requested_workflow'" class="sm:col-span-2">
                             <label class="mb-1 block text-sm font-medium text-slate-700">گردش کار فعال *</label>
                             <select v-model="actionForm.workflow_definition_id" required class="w-full rounded-xl border-slate-300 text-sm">
