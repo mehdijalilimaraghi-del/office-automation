@@ -611,3 +611,12 @@ Before making the first code change in a new conversation:
 - تسک پاسخ به نامه مبدأ و پروژه مرتبط است. نامه‌ای که از داخل تسک ایجاد می‌شود باید ارتباط تسک، پروژه و نامه مبدأ را حفظ کند و روابط از جزئیات تسک و مکاتبه قابل پیمایش باشند.
 - وضعیت واقعی در تاریخ 2026-11-01: ورودی ایجاد نامه از جزئیات تسک و ذخیره `task_id` برای مسئول فعلی دارای مجوز موجود است؛ مراحل ۱ تا ۳ و تست انتها‌به‌انتها انجام‌نشده‌اند؛ مرحله ۴ اتصال دوسویه/انتقال روابط ناقص است. جدول مرحله‌ها در سند مرجع نگهداری می‌شود.
 - پس از هر مرحله، وضعیت را در سند مرجع و فایل‌های وضعیت پروژه ثبت کن. مستندسازی به‌تنهایی هرگز به معنی تکمیل قابلیت نیست. `master` تغییر نکند.
+
+
+## 2026-11-01 — Project Management review workflow implementation checkpoint
+
+- Initial implementation committed on `development`: four employee request actions (`pm_request_refer/project/reject/return`) and two manager decisions (`pm_manager_approve_request`, `pm_manager_reject_request`).
+- Employee requests require a non-empty note, are restricted to the currently assigned employee in the configured Project Management department, and route only to that department's manager. Employee referral target is stored in action metadata; it is not routed until manager approval.
+- Manager rejection returns the letter to the same requesting employee. Manager approval executes the requested branch: referral to selected department, return/reject to the original recipient department, or `project_request_approved` as the handoff to the project-creation phase. The approved-project state does not create a project yet.
+- New pending states are included in the manager cartable and correspondence needs-action list. UI actions are shown from server-computed assignment/department-role conditions.
+- Two focused HTTP tests were added. **Do not treat this stage as accepted until the project owner runs the focused CorrespondenceHttpTest and npm build locally.** The next work after validation is stage 2: create project with editable response-department selection.
