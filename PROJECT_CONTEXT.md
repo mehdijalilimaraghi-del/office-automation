@@ -1378,3 +1378,6 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - Workflow request uses the existing `WorkflowDefinition` and `WorkflowService` to create a real instance and its task steps, linked by `correspondences.workflow_instance_id`.
 - Manager task instruction reuses the current Tasks create form in the organization's general project and the current department Section; it persists `task_id` on the source letter.
 - Focused Feature tests were added for request/rejection, letter draft delegation and real workflow start, but not executed. Build, task-link integration tests, full regression and SQL Server validation remain pending.
+
+
+- Workflow instance task links are bidirectional: correspondence detail lists authorized workflow tasks, and task detail resolves the source correspondence through the workflow instance with correspondence visibility filtering.
