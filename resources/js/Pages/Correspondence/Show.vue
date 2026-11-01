@@ -67,6 +67,9 @@ const props = defineProps<{
     canSubmitGeneralRequest: boolean;
     canReviewGeneralRequest: boolean;
     generalRequestType: string | null;
+    requestedLetterCreateUrl: string | null;
+    canCreateRequestedLetter: boolean;
+    canPrepareRequestedLetterDraft: boolean;
     canCreateProject: boolean;
     responseDepartments: { id: number; name: string; manager_id: number }[];
     responseDepartmentDefaultId: string | number | null;
@@ -116,6 +119,9 @@ const actionLabels: Record<string, string> = {
     manager_reject_employee_request: 'رد درخواست و بازگشت به کارمند',
     manager_refer_project_management: 'ارجاع به واحد مدیریت پروژه‌ها',
     manager_create_task: 'ایجاد دستورکار مرتبط با نامه',
+    manager_create_requested_letter: 'مدیر: ایجاد نامه در پاسخ به درخواست',
+    manager_assign_letter_draft: 'ارجاع برای تهیه پیش‌نویس نامه',
+    requested_letter_draft_created: 'ایجاد پیش‌نویس نامه مرتبط',
 };
 const copyForm = useForm({ department_ids: [] as number[] });
 function toggleCopyDepartment(departmentId: number, checked: boolean): void {
@@ -160,7 +166,7 @@ function submitWorkflowAction(): void {
 const typeLabels: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
 const statusLabels: Record<string, string> = { draft: 'پیش‌نویس', registered: 'ثبت‌شده' };
 const workflowStateLabels: Record<string, string> = {
-    draft: 'پیش‌نویس', awaiting_registration: 'در انتظار ثبت نهایی', awaiting_manager_approval: 'در انتظار تأیید مدیر', approved_for_registration: 'تأییدشده برای ثبت نهایی', manager_review: 'در انتظار تصمیم مدیر', project_review_pending_manager: 'در انتظار تصمیم مدیر واحد پروژه‌ها', project_request_approved: 'درخواست پروژه تأیید شده؛ در انتظار ایجاد پروژه', result_pending_manager: 'نتیجه ثبت شده؛ در انتظار تصمیم مدیر', general_review_pending_manager: 'در انتظار بررسی درخواست کارمند توسط مدیر', completed_with_result: 'خاتمه‌یافته با نتیجه ثبت‌شده', in_progress: 'در حال گردش', assigned_to_employee: 'ارجاع‌شده به کارمند', awaiting_dispatch: 'در انتظار بررسی دبیرخانه و ارسال', returned_for_correction: 'برگشت برای اصلاح', project_created: 'پروژه و تسک پاسخ ایجاد شده', dispatched: 'ارسال نهایی‌شده',
+    draft: 'پیش‌نویس', awaiting_registration: 'در انتظار ثبت نهایی', awaiting_manager_approval: 'در انتظار تأیید مدیر', approved_for_registration: 'تأییدشده برای ثبت نهایی', manager_review: 'در انتظار تصمیم مدیر', project_review_pending_manager: 'در انتظار تصمیم مدیر واحد پروژه‌ها', project_request_approved: 'درخواست پروژه تأیید شده؛ در انتظار ایجاد پروژه', result_pending_manager: 'نتیجه ثبت شده؛ در انتظار تصمیم مدیر', general_review_pending_manager: 'در انتظار بررسی درخواست کارمند توسط مدیر', letter_creation_by_manager: 'در انتظار ایجاد نامه توسط مدیر', letter_draft_pending_employee: 'در انتظار تهیه پیش‌نویس توسط کارمند', letter_draft_pending_manager: 'پیش‌نویس ایجاد شده؛ در انتظار بررسی مدیر', completed_with_result: 'خاتمه‌یافته با نتیجه ثبت‌شده', in_progress: 'در حال گردش', assigned_to_employee: 'ارجاع‌شده به کارمند', awaiting_dispatch: 'در انتظار بررسی دبیرخانه و ارسال', returned_for_correction: 'برگشت برای اصلاح', project_created: 'پروژه و تسک پاسخ ایجاد شده', dispatched: 'ارسال نهایی‌شده',
 };
 const formatDate = (value: string | null) => value
     ? new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium' }).format(new Date(value))
@@ -322,6 +328,15 @@ function registerCorrespondence(): void {
                     <p class="mt-1 text-sm text-slate-600">وضعیت فعلی: {{ workflowStateLabels[correspondence.workflow_state] ?? correspondence.workflow_state }} <span v-if="correspondence.current_department"> · واحد مسئول: {{ correspondence.current_department.name }}</span></p>
                 </div>
                 <div class="space-y-4 p-5">
+                    <div v-if="requestedLetterCreateUrl" class="rounded-xl border border-sky-200 bg-sky-50/50 p-4">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-900">تهیه نامه در پاسخ به درخواست</h3>
+                                <p class="mt-1 text-xs leading-5 text-slate-600">{{ canPrepareRequestedLetterDraft ? 'پیش‌نویس را تهیه کنید؛ پس از ذخیره برای بررسی مدیر ارسال می‌شود.' : 'نامه جدید را در پاسخ به این مکاتبه ایجاد کنید.' }}</p>
+                            </div>
+                            <Link :href="requestedLetterCreateUrl" class="rounded-lg bg-sky-700 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-800">{{ canPrepareRequestedLetterDraft ? 'تهیه پیش‌نویس نامه' : 'ایجاد نامه جدید' }}</Link>
+                        </div>
+                    </div>
                     <div v-if="taskInstructionUrl" class="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4">
                         <div class="flex flex-wrap items-center justify-between gap-3">
                             <div>
@@ -340,6 +355,8 @@ function registerCorrespondence(): void {
                                 <option v-if="canReviewProjectRequest" value="pm_manager_reject_request">عدم تأیید و بازگشت به کارمند</option>
                                 <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_none'" value="manager_refer">ارجاع نامه</option>
                                 <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_project'" value="manager_refer_project_management">ارجاع به مدیریت پروژه‌ها</option>
+                                <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_letter'" value="manager_create_requested_letter">مدیر خودش نامه را ایجاد کند</option>
+                                <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_letter'" value="manager_assign_letter_draft">ارجاع به کارمند برای تهیه پیش‌نویس</option>
                                 <option v-if="canReviewGeneralRequest" value="manager_reject_employee_request">رد درخواست و بازگشت به کارمند</option>
                                 <option v-if="!canReviewProjectRequest && !canReviewGeneralRequest && correspondence.status === 'registered' && correspondence.type !== 'outgoing'" value="manager_refer">ارجاع به</option>
                                 <option v-if="canSecretariatReturn" value="secretariat_return">برگشت برای اصلاح</option>
@@ -411,7 +428,7 @@ function registerCorrespondence(): void {
                         </template>
                         <div class="sm:col-span-2">
                             <label class="mb-1 block text-sm font-medium text-slate-700">توضیح / شرح اقدام</label>
-                            <textarea v-model="actionForm.note" rows="3" maxlength="10000" class="w-full rounded-xl border-slate-300 text-sm"   :required="['submit_result', 'confirm_result', 'secretariat_return', 'pm_request_refer', 'pm_request_project', 'pm_request_reject', 'pm_request_return', 'pm_manager_approve_request', 'pm_manager_reject_request', 'employee_request_none', 'employee_request_letter', 'employee_request_workflow', 'employee_request_project', 'manager_reject_employee_request', 'manager_refer_project_management'].includes(actionForm.action_type)" placeholder="شرح بررسی، نتیجه یا علت برگشت/ارجاع را وارد کنید"></textarea>
+                            <textarea v-model="actionForm.note" rows="3" maxlength="10000" class="w-full rounded-xl border-slate-300 text-sm"   :required="['submit_result', 'confirm_result', 'secretariat_return', 'pm_request_refer', 'pm_request_project', 'pm_request_reject', 'pm_request_return', 'pm_manager_approve_request', 'pm_manager_reject_request', 'employee_request_none', 'employee_request_letter', 'employee_request_workflow', 'employee_request_project', 'manager_reject_employee_request', 'manager_refer_project_management', 'manager_create_requested_letter', 'manager_assign_letter_draft'].includes(actionForm.action_type)" placeholder="شرح بررسی، نتیجه یا علت برگشت/ارجاع را وارد کنید"></textarea>
                             <p v-if="page.props.errors?.workflow_action" class="mt-1 text-sm text-rose-700">{{ page.props.errors.workflow_action }}</p>
                         </div>
                         <div class="sm:col-span-2 flex justify-end">
