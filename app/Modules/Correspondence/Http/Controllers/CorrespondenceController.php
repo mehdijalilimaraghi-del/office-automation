@@ -313,8 +313,7 @@ class CorrespondenceController extends Controller
                 && $correspondence->workflow_state === 'project_request_approved'
                 && $correspondence->project_id === null
                 && $request->user()->hasPermission('projects.create')
-                && app(OrganizationDepartmentRoleService::class)->userBelongsTo($request->user(), OrganizationDepartmentRoleService::PROJECT_MANAGEMENT)
-                && (int) Department::query()->whereKey($correspondence->current_department_id)->value('manager_id') === (int) $request->user()->id,
+                && app(OrganizationDepartmentRoleService::class)->userBelongsTo($request->user(), OrganizationDepartmentRoleService::PROJECT_MANAGEMENT),
             'responseDepartments' => Department::query()
                 ->with('manager:id,name,status')
                 ->where('is_active', true)
