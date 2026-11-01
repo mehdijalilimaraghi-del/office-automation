@@ -632,5 +632,5 @@ Before making the first code change in a new conversation:
 
 - Initial code path exists for creating a project from a registered incoming correspondence in project_request_approved. It is restricted to the Project Management department manager with projects.create.
 - The transaction creates a project, exactly one response Section, and a response task using existing CreateProjectAction and CreateTaskAction; the source letter receives project_id and task_id, and a project_created history action is recorded.
-- Explicit response department selection is in the correspondence detail UI. Configurable organization default is still missing. No local migration/test/build validation has been performed for this slice; do not mark stages 2/3 accepted.
+- Explicit response department selection is in the correspondence detail UI. Configurable organization default is wired through Organization Settings and pre-fills the form, while remaining editable. No local migration/test/build validation has been performed for this slice; do not mark stages 2/3 accepted.
 - Remaining: configurable default and prefill; show correspondence/project/task links from both project and task details; carry project and source letter links onto reply letters; add focused authorization/rollback/SQL Server tests.
