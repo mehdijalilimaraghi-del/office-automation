@@ -29,6 +29,8 @@ interface CorrespondenceDetail {
     received_at: string | null;
     sent_at: string | null;
     task_id: number | null;
+    project_id: number | null;
+    project: { id: number; name: string; code: string | null } | null;
     task: { id: number; title: string; status: string; assignee_id: number | null; created_by: number } | null;
     external_registration_number: string | null;
     external_registered_at: string | null;
@@ -61,6 +63,8 @@ const props = defineProps<{
     originalLetters: Attachment[];
     attachments: Attachment[];
     canRegister: boolean;
+    canCreateProject: boolean;
+    responseDepartments: { id: number; name: string; manager_id: number }[];
     correspondenceFontFamily: string;
     trackableTasks: { id: number; title: string; status: string }[];
     canUpdateExternalTracking: boolean;
@@ -99,6 +103,7 @@ const actionLabels: Record<string, string> = {
     confirm_result: 'تأیید نتیجه و خاتمه گردش',
     secretariat_initial_referral: 'ارجاع اولیه دبیرخانه',
     copy_added: 'ثبت رونوشت جهت اطلاع',
+    project_created: 'ایجاد پروژه و تسک پاسخ',
 };
 const copyForm = useForm({ department_ids: [] as number[] });
 function toggleCopyDepartment(departmentId: number, checked: boolean): void {
@@ -111,6 +116,15 @@ function submitCopies(): void {
         preserveScroll: true,
         onSuccess: () => { copyForm.reset(); },
     });
+}
+
+const projectForm = useForm({
+    name: 'پاسخ به نامه: ' + props.correspondence.subject,
+    description: '',
+    response_department_id: '' as number | '',
+});
+function createResponseProject(): void {
+    projectForm.post(route('correspondence.create-project', props.correspondence.id), { preserveScroll: true });
 }
 
 const actionForm = useForm({
@@ -195,6 +209,39 @@ function registerCorrespondence(): void {
                 <p class="font-bold">ثبت نهایی انجام نشد</p>
                 <p class="mt-1">{{ page.props.errors.registration }}</p>
             </div>
+            <section v-if="canCreateProject" class="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-5">
+                <h2 class="font-bold text-slate-900">ایجاد پروژه برای پاسخ به نامه</h2>
+                <p class="mt-1 text-sm text-slate-600">واحد پاسخ‌گو را برای این پروژه انتخاب کنید. فقط برای همین واحد بخش و تسک پاسخ ایجاد می‌شود.</p>
+                <form class="mt-4 grid gap-4 md:grid-cols-2" @submit.prevent="createResponseProject">
+                    <div>
+                        <label class="mb-1 block text-sm font-medium">نام پروژه *</label>
+                        <input v-model="projectForm.name" required maxlength="150" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" />
+                        <p v-if="projectForm.errors.name" class="mt-1 text-xs text-rose-600">{{ projectForm.errors.name }}</p>
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-sm font-medium">واحد مسئول پاسخ‌گویی *</label>
+                        <select v-model="projectForm.response_department_id" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+                            <option value="">انتخاب واحد پاسخ‌گو</option>
+                            <option v-for="department in responseDepartments" :key="department.id" :value="department.id">{{ department.name }}</option>
+                        </select>
+                        <p v-if="projectForm.errors.response_department_id" class="mt-1 text-xs text-rose-600">{{ projectForm.errors.response_department_id }}</p>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="mb-1 block text-sm font-medium">توضیحات</label>
+                        <textarea v-model="projectForm.description" rows="2" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" />
+                    </div>
+                    <div class="md:col-span-2 flex justify-end">
+                        <button type="submit" :disabled="projectForm.processing" class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{{ projectForm.processing ? 'در حال ایجاد...' : 'ایجاد پروژه و تسک پاسخ' }}</button>
+                    </div>
+                </form>
+                <p v-if="projectForm.errors.project" class="mt-2 text-sm text-rose-700">{{ projectForm.errors.project }}</p>
+            </section>
+            <section v-if="correspondence.project" class="rounded-2xl border border-slate-200 bg-white p-4">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div><h2 class="font-bold">پروژه مرتبط</h2><p class="mt-1 text-sm text-slate-600">{{ correspondence.project.name }}</p></div>
+                    <Link :href="route('projects.show', correspondence.project.id)" class="rounded-lg border px-4 py-2 text-sm font-semibold">مشاهده پروژه</Link>
+                </div>
+            </section>
             <div v-if="page.props.flash?.success" class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-800" role="status">
                 {{ page.props.flash.success }}
             </div>
