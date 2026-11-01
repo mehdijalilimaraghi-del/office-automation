@@ -1332,3 +1332,10 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - The response task links to the new project and source incoming correspondence. A response letter created from the task must link to the task, project and source correspondence. Task/correspondence navigation must work in both directions.
 - Actual implementation checkpoint (2026-11-01): task detail already offers «ایجاد نامه جدید» to the current assignee with correspondence-create permission, and backend stores the task relation. The project-specific request/approval flow, per-project response department, response section/task creation, source-letter/project propagation and bidirectional detail links remain incomplete. Do not describe them as implemented.
 - Stage-by-stage status and acceptance criteria are maintained in the reference document. `master` remains unchanged.
+
+
+## 2026-11-01 — Project Management request workflow implementation checkpoint
+
+- Initial stage-1 implementation exists on `development`: four employee request actions, mandatory feedback, separate manager approval/rejection, manager cartable visibility, and UI controls.
+- Employee requests do not route or create a project by themselves. Manager rejection returns to the same employee; manager approval performs the requested referral/return or moves to `project_request_approved`.
+- Two focused HTTP regression tests have been added; local test and frontend build validation are pending. Stage 2 project creation and response Section/Task provisioning are not implemented yet.
