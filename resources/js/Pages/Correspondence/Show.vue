@@ -235,7 +235,7 @@ function registerCorrespondence(): void {
                         <button type="submit" :disabled="projectForm.processing" class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{{ projectForm.processing ? 'در حال ایجاد...' : 'ایجاد پروژه و تسک پاسخ' }}</button>
                     </div>
                 </form>
-                <p v-if="projectForm.errors.project" class="mt-2 text-sm text-rose-700">{{ projectForm.errors.project }}</p>
+                <p v-if="page.props.errors?.project" class="mt-2 text-sm text-rose-700">{{ page.props.errors?.project }}</p>
             </section>
             <section v-if="correspondence.project" class="rounded-2xl border border-slate-200 bg-white p-4">
                 <div class="flex flex-wrap items-center justify-between gap-3">
