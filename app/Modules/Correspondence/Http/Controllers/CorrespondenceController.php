@@ -233,6 +233,7 @@ class CorrespondenceController extends Controller
             'replyTo:id,subject,letter_number,registration_number,type,status',
             'replies:id,subject,letter_number,registration_number,type,status,reply_to_id',
             'task:id,title,status,assignee_id,created_by',
+            'project:id,name,code',
             'documents.document.latestVersion',
             'actions.actor:id,name',
             'actions.toUser:id,name',
@@ -259,6 +260,8 @@ class CorrespondenceController extends Controller
                 'sent_at' => $correspondence->sent_at,
                 'task' => $correspondence->task,
                 'task_id' => $correspondence->task_id,
+                'project_id' => $correspondence->project_id,
+                'project' => $correspondence->project,
                 'external_registration_number' => $correspondence->external_registration_number,
                 'external_registered_at' => $correspondence->external_registered_at?->toDateString(),
                 'dispatch_method' => $correspondence->dispatch_method,
@@ -305,6 +308,18 @@ class CorrespondenceController extends Controller
                 ? collect()
                 : (Department::query()->whereKey($correspondence->current_department_id)->first()?->members()
                     ->where('users.status', 'active')->where('users.id', '<>', $request->user()->id)->orderBy('users.name')->get(['users.id', 'users.name']) ?? collect()),
+            'canCreateProject' => $correspondence->status === Correspondence::STATUS_REGISTERED
+                && $correspondence->type === Correspondence::TYPE_INCOMING
+                && $correspondence->workflow_state === 'project_request_approved'
+                && $correspondence->project_id === null
+                && $request->user()->hasPermission('projects.create')
+                && app(OrganizationDepartmentRoleService::class)->userBelongsTo($request->user(), OrganizationDepartmentRoleService::PROJECT_MANAGEMENT)
+                && (int) Department::query()->whereKey($correspondence->current_department_id)->value('manager_id') === (int) $request->user()->id,
+            'responseDepartments' => Department::query()
+                ->with('manager:id,name,status')
+                ->where('is_active', true)
+                ->whereHas('manager', fn ($manager) => $manager->where('status', 'active'))
+                ->orderBy('name')->get(['id', 'name', 'manager_id']),
             'canProjectEmployeeReview' => $correspondence->status === Correspondence::STATUS_REGISTERED
                 && in_array($correspondence->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)
                 && $correspondence->workflow_state === 'assigned_to_employee'
