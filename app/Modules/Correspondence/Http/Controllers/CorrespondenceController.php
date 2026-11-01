@@ -269,6 +269,38 @@ class CorrespondenceController extends Controller
             }
         }
 
+        $generalRequestTypes = [
+            CorrespondenceAction::EMPLOYEE_REQUEST_NONE,
+            CorrespondenceAction::EMPLOYEE_REQUEST_LETTER,
+            CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
+            CorrespondenceAction::EMPLOYEE_REQUEST_PROJECT,
+        ];
+        $latestGeneralRequest = $correspondence->actions()
+            ->whereIn('action_type', $generalRequestTypes)
+            ->latest('id')
+            ->first();
+        $configuredProjectDepartmentId = app(OrganizationDepartmentRoleService::class)
+            ->activeDepartmentId(OrganizationDepartmentRoleService::PROJECT_MANAGEMENT);
+        $isCurrentProjectDepartment = $configuredProjectDepartmentId !== null
+            && $currentDepartmentId === $configuredProjectDepartmentId;
+        $isAssignedEmployee = $correspondence->current_user_id !== null
+            && (int) $correspondence->current_user_id === (int) $request->user()->id
+            && $currentDepartmentId !== null
+            && (int) Department::query()->whereKey($currentDepartmentId)->value('manager_id') !== (int) $request->user()->id
+            && ($request->user()->departments()->where('departments.id', $currentDepartmentId)->exists()
+                || $request->user()->managedDepartments()->whereKey($currentDepartmentId)->exists());
+        $canSubmitGeneralRequest = $correspondence->status === Correspondence::STATUS_REGISTERED
+            && in_array($correspondence->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)
+            && $correspondence->workflow_state === 'assigned_to_employee'
+            && $isAssignedEmployee
+            && ! $isCurrentProjectDepartment;
+        $canReviewGeneralRequest = $correspondence->status === Correspondence::STATUS_REGISTERED
+            && in_array($correspondence->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)
+            && $correspondence->workflow_state === 'general_review_pending_manager'
+            && $isCurrentDepartmentManager
+            && $latestGeneralRequest !== null
+            && (int) $latestGeneralRequest->to_user_id === (int) $request->user()->id;
+
         return Inertia::render('Correspondence/Show', [
             'correspondence' => [
                 'id' => $correspondence->id,
@@ -331,6 +363,9 @@ class CorrespondenceController extends Controller
                 ->values(),
             'canRegister' => $access->canRegister($correspondence, $request->user()),
             'taskInstructionUrl' => $taskInstructionUrl,
+            'canSubmitGeneralRequest' => $canSubmitGeneralRequest,
+            'canReviewGeneralRequest' => $canReviewGeneralRequest,
+            'generalRequestType' => $latestGeneralRequest?->action_type,
             'workflowDepartments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'parent_id', 'icon']),
             'workflowUsers' => $correspondence->current_department_id === null
                 ? collect()
