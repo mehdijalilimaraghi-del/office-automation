@@ -19,6 +19,7 @@ interface OrganizationSettings {
     management_department_id: string | null;
     project_management_department_id: string | null;
     secretariat_department_id: string | null;
+    default_response_department_id: string | null;
     numbering_format: string | null;
     numbering_custom_order: string | null;
     numbering_separator: string | null;
@@ -63,6 +64,7 @@ const form = useForm({
     management_department_id: props.settings.management_department_id ?? '',
     project_management_department_id: props.settings.project_management_department_id ?? '',
     secretariat_department_id: props.settings.secretariat_department_id ?? '',
+    default_response_department_id: props.settings.default_response_department_id ?? '',
     numbering_format: props.settings.numbering_format ?? 'year',
     numbering_order_first: customOrder[0] ?? 'year',
     numbering_order_second: customOrder[1] ?? 'department',
@@ -196,6 +198,13 @@ function submit(): void {
                                     <label for="project_management_department_id" class="mb-2 block text-sm font-semibold text-slate-700">واحد مدیریت پروژه‌ها</label>
                                     <DepartmentTreeSelect id="project_management_department_id" v-model="form.project_management_department_id" :departments="departments" placeholder="انتخاب نشده" />
                                     <InputError class="mt-1.5" :message="form.errors.project_management_department_id" />
+                                </div>
+
+                                <div>
+                                    <label for="default_response_department_id" class="mb-2 block text-sm font-semibold text-slate-700">واحد پیش‌فرض پاسخ‌گویی پروژه</label>
+                                    <DepartmentTreeSelect id="default_response_department_id" v-model="form.default_response_department_id" :departments="departments.filter((department) => department.is_active)" placeholder="بدون پیش‌فرض" />
+                                    <InputError class="mt-1.5" :message="form.errors.default_response_department_id" />
+                                    <p class="mt-1 text-xs text-slate-500">این مقدار فقط فرم ایجاد پروژه را پیش‌پر می‌کند و در هر پروژه قابل تغییر است؛ واحد باید مدیر فعال داشته باشد.</p>
                                 </div>
 
                                 <div>
