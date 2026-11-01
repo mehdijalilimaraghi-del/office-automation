@@ -2308,18 +2308,22 @@ class CorrespondenceHttpTest extends TestCase
             'manager_id' => $manager->id,
             'is_active' => true,
         ]);
-        $project = Project::query()->create([
-            'name' => 'پروژه عمومی سازمان',
-            'code' => 'GEN-'.Str::upper(Str::random(6)),
-            'status' => 'active',
-            'manager_id' => null,
-            'created_by' => null,
-            'is_active' => true,
-            'is_system_default' => true,
-        ]);
-        $section = ProjectSection::query()->create([
+        $project = Project::query()->where('is_system_default', true)->where('is_active', true)->first();
+        if ($project === null) {
+            $project = Project::query()->create([
+                'name' => 'پروژه عمومی سازمان',
+                'code' => 'GEN-'.Str::upper(Str::random(6)),
+                'status' => 'active',
+                'manager_id' => null,
+                'created_by' => null,
+                'is_active' => true,
+                'is_system_default' => true,
+            ]);
+        }
+        $section = ProjectSection::query()->firstOrCreate([
             'project_id' => $project->id,
             'department_id' => $department->id,
+        ], [
             'name' => $department->name,
             'manager_can_create_tasks' => true,
             'sort_order' => 1,
