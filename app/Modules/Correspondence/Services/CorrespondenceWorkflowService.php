@@ -94,6 +94,95 @@ class CorrespondenceWorkflowService
             $canRecordResult = $letter->status === Correspondence::STATUS_REGISTERED
                 && in_array($letter->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true);
 
+            $generalEmployeeRequestActions = [
+                CorrespondenceAction::EMPLOYEE_REQUEST_NONE,
+                CorrespondenceAction::EMPLOYEE_REQUEST_LETTER,
+                CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
+                CorrespondenceAction::EMPLOYEE_REQUEST_PROJECT,
+            ];
+
+            if (in_array($type, $generalEmployeeRequestActions, true)) {
+                abort_unless($canRecordResult && ! $isProjectDepartment && $isDepartmentMember && ! $isManager
+                    && $letter->workflow_state === 'assigned_to_employee'
+                    && (int) $letter->current_user_id === (int) $actor->id, 403);
+                if ($note === '') {
+                    throw new InvalidArgumentException('ثبت بازخورد برای ارسال درخواست به مدیر الزامی است.');
+                }
+                $managerId = Department::query()->whereKey($currentDepartmentId)->value('manager_id');
+                if ($managerId === null || (int) $managerId === (int) $actor->id) {
+                    throw new InvalidArgumentException('برای واحد فعلی مدیر مشخص و مستقلی تعریف نشده است.');
+                }
+
+                $this->record(
+                    $letter,
+                    $actor,
+                    $type,
+                    $note,
+                    $currentDepartmentId,
+                    $currentDepartmentId,
+                    $actor->id,
+                    (int) $managerId,
+                    ['request_type' => str_replace('employee_request_', '', $type)],
+                );
+                $letter->forceFill([
+                    'current_user_id' => (int) $managerId,
+                    'workflow_state' => 'general_review_pending_manager',
+                ])->save();
+                return;
+            }
+
+            if (in_array($type, [
+                CorrespondenceAction::MANAGER_REJECT_EMPLOYEE_REQUEST,
+                CorrespondenceAction::MANAGER_REFER_PROJECT_MANAGEMENT,
+            ], true)) {
+                abort_unless($isManager && $letter->workflow_state === 'general_review_pending_manager', 403);
+                if ($note === '') {
+                    throw new InvalidArgumentException('برای تصمیم مدیر، ثبت توضیح الزامی است.');
+                }
+                $requestAction = $letter->actions()
+                    ->whereIn('action_type', $generalEmployeeRequestActions)
+                    ->latest('id')
+                    ->first();
+                if ($requestAction === null || (int) $requestAction->to_user_id !== (int) $actor->id) {
+                    throw new InvalidArgumentException('درخواست معتبری از کارمند برای بررسی مدیر وجود ندارد.');
+                }
+
+                if ($type === CorrespondenceAction::MANAGER_REJECT_EMPLOYEE_REQUEST) {
+                    $this->record(
+                        $letter, $actor, $type, $note,
+                        $currentDepartmentId, $currentDepartmentId,
+                        $actor->id, (int) $requestAction->actor_id,
+                    );
+                    $letter->forceFill([
+                        'current_user_id' => (int) $requestAction->actor_id,
+                        'workflow_state' => 'assigned_to_employee',
+                    ])->save();
+                    return;
+                }
+
+                if ($requestAction->action_type !== CorrespondenceAction::EMPLOYEE_REQUEST_PROJECT) {
+                    throw new InvalidArgumentException('ارجاع به مدیریت پروژه‌ها فقط برای درخواست پروژه مجاز است.');
+                }
+                $projectDepartmentId = $roles->activeDepartmentId(OrganizationDepartmentRoleService::PROJECT_MANAGEMENT);
+                $projectDepartment = $projectDepartmentId === null
+                    ? null
+                    : Department::query()->whereKey($projectDepartmentId)->where('is_active', true)->first();
+                if ($projectDepartment === null || $projectDepartment->manager_id === null) {
+                    throw new InvalidArgumentException('واحد فعال و مدیر واحد مدیریت پروژه‌ها در تنظیمات سازمان مشخص نشده است.');
+                }
+                $this->record(
+                    $letter, $actor, $type, $note,
+                    $currentDepartmentId, (int) $projectDepartment->id,
+                    $actor->id, (int) $projectDepartment->manager_id,
+                );
+                $letter->forceFill([
+                    'current_department_id' => (int) $projectDepartment->id,
+                    'current_user_id' => (int) $projectDepartment->manager_id,
+                    'workflow_state' => 'in_progress',
+                ])->save();
+                return;
+            }
+
             if ($type === CorrespondenceAction::SUBMIT_RESULT) {
                 abort_unless($canRecordResult && $isDepartmentMember && ! $isManager
                     && $letter->workflow_state === 'assigned_to_employee'
