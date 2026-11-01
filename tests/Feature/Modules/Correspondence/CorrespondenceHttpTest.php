@@ -2342,6 +2342,12 @@ class CorrespondenceHttpTest extends TestCase
                 ->component('Correspondence/Show')
                 ->where('taskInstructionUrl', fn ($value) => is_string($value) && str_contains($value, 'create_for_correspondence='.$letter->id)));
 
+        $this->actingAs($manager)->get(route('tasks.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('formOptions.projects.0.id', $project->id)
+                ->where('formOptions.projects.0.sections.0.id', $section->id));
+
         $this->actingAs($manager)->post(route('tasks.store'), [
             'correspondence_id' => $letter->id,
             'project_id' => $project->id,
