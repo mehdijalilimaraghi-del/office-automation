@@ -1545,3 +1545,12 @@ Implementation has started for the agreed cross-department project model:
 
 - Corrected the correspondence project-creation form to render the server's general `project` validation error from shared Inertia page errors (`page.props.errors`) rather than `projectForm.errors`. The form's typed payload contains only `name`, `description`, and `response_department_id`, so accessing `projectForm.errors.project` caused `vue-tsc` TS2339.
 - This is a frontend TypeScript correction only; workflow behavior and backend validation are unchanged. Build has not yet been rerun; owner validation remains pending. Branch: `development`; `master` unchanged.
+
+
+## 2026-11-01 — نمایش امن ارتباط نامه، پروژه و تسک
+
+- در جزئیات پروژه، نامه وارده مبدأ از طریق رابطه `sourceCorrespondence` بازیابی می‌شود؛ قبل از ارسال به Inertia، `CorrespondenceAccessService::canView` روی نامه اعمال می‌شود. اگر کاربر مجاز به مشاهده نامه نباشد، هیچ شناسه یا مشخصات نامه‌ای به صفحه پروژه ارسال نمی‌شود.
+- در مدل Task رابطه `correspondences()` اضافه شد. در جزئیات تسک، مکاتبات مرتبط با `task_id` خوانده و فقط موارد مجاز برای کاربر جاری به Vue ارسال می‌شوند.
+- در UI جزئیات پروژه کارت «مکاتبه مبدأ» و لینک مشاهده نامه اضافه شد؛ در UI جزئیات تسک نیز فهرست «مکاتبات مرتبط» با لینک جزئیات هر نامه نمایش داده می‌شود.
+- وضعیت مرحله ۴: پیوند داده‌ای و نمایش یک‌طرفه در صفحه پروژه و تسک پیاده‌سازی اولیه شد؛ کنترل محرمانگی با سرویس دسترسی مکاتبات اعمال شده است. نمایش پیوند در صفحه خود مکاتبه به پروژه/تسک قبلاً اضافه شده بود. هنوز تست‌های Feature مربوط به محرمانگی و روابط، تست SQL Server و build این برش اجرا نشده‌اند.
+- مرحله ۵ همچنان در انتظار تست انتها‌به‌انتها و پذیرش است. شاخه `development`؛ `master` بدون تغییر.
