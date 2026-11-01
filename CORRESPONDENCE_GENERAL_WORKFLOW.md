@@ -183,3 +183,8 @@
 - پس از هر مرحله، همین سند و `CURRENT_STATUS.md`، `AI_CONTEXT.md` و `PROJECT_CONTEXT.md` به‌روزرسانی شوند.
 - تا اجرای واقعی تست و build، وضعیت اعتبارسنجی «در انتظار» باقی بماند.
 - شاخه توسعه `development` است؛ `master` بدون اجازه صریح تغییر نکند.
+
+## 2026-11-01 — Fix incoming correspondence service test fixture
+
+- `CorrespondenceService::createDraft()` intentionally requires an incoming letter's original `letter_number`; the failing test created an incoming draft without that required field. Updated the test fixture to provide `IN-1405-001` and assert that exact source number is persisted. Production validation is unchanged.
+- User-reported suite result before this fix: 1 failed, 454 passed (1,921 assertions). The fix has been committed to `development`; rerun the targeted test and full suite to verify. No claim that tests were run by the assistant. `master` unchanged.
