@@ -172,6 +172,10 @@ class CorrespondenceWorkflowService
                         return;
                     }
 
+                    $draftEmployee = User::query()->whereKey($requestAction->actor_id)->where('status', 'active')->first();
+                    if ($draftEmployee === null || ! $draftEmployee->hasPermission('correspondence.create')) {
+                        throw new InvalidArgumentException('کارمند انتخاب‌شده مجوز ثبت پیش‌نویس نامه را ندارد.');
+                    }
                     $this->record(
                         $letter, $actor, $type, $note,
                         $currentDepartmentId, $currentDepartmentId,
