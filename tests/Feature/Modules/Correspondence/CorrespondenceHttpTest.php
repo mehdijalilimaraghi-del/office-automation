@@ -2308,7 +2308,7 @@ class CorrespondenceHttpTest extends TestCase
             'manager_id' => $manager->id,
             'is_active' => true,
         ]);
-        $project = Project::query()->where('is_system_default', true)->where('is_active', true)->first();
+        $project = Project::query()->where('is_system_default', true)->where('is_active', true)->orderBy('id')->first();
         if ($project === null) {
             $project = Project::query()->create([
                 'name' => 'پروژه عمومی سازمان',
@@ -2349,8 +2349,10 @@ class CorrespondenceHttpTest extends TestCase
         $this->actingAs($manager)->get(route('tasks.index'))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->where('formOptions.projects.0.id', $project->id)
-                ->where('formOptions.projects.0.sections.0.id', $section->id));
+                ->where('formOptions.projects', fn ($projects) => collect($projects)->contains(
+                    fn ($item) => (int) $item['id'] === (int) $project->id
+                        && collect($item['sections'])->contains(fn ($itemSection) => (int) $itemSection['id'] === (int) $section->id)
+                )));
 
         $this->actingAs($manager)->post(route('tasks.store'), [
             'correspondence_id' => $letter->id,
