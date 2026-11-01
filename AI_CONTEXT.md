@@ -652,3 +652,12 @@ Before making the first code change in a new conversation:
 - Existing task creation is reused: correspondence detail opens `tasks.index` with the general project, matching department Section and correspondence context preselected. Task store validates the manager/current department/default project/Section and links the created task to the source letter. No parallel task feature.
 - Still incomplete: manager handling for letter requests (manager creates a letter or delegates draft to the same employee), real workflow-request execution, and full acceptance tests. The task-link feature has not yet been test-run. Do not claim build/tests passed.
 - Keep `master` unchanged.
+
+
+## 2026-11-01 — General correspondence workflow follow-up
+
+- General employee request types now route to the current department manager with mandatory feedback. Manager rejection returns to the same employee; project request can be routed to the configured active Project Management department.
+- Letter request: manager may initiate letter creation or delegate draft preparation to the same employee. The existing Correspondence create form is opened with the source letter preselected; the new draft's `reply_to_id` links it to the source and the source returns to the manager after draft creation. Employee delegation requires `correspondence.create`.
+- Workflow request: manager selects an active `WorkflowDefinition`; existing `WorkflowService::start` creates the real `WorkflowInstance` and step tasks. The instance ID is attached to the correspondence and visible step tasks are linked from its detail page.
+- Manager task instruction reuses the existing Tasks form in the organization's general project and matching department Section; backend validates context and attaches the created task to the correspondence.
+- Focused Feature tests were added for general request/rejection, delegated letter draft, and workflow instance creation. They have **not** been run; no build validation has been run. The task-instruction linkage test, full regression, SQL Server and build validation remain pending.
