@@ -574,6 +574,7 @@ class CorrespondenceWorkflowService
 
             if ($draft->id === $letter->id || (int) $draft->reply_to_id !== (int) $letter->id
                 || (int) $draft->created_by !== (int) $actor->id
+                || (int) $draft->created_department_id !== (int) $departmentId
                 || $draft->status !== Correspondence::STATUS_DRAFT
                 || $managerId === null || (int) $letter->current_user_id !== (int) $actor->id) {
                 abort(403, 'پیش‌نویس باید از مسیر درخواست همین نامه و توسط مسئول فعلی ایجاد شود.');
