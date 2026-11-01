@@ -11,6 +11,8 @@ use App\Models\User;
 use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Models\CorrespondenceAction;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Projects\Models\Project;
+use App\Modules\Projects\Models\ProjectSection;
 use App\Modules\Workflows\Models\WorkflowDefinition;
 use App\Modules\Workflows\Services\WorkflowService;
 use App\Modules\Notifications\Services\NotificationService;
@@ -160,6 +162,23 @@ class CorrespondenceWorkflowService
                 if ($type === CorrespondenceAction::MANAGER_CREATE_TASK) {
                     if ($requestAction->action_type !== CorrespondenceAction::EMPLOYEE_REQUEST_TASK) {
                         throw new InvalidArgumentException('ایجاد دستورکار فقط برای درخواست دستورکار کارمند مجاز است.');
+                    }
+                    if (! $actor->hasPermission('tasks.create') || ! $actor->hasPermission('tasks.view')) {
+                        throw new InvalidArgumentException('برای ایجاد دستورکار مرتبط، مجوز مشاهده و ایجاد دستورکار لازم است.');
+                    }
+                    $generalProject = Project::query()
+                        ->where('is_system_default', true)
+                        ->where('is_active', true)
+                        ->whereNull('department_id')
+                        ->orderBy('id')
+                        ->first();
+                    $departmentSection = $generalProject === null ? null : ProjectSection::query()
+                        ->where('project_id', $generalProject->id)
+                        ->where('department_id', $currentDepartmentId)
+                        ->where('manager_can_create_tasks', true)
+                        ->first();
+                    if ($generalProject === null || $departmentSection === null) {
+                        throw new InvalidArgumentException('پروژه عمومی فعال یا بخش مجاز این واحد برای ایجاد دستورکار تعریف نشده است.');
                     }
                     $this->record(
                         $letter, $actor, $type, $note,
