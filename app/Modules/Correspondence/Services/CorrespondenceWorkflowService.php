@@ -137,6 +137,8 @@ class CorrespondenceWorkflowService
             if (in_array($type, [
                 CorrespondenceAction::MANAGER_REJECT_EMPLOYEE_REQUEST,
                 CorrespondenceAction::MANAGER_REFER_PROJECT_MANAGEMENT,
+                CorrespondenceAction::MANAGER_CREATE_REQUESTED_LETTER,
+                CorrespondenceAction::MANAGER_ASSIGN_LETTER_DRAFT,
             ], true)) {
                 abort_unless($isManager && $letter->workflow_state === 'general_review_pending_manager', 403);
                 if ($note === '') {
@@ -148,6 +150,38 @@ class CorrespondenceWorkflowService
                     ->first();
                 if ($requestAction === null || (int) $requestAction->to_user_id !== (int) $actor->id) {
                     throw new InvalidArgumentException('درخواست معتبری از کارمند برای بررسی مدیر وجود ندارد.');
+                }
+
+                if (in_array($type, [
+                    CorrespondenceAction::MANAGER_CREATE_REQUESTED_LETTER,
+                    CorrespondenceAction::MANAGER_ASSIGN_LETTER_DRAFT,
+                ], true)) {
+                    if ($requestAction->action_type !== CorrespondenceAction::EMPLOYEE_REQUEST_LETTER) {
+                        throw new InvalidArgumentException('این تصمیم فقط برای درخواست ثبت نامه قابل استفاده است.');
+                    }
+                    if ($type === CorrespondenceAction::MANAGER_CREATE_REQUESTED_LETTER) {
+                        $this->record(
+                            $letter, $actor, $type, $note,
+                            $currentDepartmentId, $currentDepartmentId,
+                            $actor->id, null,
+                        );
+                        $letter->forceFill([
+                            'current_user_id' => (int) $actor->id,
+                            'workflow_state' => 'letter_creation_by_manager',
+                        ])->save();
+                        return;
+                    }
+
+                    $this->record(
+                        $letter, $actor, $type, $note,
+                        $currentDepartmentId, $currentDepartmentId,
+                        $actor->id, (int) $requestAction->actor_id,
+                    );
+                    $letter->forceFill([
+                        'current_user_id' => (int) $requestAction->actor_id,
+                        'workflow_state' => 'letter_draft_pending_employee',
+                    ])->save();
+                    return;
                 }
 
                 if ($type === CorrespondenceAction::MANAGER_REJECT_EMPLOYEE_REQUEST) {
@@ -479,6 +513,45 @@ class CorrespondenceWorkflowService
             );
 
             $letter->forceFill(['task_id' => (int) $task->id])->save();
+        });
+    }
+
+    public function onRequestedLetterDraftCreated(Correspondence $source, Correspondence $draft, User $actor): void
+    {
+        DB::transaction(function () use ($source, $draft, $actor): void {
+            $letter = Correspondence::query()->whereKey($source->id)->lockForUpdate()->firstOrFail();
+            $departmentId = $letter->current_department_id === null ? null : (int) $letter->current_department_id;
+            $managerId = $departmentId === null ? null : Department::query()->whereKey($departmentId)->value('manager_id');
+
+            if ($draft->id === $letter->id || (int) $draft->reply_to_id !== (int) $letter->id
+                || $managerId === null || (int) $letter->current_user_id !== (int) $actor->id) {
+                abort(403, 'پیش‌نویس باید از مسیر درخواست همین نامه و توسط مسئول فعلی ایجاد شود.');
+            }
+
+            $isManagerDraft = $letter->workflow_state === 'letter_creation_by_manager'
+                && (int) $managerId === (int) $actor->id;
+            $isEmployeeDraft = $letter->workflow_state === 'letter_draft_pending_employee'
+                && (int) $managerId !== (int) $actor->id;
+            if (! $isManagerDraft && ! $isEmployeeDraft) {
+                abort(403, 'این نامه در انتظار تهیه پیش‌نویس نیست.');
+            }
+
+            $this->record(
+                $letter,
+                $actor,
+                CorrespondenceAction::REQUESTED_LETTER_DRAFT_CREATED,
+                'پیش‌نویس نامه مرتبط ایجاد شد: '.$draft->subject,
+                $departmentId,
+                $departmentId,
+                $actor->id,
+                $isEmployeeDraft ? (int) $managerId : null,
+                ['draft_correspondence_id' => (int) $draft->id],
+            );
+
+            $letter->forceFill([
+                'current_user_id' => (int) $managerId,
+                'workflow_state' => 'letter_draft_pending_manager',
+            ])->save();
         });
     }
 
