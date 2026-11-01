@@ -839,6 +839,11 @@ class CorrespondenceController extends Controller
             \Illuminate\Support\Facades\Cache::forget($scannerUpload['key']);
         }
 
+        if ($sourceCorrespondenceId !== null) {
+            return redirect()->route('correspondence.show', $sourceCorrespondenceId)
+                ->with('success', 'پیش‌نویس مرتبط ایجاد شد و برای بررسی مدیر ارسال شد.');
+        }
+
         return redirect()->route('correspondence.index')
             ->with('success', 'پیش‌نویس مکاتبه و پیوست‌های آن با موفقیت ذخیره شد.');
     }
