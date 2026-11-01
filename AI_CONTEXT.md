@@ -668,3 +668,6 @@ Before making the first code change in a new conversation:
 
 - Workflow completion updates linked source correspondence to `workflow_completed`. Confidential correspondence visibility includes the creator/current assignee of directly linked tasks and the assignees/creators of tasks belonging to its WorkflowInstance; both direct checks and visibility queries enforce this.
 - Feature coverage was added for confidential workflow-task access and completion propagation; tests have not been run.
+
+
+- Once the requested reply letter is finally registered, the source correspondence is marked `letter_registered` and locked from further workflow actions. `workflow_completed`, `letter_draft_pending_manager`, and `letter_registered` are backend-protected from new actions.
