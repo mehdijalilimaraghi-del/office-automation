@@ -110,7 +110,7 @@ class TaskController extends Controller
                     $letter = Correspondence::query()->findOrFail($correspondenceId);
                     abort_unless($correspondenceAccess->canView($letter, $request->user()), 403);
                     $section = isset($data['section_id'])
-                        ? \\App\\Modules\\Projects\\Models\\ProjectSection::query()->with('project')->find($data['section_id'])
+                        ? \App\Modules\Projects\Models\ProjectSection::query()->with('project')->find($data['section_id'])
                         : null;
                     abort_unless($section !== null
                         && $section->project?->is_system_default
