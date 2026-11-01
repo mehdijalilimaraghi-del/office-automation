@@ -1505,3 +1505,11 @@ Implementation has started for the agreed cross-department project model:
 - Removed the legacy `project_requested` workflow state from the manager `needs_action` filter. A state label alone must not represent a completed project-request process; the project request flow must be implemented with explicit actions and project creation/linkage. Updated the regression test to assert that the legacy state is not actionable.
 - This is an incremental first slice only. The project-specific approval flow, project creation with a selected response department/section/task, and source-letter linkage are not yet implemented.
 - Validation has not been run in this editing environment. Pull `development`, run `php artisan test --filter=CorrespondenceHttpTest`, then run `npm run build` before accepting this slice. `master` unchanged.
+
+
+## 2026-11-01 — ثبت رسمی دامنه گردش کار درخواست پروژه و اتصال تسک/مکاتبه
+
+- سند مرجع جدید `CORRESPONDENCE_PROJECT_WORKFLOW.md` ایجاد شد و نیازمندی‌های چهار اقدام کارمند واحد پروژه‌ها، تصمیم مستقل مدیر، انتخاب واحد پاسخ‌گو هنگام ایجاد پروژه، واحد پیش‌فرض قابل‌تغییر، ساخت Section/تسک پاسخ و ارتباط دوطرفه تسک/مکاتبه را ثبت می‌کند.
+- وضعیت قابلیت‌ها شفاف شد: مرحله ۰ (مستندسازی) تکمیل؛ مرحله ۱ گردش کار درخواست/تصمیم مدیر انجام‌نشده؛ مرحله ۲ ایجاد پروژه و انتخاب واحد پاسخ‌گو انجام‌نشده؛ مرحله ۳ ساخت Section/تسک پاسخ انجام‌نشده؛ مرحله ۴ اتصال عمومی تسک/مکاتبه ناقص؛ مرحله ۵ تست و پذیرش انتها‌به‌انتها انجام‌نشده.
+- تنها بخش اجرایی موجود در این محدوده، ورودی ایجاد نامه از جزئیات تسک و ذخیره `task_id` برای مسئول فعلی دارای مجوز است. انتقال خودکار ارتباط پروژه/نامه مبدأ و نمایش دوسویه روابط هنوز پیاده‌سازی نشده است.
+- این commit مستندسازی است و هیچ کد اجرایی یا تستی تغییر نکرده؛ نتیجه تست/build جدیدی ادعا نمی‌شود. شاخه `master` بدون تغییر است.
