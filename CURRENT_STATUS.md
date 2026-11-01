@@ -1623,3 +1623,9 @@ Implementation has started for the agreed cross-department project model:
 
 - پیش‌نویس نامه‌ای که کارمند در پاسخ به درخواست ایجاد می‌کند، با وجود وضعیت Draft برای مدیر مسئول نامه مبدأ قابل مشاهده است؛ این دسترسی فقط از طریق رابطه `reply_to` و وقتی نامه مبدأ در وضعیت `letter_draft_pending_manager` و در اختیار همان مدیر است برقرار می‌شود.
 - تست Feature مشاهده پیش‌نویس توسط مدیر اضافه شد؛ اجرا نشده است.
+
+
+## 2026-11-01 — ثبت نگاشت stateهای گردش عمومی
+
+- نگاشت stateهای اجرایی `general_review_pending_manager`، `letter_creation_by_manager`، `letter_draft_pending_employee`، `letter_draft_pending_manager`، `letter_registered`، `workflow_started` و `workflow_completed` در سند مرجع ثبت شد.
+- ارجاع به مدیریت پروژه‌ها و ایجاد دستورکار عمومی، state عمومی `in_progress` را حفظ می‌کنند و مقصد/رابطه در current department، action history و شناسه‌های اتصال مشخص می‌شود.
