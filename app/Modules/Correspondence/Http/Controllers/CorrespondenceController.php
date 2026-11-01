@@ -617,6 +617,7 @@ class CorrespondenceController extends Controller
         CorrespondenceService $service,
         DocumentService $documents,
         CorrespondenceAccessService $access,
+        CorrespondenceWorkflowService $workflow,
     ): RedirectResponse {
         $requestedType = $request->input('type');
         if (is_string($requestedType) && in_array($requestedType, Correspondence::allowedTypes(), true)) {
@@ -652,6 +653,7 @@ class CorrespondenceController extends Controller
             'sent_at' => ['nullable', 'required_if:type,'.Correspondence::TYPE_OUTGOING, 'date'],
             'recipient_department_id' => ['nullable', 'required_if:type,internal', 'required_if:type,incoming', 'integer', 'exists:departments,id'],
             'reply_to_id' => ['nullable', 'integer', Rule::exists('correspondences', 'id')->where('status', Correspondence::STATUS_REGISTERED)],
+            'source_correspondence_id' => ['nullable', 'integer', Rule::exists('correspondences', 'id')->where('status', Correspondence::STATUS_REGISTERED)],
             'task_id' => ['nullable', 'integer', 'exists:tasks,id'],
             'reply_to_ids' => ['nullable', 'array', 'max:20'],
             'reply_to_ids.*' => ['integer', 'distinct', Rule::exists('correspondences', 'id')->where('status', Correspondence::STATUS_REGISTERED)],
@@ -669,6 +671,27 @@ class CorrespondenceController extends Controller
         ]);
 
         abort_unless($access->canCreateType($data['type'], $request->user()), 403);
+        $sourceCorrespondenceId = isset($data['source_correspondence_id']) ? (int) $data['source_correspondence_id'] : null;
+        unset($data['source_correspondence_id']);
+        $requestedLetterSource = null;
+        if ($sourceCorrespondenceId !== null) {
+            $requestedLetterSource = Correspondence::query()->findOrFail($sourceCorrespondenceId);
+            abort_unless($access->canView($requestedLetterSource, $request->user()), 403);
+            $sourceDepartmentId = $requestedLetterSource->current_department_id === null ? null : (int) $requestedLetterSource->current_department_id;
+            $sourceManagerId = $sourceDepartmentId === null ? null : (int) Department::query()->whereKey($sourceDepartmentId)->value('manager_id');
+            $isManagerDraft = $requestedLetterSource->workflow_state === 'letter_creation_by_manager'
+                && $sourceManagerId === (int) $request->user()->id;
+            $isEmployeeDraft = $requestedLetterSource->workflow_state === 'letter_draft_pending_employee'
+                && $requestedLetterSource->current_user_id !== null
+                && (int) $requestedLetterSource->current_user_id === (int) $request->user()->id
+                && $sourceManagerId !== (int) $request->user()->id;
+            abort_unless($isManagerDraft || $isEmployeeDraft, 403, 'درخواست تهیه نامه دیگر در اختیار شما نیست.');
+            $data['reply_to_id'] = $sourceCorrespondenceId;
+            $data['reply_to_ids'] = array_values(array_unique(array_merge(
+                array_map('intval', $data['reply_to_ids'] ?? []),
+                [$sourceCorrespondenceId],
+            )));
+        }
         $linkedTask = null;
         if (! empty($data['task_id'])) {
             $linkedTask = Task::query()->findOrFail((int) $data['task_id']);
@@ -739,7 +762,7 @@ class CorrespondenceController extends Controller
         }
 
         try {
-            $correspondence = DB::transaction(function () use ($data, $mode, $body, $originalLetters, $attachments, $service, $documents, $request, $linkedTask, $sourceProjectCorrespondenceId): Correspondence {
+            $correspondence = DB::transaction(function () use ($data, $mode, $body, $originalLetters, $attachments, $service, $documents, $request, $linkedTask, $sourceProjectCorrespondenceId, $requestedLetterSource, $workflow): Correspondence {
                 $correspondence = $service->createDraft([
                     'type' => $data['type'],
                     'classification' => $data['classification'] ?? Correspondence::CLASSIFICATION_ORDINARY,
@@ -793,6 +816,10 @@ class CorrespondenceController extends Controller
                         linkable: $correspondence,
                         purpose: 'correspondence_attachment',
                     );
+                }
+
+                if ($requestedLetterSource !== null) {
+                    $workflow->onRequestedLetterDraftCreated($requestedLetterSource, $correspondence, $request->user());
                 }
 
                 return $correspondence;
