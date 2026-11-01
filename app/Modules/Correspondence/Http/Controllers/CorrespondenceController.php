@@ -13,6 +13,8 @@ use App\Http\Controllers\Controller;
 use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Models\CorrespondenceAction;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Projects\Models\Project;
+use App\Modules\Projects\Models\ProjectSection;
 use App\Modules\Correspondence\Services\CorrespondenceNumberingService;
 use App\Modules\Correspondence\Services\CorrespondenceAccessService;
 use App\Modules\Correspondence\Services\CorrespondenceService;
@@ -242,6 +244,31 @@ class CorrespondenceController extends Controller
             'copies:id,name',
         ]);
 
+        $taskInstructionUrl = null;
+        $currentDepartmentId = $correspondence->current_department_id === null ? null : (int) $correspondence->current_department_id;
+        $isCurrentDepartmentManager = $currentDepartmentId !== null
+            && (int) Department::query()->whereKey($currentDepartmentId)->value('manager_id') === (int) $request->user()->id;
+        if ($isCurrentDepartmentManager
+            && $request->user()->hasPermission('tasks.create')
+            && $correspondence->status === Correspondence::STATUS_REGISTERED
+            && in_array($correspondence->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)
+            && $correspondence->workflow_state === 'in_progress'
+            && $correspondence->task_id === null) {
+            $generalProject = Project::query()->where('is_system_default', true)->where('is_active', true)->orderBy('id')->first();
+            $departmentSection = $generalProject === null ? null : ProjectSection::query()
+                ->where('project_id', $generalProject->id)
+                ->where('department_id', $currentDepartmentId)
+                ->where('manager_can_create_tasks', true)
+                ->first();
+            if ($generalProject !== null && $departmentSection !== null) {
+                $taskInstructionUrl = route('tasks.index', [
+                    'create_for_correspondence' => $correspondence->id,
+                    'project_id' => $generalProject->id,
+                    'section_id' => $departmentSection->id,
+                ]);
+            }
+        }
+
         return Inertia::render('Correspondence/Show', [
             'correspondence' => [
                 'id' => $correspondence->id,
@@ -303,6 +330,7 @@ class CorrespondenceController extends Controller
                 ])
                 ->values(),
             'canRegister' => $access->canRegister($correspondence, $request->user()),
+            'taskInstructionUrl' => $taskInstructionUrl,
             'workflowDepartments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'parent_id', 'icon']),
             'workflowUsers' => $correspondence->current_department_id === null
                 ? collect()
