@@ -55,6 +55,7 @@ class Correspondence extends Model
         'workflow_instance_id',
         'reply_to_id',
         'task_id',
+        'project_id',
         'external_registration_number',
         'external_registered_at',
         'dispatch_method',
@@ -126,6 +127,11 @@ class Correspondence extends Model
     public function task(): BelongsTo
     {
         return $this->belongsTo(Task::class);
+    }
+
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(\\App\\Modules\\Projects\\Models\\Project::class);
     }
 
     public function replyTo(): BelongsTo
