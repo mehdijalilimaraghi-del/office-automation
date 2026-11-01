@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Modules\Projects\Models\Project;
 use App\Core\Departments\Models\Department;
 use App\Modules\Documents\Models\DocumentLink;
+use App\Modules\Correspondence\Models\Correspondence;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -56,6 +57,11 @@ class WorkflowInstance extends Model
     public function steps(): HasMany
     {
         return $this->hasMany(WorkflowInstanceStep::class);
+    }
+
+    public function correspondences(): HasMany
+    {
+        return $this->hasMany(Correspondence::class, 'workflow_instance_id');
     }
 
     public function documents(): MorphMany
