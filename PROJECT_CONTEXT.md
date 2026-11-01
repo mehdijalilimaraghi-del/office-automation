@@ -1405,3 +1405,8 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - Workflow choices exclude definitions with no active steps or project-only/unsupported actors; correspondence workflow runs without a project.
 - General project/department Section options are available to department managers in the existing task form with Project-scoped create permission. Task/workflow links are bidirectional and access-filtered.
 - Code/docs are on `development`; tests/build not run; `master` unchanged.
+
+## 2026-11-01 — Fix incoming correspondence service test fixture
+
+- `CorrespondenceService::createDraft()` intentionally requires an incoming letter's original `letter_number`; the failing test created an incoming draft without that required field. Updated the test fixture to provide `IN-1405-001` and assert that exact source number is persisted. Production validation is unchanged.
+- User-reported suite result before this fix: 1 failed, 454 passed (1,921 assertions). The fix has been committed to `development`; rerun the targeted test and full suite to verify. No claim that tests were run by the assistant. `master` unchanged.
