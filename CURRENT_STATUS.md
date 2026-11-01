@@ -1629,3 +1629,8 @@ Implementation has started for the agreed cross-department project model:
 
 - نگاشت stateهای اجرایی `general_review_pending_manager`، `letter_creation_by_manager`، `letter_draft_pending_employee`، `letter_draft_pending_manager`، `letter_registered`، `workflow_started` و `workflow_completed` در سند مرجع ثبت شد.
 - ارجاع به مدیریت پروژه‌ها و ایجاد دستورکار عمومی، state عمومی `in_progress` را حفظ می‌کنند و مقصد/رابطه در current department، action history و شناسه‌های اتصال مشخص می‌شود.
+
+## 2026-11-01 — Fix incoming correspondence service test fixture
+
+- `CorrespondenceService::createDraft()` intentionally requires an incoming letter's original `letter_number`; the failing test created an incoming draft without that required field. Updated the test fixture to provide `IN-1405-001` and assert that exact source number is persisted. Production validation is unchanged.
+- User-reported suite result before this fix: 1 failed, 454 passed (1,921 assertions). The fix has been committed to `development`; rerun the targeted test and full suite to verify. No claim that tests were run by the assistant. `master` unchanged.
