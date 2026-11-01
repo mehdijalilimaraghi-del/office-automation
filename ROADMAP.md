@@ -902,3 +902,11 @@ Status: correspondence list/draft/registration HTTP flow and editor/file/both co
 - Added `CORRESPONDENCE_PROJECT_WORKFLOW.md` as the functional source of truth for Project Management's four employee requests, separate manager decisions, per-project response ownership, response Section/Task creation and generic task-correspondence linking.
 - This is a documentation/status correction, not a feature-completion claim. The existing task-to-new-correspondence entry point is only a first slice. The project-specific approval flow and project/response-task/source-letter propagation remain pending.
 - Stage-by-stage implementation status and acceptance criteria are maintained in the new reference document. No tests or frontend build were run for this documentation-only change; `master` unchanged.
+
+
+## 2026-11-01 — Project Management request review: first implementation slice
+
+- Added four employee request actions with mandatory feedback and two separate manager decisions. Employee request does not perform final routing or project creation.
+- Manager rejection returns to the same employee; manager approval routes to the selected department, returns the letter to its original recipient department for approved reject/return requests, or sets `project_request_approved` for the next project-creation phase.
+- Added manager cartable/index visibility, UI controls and two focused HTTP regression tests.
+- **Status:** initial implementation committed on `development`; focused tests and frontend build await local validation. Project creation/response task integration remains pending. `master` unchanged.
