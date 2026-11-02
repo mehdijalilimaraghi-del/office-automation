@@ -171,6 +171,9 @@ class CorrespondenceAccessService
 
         if ($correspondence->status === Correspondence::STATUS_DRAFT) {
             return (int) $correspondence->created_by === (int) $user->id
+                || ((int) $correspondence->current_user_id === (int) $user->id
+                    && $correspondence->workflow_state === 'awaiting_manager_approval'
+                    && $correspondence->currentDepartment()->where('manager_id', $user->id)->exists())
                 || $correspondence->replyTo()
                     ->where('workflow_state', 'letter_draft_pending_manager')
                     ->where('current_user_id', $user->id)
