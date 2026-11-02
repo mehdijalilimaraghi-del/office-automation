@@ -1662,3 +1662,10 @@ Implementation has started for the agreed cross-department project model:
 - The `needs_action` department-manager state list now includes `project_request_approved`. After a project request is approved, the assigned project department manager can see the letter in «نیاز به اقدام» while it awaits project creation.
 - Added/updated Feature coverage for incoming manager approval and the approved-project-request action queue.
 - Validation status: **not run in this environment**. Run targeted `CorrespondenceHttpTest`, then the full `php artisan test` suite and frontend build locally. SQL Server compatibility and UI acceptance remain pending. `master` unchanged.
+
+
+## 2026-11-02 — Follow-up fixes from correspondence test run
+
+- Fixed `CorrespondenceAccessService::canView`: a non-Secretariat department manager assigned as `current_user_id` on an `awaiting_manager_approval` draft can now open it, provided the current department identifies that user as its manager. This closes the gap where list visibility allowed the manager but the detail page returned 403.
+- Fixed `CorrespondenceNumberingService::register` validation order: incoming letters now validate the mandatory original letter number before the approval-state guard. This preserves the required original-number error and does not consume a registration number.
+- Commit: `9f9f90bb374cb107ce04fb1adb57bafcdb085251` on `development`. Verification pending: rerun both correspondence feature test classes, full suite, and frontend build. `master` unchanged.
