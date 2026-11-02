@@ -487,8 +487,9 @@ class CorrespondenceWorkflowService
                 if ($letter->status !== Correspondence::STATUS_DRAFT || $letter->workflow_state !== 'awaiting_manager_approval') {
                     throw new InvalidArgumentException('این نامه در انتظار تأیید مدیر نیست.');
                 }
-                if (! in_array($letter->type, [Correspondence::TYPE_INTERNAL, Correspondence::TYPE_OUTGOING], true)) {
-                    throw new InvalidArgumentException('این مرحله تأیید برای نامه داخلی یا صادره قابل استفاده است.');
+                if (! in_array($letter->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL, Correspondence::TYPE_OUTGOING], true)
+                    || ! app(CorrespondenceCompositionSettings::class)->requiresApproval($letter->type)) {
+                    throw new InvalidArgumentException('تأیید مدیر فقط برای نوع نامه‌ای مجاز است که در تنظیمات سازمان نیاز به تأیید دارد.');
                 }
                 $this->record($letter, $actor, $type, $note, $currentDepartmentId, null, $actor->id, null);
                 $letter->forceFill(['workflow_state' => 'approved_for_registration', 'current_user_id' => null])->save();
