@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Correspondence\Services;
 
+use App\Core\Departments\Models\Department;
 use App\Core\Settings\Services\OrganizationDepartmentRoleService;
 use App\Models\User;
 use App\Modules\Correspondence\Models\CorrespondenceAction;
@@ -91,7 +92,7 @@ class CorrespondenceAccessService
             ->activeDepartmentId(OrganizationDepartmentRoleService::SECRETARIAT);
 
         $isSecretariatManager = $secretariatDepartmentId !== null
-            && \\App\\Core\\Departments\\Models\\Department::query()
+            && Department::query()
                 ->whereKey($secretariatDepartmentId)
                 ->where('manager_id', $user->id)
                 ->exists();
