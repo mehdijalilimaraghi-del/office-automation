@@ -1653,3 +1653,12 @@ Implementation has started for the agreed cross-department project model:
 - دامنه «مکاتبات من» برای مدیر واحد گسترش یافت تا نامه‌هایی را که اعضای واحد او ثبت کرده‌اند نیز پس از ارجاع به واحد گیرنده برای پیگیری/مشاهده نگه دارد؛ این رابطه به‌تنهایی به معنی «نیاز به اقدام» نیست و فیلتر نیاز به اقدام فقط مالک فعلی را نشان می‌دهد.
 - گزینه پذیرش درخواست دستورکار فقط زمانی نمایش داده می‌شود که مدیر مجوزهای tasks.create و tasks.view را داشته باشد و پروژه عمومی فعال و Section همان واحد با manager_can_create_tasks فعال باشد؛ backend همین شرایط را هنگام پذیرش دوباره کنترل می‌کند.
 - در واحد مدیریت پروژه‌ها، فرم ارجاع عمومی مدیر به کارمند همان واحد محدود شده و گزینه ارجاع مستقیم به واحد دیگر در UI نمایش داده نمی‌شود.
+
+## 2026-11-02 — Incoming letter approval ownership and project-request action queue
+
+- Root cause identified: incoming drafts were always created with `awaiting_registration` and no current assignee, regardless of `correspondence.approval.incoming`. Therefore the Secretariat department manager did not receive an approval task, and an employee could register the draft directly even when approval was configured as required.
+- Code updated on `development`: when approval is required, incoming drafts now enter `awaiting_manager_approval`, are assigned to the active configured Secretariat department manager, and fail clearly if that department has no manager. Draft visibility explicitly includes the assigned manager, and the UI defaults the manager action to `manager_approve`.
+- `manager_approve` now supports incoming letters only when the incoming approval setting requires it. Final registration remains a Secretariat action; after approval, the draft is assigned back to its creator so it appears as their next actionable item. Numbering service now enforces manager approval for every letter type whose setting requires approval.
+- The `needs_action` department-manager state list now includes `project_request_approved`. After a project request is approved, the assigned project department manager can see the letter in «نیاز به اقدام» while it awaits project creation.
+- Added/updated Feature coverage for incoming manager approval and the approved-project-request action queue.
+- Validation status: **not run in this environment**. Run targeted `CorrespondenceHttpTest`, then the full `php artisan test` suite and frontend build locally. SQL Server compatibility and UI acceptance remain pending. `master` unchanged.
