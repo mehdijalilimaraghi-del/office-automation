@@ -77,19 +77,24 @@ class CorrespondenceService
             }
 
             $approvalRequired = app(CorrespondenceCompositionSettings::class)->requiresApproval($type);
-            $initialState = $type === Correspondence::TYPE_INCOMING
-                ? 'awaiting_registration'
-                : (($approvalRequired) ? 'awaiting_manager_approval' : 'awaiting_registration');
-            $managerId = $createdDepartmentId === null
+            $secretariatDepartmentId = app(\App\Core\Settings\Services\OrganizationDepartmentRoleService::class)
+                ->activeDepartmentId(\App\Core\Settings\Services\OrganizationDepartmentRoleService::SECRETARIAT);
+            $approvalDepartmentId = $type === Correspondence::TYPE_INCOMING && $approvalRequired
+                ? ($secretariatDepartmentId ?? $createdDepartmentId)
+                : $createdDepartmentId;
+            $initialState = $approvalRequired ? 'awaiting_manager_approval' : 'awaiting_registration';
+            $managerId = $approvalDepartmentId === null
                 ? null
-                : \App\Core\Departments\Models\Department::query()->whereKey($createdDepartmentId)->value('manager_id');
+                : \App\Core\Departments\Models\Department::query()->whereKey($approvalDepartmentId)->value('manager_id');
+
+            if ($approvalRequired && $managerId === null) {
+                throw new InvalidArgumentException('برای تأیید پیش‌نویس، مدیر فعال واحد مربوطه باید در تنظیمات سازمان مشخص باشد.');
+            }
 
             $correspondence = Correspondence::query()->create([
                 'workflow_state' => $initialState,
-                'current_department_id' => $createdDepartmentId,
-                'current_user_id' => $approvalRequired && $type !== Correspondence::TYPE_INCOMING
-                    ? ($managerId === null ? null : (int) $managerId)
-                    : null,
+                'current_department_id' => $approvalRequired ? $approvalDepartmentId : $createdDepartmentId,
+                'current_user_id' => $approvalRequired ? (int) $managerId : null,
                 'type' => $type,
                 'classification' => $data['classification'] ?? Correspondence::CLASSIFICATION_ORDINARY,
                 'subject' => $subject,
