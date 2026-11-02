@@ -78,8 +78,6 @@ class CorrespondenceService
 
             // Secretariat employees prepare drafts; the Secretariat manager performs final registration.
             $initialState = 'awaiting_registration';
-            $approvalDepartmentId = $createdDepartmentId;
-            $managerId = null;
 
             $correspondence = Correspondence::query()->create([
                 'workflow_state' => $initialState,
