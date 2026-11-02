@@ -127,28 +127,28 @@ class CorrespondenceNumberingServiceTest extends TestCase
         }
     }
 
-    public function test_registration_requiring_approval_does_not_consume_a_number_without_completed_workflow(): void
+    public function test_secretariat_manager_can_register_draft_without_intermediate_approval(): void
     {
-        $creator = $this->createSecretariatUser();
+        $secretariatManager = $this->createSecretariatUser();
         $correspondence = Correspondence::query()->create([
             'type' => Correspondence::TYPE_OUTGOING,
-            'subject' => 'نامه صادره نیازمند تأیید',
+            'subject' => 'نامه صادره آماده ثبت نهایی',
             'status' => Correspondence::STATUS_DRAFT,
-            'created_by' => $creator->id,
+            'workflow_state' => 'awaiting_registration',
+            'created_by' => User::factory()->create(['status' => 'active'])->id,
         ]);
 
-        try {
-            app(CorrespondenceNumberingService::class)->register($correspondence, $creator);
-            $this->fail('Registration should require a completed approval workflow.');
-        } catch (InvalidArgumentException $exception) {
-            $this->assertSame('این نامه باید پیش از ثبت نهایی توسط مدیر واحد تأیید شود.', $exception->getMessage());
-        }
+        $registered = app(CorrespondenceNumberingService::class)->register($correspondence, $secretariatManager);
 
-        $this->assertDatabaseHas('correspondence_number_counters', ['id' => 1, 'last_number' => 0]);
+        $this->assertSame(Correspondence::STATUS_REGISTERED, $registered->status);
+        $this->assertSame((int) $secretariatManager->id, (int) $registered->registered_by);
+        $this->assertNotEmpty($registered->registration_number);
+        $this->assertDatabaseHas('correspondence_number_counters', ['id' => 1, 'last_number' => 1]);
         $this->assertDatabaseHas('correspondences', [
             'id' => $correspondence->id,
-            'status' => Correspondence::STATUS_DRAFT,
-            'registration_number' => null,
+            'status' => Correspondence::STATUS_REGISTERED,
+            'workflow_state' => 'awaiting_registration',
+            'registration_number' => $registered->registration_number,
         ]);
     }
 
