@@ -978,16 +978,28 @@ class CorrespondenceHttpTest extends TestCase
             'type' => Correspondence::TYPE_INCOMING,
             'subject' => 'نامه وارده دبیرخانه',
             'created_by' => $secretariatUser->id,
-            'workflow_state' => 'awaiting_manager_approval',
-            'current_user_id' => $secretariatUser->id,
+            'workflow_state' => 'awaiting_registration',
+            'current_user_id' => null,
         ]);
         $incomingLetter = Correspondence::query()->where('subject', 'نامه وارده دبیرخانه')->firstOrFail();
+        $secretariatEmployee = User::factory()->create(['status' => 'active']);
+        $secretariatEmployee->departments()->attach($department->id, ['is_primary' => true, 'joined_at' => now()]);
+        $this->actingAs($secretariatEmployee)->post(route('correspondence.register', $incomingLetter))->assertForbidden();
+        $this->actingAs($secretariatEmployee)->get(route('correspondence.show', $incomingLetter))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('canRegister', false));
         $this->actingAs($secretariatUser)->get(route('correspondence.show', $incomingLetter))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
+                ->where('canRegister', true)
                 ->where('originalLetters.0.file_name', 'original.pdf')
                 ->where('attachments', []));
-        app(SystemSettingsService::class)->set(['correspondence.approval.incoming' => 'direct']);
+        $this->actingAs($secretariatUser)->post(route('correspondence.register', $incomingLetter))->assertRedirect();
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $incomingLetter->id,
+            'status' => Correspondence::STATUS_REGISTERED,
+            'registered_by' => $secretariatUser->id,
+        ]);
         $this->actingAs($secretariatUser)->post(route('correspondence.store'), [
             'type' => Correspondence::TYPE_INCOMING,
             'received_at' => '2026-10-25',
@@ -1003,7 +1015,6 @@ class CorrespondenceHttpTest extends TestCase
             'current_user_id' => null,
         ]);
 
-        app(SystemSettingsService::class)->set(['correspondence.approval.outgoing' => 'direct']);
         $outgoingCreator = User::factory()->create(['status' => 'active']);
         $letter = Correspondence::query()->create(['type' => Correspondence::TYPE_OUTGOING, 'subject' => 'پیش‌نویس صادره برای دبیرخانه', 'status' => Correspondence::STATUS_DRAFT, 'created_by' => $outgoingCreator->id]);
         $this->actingAs($secretariatUser)->post(route('correspondence.register', $letter))->assertRedirect();
