@@ -716,3 +716,10 @@ Before making the first code change in a new conversation:
 - فیلتر scope=mine برای مدیر واحد علاوه بر ثبت‌های شخصی، نامه‌های ثبت‌شده توسط اعضای واحد تحت مدیریت او را نیز نگه می‌دارد؛ پس از ارجاع نامه به واحد گیرنده، این مورد در action_filter=all قابل مشاهده است اما نباید صرفاً به دلیل ثبت توسط تیم دبیرخانه در needs_action مدیر دبیرخانه ظاهر شود.
 - پذیرش employee_request_task در UI و backend به مجوزهای tasks.create/tasks.view و وجود پروژه عمومی فعال بدون department_id و Section فعال واحد با manager_can_create_tasks=true وابسته است؛ در غیر این صورت پیام تنظیمات ناقص نمایش داده می‌شود و state نامه تغییر نمی‌کند.
 - برای مدیر واحد مدیریت پروژه‌ها، target_type ارجاع عمومی به صورت پیش‌فرض user است و گزینه واحد دیگر پنهان شده؛ انتقال بین‌واحدی فقط با PM_REQUEST_REFER + PM_MANAGER_APPROVE_REQUEST ممکن است.
+
+## 2026-11-02 — Incoming approval and approved project request queue fix
+
+- Incoming draft creation previously ignored `correspondence.approval.incoming`; it always created `awaiting_registration` with no current user. Updated the service to use `awaiting_manager_approval` and the configured Secretariat manager when approval is required; a missing manager is now a clear validation error.
+- The assigned manager can see the draft and the UI selects `manager_approve` by default. Backend manager approval accepts incoming letters only when the organization setting requires approval. Once approved, the draft returns to its creator for final Secretariat registration. Numbering now rejects final registration of any type requiring approval until state is `approved_for_registration`.
+- Added `project_request_approved` to the manager branch of the `needs_action` filter so the manager responsible for creating the approved project receives the item in their action queue.
+- Feature test coverage added/updated. No tests or build were executed by the assistant; local verification remains pending. Work is on `development`; `master` unchanged.
