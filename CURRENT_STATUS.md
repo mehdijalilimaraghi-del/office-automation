@@ -1669,3 +1669,14 @@ Implementation has started for the agreed cross-department project model:
 - Fixed `CorrespondenceAccessService::canView`: a non-Secretariat department manager assigned as `current_user_id` on an `awaiting_manager_approval` draft can now open it, provided the current department identifies that user as its manager. This closes the gap where list visibility allowed the manager but the detail page returned 403.
 - Fixed `CorrespondenceNumberingService::register` validation order: incoming letters now validate the mandatory original letter number before the approval-state guard. This preserves the required original-number error and does not consume a registration number.
 - Commit: `9f9f90bb374cb107ce04fb1adb57bafcdb085251` on `development`. Verification pending: rerun both correspondence feature test classes, full suite, and frontend build. `master` unchanged.
+
+
+## 2026-11-02 — اصلاح گردش ثبت نهایی دبیرخانه
+
+- مرحله مستقل «تأیید مدیر پیش از ثبت نهایی» از مسیر ایجاد پیش‌نویس و ثبت نهایی حذف شد؛ پیش‌نویس‌ها مستقیماً با وضعیت «در انتظار ثبت نهایی» ایجاد می‌شوند.
+- دکمه «ثبت نهایی» فقط برای مدیر واحد دبیرخانه (و مدیرکل سیستم) فعال/قابل مشاهده است. کارمند عادی دبیرخانه می‌تواند پیش‌نویس را ایجاد و مشاهده کند، اما امکان ثبت نهایی ندارد.
+- مدیر دبیرخانه با انتخاب «ثبت نهایی» مستقیماً شماره ثبت را دریافت و نامه را ثبت می‌کند؛ شرط وضعیت تأیید مدیر از سرویس شماره‌گذاری حذف شد.
+- ثبت نهایی نامه داخلی توسط ایجادکننده مطابق قاعده قبلی حفظ شده است.
+- رابط کاربری اقدام اضافی «تأیید برای ثبت نهایی» را حذف کرد.
+- تست HTTP مسیر ثبت وارده به‌روزرسانی شد تا عدم دسترسی کارمند دبیرخانه و ثبت موفق توسط مدیر دبیرخانه را پوشش دهد.
+- وضعیت اجرا: تغییرات کد و تست ثبت شده‌اند؛ اجرای PHPUnit و build در محیط توسعه کاربر هنوز تأیید نشده است.
