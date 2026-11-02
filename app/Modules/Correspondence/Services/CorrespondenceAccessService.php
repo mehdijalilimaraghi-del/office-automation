@@ -87,8 +87,8 @@ class CorrespondenceAccessService
             return true;
         }
 
-        $secretariatDepartmentId = app(\\App\\Core\\Settings\\Services\\OrganizationDepartmentRoleService::class)
-            ->activeDepartmentId(\\App\\Core\\Settings\\Services\\OrganizationDepartmentRoleService::SECRETARIAT);
+        $secretariatDepartmentId = app(OrganizationDepartmentRoleService::class)
+            ->activeDepartmentId(OrganizationDepartmentRoleService::SECRETARIAT);
 
         $isSecretariatManager = $secretariatDepartmentId !== null
             && \\App\\Core\\Departments\\Models\\Department::query()
