@@ -44,7 +44,6 @@ class CorrespondenceNumberingService
             }
 
             if (app(CorrespondenceCompositionSettings::class)->requiresApproval($locked->type)
-                && in_array($locked->type, [Correspondence::TYPE_INTERNAL, Correspondence::TYPE_OUTGOING], true)
                 && $locked->workflow_state !== 'approved_for_registration') {
                 throw new InvalidArgumentException('این نامه باید پیش از ثبت نهایی توسط مدیر واحد تأیید شود.');
             }
