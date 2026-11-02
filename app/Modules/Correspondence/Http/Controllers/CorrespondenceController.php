@@ -419,12 +419,6 @@ class CorrespondenceController extends Controller
             'canRecallReferral' => $canRecallReferral,
             'generalRequestType' => $latestGeneralRequest?->action_type,
             'requestedLetterCreateUrl' => $requestedLetterCreateUrl,
-            'workflowDefinitions' => WorkflowDefinition::query()->where('is_active', true)
-                ->whereHas('steps', fn ($steps) => $steps->where('is_active', true))
-                ->whereDoesntHave('steps', fn ($steps) => $steps
-                    ->where('is_active', true)
-                    ->whereNotIn('actor_type', ['workflow_initiator', 'specific_user', 'department_manager']))
-                ->orderBy('name')->get(['id', 'name']),
             'workflowInstance' => $correspondence->workflowInstance === null ? null : [
                 'id' => (int) $correspondence->workflowInstance->id,
                 'status' => $correspondence->workflowInstance->status,
@@ -1238,13 +1232,11 @@ class CorrespondenceController extends Controller
                 CorrespondenceAction::MANAGER_REFER_PROJECT_MANAGEMENT,
                 CorrespondenceAction::MANAGER_CREATE_REQUESTED_LETTER,
                 CorrespondenceAction::MANAGER_ASSIGN_LETTER_DRAFT,
-                CorrespondenceAction::MANAGER_START_REQUESTED_WORKFLOW,
             ])],
             'note' => ['nullable', 'string', 'max:10000'],
             'target_type' => ['nullable', Rule::in(['department', 'user'])],
             'to_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')->where('is_active', true)],
             'to_user_id' => ['nullable', 'integer', Rule::exists('users', 'id')->where('status', 'active')],
-            'workflow_definition_id' => ['nullable', 'integer', Rule::exists('workflow_definitions', 'id')->where('is_active', true)],
         ]);
 
         try {
