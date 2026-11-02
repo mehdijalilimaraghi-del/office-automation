@@ -76,25 +76,15 @@ class CorrespondenceService
                 $createdDepartmentId = $allowedDepartmentIds->first();
             }
 
-            $approvalRequired = app(CorrespondenceCompositionSettings::class)->requiresApproval($type);
-            $secretariatDepartmentId = app(\App\Core\Settings\Services\OrganizationDepartmentRoleService::class)
-                ->activeDepartmentId(\App\Core\Settings\Services\OrganizationDepartmentRoleService::SECRETARIAT);
-            $approvalDepartmentId = $type === Correspondence::TYPE_INCOMING && $approvalRequired
-                ? ($secretariatDepartmentId ?? $createdDepartmentId)
-                : $createdDepartmentId;
-            $initialState = $approvalRequired ? 'awaiting_manager_approval' : 'awaiting_registration';
-            $managerId = $approvalDepartmentId === null
-                ? null
-                : \App\Core\Departments\Models\Department::query()->whereKey($approvalDepartmentId)->value('manager_id');
-
-            if ($approvalRequired && $type === Correspondence::TYPE_INCOMING && $managerId === null) {
-                throw new InvalidArgumentException('برای تأیید پیش‌نویس، مدیر فعال واحد مربوطه باید در تنظیمات سازمان مشخص باشد.');
-            }
+            // Secretariat employees prepare drafts; the Secretariat manager performs final registration.
+            $initialState = 'awaiting_registration';
+            $approvalDepartmentId = $createdDepartmentId;
+            $managerId = null;
 
             $correspondence = Correspondence::query()->create([
                 'workflow_state' => $initialState,
-                'current_department_id' => $approvalRequired ? $approvalDepartmentId : $createdDepartmentId,
-                'current_user_id' => $approvalRequired && $managerId !== null ? (int) $managerId : null,
+                'current_department_id' => $createdDepartmentId,
+                'current_user_id' => null,
                 'type' => $type,
                 'classification' => $data['classification'] ?? Correspondence::CLASSIFICATION_ORDINARY,
                 'subject' => $subject,
