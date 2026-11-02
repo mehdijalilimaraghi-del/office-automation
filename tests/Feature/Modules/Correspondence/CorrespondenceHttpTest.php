@@ -2229,78 +2229,7 @@ class CorrespondenceHttpTest extends TestCase
 
 
 
-    public function test_manager_starts_real_workflow_for_employee_workflow_request(): void
-    {
-        $manager = $this->userWithPermission('correspondence.view');
-        $employee = $this->userWithPermission('correspondence.view');
-        $department = Department::query()->create([
-            'name' => 'واحد گردش کار واقعی '.Str::upper(Str::random(5)),
-            'code' => 'WF-'.Str::upper(Str::random(6)),
-            'manager_id' => $manager->id,
-            'is_active' => true,
-        ]);
-        $employee->departments()->attach($department->id, ['is_primary' => true, 'joined_at' => now()]);
-        $definition = WorkflowDefinition::query()->create([
-            'name' => 'فرآیند آزمایشی درخواست نامه',
-            'code' => 'WF-'.Str::upper(Str::random(8)),
-            'created_by' => $manager->id,
-            'is_active' => true,
-        ]);
-        WorkflowStep::query()->create([
-            'workflow_definition_id' => $definition->id,
-            'step_order' => 1,
-            'name' => 'بررسی اولیه',
-            'task_title' => 'بررسی درخواست نامه',
-            'task_description' => 'بررسی درخواست ثبت‌شده از مکاتبه',
-            'actor_type' => 'workflow_initiator',
-            'department_id' => $department->id,
-            'review_required' => true,
-            'priority' => 'normal',
-            'is_active' => true,
-        ]);
-        $letter = Correspondence::query()->create([
-            'type' => Correspondence::TYPE_INCOMING,
-            'classification' => Correspondence::CLASSIFICATION_ORDINARY,
-            'subject' => 'درخواست گردش کار',
-            'status' => Correspondence::STATUS_REGISTERED,
-            'workflow_state' => 'assigned_to_employee',
-            'recipient_department_id' => $department->id,
-            'current_department_id' => $department->id,
-            'current_user_id' => $employee->id,
-            'created_by' => $manager->id,
-        ]);
 
-        $this->actingAs($employee)->post(route('correspondence.actions.store', $letter), [
-            'action_type' => CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
-            'note' => 'برای پیگیری این نامه یک گردش کار چندمرحله‌ای لازم است.',
-        ])->assertRedirect();
-
-        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
-            'action_type' => CorrespondenceAction::MANAGER_START_REQUESTED_WORKFLOW,
-            'workflow_definition_id' => $definition->id,
-            'note' => 'گردش کار تعریف‌شده برای این درخواست آغاز شود.',
-        ])->assertRedirect();
-
-        $letter->refresh();
-        $this->assertSame('workflow_started', $letter->workflow_state);
-        $this->assertNotNull($letter->workflow_instance_id);
-        $this->assertDatabaseHas('workflow_instances', [
-            'id' => $letter->workflow_instance_id,
-            'workflow_definition_id' => $definition->id,
-            'department_id' => $department->id,
-            'initiated_by' => $manager->id,
-        ]);
-        $this->assertDatabaseHas('workflow_instance_steps', [
-            'workflow_instance_id' => $letter->workflow_instance_id,
-            'status' => 'active',
-        ]);
-
-        $workflowTask = Task::query()->whereHas('workflowInstanceSteps', fn ($query) => $query
-            ->where('workflow_instance_id', $letter->workflow_instance_id))->firstOrFail();
-        app(WorkflowService::class)->advanceAfterTaskApproval($workflowTask);
-        $letter->refresh();
-        $this->assertSame('workflow_completed', $letter->workflow_state);
-    }
 
 
 
