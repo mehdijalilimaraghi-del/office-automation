@@ -923,3 +923,14 @@ Status: correspondence list/draft/registration HTTP flow and editor/file/both co
 
 - Added a transaction-backed path from an approved incoming letter to a new project, one response Section and one response task for the selected active department. The source correspondence is linked to the project and task.
 - Organization default response-department setting and bidirectional detail links remain pending. Migration, focused HTTP tests and frontend build validation are pending.
+
+## 2026-11-02 — اصلاحات گردش تأیید نامه وارده و کارتابل ایجاد پروژه
+
+- [x] ثبت تصمیم: وقتی تنظیم نامه وارده روی «نیاز به تأیید» است، تأیید نهایی مرحله پیش‌نویس بر عهده مدیر واحد دبیرخانه است؛ کارمند نباید این تأیید را دور بزند.
+- [x] پیاده‌سازی اولیه: تخصیص پیش‌نویس وارده به مدیر دبیرخانه تنظیم‌شده، نمایش پیش‌نویس برای مدیر و اقدام پیش‌فرض «تأیید مدیر».
+- [x] پیاده‌سازی اولیه: پس از تأیید مدیر، واگذاری ثبت نهایی به ایجادکننده پیش‌نویس در دبیرخانه.
+- [x] پیاده‌سازی اولیه: نمایش نامه دارای وضعیت `project_request_approved` در «نیاز به اقدام» مدیر واحد جاری.
+- [x] تست Feature برای تأیید مدیر روی نامه وارده و کارتابل درخواست پروژه تأییدشده اضافه/اصلاح شد.
+- [ ] اجرای تست‌های هدفمند و کل مجموعه `php artisan test`، build فرانت‌اند و پذیرش UI در محیط محلی.
+- [ ] اعتبارسنجی SQL Server و سناریوهای ثبت مستقیم/نیازمند تأیید روی تنظیمات واقعی سازمان.
+- وضعیت: کد و مستندات در شاخه `development` به‌روزرسانی شده‌اند؛ تست و build هنوز اجرا/تأیید نشده‌اند. شاخه `master` تغییر نکرده است.
