@@ -127,6 +127,7 @@ const actionLabels: Record<string, string> = {
     project_created: 'ایجاد پروژه و تسک پاسخ',
     employee_request_none: 'درخواست کارمند: بدون درخواست',
     employee_request_task: 'درخواست کارمند: ایجاد دستورکار',
+    employee_request_workflow: 'درخواست کارمند: ایجاد دستورکار', // legacy label
     employee_request_letter: 'درخواست کارمند: ثبت نامه',
     employee_request_project: 'درخواست کارمند: ایجاد پروژه',
     manager_reject_employee_request: 'رد درخواست و بازگشت به کارمند',
