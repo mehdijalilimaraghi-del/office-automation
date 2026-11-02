@@ -43,15 +43,15 @@ class CorrespondenceNumberingService
                 throw new InvalidArgumentException('فقط پیش‌نویس را می‌توان ثبت نهایی کرد.');
             }
 
-            if (app(CorrespondenceCompositionSettings::class)->requiresApproval($locked->type)
-                && $locked->workflow_state !== 'approved_for_registration') {
-                throw new InvalidArgumentException('این نامه باید پیش از ثبت نهایی توسط مدیر واحد تأیید شود.');
-            }
-
             if ($locked->type === Correspondence::TYPE_INCOMING && blank($locked->letter_number)) {
                 throw new InvalidArgumentException('شماره نامه وارده باید عیناً از روی نامه اصلی وارد شود.');
             }
-            if ($locked->type !== Correspondence::TYPE_INCOMING) {
+
+
+            if (app(CorrespondenceCompositionSettings::class)->requiresApproval($locked->type)
+                && $locked->workflow_state !== 'approved_for_registration') {
+                throw new InvalidArgumentException('این نامه باید پیش از ثبت نهایی توسط مدیر واحد تأیید شود.');
+            }            if ($locked->type !== Correspondence::TYPE_INCOMING) {
                 $config = $this->configuration();
                 $this->assertFormatIsValid($config['format'], $config['custom_order']);
                 $this->assertSeparator($config['separator']);
