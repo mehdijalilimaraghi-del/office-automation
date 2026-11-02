@@ -286,7 +286,7 @@ class CorrespondenceHttpTest extends TestCase
                 ->where('correspondences.data', fn ($rows) => collect($rows)->pluck('id')->sort()->values()->all() === collect([$resultPendingManager->id, $awaitingManager->id])->sort()->values()->all()));
     }
 
-    public function test_legacy_project_requested_state_is_not_actionable_for_current_department_manager(): void
+    public function test_approved_project_request_is_actionable_for_current_department_manager(): void
     {
         $manager = $this->userWithPermission('correspondence.view');
         $creator = $this->userWithPermission('correspondence.view');
@@ -299,11 +299,11 @@ class CorrespondenceHttpTest extends TestCase
 
         $letter = Correspondence::query()->create([
             'type' => Correspondence::TYPE_INCOMING,
-            'subject' => 'درخواست پروژه در انتظار مدیر',
+            'subject' => 'درخواست پروژه تأییدشده و منتظر ایجاد پروژه',
             'status' => Correspondence::STATUS_REGISTERED,
-            'workflow_state' => 'project_requested',
+            'workflow_state' => 'project_request_approved',
             'current_department_id' => $department->id,
-            'current_user_id' => null,
+            'current_user_id' => $manager->id,
             'created_by' => $creator->id,
         ]);
 
@@ -311,7 +311,8 @@ class CorrespondenceHttpTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->where('filters.action_filter', 'needs_action')
-                ->where('correspondences.total', 0));
+                ->where('correspondences.total', 1)
+                ->where('correspondences.data.0.id', $letter->id));
     }
 
     public function test_department_filter_uses_department_module_data_and_never_bypasses_visibility(): void
@@ -1092,6 +1093,51 @@ class CorrespondenceHttpTest extends TestCase
             'event' => 'correspondence.action.manager_approve',
             'auditable_type' => $letter->getMorphClass(),
             'auditable_id' => $letter->id,
+        ]);
+    }
+
+    public function test_manager_can_approve_incoming_draft_when_organization_requires_approval(): void
+    {
+        app(SystemSettingsService::class)->set(['correspondence.approval.incoming' => 'approval']);
+
+        $manager = $this->userWithPermission('correspondence.view');
+        $creator = $this->userWithPermission('correspondence.view');
+        $department = Department::query()->create([
+            'name' => 'دبیرخانه آزمون تأیید وارده '.Str::upper(Str::random(5)),
+            'code' => 'INAPR-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'subject' => 'نامه وارده نیازمند تأیید مدیر',
+            'letter_number' => 'IN-APP-001',
+            'status' => Correspondence::STATUS_DRAFT,
+            'workflow_state' => 'awaiting_manager_approval',
+            'current_department_id' => $department->id,
+            'current_user_id' => $manager->id,
+            'created_department_id' => $department->id,
+            'created_by' => $creator->id,
+        ]);
+
+        $this->actingAs($manager)->get(route('correspondence.show', $letter))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('canManageWorkflow', true));
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => 'manager_approve',
+            'note' => 'نامه وارده بررسی شد.',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $letter->id,
+            'workflow_state' => 'approved_for_registration',
+            'current_user_id' => null,
+        ]);
+        $this->assertDatabaseHas('correspondence_actions', [
+            'correspondence_id' => $letter->id,
+            'action_type' => 'manager_approve',
+            'actor_id' => $manager->id,
         ]);
     }
 
