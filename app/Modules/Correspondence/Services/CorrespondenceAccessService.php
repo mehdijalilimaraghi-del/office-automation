@@ -113,6 +113,12 @@ class CorrespondenceAccessService
                 if (! $isRegistrar) {
                     $draft->where(function (Builder $owner) use ($user): void {
                         $owner->where('created_by', $user->id)
+                            ->orWhere(function (Builder $assignedManager) use ($user): void {
+                                $assignedManager->where('current_user_id', $user->id)
+                                    ->where('workflow_state', 'awaiting_manager_approval')
+                                    ->whereHas('currentDepartment', fn (Builder $department) => $department
+                                        ->where('manager_id', $user->id));
+                            })
                             ->orWhereHas('replyTo', fn (Builder $source) => $source
                                 ->where('workflow_state', 'letter_draft_pending_manager')
                                 ->where('current_user_id', $user->id));
