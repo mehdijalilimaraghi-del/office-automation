@@ -433,7 +433,7 @@ function registerCorrespondence(): void {
                                 <option value="resubmit_to_secretariat">ارسال مجدد به دبیرخانه</option>
                             </select>
                         </div>
-<p v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_task' && !canCreateTaskInstruction" class="sm:col-span-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">برای این واحد، پروژه عمومی فعال یا بخش مجاز ایجاد دستورکار تعریف نشده است؛ ابتدا تنظیمات پروژه عمومی و بخش واحد را بررسی کنید.</p>
+<p v-if="canReviewGeneralRequest && ['employee_request_task', 'employee_request_workflow'].includes(generalRequestType ?? '') && !canCreateTaskInstruction" class="sm:col-span-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">برای این واحد، پروژه عمومی فعال یا بخش مجاز ایجاد دستورکار تعریف نشده است؛ ابتدا تنظیمات پروژه عمومی و بخش واحد را بررسی کنید.</p>
                         <template v-if="canProjectEmployeeReview && actionForm.action_type === 'pm_request_refer'">
                             <div class="sm:col-span-2">
                                 <label class="mb-1 block text-sm font-medium text-slate-700">واحد مقصد درخواست ارجاع</label>
