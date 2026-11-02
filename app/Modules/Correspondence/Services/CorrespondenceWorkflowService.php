@@ -492,7 +492,11 @@ class CorrespondenceWorkflowService
                     throw new InvalidArgumentException('تأیید مدیر فقط برای نوع نامه‌ای مجاز است که در تنظیمات سازمان نیاز به تأیید دارد.');
                 }
                 $this->record($letter, $actor, $type, $note, $currentDepartmentId, null, $actor->id, null);
-                $letter->forceFill(['workflow_state' => 'approved_for_registration', 'current_user_id' => null])->save();
+                $letter->forceFill([
+                    'workflow_state' => 'approved_for_registration',
+                    // After approval, the Secretariat draft creator can complete registration.
+                    'current_user_id' => $letter->type === Correspondence::TYPE_INCOMING ? (int) $letter->created_by : null,
+                ])->save();
                 return;
             }
 
