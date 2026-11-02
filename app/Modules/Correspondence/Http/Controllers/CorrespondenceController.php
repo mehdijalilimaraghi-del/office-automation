@@ -143,6 +143,7 @@ class CorrespondenceController extends Controller
                                 'result_pending_manager',
                                 'awaiting_manager_approval',
                                 'project_review_pending_manager',
+                                'project_request_approved',
                                 'general_review_pending_manager',
                             ])->whereHas('currentDepartment', fn ($currentDepartment) => $currentDepartment
                                 ->where('manager_id', $user->id))
