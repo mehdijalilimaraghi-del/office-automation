@@ -723,3 +723,12 @@ Before making the first code change in a new conversation:
 - The assigned manager can see the draft and the UI selects `manager_approve` by default. Backend manager approval accepts incoming letters only when the organization setting requires approval. Once approved, the draft returns to its creator for final Secretariat registration. Numbering now rejects final registration of any type requiring approval until state is `approved_for_registration`.
 - Added `project_request_approved` to the manager branch of the `needs_action` filter so the manager responsible for creating the approved project receives the item in their action queue.
 - Feature test coverage added/updated. No tests or build were executed by the assistant; local verification remains pending. Work is on `development`; `master` unchanged.
+
+
+## اصلاح نهایی ثبت دبیرخانه — 2026-11-02
+
+- برای پیش‌نویس‌های مکاتبات، مرحله تأیید مدیر قبل از ثبت نهایی وجود ندارد؛ وضعیت اولیه همه پیش‌نویس‌ها `awaiting_registration` است.
+- کارمند دبیرخانه پیش‌نویس را ایجاد می‌کند. فقط مدیر واحد دبیرخانه (یا مدیرکل سیستم) مجاز به ثبت نهایی آن است؛ عضویت عادی در دبیرخانه برای ثبت نهایی کافی نیست.
+- دکمه ثبت نهایی در صفحه جزئیات بر اساس همین مجوز سرور نمایش داده می‌شود و درخواست POST ثبت نهایی مستقیماً شماره ثبت را تخصیص می‌دهد و وضعیت نامه را به ثبت‌شده تغییر می‌دهد.
+- گزینه اقدام جداگانه `manager_approve` از رابط کاربری حذف شده است. ثبت داخلی توسط ایجادکننده مطابق رفتار قبلی حفظ می‌شود.
+- تست HTTP مسیر وارده اکنون بررسی می‌کند که کارمند دبیرخانه نتواند ثبت نهایی کند و مدیر دبیرخانه بتواند همان پیش‌نویس را ثبت کند.
