@@ -83,13 +83,22 @@ class CorrespondenceAccessService
             return false;
         }
 
-        if ($this->isSecretariat($user)) {
+        if ($user->isSystemAdmin()) {
             return true;
         }
 
-        return $user->hasPermission('correspondence.create')
+        $secretariatDepartmentId = app(\\App\\Core\\Settings\\Services\\OrganizationDepartmentRoleService::class)
+            ->activeDepartmentId(\\App\\Core\\Settings\\Services\\OrganizationDepartmentRoleService::SECRETARIAT);
+
+        $isSecretariatManager = $secretariatDepartmentId !== null
+            && \\App\\Core\\Departments\\Models\\Department::query()
+                ->whereKey($secretariatDepartmentId)
+                ->where('manager_id', $user->id)
+                ->exists();
+
+        return $isSecretariatManager || ($user->hasPermission('correspondence.create')
             && $correspondence->type === Correspondence::TYPE_INTERNAL
-            && (int) $correspondence->created_by === (int) $user->id;
+            && (int) $correspondence->created_by === (int) $user->id);
     }
 
     public function visibleToQuery(Builder $query, User $user): Builder
