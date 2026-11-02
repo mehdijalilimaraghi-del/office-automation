@@ -1146,6 +1146,11 @@ class CorrespondenceHttpTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page->where('canManageWorkflow', true));
 
+        $this->actingAs($creator)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => 'manager_approve',
+            'note' => 'تلاش کارمند برای تأیید',
+        ])->assertForbidden();
+
         $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
             'action_type' => 'manager_approve',
             'note' => 'نامه وارده بررسی شد.',
