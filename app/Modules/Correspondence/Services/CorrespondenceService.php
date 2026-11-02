@@ -87,14 +87,14 @@ class CorrespondenceService
                 ? null
                 : \App\Core\Departments\Models\Department::query()->whereKey($approvalDepartmentId)->value('manager_id');
 
-            if ($approvalRequired && $managerId === null) {
+            if ($approvalRequired && $type === Correspondence::TYPE_INCOMING && $managerId === null) {
                 throw new InvalidArgumentException('برای تأیید پیش‌نویس، مدیر فعال واحد مربوطه باید در تنظیمات سازمان مشخص باشد.');
             }
 
             $correspondence = Correspondence::query()->create([
                 'workflow_state' => $initialState,
                 'current_department_id' => $approvalRequired ? $approvalDepartmentId : $createdDepartmentId,
-                'current_user_id' => $approvalRequired ? (int) $managerId : null,
+                'current_user_id' => $approvalRequired && $managerId !== null ? (int) $managerId : null,
                 'type' => $type,
                 'classification' => $data['classification'] ?? Correspondence::CLASSIFICATION_ORDINARY,
                 'subject' => $subject,
