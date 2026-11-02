@@ -1428,3 +1428,10 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - «مکاتبات من» برای مدیر واحد شامل نامه‌هایی است که خود مدیر یا اعضای واحد تحت مدیریت او ثبت کرده‌اند؛ این قاعده برای پیگیری سابقه ثبت است و نباید با مالکیت اقدام فعلی اشتباه شود. «نیاز به اقدام» همچنان بر اساس مسئول فعلی نامه تعیین می‌شود.
 - اقدام پذیرش درخواست دستورکار باید پیش از تغییر state، وجود پروژه عمومی سازمان و Section مجاز واحد و مجوزهای مشاهده/ایجاد Task مدیر را کنترل کند؛ اگر مقصد آماده نباشد، درخواست در انتظار تصمیم می‌ماند و به state غیرقابل‌اقدام منتقل نمی‌شود.
 - مدیر مدیریت پروژه‌ها در ارجاع عمومی فقط می‌تواند به کارمند همان واحد ارجاع دهد؛ مقصد بین‌واحدی تابع درخواست کارمند پروژه‌ها و تأیید مدیر است.
+
+## 2026-11-02 — Incoming approval and project creation action ownership
+
+- The incoming approval setting is now honored at draft creation. When set to approval-required, the draft goes to the configured Secretariat department manager in `awaiting_manager_approval`; direct registration is not allowed until that manager approves. After approval, the draft is assigned back to its creator for final Secretariat registration.
+- Manager visibility for assigned approval drafts and the default UI action (`manager_approve`) were corrected. The numbering service checks approval for all correspondence types, including incoming.
+- The `needs_action` filter now treats `project_request_approved` as an actionable state for the current department manager, fixing the missing post-approval project-creation item.
+- Added/updated Feature tests. Test suite, build and SQL Server validation have **not** been run here and remain pending. Branch `development`; `master` unchanged.
