@@ -1467,3 +1467,8 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - علت ریشه‌ای باز نشدن مودال مشخص شد: صفحه Tasks مجوز `tasks.create` را فقط بدون شناسه پروژه بررسی می‌کرد. در `TaskPolicy` این بررسی عمومی برای برخی مدیران واحد با scope سطح واحد false است، در حالی که همان مدیر برای بخش مجاز پروژه عمومی مجوز ایجاد دارد.
 - در `TaskController::index` اکنون علاوه بر مجوز عمومی، مجوز ایجاد با شناسه پروژه مقصد نیز ارزیابی می‌شود. بنابراین مدیر مجاز می‌تواند فرم را دریافت کند و prop مربوط به نامه به Vue برسد؛ اعتبارسنجی نامه، تأیید مدیر و بخش مقصد همچنان برقرار است.
 - تست و build در محیط کاربر پیش‌تر پاس شده‌اند؛ این اصلاح جدید هنوز باید پس از pull با همان تست Feature و build مجدداً اعتبارسنجی شود. شاخه development؛ master بدون تغییر.
+
+## Incoming correspondence validation
+- Source organization is mandatory for incoming letters in create/update validation and UI.
+- Incoming letter number uniqueness is scoped to incoming correspondence plus source organization: duplicates within one organization are rejected; same number across different organizations is allowed.
+- Tests/build for this change are pending.
