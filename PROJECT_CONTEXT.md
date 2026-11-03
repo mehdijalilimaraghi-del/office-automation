@@ -1472,3 +1472,5 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - Source organization is mandatory for incoming letters in create/update validation and UI.
 - Incoming letter number uniqueness is scoped to incoming correspondence plus source organization: duplicates within one organization are rejected; same number across different organizations is allowed.
 - Tests/build for this change are pending.
+
+- اصلاح تست‌های Feature برای الزام سازمان مبدأ در نامه‌های وارده: داده تست‌های قدیمی تکمیل شد؛ تست مستقل نیز اجباری بودن سازمان، رد شماره تکراری در همان سازمان و پذیرش همان شماره در سازمان دیگر را پوشش می‌دهد. اجرای تست‌ها پس از دریافت این commit لازم است.
