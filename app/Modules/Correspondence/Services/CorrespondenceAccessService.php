@@ -15,12 +15,26 @@ class CorrespondenceAccessService
 {
     public function isSecretariat(User $user): bool
     {
-        return $user->isActive()
-            && ($user->isSystemAdmin()
-                || app(OrganizationDepartmentRoleService::class)->userBelongsTo(
-                    $user,
-                    OrganizationDepartmentRoleService::SECRETARIAT,
-                ));
+        if (! $user->isActive()) {
+            return false;
+        }
+
+        if ($user->isSystemAdmin()
+            || app(OrganizationDepartmentRoleService::class)->userBelongsTo(
+                $user,
+                OrganizationDepartmentRoleService::SECRETARIAT,
+            )) {
+            return true;
+        }
+
+        $secretariatDepartmentId = app(OrganizationDepartmentRoleService::class)
+            ->activeDepartmentId(OrganizationDepartmentRoleService::SECRETARIAT);
+
+        return $secretariatDepartmentId !== null
+            && Department::query()
+                ->whereKey($secretariatDepartmentId)
+                ->where('manager_id', $user->id)
+                ->exists();
     }
 
     public function canCreateType(string $type, User $user): bool
