@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { ChevronDown, ChevronLeft, Search, X } from '@lucide/vue';
 import DepartmentIcon from '@/Components/DepartmentIcon.vue';
 interface DepartmentOption { id:number; name:string; parent_id?:number|null; tree_label?:string|null; icon?:string|null; manager?:{name:string}|null; manager_name?:string|null; is_active?:boolean; }
@@ -18,8 +18,8 @@ function updateDropdownPosition():void {
     const margin=8;
     const viewportWidth=window.innerWidth;
     const viewportHeight=window.innerHeight;
-    const width=Math.min(rect.width,Math.max(0,viewportWidth-margin*2));
-    const left=Math.min(Math.max(margin,rect.left),Math.max(margin,viewportWidth-width-margin));
+    const width=Math.min(Math.max(rect.width,300),Math.max(0,viewportWidth-margin*2));
+    const left=Math.min(Math.max(margin,rect.right-width),Math.max(margin,viewportWidth-width-margin));
     const above=Math.max(0,rect.top-margin);
     const below=Math.max(0,viewportHeight-rect.bottom-margin);
     const openAbove=below<Math.min(320,420)&&above>below;
@@ -37,6 +37,14 @@ function updateDropdownPosition():void {
         zIndex:'9999',
     };
     listStyle.value={maxHeight:`${Math.max(48,Math.min(288,available-104))}px`};
+}
+function handleDocumentPointerDown(event:PointerEvent):void {
+    const target=event.target;
+    if(target instanceof Node&&(triggerRef.value?.contains(target)||dropdownRef.value?.contains(target)))return;
+    isOpen.value=false;
+}
+function handleDocumentKeydown(event:KeyboardEvent):void {
+    if(event.key==='Escape'&&isOpen.value){isOpen.value=false;triggerRef.value?.focus();}
 }
 function handleViewportChange(event?:Event):void {
     if(!isOpen.value)return;
@@ -61,7 +69,13 @@ watch(isOpen,async(open)=>{
         window.removeEventListener('scroll',handleViewportChange,true);
     }
 });
+onMounted(()=>{
+    document.addEventListener('pointerdown',handleDocumentPointerDown);
+    document.addEventListener('keydown',handleDocumentKeydown);
+});
 onBeforeUnmount(()=>{
+    document.removeEventListener('pointerdown',handleDocumentPointerDown);
+    document.removeEventListener('keydown',handleDocumentKeydown);
     window.removeEventListener('resize',handleViewportChange);
     window.removeEventListener('scroll',handleViewportChange,true);
 });
@@ -88,7 +102,7 @@ function clear(){if(props.multiple)emit('update:modelValues',[]);else emit('upda
 <ChevronDown :size="16" class="shrink-0 text-slate-500 transition-transform" :class="isOpen?'rotate-180':''"/>
 </button>
 <Teleport to="body">
-<div v-if="isOpen" ref="dropdownRef" :style="dropdownStyle" class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5" dir="rtl">
+<div v-if="isOpen" ref="dropdownRef" :style="dropdownStyle" class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.16)] ring-1 ring-slate-900/5" dir="rtl">
 <div class="border-b border-slate-100 p-2.5"><div class="relative"><Search :size="16" class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"/><input v-model="query" type="search" class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pr-9 pl-3 text-sm outline-none focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/10" placeholder="جستجوی واحد..." @keydown.esc="isOpen=false"/></div>
 <div class="mt-2 flex items-center justify-between px-1 text-xs text-slate-500"><span>{{nodes.length}} واحد در نمایش</span><span class="flex items-center gap-3"><button type="button" class="hover:text-indigo-700" @click="expandedIds=new Set(parentIds)">بازکردن همه</button><button type="button" class="hover:text-indigo-700" @click="expandedIds=new Set()">بستن همه</button></span></div></div>
 <div :style="listStyle" class="min-h-0 overflow-y-auto overscroll-contain p-1.5">
