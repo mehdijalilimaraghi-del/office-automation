@@ -13,6 +13,7 @@ type SelectOption = {
 
 const props = defineProps<{
     modelValue?: unknown;
+    value?: unknown;
     placeholder?: string;
 }>();
 
@@ -79,8 +80,10 @@ function sameValue(left: unknown, right: unknown): boolean {
     return String(left) === String(right);
 }
 
+const currentValue = computed(() => props.modelValue !== undefined ? props.modelValue : props.value);
+
 const selectedOption = computed(() => {
-    const selected = options.value.find((option) => sameValue(option.value, props.modelValue));
+    const selected = options.value.find((option) => sameValue(option.value, currentValue.value));
     if (selected) return selected;
     return options.value.find((option) => option.selected)
         ?? (props.modelValue === undefined ? options.value[0] : undefined);
@@ -284,7 +287,7 @@ onBeforeUnmount(() => {
                             :key="option.key"
                             type="button"
                             role="option"
-                            :aria-selected="sameValue(option.value, props.modelValue)"
+                            :aria-selected="sameValue(option.value, currentValue)"
                             :disabled="option.disabled"
                             class="flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-right text-sm transition"
                             :class="[
@@ -293,14 +296,14 @@ onBeforeUnmount(() => {
                                     : index === activeIndex
                                       ? 'bg-violet-50 text-violet-800'
                                       : 'text-slate-700 hover:bg-slate-50',
-                                sameValue(option.value, props.modelValue) ? 'font-semibold text-violet-700' : '',
+                                sameValue(option.value, currentValue) ? 'font-semibold text-violet-700' : '',
                             ]"
                             @mouseenter="activeIndex = index"
                             @click="chooseOption(option)"
                         >
                             <span class="min-w-0 flex-1 break-words">{{ option.label }}</span>
                             <svg
-                                v-if="sameValue(option.value, props.modelValue)"
+                                v-if="sameValue(option.value, currentValue)"
                                 class="h-4 w-4 shrink-0 text-violet-600"
                                 viewBox="0 0 24 24"
                                 fill="none"
