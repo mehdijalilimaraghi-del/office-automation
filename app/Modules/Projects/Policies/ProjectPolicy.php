@@ -41,6 +41,10 @@ class ProjectPolicy
             return true;
         }
 
+        if ($project->is_system_default) {
+            return false;
+        }
+
         // Project administration belongs to the Project Management unit, not
         // to the selected operational project manager or legacy project members.
         return $user->hasPermission('projects.update')
