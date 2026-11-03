@@ -807,3 +807,4 @@ Before making the first code change in a new conversation:
 - The department sentinel in the “my correspondence” scope is labeled “همه واحدهای من”. After deletion, the current list filters are re-applied.
 - Secretariat managers must see incoming Secretariat drafts awaiting registration/approval in “my correspondence” and “needs action”; this is limited to the active configured Secretariat manager and does not broaden access for other users.
 - Validation pending: focused correspondence Feature tests and frontend build must be run after pulling `development`. `master` unchanged.
+- Root cause follow-up: Secretariat draft visibility now recognizes the configured active Secretariat department manager even when the manager is not separately attached as a department member. This aligns `isSecretariat()` visibility with `canRegister()` authorization.
