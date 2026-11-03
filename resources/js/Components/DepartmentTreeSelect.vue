@@ -71,12 +71,12 @@ function handleViewportChange(event?:Event):void {
         isOpen.value=false;
         return;
     }
-    updateDropdownPosition();
+    void updateDropdownPosition();
 }
 watch(isOpen,async(open)=>{
     if(open){
         await nextTick();
-        updateDropdownPosition();
+        await updateDropdownPosition();
         window.addEventListener('resize',handleViewportChange);
         window.addEventListener('scroll',handleViewportChange,true);
     }else{
