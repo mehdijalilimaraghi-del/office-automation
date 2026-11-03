@@ -36,6 +36,7 @@ async function refreshNotificationSummary(): Promise<void> {
 }
 
 function toggleNotificationDropdown(): void {
+    openDesktopMenu.value = null;
     notificationDropdownOpen.value = !notificationDropdownOpen.value;
     if (notificationDropdownOpen.value) void refreshNotificationSummary();
 }
@@ -76,6 +77,7 @@ const hasOrganizationMenu = computed(() =>
 const hasSettingsMenu = computed(() => can('settings_manage'));
 
 function toggleDesktopMenu(menu: string): void {
+    notificationDropdownOpen.value = false;
     openDesktopMenu.value =
         openDesktopMenu.value === menu ? null : menu;
 }
@@ -88,7 +90,20 @@ function closeMobileNavigation(): void {
     showingNavigationDropdown.value = false;
 }
 
+function closeHeaderPopoversOnOutsidePointer(event: PointerEvent): void {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+
+    const menu = target.closest('[data-header-menu]')?.getAttribute('data-header-menu') ?? null;
+    const isNotificationArea = target.closest('[data-header-notifications]') !== null;
+
+    if (menu !== openDesktopMenu.value) openDesktopMenu.value = null;
+    if (!isNotificationArea) notificationDropdownOpen.value = false;
+}
+
 onMounted(() => {
+    document.addEventListener('pointerdown', closeHeaderPopoversOnOutsidePointer);
+
     if (
         route().current('cartable.*') ||
         route().current('notifications.*') ||
@@ -117,6 +132,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+    document.removeEventListener('pointerdown', closeHeaderPopoversOnOutsidePointer);
     if (notificationRefreshTimer !== undefined) window.clearInterval(notificationRefreshTimer);
 });
 </script>
@@ -146,7 +162,7 @@ onUnmounted(() => {
                                     داشبورد
                                 </NavLink>
 
-                                <div v-if="hasWorkMenu" class="relative h-full">
+                                <div v-if="hasWorkMenu" class="relative h-full" data-header-menu="work">
                                     <button
                                         type="button"
                                         class="inline-flex h-10 items-center gap-2 rounded-xl border border-transparent px-3 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
@@ -218,7 +234,7 @@ onUnmounted(() => {
                                     </div>
                                 </div>
 
-                                <div v-if="hasOrganizationMenu" class="relative h-full">
+                                <div v-if="hasOrganizationMenu" class="relative h-full" data-header-menu="organization">
                                     <button
                                         type="button"
                                         class="inline-flex h-10 items-center gap-2 rounded-xl border border-transparent px-3 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
@@ -290,7 +306,7 @@ onUnmounted(() => {
                                     برون‌سازمانی
                                 </NavLink>
 
-                                <div v-if="hasSettingsMenu" class="relative h-full">
+                                <div v-if="hasSettingsMenu" class="relative h-full" data-header-menu="settings">
                                     <button
                                         type="button"
                                         class="inline-flex h-10 items-center gap-2 rounded-xl border border-transparent px-3 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
@@ -330,7 +346,7 @@ onUnmounted(() => {
 
                         <!-- اعلان‌ها و کاربر -->
                         <div class="hidden sm:ms-6 sm:flex sm:items-center">
-                            <div class="relative me-3">
+                            <div class="relative me-3" data-header-notifications>
                                 <button type="button" class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500" aria-label="اعلان‌ها" :aria-expanded="notificationDropdownOpen" aria-haspopup="dialog" @click="toggleNotificationDropdown" @keydown.escape="notificationDropdownOpen = false">
                                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
                                     <span v-if="unreadNotificationCount > 0" class="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white ring-2 ring-white">{{ unreadNotificationCount > 99 ? '99+' : unreadNotificationCount }}</span>
@@ -398,7 +414,7 @@ onUnmounted(() => {
 
                         <!-- اعلان‌ها و منوی موبایل -->
                         <div class="-ms-2 flex items-center gap-2 sm:hidden">
-                            <div class="relative">
+                            <div class="relative" data-header-notifications>
                                 <button type="button" class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 hover:bg-slate-100" aria-label="اعلان‌ها" :aria-expanded="notificationDropdownOpen" @click="toggleNotificationDropdown">
                                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
                                     <span v-if="unreadNotificationCount > 0" class="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[9px] font-bold text-white">{{ unreadNotificationCount > 99 ? '99+' : unreadNotificationCount }}</span>
