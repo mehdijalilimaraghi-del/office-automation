@@ -45,5 +45,5 @@ Artisan::command('projects:sync-organization-sections', function (EnsureDepartme
         $this->info('بخش تکراری برای واحدها یافت نشد.');
     }
 
-    return self::SUCCESS;
+    return 0;
 })->purpose('همگام‌سازی بخش‌های پروژه عمومی با واحدهای سازمانی');
