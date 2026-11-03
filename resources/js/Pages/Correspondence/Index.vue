@@ -39,7 +39,7 @@ const actionFilter = ref(props.filters.action_filter || 'needs_action');
 const departmentFilter = ref<string | number>(props.filters.department_filter || (props.filters.scope === 'all' ? 'all' : 'mine'));
 const departmentSpecialOptions = computed(() => scope.value === 'all'
     ? [{ value: 'all', label: 'همه واحدها' }]
-    : [{ value: 'mine', label: 'من' }]);
+    : [{ value: 'mine', label: 'همه واحدهای من' }]);
 
 const typeLabels: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
 const statusLabels: Record<string, string> = { draft: 'پیش‌نویس', registered: 'ثبت‌شده' };
@@ -64,7 +64,12 @@ watch(search, (_value, _oldValue, onCleanup) => {
     onCleanup(() => clearTimeout(timeout));
 });
 function confirmDelete(id: number): void {
-    if (window.confirm('این مکاتبه حذف شود؟ این عملیات قابل بازگشت نیست.')) router.delete(route('correspondence.destroy', id), { preserveScroll: true });
+    if (window.confirm('این مکاتبه حذف شود؟ این عملیات قابل بازگشت نیست.')) {
+        router.delete(route('correspondence.destroy', id), {
+            preserveScroll: true,
+            onSuccess: () => applyFilters(),
+        });
+    }
 }
 function register(id: number): void {
     if (window.confirm('در ثبت نهایی، شماره ثبت دبیرخانه تخصیص می‌یابد و شماره نامه فعلی ثابت می‌ماند. ادامه می‌دهید؟')) {
