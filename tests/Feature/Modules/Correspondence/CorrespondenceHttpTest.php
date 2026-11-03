@@ -39,6 +39,62 @@ class CorrespondenceHttpTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_direct_internal_correspondence_is_finalized_when_created(): void
+    {
+        $creator = $this->userWithPermission('correspondence.create');
+        $department = Department::query()->create([
+            'name' => 'واحد ثبت مستقیم',
+            'code' => 'DIR-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+        ]);
+        $creator->departments()->attach($department->id, ['is_primary' => true, 'joined_at' => now()]);
+
+        $this->actingAs($creator)->post(route('correspondence.store'), [
+            'type' => Correspondence::TYPE_INTERNAL,
+            'created_department_id' => $department->id,
+            'classification' => Correspondence::CLASSIFICATION_ORDINARY,
+            'subject' => 'نامه داخلی با ثبت مستقیم',
+            'composition_mode' => 'editor',
+            'body' => '<p>متن نامه</p>',
+            'recipient_department_id' => $department->id,
+        ])->assertRedirect(route('correspondence.index'));
+
+        $this->assertDatabaseHas('correspondences', [
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => 'نامه داخلی با ثبت مستقیم',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'registered_by' => $creator->id,
+            'workflow_state' => 'in_progress',
+        ]);
+    }
+
+    public function test_outgoing_draft_awaiting_manager_approval_appears_in_manager_needs_action_filter(): void
+    {
+        $creator = $this->userWithPermission('correspondence.create');
+        $manager = $this->userWithPermission('correspondence.view');
+        $department = Department::query()->create([
+            'name' => 'واحد صادرکننده در انتظار تأیید',
+            'code' => 'MGR-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+        $creator->departments()->attach($department->id, ['is_primary' => true, 'joined_at' => now()]);
+        app(SystemSettingsService::class)->set(['correspondence.approval.outgoing' => 'approval']);
+
+        $letter = app(\App\Modules\Correspondence\Services\CorrespondenceService::class)->createDraft([
+            'type' => Correspondence::TYPE_OUTGOING,
+            'subject' => 'نامه صادره در انتظار تأیید مدیر',
+            'created_department_id' => $department->id,
+        ], $creator);
+
+        $this->actingAs($manager)->get(route('correspondence.index', [
+            'scope' => 'mine',
+            'action_filter' => 'needs_action',
+        ]))->assertOk()->assertInertia(fn ($page) => $page
+            ->where('correspondences.total', 1)
+            ->where('correspondences.data.0.id', $letter->id));
+    }
+
     public function test_user_with_view_permission_can_open_correspondence_index(): void
     {
         $user = $this->userWithPermission('correspondence.view');
