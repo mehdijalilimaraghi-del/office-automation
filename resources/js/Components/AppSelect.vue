@@ -105,24 +105,42 @@ const triggerClasses = computed(() => [
     attrs.class,
 ]);
 
-function updatePosition(): void {
+async function updatePosition(): Promise<void> {
     const trigger = triggerRef.value;
     if (!trigger) return;
 
     const rect = trigger.getBoundingClientRect();
     const viewportPadding = 8;
     const width = Math.min(Math.max(rect.width, 260), window.innerWidth - viewportPadding * 2);
-    const availableBelow = window.innerHeight - rect.bottom - viewportPadding;
-    const availableAbove = rect.top - viewportPadding;
-    const openAbove = availableBelow < 210 && availableAbove > availableBelow;
-    const maxHeight = Math.max(120, Math.min(320, openAbove ? availableAbove : availableBelow));
-    const top = openAbove
-        ? Math.max(viewportPadding, rect.top - maxHeight - 6)
-        : Math.min(window.innerHeight - maxHeight - viewportPadding, rect.bottom + 6);
+    const availableBelow = Math.max(0, window.innerHeight - rect.bottom - viewportPadding);
+    const availableAbove = Math.max(0, rect.top - viewportPadding);
     const left = Math.min(
         Math.max(viewportPadding, rect.right - width),
         window.innerWidth - width - viewportPadding,
     );
+
+    // Render once with a safe viewport bound, then position using the panel's
+    // measured content height rather than the available space as a proxy.
+    panelStyle.value = {
+        position: 'fixed',
+        top: `${viewportPadding}px`,
+        left: `${left}px`,
+        width: `${width}px`,
+        maxHeight: `${Math.max(80, Math.min(320, Math.max(availableAbove, availableBelow)))}px`,
+        zIndex: '10000',
+    };
+    await nextTick();
+
+    const panel = panelRef.value;
+    if (!panel) return;
+
+    const desiredHeight = Math.max(80, Math.min(320, panel.scrollHeight));
+    const openAbove = availableBelow < desiredHeight && availableAbove > availableBelow;
+    const available = openAbove ? availableAbove : availableBelow;
+    const maxHeight = Math.max(80, Math.min(desiredHeight, available));
+    const top = openAbove
+        ? Math.max(viewportPadding, rect.top - maxHeight - 6)
+        : Math.min(rect.bottom + 6, window.innerHeight - maxHeight - viewportPadding);
 
     panelStyle.value = {
         position: 'fixed',
