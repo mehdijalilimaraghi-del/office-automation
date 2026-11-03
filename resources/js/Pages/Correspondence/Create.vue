@@ -34,6 +34,7 @@ const props = defineProps<{
     createdDepartment: CreatedDepartment | null;
     createdDepartments: CreatedDepartment[];
     correspondenceFontFamily: string;
+    approvalSettings?: { incoming: string; outgoing: string; internal: string };
     isEditing?: boolean;
     correspondence?: ExistingCorrespondence | null;
     taskId?: number | null;
@@ -131,6 +132,9 @@ const form = useForm({
     attachments: [] as File[],
 });
 selectedRelatedLetters.value = existing?.related_letters ?? (props.sourceCorrespondence ? [props.sourceCorrespondence] : []);
+const isDirectRegistration = computed(() => !props.isEditing
+    && !props.sourceCorrespondenceId
+    && props.approvalSettings?.[form.type] === 'direct');
 
 
 watch(() => form.type, (type, previousType) => {
@@ -412,7 +416,7 @@ async function scanOriginalLetter(): Promise<void> {
         <template #header>
             <div>
                 <h2 class="text-xl font-bold text-slate-900">{{ isEditing ? 'ویرایش مکاتبه' : 'ایجاد مکاتبه' }}</h2>
-                <p class="mt-1 text-sm text-slate-500">{{ isEditing ? 'اطلاعات مکاتبه را در همان فرم ثبت اولیه اصلاح کنید.' : 'پیش‌نویس ایجاد می‌شود و شماره رسمی پس از ثبت نهایی اختصاص می‌یابد.' }}</p>
+                <p class="mt-1 text-sm text-slate-500">{{ isEditing ? 'اطلاعات مکاتبه را در همان فرم ثبت اولیه اصلاح کنید.' : (isDirectRegistration ? 'پس از ذخیره، مکاتبه مستقیماً ثبت نهایی و شماره ثبت آن تخصیص داده می‌شود.' : 'پیش‌نویس ایجاد می‌شود و پس از تأیید، برای ثبت نهایی ارسال خواهد شد.') }}</p>
             </div>
         </template>
 
@@ -743,7 +747,7 @@ async function scanOriginalLetter(): Promise<void> {
                 <div class="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-5">
                     <Link :href="route('correspondence.index')" class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">انصراف</Link>
                     <button type="submit" :disabled="form.processing" class="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
-                        {{ form.processing ? 'در حال ذخیره...' : (isEditing ? 'ذخیره تغییرات' : 'ذخیره پیش‌نویس') }}
+                        {{ form.processing ? 'در حال ذخیره...' : (isEditing ? 'ذخیره تغییرات' : (isDirectRegistration ? 'ثبت نهایی مکاتبه' : 'ذخیره پیش‌نویس')) }}
                     </button>
                 </div>
             </form>
