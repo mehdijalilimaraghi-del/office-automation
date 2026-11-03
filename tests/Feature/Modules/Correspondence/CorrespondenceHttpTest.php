@@ -2382,9 +2382,16 @@ class CorrespondenceHttpTest extends TestCase
             'note' => 'ارجاع پیش از ایجاد دستورکار نباید مجاز باشد.',
         ])->assertSessionHasErrors('workflow_action');
 
-        $this->actingAs($manager)->get(route('tasks.index'))
+        $this->actingAs($manager)->get(route('tasks.index', [
+            'create_for_correspondence' => $letter->id,
+            'project_id' => $project->id,
+            'section_id' => $section->id,
+        ]))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
+                ->where('createForCorrespondence.correspondence_id', (int) $letter->id)
+                ->where('createForCorrespondence.project_id', (int) $project->id)
+                ->where('createForCorrespondence.section_id', (int) $section->id)
                 ->where('formOptions.projects', fn ($projects) => collect($projects)->contains(
                     fn ($item) => (int) $item['id'] === (int) $project->id
                         && collect($item['sections'])->contains(fn ($itemSection) => (int) $itemSection['id'] === (int) $section->id)
