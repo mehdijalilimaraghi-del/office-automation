@@ -1445,3 +1445,11 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - System administrators can edit an existing shared section's description and manager_can_create_tasks. Department/manager inactivity forces task creation off. The sync action preserves manually configured descriptions and does not re-enable a previously disabled section automatically.
 - Run php artisan projects:sync-organization-sections to reconcile existing departments and shared-project sections. Missing sections are created; duplicate section associations are reported but not deleted automatically, to protect task/document history.
 - Tests, frontend build, and execution of the reconciliation command against the deployment database remain pending. Branch: development; master unchanged.
+
+
+## 2026-11-03 — Approved task-instruction stage in correspondence
+
+- Once a manager approves an employee's task-instruction request, ordinary manager actions (including referral) are hidden and server-side blocked until the approved task is created and linked to the correspondence.
+- After the task is linked, ordinary manager actions become available again. The manager can refer the letter or use the dedicated “Complete correspondence workflow” action.
+- Completion requires a note, verifies that the linked task matches the manager's approved task-instruction action metadata, and sets workflow state to `workflow_completed`.
+- A feature test covers the employee request, manager approval, referral rejection before task creation, action availability after linking, and manager completion. Tests/build have not yet been executed in the target environment.
