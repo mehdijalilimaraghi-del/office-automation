@@ -102,7 +102,6 @@ class CorrespondenceAccessService
             return true;
         }
 
-        $requiresApproval = app(CorrespondenceCompositionSettings::class)->requiresApproval($correspondence->type);
         $secretariatDepartmentId = app(OrganizationDepartmentRoleService::class)
             ->activeDepartmentId(OrganizationDepartmentRoleService::SECRETARIAT);
 
@@ -112,11 +111,7 @@ class CorrespondenceAccessService
                 ->where('manager_id', $user->id)
                 ->exists();
 
-        if ($requiresApproval) {
-            if ($correspondence->workflow_state !== 'approved_for_registration') {
-                return false;
-            }
-
+        if ($correspondence->workflow_state === 'approved_for_registration') {
             if ($correspondence->type === Correspondence::TYPE_INTERNAL) {
                 return $user->hasPermission('correspondence.create')
                     && (int) $correspondence->created_by === (int) $user->id;
@@ -125,8 +120,11 @@ class CorrespondenceAccessService
             return $isSecretariatManager;
         }
 
-        return $correspondence->workflow_state === 'awaiting_registration'
-            && $user->hasPermission('correspondence.create')
+        if ($correspondence->workflow_state !== 'awaiting_registration') {
+            return false;
+        }
+
+        return $user->hasPermission('correspondence.create')
             && (int) $correspondence->created_by === (int) $user->id
             && ($correspondence->type !== Correspondence::TYPE_INCOMING || $this->isSecretariat($user));
     }
