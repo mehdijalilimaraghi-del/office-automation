@@ -54,8 +54,8 @@ const onCheckboxChange = (key: string, event: Event): void => {
     setValue(key, (event.target as HTMLInputElement).checked);
 };
 
-const onSelectChange = (key: string, event: Event): void => {
-    setValue(key, (event.target as HTMLSelectElement).value || null);
+const onSelectChange = (key: string, event: { target: { value: string } }): void => {
+    setValue(key, event.target.value || null);
 };
 </script>
 
