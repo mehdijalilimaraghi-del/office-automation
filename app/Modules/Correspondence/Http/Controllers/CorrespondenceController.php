@@ -123,8 +123,8 @@ class CorrespondenceController extends Controller
                             ->orWhereIn('to_department_id', $departmentIds));
                 });
             })
-            ->when($actionFilter === 'needs_action', function ($query) use ($user): void {
-                $query->where(function ($pending) use ($user): void {
+            ->when($actionFilter === 'needs_action', function ($query) use ($user, $isSecretariatManager, $secretariatDepartmentId): void {
+                $query->where(function ($pending) use ($user, $isSecretariatManager, $secretariatDepartmentId): void {
                     // Current assignment is authoritative; historical action rows may be incomplete.
                     $pending->where(function ($direct) use ($user): void {
                         $direct->where('current_user_id', $user->id)
