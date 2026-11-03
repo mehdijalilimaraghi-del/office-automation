@@ -661,6 +661,10 @@ class CorrespondenceWorkflowService
                 ->first();
             $latestTaskApprovalMetadata = $latestTaskApproval?->metadata ?? [];
             if ($latestTaskRequest === null
+                || ! in_array($latestTaskRequest->action_type, [
+                    CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
+                    CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
+                ], true)
                 || $latestTaskApproval === null
                 || (int) $latestTaskApproval->actor_id !== (int) $actor->id
                 || (int) $latestTaskApproval->id <= (int) $latestTaskRequest->id
