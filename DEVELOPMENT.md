@@ -1,3 +1,9 @@
+## 2026-11-03 — AppSelect change-event typing correction
+
+- Updated `CustomFieldsForm.vue` so its select change handler accepts the documented AppSelect payload shape (`{ target: { value: string } }`) instead of a native DOM `Event`. This resolves the TypeScript incompatibility introduced when the native select was replaced.
+- Runtime behavior remains unchanged: the selected string is stored, and an empty value is normalized to `null`.
+- Validation pending: rerun `npm run build`. Development only; master and server remain untouched.
+
 ## 2026-11-03 — Shared application select rollout
 
 - Added `resources/js/Components/AppSelect.vue` as the common application-rendered select control. It renders a consistent RTL option panel with a rounded surface, subtle border/shadow, selected-state indicator, viewport-aware positioning, outside-click and Escape dismissal, keyboard navigation, and automatic search for longer option lists.
