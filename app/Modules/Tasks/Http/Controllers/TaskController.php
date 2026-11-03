@@ -80,13 +80,18 @@ class TaskController extends Controller
             unset($filters['scope']);
         }
 
-        $canCreate = Gate::allows('create', Task::class);
-        $formOptions = $canCreate ? $this->taskFormOptionsService->forCreate($request->user()) : null;
-        $createForCorrespondence = null;
-
         $correspondenceId = $request->integer('create_for_correspondence');
         $requestedProjectId = $request->integer('project_id');
         $requestedSectionId = $request->integer('section_id');
+
+        // A department manager may be allowed to create tasks in their shared
+        // project section even when the generic (project-agnostic) ability is false.
+        // Evaluate the ability against the requested project as well, so the
+        // correspondence launch route can build its form options for that manager.
+        $canCreate = Gate::allows('create', Task::class)
+            || ($requestedProjectId > 0 && Gate::allows('create', [Task::class, $requestedProjectId]));
+        $formOptions = $canCreate ? $this->taskFormOptionsService->forCreate($request->user()) : null;
+        $createForCorrespondence = null;
 
         if ($canCreate && $correspondenceId > 0 && $requestedProjectId > 0 && $requestedSectionId > 0) {
             $letter = Correspondence::query()->find($correspondenceId);
