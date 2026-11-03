@@ -120,8 +120,17 @@ class CorrespondenceAccessService
             return $isSecretariatManager;
         }
 
-        if ($correspondence->workflow_state !== 'awaiting_registration') {
+        if ($correspondence->workflow_state === 'awaiting_manager_approval') {
             return false;
+        }
+
+        if (app(CorrespondenceCompositionSettings::class)->requiresApproval($correspondence->type)) {
+            // Keep pre-policy drafts registrable by the Secretariat manager; new approval
+            // drafts are explicitly assigned to the manager and blocked above.
+            return $isSecretariatManager
+                || ($correspondence->type === Correspondence::TYPE_INTERNAL
+                    && $user->hasPermission('correspondence.create')
+                    && (int) $correspondence->created_by === (int) $user->id);
         }
 
         return $user->hasPermission('correspondence.create')
