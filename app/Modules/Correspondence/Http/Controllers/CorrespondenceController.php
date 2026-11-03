@@ -969,7 +969,7 @@ class CorrespondenceController extends Controller
 
         $registeredImmediately = false;
         if ($sourceCorrespondenceId === null && $requestedLetterSource === null
-            && ! app(\App\Modules\Correspondence\Services\CorrespondenceCompositionSettings::class)->requiresApproval($correspondence->type)) {
+            && $correspondence->workflow_state === 'awaiting_registration') {
             try {
                 $numbering->register($correspondence, $request->user());
                 $workflow->onRegistered($correspondence, $request->user());
