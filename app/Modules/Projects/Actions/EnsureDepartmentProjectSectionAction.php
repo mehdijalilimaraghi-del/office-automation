@@ -21,12 +21,12 @@ class EnsureDepartmentProjectSectionAction
             $project = $this->sharedProjectAction->execute($department);
             $department->loadMissing('manager');
 
+            $departmentCanCreateTasks = $department->is_active
+                && $department->manager !== null
+                && $department->manager->isActive();
+
             $attributes = [
                 'name' => $department->name,
-                'description' => 'بخش عمومی فعالیت‌های واحد '.$department->name,
-                'manager_can_create_tasks' => $department->is_active
-                    && $department->manager !== null
-                    && $department->manager->isActive(),
             ];
 
             $section = ProjectSection::query()
@@ -35,13 +35,19 @@ class EnsureDepartmentProjectSectionAction
                 ->first();
 
             if ($section !== null) {
-                $section->update($attributes);
+                $section->update([
+                    ...$attributes,
+                    'manager_can_create_tasks' => $departmentCanCreateTasks
+                        && $section->manager_can_create_tasks,
+                ]);
 
                 return $section->refresh();
             }
 
             return ProjectSection::query()->create([
                 ...$attributes,
+                'description' => 'بخش عمومی فعالیت‌های واحد '.$department->name,
+                'manager_can_create_tasks' => $departmentCanCreateTasks,
                 'project_id' => $project->id,
                 'department_id' => $department->id,
                 'sort_order' => (int) ProjectSection::query()
