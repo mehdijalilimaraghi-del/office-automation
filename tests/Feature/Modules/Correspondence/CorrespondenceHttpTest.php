@@ -1039,10 +1039,14 @@ class CorrespondenceHttpTest extends TestCase
             'type' => Correspondence::TYPE_INCOMING,
             'subject' => 'نامه وارده دبیرخانه',
             'created_by' => $secretariatUser->id,
-            'workflow_state' => 'awaiting_registration',
-            'current_user_id' => null,
+            'workflow_state' => 'awaiting_manager_approval',
+            'current_user_id' => $secretariatUser->id,
         ]);
         $incomingLetter = Correspondence::query()->where('subject', 'نامه وارده دبیرخانه')->firstOrFail();
+        $this->actingAs($secretariatUser)->post(route('correspondence.actions.store', $incomingLetter), [
+            'action_type' => 'manager_approve',
+            'note' => 'نامه وارده بررسی و تأیید شد.',
+        ])->assertRedirect();
         $secretariatEmployee = User::factory()->create(['status' => 'active']);
         $secretariatEmployee->departments()->attach($department->id, ['is_primary' => true, 'joined_at' => now()]);
         $this->actingAs($secretariatEmployee)->post(route('correspondence.register', $incomingLetter))->assertForbidden();
@@ -1061,6 +1065,7 @@ class CorrespondenceHttpTest extends TestCase
             'status' => Correspondence::STATUS_REGISTERED,
             'registered_by' => $secretariatUser->id,
         ]);
+        app(SystemSettingsService::class)->set(['correspondence.approval.incoming' => 'direct']);
         $this->actingAs($secretariatUser)->post(route('correspondence.store'), [
             'type' => Correspondence::TYPE_INCOMING,
             'received_at' => '2026-10-25',
@@ -1073,8 +1078,9 @@ class CorrespondenceHttpTest extends TestCase
         $this->assertDatabaseHas('correspondences', [
             'type' => Correspondence::TYPE_INCOMING,
             'subject' => 'نامه وارده ثبت مستقیم',
-            'workflow_state' => 'awaiting_registration',
-            'current_user_id' => null,
+            'status' => Correspondence::STATUS_REGISTERED,
+            'registered_by' => $secretariatUser->id,
+            'workflow_state' => 'in_progress',
         ]);
 
         $outgoingCreator = User::factory()->create(['status' => 'active']);
