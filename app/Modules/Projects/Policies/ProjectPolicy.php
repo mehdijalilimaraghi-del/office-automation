@@ -33,7 +33,7 @@ class ProjectPolicy
 
     public function update(User $user, Project $project): bool
     {
-        if ($project->is_system_default || ! $this->canManageProjects($user)) {
+        if (! $this->canManageProjects($user)) {
             return false;
         }
 
