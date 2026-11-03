@@ -530,7 +530,7 @@ async function scanOriginalLetter(): Promise<void> {
                             </div>
                             <div class="grid gap-4 sm:grid-cols-2">
                                 <div>
-                                    <label for="external_organization_id" class="mb-1.5 block text-sm font-semibold text-slate-700">{{ form.type === 'incoming' ? 'سازمان مبدأ نامه' : 'سازمان مخاطب' }}<span v-if="['incoming', 'outgoing'].includes(form.type)" class="text-rose-600"> *</span></label>
+                                    <label for="external_organization_id" class="mb-1.5 block text-sm font-semibold text-slate-700">{{ form.type === 'incoming' ? 'سازمان مبدأ نامه' : 'سازمان مخاطب' }}</label>
                                     <select id="external_organization_id" v-model="form.external_organization_id" :required="['incoming', 'outgoing'].includes(form.type)" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                                         <option value="">انتخاب سازمان بیرونی</option>
                                         <option v-for="item in externalOrganizations" :key="item.id" :value="item.id">{{ item.name }}</option>
