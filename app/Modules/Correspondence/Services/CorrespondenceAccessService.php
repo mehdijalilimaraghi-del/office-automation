@@ -133,9 +133,13 @@ class CorrespondenceAccessService
                     && (int) $correspondence->created_by === (int) $user->id);
         }
 
+        if ($correspondence->type === Correspondence::TYPE_INCOMING) {
+            return (int) $correspondence->created_by === (int) $user->id
+                && $this->isSecretariat($user);
+        }
+
         return $user->hasPermission('correspondence.create')
-            && (int) $correspondence->created_by === (int) $user->id
-            && ($correspondence->type !== Correspondence::TYPE_INCOMING || $this->isSecretariat($user));
+            && (int) $correspondence->created_by === (int) $user->id;
     }
 
     public function visibleToQuery(Builder $query, User $user): Builder
