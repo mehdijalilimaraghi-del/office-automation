@@ -46,7 +46,7 @@ class TaskController extends Controller
     ) {
     }
 
-    public function index(Request $request): Response
+    public function index(Request $request, CorrespondenceAccessService $correspondenceAccess): Response
     {
         Gate::authorize('viewAny', Task::class);
 
@@ -92,6 +92,7 @@ class TaskController extends Controller
             $letter = Correspondence::query()->find($correspondenceId);
 
             if ($letter !== null
+                && $correspondenceAccess->canView($letter, $request->user())
                 && $letter->status === Correspondence::STATUS_REGISTERED
                 && in_array($letter->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)
                 && $letter->workflow_state === 'in_progress'
