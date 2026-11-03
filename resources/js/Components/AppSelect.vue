@@ -162,6 +162,9 @@ function handleTriggerKeydown(event: KeyboardEvent): void {
         event.preventDefault();
         if (!isOpen.value) {
             void openDropdown();
+        } else if (event.key === 'Enter' || event.key === ' ') {
+            const option = filteredOptions.value[activeIndex.value];
+            if (option) chooseOption(option);
         } else {
             moveActive(event.key === 'ArrowUp' ? -1 : 1);
         }
