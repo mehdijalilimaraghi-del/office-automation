@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppSelect from '@/Components/AppSelect.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
@@ -823,7 +824,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                     <section v-if="abilities.change_status && !isFinalized && task.review_status !== 'pending'" class="rounded-xl border bg-card p-5 shadow-sm">
                         <h3 class="font-semibold">وضعیت</h3>
                         <form class="mt-3 flex gap-2" @submit.prevent="changeStatus">
-                            <select v-model="statusForm.status" class="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm"><option value="cancelled">لغو شده</option><option value="cannot_continue">امکان ادامه وجود ندارد</option></select>
+                            <AppSelect v-model="statusForm.status" class="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm"><option value="cancelled">لغو شده</option><option value="cannot_continue">امکان ادامه وجود ندارد</option></AppSelect>
                             <button type="submit" :disabled="statusForm.processing" class="rounded-lg border bg-white px-3 text-sm font-medium">ذخیره</button>
                         </form>
                     </section>
@@ -847,7 +848,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
             <div class="task-modal-panel w-full max-w-lg rounded-2xl bg-white shadow-2xl">
                 <div class="flex items-center justify-between border-b p-5"><div><h3 class="font-semibold">ارجاع دستورکار</h3><p class="mt-1 text-sm text-muted-foreground">مسئول فعلی دستورکار را به شخص دیگری واگذار کنید.</p></div><button type="button" class="text-xl" @click="showReferralModal = false">×</button></div>
                 <form class="space-y-4 p-5" @submit.prevent="submitReferral">
-                    <select v-model="referralForm.assignee_id" required class="h-10 w-full rounded-lg border bg-background px-3 text-sm"><option value="" disabled>انتخاب مسئول جدید</option><option v-for="user in assigneeOptions" :key="user.id" :value="String(user.id)">{{ user.name }}</option></select>
+                    <AppSelect v-model="referralForm.assignee_id" required class="h-10 w-full rounded-lg border bg-background px-3 text-sm"><option value="" disabled>انتخاب مسئول جدید</option><option v-for="user in assigneeOptions" :key="user.id" :value="String(user.id)">{{ user.name }}</option></AppSelect>
                     <input v-model="referralForm.note" class="h-10 w-full rounded-lg border bg-background px-3 text-sm" placeholder="توضیح ارجاع (اختیاری)" />
                     <p v-if="referralForm.errors.assignee_id" class="text-sm text-red-600">{{ referralForm.errors.assignee_id }}</p><p v-if="referralForm.errors.note" class="text-sm text-red-600">{{ referralForm.errors.note }}</p>
                     <div class="flex justify-end gap-2"><button type="button" class="rounded-lg border px-4 py-2 text-sm" @click="showReferralModal = false">انصراف</button><button type="submit" :disabled="referralForm.processing" class="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">{{ referralForm.processing ? 'در حال ارجاع...' : 'ارجاع دستورکار' }}</button></div>
@@ -893,7 +894,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                 <div class="flex items-center justify-between border-b p-5"><div><h3 class="font-semibold">ویرایش دستورکار</h3><p class="mt-1 text-sm text-muted-foreground">اطلاعات اصلی دستورکار را ویرایش کنید.</p></div><button type="button" class="text-xl" @click="showEditModal = false">×</button></div>
                 <form class="grid gap-5 p-5 sm:grid-cols-2" @submit.prevent="submitEdit">
                     <div class="sm:col-span-2"><label class="mb-2 block text-sm font-medium">عنوان دستورکار</label><input v-model="editForm.title" required maxlength="255" class="h-10 w-full rounded-lg border px-3 text-sm" /></div>
-                    <div><label class="mb-2 block text-sm font-medium">اولویت</label><select v-model="editForm.priority" class="h-10 w-full rounded-lg border px-3 text-sm"><option value="low">کم</option><option value="normal">عادی</option><option value="high">زیاد</option><option value="urgent">فوری</option></select></div>
+                    <div><label class="mb-2 block text-sm font-medium">اولویت</label><AppSelect v-model="editForm.priority" class="h-10 w-full rounded-lg border px-3 text-sm"><option value="low">کم</option><option value="normal">عادی</option><option value="high">زیاد</option><option value="urgent">فوری</option></AppSelect></div>
                     <div><label class="mb-2 block text-sm font-medium">تاریخ شروع</label><JalaliDatePicker v-model="editForm.start_date" /></div>
                     <div><label class="mb-2 block text-sm font-medium">مهلت انجام</label><JalaliDatePicker v-model="editForm.due_date" /></div>
                     <div class="flex items-center gap-2 pt-7"><input id="task-active" v-model="editForm.is_active" type="checkbox" /><label for="task-active" class="text-sm font-medium">دستورکار فعال باشد</label></div>
@@ -908,7 +909,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                 <section class="task-modal-panel w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl sm:p-6">
                     <div class="flex items-center justify-between"><div><h3 class="font-semibold text-gray-900">{{ editingExternalContactId ? 'ویرایش ارتباط و پیگیری بیرونی' : 'افزودن ارتباط و پیگیری بیرونی' }}</h3><p class="mt-1 text-sm text-muted-foreground">{{ editingExternalContactId ? 'اطلاعات این ارتباط را ویرایش کنید.' : 'یک یا چند شخص را به‌عنوان ارتباط و پیگیری بیرونی اضافه کنید.' }}</p></div><button type="button" class="text-gray-500 hover:text-gray-900" @click="showExternalModal = false; editingExternalContactId = null">×</button></div>
                     <form class="mt-5 space-y-4" @submit.prevent="submitExternal">
-                        <select v-model="externalForm.external_organization_id" @change="handleExternalOrganizationChange" class="h-10 w-full rounded-lg border px-3 text-sm"><option :value="null">بدون سازمان خارجی</option><option v-for="item in externalPartyOptions.external_organizations" :key="item.id" :value="item.id">{{ item.name }}</option></select>
+                        <AppSelect v-model="externalForm.external_organization_id" @change="handleExternalOrganizationChange" class="h-10 w-full rounded-lg border px-3 text-sm"><option :value="null">بدون سازمان خارجی</option><option v-for="item in externalPartyOptions.external_organizations" :key="item.id" :value="item.id">{{ item.name }}</option></AppSelect>
                         <DepartmentTreeSelect v-model="externalForm.external_department_id" :departments="externalDepartments" :disabled="externalForm.external_organization_id === null" placeholder="بدون واحد خارجی" @update:model-value="handleExternalDepartmentChange" />
                         <div>
                             <div class="mb-2 flex items-center justify-between">
