@@ -1153,6 +1153,16 @@ class CorrespondenceHttpTest extends TestCase
     public function test_current_department_manager_can_approve_an_outgoing_draft_before_registration(): void
     {
         $manager = $this->userWithPermission('correspondence.view');
+        $secretariatManager = $this->userWithPermission('correspondence.view');
+        $secretariat = Department::query()->create([
+            'name' => 'دبیرخانه ثبت نهایی صادره '.Str::upper(Str::random(5)),
+            'code' => 'SEC-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $secretariatManager->id,
+        ]);
+        app(SystemSettingsService::class)->set([
+            OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT) => (string) $secretariat->id,
+        ]);
         $department = Department::query()->create([
             'name' => 'واحد تأییدکننده '.Str::upper(Str::random(5)),
             'code' => 'APR-'.Str::upper(Str::random(6)),
@@ -1178,6 +1188,8 @@ class CorrespondenceHttpTest extends TestCase
         $this->assertDatabaseHas('correspondences', [
             'id' => $letter->id,
             'workflow_state' => 'approved_for_registration',
+            'current_department_id' => $secretariat->id,
+            'current_user_id' => $secretariatManager->id,
         ]);
         $this->assertDatabaseHas('correspondence_actions', [
             'correspondence_id' => $letter->id,
