@@ -34,7 +34,7 @@ const props = defineProps<{
     createdDepartment: CreatedDepartment | null;
     createdDepartments: CreatedDepartment[];
     correspondenceFontFamily: string;
-    approvalSettings?: { incoming: string; outgoing: string; internal: string };
+    approvalSettings?: Record<string, string>;
     isEditing?: boolean;
     correspondence?: ExistingCorrespondence | null;
     taskId?: number | null;
