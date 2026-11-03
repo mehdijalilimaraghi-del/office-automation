@@ -645,11 +645,12 @@ class CorrespondenceWorkflowService
                 ->where('action_type', CorrespondenceAction::MANAGER_CREATE_TASK)
                 ->latest('id')
                 ->first();
+            $latestTaskApprovalMetadata = $latestTaskApproval?->metadata ?? [];
             if ($latestTaskRequest === null
                 || $latestTaskApproval === null
                 || (int) $latestTaskApproval->actor_id !== (int) $actor->id
                 || (int) $latestTaskApproval->id <= (int) $latestTaskRequest->id
-                || isset(($latestTaskApproval->metadata ?? [])['task_id'])) {
+                || isset($latestTaskApprovalMetadata['task_id'])) {
                 abort(403, 'ابتدا باید درخواست ایجاد دستورکار توسط مدیر تأیید شود.');
             }
 
