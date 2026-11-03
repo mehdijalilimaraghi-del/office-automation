@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppSelect from '@/Components/AppSelect.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
@@ -345,20 +346,20 @@ onMounted(() => {
 
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">پروژه</label>
-                        <select v-model="createForm.project_id" @change="handleProjectChange"
+                        <AppSelect v-model="createForm.project_id" @change="handleProjectChange"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
                             <option :value="null">بدون پروژه</option>
                             <option v-for="project in formOptions.projects" :key="project.id" :value="project.id">{{ project.name }}</option>
-                        </select>
+                        </AppSelect>
                     </div>
 
                     <div v-if="selectedProject && selectedProject.sections.length">
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">بخش پروژه</label>
-                        <select v-model="createForm.section_id" required @change="handleSectionChange"
+                        <AppSelect v-model="createForm.section_id" required @change="handleSectionChange"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
                             <option :value="null">انتخاب بخش</option>
                             <option v-for="section in selectedProject.sections" :key="section.id" :value="section.id">{{ section.name }}</option>
-                        </select>
+                        </AppSelect>
                     </div>
 
                     <div>
@@ -368,11 +369,11 @@ onMounted(() => {
 
                     <div v-if="createForm.section_id === null">
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">مسئول دستورکار</label>
-                        <select v-model="createForm.assignee_id"
+                        <AppSelect v-model="createForm.assignee_id"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
                             <option :value="null">بدون مسئول</option>
                             <option v-for="user in availableAssignees" :key="user.id" :value="user.id">{{ user.name }}</option>
-                        </select>
+                        </AppSelect>
                         <p v-if="createForm.project_id !== null" class="mt-1 text-xs text-gray-500">برای دستورکارهای عمومی، مسئول را مستقیماً انتخاب کنید؛ دستورکارهای بخش ابتدا به مدیر واحد ارجاع می‌شوند.</p>
                     </div>
 
@@ -387,20 +388,20 @@ onMounted(() => {
                         </label>
                         <div v-if="createForm.delegate_to_employee">
                             <label class="mb-1.5 block text-sm font-medium text-gray-700">کارمند مقصد ارجاع</label>
-                            <select v-model="createForm.delegate_assignee_id" required
+                            <AppSelect v-model="createForm.delegate_assignee_id" required
                                 class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
                                 <option :value="null">انتخاب کارمند</option>
                                 <option v-for="user in availableAssignees" :key="user.id" :value="user.id">{{ user.name }}</option>
-                            </select>
+                            </AppSelect>
                         </div>
                     </div>
 
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">اولویت</label>
-                        <select v-model="createForm.priority"
+                        <AppSelect v-model="createForm.priority"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
                             <option value="low">کم</option><option value="normal">عادی</option><option value="high">زیاد</option><option value="urgent">فوری</option>
-                        </select>
+                        </AppSelect>
                     </div>
 
                     <div>
@@ -419,9 +420,9 @@ onMounted(() => {
                             <p class="mt-1 text-xs text-gray-500">اگر این دستورکار نیاز به پیگیری با سازمان یا شخص خارج از شرکت دارد، اطلاعات آن را انتخاب کنید.</p>
                         </div>
                         <div class="grid gap-4 md:grid-cols-3">
-                            <select v-model="createForm.external_organization_id" @change="handleExternalOrganizationChange" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm"><option :value="null">بدون پیگیری خارجی</option><option v-for="item in formOptions.external_organizations" :key="item.id" :value="item.id">{{ item.name }}</option></select>
+                            <AppSelect v-model="createForm.external_organization_id" @change="handleExternalOrganizationChange" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm"><option :value="null">بدون پیگیری خارجی</option><option v-for="item in formOptions.external_organizations" :key="item.id" :value="item.id">{{ item.name }}</option></AppSelect>
                             <DepartmentTreeSelect v-model="createForm.external_department_id" :departments="externalDepartments" :disabled="createForm.external_organization_id === null" placeholder="بدون واحد خارجی" @update:model-value="handleExternalDepartmentChange" />
-                            <select v-model="createForm.external_contact_id" :disabled="createForm.external_organization_id === null" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm"><option :value="null">بدون شخص مشخص</option><option v-for="item in externalContacts" :key="item.id" :value="item.id">{{ item.name }}{{ item.position ? ' — ' + item.position : '' }}</option></select>
+                            <AppSelect v-model="createForm.external_contact_id" :disabled="createForm.external_organization_id === null" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm"><option :value="null">بدون شخص مشخص</option><option v-for="item in externalContacts" :key="item.id" :value="item.id">{{ item.name }}{{ item.position ? ' — ' + item.position : '' }}</option></AppSelect>
                         </div>
                     </div>
 
@@ -484,42 +485,42 @@ onMounted(() => {
                 <div class="mb-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <div v-if="props.canFilterUnit">
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">محدوده دستورکار</label>
-                        <select v-model="scopeFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                        <AppSelect v-model="scopeFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
                             <option value="">همه موارد مجاز</option>
                             <option value="personal">دستورکارهای شخصی من</option>
                             <option value="unit">دستورکارهای واحد</option>
-                        </select>
+                        </AppSelect>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">مهلت</label>
-                        <select v-model="dueFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                        <AppSelect v-model="dueFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
                             <option value="">همه مهلت‌ها</option>
                             <option value="today">سررسید امروز</option>
                             <option value="overdue">عقب‌افتاده</option>
-                        </select>
+                        </AppSelect>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">بررسی</label>
-                        <select v-model="reviewFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                        <AppSelect v-model="reviewFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
                             <option value="">همه وضعیت‌های بررسی</option>
                             <option value="1">در انتظار بررسی</option>
-                        </select>
+                        </AppSelect>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">بازه تکمیل</label>
-                        <select v-model="completedPeriodFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                        <AppSelect v-model="completedPeriodFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
                             <option value="">همه زمان‌ها</option>
                             <option value="month">تکمیل‌شده در ماه جاری</option>
-                        </select>
+                        </AppSelect>
                     </div>
                 </div>
                 <div class="mb-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">مسئول دستورکار</label>
-                        <select v-model="assigneeFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                        <AppSelect v-model="assigneeFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
                             <option value="">همه مسئولان</option>
                             <option v-for="user in filterOptions.users" :key="user.id" :value="user.id">{{ user.name }}</option>
-                        </select>
+                        </AppSelect>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">مهلت از</label>
@@ -533,7 +534,7 @@ onMounted(() => {
                 <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">وضعیت</label>
-                        <select v-model="statusFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                        <AppSelect v-model="statusFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
                             <option value="">همه وضعیت‌ها</option>
                             <option value="__pending">در انتظار انجام یا دیده‌شده</option>
                             <option value="todo">انجام نشده</option>
@@ -542,24 +543,24 @@ onMounted(() => {
                             <option value="completed">تکمیل شده</option>
                             <option value="cancelled">لغو شده</option>
                             <option value="cannot_continue">امکان ادامه وجود ندارد</option>
-                        </select>
+                        </AppSelect>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">اولویت</label>
-                        <select v-model="priorityFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                        <AppSelect v-model="priorityFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
                             <option value="">همه اولویت‌ها</option>
                             <option value="low">کم</option>
                             <option value="normal">عادی</option>
                             <option value="high">زیاد</option>
                             <option value="urgent">فوری</option>
-                        </select>
+                        </AppSelect>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">پروژه</label>
-                        <select v-model="projectFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                        <AppSelect v-model="projectFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
                             <option value="">همه پروژه‌ها</option>
                             <option v-for="project in filterOptions.projects" :key="project.id" :value="project.id">{{ project.name }}</option>
-                        </select>
+                        </AppSelect>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">واحد</label>
