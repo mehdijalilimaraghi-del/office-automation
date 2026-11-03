@@ -112,13 +112,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/projects', [ProjectController::class, 'index'])->middleware('permission:projects.view')->name('projects.index');
     Route::get('/projects/create', [ProjectController::class, 'create'])->middleware('permission:projects.create')->name('projects.create');
     Route::post('/projects', [ProjectController::class, 'store'])->middleware('permission:projects.create')->name('projects.store');
-    Route::get('/projects/{project}/edit', [ProjectController::class, 'edit'])->middleware('permission:projects.update')->name('projects.edit');
+    Route::get('/projects/{project}/edit', [ProjectController::class, 'edit'])->name('projects.edit');
     Route::get('/projects/{project}', [ProjectController::class, 'show'])->middleware('permission:projects.view')->name('projects.show');
-    Route::put('/projects/{project}', [ProjectController::class, 'update'])->middleware('permission:projects.update')->name('projects.update');
+    Route::put('/projects/{project}', [ProjectController::class, 'update'])->name('projects.update');
     Route::delete('/projects/{project}', [ProjectController::class, 'destroy'])->middleware('permission:projects.delete')->name('projects.destroy');
-    Route::post('/projects/{project}/sections', [ProjectSectionController::class, 'store'])->middleware('permission:projects.update')->name('projects.sections.store');
-    Route::put('/projects/{project}/sections/{section}', [ProjectSectionController::class, 'update'])->middleware('permission:projects.update')->name('projects.sections.update');
-    Route::delete('/projects/{project}/sections/{section}', [ProjectSectionController::class, 'destroy'])->middleware('permission:projects.update')->name('projects.sections.destroy');
+    Route::post('/projects/{project}/sections', [ProjectSectionController::class, 'store'])->name('projects.sections.store');
+    Route::put('/projects/{project}/sections/{section}', [ProjectSectionController::class, 'update'])->name('projects.sections.update');
+    Route::delete('/projects/{project}/sections/{section}', [ProjectSectionController::class, 'destroy'])->name('projects.sections.destroy');
 
     Route::scopeBindings()->group(function () {
         Route::post('/projects/{project}/roles', [ProjectRoleController::class, 'store'])->middleware('permission:projects.manage_roles')->name('projects.roles.store');
