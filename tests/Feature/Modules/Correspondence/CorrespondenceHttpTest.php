@@ -1635,7 +1635,8 @@ class CorrespondenceHttpTest extends TestCase
         $secretariat=User::factory()->create(['status'=>'active']);
         $department=Department::query()->create(['name'=>'دبیرخانه شماره نامه '.Str::upper(Str::random(5)),'code'=>'IN-'.Str::upper(Str::random(5)),'is_active'=>true,'manager_id'=>$secretariat->id]);
         app(SystemSettingsService::class)->set([OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT)=>(string)$department->id]);
-        $payload=['type'=>Correspondence::TYPE_INCOMING,'recipient_department_id'=>$this->recipientDepartmentId(),'received_at'=>'2026-10-27','subject'=>'وارده با شماره اصلی','letter_number'=>'OUTSIDE-452/الف','original_letters'=>[UploadedFile::fake()->create('original.pdf',10,'application/pdf')]];
+        $organization=ExternalOrganization::query()->create(['name'=>'سازمان مبدأ شماره نامه '.Str::upper(Str::random(5)),'status'=>'active']);
+        $payload=['type'=>Correspondence::TYPE_INCOMING,'recipient_department_id'=>$this->recipientDepartmentId(),'received_at'=>'2026-10-27','subject'=>'وارده با شماره اصلی','letter_number'=>'OUTSIDE-452/الف','external_organization_id'=>$organization->id,'original_letters'=>[UploadedFile::fake()->create('original.pdf',10,'application/pdf')]];
         $this->actingAs($secretariat)->post(route('correspondence.store'),$payload)->assertRedirect(route('correspondence.index'));
         $this->assertDatabaseHas('correspondences',['subject'=>'وارده با شماره اصلی','letter_number'=>'OUTSIDE-452/الف','registration_number'=>null]);
         unset($payload['letter_number']); $payload['subject']='وارده بدون شماره اصلی';
@@ -1656,6 +1657,7 @@ class CorrespondenceHttpTest extends TestCase
             OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT) => (string) $department->id,
         ]);
         $recipient = $this->recipientDepartmentId();
+        $organization = ExternalOrganization::query()->create(['name' => 'سازمان مبدأ ویرایش '.Str::upper(Str::random(5)), 'status' => 'active']);
         $letter = Correspondence::query()->create([
             'type' => Correspondence::TYPE_INCOMING,
             'subject' => 'موضوع اولیه',
@@ -1665,6 +1667,7 @@ class CorrespondenceHttpTest extends TestCase
             'registered_by' => $secretariat->id,
             'created_by' => $secretariat->id,
             'recipient_department_id' => $recipient,
+            'external_organization_id' => $organization->id,
             'received_at' => '2026-10-27',
         ]);
 
@@ -1696,6 +1699,7 @@ class CorrespondenceHttpTest extends TestCase
             'letter_number' => 'IN-124',
             'received_at' => '2026-10-27',
             'recipient_department_id' => $recipient,
+            'external_organization_id' => $organization->id,
         ])->assertRedirect(route('correspondence.index'));
         $this->assertDatabaseHas('correspondences', ['id' => $letter->id, 'subject' => 'موضوع اصلاح‌شده', 'letter_number' => 'IN-124']);
 
