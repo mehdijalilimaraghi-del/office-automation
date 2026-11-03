@@ -20,22 +20,31 @@ class EnsureDepartmentProjectSectionAction
     {
         return DB::transaction(function () use ($department): ProjectSection {
             $project = $this->sharedProjectAction->execute($department);
+            $department->loadMissing('manager');
 
-            $existing = ProjectSection::query()
+            $attributes = [
+                'name' => $department->name,
+                'description' => 'بخش عمومی فعالیت‌های واحد '.$department->name,
+                'manager_can_create_tasks' => $department->is_active
+                    && $department->manager !== null
+                    && $department->manager->isActive(),
+            ];
+
+            $section = ProjectSection::query()
                 ->where('project_id', $project->id)
                 ->where('department_id', $department->id)
                 ->first();
 
-            if ($existing !== null) {
-                return $existing;
+            if ($section !== null) {
+                $section->update($attributes);
+
+                return $section->refresh();
             }
 
             return ProjectSection::query()->create([
+                ...$attributes,
                 'project_id' => $project->id,
                 'department_id' => $department->id,
-                'name' => $department->name,
-                'description' => 'بخش عمومی فعالیت‌های واحد '.$department->name,
-                'manager_can_create_tasks' => true,
                 'sort_order' => (int) ProjectSection::query()
                     ->where('project_id', $project->id)
                     ->max('sort_order') + 1,
