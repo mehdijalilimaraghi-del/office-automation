@@ -1644,6 +1644,45 @@ class CorrespondenceHttpTest extends TestCase
         $this->assertDatabaseMissing('correspondences',['subject'=>'وارده بدون شماره اصلی']);
     }
 
+    public function test_incoming_letter_number_must_be_unique_per_source_organization(): void
+    {
+        Storage::fake('local');
+        $secretariat = User::factory()->create(['status' => 'active']);
+        $department = Department::query()->create([
+            'name' => 'دبیرخانه یکتایی شماره '.Str::upper(Str::random(5)),
+            'code' => 'UNQ-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $secretariat->id,
+        ]);
+        app(SystemSettingsService::class)->set([
+            OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT) => (string) $department->id,
+        ]);
+        $organizationA = ExternalOrganization::query()->create(['name' => 'سازمان الف '.Str::upper(Str::random(5)), 'status' => 'active']);
+        $organizationB = ExternalOrganization::query()->create(['name' => 'سازمان ب '.Str::upper(Str::random(5)), 'status' => 'active']);
+        $payload = [
+            'type' => Correspondence::TYPE_INCOMING,
+            'letter_number' => 'DUP-1405-01',
+            'received_at' => '2026-10-27',
+            'recipient_department_id' => $this->recipientDepartmentId(),
+            'subject' => 'نامه اول',
+            'external_organization_id' => $organizationA->id,
+            'original_letters' => [UploadedFile::fake()->create('first.pdf', 10, 'application/pdf')],
+        ];
+
+        $this->actingAs($secretariat)->post(route('correspondence.store'), $payload)
+            ->assertRedirect(route('correspondence.index'));
+        $payload['subject'] = 'نامه تکراری همان سازمان';
+        $payload['original_letters'] = [UploadedFile::fake()->create('duplicate.pdf', 10, 'application/pdf')];
+        $this->from(route('correspondence.create'))->post(route('correspondence.store'), $payload)
+            ->assertRedirect(route('correspondence.create'))
+            ->assertSessionHasErrors('letter_number');
+        $payload['subject'] = 'همان شماره در سازمان دیگر';
+        $payload['external_organization_id'] = $organizationB->id;
+        $payload['original_letters'] = [UploadedFile::fake()->create('other-org.pdf', 10, 'application/pdf')];
+        $this->post(route('correspondence.store'), $payload)
+            ->assertRedirect(route('correspondence.index'));
+    }
+
     public function test_incoming_correspondence_can_be_managed_by_secretariat_after_registration_until_first_action(): void
     {
         $secretariat = User::factory()->create(['status' => 'active']);
