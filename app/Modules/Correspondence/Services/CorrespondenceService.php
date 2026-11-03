@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Correspondence\Services;
 
 use App\Models\User;
+use App\Core\Departments\Models\Department;
 use App\Core\ExternalParties\Models\ExternalOrganization;
 use App\Core\ExternalParties\Models\ExternalDepartment;
 use App\Modules\Correspondence\Models\Correspondence;
