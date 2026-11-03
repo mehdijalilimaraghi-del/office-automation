@@ -799,3 +799,11 @@ Before making the first code change in a new conversation:
 - Tests/build for this change are pending.
 
 - اصلاح تست‌های Feature برای الزام سازمان مبدأ در نامه‌های وارده: داده تست‌های قدیمی تکمیل شد؛ تست مستقل نیز اجباری بودن سازمان، رد شماره تکراری در همان سازمان و پذیرش همان شماره در سازمان دیگر را پوشش می‌دهد. اجرای تست‌ها پس از دریافت این commit لازم است.
+
+## 2026-11-03 — Correspondence list and validation refinements
+
+- Incoming duplicate letter-number validation now returns a Persian message in both create and edit flows.
+- Required-field markers follow the shared CSS convention: do not add a manual asterisk when the required control is already detected by the label selector. The external organization field uses only the shared marker.
+- The department sentinel in the “my correspondence” scope is labeled “همه واحدهای من”. After deletion, the current list filters are re-applied.
+- Secretariat managers must see incoming Secretariat drafts awaiting registration/approval in “my correspondence” and “needs action”; this is limited to the active configured Secretariat manager and does not broaden access for other users.
+- Validation pending: focused correspondence Feature tests and frontend build must be run after pulling `development`. `master` unchanged.
