@@ -102,6 +102,12 @@ const props = defineProps<{
     canCreate: boolean;
     canFilterUnit: boolean;
     formOptions: FormOptions | null;
+    createForCorrespondence: {
+        correspondence_id: number;
+        project_id: number;
+        section_id: number;
+        department_id: number;
+    } | null;
     filterOptions: { projects: Array<{ id: number; name: string }>; departments: DepartmentOption[]; users: User[] };
     customFields: Array<{
         id: number; key: string; label: string;
@@ -274,20 +280,13 @@ const handleSectionChange = (): void => {
 };
 
 onMounted(() => {
-    const params = new URLSearchParams(window.location.search);
-    const correspondenceId = Number(params.get('create_for_correspondence'));
-    const projectId = Number(params.get('project_id'));
-    const sectionId = Number(params.get('section_id'));
-    if (!correspondenceId || !projectId || !sectionId || !props.formOptions) return;
+    const context = props.createForCorrespondence;
+    if (!context || !props.formOptions || !props.canCreate) return;
 
-    const project = props.formOptions.projects.find((item) => item.id === projectId);
-    const section = project?.sections.find((item) => item.id === sectionId);
-    if (!project || !section || !section.department_id) return;
-
-    createForm.correspondence_id = correspondenceId;
-    createForm.project_id = projectId;
-    createForm.section_id = sectionId;
-    createForm.department_id = section.department_id;
+    createForm.correspondence_id = context.correspondence_id;
+    createForm.project_id = context.project_id;
+    createForm.section_id = context.section_id;
+    createForm.department_id = context.department_id;
     showCreateModal.value = true;
 });
 </script>
