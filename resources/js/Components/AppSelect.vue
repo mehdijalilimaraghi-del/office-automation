@@ -37,6 +37,9 @@ const listboxId = `app-select-${useId()}`;
 function textFromChildren(children: unknown): string {
     if (typeof children === 'string' || typeof children === 'number') return String(children);
     if (Array.isArray(children)) return children.map(textFromChildren).join('');
+    if (children && typeof children === 'object' && 'children' in children) {
+        return textFromChildren((children as VNode).children);
+    }
     return '';
 }
 
