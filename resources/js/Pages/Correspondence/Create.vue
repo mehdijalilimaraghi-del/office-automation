@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppSelect from '@/Components/AppSelect.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
@@ -428,16 +429,16 @@ async function scanOriginalLetter(): Promise<void> {
                     <div class="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <div>
                             <label for="type" class="mb-1.5 block text-sm font-semibold text-slate-700">نوع مکاتبه <span class="text-rose-600">*</span></label>
-                            <select id="type" v-model="form.type" :disabled="isEditing" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-slate-100 disabled:text-slate-500">
+                            <AppSelect id="type" v-model="form.type" :disabled="isEditing" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-slate-100 disabled:text-slate-500">
                                 <option v-for="item in types" :key="item.value" :value="item.value">{{ item.label }}</option>
-                            </select>
+                            </AppSelect>
                             <InputError class="mt-1" :message="form.errors.type" />
                         </div>
                         <div>
                             <div class="mb-1.5 flex items-center gap-1.5"><label for="classification" class="text-sm font-semibold text-slate-700">طبقه‌بندی دسترسی <span class="text-rose-600">*</span></label><details class="group relative"><summary aria-label="راهنمای طبقه‌بندی دسترسی" class="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-slate-300 text-[11px] font-bold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-300">؟</summary><div class="absolute right-0 top-7 z-20 w-64 rounded-lg border border-slate-200 bg-white p-3 text-xs font-normal leading-6 text-slate-700 shadow-lg">نامه عادی پس از ثبت نهایی برای کاربران دارای مجوز مشاهده قابل مشاهده است؛ نامه محرمانه فقط برای افراد مرتبط و دبیرخانه.</div></details></div>
-                            <select id="classification" v-model="form.classification" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <AppSelect id="classification" v-model="form.classification" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option v-for="item in classifications" :key="item.value" :value="item.value">{{ item.label }}</option>
-                            </select>
+                            </AppSelect>
                             <InputError class="mt-1" :message="form.errors.classification" />
                         </div>
                         <div v-if="form.type !== 'incoming'" :class="form.type === 'outgoing' || form.type === 'internal' ? 'lg:col-span-2' : ''">
@@ -531,10 +532,10 @@ async function scanOriginalLetter(): Promise<void> {
                             <div class="grid gap-4 sm:grid-cols-2">
                                 <div>
                                     <label for="external_organization_id" class="mb-1.5 block text-sm font-semibold text-slate-700">{{ form.type === 'incoming' ? 'سازمان مبدأ نامه' : 'سازمان مخاطب' }}</label>
-                                    <select id="external_organization_id" v-model="form.external_organization_id" :required="['incoming', 'outgoing'].includes(form.type)" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    <AppSelect id="external_organization_id" v-model="form.external_organization_id" :required="['incoming', 'outgoing'].includes(form.type)" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                                         <option value="">انتخاب سازمان بیرونی</option>
                                         <option v-for="item in externalOrganizations" :key="item.id" :value="item.id">{{ item.name }}</option>
-                                    </select>
+                                    </AppSelect>
                                     <InputError class="mt-1" :message="form.errors.external_organization_id" />
                                 </div>
                                 <div>
@@ -614,7 +615,7 @@ async function scanOriginalLetter(): Promise<void> {
                     <div class="overflow-hidden rounded-xl border border-slate-300 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
                         <div class="space-y-2 border-b border-slate-200 bg-slate-50 p-3" role="toolbar" aria-label="قالب‌بندی متن نامه">
                             <div class="flex flex-wrap items-center gap-1.5">
-                                <select aria-label="نوع قلم" title="نوع قلم" :value="correspondenceFontFamily" class="h-9 max-w-36 rounded-lg border-slate-300 bg-white text-xs" @change="applyFontFamily(($event.target as HTMLSelectElement).value)">
+                                <AppSelect aria-label="نوع قلم" title="نوع قلم" :value="correspondenceFontFamily" class="h-9 max-w-36 rounded-lg border-slate-300 bg-white text-xs" @change="applyFontFamily(($event.target as HTMLSelectElement).value)">
                                     <option value="Vazirmatn">وزیرمتن</option>
                                     <option value="Arial">Arial</option>
                                     <option value="Tahoma">Tahoma</option>
@@ -622,14 +623,14 @@ async function scanOriginalLetter(): Promise<void> {
                                     <option value="B Mitra">B Mitra</option>
                                     <option value="IRANSans">IRANSans</option>
                                     <option value="Times New Roman">Times New Roman</option>
-                                </select>
-                                <select aria-label="اندازه قلم" title="اندازه قلم" class="h-9 w-20 rounded-lg border-slate-300 bg-white text-xs" @change="applyFontSize(($event.target as HTMLSelectElement).value)">
+                                </AppSelect>
+                                <AppSelect aria-label="اندازه قلم" title="اندازه قلم" class="h-9 w-20 rounded-lg border-slate-300 bg-white text-xs" @change="applyFontSize(($event.target as HTMLSelectElement).value)">
                                     <option value="2">کوچک</option>
                                     <option value="3" selected>معمولی</option>
                                     <option value="4">بزرگ</option>
                                     <option value="5">خیلی بزرگ</option>
                                     <option value="6">تیتر</option>
-                                </select>
+                                </AppSelect>
                                 <span class="mx-1 hidden h-7 w-px bg-slate-300 sm:block"></span>
                                 <button type="button" title="پررنگ" aria-label="پررنگ" class="editor-tool" @click="format('bold')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h6a4 4 0 0 1 0 8H7zM7 13h7a4 4 0 0 1 0 8H7z"/></svg></button>
                                 <button type="button" title="مورب" aria-label="مورب" class="editor-tool" @click="format('italic')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h7M3 20h7M14 4 7 20"/></svg></button>
