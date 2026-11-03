@@ -1,3 +1,8 @@
+## 2026-11-03 — Fix needs-action index closure scope
+
+- Root cause of the reported HTTP 500: the nested `needs_action` query closure referenced `$isSecretariatManager` and `$secretariatDepartmentId` without capturing them in its enclosing closures. PHP raised `Undefined variable $isSecretariatManager` at `CorrespondenceController.php` during correspondence index requests.
+- Captured both values in the `when(needs_action)` callback and its `$pending` callback. No workflow states, visibility rules, secretariat authorization, assignment rules, or query semantics were changed.
+- Existing `CorrespondenceHttpTest` cases exercise the affected index/filter path, including manager and department routing scenarios. Validation is pending on the project owner's local environment; run the focused command provided in the handoff. `development` only; `master` unchanged. No migration or dependency changes.
 ## 2026-10-31 — Regression fix: needs-action after direct referral
 
 - Restored the direct-assignment rule that excludes a correspondence from `needs_action` when the assigned user has already recorded an action after the latest referral to them. Current assignments with no referral-history row remain actionable for legacy-data compatibility.
