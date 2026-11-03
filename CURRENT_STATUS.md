@@ -1735,3 +1735,10 @@ Implementation has started for the agreed cross-department project model:
 - خاتمه گردش فقط برای همان دستورکار تأییدشده و متصل به نامه مجاز است؛ ثبت توضیح الزامی است و وضعیت نامه به `workflow_completed` تغییر می‌کند.
 - تست Feature سناریوی درخواست کارمند، تأیید مدیر، جلوگیری از ارجاع پیش از ایجاد دستورکار، فعال شدن اقدامات پس از اتصال و خاتمه گردش را پوشش می‌دهد.
 - وضعیت اجرا: کد و تست به‌روزرسانی شده‌اند؛ اجرای واقعی تست‌ها و build پس از دریافت تغییرات در محیط توسعه/استقرار باید تأیید شود.
+
+## 2026-11-03 — Launch task creation form from correspondence
+
+- Fixed the approved correspondence «ایجاد دستورکار» destination: the Tasks index now resolves and validates the correspondence, latest employee task request, manager approval action, current department manager, active organization project section, and section task-creation setting on the server.
+- The validated creation context is sent as an Inertia prop; the Vue page opens the create modal and preselects correspondence, shared project, section, and department from that prop instead of relying on client-side URL parsing.
+- If the manager's normal task-form options omit the authorized shared project/section, the server adds only the validated target project/section to the form options. Unauthorized or stale query parameters do not open the modal. Existing task-store authorization and correspondence-linking checks remain in place.
+- Extended the correspondence feature test to request the Tasks page with the three launch query parameters and assert the validated launch context and target section are present. Validation pending: run `php artisan test --filter=test_manager_creates_general_task_from_correspondence_and_links_it` and `npm run build`; `master` unchanged.
