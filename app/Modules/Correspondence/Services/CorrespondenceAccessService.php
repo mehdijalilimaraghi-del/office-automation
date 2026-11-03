@@ -102,6 +102,7 @@ class CorrespondenceAccessService
             return true;
         }
 
+        $requiresApproval = app(CorrespondenceCompositionSettings::class)->requiresApproval($correspondence->type);
         $secretariatDepartmentId = app(OrganizationDepartmentRoleService::class)
             ->activeDepartmentId(OrganizationDepartmentRoleService::SECRETARIAT);
 
@@ -111,9 +112,22 @@ class CorrespondenceAccessService
                 ->where('manager_id', $user->id)
                 ->exists();
 
-        return $isSecretariatManager || ($user->hasPermission('correspondence.create')
-            && $correspondence->type === Correspondence::TYPE_INTERNAL
-            && (int) $correspondence->created_by === (int) $user->id);
+        if ($requiresApproval) {
+            if ($correspondence->workflow_state !== 'approved_for_registration') {
+                return false;
+            }
+
+            if ($correspondence->type === Correspondence::TYPE_INTERNAL) {
+                return $user->hasPermission('correspondence.create')
+                    && (int) $correspondence->created_by === (int) $user->id;
+            }
+
+            return $isSecretariatManager;
+        }
+
+        return $user->hasPermission('correspondence.create')
+            && (int) $correspondence->created_by === (int) $user->id
+            && ($correspondence->type !== Correspondence::TYPE_INCOMING || $this->isSecretariat($user));
     }
 
     public function visibleToQuery(Builder $query, User $user): Builder
