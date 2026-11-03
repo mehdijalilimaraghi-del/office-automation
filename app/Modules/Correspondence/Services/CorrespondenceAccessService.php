@@ -125,7 +125,8 @@ class CorrespondenceAccessService
             return $isSecretariatManager;
         }
 
-        return $user->hasPermission('correspondence.create')
+        return $correspondence->workflow_state === 'awaiting_registration'
+            && $user->hasPermission('correspondence.create')
             && (int) $correspondence->created_by === (int) $user->id
             && ($correspondence->type !== Correspondence::TYPE_INCOMING || $this->isSecretariat($user));
     }
