@@ -76,13 +76,26 @@ class CorrespondenceService
                 $createdDepartmentId = $allowedDepartmentIds->first();
             }
 
-            // Secretariat employees prepare drafts; the Secretariat manager performs final registration.
+            $requiresApproval = app(CorrespondenceCompositionSettings::class)->requiresApproval((string) $type);
             $initialState = 'awaiting_registration';
+            $currentUserId = null;
+
+            if ($requiresApproval) {
+                $managerId = $createdDepartmentId === null
+                    ? null
+                    : Department::query()->whereKey($createdDepartmentId)->value('manager_id');
+                if ($managerId === null || ! User::query()->whereKey($managerId)->where('status', 'active')->exists()) {
+                    throw new InvalidArgumentException('برای واحد ایجادکننده، مدیر فعال جهت تأیید نامه در تنظیمات واحدها مشخص نشده است.');
+                }
+
+                $initialState = 'awaiting_manager_approval';
+                $currentUserId = (int) $managerId;
+            }
 
             $correspondence = Correspondence::query()->create([
                 'workflow_state' => $initialState,
                 'current_department_id' => $createdDepartmentId,
-                'current_user_id' => null,
+                'current_user_id' => $currentUserId,
                 'type' => $type,
                 'classification' => $data['classification'] ?? Correspondence::CLASSIFICATION_ORDINARY,
                 'subject' => $subject,
