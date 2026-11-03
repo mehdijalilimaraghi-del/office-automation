@@ -158,7 +158,7 @@ async function openDropdown(): Promise<void> {
     searchQuery.value = '';
     activeIndex.value = Math.max(0, filteredOptions.value.findIndex((option) => !option.disabled));
     await nextTick();
-    updatePosition();
+    await updatePosition();
     if (searchable.value) searchRef.value?.focus();
 }
 
@@ -227,7 +227,7 @@ function handleOutsidePointer(event: PointerEvent): void {
 }
 
 function handleViewportChange(): void {
-    if (isOpen.value) updatePosition();
+    if (isOpen.value) void updatePosition();
 }
 
 watch(filteredOptions, (next) => {
