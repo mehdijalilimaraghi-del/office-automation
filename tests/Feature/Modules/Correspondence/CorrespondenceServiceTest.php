@@ -91,6 +91,37 @@ class CorrespondenceServiceTest extends TestCase
         ]);
     }
 
+    public function test_approval_required_draft_is_assigned_to_active_creator_department_manager(): void
+    {
+        $creator = User::factory()->create(['status' => 'active']);
+        $manager = User::factory()->create(['status' => 'active']);
+        $department = Department::query()->create([
+            'name' => 'واحد صادرکننده نیازمند تأیید',
+            'code' => 'APR-'.strtoupper(bin2hex(random_bytes(3))),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+        $creator->departments()->attach($department->id, [
+            'is_primary' => true,
+            'joined_at' => now(),
+        ]);
+        app(SystemSettingsService::class)->set(['correspondence.approval.outgoing' => 'approval']);
+
+        $correspondence = app(CorrespondenceService::class)->createDraft([
+            'type' => Correspondence::TYPE_OUTGOING,
+            'subject' => 'نامه صادره نیازمند تأیید مدیر',
+            'created_department_id' => $department->id,
+        ], $creator);
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $correspondence->id,
+            'status' => Correspondence::STATUS_DRAFT,
+            'workflow_state' => 'awaiting_manager_approval',
+            'current_department_id' => $department->id,
+            'current_user_id' => $manager->id,
+        ]);
+    }
+
     public function test_create_draft_rejects_unknown_type(): void
     {
         $creator = User::factory()->create(['status' => 'active']);
