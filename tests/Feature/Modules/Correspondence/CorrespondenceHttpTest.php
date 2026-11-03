@@ -2312,6 +2312,7 @@ class CorrespondenceHttpTest extends TestCase
     public function test_manager_creates_general_task_from_correspondence_and_links_it(): void
     {
         $manager = $this->userWithPermission('correspondence.view');
+        $employee = $this->userWithPermission('correspondence.view');
         $taskCreator = $this->userWithPermission('tasks.create');
         $taskViewer = $this->userWithPermission('tasks.view');
         $manager->roles()->attach([
@@ -2324,6 +2325,7 @@ class CorrespondenceHttpTest extends TestCase
             'manager_id' => $manager->id,
             'is_active' => true,
         ]);
+        $employee->departments()->attach($department->id, ['is_primary' => true, 'joined_at' => now()]);
         $project = Project::query()->where('is_system_default', true)->where('is_active', true)->orderBy('id')->first();
         if ($project === null) {
             $project = Project::query()->create([
@@ -2349,18 +2351,36 @@ class CorrespondenceHttpTest extends TestCase
             'classification' => Correspondence::CLASSIFICATION_ORDINARY,
             'subject' => 'نامه برای ایجاد دستورکار عمومی',
             'status' => Correspondence::STATUS_REGISTERED,
-            'workflow_state' => 'in_progress',
+            'workflow_state' => 'assigned_to_employee',
             'current_department_id' => $department->id,
-            'current_user_id' => $manager->id,
+            'current_user_id' => $employee->id,
             'recipient_department_id' => $department->id,
             'created_by' => $manager->id,
         ]);
+
+        $this->actingAs($employee)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
+            'note' => 'درخواست ایجاد دستورکار برای پیگیری نامه.',
+        ])->assertRedirect();
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::MANAGER_CREATE_TASK,
+            'note' => 'با درخواست ایجاد دستورکار موافقت شد.',
+        ])->assertRedirect();
 
         $this->actingAs($manager)->get(route('correspondence.show', $letter))
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('Correspondence/Show')
+                ->where('canManageWorkflow', false)
                 ->where('taskInstructionUrl', fn ($value) => is_string($value) && str_contains($value, 'create_for_correspondence='.$letter->id)));
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::MANAGER_REFER,
+            'target_type' => 'user',
+            'to_user_id' => $employee->id,
+            'note' => 'ارجاع پیش از ایجاد دستورکار نباید مجاز باشد.',
+        ])->assertSessionHasErrors('workflow_action');
 
         $this->actingAs($manager)->get(route('tasks.index'))
             ->assertOk()
@@ -2389,6 +2409,26 @@ class CorrespondenceHttpTest extends TestCase
         $this->assertDatabaseHas('correspondence_actions', [
             'correspondence_id' => $letter->id,
             'action_type' => 'manager_create_task',
+            'actor_id' => $manager->id,
+        ]);
+
+        $this->actingAs($manager)->get(route('correspondence.show', $letter))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('canManageWorkflow', true)
+                ->where('canCompleteTaskInstructionWorkflow', true));
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::MANAGER_COMPLETE_WORKFLOW,
+            'note' => 'دستورکار ایجاد شد و اقدام دیگری برای این نامه باقی نمانده است.',
+        ])->assertRedirect();
+
+        $letter->refresh();
+        $this->assertSame('workflow_completed', $letter->workflow_state);
+        $this->assertNull($letter->current_user_id);
+        $this->assertDatabaseHas('correspondence_actions', [
+            'correspondence_id' => $letter->id,
+            'action_type' => CorrespondenceAction::MANAGER_COMPLETE_WORKFLOW,
             'actor_id' => $manager->id,
         ]);
     }
