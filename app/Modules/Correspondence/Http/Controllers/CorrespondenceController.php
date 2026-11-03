@@ -775,6 +775,8 @@ class CorrespondenceController extends Controller
                 'max:20480',
                 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,txt,csv,zip',
             ],
+        ], [
+            'letter_number.unique' => 'شماره نامه با این سازمان مبدأ قبلاً ثبت شده است.',
         ]);
 
         abort_unless($access->canCreateType($data['type'], $request->user()), 403);
