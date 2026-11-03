@@ -1453,3 +1453,10 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - After the task is linked, ordinary manager actions become available again. The manager can refer the letter or use the dedicated “Complete correspondence workflow” action.
 - Completion requires a note, verifies that the linked task matches the manager's approved task-instruction action metadata, and sets workflow state to `workflow_completed`.
 - A feature test covers the employee request, manager approval, referral rejection before task creation, action availability after linking, and manager completion. Tests/build have not yet been executed in the target environment.
+
+## 2026-11-03 — Launch task creation form from correspondence
+
+- Fixed the approved correspondence «ایجاد دستورکار» destination: the Tasks index now resolves and validates the correspondence, latest employee task request, manager approval action, current department manager, active organization project section, and section task-creation setting on the server.
+- The validated creation context is sent as an Inertia prop; the Vue page opens the create modal and preselects correspondence, shared project, section, and department from that prop instead of relying on client-side URL parsing.
+- If the manager's normal task-form options omit the authorized shared project/section, the server adds only the validated target project/section to the form options. Unauthorized or stale query parameters do not open the modal. Existing task-store authorization and correspondence-linking checks remain in place.
+- Extended the correspondence feature test to request the Tasks page with the three launch query parameters and assert the validated launch context and target section are present. Validation pending: run `php artisan test --filter=test_manager_creates_general_task_from_correspondence_and_links_it` and `npm run build`; `master` unchanged.
