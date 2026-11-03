@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Modules\Projects\Actions;
 
 use App\Core\Departments\Models\Department;
-use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectSection;
 use Illuminate\Support\Facades\DB;
 
