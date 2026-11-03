@@ -11,7 +11,7 @@ const triggerRef=ref<HTMLButtonElement|null>(null);
 const dropdownRef=ref<HTMLDivElement|null>(null);
 const dropdownStyle=ref<Record<string,string>>({});
 const listStyle=ref<Record<string,string>>({});
-function updateDropdownPosition():void {
+async function updateDropdownPosition():Promise<void> {
     const trigger=triggerRef.value;
     if(!trigger)return;
     const rect=trigger.getBoundingClientRect();
@@ -22,10 +22,25 @@ function updateDropdownPosition():void {
     const left=Math.min(Math.max(margin,rect.right-width),Math.max(margin,viewportWidth-width-margin));
     const above=Math.max(0,rect.top-margin);
     const below=Math.max(0,viewportHeight-rect.bottom-margin);
-    const openAbove=below<Math.min(320,420)&&above>below;
-    const available=Math.max(80,Math.min(420,openAbove?above:below));
+
+    dropdownStyle.value={
+        position:'fixed',
+        left:`${left}px`,
+        width:`${width}px`,
+        top:`${margin}px`,
+        maxHeight:`${Math.max(80,Math.min(420,Math.max(above,below)))}px`,
+        zIndex:'9999',
+    };
+    listStyle.value={maxHeight:'288px'};
+    await nextTick();
+
+    const dropdown=dropdownRef.value;
+    if(!dropdown)return;
+    const desiredHeight=Math.max(80,Math.min(420,dropdown.scrollHeight));
+    const openAbove=below<desiredHeight&&above>below;
+    const available=Math.max(80,Math.min(desiredHeight,openAbove?above:below));
     const top=openAbove
-        ? Math.max(margin,rect.top-available)
+        ? Math.max(margin,rect.top-available-4)
         : Math.min(rect.bottom+4,Math.max(margin,viewportHeight-available-margin));
 
     dropdownStyle.value={
