@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppSelect from '@/Components/AppSelect.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, ref } from 'vue';
@@ -616,7 +617,7 @@ function currentUserId(): number | null {
                             <div v-for="field in props.customFields" :key="field.id">
                                 <label class="mb-1.5 block text-sm font-semibold text-slate-700">{{ field.label }}<span v-if="field.is_required" class="text-red-500"> *</span></label>
                                 <textarea v-if="field.type === 'textarea'" :value="String(form.custom_fields[field.key] ?? '')" @input="form.custom_fields[field.key] = ($event.target as HTMLTextAreaElement).value" rows="3" class="w-full rounded-xl border-slate-200 bg-white"></textarea>
-                                <select v-else-if="field.type === 'select'" v-model="form.custom_fields[field.key]" class="w-full rounded-xl border-slate-200 bg-white"><option :value="null">انتخاب کنید</option><option v-for="option in field.options ?? []" :key="option" :value="option">{{ option }}</option></select>
+                                <AppSelect v-else-if="field.type === 'select'" v-model="form.custom_fields[field.key]" class="w-full rounded-xl border-slate-200 bg-white"><option :value="null">انتخاب کنید</option><option v-for="option in field.options ?? []" :key="option" :value="option">{{ option }}</option></AppSelect>
                                 <input v-else-if="field.type === 'boolean'" v-model="form.custom_fields[field.key]" type="checkbox" class="rounded border-slate-300 text-teal-600" />
                                 <input v-else v-model="form.custom_fields[field.key]" :type="field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'" class="w-full rounded-xl border-slate-200 bg-white" />
                                 <p v-if="(form.errors as Record<string, CustomFieldError>)['custom_fields.' + field.key]" class="mt-1 text-xs text-red-600">{{ (form.errors as Record<string, CustomFieldError>)['custom_fields.' + field.key] }}</p>
@@ -633,7 +634,7 @@ function currentUserId(): number | null {
                                 <p class="mt-1 text-xs leading-5 text-slate-500">نقش کاربری، مجموعه مجوزهای این کاربر در سامانه را مشخص می‌کند.</p>
                             </div>
                             <div>
-                                 <select
+                                 <AppSelect
                                      v-model="selectedRoleId"
                                      aria-label="نقش کاربری"
                                      class="w-full rounded-xl border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 shadow-sm transition focus:border-teal-500 focus:ring-teal-500"
@@ -642,7 +643,7 @@ function currentUserId(): number | null {
                                      <option v-for="role in activeRoles" :key="role.id" :value="role.id">
                                          {{ role.name }}{{ role.code ? ` — ${role.code}` : '' }}
                                      </option>
-                                 </select>
+                                 </AppSelect>
                                  <p v-if="activeRoles.length === 0" class="mt-2 text-xs text-slate-400">
                                      نقش کاربری فعالی برای تخصیص تعریف نشده است؛ این کاربر به‌صورت عادی و بدون نقش ایجاد می‌شود.
                                  </p>
