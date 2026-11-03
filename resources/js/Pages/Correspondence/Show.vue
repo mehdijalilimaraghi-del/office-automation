@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppSelect from '@/Components/AppSelect.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import type { PageProps } from '@/types';
@@ -255,10 +256,10 @@ function registerCorrespondence(): void {
                     </div>
                     <div>
                         <label class="mb-1 block text-sm font-medium">واحد مسئول پاسخ‌گویی *</label>
-                        <select v-model="projectForm.response_department_id" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+                        <AppSelect v-model="projectForm.response_department_id" required class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
                             <option value="">انتخاب واحد پاسخ‌گو</option>
                             <option v-for="department in responseDepartments" :key="department.id" :value="department.id">{{ department.name }}</option>
-                        </select>
+                        </AppSelect>
                         <p v-if="projectForm.errors.response_department_id" class="mt-1 text-xs text-rose-600">{{ projectForm.errors.response_department_id }}</p>
                     </div>
                     <div class="md:col-span-2">
@@ -384,7 +385,7 @@ function registerCorrespondence(): void {
                     <form v-if="canManageWorkflow || canReturnToManager || canProjectEmployeeReview || canReviewProjectRequest || canSecretariatReturn || canResubmitToSecretariat || canSubmitGeneralRequest || canReviewGeneralRequest" class="grid gap-3 rounded-xl border border-slate-200 p-4 sm:grid-cols-2" @submit.prevent="submitWorkflowAction">
                         <div v-if="canManageWorkflow">
                             <label class="mb-1 block text-sm font-medium text-slate-700">اقدام مدیر</label>
-                            <select v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
+                            <AppSelect v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
                                 <option v-if="canReviewProjectRequest" value="pm_manager_approve_request">تأیید درخواست کارمند</option>
                                 <option v-if="canReviewProjectRequest" value="pm_manager_reject_request">عدم تأیید و بازگشت به کارمند</option>
                                 <option v-if="canReviewGeneralRequest && generalRequestType === 'employee_request_none'" value="manager_refer">ارجاع نامه</option>
@@ -399,43 +400,43 @@ function registerCorrespondence(): void {
                                 <option v-if="canSecretariatReturn" value="secretariat_return">برگشت برای اصلاح</option>
                                 <option v-if="canResubmitToSecretariat" value="resubmit_to_secretariat">ارسال مجدد به دبیرخانه</option>
                                 <option v-if="correspondence.workflow_state === 'result_pending_manager' && ['incoming', 'internal'].includes(correspondence.type)" value="confirm_result">تأیید نتیجه و خاتمه گردش</option>
-                            </select>
+                            </AppSelect>
                         </div>
                         <div v-else-if="canSubmitGeneralRequest">
                             <label class="mb-1 block text-sm font-medium text-slate-700">نوع درخواست کارمند</label>
-                            <select v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
+                            <AppSelect v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
                                 <option value="employee_request_none">بدون درخواست</option>
                                 <option value="employee_request_task">درخواست ایجاد دستورکار</option>
                                 <option value="employee_request_letter">درخواست ثبت نامه</option>
                                 <option value="employee_request_project">درخواست پروژه</option>
-                            </select>
+                            </AppSelect>
                         </div>
                         <div v-else-if="canProjectEmployeeReview">
                             <label class="mb-1 block text-sm font-medium text-slate-700">درخواست اقدام کارمند واحد پروژه‌ها</label>
-                            <select v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
+                            <AppSelect v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
                                 <option value="pm_request_refer">درخواست ارجاع به واحد دیگر</option>
                                 <option value="pm_request_project">درخواست پروژه</option>
                                 <option value="pm_request_reject">رد درخواست</option>
                                 <option value="pm_request_return">برگشت جهت اصلاح</option>
-                            </select>
+                            </AppSelect>
                         </div>
                         <div v-else-if="canReturnToManager">
                             <label class="mb-1 block text-sm font-medium text-slate-700">اقدام</label>
-                            <select v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
+                            <AppSelect v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
                                 <option value="submit_result">ثبت نتیجه بررسی و ارسال به مدیر</option>
-                            </select>
+                            </AppSelect>
                         </div>
                         <div v-else-if="canSecretariatReturn">
                             <label class="mb-1 block text-sm font-medium text-slate-700">اقدام دبیرخانه</label>
-                            <select v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
+                            <AppSelect v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
                                 <option value="secretariat_return">برگشت نامه برای اصلاح</option>
-                            </select>
+                            </AppSelect>
                         </div>
                         <div v-else>
                             <label class="mb-1 block text-sm font-medium text-slate-700">اقدام</label>
-                            <select v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
+                            <AppSelect v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
                                 <option value="resubmit_to_secretariat">ارسال مجدد به دبیرخانه</option>
-                            </select>
+                            </AppSelect>
                         </div>
 <p v-if="canReviewGeneralRequest && ['employee_request_task', 'employee_request_workflow'].includes(generalRequestType ?? '') && !canCreateTaskInstruction" class="sm:col-span-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">برای این واحد، پروژه عمومی فعال یا بخش مجاز ایجاد دستورکار تعریف نشده است؛ ابتدا تنظیمات پروژه عمومی و بخش واحد را بررسی کنید.</p>
                         <template v-if="canProjectEmployeeReview && actionForm.action_type === 'pm_request_refer'">
@@ -447,10 +448,10 @@ function registerCorrespondence(): void {
                         <template v-if="canManageWorkflow && actionForm.action_type === 'manager_refer'">
                             <div>
                                 <label class="mb-1 block text-sm font-medium text-slate-700">نوع ارجاع</label>
-                                <select v-model="actionForm.target_type" class="w-full rounded-xl border-slate-300 text-sm">
+                                <AppSelect v-model="actionForm.target_type" class="w-full rounded-xl border-slate-300 text-sm">
                                     <option v-if="!isProjectManagementDepartment" value="department">واحد دیگر</option>
                                     <option value="user">کارمند همین واحد</option>
-                                </select>
+                                </AppSelect>
                             </div>
                             <div v-if="actionForm.target_type === 'department'">
                                 <label class="mb-1 block text-sm font-medium text-slate-700">واحد مقصد</label>
@@ -458,10 +459,10 @@ function registerCorrespondence(): void {
                             </div>
                             <div v-else>
                                 <label class="mb-1 block text-sm font-medium text-slate-700">کارمند مقصد</label>
-                                <select v-model="actionForm.to_user_id" class="w-full rounded-xl border-slate-300 text-sm">
+                                <AppSelect v-model="actionForm.to_user_id" class="w-full rounded-xl border-slate-300 text-sm">
                                     <option value="">انتخاب کارمند</option>
                                     <option v-for="user in workflowUsers" :key="user.id" :value="String(user.id)">{{ user.name }}</option>
-                                </select>
+                                </AppSelect>
                             </div>
                         </template>
                         <div class="sm:col-span-2">
@@ -538,11 +539,11 @@ function registerCorrespondence(): void {
                 <form class="grid gap-4 p-5 sm:grid-cols-2" @submit.prevent="saveExternalTracking">
                     <div>
                         <label class="mb-1 block text-sm font-medium text-slate-700">تسک مرتبط</label>
-                        <select v-model="trackingForm.task_id" :disabled="!canUpdateExternalTracking" class="w-full rounded-xl border-slate-300 text-sm">
+                        <AppSelect v-model="trackingForm.task_id" :disabled="!canUpdateExternalTracking" class="w-full rounded-xl border-slate-300 text-sm">
                             <option value="">بدون تسک مرتبط</option>
                             <option v-for="task in trackableTasks" :key="task.id" :value="String(task.id)">#{{ task.id }} — {{ task.title }}</option>
                             <option v-if="correspondence.task && !trackableTasks.some(task => task.id === correspondence.task?.id)" :value="String(correspondence.task.id)">#{{ correspondence.task.id }} — {{ correspondence.task.title }}</option>
-                        </select>
+                        </AppSelect>
                         <p v-if="correspondence.task" class="mt-1 text-xs text-slate-500">تسک فعلی: {{ correspondence.task.title }} ({{ correspondence.task.status }})</p>
                     </div>
                     <div>
@@ -555,14 +556,14 @@ function registerCorrespondence(): void {
                     </div>
                     <div>
                         <label class="mb-1 block text-sm font-medium text-slate-700">روش ارسال</label>
-                        <select v-model="trackingForm.dispatch_method" :disabled="!canUpdateExternalTracking" class="w-full rounded-xl border-slate-300 text-sm">
+                        <AppSelect v-model="trackingForm.dispatch_method" :disabled="!canUpdateExternalTracking" class="w-full rounded-xl border-slate-300 text-sm">
                             <option value="">انتخاب نشده</option>
                             <option value="official_portal">سامانه مکاتبات</option>
                             <option value="email">ایمیل</option>
                             <option value="courier">پیک / پست</option>
                             <option value="in_person">تحویل حضوری</option>
                             <option value="other">سایر</option>
-                        </select>
+                        </AppSelect>
                     </div>
                     <div>
                         <label class="mb-1 block text-sm font-medium text-slate-700">تاریخ ارسال</label>
