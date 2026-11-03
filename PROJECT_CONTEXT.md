@@ -1435,3 +1435,13 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - Manager visibility for assigned approval drafts and the default UI action (`manager_approve`) were corrected. The numbering service checks approval for all correspondence types, including incoming.
 - The `needs_action` filter now treats `project_request_approved` as an actionable state for the current department manager, fixing the missing post-approval project-creation item.
 - Added/updated Feature tests. Test suite, build and SQL Server validation have **not** been run here and remain pending. Branch `development`; `master` unchanged.
+
+
+## 2026-11-03 — Shared organization project administration
+
+- System administrators can update the shared system-default organization project; deleting the system-default project remains forbidden. Non-admin users cannot update it.
+- Project edit/update and section routes now rely on controller Policy authorization rather than the projects.update route middleware; Gate::authorize remains enforced in each controller action.
+- Shared-project sections are derived from organization departments. Manual section creation/deletion and changing a section's department association are blocked. Section names follow the linked department.
+- System administrators can edit an existing shared section's description and manager_can_create_tasks. Department/manager inactivity forces task creation off. The sync action preserves manually configured descriptions and does not re-enable a previously disabled section automatically.
+- Run php artisan projects:sync-organization-sections to reconcile existing departments and shared-project sections. Missing sections are created; duplicate section associations are reported but not deleted automatically, to protect task/document history.
+- Tests, frontend build, and execution of the reconciliation command against the deployment database remain pending. Branch: development; master unchanged.
