@@ -873,9 +873,11 @@ class CorrespondenceHttpTest extends TestCase
             OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT) => (string) $department->id,
         ]);
 
+        $organization = ExternalOrganization::query()->create(['name' => 'سازمان مبدأ فایل '.Str::upper(Str::random(5)), 'status' => 'active']);
         $this->actingAs($user)->from(route('correspondence.create'))->post(route('correspondence.store'), [
             'type' => Correspondence::TYPE_INCOMING,
             'letter_number' => 'IN-1405-TEST',
+            'external_organization_id' => $organization->id,
             'received_at' => '2026-10-24',
             'subject' => 'نامه وارده بدون اصل نامه',
             'recipient_department_id' => $this->recipientDepartmentId(),
