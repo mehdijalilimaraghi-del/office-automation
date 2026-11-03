@@ -489,11 +489,29 @@ class CorrespondenceWorkflowService
                     || ! app(CorrespondenceCompositionSettings::class)->requiresApproval($letter->type)) {
                     throw new InvalidArgumentException('تأیید مدیر فقط برای نوع نامه‌ای مجاز است که در تنظیمات سازمان نیاز به تأیید دارد.');
                 }
-                $this->record($letter, $actor, $type, $note, $currentDepartmentId, null, $actor->id, null);
+                $nextDepartmentId = $currentDepartmentId;
+                $nextUserId = $letter->type === Correspondence::TYPE_INCOMING
+                    ? (int) $letter->created_by
+                    : null;
+
+                if ($letter->type === Correspondence::TYPE_OUTGOING) {
+                    $secretariatDepartmentId = $roles->activeDepartmentId(OrganizationDepartmentRoleService::SECRETARIAT);
+                    $secretariatManagerId = $secretariatDepartmentId === null
+                        ? null
+                        : Department::query()->whereKey($secretariatDepartmentId)->value('manager_id');
+                    if ($secretariatDepartmentId === null || $secretariatManagerId === null
+                        || ! User::query()->whereKey($secretariatManagerId)->where('status', 'active')->exists()) {
+                        throw new InvalidArgumentException('برای ثبت نهایی نامه صادره، واحد دبیرخانه و مدیر فعال آن باید در تنظیمات سازمان مشخص باشند.');
+                    }
+                    $nextDepartmentId = (int) $secretariatDepartmentId;
+                    $nextUserId = (int) $secretariatManagerId;
+                }
+
+                $this->record($letter, $actor, $type, $note, $currentDepartmentId, $nextDepartmentId, $actor->id, $nextUserId);
                 $letter->forceFill([
+                    'current_department_id' => $nextDepartmentId,
                     'workflow_state' => 'approved_for_registration',
-                    // After approval, the Secretariat draft creator can complete registration.
-                    'current_user_id' => $letter->type === Correspondence::TYPE_INCOMING ? (int) $letter->created_by : null,
+                    'current_user_id' => $nextUserId,
                 ])->save();
                 return;
             }
