@@ -986,9 +986,10 @@ class CorrespondenceHttpTest extends TestCase
         $this->actingAs($user)->get(route('correspondence.create'))->assertOk();
     }
 
-    public function test_non_secretariat_can_create_internal_and_outgoing_drafts_but_not_incoming_letters(): void
+    public function test_non_secretariat_can_create_internal_and_directly_register_outgoing_but_not_incoming_letters(): void
     {
         $user = User::factory()->create(['status' => 'active']);
+        app(SystemSettingsService::class)->set(['correspondence.approval.outgoing' => 'direct']);
         $this->actingAs($user)->get(route('correspondence.create'))->assertOk()->assertInertia(fn ($page) => $page->where('types', [['value' => Correspondence::TYPE_OUTGOING, 'label' => 'صادره'], ['value' => Correspondence::TYPE_INTERNAL, 'label' => 'داخلی']]));
         $this->actingAs($user)->post(route('correspondence.store'), ['type' => Correspondence::TYPE_INCOMING, 'subject' => 'نامه وارده غیرمجاز', 'composition_mode' => 'editor', 'body' => '<p>متن</p>'])->assertForbidden();
         $this->assertDatabaseCount('correspondences', 0);
@@ -2155,6 +2156,7 @@ class CorrespondenceHttpTest extends TestCase
     public function test_outgoing_correspondence_can_select_an_existing_external_organization_and_department(): void
     {
         $user = $this->userWithPermission('correspondence.create');
+        app(SystemSettingsService::class)->set(['correspondence.approval.outgoing' => 'direct']);
         $organization = ExternalOrganization::query()->create([
             'name' => 'سازمان بیرونی '.Str::upper(Str::random(5)),
             'status' => 'active',
