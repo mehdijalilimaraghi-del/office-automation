@@ -490,9 +490,11 @@ class CorrespondenceWorkflowService
                     throw new InvalidArgumentException('تأیید مدیر فقط برای نوع نامه‌ای مجاز است که در تنظیمات سازمان نیاز به تأیید دارد.');
                 }
                 $nextDepartmentId = $currentDepartmentId;
-                $nextUserId = $letter->type === Correspondence::TYPE_INCOMING
-                    ? (int) $letter->created_by
-                    : null;
+                $nextUserId = match ($letter->type) {
+                    Correspondence::TYPE_INCOMING => (int) $actor->id,
+                    Correspondence::TYPE_INTERNAL => (int) $letter->created_by,
+                    default => null,
+                };
 
                 if ($letter->type === Correspondence::TYPE_OUTGOING) {
                     $secretariatDepartmentId = $roles->activeDepartmentId(OrganizationDepartmentRoleService::SECRETARIAT);
