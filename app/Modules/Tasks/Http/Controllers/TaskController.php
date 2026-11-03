@@ -98,29 +98,29 @@ class TaskController extends Controller
                 && $letter->task_id === null
                 && $letter->current_department_id !== null
                 && ($letter->current_user_id === null || (int) $letter->current_user_id === (int) $request->user()->id)
-                && (int) \\App\\Core\\Departments\\Models\\Department::query()->whereKey($letter->current_department_id)->value('manager_id') === (int) $request->user()->id) {
+                && (int) \App\Core\Departments\Models\Department::query()->whereKey($letter->current_department_id)->value('manager_id') === (int) $request->user()->id) {
                 $latestRequest = $letter->actions()
                     ->whereIn('action_type', [
-                        \\App\\Modules\\Correspondence\\Models\\CorrespondenceAction::EMPLOYEE_REQUEST_NONE,
-                        \\App\\Modules\\Correspondence\\Models\\CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
-                        \\App\\Modules\\Correspondence\\Models\\CorrespondenceAction::EMPLOYEE_REQUEST_LETTER,
-                        \\App\\Modules\\Correspondence\\Models\\CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
-                        \\App\\Modules\\Correspondence\\Models\\CorrespondenceAction::EMPLOYEE_REQUEST_PROJECT,
+                        \App\Modules\Correspondence\Models\CorrespondenceAction::EMPLOYEE_REQUEST_NONE,
+                        \App\Modules\Correspondence\Models\CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
+                        \App\Modules\Correspondence\Models\CorrespondenceAction::EMPLOYEE_REQUEST_LETTER,
+                        \App\Modules\Correspondence\Models\CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
+                        \App\Modules\Correspondence\Models\CorrespondenceAction::EMPLOYEE_REQUEST_PROJECT,
                     ])->latest('id')->first();
                 $latestApproval = $letter->actions()
-                    ->where('action_type', \\App\\Modules\\Correspondence\\Models\\CorrespondenceAction::MANAGER_CREATE_TASK)
+                    ->where('action_type', \App\Modules\Correspondence\Models\CorrespondenceAction::MANAGER_CREATE_TASK)
                     ->latest('id')->first();
                 $approvalMetadata = $latestApproval?->metadata ?? [];
 
-                $section = \\App\\Modules\\Projects\\Models\\ProjectSection::query()
+                $section = \App\Modules\Projects\Models\ProjectSection::query()
                     ->with(['project', 'department.manager', 'department.members:id'])
                     ->whereKey($requestedSectionId)
                     ->first();
 
                 $validRequest = $latestRequest !== null
                     && in_array($latestRequest->action_type, [
-                        \\App\\Modules\\Correspondence\\Models\\CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
-                        \\App\\Modules\\Correspondence\\Models\\CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
+                        \App\Modules\Correspondence\Models\CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
+                        \App\Modules\Correspondence\Models\CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
                     ], true)
                     && $latestApproval !== null
                     && (int) $latestApproval->actor_id === (int) $request->user()->id
