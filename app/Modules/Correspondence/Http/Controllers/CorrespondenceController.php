@@ -259,6 +259,43 @@ class CorrespondenceController extends Controller
         $currentDepartmentId = $correspondence->current_department_id === null ? null : (int) $correspondence->current_department_id;
         $isCurrentDepartmentManager = $currentDepartmentId !== null
             && (int) Department::query()->whereKey($currentDepartmentId)->value('manager_id') === (int) $request->user()->id;
+
+        $generalRequestTypes = [
+            CorrespondenceAction::EMPLOYEE_REQUEST_NONE,
+            CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
+            CorrespondenceAction::EMPLOYEE_REQUEST_LETTER,
+            CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
+            CorrespondenceAction::EMPLOYEE_REQUEST_PROJECT,
+        ];
+        $latestGeneralRequest = $correspondence->actions()
+            ->whereIn('action_type', $generalRequestTypes)
+            ->latest('id')
+            ->first();
+        $latestTaskDecision = $correspondence->actions()
+            ->where('action_type', CorrespondenceAction::MANAGER_CREATE_TASK)
+            ->latest('id')
+            ->first();
+        $latestTaskDecisionMetadata = $latestTaskDecision?->metadata ?? [];
+        $isAwaitingApprovedTaskInstruction = $correspondence->task_id === null
+            && $latestGeneralRequest !== null
+            && in_array($latestGeneralRequest->action_type, [
+                CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
+                CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
+            ], true)
+            && $latestTaskDecision !== null
+            && (int) $latestTaskDecision->actor_id === (int) $request->user()->id
+            && (int) $latestTaskDecision->id > (int) $latestGeneralRequest->id
+            && ! isset($latestTaskDecisionMetadata['task_id']);
+        $hasApprovedTaskInstruction = $correspondence->task_id !== null
+            && $latestGeneralRequest !== null
+            && in_array($latestGeneralRequest->action_type, [
+                CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
+                CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
+            ], true)
+            && $latestTaskDecision !== null
+            && (int) $latestTaskDecision->actor_id === (int) $request->user()->id
+            && (int) $latestTaskDecision->id > (int) $latestGeneralRequest->id
+            && (int) ($latestTaskDecisionMetadata['task_id'] ?? 0) === (int) $correspondence->task_id;
         $generalProject = Project::query()
             ->where('is_system_default', true)
             ->where('is_active', true)
@@ -279,6 +316,7 @@ class CorrespondenceController extends Controller
             && $generalProject !== null
             && $departmentSection !== null;
         if ($canCreateTaskInstruction
+            && $isAwaitingApprovedTaskInstruction
             && ($correspondence->current_user_id === null || (int) $correspondence->current_user_id === (int) $request->user()->id)
             && $correspondence->workflow_state === 'in_progress') {
             $taskInstructionUrl = route('tasks.index', [
@@ -288,17 +326,6 @@ class CorrespondenceController extends Controller
             ]);
         }
 
-        $generalRequestTypes = [
-            CorrespondenceAction::EMPLOYEE_REQUEST_NONE,
-            CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
-            CorrespondenceAction::EMPLOYEE_REQUEST_LETTER,
-            CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
-            CorrespondenceAction::EMPLOYEE_REQUEST_PROJECT,
-        ];
-        $latestGeneralRequest = $correspondence->actions()
-            ->whereIn('action_type', $generalRequestTypes)
-            ->latest('id')
-            ->first();
         $configuredProjectDepartmentId = app(OrganizationDepartmentRoleService::class)
             ->activeDepartmentId(OrganizationDepartmentRoleService::PROJECT_MANAGEMENT);
         $isCurrentProjectDepartment = $configuredProjectDepartmentId !== null
@@ -481,7 +508,8 @@ class CorrespondenceController extends Controller
                     || $request->user()->managedDepartments()->whereKey($correspondence->current_department_id)->exists())
                 && $correspondence->workflow_state === 'assigned_to_employee'
                 && (int) $correspondence->current_user_id === (int) $request->user()->id,
-            'canManageWorkflow' => ! in_array($correspondence->workflow_state, ['completed_with_result', 'project_request_approved', 'letter_draft_pending_manager', 'workflow_completed', 'letter_registered'], true)
+            'canManageWorkflow' => ! $isAwaitingApprovedTaskInstruction
+                && ! in_array($correspondence->workflow_state, ['completed_with_result', 'project_request_approved', 'letter_draft_pending_manager', 'workflow_completed', 'letter_registered'], true)
                 && $correspondence->current_department_id !== null
                 && (int) Department::query()->whereKey($correspondence->current_department_id)->value('manager_id') === (int) $request->user()->id
                 && (($correspondence->status === Correspondence::STATUS_DRAFT
@@ -490,6 +518,12 @@ class CorrespondenceController extends Controller
                         && $correspondence->type !== Correspondence::TYPE_OUTGOING)
                     || ($correspondence->type === Correspondence::TYPE_OUTGOING
                         && $correspondence->workflow_state === 'returned_for_correction')),
+            'canCompleteTaskInstructionWorkflow' => $hasApprovedTaskInstruction
+                && $correspondence->status === Correspondence::STATUS_REGISTERED
+                && in_array($correspondence->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)
+                && $correspondence->workflow_state === 'in_progress'
+                && $isCurrentDepartmentManager
+                && (int) $correspondence->current_user_id === (int) $request->user()->id,
             'canAddCopies' => $correspondence->status === Correspondence::STATUS_REGISTERED
                 && $correspondence->workflow_state !== 'completed_with_result'
                 && $correspondence->current_department_id !== null
@@ -1229,6 +1263,7 @@ class CorrespondenceController extends Controller
                 CorrespondenceAction::EMPLOYEE_REQUEST_PROJECT,
                 CorrespondenceAction::MANAGER_REJECT_EMPLOYEE_REQUEST,
                 CorrespondenceAction::MANAGER_CREATE_TASK,
+                CorrespondenceAction::MANAGER_COMPLETE_WORKFLOW,
                 CorrespondenceAction::MANAGER_REFER_PROJECT_MANAGEMENT,
                 CorrespondenceAction::MANAGER_CREATE_REQUESTED_LETTER,
                 CorrespondenceAction::MANAGER_ASSIGN_LETTER_DRAFT,
