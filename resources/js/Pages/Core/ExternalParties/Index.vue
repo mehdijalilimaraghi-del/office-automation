@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppSelect from '@/Components/AppSelect.vue';
 import { computed, reactive, ref } from 'vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
@@ -197,7 +198,7 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
         <div class="mb-5"><h2 class="font-black text-slate-900">{{depForm.id?'ویرایش واحد':'واحد جدید'}}</h2></div>
         <div class="space-y-3">
           <label class="block text-sm font-semibold text-slate-700">سازمان</label>
-          <select v-model="depForm.external_organization_id" required class="w-full rounded-xl border border-slate-200 px-3 py-2.5"><option value="">سازمان *</option><option v-for="o in organizations" :key="o.id" :value="o.id">{{o.name}}</option></select>
+          <AppSelect v-model="depForm.external_organization_id" required class="w-full rounded-xl border border-slate-200 px-3 py-2.5"><option value="">سازمان *</option><option v-for="o in organizations" :key="o.id" :value="o.id">{{o.name}}</option></AppSelect>
           <label class="block text-sm font-semibold text-slate-700">واحد بالادست</label>
           <DepartmentTreeSelect v-model="depForm.parent_id" :departments="departmentParentOptions" placeholder="بدون واحد بالادست (واحد اصلی)" />
           <label class="block text-sm font-semibold text-slate-700">نام واحد</label>
@@ -240,7 +241,7 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
         <div class="mb-5"><h2 class="font-black text-slate-900">{{contactForm.id?'ویرایش فرد':'فرد جدید'}}</h2></div>
         <div class="space-y-3">
           <label class="block text-sm font-semibold text-slate-700">سازمان</label>
-          <select v-model="contactForm.external_organization_id" required class="w-full rounded-xl border border-slate-200 px-3 py-2.5"><option value="">سازمان *</option><option v-for="o in organizations" :key="o.id" :value="o.id">{{o.name}}</option></select>
+          <AppSelect v-model="contactForm.external_organization_id" required class="w-full rounded-xl border border-slate-200 px-3 py-2.5"><option value="">سازمان *</option><option v-for="o in organizations" :key="o.id" :value="o.id">{{o.name}}</option></AppSelect>
           <DepartmentTreeSelect v-model="contactForm.external_department_id" :departments="departmentsForContact" placeholder="واحد اختیاری" />
           <label class="block text-sm font-semibold text-slate-700">نام و نام خانوادگی</label>
           <input v-model="contactForm.name" required placeholder="نام و نام خانوادگی" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
