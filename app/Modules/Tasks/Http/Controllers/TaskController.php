@@ -80,14 +80,108 @@ class TaskController extends Controller
             unset($filters['scope']);
         }
 
+        $canCreate = Gate::allows('create', Task::class);
+        $formOptions = $canCreate ? $this->taskFormOptionsService->forCreate($request->user()) : null;
+        $createForCorrespondence = null;
+
+        $correspondenceId = $request->integer('create_for_correspondence');
+        $requestedProjectId = $request->integer('project_id');
+        $requestedSectionId = $request->integer('section_id');
+
+        if ($canCreate && $correspondenceId > 0 && $requestedProjectId > 0 && $requestedSectionId > 0) {
+            $letter = Correspondence::query()->find($correspondenceId);
+
+            if ($letter !== null
+                && $letter->status === Correspondence::STATUS_REGISTERED
+                && in_array($letter->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)
+                && $letter->workflow_state === 'in_progress'
+                && $letter->task_id === null
+                && $letter->current_department_id !== null
+                && ($letter->current_user_id === null || (int) $letter->current_user_id === (int) $request->user()->id)
+                && (int) \\App\\Core\\Departments\\Models\\Department::query()->whereKey($letter->current_department_id)->value('manager_id') === (int) $request->user()->id) {
+                $latestRequest = $letter->actions()
+                    ->whereIn('action_type', [
+                        \\App\\Modules\\Correspondence\\Models\\CorrespondenceAction::EMPLOYEE_REQUEST_NONE,
+                        \\App\\Modules\\Correspondence\\Models\\CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
+                        \\App\\Modules\\Correspondence\\Models\\CorrespondenceAction::EMPLOYEE_REQUEST_LETTER,
+                        \\App\\Modules\\Correspondence\\Models\\CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
+                        \\App\\Modules\\Correspondence\\Models\\CorrespondenceAction::EMPLOYEE_REQUEST_PROJECT,
+                    ])->latest('id')->first();
+                $latestApproval = $letter->actions()
+                    ->where('action_type', \\App\\Modules\\Correspondence\\Models\\CorrespondenceAction::MANAGER_CREATE_TASK)
+                    ->latest('id')->first();
+                $approvalMetadata = $latestApproval?->metadata ?? [];
+
+                $section = \\App\\Modules\\Projects\\Models\\ProjectSection::query()
+                    ->with(['project', 'department.manager', 'department.members:id'])
+                    ->whereKey($requestedSectionId)
+                    ->first();
+
+                $validRequest = $latestRequest !== null
+                    && in_array($latestRequest->action_type, [
+                        \\App\\Modules\\Correspondence\\Models\\CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
+                        \\App\\Modules\\Correspondence\\Models\\CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
+                    ], true)
+                    && $latestApproval !== null
+                    && (int) $latestApproval->actor_id === (int) $request->user()->id
+                    && (int) $latestApproval->id > (int) $latestRequest->id
+                    && ! isset($approvalMetadata['task_id']);
+
+                if ($validRequest
+                    && $section !== null
+                    && $section->project !== null
+                    && (int) $section->project_id === $requestedProjectId
+                    && $section->project->is_system_default
+                    && (int) $section->department_id === (int) $letter->current_department_id
+                    && $section->manager_can_create_tasks
+                    && $section->department?->is_active
+                    && (int) $section->department?->manager_id === (int) $request->user()->id) {
+                    $sectionOption = [
+                        'id' => (int) $section->id,
+                        'name' => $section->name,
+                        'department_id' => (int) $section->department_id,
+                        'manager_id' => (int) $request->user()->id,
+                        'manager_name' => $request->user()->name,
+                        'manager_can_create_tasks' => true,
+                        'member_ids' => $section->department->members->pluck('id')->map(fn ($id): int => (int) $id)->values()->all(),
+                    ];
+
+                    if ($formOptions !== null) {
+                        $projectIndex = collect($formOptions['projects'])->search(
+                            fn (array $project): bool => (int) $project['id'] === (int) $section->project_id
+                        );
+
+                        if ($projectIndex === false) {
+                            $formOptions['projects'][] = [
+                                'id' => (int) $section->project_id,
+                                'name' => $section->project->name,
+                                'member_ids' => $sectionOption['member_ids'],
+                                'sections' => [$sectionOption],
+                            ];
+                        } else {
+                            $formOptions['projects'][$projectIndex]['sections'] = collect($formOptions['projects'][$projectIndex]['sections'])
+                                ->reject(fn (array $item): bool => (int) $item['id'] === (int) $section->id)
+                                ->push($sectionOption)->values()->all();
+                        }
+                    }
+
+                    $createForCorrespondence = [
+                        'correspondence_id' => (int) $letter->id,
+                        'project_id' => (int) $section->project_id,
+                        'section_id' => (int) $section->id,
+                        'department_id' => (int) $section->department_id,
+                    ];
+                }
+            }
+        }
+
         return Inertia::render('Tasks/Index', [
             'tasks' => $this->taskService->list($request->user(), $filters),
             'filters' => $filters,
-            'canCreate' => Gate::allows('create', Task::class),
+            'canCreate' => $canCreate,
             'canFilterUnit' => $canFilterUnit,
-            'formOptions' => Gate::allows('create', Task::class)
-                ? $this->taskFormOptionsService->forCreate($request->user())
-                : null,
+            'formOptions' => $formOptions,
+            'createForCorrespondence' => $createForCorrespondence,
             'customFields' => $this->customFieldService->definitions(Task::class),
             'filterOptions' => $this->taskFormOptionsService->forFilters($request->user()),
         ]);
