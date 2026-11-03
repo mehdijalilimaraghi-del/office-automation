@@ -1029,7 +1029,7 @@ class CorrespondenceHttpTest extends TestCase
 
     public function test_configured_secretariat_can_create_incoming_letter_and_register_outgoing_draft(): void
     {
-        $secretariatUser = User::factory()->create(['status' => 'active']);
+        $secretariatUser = $this->userWithPermission('correspondence.view');
         $department = Department::query()->create(['name' => 'دبیرخانه تست', 'code' => 'TEST-SEC', 'is_active' => true, 'manager_id' => $secretariatUser->id]);
         app(SystemSettingsService::class)->set([OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT) => (string) $department->id]);
         $organization = ExternalOrganization::query()->create(['name' => 'سازمان مبدأ دبیرخانه '.Str::upper(Str::random(5)), 'status' => 'active']);
@@ -1047,7 +1047,7 @@ class CorrespondenceHttpTest extends TestCase
             'action_type' => 'manager_approve',
             'note' => 'نامه وارده بررسی و تأیید شد.',
         ])->assertRedirect();
-        $secretariatEmployee = User::factory()->create(['status' => 'active']);
+        $secretariatEmployee = $this->userWithPermission('correspondence.view');
         $secretariatEmployee->departments()->attach($department->id, ['is_primary' => true, 'joined_at' => now()]);
         $this->actingAs($secretariatEmployee)->post(route('correspondence.register', $incomingLetter))->assertForbidden();
         $this->actingAs($secretariatEmployee)->get(route('correspondence.show', $incomingLetter))
