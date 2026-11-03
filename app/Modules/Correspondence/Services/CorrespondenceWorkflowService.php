@@ -96,6 +96,31 @@ class CorrespondenceWorkflowService
             $canRecordResult = $letter->status === Correspondence::STATUS_REGISTERED
                 && in_array($letter->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true);
 
+            $latestTaskRequest = $letter->actions()
+                ->whereIn('action_type', [
+                    CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
+                    CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
+                ])
+                ->latest('id')
+                ->first();
+            $latestTaskDecision = $letter->actions()
+                ->where('action_type', CorrespondenceAction::MANAGER_CREATE_TASK)
+                ->latest('id')
+                ->first();
+            $latestTaskDecisionMetadata = $latestTaskDecision?->metadata ?? [];
+            $hasApprovedTaskInstruction = $latestTaskRequest !== null
+                && $latestTaskDecision !== null
+                && (int) $latestTaskDecision->actor_id === (int) $actor->id
+                && (int) $latestTaskDecision->id > (int) $latestTaskRequest->id
+                && $letter->task_id !== null
+                && (int) ($latestTaskDecisionMetadata['task_id'] ?? 0) === (int) $letter->task_id;
+            $awaitingApprovedTaskInstruction = $latestTaskRequest !== null
+                && $latestTaskDecision !== null
+                && (int) $latestTaskDecision->actor_id === (int) $actor->id
+                && (int) $latestTaskDecision->id > (int) $latestTaskRequest->id
+                && ! isset($latestTaskDecisionMetadata['task_id'])
+                && $letter->task_id === null;
+
             $projectDepartmentId = $roles->activeDepartmentId(OrganizationDepartmentRoleService::PROJECT_MANAGEMENT);
             $isProjectDepartment = $projectDepartmentId !== null && $currentDepartmentId === $projectDepartmentId;
 
@@ -472,6 +497,40 @@ class CorrespondenceWorkflowService
                 return;
             }
 
+            if ($type === CorrespondenceAction::MANAGER_COMPLETE_WORKFLOW) {
+                abort_unless(
+                    $isManager
+                    && $canRecordResult
+                    && $letter->workflow_state === 'in_progress'
+                    && $hasApprovedTaskInstruction,
+                    403,
+                    'خاتمه گردش فقط پس از ایجاد دستورکار تأییدشده توسط مدیر مسئول مجاز است.',
+                );
+                if ($note === '') {
+                    throw new InvalidArgumentException('برای خاتمه گردش نامه، ثبت توضیح الزامی است.');
+                }
+                $this->record(
+                    $letter,
+                    $actor,
+                    $type,
+                    $note,
+                    $currentDepartmentId,
+                    null,
+                    $actor->id,
+                    null,
+                    ['task_id' => (int) $letter->task_id],
+                );
+                $letter->forceFill([
+                    'workflow_state' => 'workflow_completed',
+                    'current_user_id' => null,
+                ])->save();
+                return;
+            }
+
+            if ($type === CorrespondenceAction::MANAGER_REFER && $awaitingApprovedTaskInstruction) {
+                throw new InvalidArgumentException('ابتدا دستورکار مورد تأیید را ایجاد کنید؛ پس از اتصال دستورکار امکان ارجاع نامه فراهم می‌شود.');
+            }
+
             if ($type === CorrespondenceAction::MANAGER_REFER
                 && $isProjectDepartment
                 && $targetType === 'department') {
@@ -573,6 +632,25 @@ class CorrespondenceWorkflowService
                 || $letter->workflow_state !== 'in_progress'
                 || ($letter->current_user_id !== null && (int) $letter->current_user_id !== (int) $actor->id)) {
                 abort(403, 'فقط مدیر مسئول نامه در مرحله بررسی اولیه می‌تواند دستورکار مرتبط ایجاد کند.');
+            }
+
+            $latestTaskRequest = $letter->actions()
+                ->whereIn('action_type', [
+                    CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
+                    CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
+                ])
+                ->latest('id')
+                ->first();
+            $latestTaskApproval = $letter->actions()
+                ->where('action_type', CorrespondenceAction::MANAGER_CREATE_TASK)
+                ->latest('id')
+                ->first();
+            if ($latestTaskRequest === null
+                || $latestTaskApproval === null
+                || (int) $latestTaskApproval->actor_id !== (int) $actor->id
+                || (int) $latestTaskApproval->id <= (int) $latestTaskRequest->id
+                || isset(($latestTaskApproval->metadata ?? [])['task_id'])) {
+                abort(403, 'ابتدا باید درخواست ایجاد دستورکار توسط مدیر تأیید شود.');
             }
 
             if ($letter->task_id !== null) {
