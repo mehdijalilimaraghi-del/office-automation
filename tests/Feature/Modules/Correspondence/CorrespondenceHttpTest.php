@@ -1659,6 +1659,18 @@ class CorrespondenceHttpTest extends TestCase
         ]);
         $organizationA = ExternalOrganization::query()->create(['name' => 'سازمان الف '.Str::upper(Str::random(5)), 'status' => 'active']);
         $organizationB = ExternalOrganization::query()->create(['name' => 'سازمان ب '.Str::upper(Str::random(5)), 'status' => 'active']);
+        $missingOrganizationPayload = [
+            'type' => Correspondence::TYPE_INCOMING,
+            'letter_number' => 'NO-ORG-1405',
+            'received_at' => '2026-10-27',
+            'recipient_department_id' => $this->recipientDepartmentId(),
+            'subject' => 'نامه بدون سازمان مبدأ',
+            'original_letters' => [UploadedFile::fake()->create('no-org.pdf', 10, 'application/pdf')],
+        ];
+        $this->actingAs($secretariat)->from(route('correspondence.create'))->post(route('correspondence.store'), $missingOrganizationPayload)
+            ->assertRedirect(route('correspondence.create'))
+            ->assertSessionHasErrors('external_organization_id');
+
         $payload = [
             'type' => Correspondence::TYPE_INCOMING,
             'letter_number' => 'DUP-1405-01',
