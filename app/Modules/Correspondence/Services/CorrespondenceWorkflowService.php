@@ -98,8 +98,11 @@ class CorrespondenceWorkflowService
 
             $latestTaskRequest = $letter->actions()
                 ->whereIn('action_type', [
+                    CorrespondenceAction::EMPLOYEE_REQUEST_NONE,
                     CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
+                    CorrespondenceAction::EMPLOYEE_REQUEST_LETTER,
                     CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
+                    CorrespondenceAction::EMPLOYEE_REQUEST_PROJECT,
                 ])
                 ->latest('id')
                 ->first();
@@ -109,12 +112,20 @@ class CorrespondenceWorkflowService
                 ->first();
             $latestTaskDecisionMetadata = $latestTaskDecision?->metadata ?? [];
             $hasApprovedTaskInstruction = $latestTaskRequest !== null
+                && in_array($latestTaskRequest->action_type, [
+                    CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
+                    CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
+                ], true)
                 && $latestTaskDecision !== null
                 && (int) $latestTaskDecision->actor_id === (int) $actor->id
                 && (int) $latestTaskDecision->id > (int) $latestTaskRequest->id
                 && $letter->task_id !== null
                 && (int) ($latestTaskDecisionMetadata['task_id'] ?? 0) === (int) $letter->task_id;
             $awaitingApprovedTaskInstruction = $latestTaskRequest !== null
+                && in_array($latestTaskRequest->action_type, [
+                    CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
+                    CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
+                ], true)
                 && $latestTaskDecision !== null
                 && (int) $latestTaskDecision->actor_id === (int) $actor->id
                 && (int) $latestTaskDecision->id > (int) $latestTaskRequest->id
@@ -636,8 +647,11 @@ class CorrespondenceWorkflowService
 
             $latestTaskRequest = $letter->actions()
                 ->whereIn('action_type', [
+                    CorrespondenceAction::EMPLOYEE_REQUEST_NONE,
                     CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
+                    CorrespondenceAction::EMPLOYEE_REQUEST_LETTER,
                     CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
+                    CorrespondenceAction::EMPLOYEE_REQUEST_PROJECT,
                 ])
                 ->latest('id')
                 ->first();
