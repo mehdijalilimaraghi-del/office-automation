@@ -203,14 +203,12 @@ watch(filteredOptions, (next) => {
 
 onMounted(() => {
     document.addEventListener('pointerdown', handleOutsidePointer);
-    document.addEventListener('keydown', handlePanelKeydown);
     window.addEventListener('resize', handleViewportChange);
     window.addEventListener('scroll', handleViewportChange, true);
 });
 
 onBeforeUnmount(() => {
     document.removeEventListener('pointerdown', handleOutsidePointer);
-    document.removeEventListener('keydown', handlePanelKeydown);
     window.removeEventListener('resize', handleViewportChange);
     window.removeEventListener('scroll', handleViewportChange, true);
 });
@@ -264,7 +262,6 @@ onBeforeUnmount(() => {
                     class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-1.5 shadow-[0_16px_48px_rgba(15,23,42,0.16)] ring-1 ring-slate-900/5"
                     :style="panelStyle"
                     role="listbox"
-                    @keydown="handlePanelKeydown"
                 >
                     <div v-if="searchable" class="border-b border-slate-100 p-1.5">
                         <input
@@ -274,7 +271,6 @@ onBeforeUnmount(() => {
                             autocomplete="off"
                             placeholder="جستجوی گزینه..."
                             class="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-right text-xs text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-violet-300 focus:bg-white focus:ring-2 focus:ring-violet-100"
-                            @keydown="handlePanelKeydown"
                         />
                     </div>
 
