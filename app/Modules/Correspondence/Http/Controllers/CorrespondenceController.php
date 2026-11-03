@@ -52,6 +52,10 @@ class CorrespondenceController extends Controller
         $actionFilter = $scope === 'mine' ? ($filters['action_filter'] ?? 'needs_action') : 'all';
 
         $user = $request->user();
+        $secretariatDepartmentId = app(OrganizationDepartmentRoleService::class)
+            ->activeDepartmentId(OrganizationDepartmentRoleService::SECRETARIAT);
+        $isSecretariatManager = $secretariatDepartmentId !== null
+            && (int) Department::query()->whereKey($secretariatDepartmentId)->value('manager_id') === (int) $user->id;
         $managedDepartmentIds = $user->managedDepartments()->pluck('departments.id')->unique()->values();
         $departmentIds = $user->departments()->pluck('departments.id')
             ->merge($managedDepartmentIds)
@@ -79,8 +83,8 @@ class CorrespondenceController extends Controller
             ->values();
 
         $query = $access->visibleToQuery(Correspondence::query(), $user)
-            ->when($scope === 'mine', function ($query) use ($user, $managedDepartmentIds): void {
-                $query->where(function ($mine) use ($user, $managedDepartmentIds): void {
+            ->when($scope === 'mine', function ($query) use ($user, $managedDepartmentIds, $secretariatDepartmentId, $isSecretariatManager): void {
+                $query->where(function ($mine) use ($user, $managedDepartmentIds, $secretariatDepartmentId, $isSecretariatManager): void {
                     $mine->where('created_by', $user->id)
                         ->orWhere('registered_by', $user->id)
                         // A department manager's "mine" scope includes letters registered
@@ -93,6 +97,13 @@ class CorrespondenceController extends Controller
                         ->orWhereIn('current_department_id', $managedDepartmentIds)
                         ->orWhereHas('authorizedUsers', fn ($users) => $users->where('users.id', $user->id))
                         ->orWhereHas('actions', fn ($actions) => $actions->where('to_user_id', $user->id));
+                    if ($isSecretariatManager && $secretariatDepartmentId !== null) {
+                        $mine->orWhere(function ($secretariatDrafts) use ($secretariatDepartmentId): void {
+                            $secretariatDrafts->where('status', Correspondence::STATUS_DRAFT)
+                                ->where('type', Correspondence::TYPE_INCOMING)
+                                ->where('created_department_id', $secretariatDepartmentId);
+                        });
+                    }
                 });
             })
             ->when($scope === 'department', function ($query) use ($departmentIds): void {
@@ -137,6 +148,16 @@ class CorrespondenceController extends Controller
                             });
                     })
                         // A department referral belongs to its manager until assigned to an employee.
+                        ->orWhere(function ($secretariatDrafts) use ($isSecretariatManager, $secretariatDepartmentId): void {
+                            if (! $isSecretariatManager || $secretariatDepartmentId === null) {
+                                $secretariatDrafts->whereRaw('1 = 0');
+                                return;
+                            }
+                            $secretariatDrafts->where('status', Correspondence::STATUS_DRAFT)
+                                ->where('type', Correspondence::TYPE_INCOMING)
+                                ->where('created_department_id', $secretariatDepartmentId)
+                                ->whereIn('workflow_state', ['awaiting_registration', 'awaiting_manager_approval', 'approved_for_registration']);
+                        })
                         ->orWhere(function ($department) use ($user): void {
                             $department->whereIn('workflow_state', [
                                 'in_progress',
