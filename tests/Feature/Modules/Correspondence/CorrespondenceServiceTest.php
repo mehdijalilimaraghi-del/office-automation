@@ -45,6 +45,7 @@ class CorrespondenceServiceTest extends TestCase
 
     public function test_create_draft_supports_outgoing_and_internal_correspondence_types(): void
     {
+        app(SystemSettingsService::class)->set(['correspondence.approval.outgoing' => 'direct']);
         $creator = User::factory()->create(['status' => 'active']);
         $service = app(CorrespondenceService::class);
 
