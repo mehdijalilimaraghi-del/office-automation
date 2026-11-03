@@ -19,6 +19,12 @@ class ProjectSectionController extends Controller
     {
         Gate::authorize('update', $project);
 
+        if ($project->is_system_default) {
+            throw ValidationException::withMessages([
+                'section' => 'بخش‌های پروژه عمومی از واحدهای سازمانی ایجاد می‌شوند و امکان ایجاد دستی آن‌ها وجود ندارد.',
+            ]);
+        }
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'description' => ['nullable', 'string', 'max:10000'],
@@ -50,6 +56,26 @@ class ProjectSectionController extends Controller
             'manager_can_create_tasks' => ['sometimes', 'boolean'],
         ]);
 
+        if ($project->is_system_default) {
+            if ((int) $data['department_id'] !== (int) $section->department_id) {
+                throw ValidationException::withMessages([
+                    'department_id' => 'واحد مسئول بخش پروژه عمومی از ساختار واحدهای سازمانی تعیین می‌شود و قابل تغییر دستی نیست.',
+                ]);
+            }
+
+            $department = Department::query()->with('manager')->findOrFail($section->department_id);
+            $section->update([
+                'name' => $department->name,
+                'description' => $data['description'] ?? null,
+                'manager_can_create_tasks' => $department->is_active
+                    && $department->manager !== null
+                    && $department->manager->isActive()
+                    && (bool) ($data['manager_can_create_tasks'] ?? false),
+            ]);
+
+            return back()->with('success', 'تنظیمات بخش پروژه عمومی ویرایش شد.');
+        }
+
         if ((int) $data['department_id'] !== (int) $section->department_id && $section->tasks()->exists()) {
             throw ValidationException::withMessages([
                 'department_id' => 'واحد مسئول بخشی که دستورکار دارد قابل تغییر نیست تا سوابق ارجاع حفظ شود.',
@@ -71,6 +97,12 @@ class ProjectSectionController extends Controller
     {
         Gate::authorize('update', $project);
         abort_unless((int) $section->project_id === (int) $project->id, 404);
+
+        if ($project->is_system_default) {
+            throw ValidationException::withMessages([
+                'section' => 'بخش‌های پروژه عمومی همراه با چرخه عمر واحد سازمانی مدیریت می‌شوند و حذف دستی آن‌ها مجاز نیست.',
+            ]);
+        }
 
         if ($section->tasks()->exists() || $section->documents()->exists()) {
             throw ValidationException::withMessages([
