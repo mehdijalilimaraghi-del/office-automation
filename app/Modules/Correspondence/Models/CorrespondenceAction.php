@@ -16,6 +16,7 @@ class CorrespondenceAction extends Model
     public const MANAGER_REFER = 'manager_refer';
     public const MANAGER_RECALL_REFERRAL = 'manager_recall_referral';
     public const MANAGER_CREATE_TASK = 'manager_create_task';
+    public const MANAGER_COMPLETE_WORKFLOW = 'manager_complete_workflow';
     public const REQUEST_TASK = 'request_task';
     public const REQUEST_PROJECT = 'request_project';
     public const REQUEST_LETTER = 'request_letter';
