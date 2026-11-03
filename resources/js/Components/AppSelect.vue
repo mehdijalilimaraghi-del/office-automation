@@ -93,6 +93,11 @@ const selectedOption = computed(() => {
         ?? (props.modelValue === undefined ? options.value[0] : undefined);
 });
 
+function isOptionSelected(option: SelectOption): boolean {
+    if (currentValue.value !== undefined) return sameValue(option.value, currentValue.value);
+    return selectedOption.value?.key === option.key;
+}
+
 const isDisabled = computed(() => Boolean(attrs.disabled));
 const isRequired = computed(() => Boolean(attrs.required));
 const triggerClasses = computed(() => [
@@ -292,7 +297,7 @@ onBeforeUnmount(() => {
                             :key="option.key"
                             type="button"
                             role="option"
-                            :aria-selected="sameValue(option.value, currentValue)"
+                            :aria-selected="isOptionSelected(option)"
                             :disabled="option.disabled"
                             class="flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-right text-sm transition"
                             :class="[
@@ -301,14 +306,14 @@ onBeforeUnmount(() => {
                                     : index === activeIndex
                                       ? 'bg-violet-50 text-violet-800'
                                       : 'text-slate-700 hover:bg-slate-50',
-                                sameValue(option.value, currentValue) ? 'font-semibold text-violet-700' : '',
+                                isOptionSelected(option) ? 'font-semibold text-violet-700' : '',
                             ]"
                             @mouseenter="activeIndex = index"
                             @click="chooseOption(option)"
                         >
                             <span class="min-w-0 flex-1 break-words">{{ option.label }}</span>
                             <svg
-                                v-if="sameValue(option.value, currentValue)"
+                                v-if="isOptionSelected(option)"
                                 class="h-4 w-4 shrink-0 text-violet-600"
                                 viewBox="0 0 24 24"
                                 fill="none"
