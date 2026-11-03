@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppSelect from '@/Components/AppSelect.vue';
 import { computed, ref, watch } from 'vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
@@ -870,7 +871,7 @@ watch(
                                             v-if="abilities.departments_manage_positions && selectedDepartment.members?.length"
                                             class="mt-4 flex flex-col gap-2 sm:flex-row"
                                         >
-                                            <select
+                                            <AppSelect
                                                 v-model="assignmentForm.user_id"
                                                 required
                                                 class="min-w-0 flex-1 rounded-lg border-slate-200 bg-white text-xs text-slate-700 focus:border-teal-500 focus:ring-teal-500"
@@ -883,7 +884,7 @@ watch(
                                                 >
                                                     {{ member.name }}
                                                 </option>
-                                            </select>
+                                            </AppSelect>
 
                                             <label class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-600">
                                                 <input
@@ -1002,7 +1003,7 @@ watch(
 
                         <div>
                             <label class="mb-2 block text-sm font-semibold text-slate-700">مدیر واحد</label>
-                            <select
+                            <AppSelect
                                 v-model="form.manager_id"
                                 class="block min-h-11 w-full rounded-xl border-slate-300 bg-white text-sm text-slate-700 focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
                             >
@@ -1010,7 +1011,7 @@ watch(
                                 <option v-for="user in props.users" :key="user.id" :value="user.id">
                                     {{ user.name }}
                                 </option>
-                            </select>
+                            </AppSelect>
                             <InputError class="mt-1.5" :message="form.errors.manager_id" />
                         </div>
                     </div>
