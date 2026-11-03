@@ -28,6 +28,7 @@ const triggerRef = ref<HTMLButtonElement | null>(null);
 const panelRef = ref<HTMLDivElement | null>(null);
 const searchRef = ref<HTMLInputElement | null>(null);
 const isOpen = ref(false);
+const internalValue = ref<unknown>(undefined);
 const searchQuery = ref('');
 const activeIndex = ref(0);
 const panelStyle = ref<Record<string, string>>({});
@@ -80,7 +81,7 @@ function sameValue(left: unknown, right: unknown): boolean {
     return String(left) === String(right);
 }
 
-const currentValue = computed(() => props.modelValue !== undefined ? props.modelValue : props.value);
+const currentValue = computed(() => props.modelValue !== undefined ? props.modelValue : props.value !== undefined ? props.value : internalValue.value);
 
 const selectedOption = computed(() => {
     const selected = options.value.find((option) => sameValue(option.value, currentValue.value));
@@ -144,6 +145,7 @@ function closeDropdown(restoreFocus = false): void {
 
 function chooseOption(option: SelectOption): void {
     if (option.disabled) return;
+    if (props.modelValue === undefined && props.value === undefined) internalValue.value = option.value;
     emit('update:modelValue', option.value);
     emit('change', { target: { value: option.value == null ? '' : String(option.value) } });
     closeDropdown(true);
