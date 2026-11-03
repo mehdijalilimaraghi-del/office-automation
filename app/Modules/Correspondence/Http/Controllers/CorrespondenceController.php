@@ -1033,6 +1033,8 @@ class CorrespondenceController extends Controller
             'copy_department_ids' => ['nullable', 'array', 'max:20'], 'copy_department_ids.*' => ['integer', 'distinct', Rule::exists('departments', 'id')->where('is_active', true)],
             'original_letters' => ['nullable', 'array', 'max:10'], 'original_letters.*' => ['file', 'max:20480', 'mimes:pdf,jpg,jpeg,png'],
             'attachments' => ['nullable', 'array', 'max:10'], 'attachments.*' => ['file', 'max:20480', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,txt,csv,zip'],
+        ], [
+            'letter_number.unique' => 'شماره نامه با این سازمان مبدأ قبلاً ثبت شده است.',
         ]);
         $mode = $correspondence->type === Correspondence::TYPE_INCOMING
             ? 'file'
