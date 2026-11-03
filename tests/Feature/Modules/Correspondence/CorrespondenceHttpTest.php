@@ -1251,7 +1251,7 @@ class CorrespondenceHttpTest extends TestCase
         $this->assertDatabaseHas('correspondences', [
             'id' => $letter->id,
             'workflow_state' => 'approved_for_registration',
-            'current_user_id' => $creator->id,
+            'current_user_id' => $manager->id,
         ]);
         $this->assertDatabaseHas('correspondence_actions', [
             'correspondence_id' => $letter->id,
