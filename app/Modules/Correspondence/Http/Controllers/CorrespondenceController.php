@@ -579,6 +579,7 @@ class CorrespondenceController extends Controller
                 || (int) $correspondence->task?->assignee_id === (int) $request->user()->id
                 || (int) $correspondence->task?->created_by === (int) $request->user()->id,
             'correspondenceFontFamily' => $settings->get(['correspondence.composition.font_family' => 'Vazirmatn'])['correspondence.composition.font_family'],
+            'approvalSettings' => app(\App\Modules\Correspondence\Services\CorrespondenceCompositionSettings::class)->get()['approval'],
         ]);
     }
 
@@ -746,6 +747,7 @@ class CorrespondenceController extends Controller
         DocumentService $documents,
         CorrespondenceAccessService $access,
         CorrespondenceWorkflowService $workflow,
+        CorrespondenceNumberingService $numbering,
     ): RedirectResponse {
         $requestedType = $request->input('type');
         if (is_string($requestedType) && in_array($requestedType, Correspondence::allowedTypes(), true)) {
@@ -964,6 +966,19 @@ class CorrespondenceController extends Controller
             return back()->withErrors(['copy_department_ids' => $exception->getMessage()])->withInput();
         }
 
+        $registeredImmediately = false;
+        if ($sourceCorrespondenceId === null && $requestedLetterSource === null
+            && ! app(\App\Modules\Correspondence\Services\CorrespondenceCompositionSettings::class)->requiresApproval($correspondence->type)) {
+            try {
+                $numbering->register($correspondence, $request->user());
+                $workflow->onRegistered($correspondence, $request->user());
+                $registeredImmediately = true;
+            } catch (InvalidArgumentException $exception) {
+                return redirect()->route('correspondence.index')
+                    ->withErrors(['registration' => $exception->getMessage()]);
+            }
+        }
+
         if (is_array($scannerUpload)) {
             Storage::disk('local')->delete($scannerUpload['path']);
             \Illuminate\Support\Facades\Cache::forget($scannerUpload['key']);
@@ -975,7 +990,9 @@ class CorrespondenceController extends Controller
         }
 
         return redirect()->route('correspondence.index')
-            ->with('success', 'پیش‌نویس مکاتبه و پیوست‌های آن با موفقیت ذخیره شد.');
+            ->with('success', $registeredImmediately
+                ? 'مکاتبه با موفقیت ثبت نهایی شد.'
+                : 'پیش‌نویس مکاتبه و پیوست‌های آن با موفقیت ذخیره شد.');
     }
 
 
