@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppSelect from '@/Components/AppSelect.vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 
 type CustomValue = string | number | boolean | null;
@@ -98,7 +99,7 @@ const onSelectChange = (key: string, event: Event): void => {
                     @input="onTextInput(field.key, $event)"
                 />
 
-                <select
+                <AppSelect
                     v-else-if="field.type === 'select'"
                     :value="valueOf(field.key)"
                     class="w-full rounded-xl border-slate-200 bg-white text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500"
@@ -112,7 +113,7 @@ const onSelectChange = (key: string, event: Event): void => {
                     >
                         {{ option }}
                     </option>
-                </select>
+                </AppSelect>
 
                 <div
                     v-else-if="field.type === 'boolean'"
