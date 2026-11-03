@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppSelect from '@/Components/AppSelect.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Button } from '@/Components/ui/button';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
@@ -542,12 +543,12 @@ const deleteTask = (task: Task): void => {
                     <div class="grid gap-3 sm:grid-cols-2">
                         <div class="space-y-1">
                             <label for="section-task-priority" class="text-sm font-medium">اولویت</label>
-                            <select id="section-task-priority" v-model="sectionTaskForm.priority" class="w-full rounded-md border bg-background px-3 py-2 text-sm">
+                            <AppSelect id="section-task-priority" v-model="sectionTaskForm.priority" class="w-full rounded-md border bg-background px-3 py-2 text-sm">
                                 <option value="low">کم</option>
                                 <option value="normal">عادی</option>
                                 <option value="high">زیاد</option>
                                 <option value="urgent">فوری</option>
-                            </select>
+                            </AppSelect>
                         </div>
                         <div class="space-y-1">
                             <label class="text-sm font-medium">مدیر اولیه</label>
@@ -574,10 +575,10 @@ const deleteTask = (task: Task): void => {
                     </label>
                     <div v-if="sectionTaskForm.delegate_to_employee" class="space-y-1">
                         <label for="section-task-employee" class="text-sm font-medium">کارمند مقصد ارجاع</label>
-                        <select id="section-task-employee" v-model="sectionTaskForm.delegate_assignee_id" required class="w-full rounded-md border bg-background px-3 py-2 text-sm">
+                        <AppSelect id="section-task-employee" v-model="sectionTaskForm.delegate_assignee_id" required class="w-full rounded-md border bg-background px-3 py-2 text-sm">
                             <option :value="null">انتخاب کارمند</option>
                             <option v-for="employee in sectionEmployees" :key="employee.id" :value="employee.id">{{ employee.name }}</option>
-                        </select>
+                        </AppSelect>
                         <p v-if="sectionTaskForm.errors.delegate_assignee_id" class="text-xs text-destructive">{{ sectionTaskForm.errors.delegate_assignee_id }}</p>
                     </div>
                     <div class="space-y-1">
