@@ -840,10 +840,12 @@ class CorrespondenceHttpTest extends TestCase
             OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT) => (string) $department->id,
         ]);
 
+        $organization = ExternalOrganization::query()->create(['name' => 'سازمان مبدأ توضیحات '.Str::upper(Str::random(5)), 'status' => 'active']);
         $description = 'خلاصه نامه درباره درخواست بررسی قرارداد';
         $this->actingAs($secretariat)->post(route('correspondence.store'), [
             'type' => Correspondence::TYPE_INCOMING,
             'letter_number' => 'IN-DESC-001',
+            'external_organization_id' => $organization->id,
             'received_at' => '2026-10-28',
             'subject' => 'نامه وارده با توضیح',
             'recipient_department_id' => $this->recipientDepartmentId(),
