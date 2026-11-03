@@ -1460,3 +1460,10 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - The validated creation context is sent as an Inertia prop; the Vue page opens the create modal and preselects correspondence, shared project, section, and department from that prop instead of relying on client-side URL parsing.
 - If the manager's normal task-form options omit the authorized shared project/section, the server adds only the validated target project/section to the form options. Unauthorized or stale query parameters do not open the modal. Existing task-store authorization and correspondence-linking checks remain in place.
 - Extended the correspondence feature test to request the Tasks page with the three launch query parameters and assert the validated launch context and target section are present. Validation pending: run `php artisan test --filter=test_manager_creates_general_task_from_correspondence_and_links_it` and `npm run build`; `master` unchanged.
+
+
+## 2026-11-03 — اصلاح مجوز ایجاد دستورکار از مسیر نامه
+
+- علت ریشه‌ای باز نشدن مودال مشخص شد: صفحه Tasks مجوز `tasks.create` را فقط بدون شناسه پروژه بررسی می‌کرد. در `TaskPolicy` این بررسی عمومی برای برخی مدیران واحد با scope سطح واحد false است، در حالی که همان مدیر برای بخش مجاز پروژه عمومی مجوز ایجاد دارد.
+- در `TaskController::index` اکنون علاوه بر مجوز عمومی، مجوز ایجاد با شناسه پروژه مقصد نیز ارزیابی می‌شود. بنابراین مدیر مجاز می‌تواند فرم را دریافت کند و prop مربوط به نامه به Vue برسد؛ اعتبارسنجی نامه، تأیید مدیر و بخش مقصد همچنان برقرار است.
+- تست و build در محیط کاربر پیش‌تر پاس شده‌اند؛ این اصلاح جدید هنوز باید پس از pull با همان تست Feature و build مجدداً اعتبارسنجی شود. شاخه development؛ master بدون تغییر.
