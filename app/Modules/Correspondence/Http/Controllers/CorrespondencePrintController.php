@@ -52,6 +52,10 @@ class CorrespondencePrintController extends Controller
             ];
         })();
 
+        $templateRaw = $settings->get(['correspondence.print.template' => null])['correspondence.print.template'];
+        $templateElements = is_string($templateRaw) ? json_decode($templateRaw, true) : null;
+        $templateElements = is_array($templateElements) ? $templateElements : [];
+
         $stampPath = $snapshot['stamp_path'] ?? null;
         $signaturePath = $snapshot['signature_path'] ?? null;
 
@@ -86,6 +90,7 @@ class CorrespondencePrintController extends Controller
                 'external_department' => $correspondence->externalDepartment?->name,
             ],
             'organization' => $organization,
+            'templateElements' => $templateElements,
             'creatorName' => $snapshot['creator_name'] ?? $correspondence->creator?->name,
             'creatorUnitTitle' => $snapshot['creator_unit_title'] ?? ($correspondence->createdDepartment?->name ? 'مدیریت '.$correspondence->createdDepartment->name : null),
             'stampDataUri' => $this->imageDataUri($stampPath),
