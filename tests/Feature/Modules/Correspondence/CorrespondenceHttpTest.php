@@ -2089,6 +2089,76 @@ class CorrespondenceHttpTest extends TestCase
         $this->assertSame('in_progress', $letter->workflow_state);
     }
 
+    public function test_current_department_manager_can_accept_correspondence_responsibility(): void
+    {
+        $manager = $this->userWithPermission('correspondence.view');
+        $department = Department::query()->create([
+            'name' => 'واحد پذیرش مسئولیت مکاتبه',
+            'code' => 'CAR-'.Str::upper(Str::random(7)),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'classification' => Correspondence::CLASSIFICATION_ORDINARY,
+            'subject' => 'نامه برای پذیرش مسئولیت مدیر',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'registration_number' => '1405/RESP-'.Str::upper(Str::random(5)),
+            'created_by' => $manager->id,
+            'current_department_id' => $department->id,
+            'current_user_id' => null,
+            'workflow_state' => 'in_progress',
+        ]);
+
+        $this->actingAs($manager)
+            ->post(route('correspondence.actions.store', $letter), [
+                'action_type' => CorrespondenceAction::MANAGER_ACCEPT_RESPONSIBILITY,
+                'note' => 'شخصاً مسئول پیگیری هستم',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success', 'مسئولیت مکاتبه به شما واگذار شد.');
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $letter->id,
+            'current_user_id' => $manager->id,
+            'workflow_state' => 'in_progress',
+        ]);
+        $this->assertDatabaseHas('correspondence_actions', [
+            'correspondence_id' => $letter->id,
+            'actor_id' => $manager->id,
+            'action_type' => CorrespondenceAction::MANAGER_ACCEPT_RESPONSIBILITY,
+            'to_user_id' => $manager->id,
+        ]);
+    }
+
+    public function test_non_manager_cannot_accept_correspondence_responsibility(): void
+    {
+        $manager = User::factory()->create(['status' => 'active']);
+        $other = $this->userWithPermission('correspondence.view');
+        $department = Department::query()->create([
+            'name' => 'واحد محدودیت پذیرش',
+            'code' => 'NAR-'.Str::upper(Str::random(7)),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_INCOMING,
+            'classification' => Correspondence::CLASSIFICATION_ORDINARY,
+            'subject' => 'نامه خارج از واحد مدیر',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'registration_number' => '1405/NAR-'.Str::upper(Str::random(5)),
+            'created_by' => $manager->id,
+            'current_department_id' => $department->id,
+            'workflow_state' => 'in_progress',
+        ]);
+
+        $this->actingAs($other)
+            ->post(route('correspondence.actions.store', $letter), [
+                'action_type' => CorrespondenceAction::MANAGER_ACCEPT_RESPONSIBILITY,
+            ])
+            ->assertForbidden();
+    }
+
     private function userWithPermission(string $permissionCode): User
     {
         $permission = Permission::query()->firstOrCreate(
