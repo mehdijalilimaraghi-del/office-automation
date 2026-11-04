@@ -17,6 +17,8 @@ interface OrganizationSettings {
     email: string | null;
     website: string | null;
     address: string | null;
+    stamp_url?: string | null;
+    stamp_active?: boolean;
     management_department_id: string | null;
     project_management_department_id: string | null;
     secretariat_department_id: string | null;
@@ -62,6 +64,9 @@ const form = useForm({
     email: props.settings.email ?? '',
     website: props.settings.website ?? '',
     address: props.settings.address ?? '',
+    stamp: null as File | null,
+    stamp_active: props.settings.stamp_active ?? false,
+    remove_stamp: false,
     management_department_id: props.settings.management_department_id ?? '',
     project_management_department_id: props.settings.project_management_department_id ?? '',
     secretariat_department_id: props.settings.secretariat_department_id ?? '',
@@ -90,6 +95,7 @@ const form = useForm({
 function submit(): void {
     form.put(route('settings.organization.update'), {
         preserveScroll: true,
+        forceFormData: true,
     });
 }
 </script>
@@ -178,6 +184,20 @@ function submit(): void {
                             <label for="address" class="mb-2 block text-sm font-semibold text-slate-700">نشانی</label>
                             <textarea id="address" v-model="form.address" rows="4" class="block w-full rounded-xl border-slate-300 text-sm text-slate-900 shadow-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-200"></textarea>
                             <InputError class="mt-1.5" :message="form.errors.address" />
+                        </div>
+
+                        <div class="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4 md:col-span-2">
+                            <div>
+                                <label for="organization_stamp" class="mb-2 block text-sm font-semibold text-slate-700">مهر سازمان</label>
+                                <input id="organization_stamp" type="file" accept="image/png,image/jpeg,image/webp" class="block w-full text-sm text-slate-600 file:ml-3 file:rounded-lg file:border-0 file:bg-white file:px-4 file:py-2 file:font-semibold file:text-slate-700" @change="(event) => { form.stamp = (event.target as HTMLInputElement).files?.[0] ?? null; form.remove_stamp = false; }" />
+                                <p class="mt-1 text-xs text-slate-500">تصویر جداگانه مهر سازمان؛ PNG، JPG یا WEBP تا ۲ مگابایت.</p>
+                                <InputError class="mt-1.5" :message="form.errors.stamp" />
+                            </div>
+                            <div v-if="props.settings.stamp_url && !form.remove_stamp" class="flex items-center gap-3">
+                                <img :src="props.settings.stamp_url" alt="مهر فعلی سازمان" class="h-20 w-20 rounded border border-slate-200 bg-white object-contain p-2" />
+                                <label class="inline-flex items-center gap-2 text-sm text-slate-700"><input v-model="form.remove_stamp" type="checkbox" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500" /> حذف مهر فعلی</label>
+                            </div>
+                            <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700"><input v-model="form.stamp_active" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> استفاده از مهر در خروجی نامه</label>
                         </div>
 
                         <section class="space-y-5 rounded-xl border border-slate-200 bg-slate-50 p-5">
