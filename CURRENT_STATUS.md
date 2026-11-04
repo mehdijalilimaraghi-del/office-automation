@@ -1959,3 +1959,8 @@ Implementation has started for the agreed cross-department project model:
 - No PDF dependency added. No master, release branch or server changes.
 - Validation is not yet run in the owner's local environment. Migration, PHP tests, frontend type-check/build, multi-page print pagination and manual preview still require verification. Full coordinate configurability, logo/background assets and configurable page-number placement remain follow-up items within Phase 3.
 - This entry supersedes the earlier 2026-11-04 Phase 3 audit note that said implementation had not started.
+
+
+## 2026-11-04 — Settings interface update
+
+Organization Settings now uses three tabs. A separate organization letterhead image is uploaded in settings, served through a protected preview route, snapshotted per registered letter, and selectable as a positioned image element in the A4 template. Template JSON regression comparison now normalizes object key order. Letterhead upload/preview and snapshot test coverage has been added. Local validation is pending.
