@@ -38,6 +38,8 @@ class CorrespondenceTemplateController extends Controller
                 ['key' => '{{date}}', 'label' => 'تاریخ'],
                 ['key' => '{{recipient_name}}', 'label' => 'نام مخاطب'],
                 ['key' => '{{recipient_address}}', 'label' => 'نشانی مخاطب'],
+                ['key' => '{{creator_name}}', 'label' => 'نام تنظیم‌کننده'],
+                ['key' => '{{creator_unit_title}}', 'label' => 'عنوان واحد صادرکننده'],
             ],
         ]);
     }
