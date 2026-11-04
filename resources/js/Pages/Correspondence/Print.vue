@@ -82,8 +82,11 @@ function printLetter():void{window.print();}
  main{min-height:0!important;padding:0!important;background:#fff!important;}
  .no-print{display:none!important;}
  .paper{width:auto;min-height:0;margin:0;padding:0 18mm;box-shadow:none;overflow:visible;}
- .letterhead-background{position:fixed;}\n .repeat-item{position:fixed;}\n .page-number{display:block;position:fixed;z-index:4;bottom:-13mm;left:0;right:0;text-align:center;font:9pt Tahoma,sans-serif;color:#475569;}
- .page-counter:before{content:counter(page);}\n .pages-counter:before{content:counter(pages);}
+ .letterhead-background{position:fixed;}
+ .repeat-item{position:fixed;}
+ .page-number{display:block;position:fixed;z-index:4;bottom:-13mm;left:0;right:0;text-align:center;font:9pt Tahoma,sans-serif;color:#475569;}
+ .page-counter:before{content:counter(page);}
+ .pages-counter:before{content:counter(pages);}
 }
 @media screen and (max-width:800px){.paper{width:100%;min-height:0;padding:24px;}}
 </style>
