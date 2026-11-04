@@ -10,7 +10,7 @@ import axios from 'axios';
 
 interface Department { id: number; name: string; parent_id: number | null; icon?: string | null; }
 interface ExternalOrganization { id: number; name: string; }
-interface ExternalDepartment { id: number; external_organization_id: number; parent_id?: number | null; name: string; }
+interface ExternalDepartment { id: number; external_organization_id: number; parent_id?: number | null; manager_contact_id?: number | null; name: string; }
 interface ExternalContact { id: number; external_organization_id: number; external_department_id: number | null; name: string; position: string | null; organizational_title_prefix: string | null; personal_salutation: string | null; professional_title: string | null; is_default: boolean; }
 interface ReplyOption { id: number; letter_number: string | null; registration_number: string | null; external_registration_number: string | null; subject: string; type: string; letter_date: string | null; created_department: string | null; recipient_department: string | null; external_organization: string | null; external_organization_code: string | null; external_department: string | null; external_department_code: string | null; created_department_code: string | null; recipient_department_code: string | null; }
 interface CreatedDepartment { id: number; name: string; parent_id?: number | null; icon?: string | null; }
@@ -188,12 +188,18 @@ function selectDefaultExternalContact(): void {
         return;
     }
     const departmentId = form.external_department_id || null;
+    const selectedDepartment = departmentId
+        ? props.externalDepartments.find((department) => department.id === Number(departmentId))
+        : null;
+    const unitManager = selectedDepartment?.manager_contact_id
+        ? props.externalContacts.find((contact) => contact.id === selectedDepartment.manager_contact_id)
+        : null;
     const defaultContact = props.externalContacts.find((contact) =>
         contact.is_default
         && contact.external_organization_id === Number(form.external_organization_id)
         && contact.external_department_id === (departmentId ? Number(departmentId) : null),
     );
-    form.external_contact_id = defaultContact?.id ?? '';
+    form.external_contact_id = unitManager?.id ?? defaultContact?.id ?? '';
 }
 
 watch(() => [form.external_organization_id, form.external_department_id], () => {
