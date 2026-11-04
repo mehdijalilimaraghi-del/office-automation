@@ -55,6 +55,8 @@ class OrganizationSettingsTest extends TestCase
             'print_show_creator_identity' => false,
             'print_show_stamp' => true,
             'print_show_department_signature' => false,
+            'letterhead_show_address' => false,
+            'letterhead_show_phone' => true,
             'numbering_format' => 'custom',
             'numbering_order_first' => 'sequence',
             'numbering_order_second' => 'department',
@@ -95,6 +97,7 @@ class OrganizationSettingsTest extends TestCase
         Storage::disk('local')->assertExists($stampPath);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.print.show_creator_identity', 'value' => '0']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.print.show_department_signature', 'value' => '0']);
+        $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.print.letterhead.show_address', 'value' => '0']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.numbering.format', 'value' => 'custom']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.numbering.custom_order', 'value' => 'sequence,department,year']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.registration_numbering.format', 'value' => 'custom']);
