@@ -774,6 +774,7 @@ class CorrespondenceHttpTest extends TestCase
 
     public function test_user_with_create_permission_can_create_editor_draft_and_unsafe_markup_is_removed(): void
     {
+        app(SystemSettingsService::class)->set(['correspondence.approval.internal' => 'approval']);
         $user = $this->userWithPermission('correspondence.create');
         $recipientDepartmentId = $this->recipientDepartmentId();
 
@@ -947,6 +948,7 @@ class CorrespondenceHttpTest extends TestCase
 
     public function test_user_can_create_file_only_draft_with_attachment(): void
     {
+        app(SystemSettingsService::class)->set(['correspondence.approval.internal' => 'approval']);
         $user = $this->userWithPermission('correspondence.create');
         $recipientDepartmentId = $this->recipientDepartmentId();
         $documents = Mockery::mock(DocumentService::class);
