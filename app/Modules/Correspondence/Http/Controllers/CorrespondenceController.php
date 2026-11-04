@@ -1291,6 +1291,7 @@ class CorrespondenceController extends Controller
                 CorrespondenceAction::MANAGER_APPROVE,
                 CorrespondenceAction::CONFIRM_RESULT,
                 CorrespondenceAction::MANAGER_REFER,
+                CorrespondenceAction::MANAGER_ACCEPT_RESPONSIBILITY,
                 CorrespondenceAction::MANAGER_RECALL_REFERRAL,
                 CorrespondenceAction::SECRETARIAT_RETURN,
                 CorrespondenceAction::RESUBMIT_TO_SECRETARIAT,
@@ -1324,7 +1325,9 @@ class CorrespondenceController extends Controller
             return back()->withErrors(['workflow_action' => $exception->getMessage()])->withInput();
         }
 
-        return back()->with('success', 'اقدام گردش مکاتبه ثبت شد.');
+        return back()->with('success', $data['action_type'] === CorrespondenceAction::MANAGER_ACCEPT_RESPONSIBILITY
+            ? 'مسئولیت مکاتبه به شما واگذار شد.'
+            : 'اقدام گردش مکاتبه ثبت شد.');
     }
 
     public function register(
