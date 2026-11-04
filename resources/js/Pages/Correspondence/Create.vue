@@ -11,7 +11,7 @@ import axios from 'axios';
 interface Department { id: number; name: string; parent_id: number | null; icon?: string | null; }
 interface ExternalOrganization { id: number; name: string; }
 interface ExternalDepartment { id: number; external_organization_id: number; parent_id?: number | null; manager_contact_id?: number | null; name: string; }
-interface ExternalContact { id: number; external_organization_id: number; external_department_id: number | null; name: string; position: string | null; organizational_title_prefix: string | null; personal_salutation: string | null; professional_title: string | null; is_default: boolean; }
+interface ExternalContact { id: number; external_organization_id: number; external_department_id: number | null; name: string; }
 interface ReplyOption { id: number; letter_number: string | null; registration_number: string | null; external_registration_number: string | null; subject: string; type: string; letter_date: string | null; created_department: string | null; recipient_department: string | null; external_organization: string | null; external_organization_code: string | null; external_department: string | null; external_department_code: string | null; created_department_code: string | null; recipient_department_code: string | null; }
 interface CreatedDepartment { id: number; name: string; parent_id?: number | null; icon?: string | null; }
 type CompositionMode = 'editor' | 'file' | 'both';
@@ -194,12 +194,7 @@ function selectDefaultExternalContact(): void {
     const unitManager = selectedDepartment?.manager_contact_id
         ? props.externalContacts.find((contact) => contact.id === selectedDepartment.manager_contact_id)
         : null;
-    const defaultContact = props.externalContacts.find((contact) =>
-        contact.is_default
-        && contact.external_organization_id === Number(form.external_organization_id)
-        && contact.external_department_id === (departmentId ? Number(departmentId) : null),
-    );
-    form.external_contact_id = unitManager?.id ?? defaultContact?.id ?? '';
+    form.external_contact_id = unitManager?.id ?? '';
 }
 
 watch(() => [form.external_organization_id, form.external_department_id], () => {
@@ -592,7 +587,7 @@ async function scanOriginalLetter(): Promise<void> {
                                     <AppSelect id="external_contact_id" v-model="form.external_contact_id" :disabled="!form.external_organization_id" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                                         <option value="">بدون انتخاب شخص؛ خطاب به سازمان یا واحد</option>
                                         <option v-for="contact in externalContacts.filter(item => item.external_organization_id === Number(form.external_organization_id) && item.external_department_id === (form.external_department_id ? Number(form.external_department_id) : null))" :key="contact.id" :value="contact.id">
-                                            {{ [contact.organizational_title_prefix, contact.position, contact.personal_salutation, contact.professional_title, contact.name].filter(Boolean).join(' ') }}{{ contact.is_default ? ' (پیش‌فرض)' : '' }}
+                                            {{ contact.name }}{{ contact.id === externalDepartments.find(item => item.id === Number(form.external_department_id))?.manager_contact_id ? ' (مدیر واحد)' : '' }}
                                         </option>
                                     </AppSelect>
                                     <InputError class="mt-1" :message="form.errors.external_contact_id" />
