@@ -1,3 +1,12 @@
+## 2026-11-04 — Role-based Persian letter template and automatic body flow
+
+- Reworked the A4 template editor around semantic roles: letter number/date, addressee/subject, page number, issuer/signature, and repeating text. Variable choices are filtered by the selected role.
+- The organization letterhead is no longer a configurable element; it is loaded automatically as a page background in the editor and print preview.
+- The letter body remains automatic, is not a template element, and is rendered from the stored HTML in normal multi-page document flow. RTL direction/alignment and whitespace/rich HTML formatting are preserved in the print body.
+- Metadata and addressee/subject render once before the body; issuer/signature elements follow the body; repeating elements use fixed page coordinates; page numbering is controlled by the page-number role. Flow elements expose width and spacing, not arbitrary page Y coordinates.
+- Existing stored template elements are normalized for compatibility; legacy letterhead image elements are removed from the element list because the image is now automatic. No migration or PDF dependency was added.
+- Validation and physical multi-page print acceptance remain pending owner execution. Development only; master/server unchanged.
+
 ## 2026-11-04 — Template token and asset binding completion
 
 - Template variables include recipient organization/unit/position/title, recipient name, subject, letter type, creator name and creator unit title, in addition to organization contact details and letter numbering/date. Variables without a reliable source are not offered as selectable tokens.
