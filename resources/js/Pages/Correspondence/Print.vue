@@ -12,6 +12,8 @@ interface AddressingSnapshot {
     department_name?: string | null;
 }
 
+interface TemplateElement { id: string; label: string; content: string; x: number; y: number; width: number; height: number; font_size: number; bold: boolean; align: 'right'|'center'|'left'; visible: boolean; }
+
 interface PrintLetter {
     id: number;
     type: 'incoming' | 'outgoing' | 'internal';
@@ -29,6 +31,7 @@ interface PrintLetter {
 
 const props = defineProps<{
     letter: PrintLetter;
+    templateElements: TemplateElement[];
     organization: {
         name?: string | null;
         short_name?: string | null;
@@ -69,6 +72,15 @@ const letterDate = computed(() => {
     const value = props.letter.sent_at ?? props.letter.registered_at;
     return value ? new Intl.DateTimeFormat('fa-IR', { dateStyle: 'long' }).format(new Date(value)) : '—';
 });
+function resolveTemplate(content: string): string {
+    const values: Record<string, string> = {
+        organization_name: props.organization.name ?? '', short_name: props.organization.short_name ?? '',
+        address: props.organization.address ?? '', tel: props.organization.phone ?? '', email: props.organization.email ?? '', website: props.organization.website ?? '',
+        letter_number: props.letter.letter_number ?? '', registration_number: props.letter.registration_number ?? '', date: letterDate.value,
+        recipient_name: props.letter.recipient_name ?? props.letter.recipient_addressing?.name ?? '', recipient_address: '',
+    };
+    return content.replace(/\{\{([a-z_]+)\}\}/g, (token, key: string) => Object.prototype.hasOwnProperty.call(values, key) ? values[key] : token);
+}
 function printLetter(): void {
     window.print();
 }
@@ -93,7 +105,10 @@ function printLetter(): void {
         </div>
 
         <article class="paper mx-auto bg-white px-[18mm] py-[14mm] shadow-xl" :style="{ fontFamily: printOptions.font_family || 'Vazirmatn' }">
-            <header class="letterhead-slot" :class="{ 'letterhead-hidden': !withLetterhead }">
+            <div v-if="templateElements.length && withLetterhead" class="template-overlay" aria-hidden="true">
+                <div v-for="element in templateElements.filter(item => item.visible)" :key="element.id" class="template-box" :style="{ left:element.x+'%', top:element.y+'%', width:element.width+'%', height:element.height+'%', fontSize:element.font_size+'pt', fontWeight:element.bold?'700':'400', textAlign:element.align }">{{ resolveTemplate(element.content) }}</div>
+            </div>
+            <header v-if="!templateElements.length" class="letterhead-slot" :class="{ 'letterhead-hidden': !withLetterhead }">
                 <div class="flex items-start justify-between gap-6 border-b-2 border-slate-700 pb-4">
                     <div class="min-w-0">
                         <h1 v-if="printOptions.letterhead_show_name && organization.name" class="text-xl font-bold">{{ organization.name }}</h1>
@@ -151,10 +166,26 @@ function printLetter(): void {
         color: #475569;
     }
 }
-.paper {
+ .paper {
+    position: relative;
     box-sizing: border-box;
     width: 210mm;
     min-height: 269mm;
+    color: #111827;
+}
+ .template-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 297mm;
+    pointer-events: none;
+    z-index: 1;
+}
+.template-box {
+    position: absolute;
+    overflow: hidden;
+    white-space: pre-wrap;
+    line-height: 1.5;
     color: #111827;
 }
 .letterhead-slot {
