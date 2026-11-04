@@ -52,11 +52,6 @@ class OrganizationSettingsTest extends TestCase
             'address' => 'تهران',
             'stamp' => UploadedFile::fake()->image('stamp.png', 300, 300),
             'stamp_active' => true,
-            'print_show_creator_identity' => false,
-            'print_show_stamp' => true,
-            'print_show_department_signature' => false,
-            'letterhead_show_address' => false,
-            'letterhead_show_phone' => true,
             'numbering_format' => 'custom',
             'numbering_order_first' => 'sequence',
             'numbering_order_second' => 'department',
@@ -95,9 +90,6 @@ class OrganizationSettingsTest extends TestCase
         $stampPath = SystemSetting::query()->where('key', 'organization.stamp.path')->value('value');
         $this->assertNotEmpty($stampPath);
         Storage::disk('local')->assertExists($stampPath);
-        $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.print.show_creator_identity', 'value' => '0']);
-        $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.print.show_department_signature', 'value' => '0']);
-        $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.print.letterhead.show_address', 'value' => '0']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.numbering.format', 'value' => 'custom']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.numbering.custom_order', 'value' => 'sequence,department,year']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.registration_numbering.format', 'value' => 'custom']);
@@ -129,4 +121,44 @@ class OrganizationSettingsTest extends TestCase
             ->get(route('settings.organization.edit'))
             ->assertForbidden();
     }
+    public function test_user_with_settings_permission_can_save_visual_correspondence_template(): void
+    {
+        $admin = User::factory()->create();
+        $this->grantPermissions($admin, ['settings.manage']);
+
+        $elements = [[
+            'id' => 'header_contact',
+            'label' => 'اطلاعات تماس',
+            'content' => 'آدرس: {{address}} | تلفن تماس: {{tel}} | ایمیل: {{email}}',
+            'x' => 8,
+            'y' => 12,
+            'width' => 84,
+            'height' => 8,
+            'font_size' => 10,
+            'bold' => false,
+            'align' => 'right',
+            'visible' => true,
+        ]];
+
+        $this->actingAs($admin)
+            ->put(route('correspondence.template.update'), ['elements' => $elements])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('system_settings', [
+            'key' => 'correspondence.print.template',
+            'value' => json_encode($elements, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+        ]);
+    }
+
+    public function test_user_without_settings_permission_cannot_manage_correspondence_template(): void
+    {
+        $user = User::factory()->create();
+        $this->grantPermissions($user, []);
+
+        $this->actingAs($user)
+            ->get(route('correspondence.template.edit'))
+            ->assertForbidden();
+    }
+
 }
