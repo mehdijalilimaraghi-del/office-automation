@@ -90,6 +90,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/custom-fields/{customField}', [CustomFieldController::class, 'destroy'])->middleware('permission:custom_fields.manage')->name('custom-fields.destroy');
 
     Route::get('/departments', [DepartmentController::class, 'index'])->middleware('permission:departments.view')->name('departments.index');
+    Route::get('/departments/{department}/signature', [DepartmentController::class, 'signature'])->middleware('permission:departments.view')->name('departments.signature');
     Route::post('/departments', [DepartmentController::class, 'store'])->middleware('permission:departments.create')->name('departments.store');
     Route::put('/departments/{department}', [DepartmentController::class, 'update'])->middleware('permission:departments.edit')->name('departments.update');
     Route::delete('/departments/{department}', [DepartmentController::class, 'destroy'])->middleware('permission:departments.delete')->name('departments.destroy');
