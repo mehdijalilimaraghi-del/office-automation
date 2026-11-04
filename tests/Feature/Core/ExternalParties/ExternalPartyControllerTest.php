@@ -165,6 +165,51 @@ class ExternalPartyControllerTest extends TestCase
     }
 
 
+    public function test_assigned_external_unit_manager_cannot_be_deactivated_or_moved(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $this->grantPermissions($user, ['external_parties.view', 'external_parties.edit']);
+
+        $organization = ExternalOrganization::query()->create(['name' => 'سازمان مدیر', 'status' => 'active']);
+        $department = ExternalDepartment::query()->create([
+            'external_organization_id' => $organization->id,
+            'name' => 'واحد مدیر',
+            'status' => 'active',
+        ]);
+        $otherDepartment = ExternalDepartment::query()->create([
+            'external_organization_id' => $organization->id,
+            'name' => 'واحد دیگر',
+            'status' => 'active',
+        ]);
+        $manager = ExternalContact::query()->create([
+            'external_organization_id' => $organization->id,
+            'external_department_id' => $department->id,
+            'name' => 'مدیر واحد',
+            'status' => 'active',
+        ]);
+        $department->update(['manager_contact_id' => $manager->id]);
+
+        $this->actingAs($user)->put("/external-parties/contacts/{$manager->id}", [
+            'external_organization_id' => $organization->id,
+            'external_department_id' => $otherDepartment->id,
+            'name' => $manager->name,
+            'status' => 'active',
+        ])->assertSessionHasErrors('contact');
+
+        $this->actingAs($user)->put("/external-parties/contacts/{$manager->id}", [
+            'external_organization_id' => $organization->id,
+            'external_department_id' => $department->id,
+            'name' => $manager->name,
+            'status' => 'inactive',
+        ])->assertSessionHasErrors('contact');
+
+        $this->assertDatabaseHas('external_contacts', [
+            'id' => $manager->id,
+            'external_department_id' => $department->id,
+            'status' => 'active',
+        ]);
+    }
+
     public function test_external_party_routes_require_permissions(): void
     {
         $user = User::factory()->create(['status' => 'active']);
