@@ -11,6 +11,7 @@ use App\Modules\Correspondence\Models\Correspondence;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 use InvalidArgumentException;
 
 class CorrespondenceNumberingService
@@ -124,7 +125,8 @@ class CorrespondenceNumberingService
             }
         }
 
-        if ($department?->manager_signature_active
+        if ($correspondence->workflow_state === 'approved_for_registration'
+            && $department?->manager_signature_active
             && filled($department->manager_signature_path)
             && Storage::disk('local')->exists($department->manager_signature_path)) {
             $extension = pathinfo($department->manager_signature_path, PATHINFO_EXTENSION) ?: 'png';
