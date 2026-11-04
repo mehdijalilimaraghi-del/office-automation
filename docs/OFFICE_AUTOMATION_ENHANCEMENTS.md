@@ -22,23 +22,13 @@ Recipient addressing data is modeled as separate parts:
 
 The organizational title prefix is an additional independent field, not a replacement for position. At most one active default contact should exist per external department (and an organization-level default where no department is selected). The selected addressing text must be snapshotted on correspondence finalization so later contact edits do not rewrite historical letters.
 
-### 3. Letterhead, PDF and physical printing
+### 3. Letterhead, PDF, pagination and physical printing
 
 One shared correspondence document template and coordinate system must support both PDF and physical printing. For each output/print operation, the operator can select:
 - With letterhead
 - Without letterhead
 
-The choice applies both to generated PDF and to physical print output. Letterhead elements are configurable independently, including image/background, logo, organization name, address, telephone, email, website and footer. Contact information such as address and phone is part of the configurable letterhead composition, but each element can be enabled/disabled independently. Page size, margins, content start position and registration number/date/attachment coordinates are configurable. The no-letterhead output suppresses only letterhead layers; body text and coordinates remain unchanged. Preview is required before output.
-
-## Implementation stages and status
-
-| Stage | Scope | Status |
-|---|---|---|
-| 0 | Approved requirements and architecture recorded | Complete |
-| 1 | Manager accepts responsibility in Correspondence and Tasks, with history/audit and regression tests | Not started |
-| 2 | External department/contact defaults, addressing fields, selection and historical snapshot | Not started |
-| 3 | Shared letterhead/template settings and PDF/print modes | Not started |
-| 4 | End-to-end regression, build and manual acceptance | Not started |
+The choice applies both to generated PDF and to physical print output. Letterhead elements are configurable independently, including image/background, logo, organization name, address, telephone, email, website and footer. Contact information such as address and phone is part of the configurable letterhead composition, but each element can be enabled/disabled independently. Page size, margins, content start position and registration number/date/attachment coordinates are configurable. The no-letterhead output suppresses only letterhead layers; body text and coordinates remain unchanged. Long letters must flow naturally across as many A4 pages as required. Pagination must preserve paragraph/line order, avoid clipping and overlapping, keep appropriate margins and letterhead/content areas, and support page numbering (e.g. page X of Y) in a configurable footer/header position. Avoid splitting short logical blocks (such as a heading with its following paragraph or signature block) across pages where practical. Preview is required before output.
 
 ## Engineering constraints
 
@@ -49,3 +39,18 @@ The choice applies both to generated PDF and to physical print output. Letterhea
 - Add regression coverage for authorization, history, no-self-referral and output variants.
 - Update this document and the authoritative status/context documents after each completed stage.
 - Local PHP tests and frontend build are run by the project owner; never report them as passed until the owner supplies results.
+
+### 4. Reusable outgoing-letter text templates
+
+In Correspondence > outgoing letter composition, specifically the «روش تهیه نامه» / letter editor path, users can save an authored letter body as a reusable template and later select it to prefill the editor. A template is a starting point, not a locked document: after insertion, its text remains fully editable for the current letter. Templates should have a name/title, body content, active state and appropriate ownership/availability scope (organization-wide versus creator-only) governed by permissions. Selecting a template must not overwrite already-entered body text without explicit confirmation. The saved template is separate from final correspondence records and must not silently alter previously registered letters.
+
+## Five implementation phases and status
+
+| Phase | Scope | Status |
+|---|---|---|
+| 1 | Manager accepts responsibility in Correspondence and Tasks, with authorization, audit/history and regression tests | In progress — code-path review |
+| 2 | External recipient defaults, organizational title prefix and addressing snapshot | Not started |
+| 3 | Shared letterhead/template, configurable fields, multipage layout and page numbering for PDF/print | Not started |
+| 4 | Reusable outgoing-letter body templates in the letter editor, editable after insertion | Not started |
+| 5 | End-to-end regression, build and manual acceptance of all five feature areas | Not started |
+
