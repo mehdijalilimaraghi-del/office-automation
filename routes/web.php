@@ -22,6 +22,7 @@ use App\Modules\Cartable\Http\Controllers\CartableController;
 use App\Modules\Notifications\Http\Controllers\NotificationController;
 use App\Modules\Correspondence\Http\Controllers\CorrespondenceController;
 use App\Modules\Correspondence\Http\Controllers\CorrespondencePrintController;
+use App\Modules\Correspondence\Http\Controllers\CorrespondenceTemplateController;
 use App\Modules\Correspondence\Http\Controllers\CreateProjectFromCorrespondenceController;
 use App\Modules\Correspondence\Http\Controllers\CorrespondenceScannerController;
 use Illuminate\Support\Facades\Route;
