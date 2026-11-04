@@ -128,6 +128,7 @@ class OrganizationSettingsTest extends TestCase
 
         $elements = [[
             'id' => 'header_contact',
+            'kind' => 'text',
             'label' => 'اطلاعات تماس',
             'content' => 'آدرس: {{address}} | تلفن تماس: {{tel}} | ایمیل: {{email}}',
             'x' => 8,
