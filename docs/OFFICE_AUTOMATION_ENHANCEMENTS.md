@@ -99,3 +99,17 @@ In Correspondence > outgoing letter composition, specifically the «روش ته�
 - فرم ایجاد و ویرایش مخاطب هر دو اجزای خطاب و وضعیت پیش‌فرض را اعتبارسنجی و ذخیره می‌کنند.
 - حذف مخاطبی که به مکاتبه یا تسک ثبت‌شده متصل است مسدود می‌شود؛ برای حفظ سوابق باید آن را غیرفعال کرد. تغییر مخاطب پیش‌فرض در تراکنش با قفل سازمان انجام می‌شود.
 - تست‌های regression برای یکتایی پیش‌فرض در هر محدوده و حفظ snapshot بعد از تغییر مخاطب اضافه/به‌روزرسانی شدند. مالک پروژه پس از دریافت اصلاح نحوی، پاس شدن `ExternalPartyControllerTest` و `CorrespondenceHttpTest` را اعلام کرد. این دو مجموعه تست regression مرحله ۲ را نیز اجرا می‌کنند؛ build فرانت‌اند و پذیرش دستی همچنان باقی است.
+
+
+
+## 2026-11-04 — Phase 3 repository audit checkpoint
+
+Verified implementation facts on `development`:
+- Core organization settings already persist organization name, address, phone, email and website. Phase 3 should reuse these values as independently configurable letterhead elements rather than duplicate them.
+- `Department` already has a `manager_id` relationship, but no manager-signature image field, upload action or UI exists.
+- Organization settings have no stamp image field or upload flow.
+- Correspondence detail has no print/PDF route or dedicated print template; the current Vue show page is an operational workflow/detail screen.
+- No PDF renderer is currently declared in `composer.json`.
+- The Documents module uses a storage contract and disk/path/version metadata, and its download endpoint authorizes access. Existing public avatar storage must not be treated as the default access policy for official stamp/signature files.
+
+No application code, migration, dependency, master/release branch or server change was made during this audit. The remaining architecture decision is whether PDF output means browser-native Print / Save as PDF from the same HTML/CSS A4 template used for physical printing, or a server-generated downloadable PDF using an added renderer. This choice affects preview, pagination and image delivery, so it must be settled before the shared output pipeline is implemented.
