@@ -1,3 +1,7 @@
+## 2026-11-04 — Correspondence template boundary
+
+External recipient addressing data belongs to the external unit and its selected manager, not individual contacts. Correspondence recipient selectors must show only contact names; unit addressing components are resolved separately. Organization Settings owns organization profile and stamp asset upload/activation only. A dedicated visual letter-template designer owns print layout and visibility. The planned designer uses movable/resizable A4 text boxes and typed tokens such as `{{address}}`, `{{tel}}`, `{{email}}`, `{{website}}`, `{{letter_number}}` and `{{date}}`, with a shared preview/print/PDF renderer. Implementation is pending.
+
 ## 2026-11-04 — External unit owns manager and addressee data (implementation follow-up)
 
 - The four addressee components are owned by `ExternalDepartment` only: organizational title prefix, organizational position, personal salutation, and professional title. This applies only to external organizational units; internal Core Department manager selection and behavior are unchanged.
