@@ -66,7 +66,7 @@ class UpdateDepartmentAction
                 'icon' => $data['icon'] ?? 'building-2',
                 'description' => $data['description'] ?? null,
                 'is_active' => $data['is_active'] ?? true,
-                'manager_signature_path' => $data['manager_signature_path'] ?? $department->manager_signature_path,
+                'manager_signature_path' => array_key_exists('manager_signature_path', $data) ? $data['manager_signature_path'] : $department->manager_signature_path,
                 'manager_signature_active' => $data['manager_signature_active'] ?? false,
             ]);
 
