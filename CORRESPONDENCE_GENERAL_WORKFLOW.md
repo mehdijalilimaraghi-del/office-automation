@@ -1,3 +1,10 @@
+## 2026-11-04 — Direct correspondence registration follow-up
+
+- Fixed the create-page contract: `Correspondence/Create` now receives the per-type `approvalSettings` used by its submit label and explanatory text. Previously this prop was omitted on the create action (although it was supplied by the edit action), so a type configured for direct registration could still display «ذخیره پیش‌نویس».
+- Made the server's immediate-registration decision explicitly use the same `CorrespondenceCompositionSettings::requiresApproval(type)` policy instead of inferring the decision from the created record's workflow state. When approval is disabled for the selected type, the create request invokes numbering/final registration immediately; approval-enabled types remain drafts assigned for approval. Reply/request-generated correspondence remains on its dedicated workflow.
+- Added an HTTP regression test asserting the create page receives the direct setting and a direct internal letter is persisted as registered in the initial create request, not as a draft.
+- Validation pending on the project owner's machine. Development only; master and server untouched.
+
 # گردش عمومی مکاتبات وارده و اتصال به وظایف/پروژه/ثبت نامه
 
 > وضعیت: نیازمندی تثبیت و مستندسازی شده؛ پیاده‌سازی کامل این سناریوها هنوز تأیید نشده است. این سند مربوط به گردش عمومی نامه وارده در واحدهای سازمان است و با گردش اختصاصی بررسی درخواست پروژه در واحد مدیریت پروژه‌ها اشتباه نشود.
