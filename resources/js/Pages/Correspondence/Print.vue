@@ -80,7 +80,12 @@ function resolveTemplate(content: string): string {
         organization_name: props.organization.name ?? '', short_name: props.organization.short_name ?? '',
         address: props.organization.address ?? '', tel: props.organization.phone ?? '', email: props.organization.email ?? '', website: props.organization.website ?? '',
         letter_number: props.letter.letter_number ?? '', registration_number: props.letter.registration_number ?? '', date: letterDate.value,
-        recipient_name: props.letter.recipient_name ?? props.letter.recipient_addressing?.name ?? '',\n        recipient_organization: props.letter.recipient_addressing?.organization_name ?? props.letter.external_organization ?? '',\n        recipient_unit: props.letter.recipient_addressing?.department_name ?? props.letter.external_department ?? '',\n        recipient_position: props.letter.recipient_addressing?.position ?? '',\n        recipient_title: [props.letter.recipient_addressing?.personal_salutation, props.letter.recipient_addressing?.professional_title].filter(Boolean).join(' '),\n        subject: props.letter.subject, letter_type: typeLabel.value,
+        recipient_name: props.letter.recipient_name ?? props.letter.recipient_addressing?.name ?? '',
+        recipient_organization: props.letter.recipient_addressing?.organization_name ?? props.letter.external_organization ?? '',
+        recipient_unit: props.letter.recipient_addressing?.department_name ?? props.letter.external_department ?? '',
+        recipient_position: props.letter.recipient_addressing?.position ?? '',
+        recipient_title: [props.letter.recipient_addressing?.personal_salutation, props.letter.recipient_addressing?.professional_title].filter(Boolean).join(' '),
+        subject: props.letter.subject, letter_type: typeLabel.value,
         creator_name: props.creatorName ?? '', creator_unit_title: props.creatorUnitTitle ?? '',
     };
     return content.replace(/\{\{([a-z_]+)\}\}/g, (token, key: string) => Object.prototype.hasOwnProperty.call(values, key) ? values[key] : token);
