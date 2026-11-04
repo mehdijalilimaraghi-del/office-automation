@@ -123,7 +123,9 @@ function printLetter(): void {
                 <div v-if="printOptions.show_creator_identity" class="min-w-0 text-center text-sm leading-7">
                     <p v-if="creatorUnitTitle" class="font-semibold">{{ creatorUnitTitle }}</p>
                     <p v-if="creatorName" class="font-bold">{{ creatorName }}</p>
-                    <img v-if="printOptions.show_department_signature && signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="mx-auto mt-2 h-20 max-w-44 object-contain" />
+                </div>
+                <div v-if="printOptions.show_department_signature && signatureDataUri" class="text-center">
+                    <img :src="signatureDataUri" alt="امضای مدیر واحد" class="mx-auto h-20 max-w-44 object-contain" />
                 </div>
                 <div v-if="printOptions.show_stamp && stampDataUri" class="mr-auto text-center">
                     <img :src="stampDataUri" alt="مهر سازمان" class="h-28 w-28 object-contain" />
