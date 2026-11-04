@@ -68,7 +68,7 @@ In Correspondence > outgoing letter composition, specifically the «روش ته�
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Manager accepts responsibility in Correspondence and Tasks, with authorization, audit/history and regression tests | Implemented; focused tests passed (owner-reported) |
-| 2 | External recipient defaults, organizational title prefix and addressing snapshot | Not started |
+| 2 | External recipient defaults, organizational title prefix and addressing snapshot | Backend and form implementation added; awaiting focused tests |
 | 3 | Shared letterhead/template, creator identity block, organization stamp, per-department manager signature, configurable fields, multipage layout and page numbering for PDF/print | Not started |
 | 4 | Reusable outgoing-letter body templates in the letter editor, editable after insertion | Not started |
 | 5 | End-to-end regression, build and manual acceptance of all five feature areas | Not started |
@@ -84,7 +84,16 @@ In Correspondence > outgoing letter composition, specifically the «روش ته�
 | مرحله | شرح | وضعیت |
 |---|---|---|
 | ۱ | پذیرش مسئولیت مدیر در مکاتبات و تسک‌ها، همراه با مجوز، history/audit و regression tests | پیاده‌سازی انجام شد؛ تست‌های متمرکز پاس شد |
-| ۲ | مخاطب پیش‌فرض، ساختار خطاب و snapshot تاریخی | شروع نشده |
+| ۲ | مخاطب پیش‌فرض، ساختار خطاب و snapshot تاریخی | پیاده‌سازی اولیه backend و فرم‌ها انجام شد؛ در انتظار تست متمرکز |
 | ۳ | قالب مشترک سربرگ، PDF/چاپ، مشخصات ایجادکننده، مهر/امضای مدیر، صفحه‌بندی و شماره صفحات | مستند شده؛ شروع نشده |
 | ۴ | قالب‌های متنی قابل استفاده مجدد در نامه صادره | شروع نشده |
 | ۵ | تست end-to-end، build و پذیرش دستی همه موارد | شروع نشده |
+
+## مرحله ۲ — مخاطب بیرونی و snapshot خطاب (پیاده‌سازی اولیه)
+- مدل موجود `ExternalContact` گسترش یافت؛ فیلدهای مستقل «پیشوند عنوان سازمانی»، «سمت سازمانی»، «پیشوند خطاب شخصی» و «عنوان حرفه‌ای» اضافه شدند.
+- برای مخاطب، وضعیت «پیش‌فرض» اضافه شد. هنگام ثبت مخاطب پیش‌فرض، پیش‌فرض قبلی همان سازمان و همان محدوده (واحد مشخص یا سطح سازمان بدون واحد) غیرفعال می‌شود؛ پیش‌فرض سطح سازمان و پیش‌فرض واحد می‌توانند مستقل باشند. مخاطب غیرفعال از حالت پیش‌فرض خارج می‌شود.
+- فرم مدیریت افراد بیرونی برای ثبت/ویرایش اجزای خطاب و انتخاب مخاطب پیش‌فرض توسعه یافت.
+- فرم نامه صادره اکنون مخاطب شخصی را به‌صورت اختیاری از افراد فعال همان سازمان/واحد انتخاب می‌کند و مخاطب پیش‌فرض همان محدوده را خودکار انتخاب می‌کند. انتخاب شخص اجباری نیست و خطاب سازمانی/واحدی بدون نام شخص همچنان مجاز است.
+- رابطه `external_contact_id` به مکاتبه و snapshot خطاب به مکاتبه اضافه شد. هنگام ثبت نهایی نامه صادره، اجزای خطاب مخاطب و نام سازمان/واحد در snapshot ذخیره می‌شوند؛ تغییرات بعدی اطلاعات مخاطب نباید snapshot نامه ثبت‌شده را تغییر دهد.
+- Migration جدید: `2026_11_04_120000_add_external_contact_addressing_and_defaults`.
+- تست‌های regression برای یکتایی پیش‌فرض در هر محدوده و حفظ snapshot بعد از تغییر مخاطب اضافه/به‌روزرسانی شدند. اجرای تست‌ها و build هنوز توسط مالک پروژه تأیید نشده است.
