@@ -124,6 +124,47 @@ class ExternalPartyControllerTest extends TestCase
         $this->assertTrue($second->fresh()->is_default);
     }
 
+
+    public function test_external_department_stores_one_manager_and_shared_addressing_data(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $this->grantPermissions($user, ['external_parties.view', 'external_parties.create', 'external_parties.edit']);
+
+        $organization = ExternalOrganization::query()->create(['name' => 'سازمان خطاب', 'status' => 'active']);
+        $department = ExternalDepartment::query()->create([
+            'external_organization_id' => $organization->id,
+            'name' => 'واحد مالی',
+            'status' => 'active',
+        ]);
+        $manager = ExternalContact::query()->create([
+            'external_organization_id' => $organization->id,
+            'external_department_id' => $department->id,
+            'name' => 'علی رضایی',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($user)->put("/external-parties/departments/{$department->id}", [
+            'external_organization_id' => $organization->id,
+            'name' => 'واحد مالی',
+            'manager_contact_id' => $manager->id,
+            'organizational_title_prefix' => 'مدیریت',
+            'position' => 'مدیر واحد مالی',
+            'personal_salutation' => 'جناب آقای',
+            'professional_title' => 'دکتر',
+            'status' => 'active',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('external_departments', [
+            'id' => $department->id,
+            'manager_contact_id' => $manager->id,
+            'organizational_title_prefix' => 'مدیریت',
+            'position' => 'مدیر واحد مالی',
+            'personal_salutation' => 'جناب آقای',
+            'professional_title' => 'دکتر',
+        ]);
+    }
+
+
     public function test_external_party_routes_require_permissions(): void
     {
         $user = User::factory()->create(['status' => 'active']);
