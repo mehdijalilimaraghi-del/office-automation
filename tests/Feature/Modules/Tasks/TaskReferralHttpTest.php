@@ -110,6 +110,94 @@ class TaskReferralHttpTest extends TestCase
         ]);
     }
 
+    public function test_department_manager_can_accept_task_responsibility_and_history_is_recorded(): void
+    {
+        $manager = $this->userWithPermission('tasks.assign');
+        $employee = User::factory()->create(['status' => 'active']);
+        $department = \App\Core\Departments\Models\Department::query()->create([
+            'name' => 'واحد پذیرش مسئولیت',
+            'code' => 'OWN-'.Str::upper(Str::random(7)),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+        $task = Task::query()->create([
+            'project_id' => null,
+            'department_id' => $department->id,
+            'title' => 'Task responsibility acceptance',
+            'created_by' => $employee->id,
+            'assignee_id' => $employee->id,
+            'status' => 'in_progress',
+            'priority' => 'normal',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($manager)
+            ->post(route('tasks.accept-responsibility', $task))
+            ->assertRedirect()
+            ->assertSessionHas('success', 'مسئولیت دستورکار به شما واگذار شد.');
+
+        $this->assertDatabaseHas('tasks', ['id' => $task->id, 'assignee_id' => $manager->id]);
+        $this->assertDatabaseHas('task_assignments', [
+            'task_id' => $task->id,
+            'from_user_id' => $employee->id,
+            'to_user_id' => $manager->id,
+            'assigned_by' => $manager->id,
+            'type' => 'manager_accept_responsibility',
+        ]);
+    }
+
+    public function test_non_manager_cannot_accept_task_responsibility(): void
+    {
+        $manager = User::factory()->create(['status' => 'active']);
+        $other = $this->userWithPermission('tasks.assign');
+        $department = \App\Core\Departments\Models\Department::query()->create([
+            'name' => 'واحد حفاظت مسئولیت',
+            'code' => 'DEN-'.Str::upper(Str::random(7)),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+        $task = Task::query()->create([
+            'project_id' => null,
+            'department_id' => $department->id,
+            'title' => 'Protected responsibility task',
+            'created_by' => $manager->id,
+            'assignee_id' => $manager->id,
+            'status' => 'todo',
+            'priority' => 'normal',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($other)
+            ->post(route('tasks.accept-responsibility', $task))
+            ->assertForbidden();
+    }
+
+    public function test_finalized_and_review_locked_tasks_cannot_be_accepted_by_manager(): void
+    {
+        $manager = $this->userWithPermission('tasks.assign');
+        $department = \App\Core\Departments\Models\Department::query()->create([
+            'name' => 'واحد وضعیت نهایی',
+            'code' => 'FIN-'.Str::upper(Str::random(7)),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+
+        foreach ([['status' => 'completed', 'review_status' => 'approved'], ['status' => 'in_progress', 'review_status' => 'pending']] as $index => $state) {
+            $task = Task::query()->create([
+                'project_id' => null,
+                'department_id' => $department->id,
+                'title' => 'Locked responsibility task '.$index,
+                'created_by' => $manager->id,
+                'assignee_id' => User::factory()->create(['status' => 'active'])->id,
+                'status' => $state['status'],
+                'review_status' => $state['review_status'],
+                'priority' => 'normal',
+                'is_active' => true,
+            ]);
+            $this->actingAs($manager)->post(route('tasks.accept-responsibility', $task))->assertForbidden();
+        }
+    }
+
     private function userWithPermission(string $permissionCode): User
     {
         $permission = Permission::query()->where('code', $permissionCode)->firstOrFail();
