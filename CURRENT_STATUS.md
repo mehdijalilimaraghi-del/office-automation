@@ -1,3 +1,11 @@
+## 2026-11-04 — Expanded requirements and five-phase execution tracking
+
+- User requested explicit progress reporting and documentation updates for all five implementation phases at each checkpoint.
+- Expanded the shared letterhead/PDF/print requirements to include robust multipage A4 text flow, stable layout/margins, page numbering (including X of Y), and sensible pagination around headings and signature blocks.
+- Added reusable outgoing-letter body templates specifically to the «روش تهیه نامه» / letter-editor path. Saved text is selectable as a starting point and remains editable for each letter; inserting a template must not silently overwrite existing text.
+- Execution is tracked as five phases: (1) manager self-acceptance in correspondence/tasks, (2) external recipient defaults and addressing snapshot, (3) shared letterhead + multipage PDF/print, (4) reusable outgoing letter templates, (5) end-to-end verification.
+- Phase 1 is in progress at code-path review. Phases 2–5 are not started. No new application-code changes in this documentation update; local tests/build remain unrun.
+
 ## 2026-11-04 — Approved office-automation enhancements plan
 
 - Approved manager self-acceptance of responsibility in both Correspondence and Tasks as a distinct action, without self-referral; history and audit must be preserved.
