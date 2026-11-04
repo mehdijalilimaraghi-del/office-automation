@@ -220,3 +220,8 @@ Before implementing the phase-3 shared letter output, inspect and reuse existing
 ## 2026-11-04 — Phase 3 implementation slice 1
 
 The owner selected browser-native Print / Save as PDF from a shared HTML/CSS A4 template. Do not add a server-side PDF dependency without a new explicit requirement. Store the organization stamp in Core organization settings and the manager signature on each Department (not on User). A manager change must deactivate the old unit signature until replaced. Both are private, separately managed assets. Snapshot creator/unit details and the exact stamp/signature files at outgoing-letter finalization; only include the manager signature when workflow approval authorizes it. The new registered-letter print preview provides a per-operation letterhead toggle and independent visibility settings. Local PHP tests, migration, TypeScript/build and physical print pagination remain pending; do not report them as passed until owner confirmation.
+
+
+## 2026-11-04 — Letterhead and settings navigation
+
+Organization Settings now has three tabs. A separate organization letterhead image can be uploaded and previewed; it is snapshotted per registered letter and placed through a dedicated image element in the A4 template editor. The template persistence regression compares decoded JSON after normalizing key order. Upload/preview and snapshot coverage has been added. Local validation remains pending.
