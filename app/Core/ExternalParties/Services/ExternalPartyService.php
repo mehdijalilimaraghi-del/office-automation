@@ -247,13 +247,18 @@ class ExternalPartyService implements ExternalPartyServiceInterface
 
     private function syncDefaultContact(ExternalContact $contact): void
     {
+        if ($contact->status !== 'active' && $contact->is_default) {
+            $contact->forceFill(['is_default' => false])->save();
+            return;
+        }
+
         if (! $contact->is_default) {
             return;
         }
 
         $query = ExternalContact::query()
             ->where('external_organization_id', $contact->external_organization_id)
-            ->whereKeyNot($contact->id);
+            ->where('id', '<>', $contact->id);
 
         if ($contact->external_department_id === null) {
             $query->whereNull('external_department_id');
