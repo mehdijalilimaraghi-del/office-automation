@@ -934,3 +934,8 @@ Status: correspondence list/draft/registration HTTP flow and editor/file/both co
 - [ ] اجرای تست‌های هدفمند و کل مجموعه `php artisan test`، build فرانت‌اند و پذیرش UI در محیط محلی.
 - [ ] اعتبارسنجی SQL Server و سناریوهای ثبت مستقیم/نیازمند تأیید روی تنظیمات واقعی سازمان.
 - وضعیت: کد و مستندات در شاخه `development` به‌روزرسانی شده‌اند؛ تست و build هنوز اجرا/تأیید نشده‌اند. شاخه `master` تغییر نکرده است.
+
+
+### Correspondence letter-template designer — 2026-11-04 status
+
+First implementation slice exists: a settings-managed A4 text-box editor with move/resize, content editing, visibility, typography/alignment controls, and typed token insertion; saved JSON is rendered in first-page print preview. Remaining work before acceptance: image elements for stamp/signature, explicit recipient/body/footer zones, robust multi-page header/footer behavior, visual guides/snapping/zoom, token completeness and output verification, focused tests, frontend build and manual print/PDF review. This is in progress, not complete.
