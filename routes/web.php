@@ -77,6 +77,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->middleware('permission:users.delete')->name('users.destroy');
     Route::patch('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->middleware('permission:users.toggle_status')->name('users.toggle-status');
 
+    Route::get('/settings/organization/stamp', [OrganizationSettingsController::class, 'stamp'])
+        ->middleware('permission:settings.manage')
+        ->name('settings.organization.stamp');
     Route::get('/settings/organization', [OrganizationSettingsController::class, 'edit'])
         ->middleware('permission:settings.manage')
         ->name('settings.organization.edit');
