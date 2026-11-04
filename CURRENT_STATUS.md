@@ -1,3 +1,10 @@
+## 2026-11-04 — Flow-based template preview
+
+- A4 designer preview now shows metadata, addressee/subject, automatic body placeholder, issuer/signature and page-number indicator in document flow rather than hard-coded Y positions. Only repeating elements retain independent page coordinates.
+- Preview shows order and approximate occupied regions; actual body length and signature position depend on letter content and pagination.
+- Current development test fixture excludes obsolete `height` fields. The reported local failure still expects them, indicating a stale local test revision. Pull before rerunning.
+- Local tests, TypeScript, build and multi-page print acceptance remain pending. Development only; master/server unchanged.
+
 ## 2026-11-04 — Fix semantic template persistence test
 
 - Updated the visual-template feature fixture to match the new role-based schema: flow elements use width and spacing rather than a fixed height. The previous failure was an outdated test expectation; request validation correctly excludes the removed `height` property from persisted data.
