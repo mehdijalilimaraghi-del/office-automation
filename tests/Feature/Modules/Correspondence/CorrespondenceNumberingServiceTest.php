@@ -7,6 +7,9 @@ namespace Tests\Feature\Modules\Correspondence;
 use App\Core\Settings\Services\SystemSettingsService;
 use App\Core\Settings\Services\OrganizationDepartmentRoleService;
 use App\Core\Departments\Models\Department;
+use App\Core\ExternalParties\Models\ExternalContact;
+use App\Core\ExternalParties\Models\ExternalDepartment;
+use App\Core\ExternalParties\Models\ExternalOrganization;
 use App\Models\User;
 use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Services\CorrespondenceNumberingService;
@@ -213,6 +216,54 @@ class CorrespondenceNumberingServiceTest extends TestCase
         $this->assertNotEmpty($snapshot['signature_path']);
         Storage::disk('local')->assertExists($snapshot['stamp_path']);
         Storage::disk('local')->assertExists($snapshot['signature_path']);
+    }
+
+    public function test_outgoing_recipient_snapshot_uses_external_unit_addressing_and_manager(): void
+    {
+        $creator = User::factory()->create(['status' => 'active']);
+        $organization = ExternalOrganization::query()->create([
+            'name' => 'سازمان مقصد',
+            'status' => 'active',
+        ]);
+        $unit = ExternalDepartment::query()->create([
+            'external_organization_id' => $organization->id,
+            'name' => 'مدیریت مالی',
+            'organizational_title_prefix' => 'مدیریت',
+            'position' => 'مدیر واحد مالی',
+            'personal_salutation' => 'سرکار خانم',
+            'professional_title' => 'دکتر',
+            'status' => 'active',
+        ]);
+        $manager = ExternalContact::query()->create([
+            'external_organization_id' => $organization->id,
+            'external_department_id' => $unit->id,
+            'name' => 'زهرا احمدی',
+            'status' => 'active',
+        ]);
+        $unit->update(['manager_contact_id' => $manager->id]);
+        $registrar = $this->createSecretariatUser();
+
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_OUTGOING,
+            'subject' => 'نامه به واحد بیرونی',
+            'status' => Correspondence::STATUS_DRAFT,
+            'created_by' => $creator->id,
+            'external_organization_id' => $organization->id,
+            'external_department_id' => $unit->id,
+            'external_contact_id' => null,
+        ]);
+
+        $registered = app(CorrespondenceNumberingService::class)->register($letter, $registrar);
+        $snapshot = $registered->recipient_addressing_snapshot;
+
+        $this->assertSame('مدیریت', $snapshot['organizational_title_prefix']);
+        $this->assertSame('مدیر واحد مالی', $snapshot['position']);
+        $this->assertSame('سرکار خانم', $snapshot['personal_salutation']);
+        $this->assertSame('دکتر', $snapshot['professional_title']);
+        $this->assertSame('زهرا احمدی', $snapshot['name']);
+        $this->assertSame($manager->id, $snapshot['manager_contact_id']);
+        $this->assertSame('سازمان مقصد', $snapshot['organization_name']);
+        $this->assertSame('مدیریت مالی', $snapshot['department_name']);
     }
 
     private function createSecretariatUser(): User
