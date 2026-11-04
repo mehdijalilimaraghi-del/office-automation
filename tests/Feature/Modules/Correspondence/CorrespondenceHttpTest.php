@@ -113,6 +113,34 @@ class CorrespondenceHttpTest extends TestCase
                 ->where('correspondences.data.0.subject', 'نامه آزمایشی'));
     }
 
+    public function test_registered_correspondence_has_a_protected_a4_print_preview(): void
+    {
+        $viewer = $this->userWithPermission('correspondence.view');
+        $creator = $this->userWithPermission('correspondence.create');
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_OUTGOING,
+            'subject' => 'نامه برای پیش‌نمایش چاپ',
+            'body' => '<p>متن نامه</p>',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'classification' => Correspondence::CLASSIFICATION_ORDINARY,
+            'registration_number' => '1405/PRINT01',
+            'created_by' => $creator->id,
+            'document_identity_snapshot' => [
+                'creator_name' => $creator->name,
+                'creator_unit_title' => 'مدیریت فناوری اطلاعات',
+                'organization' => ['name' => 'سازمان نمونه'],
+            ],
+        ]);
+
+        $this->actingAs($viewer)
+            ->get(route('correspondence.print', $letter))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Correspondence/Print')
+                ->where('letter.subject', 'نامه برای پیش‌نمایش چاپ')
+                ->where('creatorUnitTitle', 'مدیریت فناوری اطلاعات'));
+    }
+
     public function test_correspondence_index_supports_mine_department_and_all_scopes(): void
     {
         $user = $this->userWithPermission('correspondence.view');
