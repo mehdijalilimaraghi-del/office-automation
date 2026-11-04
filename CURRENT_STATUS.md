@@ -1897,3 +1897,17 @@ Implementation has started for the agreed cross-department project model:
 - No application code, migrations, dependencies, master branch, release branch or server were changed in this audit checkpoint.
 - Phase 3 implementation is blocked on one output-architecture decision: use one HTML/CSS A4 template and the browser's native Print / Save as PDF flow (no server-side PDF dependency), or add a server-side PDF renderer for downloadable generated PDFs. The choice determines rendering, preview, pagination and asset-delivery implementation.
 - Five-phase status: Phase 1 focused tests passed (owner-reported); Phase 2 implementation and focused tests passed (owner-reported; build/E2E pending); Phase 3 audited, implementation not started; Phase 4 not started; Phase 5 not started.
+
+
+## 2026-11-04 — Phase 3 implementation slice 1 (code committed; local validation pending)
+
+- Confirmed the selected output architecture: one HTML/CSS A4 document view with browser-native Print / Save as PDF; no PDF Composer package was added.
+- Added unit-level manager signature configuration: the signature image is stored on the Department record, not on individual users. The department continues to have one manager and multiple members. Changing the department manager automatically deactivates the previous signature until a new signature is supplied.
+- Added organization-level stamp upload in Core → Organization Settings. Stamp and manager signature are separate private files, independently replaceable and activatable. Uploads accept PNG/JPG/WEBP, maximum 2 MB, with dimension limits.
+- Added protected authenticated image delivery and hid private storage paths from serialized Department data.
+- Added finalization-time outgoing-letter snapshot for creator name, issuing unit title, organization contact details, organization stamp and the issuing department manager signature. The manager signature is snapshotted only when the workflow has reached `approved_for_registration`; direct registration does not imply manager approval.
+- Added a dedicated registered-correspondence A4 print-preview page, a per-operation «با سربرگ» toggle, separate stamp/signature rendering, print visibility settings, and browser print / Save as PDF action. Added page counters through CSS page margin boxes.
+- Added focused regression tests for department signature upload, organization stamp upload / visibility settings, and immutable outgoing-letter identity/image snapshots.
+- No PDF dependency added. No master, release branch or server changes.
+- Validation is not yet run in the owner's local environment. Migration, PHP tests, frontend type-check/build, multi-page print pagination and manual preview still require verification. Full coordinate configurability, logo/background assets and configurable page-number placement remain follow-up items within Phase 3.
+- This entry supersedes the earlier 2026-11-04 Phase 3 audit note that said implementation had not started.
