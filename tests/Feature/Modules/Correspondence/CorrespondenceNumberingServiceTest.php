@@ -96,7 +96,7 @@ class CorrespondenceNumberingServiceTest extends TestCase
     public function test_register_assigns_a_unique_number_and_freezes_the_correspondence(): void
     {
         $creator = User::factory()->create(['status' => 'active']);
-        $registrar = $this->createSecretariatUser();
+        $registrar = $creator;
         $correspondence = Correspondence::query()->create([
             'type' => Correspondence::TYPE_INTERNAL,
             'subject' => 'ثبت نامه داخلی',
@@ -154,7 +154,7 @@ class CorrespondenceNumberingServiceTest extends TestCase
 
     public function test_registration_number_uses_its_own_configurable_template(): void
     {
-        $creator=User::factory()->create(['status'=>'active']); $registrar=$this->createSecretariatUser();
+        $creator=User::factory()->create(['status'=>'active']); $registrar=$creator;
         $letter=Correspondence::query()->create(['type'=>Correspondence::TYPE_INTERNAL,'subject'=>'قالب مستقل','status'=>Correspondence::STATUS_DRAFT,'letter_number'=>'INT-77','created_by'=>$creator->id]);
         app(SystemSettingsService::class)->set(['correspondence.registration_numbering.format'=>'custom','correspondence.registration_numbering.custom_order'=>'sequence,year','correspondence.registration_numbering.separator'=>'-','correspondence.registration_numbering.padding'=>'4']);
         $registered=app(CorrespondenceNumberingService::class)->register($letter,$registrar);
