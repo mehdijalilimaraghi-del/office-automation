@@ -1,3 +1,8 @@
+## 2026-11-04 — Fix semantic template persistence test
+
+- Updated the visual-template feature fixture to match the new role-based schema: flow elements use width and spacing rather than a fixed height. The previous failure was an outdated test expectation; request validation correctly excludes the removed `height` property from persisted data.
+- No production behavior change. Local focused test rerun remains pending owner confirmation. Development only; master/server unchanged.
+
 ## 2026-11-04 — Role-based Persian letter template and automatic body flow
 
 - Reworked the A4 template editor around semantic roles: letter number/date, addressee/subject, page number, issuer/signature, and repeating text. Variable choices are filtered by the selected role.
