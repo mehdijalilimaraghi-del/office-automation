@@ -6,6 +6,7 @@ namespace App\Modules\Correspondence\Services;
 
 use App\Core\Settings\Services\SystemSettingsService;
 use App\Models\User;
+use App\Core\ExternalParties\Models\ExternalContact;
 use App\Modules\Correspondence\Models\Correspondence;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
@@ -56,6 +57,19 @@ class CorrespondenceNumberingService
                     $locked->letter_number = $this->formatNumber($locked, $this->incrementLetterCounter(), $config);
                 }
             }
+            if ($locked->type === Correspondence::TYPE_OUTGOING && $locked->external_contact_id !== null && $locked->recipient_addressing_snapshot === null) {
+                $contact = ExternalContact::query()->whereKey($locked->external_contact_id)->first();
+                if ($contact !== null) {
+                    $locked->recipient_addressing_snapshot = [
+                        'organizational_title_prefix' => $contact->organizational_title_prefix,
+                        'position' => $contact->position,
+                        'personal_salutation' => $contact->personal_salutation,
+                        'professional_title' => $contact->professional_title,
+                        'name' => $contact->name,
+                    ];
+                }
+            }
+
             $registrationConfig = $this->registrationConfiguration();
             $this->assertFormatIsValid($registrationConfig['format'], $registrationConfig['custom_order']);
             $this->assertSeparator($registrationConfig['separator']);
