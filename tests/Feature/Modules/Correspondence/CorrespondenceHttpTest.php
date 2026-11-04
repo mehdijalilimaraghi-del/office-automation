@@ -807,6 +807,35 @@ class CorrespondenceHttpTest extends TestCase
         ]);
     }
 
+    public function test_direct_registration_setting_is_sent_to_form_and_registers_internal_letter_on_create(): void
+    {
+        $user = $this->userWithPermission('correspondence.create');
+        $recipientDepartmentId = $this->recipientDepartmentId();
+
+        $this->actingAs($user)->get(route('correspondence.create'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('approvalSettings.internal', 'direct'));
+
+        $this->actingAs($user)->post(route('correspondence.store'), [
+            'type' => Correspondence::TYPE_INTERNAL,
+            'recipient_department_id' => $recipientDepartmentId,
+            'subject' => 'نامه داخلی با ثبت مستقیم',
+            'composition_mode' => 'editor',
+            'body' => '<p>متن نامه</p>',
+        ])->assertRedirect(route('correspondence.index'));
+
+        $this->assertDatabaseHas('correspondences', [
+            'subject' => 'نامه داخلی با ثبت مستقیم',
+            'status' => Correspondence::STATUS_REGISTERED,
+            'created_by' => $user->id,
+        ]);
+        $this->assertDatabaseMissing('correspondences', [
+            'subject' => 'نامه داخلی با ثبت مستقیم',
+            'status' => Correspondence::STATUS_DRAFT,
+        ]);
+    }
+
     public function test_user_with_multiple_department_memberships_can_choose_the_creator_department(): void
     {
         $user = User::factory()->create(['status' => 'active']);
