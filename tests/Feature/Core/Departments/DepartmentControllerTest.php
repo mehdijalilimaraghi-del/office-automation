@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Tasks\Models\Task;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\Feature\Core\Concerns\InteractsWithPermissions;
 use Tests\TestCase;
 
@@ -125,6 +127,29 @@ class DepartmentControllerTest extends TestCase
         ]);
     }
 
+
+    public function test_department_manager_signature_is_stored_as_a_private_unit_asset(): void
+    {
+        Storage::fake('local');
+        $user = $this->user();
+        $manager = User::factory()->create(['status' => 'active']);
+        $this->grant($user, 'departments.create');
+
+        $this->actingAs($user)->post(route('departments.store'), [
+            'name' => 'واحد دارای امضا',
+            'code' => 'SIGN-'.strtoupper(bin2hex(random_bytes(2))),
+            'manager_id' => $manager->id,
+            'manager_signature' => UploadedFile::fake()->image('signature.png', 400, 180),
+            'manager_signature_active' => true,
+            'is_active' => true,
+        ])->assertRedirect();
+
+        $department = Department::query()->where('manager_id', $manager->id)->firstOrFail();
+
+        $this->assertNotEmpty($department->manager_signature_path);
+        $this->assertTrue($department->manager_signature_active);
+        Storage::disk('local')->assertExists($department->manager_signature_path);
+    }
 
     public function test_authenticated_user_can_create_department_with_icon(): void
     {
