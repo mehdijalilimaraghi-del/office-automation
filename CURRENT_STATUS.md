@@ -1,3 +1,9 @@
+## 2026-11-04 — Template token and asset binding completion
+
+- Template variables now include recipient organization/unit/position/title, recipient name, subject, letter type, creator name and creator unit title, in addition to organization contact details and letter numbering/date. Variables without a reliable source are not offered as selectable tokens.
+- Stamp and signature image elements bind to the protected correspondence-specific snapshot assets. Legacy footer rendering remains for stamp/signature/creator identity unless the template explicitly places the corresponding element/token, avoiding accidental disappearance or duplicate output.
+- Feature coverage includes persisting a text element and an image asset element, plus denial without `settings.manage`. Local execution is still pending.
+
 ## 2026-11-04 — Template designer image elements follow-up
 
 - Added selectable template element kinds: text, organization stamp, and issuing-unit manager signature. Stamp/signature elements use the existing protected, snapshotted image assets; their position and dimensions are configured in the A4 editor. Text elements support creator identity tokens as well.
