@@ -144,7 +144,7 @@ class TaskReferralHttpTest extends TestCase
             'from_user_id' => $employee->id,
             'to_user_id' => $manager->id,
             'assigned_by' => $manager->id,
-            'type' => 'manager_accept_responsibility',
+            'type' => 'manager_accept',
         ]);
     }
 
