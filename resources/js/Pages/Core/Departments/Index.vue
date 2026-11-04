@@ -51,6 +51,8 @@ interface Department {
     is_active: boolean;
     is_system_default: boolean;
     manager_id: number | null;
+    manager_signature_url?: string | null;
+    manager_signature_active?: boolean;
     manager?: { id: number; name: string } | null;
     parent?: { id: number; name: string } | null;
     members?: DepartmentMember[];
@@ -92,6 +94,9 @@ const showPositionForm = ref(false);
 const form = useForm({
     parent_id: null as number | null,
     manager_id: null as number | null,
+    manager_signature: null as File | null,
+    manager_signature_active: false,
+    remove_manager_signature: false,
     name: '',
     code: '',
     icon: 'building-2',
@@ -239,6 +244,9 @@ const resetDepartmentForm = () => {
     form.icon = 'building-2';
     form.code = '';
     form.custom_fields = {};
+    form.manager_signature = null;
+    form.manager_signature_active = false;
+    form.remove_manager_signature = false;
     form.clearErrors();
 };
 
@@ -254,6 +262,9 @@ const openEdit = (department: Department) => {
     editingDepartment.value = department;
     form.parent_id = department.parent_id;
     form.manager_id = department.manager_id;
+    form.manager_signature = null;
+    form.manager_signature_active = department.manager_signature_active ?? false;
+    form.remove_manager_signature = false;
     form.name = department.name;
     form.code = department.code ?? '';
     form.icon = department.icon ?? 'building-2';
@@ -267,6 +278,7 @@ const openEdit = (department: Department) => {
 const submitDepartment = () => {
     const options = {
         preserveScroll: true,
+        forceFormData: true,
         onSuccess: () => {
             showDepartmentForm.value = false;
             editingDepartment.value = null;
@@ -1014,6 +1026,32 @@ watch(
                             </AppSelect>
                             <InputError class="mt-1.5" :message="form.errors.manager_id" />
                         </div>
+                    </div>
+
+                    <div class="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div>
+                            <label class="mb-2 block text-sm font-semibold text-slate-700">تصویر امضای مدیر این واحد</label>
+                            <input
+                                type="file"
+                                accept="image/png,image/jpeg,image/webp"
+                                class="block w-full text-sm text-slate-600 file:ml-3 file:rounded-lg file:border-0 file:bg-white file:px-4 file:py-2 file:font-semibold file:text-slate-700"
+                                @change="(event) => { form.manager_signature = (event.target as HTMLInputElement).files?.[0] ?? null; form.remove_manager_signature = false; }"
+                            />
+                            <p class="mt-1 text-xs text-slate-500">فقط تصویر PNG، JPG یا WEBP تا ۲ مگابایت؛ این امضا متعلق به واحد است، نه حساب کاربری مدیر.</p>
+                            <InputError class="mt-1.5" :message="form.errors.manager_signature" />
+                        </div>
+                        <div v-if="editingDepartment?.manager_signature_url && !form.remove_manager_signature" class="flex items-center gap-3">
+                            <img :src="editingDepartment.manager_signature_url" alt="امضای فعلی مدیر واحد" class="h-16 max-w-40 rounded border border-slate-200 bg-white object-contain p-2" />
+                            <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                                <input v-model="form.remove_manager_signature" type="checkbox" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500" />
+                                حذف امضای فعلی
+                            </label>
+                        </div>
+                        <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+                            <input v-model="form.manager_signature_active" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
+                            استفاده از امضای مدیر در خروجی نامه
+                        </label>
+                        <InputError class="mt-1.5" :message="form.errors.manager_signature_active" />
                     </div>
 
                     <div>
