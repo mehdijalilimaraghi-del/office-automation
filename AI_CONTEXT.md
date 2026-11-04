@@ -1,3 +1,8 @@
+## 2026-11-04 — Correspondence approval test department-manager setup
+
+- The two HTTP draft-persistence tests now create an active manager and assign that manager to the creator's primary department. This is required because the approval workflow must resolve an active manager for the creating department; merely setting internal approval to `approval` is not a complete fixture.
+- The previous rerun exposed this missing fixture: both requests were correctly rejected with the Persian validation message that no active approval manager was configured. Product validation and authorization remain unchanged. Validation pending; development only; master and server untouched.
+
 ## 2026-11-04 — Correspondence test alignment with direct-registration policy
 
 - Local correspondence test run exposed four failures caused by stale test assumptions, not four distinct runtime regressions: two HTTP tests still expected internal letters to remain drafts although the default internal policy is direct registration; two numbering-service tests attempted to register an internal letter as a separate Secretariat registrar although direct internal registration is creator-only.
