@@ -200,9 +200,10 @@ class ExternalPartyService implements ExternalPartyServiceInterface
     }
     public function deleteContact(ExternalContact $contact): void
     {
-        if (DB::table('task_external_contacts')->where('external_contact_id', $contact->id)->exists()) {
+        if (DB::table('task_external_contacts')->where('external_contact_id', $contact->id)->exists()
+            || Correspondence::query()->where('external_contact_id', $contact->id)->exists()) {
             throw ValidationException::withMessages([
-                'contact' => 'این شخص خارجی به فعالیت ثبت‌شده متصل است و قابل حذف نیست.',
+                'contact' => 'این شخص خارجی به فعالیت یا مکاتبه ثبت‌شده متصل است و قابل حذف نیست؛ در صورت نیاز وضعیت آن را غیرفعال کنید.',
             ]);
         }
 
@@ -255,6 +256,8 @@ class ExternalPartyService implements ExternalPartyServiceInterface
         if (! $contact->is_default) {
             return;
         }
+
+        ExternalOrganization::query()->whereKey($contact->external_organization_id)->lockForUpdate()->first();
 
         $query = ExternalContact::query()
             ->where('external_organization_id', $contact->external_organization_id)
