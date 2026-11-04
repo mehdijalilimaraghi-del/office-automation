@@ -76,7 +76,7 @@ class DepartmentController extends Controller
             $data['manager_signature_path'] = $request->file('manager_signature')->store('organization/department-signatures', 'local');
             $data['manager_signature_active'] = (bool) ($data['manager_signature_active'] ?? true);
         }
-        if (empty($data['manager_signature_path']) && ! $request->hasFile('manager_signature')) {
+        if (! $department->manager_signature_path && ! $request->hasFile('manager_signature')) {
             $data['manager_signature_active'] = false;
         }
         $this->departmentService->update($department, $data);
