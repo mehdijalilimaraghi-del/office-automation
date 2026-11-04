@@ -143,6 +143,20 @@ class ExternalPartyService implements ExternalPartyServiceInterface
         return DB::transaction(function () use ($department, $data): ExternalDepartment {
             
                     $this->validateDepartmentParent($data, $department->id);
+                    if (! empty($data['manager_contact_id'])) {
+                        $manager = ExternalContact::query()
+                            ->whereKey((int) $data['manager_contact_id'])
+                            ->where('external_organization_id', (int) $data['external_organization_id'])
+                            ->where('external_department_id', $department->id)
+                            ->where('status', 'active')
+                            ->exists();
+
+                        if (! $manager) {
+                            throw ValidationException::withMessages([
+                                'manager_contact_id' => 'مدیر واحد باید شخص فعال متعلق به همین واحد باشد.',
+                            ]);
+                        }
+                    }
                     if ((int) $department->external_organization_id !== (int) $data['external_organization_id']
                         && ($department->children()->exists() || $department->contacts()->exists())) {
                         throw ValidationException::withMessages([
@@ -189,6 +203,19 @@ class ExternalPartyService implements ExternalPartyServiceInterface
         return DB::transaction(function () use ($contact, $data): ExternalContact {
             
                     $this->validateContactDepartment($data);
+                    $isAssignedManager = ExternalDepartment::query()
+                        ->where('manager_contact_id', $contact->id)
+                        ->exists();
+
+                    if ($isAssignedManager
+                        && (($data['status'] ?? $contact->status) !== 'active'
+                            || (int) ($data['external_department_id'] ?? 0) !== (int) $contact->external_department_id
+                            || (int) ($data['external_organization_id'] ?? 0) !== (int) $contact->external_organization_id)) {
+                        throw ValidationException::withMessages([
+                            'contact' => 'این شخص مدیر یک واحد بیرونی است؛ ابتدا مدیر واحد را تغییر دهید، سپس وضعیت یا واحد انتسابی او را ویرایش کنید.',
+                        ]);
+                    }
+
                     $customFields = $data['custom_fields'] ?? [];
                     unset($data['code'], $data['custom_fields']);
                     $contact->update($data);
