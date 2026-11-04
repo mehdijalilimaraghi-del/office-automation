@@ -143,6 +143,34 @@ class CorrespondenceWorkflowService
                 CorrespondenceAction::EMPLOYEE_REQUEST_PROJECT,
             ];
 
+            if ($type === CorrespondenceAction::MANAGER_ACCEPT_RESPONSIBILITY) {
+                abort_unless(
+                    $isManager
+                    && $letter->status === Correspondence::STATUS_REGISTERED
+                    && $letter->workflow_state === 'in_progress'
+                    && ($letter->current_user_id === null || (int) $letter->current_user_id === (int) $actor->id),
+                    403,
+                    'پذیرش مسئولیت فقط برای مدیر واحد مسئول و در وضعیت قابل اقدام مجاز است.'
+                );
+
+                $this->record(
+                    $letter,
+                    $actor,
+                    $type,
+                    $note,
+                    $currentDepartmentId,
+                    $currentDepartmentId,
+                    $letter->current_user_id === null ? null : (int) $letter->current_user_id,
+                    (int) $actor->id,
+                    ['responsibility' => 'manager'],
+                );
+                $letter->forceFill([
+                    'current_user_id' => (int) $actor->id,
+                    'workflow_state' => 'in_progress',
+                ])->save();
+                return;
+            }
+
             if (in_array($type, $generalEmployeeRequestActions, true)) {
                 abort_unless($canRecordResult && ! $isProjectDepartment && $isDepartmentMember && ! $isManager
                     && $letter->workflow_state === 'assigned_to_employee'
