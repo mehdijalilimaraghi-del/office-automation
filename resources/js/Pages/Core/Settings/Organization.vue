@@ -199,8 +199,8 @@ function submit(): void {
                                 <p class="mt-1 text-xs text-slate-500">تصویر جداگانه مهر سازمان؛ PNG، JPG یا WEBP تا ۲ مگابایت.</p>
                                 <InputError class="mt-1.5" :message="form.errors.stamp" />
                             </div>
-                            <div v-if="props.settings.stamp_url && !form.remove_stamp" class="flex items-center gap-3">
-                                <img :src="props.settings.stamp_url" alt="مهر فعلی سازمان" class="h-20 w-20 rounded border border-slate-200 bg-white object-contain p-2" />
+                            <div v-if="props.settings.stamp_url" class="flex items-center gap-3">
+                                <img v-if="!form.remove_stamp" :src="props.settings.stamp_url" alt="مهر فعلی سازمان" class="h-20 w-20 rounded border border-slate-200 bg-white object-contain p-2" />
                                 <label class="inline-flex items-center gap-2 text-sm text-slate-700"><input v-model="form.remove_stamp" type="checkbox" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500" /> حذف مهر فعلی</label>
                             </div>
                             <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700"><input v-model="form.stamp_active" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> استفاده از مهر در خروجی نامه</label>
