@@ -315,6 +315,7 @@ class TaskController extends Controller
             'canCreateCorrespondence' => $request->user()->hasPermission('correspondence.create'),
             'abilities' => [
                 'refer' => Gate::allows('refer', $task),
+                'accept_responsibility' => Gate::allows('acceptResponsibility', $task),
                 'comment' => Gate::allows('comment', $task),
                 'log_work' => Gate::allows('logWork', $task),
                 'create_reminder' => Gate::allows('createReminder', $task),
@@ -438,6 +439,25 @@ class TaskController extends Controller
         }
 
         return back()->with('success', 'مسئول تسک با موفقیت تغییر کرد.');
+    }
+
+    public function acceptResponsibility(Request $request, Task $task): RedirectResponse
+    {
+        Gate::authorize('acceptResponsibility', $task);
+
+        try {
+            $this->taskService->assign(
+                task: $task,
+                assignee: $request->user(),
+                actor: $request->user(),
+                type: 'manager_accept_responsibility',
+                note: 'پذیرش مسئولیت توسط مدیر واحد',
+            );
+        } catch (InvalidArgumentException $exception) {
+            throw ValidationException::withMessages(['task' => $exception->getMessage()]);
+        }
+
+        return back()->with('success', 'مسئولیت دستورکار به شما واگذار شد.');
     }
 
     public function refer(ReferTaskRequest $request, Task $task): RedirectResponse
