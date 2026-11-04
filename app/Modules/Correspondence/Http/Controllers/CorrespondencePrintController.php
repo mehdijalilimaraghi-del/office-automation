@@ -32,14 +32,25 @@ class CorrespondencePrintController extends Controller
         ]);
 
         $snapshot = $correspondence->document_identity_snapshot ?? [];
-        $organization = $snapshot['organization'] ?? $settings->get([
-            'organization.name' => null,
-            'organization.short_name' => null,
-            'organization.address' => null,
-            'organization.phone' => null,
-            'organization.email' => null,
-            'organization.website' => null,
-        ]);
+        $organization = $snapshot['organization'] ?? (function () use ($settings): array {
+            $values = $settings->get([
+                'organization.name' => null,
+                'organization.short_name' => null,
+                'organization.address' => null,
+                'organization.phone' => null,
+                'organization.email' => null,
+                'organization.website' => null,
+            ]);
+
+            return [
+                'name' => $values['organization.name'],
+                'short_name' => $values['organization.short_name'],
+                'address' => $values['organization.address'],
+                'phone' => $values['organization.phone'],
+                'email' => $values['organization.email'],
+                'website' => $values['organization.website'],
+            ];
+        })();
 
         $stampPath = $snapshot['stamp_path'] ?? null;
         $signaturePath = $snapshot['signature_path'] ?? null;
