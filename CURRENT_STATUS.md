@@ -1,3 +1,10 @@
+## 2026-11-04 — Fix correspondence controller parse error
+
+- Root cause of the widespread HTTP 500/test failures: the `createDraft()` attribute array in `CorrespondenceController::store()` had a malformed key (`'reply_to_id => ...`) introduced while wiring multi-letter relations. PHP could not parse the controller, so unrelated routes/tests also failed when Laravel attempted to load routes/controllers.
+- Corrected the key to `'reply_to_id' => ...`; retained the existing first-related-letter fallback and source-project correspondence fallback. No workflow, validation, authorization, or database behavior was changed.
+- Existing `CorrespondenceHttpTest` and `ExternalPartyControllerTest` cover the affected route-loading and create/update behavior. Validation is pending on the project owner's Windows environment; run PHP lint plus both focused feature suites in the single validation step provided in the handoff.
+- Development only. `master`, release branch, migrations, and server are untouched.
+
 ## 2026-11-04 — مرحله ۲: مخاطب بیرونی و snapshot خطاب
 
 - در `ExternalContact` فیلدهای مستقل پیشوند عنوان سازمانی، سمت سازمانی، پیشوند خطاب شخصی و عنوان حرفه‌ای اضافه شدند.
