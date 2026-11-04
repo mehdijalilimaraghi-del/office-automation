@@ -1022,6 +1022,7 @@ class CorrespondenceController extends Controller
             'createdDepartments' => $createdDepartments,
             'externalOrganizations' => ExternalOrganization::query()->where('status', 'active')->orderBy('name')->get(['id', 'name']),
             'externalDepartments' => ExternalDepartment::query()->where('status', 'active')->orderBy('name')->get(['id', 'external_organization_id', 'parent_id', 'name']),
+            'externalContacts' => ExternalContact::query()->where('status', 'active')->orderBy('name')->get(['id', 'external_organization_id', 'external_department_id', 'name', 'position', 'organizational_title_prefix', 'personal_salutation', 'professional_title', 'is_default']),
             'types' => [
                 ['value' => Correspondence::TYPE_INCOMING, 'label' => 'وارده'],
                 ['value' => Correspondence::TYPE_OUTGOING, 'label' => 'صادره'],
