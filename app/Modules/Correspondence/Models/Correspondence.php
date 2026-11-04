@@ -56,6 +56,7 @@ class Correspondence extends Model
         'external_department_id',
         'external_contact_id',
         'recipient_addressing_snapshot',
+        'document_identity_snapshot',
         'workflow_instance_id',
         'reply_to_id',
         'task_id',
@@ -77,6 +78,7 @@ class Correspondence extends Model
             'sent_at' => 'datetime',
             'external_registered_at' => 'date',
             'recipient_addressing_snapshot' => 'array',
+            'document_identity_snapshot' => 'array',
         ];
     }
 
