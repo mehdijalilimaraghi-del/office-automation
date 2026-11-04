@@ -104,7 +104,14 @@ function edit(f:any,item:any){
     delete f.code;
     delete f.managerContact;
     if(f===depForm) { f.parent_id=item.parent_id??''; f.manager_contact_id=item.manager_contact_id??''; }
-    if(f===contactForm) f.external_department_id=item.external_department_id??'';
+    if(f===contactForm) {
+        f.external_department_id=item.external_department_id??'';
+        delete f.position;
+        delete f.organizational_title_prefix;
+        delete f.personal_salutation;
+        delete f.professional_title;
+        delete f.is_default;
+    }
     window.scrollTo({top:0,behavior:'smooth'});
 }
 function submit(f:any,base:string){
