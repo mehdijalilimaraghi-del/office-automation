@@ -7,6 +7,9 @@ use App\Core\Departments\Models\Department;
 use App\Core\Settings\Services\OrganizationDepartmentRoleService;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use App\Core\Settings\Models\SystemSetting;
 use Tests\Feature\Core\Concerns\InteractsWithPermissions;
 use Tests\TestCase;
 
@@ -17,6 +20,7 @@ class OrganizationSettingsTest extends TestCase
 
     public function test_user_with_settings_permission_can_update_organization_settings(): void
     {
+        Storage::fake('local');
         $admin = User::factory()->create();
         $this->grantPermissions($admin, ['settings.manage']);
         $management = Department::query()->create([
@@ -46,6 +50,11 @@ class OrganizationSettingsTest extends TestCase
             'email' => 'info@example.com',
             'website' => 'https://example.com',
             'address' => 'تهران',
+            'stamp' => UploadedFile::fake()->image('stamp.png', 300, 300),
+            'stamp_active' => true,
+            'print_show_creator_identity' => false,
+            'print_show_stamp' => true,
+            'print_show_department_signature' => false,
             'numbering_format' => 'custom',
             'numbering_order_first' => 'sequence',
             'numbering_order_second' => 'department',
@@ -80,6 +89,12 @@ class OrganizationSettingsTest extends TestCase
             'key' => 'organization.national_id',
             'value' => '1234567890',
         ]);
+        $this->assertDatabaseHas('system_settings', ['key' => 'organization.stamp.active', 'value' => '1']);
+        $stampPath = SystemSetting::query()->where('key', 'organization.stamp.path')->value('value');
+        $this->assertNotEmpty($stampPath);
+        Storage::disk('local')->assertExists($stampPath);
+        $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.print.show_creator_identity', 'value' => '0']);
+        $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.print.show_department_signature', 'value' => '0']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.numbering.format', 'value' => 'custom']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.numbering.custom_order', 'value' => 'sequence,department,year']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.registration_numbering.format', 'value' => 'custom']);
