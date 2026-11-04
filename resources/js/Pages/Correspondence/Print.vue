@@ -12,7 +12,7 @@ interface AddressingSnapshot {
     department_name?: string | null;
 }
 
-interface TemplateElement { id: string; label: string; content: string; x: number; y: number; width: number; height: number; font_size: number; bold: boolean; align: 'right'|'center'|'left'; visible: boolean; }
+interface TemplateElement { id: string; kind: 'text'|'stamp'|'signature'; label: string; content: string; x: number; y: number; width: number; height: number; font_size: number; bold: boolean; align: 'right'|'center'|'left'; visible: boolean; }
 
 interface PrintLetter {
     id: number;
@@ -106,7 +106,11 @@ function printLetter(): void {
 
         <article class="paper mx-auto bg-white px-[18mm] py-[14mm] shadow-xl" :style="{ fontFamily: printOptions.font_family || 'Vazirmatn' }">
             <div v-if="templateElements.length && withLetterhead" class="template-overlay" aria-hidden="true">
-                <div v-for="element in templateElements.filter(item => item.visible)" :key="element.id" class="template-box" :style="{ left:element.x+'%', top:element.y+'%', width:element.width+'%', height:element.height+'%', fontSize:element.font_size+'pt', fontWeight:element.bold?'700':'400', textAlign:element.align }">{{ resolveTemplate(element.content) }}</div>
+                <div v-for="element in templateElements.filter(item => item.visible)" :key="element.id" class="template-box" :style="{ left:element.x+'%', top:element.y+'%', width:element.width+'%', height:element.height+'%', fontSize:element.font_size+'pt', fontWeight:element.bold?'700':'400', textAlign:element.align }">
+                    <img v-if="element.kind === 'stamp' && stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="h-full w-full object-contain" />
+                    <img v-else-if="element.kind === 'signature' && signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="h-full w-full object-contain" />
+                    <span v-else-if="element.kind === 'text'">{{ resolveTemplate(element.content) }}</span>
+                </div>
             </div>
             <header v-if="!templateElements.length" class="letterhead-slot" :class="{ 'letterhead-hidden': !withLetterhead }">
                 <div class="flex items-start justify-between gap-6 border-b-2 border-slate-700 pb-4">
