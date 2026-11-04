@@ -54,7 +54,7 @@ class CorrespondenceTemplateController extends Controller
         $data = $request->validate([
             'elements' => ['required', 'array', 'min:1', 'max:20'],
             'elements.*.kind' => ['required', 'in:text,stamp,signature'],
-            'elements.*.id' => ['required', 'string', 'max:40'],
+            'elements.*.id' => ['required', 'string', 'max:40', 'distinct'],
             'elements.*.label' => ['required', 'string', 'max:80'],
             'elements.*.content' => ['nullable', 'string', 'max:2000'],
             'elements.*.x' => ['required', 'numeric', 'min:0', 'max:100'],
