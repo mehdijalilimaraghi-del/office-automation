@@ -8,6 +8,7 @@ use App\Core\ExternalParties\Models\{ExternalContact, ExternalDepartment, Extern
 use App\Http\Controllers\Controller;
 use Illuminate\Http\{RedirectResponse, Request};
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -79,6 +80,10 @@ class ExternalPartyController extends Controller
             'external_organization_id' => ['required', 'exists:external_organizations,id'],
             'parent_id' => ['nullable', 'exists:external_departments,id'],
             'name' => ['required', 'string', 'max:255'],
+            'organizational_title_prefix' => ['nullable', 'string', 'max:100'],
+            'position' => ['nullable', 'string', 'max:255'],
+            'personal_salutation' => ['nullable', 'string', 'max:100'],
+            'professional_title' => ['nullable', 'string', 'max:100'],
             'custom_fields' => ['nullable', 'array'],
             'phone' => ['nullable', 'string', 'max:50'],
             'extension' => ['nullable', 'string', 'max:20'],
@@ -97,6 +102,11 @@ class ExternalPartyController extends Controller
             'external_organization_id' => ['required', 'exists:external_organizations,id'],
             'parent_id' => ['nullable', 'exists:external_departments,id'],
             'name' => ['required', 'string', 'max:255'],
+            'manager_contact_id' => ['nullable', 'integer', Rule::exists('external_contacts', 'id')->where(fn ($query) => $query->where('external_organization_id', $request->input('external_organization_id'))->where('external_department_id', $department->id)->where('status', 'active'))],
+            'organizational_title_prefix' => ['nullable', 'string', 'max:100'],
+            'position' => ['nullable', 'string', 'max:255'],
+            'personal_salutation' => ['nullable', 'string', 'max:100'],
+            'professional_title' => ['nullable', 'string', 'max:100'],
             'custom_fields' => ['nullable', 'array'],
             'phone' => ['nullable', 'string', 'max:50'],
             'extension' => ['nullable', 'string', 'max:20'],
