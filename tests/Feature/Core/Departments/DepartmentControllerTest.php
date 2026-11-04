@@ -151,6 +151,37 @@ class DepartmentControllerTest extends TestCase
         Storage::disk('local')->assertExists($department->manager_signature_path);
     }
 
+    public function test_changing_department_manager_deactivates_the_previous_manager_signature(): void
+    {
+        Storage::fake('local');
+        Storage::disk('local')->put('organization/department-signatures/current.png', 'signature');
+        $editor = $this->user();
+        $oldManager = User::factory()->create(['status' => 'active']);
+        $newManager = User::factory()->create(['status' => 'active']);
+        $department = Department::query()->create([
+            'name' => 'واحد تغییر مدیر',
+            'code' => 'MGR-'.strtoupper(bin2hex(random_bytes(2))),
+            'manager_id' => $oldManager->id,
+            'manager_signature_path' => 'organization/department-signatures/current.png',
+            'manager_signature_active' => true,
+            'is_active' => true,
+        ]);
+        $this->grant($editor, 'departments.edit');
+
+        $this->actingAs($editor)->put(route('departments.update', $department), [
+            'name' => $department->name,
+            'code' => $department->code,
+            'manager_id' => $newManager->id,
+            'manager_signature_active' => true,
+            'is_active' => true,
+        ])->assertRedirect();
+
+        $department->refresh();
+        $this->assertSame((int) $newManager->id, (int) $department->manager_id);
+        $this->assertFalse($department->manager_signature_active);
+        $this->assertTrue($department->members()->whereKey($newManager->id)->exists());
+    }
+
     public function test_authenticated_user_can_create_department_with_icon(): void
     {
         $user = $this->user();
