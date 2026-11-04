@@ -238,6 +238,7 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
                 <h3 class="font-bold text-slate-900">{{d.name}}</h3>
               </div>
               <p class="mt-1 text-xs text-slate-500">{{d.organization?.name||'—'}}<span v-if="d.parent_id"> · زیرمجموعه واحد بالادست</span> · {{d.phone||'بدون تلفن'}}<span v-if="d.extension"> · داخلی {{d.extension}}</span></p>
+              <p v-if="d.managerContact || d.position || d.organizational_title_prefix" class="mt-1 text-xs text-teal-700">مدیر: {{d.managerContact?.name||'تعیین نشده'}} · {{[d.organizational_title_prefix,d.position,d.personal_salutation,d.professional_title].filter(Boolean).join(' ')}}</p>
               <p class="mt-1 font-mono text-[10px] text-slate-400" dir="ltr">کد سیستمی: {{d.code||'—'}}</p>
             </div>
             <div class="flex gap-2"><button @click="edit(depForm,d)" class="rounded-lg px-3 py-2 text-xs font-bold text-teal-700 hover:bg-teal-50">ویرایش</button><button @click="destroy('external-parties.departments.destroy',d.id)" class="rounded-lg px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">حذف</button></div>
