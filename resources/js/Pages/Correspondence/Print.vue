@@ -12,7 +12,7 @@ const flowMeta=computed(()=>elements.value.filter(item=>item.role==='meta'));
 const flowHeading=computed(()=>elements.value.filter(item=>item.role==='heading'));
 const flowIssuer=computed(()=>elements.value.filter(item=>item.role==='issuer'));
 const repeating=computed(()=>elements.value.filter(item=>item.role==='repeat'));
-const pageNumberEnabled=computed(()=>elements.value.some(item=>item.role==='page_number'));
+const pageNumberEnabled=computed(()=>elements.value.some(item=>item.role==='page_number'));\nconst hasCreatorElement=computed(()=>flowIssuer.value.some(item=>item.kind==='text'&&(item.content.includes('{{creator_name}}')||item.content.includes('{{creator_unit_title}}'))));\nconst hasSignatureElement=computed(()=>flowIssuer.value.some(item=>item.kind==='signature'));\nconst hasStampElement=computed(()=>flowIssuer.value.some(item=>item.kind==='stamp'));
 const typeLabel=computed(()=>({incoming:'نامه وارده',outgoing:'نامه صادره',internal:'نامه داخلی'})[props.letter.type]);
 const recipientLines=computed(()=>{const a=props.letter.recipient_addressing;if(!a)return [props.letter.recipient_name].filter(Boolean) as string[];return [[a.organizational_title_prefix,a.position].filter(Boolean).join(' '),[a.personal_salutation,a.professional_title,a.name].filter(Boolean).join(' '),[a.organization_name,a.department_name].filter(Boolean).join(' - ')].filter(Boolean) as string[];});
 const letterDate=computed(()=>{const value=props.letter.sent_at??props.letter.registered_at;return value?new Intl.DateTimeFormat('fa-IR',{dateStyle:'long'}).format(new Date(value)):'—';});
@@ -47,10 +47,10 @@ function printLetter():void{window.print();}
      <div v-else-if="item.kind==='signature'&&signatureDataUri"><img :src="signatureDataUri" alt="امضای مدیر واحد" class="inline-asset"/></div>
      <template v-else>{{resolveTemplate(item.content)}}</template>
     </div>
-    <footer v-if="!flowIssuer.length && (printOptions.show_creator_identity||printOptions.show_department_signature&&signatureDataUri||printOptions.show_stamp&&stampDataUri)" class="signature-area">
-     <div v-if="printOptions.show_creator_identity" class="text-center text-sm leading-7"><p v-if="creatorUnitTitle" class="font-semibold">{{creatorUnitTitle}}</p><p v-if="creatorName" class="font-bold">{{creatorName}}</p></div>
-     <img v-if="printOptions.show_department_signature&&signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="inline-asset"/>
-     <img v-if="printOptions.show_stamp&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="inline-asset"/>
+    <footer v-if="(!hasCreatorElement&&printOptions.show_creator_identity)||(!hasSignatureElement&&printOptions.show_department_signature&&signatureDataUri)||(!hasStampElement&&printOptions.show_stamp&&stampDataUri)" class="signature-area">
+     <div v-if="!hasCreatorElement&&printOptions.show_creator_identity" class="text-center text-sm leading-7"><p v-if="creatorUnitTitle" class="font-semibold">{{creatorUnitTitle}}</p><p v-if="creatorName" class="font-bold">{{creatorName}}</p></div>
+     <img v-if="!hasSignatureElement&&printOptions.show_department_signature&&signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="inline-asset"/>
+     <img v-if="!hasStampElement&&printOptions.show_stamp&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="inline-asset"/>
     </footer>
    </div>
   </article>
