@@ -162,7 +162,15 @@ class OrganizationSettingsTest extends TestCase
             ->assertSessionHas('success');
 
         $storedTemplate = SystemSetting::query()->where('key', 'correspondence.print.template')->value('value');
-        $this->assertSame($elements, json_decode($storedTemplate, true, 512, JSON_THROW_ON_ERROR));
+        $actual = json_decode($storedTemplate, true, 512, JSON_THROW_ON_ERROR);
+        $normalize = static function (array $items): array {
+            foreach ($items as &$item) {
+                ksort($item);
+            }
+            unset($item);
+            return $items;
+        };
+        $this->assertSame($normalize($elements), $normalize($actual));
     }
 
     public function test_user_without_settings_permission_cannot_manage_correspondence_template(): void
