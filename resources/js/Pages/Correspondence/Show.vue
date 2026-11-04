@@ -110,6 +110,7 @@ const referralActions = props.correspondence.actions.filter((item) => Boolean(it
 const actionLabels: Record<string, string> = {
     submit_result: 'ثبت نتیجه بررسی و ارسال به مدیر',
     manager_refer: 'ارجاع',
+    manager_accept_responsibility: 'پذیرش مسئولیت توسط مدیر واحد',
     manager_recall_referral: 'پس گرفتن ارجاع',
     secretariat_return: 'برگشت برای اصلاح توسط دبیرخانه',
     resubmit_to_secretariat: 'ارسال مجدد به دبیرخانه',
@@ -383,6 +384,9 @@ function registerCorrespondence(): void {
                         </div>
                     </div>
                     <form v-if="canManageWorkflow || canReturnToManager || canProjectEmployeeReview || canReviewProjectRequest || canSecretariatReturn || canResubmitToSecretariat || canSubmitGeneralRequest || canReviewGeneralRequest" class="grid gap-3 rounded-xl border border-slate-200 p-4 sm:grid-cols-2" @submit.prevent="submitWorkflowAction">
+                        <div v-if="canManageWorkflow && correspondence.workflow_state === 'in_progress'" class="sm:col-span-2 flex justify-start">
+                            <button type="button" class="rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-800" @click="actionForm.action_type = 'manager_accept_responsibility'; submitWorkflowAction()">پذیرش مسئولیت مکاتبه</button>
+                        </div>
                         <div v-if="canManageWorkflow">
                             <label class="mb-1 block text-sm font-medium text-slate-700">اقدام مدیر</label>
                             <AppSelect v-model="actionForm.action_type" class="w-full rounded-xl border-slate-300 text-sm">
