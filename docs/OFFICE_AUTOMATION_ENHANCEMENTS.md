@@ -69,7 +69,7 @@ In Correspondence > outgoing letter composition, specifically the «روش ته�
 |---|---|---|
 | 1 | Manager accepts responsibility in Correspondence and Tasks, with authorization, audit/history and regression tests | Implemented; focused tests passed (owner-reported) |
 | 2 | External recipient defaults, organizational title prefix and addressing snapshot | Backend/form implementation added; focused regression suites passed (owner-reported); frontend build and end-to-end acceptance remain pending |
-| 3 | Shared letterhead/template, creator identity block, organization stamp, per-department manager signature, configurable fields, multipage layout and page numbering for PDF/print | Not started |
+| 3 | Shared letterhead/template, creator identity block, organization stamp, per-department manager signature, configurable fields, multipage layout and page numbering for PDF/print | Initial implementation committed; tests/build/manual print and remaining layout controls pending |
 | 4 | Reusable outgoing-letter body templates in the letter editor, editable after insertion | Not started |
 | 5 | End-to-end regression, build and manual acceptance of all five feature areas | Not started |
 
@@ -113,3 +113,15 @@ Verified implementation facts on `development`:
 - The Documents module uses a storage contract and disk/path/version metadata, and its download endpoint authorizes access. Existing public avatar storage must not be treated as the default access policy for official stamp/signature files.
 
 No application code, migration, dependency, master/release branch or server change was made during this audit. The remaining architecture decision is whether PDF output means browser-native Print / Save as PDF from the same HTML/CSS A4 template used for physical printing, or a server-generated downloadable PDF using an added renderer. This choice affects preview, pagination and image delivery, so it must be settled before the shared output pipeline is implemented.
+
+
+## 2026-11-04 — Phase 3 implementation slice 1
+
+- Output architecture selected by the owner: one shared HTML/CSS A4 template, using browser-native Print / Save as PDF. No server-side PDF renderer/package was introduced.
+- Unit manager signature is configured on the Department, not per user. A unit still supports multiple members and one manager; changing the manager deactivates the previous signature until replaced.
+- Organization stamp is configured separately under Core → Organization Settings. Stamp and manager signature are separate private assets, independently replaceable and activatable.
+- Added authenticated image delivery, upload validation (PNG/JPG/WEBP, 2 MB maximum, dimension constraints), and private storage.
+- Outgoing-letter finalization snapshots creator name, issuing unit title, organization contact details, stamp and manager signature. The signature is included only for the approved-for-registration workflow state.
+- Added registered-letter A4 preview/print page, per-operation letterhead toggle, independent creator/stamp/signature visibility controls and CSS page counters.
+- Focused tests were added for asset uploads and finalization snapshots. Local execution is pending.
+- Remaining Phase 3 work: verify the migration, tests and build; manually validate long multi-page letters and printer output; complete detailed placement/coordinate controls, logo/background support and configurable page-number placement.
