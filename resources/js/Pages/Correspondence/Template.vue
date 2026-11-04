@@ -24,7 +24,8 @@ const roleTokens:Record<Role,string[]> = {
  repeat:['{{organization_name}}','{{short_name}}','{{address}}','{{tel}}','{{email}}','{{website}}']
 };
 const availableTokens = computed(() => props.tokens.filter(token => selected.value && roleTokens[selected.value.role].includes(token.key)));
-function addRole(role:string):void { if (role in roleLabels) addBox(role as Role); }\nfunction addBox(role:Role, kind:Kind='text'):void {
+function addRole(role:string):void { if (role in roleLabels) addBox(role as Role); }
+function addBox(role:Role, kind:Kind='text'):void {
  const id='item_'+Math.random().toString(36).slice(2,9);
  const labels:Record<Role,string> = roleLabels;
  form.elements.push({id,kind,role,label:kind==='stamp'?'مهر سازمان':kind==='signature'?'امضای مدیر واحد':labels[role],content:role==='page_number'?'':role==='meta'?'شماره: {{letter_number}}\nتاریخ: {{date}}':role==='issuer'?'{{creator_unit_title}}\n{{creator_name}}':'',x:8,y:role==='repeat'?8:0,width:84,spacing:role==='heading'?8:role==='issuer'?16:0,font_size:role==='meta'?10:12,bold:role==='heading',align:'right',visible:true});
