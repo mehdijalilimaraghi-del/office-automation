@@ -8,6 +8,7 @@ use App\Core\Audit\Contracts\AuditServiceInterface;
 use App\Core\Departments\Contracts\DepartmentServiceInterface;
 use App\Core\Departments\Models\Department;
 use App\Core\ExternalParties\Models\ExternalOrganization;
+use App\Core\ExternalParties\Models\ExternalContact;
 use App\Core\ExternalParties\Models\ExternalDepartment;
 use App\Http\Controllers\Controller;
 use App\Modules\Correspondence\Models\Correspondence;
@@ -734,6 +735,7 @@ class CorrespondenceController extends Controller
             'createdDepartments' => $createdDepartments,
             'externalOrganizations' => ExternalOrganization::query()->where('status', 'active')->orderBy('name')->get(['id', 'name']),
             'externalDepartments' => ExternalDepartment::query()->where('status', 'active')->orderBy('name')->get(['id', 'external_organization_id', 'parent_id', 'name']),
+            'externalContacts' => ExternalContact::query()->where('status', 'active')->orderBy('name')->get(['id', 'external_organization_id', 'external_department_id', 'name', 'position', 'organizational_title_prefix', 'personal_salutation', 'professional_title', 'is_default']),
             'types' => $types,
             'classifications' => [
                 ['value' => Correspondence::CLASSIFICATION_ORDINARY, 'label' => 'عادی'],
@@ -781,6 +783,7 @@ class CorrespondenceController extends Controller
             'recipient_name' => ['nullable', 'string', 'max:255'],
             'external_organization_id' => ['nullable', Rule::requiredIf(in_array($request->input('type'), [Correspondence::TYPE_INCOMING, Correspondence::TYPE_OUTGOING], true)), 'integer', Rule::exists('external_organizations', 'id')->where('status', 'active')],
             'external_department_id' => ['nullable', 'integer', Rule::exists('external_departments', 'id')->where(fn ($query) => $query->where('status', 'active')->where('external_organization_id', $request->input('external_organization_id')))],
+            'external_contact_id' => ['nullable', 'required_if:type,'.Correspondence::TYPE_OUTGOING, 'integer', Rule::exists('external_contacts', 'id')->where(fn ($query) => $query->where('status', 'active')->where('external_organization_id', $request->input('external_organization_id'))->where(function ($scope) use ($request): void { $departmentId = $request->input('external_department_id'); $departmentId ? $scope->where('external_department_id', $departmentId) : $scope->whereNull('external_department_id'); }))],
             'received_at' => ['nullable', 'required_if:type,'.Correspondence::TYPE_INCOMING, 'date'],
             'sent_at' => ['nullable', 'required_if:type,'.Correspondence::TYPE_OUTGOING, 'date'],
             'recipient_department_id' => ['nullable', 'required_if:type,internal', 'required_if:type,incoming', 'integer', 'exists:departments,id'],
@@ -913,7 +916,8 @@ class CorrespondenceController extends Controller
                     'recipient_department_id' => $data['recipient_department_id'] ?? null,
                     'external_organization_id' => $data['external_organization_id'] ?? null,
                     'external_department_id' => $data['external_department_id'] ?? null,
-                    'reply_to_id' => ! empty($data['reply_to_ids']) ? (int) $data['reply_to_ids'][0] : (($data['reply_to_id'] ?? null) ?: $sourceProjectCorrespondenceId),
+                    'external_contact_id' => $data['external_contact_id'] ?? null,
+                    'reply_to_id => ! empty($data['reply_to_ids']) ? (int) $data['reply_to_ids'][0] : (($data['reply_to_id'] ?? null) ?: $sourceProjectCorrespondenceId),
                     'task_id' => $data['task_id'] ?? null,
                     'project_id' => $linkedTask?->project_id,
                 ], $request->user());
@@ -1035,6 +1039,7 @@ class CorrespondenceController extends Controller
                 'received_at' => $correspondence->received_at?->toDateString(), 'sent_at' => $correspondence->sent_at?->toDateString(),
                 'created_department_id' => $correspondence->created_department_id, 'recipient_department_id' => $correspondence->recipient_department_id,
                 'external_organization_id' => $correspondence->external_organization_id, 'external_department_id' => $correspondence->external_department_id,
+                'external_contact_id' => $correspondence->external_contact_id,
                 'related_letters' => $correspondence->relatedLetters->map(fn (Correspondence $letter): array => [
                     'id' => $letter->id, 'letter_number' => $letter->letter_number, 'registration_number' => $letter->registration_number,
                     'external_registration_number' => $letter->external_registration_number, 'subject' => $letter->subject, 'type' => $letter->type,
@@ -1068,6 +1073,7 @@ class CorrespondenceController extends Controller
             'recipient_department_id' => [Rule::requiredIf(in_array($correspondence->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)), 'nullable', 'integer', 'exists:departments,id'],
             'external_organization_id' => ['nullable', Rule::requiredIf(in_array($correspondence->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_OUTGOING], true)), 'integer', Rule::exists('external_organizations', 'id')->where('status', 'active')],
             'external_department_id' => ['nullable', 'integer', Rule::exists('external_departments', 'id')->where(fn ($query) => $query->where('status', 'active')->where('external_organization_id', $request->input('external_organization_id')))],
+            'external_contact_id' => ['nullable', 'required_if:type,'.Correspondence::TYPE_OUTGOING, 'integer', Rule::exists('external_contacts', 'id')->where(fn ($query) => $query->where('status', 'active')->where('external_organization_id', $request->input('external_organization_id'))->where(function ($scope) use ($request): void { $departmentId = $request->input('external_department_id'); $departmentId ? $scope->where('external_department_id', $departmentId) : $scope->whereNull('external_department_id'); }))],
             'reply_to_id' => ['nullable', 'integer', Rule::exists('correspondences', 'id')->where('status', Correspondence::STATUS_REGISTERED)],
             'reply_to_ids' => ['nullable', 'array', 'max:20'], 'reply_to_ids.*' => ['integer', 'distinct', Rule::exists('correspondences', 'id')->where('status', Correspondence::STATUS_REGISTERED)],
             'copy_department_ids' => ['nullable', 'array', 'max:20'], 'copy_department_ids.*' => ['integer', 'distinct', Rule::exists('departments', 'id')->where('is_active', true)],
@@ -1116,7 +1122,8 @@ class CorrespondenceController extends Controller
                 'created_department_id' => $data['created_department_id'] ?? $locked->created_department_id,
                 'recipient_department_id' => $data['recipient_department_id'] ?? null,
                 'external_organization_id' => $data['external_organization_id'] ?? null,
-                'external_department_id' => $data['external_department_id'] ?? null, 'reply_to_id' => $relatedLetterIds[0] ?? null,
+                'external_department_id' => $data['external_department_id'] ?? null,
+                'external_contact_id' => $data['external_contact_id'] ?? null, 'reply_to_id' => $relatedLetterIds[0] ?? null,
             ])->save();
             $locked->relatedLetters()->sync($relatedLetterIds);
             $locked->copies()->syncWithPivotValues(array_map('intval', $data['copy_department_ids'] ?? []), ['created_by' => $request->user()->id]);
