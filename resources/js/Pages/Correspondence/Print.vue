@@ -12,7 +12,7 @@ interface AddressingSnapshot {
     department_name?: string | null;
 }
 
-interface TemplateElement { id: string; kind: 'text'|'stamp'|'signature'; label: string; content: string; x: number; y: number; width: number; height: number; font_size: number; bold: boolean; align: 'right'|'center'|'left'; visible: boolean; }
+interface TemplateElement { id: string; kind: 'text'|'stamp'|'signature'|'letterhead'; label: string; content: string; x: number; y: number; width: number; height: number; font_size: number; bold: boolean; align: 'right'|'center'|'left'; visible: boolean; }
 
 interface PrintLetter {
     id: number;
@@ -43,6 +43,7 @@ const props = defineProps<{
     creatorName: string | null;
     creatorUnitTitle: string | null;
     stampDataUri: string | null;
+    letterheadDataUri: string | null;
     signatureDataUri: string | null;
     printOptions: {
         show_creator_identity: boolean;
@@ -58,6 +59,7 @@ const props = defineProps<{
 }>();
 
 const withLetterhead = ref(true);
+const templateHasLetterhead = computed(() => props.templateElements.some(item => item.kind === 'letterhead' && item.visible));
 const templateHasStamp = computed(() => props.templateElements.some(item => item.kind === 'stamp' && item.visible));
 const templateHasSignature = computed(() => props.templateElements.some(item => item.kind === 'signature' && item.visible));
 const templateHasCreatorIdentity = computed(() => props.templateElements.some(item => item.visible && (item.content.includes('{{creator_name}}') || item.content.includes('{{creator_unit_title}}'))));
@@ -116,7 +118,8 @@ function printLetter(): void {
         <article class="paper mx-auto bg-white px-[18mm] py-[14mm] shadow-xl" :style="{ fontFamily: printOptions.font_family || 'Vazirmatn' }">
             <div v-if="templateElements.length && withLetterhead" class="template-overlay" aria-hidden="true">
                 <div v-for="element in templateElements.filter(item => item.visible)" :key="element.id" class="template-box" :style="{ left:element.x+'%', top:element.y+'%', width:element.width+'%', height:element.height+'%', fontSize:element.font_size+'pt', fontWeight:element.bold?'700':'400', textAlign:element.align }">
-                    <img v-if="element.kind === 'stamp' && stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="h-full w-full object-contain" />
+                    <img v-if="element.kind === 'letterhead' && letterheadDataUri" :src="letterheadDataUri" alt="سربرگ سازمان" class="h-full w-full object-contain" />
+                    <img v-else-if="element.kind === 'stamp' && stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="h-full w-full object-contain" />
                     <img v-else-if="element.kind === 'signature' && signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="h-full w-full object-contain" />
                     <span v-else-if="element.kind === 'text'">{{ resolveTemplate(element.content) }}</span>
                 </div>
