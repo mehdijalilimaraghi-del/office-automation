@@ -256,11 +256,6 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
           <DepartmentTreeSelect v-model="contactForm.external_department_id" :departments="departmentsForContact" placeholder="واحد اختیاری" />
           <label class="block text-sm font-semibold text-slate-700">نام و نام خانوادگی</label>
           <input v-model="contactForm.name" required placeholder="نام و نام خانوادگی" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
-          <input v-model="contactForm.organizational_title_prefix" placeholder="پیشوند عنوان سازمانی؛ مانند مدیریت یا ریاست" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
-          <input v-model="contactForm.position" placeholder="سمت سازمانی؛ مانند مدیر واحد مالی" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
-          <input v-model="contactForm.personal_salutation" placeholder="پیشوند خطاب شخصی؛ مانند جناب آقای یا سرکار خانم" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
-          <input v-model="contactForm.professional_title" placeholder="عنوان حرفه‌ای؛ مانند مهندس یا دکتر" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
-          <label class="flex items-center gap-2 text-sm font-semibold text-slate-700"><input v-model="contactForm.is_default" type="checkbox" class="rounded border-slate-300 text-teal-600"> مخاطب پیش‌فرض این سازمان/واحد</label>
           <div class="grid grid-cols-2 gap-3"><input v-model="contactForm.mobile" placeholder="موبایل" class="rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr"><input v-model="contactForm.phone" placeholder="تلفن ثابت" class="rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr"></div>
           <input v-model="contactForm.email" type="email" placeholder="ایمیل" class="w-full rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr">
           <textarea v-model="contactForm.notes" rows="3" placeholder="یادداشت" class="w-full rounded-xl border border-slate-200 px-3 py-2.5"></textarea>
