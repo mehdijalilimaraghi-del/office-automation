@@ -19,14 +19,6 @@ interface OrganizationSettings {
     address: string | null;
     stamp_url?: string | null;
     stamp_active?: boolean;
-    print_show_creator_identity?: boolean;
-    print_show_stamp?: boolean;
-    print_show_department_signature?: boolean;
-    letterhead_show_name?: boolean;
-    letterhead_show_address?: boolean;
-    letterhead_show_phone?: boolean;
-    letterhead_show_email?: boolean;
-    letterhead_show_website?: boolean;
     management_department_id: string | null;
     project_management_department_id: string | null;
     secretariat_department_id: string | null;
@@ -75,14 +67,6 @@ const form = useForm({
     stamp: null as File | null,
     stamp_active: props.settings.stamp_active ?? false,
     remove_stamp: false,
-    print_show_creator_identity: props.settings.print_show_creator_identity ?? true,
-    print_show_stamp: props.settings.print_show_stamp ?? true,
-    print_show_department_signature: props.settings.print_show_department_signature ?? true,
-    letterhead_show_name: props.settings.letterhead_show_name ?? true,
-    letterhead_show_address: props.settings.letterhead_show_address ?? true,
-    letterhead_show_phone: props.settings.letterhead_show_phone ?? true,
-    letterhead_show_email: props.settings.letterhead_show_email ?? true,
-    letterhead_show_website: props.settings.letterhead_show_website ?? true,
     management_department_id: props.settings.management_department_id ?? '',
     project_management_department_id: props.settings.project_management_department_id ?? '',
     secretariat_department_id: props.settings.secretariat_department_id ?? '',
