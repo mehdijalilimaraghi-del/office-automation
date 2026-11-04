@@ -6,6 +6,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 import { Head, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
 
 interface OrganizationSettings {
     name: string | null;
@@ -18,6 +19,7 @@ interface OrganizationSettings {
     website: string | null;
     address: string | null;
     stamp_url?: string | null;
+    letterhead_url?: string | null;
     stamp_active?: boolean;
     management_department_id: string | null;
     project_management_department_id: string | null;
@@ -51,6 +53,8 @@ const props = defineProps<{
     departments: OrganizationDepartment[];
 }>();
 
+const activeTab = ref<'organization' | 'structure' | 'correspondence'>('organization');
+
 const customOrder = (props.settings.numbering_custom_order ?? 'year,department,sequence').split(',');
 const registrationCustomOrder = (props.settings.registration_numbering_custom_order ?? 'year,department,sequence').split(',');
 
@@ -66,6 +70,8 @@ const form = useForm({
     address: props.settings.address ?? '',
     stamp: null as File | null,
     stamp_active: props.settings.stamp_active ?? false,
+    letterhead: null as File | null,
+    remove_letterhead: false,
     remove_stamp: false,
     management_department_id: props.settings.management_department_id ?? '',
     project_management_department_id: props.settings.project_management_department_id ?? '',
@@ -130,6 +136,12 @@ function submit(): void {
                     </div>
 
                     <form class="mt-7 space-y-6" @submit.prevent="submit">
+                        <div class="flex flex-wrap gap-2 border-b border-slate-200 pb-4" role="tablist" aria-label="بخش‌های تنظیمات سازمان">
+                            <button type="button" role="tab" :aria-selected="activeTab === 'organization'" :class="activeTab === 'organization' ? 'bg-teal-700 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100'" class="rounded-lg px-4 py-2.5 text-sm font-semibold transition" @click="activeTab = 'organization'">مشخصات و سربرگ</button>
+                            <button type="button" role="tab" :aria-selected="activeTab === 'structure'" :class="activeTab === 'structure' ? 'bg-teal-700 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100'" class="rounded-lg px-4 py-2.5 text-sm font-semibold transition" @click="activeTab = 'structure'">ساختار و واحدها</button>
+                            <button type="button" role="tab" :aria-selected="activeTab === 'correspondence'" :class="activeTab === 'correspondence' ? 'bg-teal-700 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100'" class="rounded-lg px-4 py-2.5 text-sm font-semibold transition" @click="activeTab = 'correspondence'">مکاتبات و شماره‌گذاری</button>
+                        </div>
+                        <div v-show="activeTab === 'organization'" class="space-y-6">
                         <div class="grid gap-5 md:grid-cols-2">
                             <div>
                                 <label for="organization_name" class="mb-2 block text-sm font-semibold text-slate-700">نام سازمان</label>
@@ -200,12 +212,26 @@ function submit(): void {
                             <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700"><input v-model="form.stamp_active" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> فعال بودن مهر سازمان برای استفاده در قالب نامه</label>
                         </div>
 
+                        <div class="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                            <div>
+                                <label for="organization_letterhead" class="mb-2 block text-sm font-semibold text-slate-700">تصویر سربرگ سازمان</label>
+                                <input id="organization_letterhead" type="file" accept="image/png,image/jpeg,image/webp" class="block w-full text-sm text-slate-600 file:ml-3 file:rounded-lg file:border-0 file:bg-white file:px-4 file:py-2 file:font-semibold file:text-slate-700" @change="(event) => { form.letterhead = (event.target as HTMLInputElement).files?.[0] ?? null; form.remove_letterhead = false; }" />
+                                <p class="mt-1 text-xs leading-5 text-slate-500">تصویر سربرگ را جدا از مهر بارگذاری کنید. محل، اندازه و نحوه نمایش آن در طراح قالب نامه تنظیم می‌شود. فرمت PNG، JPG یا WEBP و حداکثر حجم ۵ مگابایت؛ تصویر افقی با عرض حداقل ۶۰۰ پیکسل پیشنهاد می‌شود.</p>
+                                <InputError class="mt-1.5" :message="form.errors.letterhead" />
+                            </div>
+                            <div v-if="props.settings.letterhead_url" class="flex flex-wrap items-center gap-3">
+                                <img v-if="!form.remove_letterhead" :src="props.settings.letterhead_url" alt="سربرگ فعلی سازمان" class="max-h-24 max-w-full rounded border border-slate-200 bg-white object-contain p-2" />
+                                <label class="inline-flex items-center gap-2 text-sm text-slate-700"><input v-model="form.remove_letterhead" type="checkbox" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500" /> حذف تصویر سربرگ فعلی</label>
+                            </div>
+                        </div>
+
                         <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal-200 bg-teal-50 p-4">
                             <div><h3 class="font-bold text-teal-950">قالب و سربرگ نامه</h3><p class="mt-1 text-sm text-teal-800">چیدمان کادرها، متن‌های ثابت و متغیرهای اطلاعات سازمان را در صفحه A4 طراحی کنید.</p></div>
                             <a :href="route('correspondence.template.edit')" class="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">باز کردن طراح قالب</a>
                         </div>
 
-                        <section class="space-y-5 rounded-xl border border-slate-200 bg-slate-50 p-5">
+                        </div>
+                        <section v-show="activeTab === 'structure'" class="space-y-5 rounded-xl border border-slate-200 bg-slate-50 p-5">
                             <div>
                                 <h3 class="font-bold text-slate-900">تخصیص نقش به واحدها</h3>
                                 <p class="mt-1 text-sm leading-6 text-slate-600">
@@ -241,7 +267,7 @@ function submit(): void {
                             </div>
                         </section>
 
-                        <section class="space-y-5 rounded-xl border border-slate-200 bg-slate-50 p-5">
+                        <section v-show="activeTab === 'correspondence'" class="space-y-5 rounded-xl border border-slate-200 bg-slate-50 p-5">
                             <div>
                                 <h3 class="font-bold text-slate-900">تنظیمات مکاتبات</h3>
                                 <p class="mt-1 text-sm leading-6 text-slate-600">قالب شماره نامه‌های صادره و داخلی، قالب مستقل شماره ثبت دبیرخانه، روش نگارش و سیاست تأیید را تنظیم کنید. شماره نامه وارده از روی اصل نامه وارد می‌شود.</p>
