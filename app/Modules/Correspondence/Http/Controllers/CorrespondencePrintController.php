@@ -65,7 +65,7 @@ class CorrespondencePrintController extends Controller
             }
 
             $department = $correspondence->createdDepartment;
-            if ($department !== null && $department->manager_signature_active) {
+            if ($department !== null && $department->manager_signature_active && $correspondence->workflow_state === 'approved_for_registration') {
                 $signaturePath = $department->manager_signature_path;
             }
         }
