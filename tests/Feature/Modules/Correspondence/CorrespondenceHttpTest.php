@@ -776,6 +776,14 @@ class CorrespondenceHttpTest extends TestCase
     {
         app(SystemSettingsService::class)->set(['correspondence.approval.internal' => 'approval']);
         $user = $this->userWithPermission('correspondence.create');
+        $manager = $this->userWithPermission('correspondence.view');
+        $creatorDepartment = Department::query()->create([
+            'name' => 'واحد ایجادکننده پیش‌نویس '.Str::upper(Str::random(5)),
+            'code' => 'DRF-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+        $user->departments()->attach($creatorDepartment->id, ['is_primary' => true, 'joined_at' => now()]);
         $recipientDepartmentId = $this->recipientDepartmentId();
 
         $this->actingAs($user)->post(route('correspondence.store'), [
@@ -950,6 +958,14 @@ class CorrespondenceHttpTest extends TestCase
     {
         app(SystemSettingsService::class)->set(['correspondence.approval.internal' => 'approval']);
         $user = $this->userWithPermission('correspondence.create');
+        $manager = $this->userWithPermission('correspondence.view');
+        $creatorDepartment = Department::query()->create([
+            'name' => 'واحد ایجادکننده پیش‌نویس '.Str::upper(Str::random(5)),
+            'code' => 'DRF-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+        $user->departments()->attach($creatorDepartment->id, ['is_primary' => true, 'joined_at' => now()]);
         $recipientDepartmentId = $this->recipientDepartmentId();
         $documents = Mockery::mock(DocumentService::class);
         $documents->shouldReceive('create')
