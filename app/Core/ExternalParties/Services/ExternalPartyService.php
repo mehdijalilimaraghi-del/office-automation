@@ -29,7 +29,7 @@ class ExternalPartyService implements ExternalPartyServiceInterface
     public function departments(): Collection
     {
         return ExternalDepartment::query()
-            ->with(['organization:id,name', 'customFieldValues.field'])
+            ->with(['organization:id,name', 'managerContact:id,name,mobile,phone,email', 'customFieldValues.field'])
             ->orderBy('name')
             ->get();
     }
@@ -201,7 +201,8 @@ class ExternalPartyService implements ExternalPartyServiceInterface
     public function deleteContact(ExternalContact $contact): void
     {
         if (DB::table('task_external_contacts')->where('external_contact_id', $contact->id)->exists()
-            || Correspondence::query()->where('external_contact_id', $contact->id)->exists()) {
+            || Correspondence::query()->where('external_contact_id', $contact->id)->exists()
+            || ExternalDepartment::query()->where('manager_contact_id', $contact->id)->exists()) {
             throw ValidationException::withMessages([
                 'contact' => 'این شخص خارجی به فعالیت یا مکاتبه ثبت‌شده متصل است و قابل حذف نیست؛ در صورت نیاز وضعیت آن را غیرفعال کنید.',
             ]);
