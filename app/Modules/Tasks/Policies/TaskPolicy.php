@@ -137,6 +137,24 @@ class TaskPolicy
         return ! $task->isFinalized() && $task->review_status !== 'pending' && $this->taskAccessService->canAccess($user, $task, 'tasks.assign');
     }
 
+    public function acceptResponsibility(User $user, Task $task): bool
+    {
+        if (! $user->isActive()
+            || $task->isFinalized()
+            || $task->review_status === 'pending'
+            || (int) $task->assignee_id === (int) $user->id
+            || ! $this->taskAccessService->canAccess($user, $task, 'tasks.assign')) {
+            return false;
+        }
+
+        $departmentId = $task->department_id ?? $task->section?->department_id;
+
+        return $departmentId !== null
+            && (int) \App\Core\Departments\Models\Department::query()
+                ->whereKey($departmentId)
+                ->value('manager_id') === (int) $user->id;
+    }
+
     public function refer(User $user, Task $task): bool
     {
         return ! $task->isFinalized()
