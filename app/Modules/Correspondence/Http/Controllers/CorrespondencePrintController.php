@@ -57,13 +57,16 @@ class CorrespondencePrintController extends Controller
         $templateElements = is_array($templateElements) ? $templateElements : [];
 
         $stampPath = $snapshot['stamp_path'] ?? null;
+        $letterheadPath = $snapshot['letterhead_path'] ?? null;
         $signaturePath = $snapshot['signature_path'] ?? null;
 
         if ($correspondence->document_identity_snapshot === null) {
             $live = $settings->get([
                 'organization.stamp.path' => null,
                 'organization.stamp.active' => '0',
+                'organization.letterhead.path' => null,
             ]);
+            $letterheadPath = $live['organization.letterhead.path'];
             if ($live['organization.stamp.active'] === '1') {
                 $stampPath = $live['organization.stamp.path'];
             }
@@ -94,6 +97,7 @@ class CorrespondencePrintController extends Controller
             'creatorName' => $snapshot['creator_name'] ?? $correspondence->creator?->name,
             'creatorUnitTitle' => $snapshot['creator_unit_title'] ?? ($correspondence->createdDepartment?->name ? 'مدیریت '.$correspondence->createdDepartment->name : null),
             'stampDataUri' => $this->imageDataUri($stampPath),
+            'letterheadDataUri' => $this->imageDataUri($letterheadPath),
             'signatureDataUri' => $this->imageDataUri($signaturePath),
             'printOptions' => [
                 'show_creator_identity' => $settings->get(['correspondence.print.show_creator_identity' => '1'])['correspondence.print.show_creator_identity'] === '1',
