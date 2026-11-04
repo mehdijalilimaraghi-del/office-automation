@@ -24,6 +24,11 @@ const roleTokens:Record<Role,string[]> = {
  repeat:['{{organization_name}}','{{short_name}}','{{address}}','{{tel}}','{{email}}','{{website}}']
 };
 const availableTokens = computed(() => props.tokens.filter(token => selected.value && roleTokens[selected.value.role].includes(token.key)));
+const flowMeta = computed(() => form.elements.filter(item => item.visible && item.role === 'meta'));
+const flowHeading = computed(() => form.elements.filter(item => item.visible && item.role === 'heading'));
+const flowIssuer = computed(() => form.elements.filter(item => item.visible && item.role === 'issuer'));
+const repeating = computed(() => form.elements.filter(item => item.visible && item.role === 'repeat'));
+const pageNumberEnabled = computed(() => form.elements.some(item => item.visible && item.role === 'page_number'));
 function addRole(role:string):void { if (role in roleLabels) addBox(role as Role); }
 function addBox(role:Role, kind:Kind='text'):void {
  const id='item_'+Math.random().toString(36).slice(2,9);
@@ -46,6 +51,7 @@ function pointerMove(event:PointerEvent):void {
 }
 function pointerUp():void{dragging.value=null;}
 function displayText(item:ElementBox):string { if(item.kind==='stamp')return 'مهر سازمان';if(item.kind==='signature')return 'امضای مدیر واحد';return item.content||item.label; }
+function flowStyle(item:ElementBox):Record<string,string> { return { width:item.width+'%', marginTop:item.spacing+'mm', fontSize:item.font_size+'px', fontWeight:item.bold?'700':'400', textAlign:item.align }; }
 </script>
 
 <template>
@@ -57,10 +63,17 @@ function displayText(item:ElementBox):string { if(item.kind==='stamp')return 'م
     <section class="overflow-auto rounded-2xl border border-slate-200 bg-slate-200 p-4">
      <div class="mx-auto mb-3 flex max-w-[210mm] flex-wrap items-center justify-between gap-2 text-xs text-slate-600"><span>پیش‌نمایش A4 · سربرگ به‌صورت پس‌زمینه</span><div class="flex flex-wrap gap-2"><button v-for="(label,role) in roleLabels" :key="role" type="button" class="rounded-lg bg-white px-3 py-2 font-semibold" @click="addRole(role)">{{label}} +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','stamp')">مهر +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','signature')">امضا +</button></div></div>
      <div ref="page" class="relative mx-auto aspect-[210/297] w-full max-w-[210mm] overflow-hidden bg-white shadow-xl" :style="letterheadDataUri?{backgroundImage:'url('+letterheadDataUri+')',backgroundSize:'100% 100%',backgroundPosition:'center'}:{}" @pointermove="pointerMove" @pointerup="pointerUp" @pointercancel="pointerUp">
-      <div class="pointer-events-none absolute inset-x-[8%] top-[22%] text-right text-sm leading-8 text-slate-400"><div class="mb-5 border-b border-dashed border-slate-300 pb-2">محل درج خودکار متن اصلی نامه</div><p>متن نامه با همان قالب ثبت‌شده، از این قسمت آغاز می‌شود و در صفحات بعد ادامه پیدا می‌کند.</p></div>
-      <div v-for="item in form.elements.filter(e=>e.visible)" :key="item.id" class="absolute whitespace-pre-wrap border border-dashed p-2 text-slate-900" :class="[selectedId===item.id?'border-teal-600 bg-teal-50/60 ring-1 ring-teal-500':'border-slate-300 bg-white/50', item.role==='repeat'?'cursor-move':'cursor-default']" :style="item.role==='repeat'?{left:item.x+'%',top:item.y+'%',width:item.width+'%',fontSize:item.font_size+'px',fontWeight:item.bold?'700':'400',textAlign:item.align}:{left:'8%',top:(item.role==='meta'? '17%':item.role==='heading'?'24%':item.role==='issuer'?'82%':'94%'),width:item.width+'%',fontSize:item.font_size+'px',fontWeight:item.bold?'700':'400',textAlign:item.align}" @pointerdown="item.role==='repeat' ? pointerDown($event,item) : undefined">
-       <span class="pointer-events-none">{{displayText(item)}}</span>
+      <div class="absolute inset-x-[8%] top-[7%] bottom-[7%] flex flex-col overflow-hidden text-slate-900">
+       <div v-for="item in flowMeta" :key="item.id" class="relative shrink-0 whitespace-pre-wrap border border-dashed p-2" :class="selectedId===item.id?'border-teal-600 bg-teal-50/70 ring-1 ring-teal-500':'border-slate-300 bg-white/60'" :style="flowStyle(item)" @click="selectedId=item.id">{{displayText(item)}}</div>
+       <div v-for="item in flowHeading" :key="item.id" class="relative shrink-0 whitespace-pre-wrap border border-dashed p-2" :class="selectedId===item.id?'border-teal-600 bg-teal-50/70 ring-1 ring-teal-500':'border-slate-300 bg-white/60'" :style="flowStyle(item)" @click="selectedId=item.id">{{displayText(item) || 'خطاب و موضوع نامه'}}</div>
+       <div class="my-3 min-h-0 flex-1 border-y border-dashed border-slate-300 bg-white/35 p-3 text-right text-sm leading-8 text-slate-400">
+        <p class="mb-2 font-semibold">متن اصلی نامه — درج خودکار</p>
+        <p>متن نامه با قالب‌بندی ثبت‌شده، از این نقطه در جریان عادی سند آغاز می‌شود و در صورت نیاز به صفحات بعد ادامه می‌یابد.</p>
+       </div>
+       <div v-for="item in flowIssuer" :key="item.id" class="relative shrink-0 whitespace-pre-wrap border border-dashed p-2" :class="selectedId===item.id?'border-teal-600 bg-teal-50/70 ring-1 ring-teal-500':'border-slate-300 bg-white/60'" :style="flowStyle(item)" @click="selectedId=item.id">{{displayText(item)}}</div>
+       <div v-if="pageNumberEnabled" class="mt-auto border-t border-dashed border-slate-300 pt-2 text-center text-xs text-slate-500">پیش‌نمایش شماره صفحه در پابرگ</div>
       </div>
+      <div v-for="item in repeating" :key="item.id" class="absolute whitespace-pre-wrap border border-dashed p-2 text-slate-900" :class="selectedId===item.id?'border-teal-600 bg-teal-50/70 ring-1 ring-teal-500':'border-slate-300 bg-white/60'" :style="{left:item.x+'%',top:item.y+'%',width:item.width+'%',fontSize:item.font_size+'px',fontWeight:item.bold?'700':'400',textAlign:item.align}" @pointerdown="pointerDown($event,item)"><span class="pointer-events-none">{{displayText(item)}}</span></div>
      </div>
     </section>
     <aside class="space-y-4">
