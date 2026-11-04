@@ -729,7 +729,7 @@ class CorrespondenceController extends Controller
             ],
             'correspondence' => null,
             'correspondenceFontFamily' => $settings->get(['correspondence.composition.font_family' => 'Vazirmatn'])['correspondence.composition.font_family'],
-            'approvalSettings' => app(\\App\\Modules\\Correspondence\\Services\\CorrespondenceCompositionSettings::class)->get()['approval'],
+            'approvalSettings' => app(\App\Modules\Correspondence\Services\CorrespondenceCompositionSettings::class)->get()['approval'],
             'createdDepartment' => $createdDepartment,
             'createdDepartments' => $createdDepartments,
             'externalOrganizations' => ExternalOrganization::query()->where('status', 'active')->orderBy('name')->get(['id', 'name']),
