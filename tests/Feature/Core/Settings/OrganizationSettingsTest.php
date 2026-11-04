@@ -141,6 +141,21 @@ class OrganizationSettingsTest extends TestCase
             'visible' => true,
         ]];
 
+        $elements[] = [
+            'id' => 'stamp_box',
+            'kind' => 'stamp',
+            'label' => 'مهر سازمان',
+            'content' => '',
+            'x' => 75,
+            'y' => 82,
+            'width' => 15,
+            'height' => 12,
+            'font_size' => 12,
+            'bold' => false,
+            'align' => 'center',
+            'visible' => true,
+        ];
+
         $this->actingAs($admin)
             ->put(route('correspondence.template.update'), ['elements' => $elements])
             ->assertRedirect()
