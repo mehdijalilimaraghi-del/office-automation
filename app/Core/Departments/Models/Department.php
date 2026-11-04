@@ -28,6 +28,10 @@ class Department extends Model
             ->where('entity_type', self::class);
     }
 
+    protected $hidden = [
+        'manager_signature_path',
+    ];
+
     protected $fillable = [
         'parent_id',
         'manager_id',
