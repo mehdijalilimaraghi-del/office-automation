@@ -1040,8 +1040,8 @@ watch(
                             <p class="mt-1 text-xs text-slate-500">فقط تصویر PNG، JPG یا WEBP تا ۲ مگابایت؛ این امضا متعلق به واحد است، نه حساب کاربری مدیر.</p>
                             <InputError class="mt-1.5" :message="form.errors.manager_signature" />
                         </div>
-                        <div v-if="editingDepartment?.manager_signature_url && !form.remove_manager_signature" class="flex items-center gap-3">
-                            <img :src="editingDepartment.manager_signature_url" alt="امضای فعلی مدیر واحد" class="h-16 max-w-40 rounded border border-slate-200 bg-white object-contain p-2" />
+                        <div v-if="editingDepartment?.manager_signature_url" class="flex items-center gap-3">
+                            <img v-if="!form.remove_manager_signature" :src="editingDepartment.manager_signature_url" alt="امضای فعلی مدیر واحد" class="h-16 max-w-40 rounded border border-slate-200 bg-white object-contain p-2" />
                             <label class="inline-flex items-center gap-2 text-sm text-slate-700">
                                 <input v-model="form.remove_manager_signature" type="checkbox" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500" />
                                 حذف امضای فعلی
