@@ -51,6 +51,7 @@ class OrganizationSettingsTest extends TestCase
             'website' => 'https://example.com',
             'address' => 'تهران',
             'stamp' => UploadedFile::fake()->image('stamp.png', 300, 300),
+            'letterhead' => UploadedFile::fake()->image('letterhead.png', 1200, 300),
             'stamp_active' => true,
             'numbering_format' => 'custom',
             'numbering_order_first' => 'sequence',
@@ -87,6 +88,10 @@ class OrganizationSettingsTest extends TestCase
             'value' => '1234567890',
         ]);
         $this->assertDatabaseHas('system_settings', ['key' => 'organization.stamp.active', 'value' => '1']);
+        $letterheadPath = SystemSetting::query()->where('key', 'organization.letterhead.path')->value('value');
+        $this->assertNotEmpty($letterheadPath);
+        Storage::disk('local')->assertExists($letterheadPath);
+        $this->actingAs($admin)->get(route('settings.organization.letterhead'))->assertOk();
         $stampPath = SystemSetting::query()->where('key', 'organization.stamp.path')->value('value');
         $this->assertNotEmpty($stampPath);
         Storage::disk('local')->assertExists($stampPath);
