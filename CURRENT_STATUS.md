@@ -1,3 +1,10 @@
+## 2026-11-04 — Creator identity, organization stamp and department signature requirements
+
+- Added the creator/issuer identity block to the bottom of the finalized letter (organizational unit/title plus creator full name), with a finalization-time snapshot so historical letters remain unchanged.
+- Added two distinct image assets: one organization-level stamp, configured under Core → Organization Settings; and one manager signature per department, configured under Core → Departments → Create/Edit Department. These are proposed configuration entry points based on the existing Core module boundaries and must be verified against the detailed settings UI before implementation.
+- Added independent document-template controls for identity block, stamp and signature visibility/placement, using the shared PDF/print coordinate system. The department signature and organization stamp must not be combined into one asset; finalization must preserve the exact versions used.
+- Phase 3 scope now includes the creator identity block, stamp and per-department manager signature. No application code changed; only the enhancement plan and this status document are being updated. Validation is not applicable to this documentation-only checkpoint. Development only; master/server untouched.
+
 ## 2026-11-04 — Expanded requirements and five-phase execution tracking
 
 - User requested explicit progress reporting and documentation updates for all five implementation phases at each checkpoint.
