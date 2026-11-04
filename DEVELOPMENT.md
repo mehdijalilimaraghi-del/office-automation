@@ -117,6 +117,10 @@ Only include `git pull origin development` at the beginning of a validation comm
 
 Prefer one validation step at a time.
 
+### Correspondence approval test fixtures
+
+When a test enables `correspondence.approval.internal=approval` and creates an internal correspondence through the HTTP endpoint, its creator must belong to a primary active department whose `manager_id` references an active user. The approval workflow intentionally rejects the request if no active department manager can be resolved. Draft-persistence tests must build this fixture rather than bypassing the manager requirement.
+
 ## 4. Troubleshooting
 
 - Fix the root cause.
