@@ -63,15 +63,18 @@ class CorrespondenceNumberingService
                 $contact = $locked->external_contact_id === null
                     ? null
                     : ExternalContact::query()->whereKey($locked->external_contact_id)->first();
-                $locked->loadMissing(['externalOrganization', 'externalDepartment']);
+                $locked->loadMissing(['externalOrganization', 'externalDepartment.managerContact']);
+                $unit = $locked->externalDepartment;
+                $unitManager = $unit?->managerContact;
                 $locked->recipient_addressing_snapshot = [
-                    'organizational_title_prefix' => $contact?->organizational_title_prefix,
-                    'position' => $contact?->position,
-                    'personal_salutation' => $contact?->personal_salutation,
-                    'professional_title' => $contact?->professional_title,
-                    'name' => $contact?->name ?? $locked->recipient_name,
+                    'organizational_title_prefix' => $unit?->organizational_title_prefix ?? $contact?->organizational_title_prefix,
+                    'position' => $unit?->position ?? $contact?->position,
+                    'personal_salutation' => $unit?->personal_salutation ?? $contact?->personal_salutation,
+                    'professional_title' => $unit?->professional_title ?? $contact?->professional_title,
+                    'name' => $unitManager?->name ?? $contact?->name ?? $locked->recipient_name,
                     'organization_name' => $locked->externalOrganization?->name,
-                    'department_name' => $locked->externalDepartment?->name,
+                    'department_name' => $unit?->name,
+                    'manager_contact_id' => $unitManager?->id,
                 ];
             }
 
