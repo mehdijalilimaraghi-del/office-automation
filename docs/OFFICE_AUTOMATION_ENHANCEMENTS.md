@@ -67,23 +67,23 @@ In Correspondence > outgoing letter composition, specifically the «روش ته�
 
 | Phase | Scope | Status |
 |---|---|---|
-| 1 | Manager accepts responsibility in Correspondence and Tasks, with authorization, audit/history and regression tests | In progress — code-path review |
+| 1 | Manager accepts responsibility in Correspondence and Tasks, with authorization, audit/history and regression tests | Implemented; focused tests passed (owner-reported) |
 | 2 | External recipient defaults, organizational title prefix and addressing snapshot | Not started |
 | 3 | Shared letterhead/template, creator identity block, organization stamp, per-department manager signature, configurable fields, multipage layout and page numbering for PDF/print | Not started |
 | 4 | Reusable outgoing-letter body templates in the letter editor, editable after insertion | Not started |
 | 5 | End-to-end regression, build and manual acceptance of all five feature areas | Not started |
 
 
-## مرحله ۱ — پذیرش مسئولیت توسط مدیر (پیاده‌سازی در انتظار تست)
+## مرحله ۱ — پذیرش مسئولیت توسط مدیر (تست‌های متمرکز پاس شد)
 - مکاتبات: action مستقل `manager_accept_responsibility` اضافه شد؛ فقط مدیر واحد جاری، برای نامه ثبت‌شده در وضعیت `in_progress` و وقتی مسئول جاری خالی یا خود مدیر است، می‌تواند مسئولیت را بپذیرد. ارجاع به خود انجام نمی‌شود و اقدام در تاریخچه و audit موجود ثبت می‌شود.
 - تسک‌ها: endpoint مستقل پذیرش مسئولیت اضافه شد. فقط مدیر واحد مرتبط با تسک، با مجوز `tasks.assign` و خارج از وضعیت نهایی/بررسی معلق، می‌تواند مسئول شود. نوع تخصیص `manager_accept` در تاریخچه و audit ثبت می‌شود.
 - برای هر دو ماژول دکمه مستقل «پذیرش مسئولیت» افزوده شد. تست‌های HTTP برای موفقیت، عدم اختیار مدیر و وضعیت‌های قفل‌شده تسک و نیز موفقیت/عدم اختیار مدیر در مکاتبات اضافه شدند.
-- تست و build هنوز توسط مالک پروژه اجرا و تأیید نشده‌اند؛ وضعیت این مرحله: **پیاده‌سازی در انتظار تست کاربر**.
+- مالک پروژه اجرای تست‌های متمرکز `TaskReferralHttpTest` و `CorrespondenceHttpTest` را تأیید کرد؛ وضعیت تست‌های این مرحله: **پاس‌شده**. اجرای build و پذیرش end-to-end/دستی در مرحله ۵ باقی است.
 
 ## وضعیت پنج مرحله اجرایی
 | مرحله | شرح | وضعیت |
 |---|---|---|
-| ۱ | پذیرش مسئولیت مدیر در مکاتبات و تسک‌ها، همراه با مجوز، history/audit و regression tests | پیاده‌سازی انجام شد؛ در انتظار تست کاربر |
+| ۱ | پذیرش مسئولیت مدیر در مکاتبات و تسک‌ها، همراه با مجوز، history/audit و regression tests | پیاده‌سازی انجام شد؛ تست‌های متمرکز پاس شد |
 | ۲ | مخاطب پیش‌فرض، ساختار خطاب و snapshot تاریخی | شروع نشده |
 | ۳ | قالب مشترک سربرگ، PDF/چاپ، مشخصات ایجادکننده، مهر/امضای مدیر، صفحه‌بندی و شماره صفحات | مستند شده؛ شروع نشده |
 | ۴ | قالب‌های متنی قابل استفاده مجدد در نامه صادره | شروع نشده |
