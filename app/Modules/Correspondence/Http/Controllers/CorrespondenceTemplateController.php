@@ -51,7 +51,7 @@ class CorrespondenceTemplateController extends Controller
             'elements.*.kind' => ['required', 'in:text,stamp,signature'],
             'elements.*.id' => ['required', 'string', 'max:40'],
             'elements.*.label' => ['required', 'string', 'max:80'],
-            'elements.*.content' => ['required', 'string', 'max:2000'],
+            'elements.*.content' => ['nullable', 'string', 'max:2000'],
             'elements.*.x' => ['required', 'numeric', 'min:0', 'max:100'],
             'elements.*.y' => ['required', 'numeric', 'min:0', 'max:100'],
             'elements.*.width' => ['required', 'numeric', 'min:5', 'max:100'],
@@ -62,11 +62,13 @@ class CorrespondenceTemplateController extends Controller
             'elements.*.visible' => ['required', 'boolean'],
         ]);
 
-        foreach ($data['elements'] as $element) {
+        $elements = array_map(static fn (array $element): array => [...$element, 'content' => $element['content'] ?? ''], $data['elements']);
+
+        foreach ($elements as $element) {
             abort_if($element['x'] + $element['width'] > 100 || $element['y'] + $element['height'] > 100, 422, 'ابعاد کادر از محدوده صفحه خارج است.');
         }
 
-        $settings->set(['correspondence.print.template' => json_encode($data['elements'], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)]);
+        $settings->set(['correspondence.print.template' => json_encode($elements, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)]);
 
         return back()->with('success', 'قالب نامه ذخیره شد.');
     }
