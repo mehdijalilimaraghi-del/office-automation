@@ -27,7 +27,7 @@ const availableTokens = computed(() => props.tokens.filter(token => selected.val
 function addBox(role:Role, kind:Kind='text'):void {
  const id='item_'+Math.random().toString(36).slice(2,9);
  const labels:Record<Role,string> = roleLabels;
- form.elements.push({id,kind,role,label:kind==='stamp'?'مهر سازمان':kind==='signature'?'امضای مدیر واحد':labels[role],content:role==='page_number'?'':role==='meta'?'شماره: {{letter_number}}\\nتاریخ: {{date}}':role==='heading'?'':'',x:8,y:role==='repeat'?8:0,width:84,spacing:role==='heading'?8:role==='issuer'?16:0,font_size:role==='meta'?10:12,bold:role==='heading',align:'right',visible:true});
+ form.elements.push({id,kind,role,label:kind==='stamp'?'مهر سازمان':kind==='signature'?'امضای مدیر واحد':labels[role],content:role==='page_number'?'':role==='meta'?'شماره: {{letter_number}}\nتاریخ: {{date}}':role==='issuer'?'{{creator_unit_title}}\n{{creator_name}}':'',x:8,y:role==='repeat'?8:0,width:84,spacing:role==='heading'?8:role==='issuer'?16:0,font_size:role==='meta'?10:12,bold:role==='heading',align:'right',visible:true});
  selectedId.value=id;
 }
 function removeBox():void { if(!selected.value)return; form.elements=form.elements.filter(item=>item.id!==selectedId.value);selectedId.value=form.elements[0]?.id??''; }
