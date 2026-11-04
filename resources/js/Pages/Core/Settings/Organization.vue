@@ -188,9 +188,9 @@ function submit(): void {
 
                         <div class="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4 md:col-span-2">
                             <div>
-                                <label for="organization_stamp" class="mb-2 block text-sm font-semibold text-slate-700">مهر سازمان</label>
+                                <label for="organization_stamp" class="mb-2 block text-sm font-semibold text-slate-700">تصویر مهر رسمی سازمان</label>
                                 <input id="organization_stamp" type="file" accept="image/png,image/jpeg,image/webp" class="block w-full text-sm text-slate-600 file:ml-3 file:rounded-lg file:border-0 file:bg-white file:px-4 file:py-2 file:font-semibold file:text-slate-700" @change="(event) => { form.stamp = (event.target as HTMLInputElement).files?.[0] ?? null; form.remove_stamp = false; }" />
-                                <p class="mt-1 text-xs text-slate-500">تصویر جداگانه مهر سازمان؛ PNG، JPG یا WEBP تا ۲ مگابایت.</p>
+                                <p class="mt-1 text-xs text-slate-500">تصویر مهر را از این قسمت بارگذاری و فعال کنید. محل قرارگیری و اندازه مهر در طراح قالب نامه تعیین می‌شود. فرمت PNG، JPG یا WEBP و حداکثر حجم ۲ مگابایت.</p>
                                 <InputError class="mt-1.5" :message="form.errors.stamp" />
                             </div>
                             <div v-if="props.settings.stamp_url" class="flex items-center gap-3">
