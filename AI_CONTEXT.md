@@ -1,3 +1,10 @@
+## 2026-11-04 — Template preview uses semantic document flow
+
+- Corrected the A4 designer preview: metadata, addressee/subject, automatic body placeholder, issuer/signature and page-number indicator are now displayed as a vertical document-flow sequence, not placed at hard-coded Y percentages. Only repeating elements retain independent page coordinates.
+- This makes the designer show the order and approximate occupied regions of automatically rendered content against the actual letterhead background. It does not claim exact pagination: final body length and issuer position depend on the saved letter HTML and may flow onto later pages.
+- The earlier local test output still showed removed `height` fields in its expected fixture, while the current `development` test file no longer includes those fields. The owner should pull the latest branch before rerunning.
+- Local test/build and physical multi-page print acceptance remain pending. Development only; master/server unchanged.
+
 ## 2026-11-04 — Role-based Persian letter template and automatic body flow
 
 - Reworked the A4 template editor around semantic roles: letter number/date, addressee/subject, page number, issuer/signature, and repeating text. Variable choices are filtered by the selected role.
