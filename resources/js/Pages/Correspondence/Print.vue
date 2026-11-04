@@ -60,6 +60,7 @@ const props = defineProps<{
 const withLetterhead = ref(true);
 const templateHasStamp = computed(() => props.templateElements.some(item => item.kind === 'stamp' && item.visible));
 const templateHasSignature = computed(() => props.templateElements.some(item => item.kind === 'signature' && item.visible));
+const templateHasCreatorIdentity = computed(() => props.templateElements.some(item => item.visible && (item.content.includes('{{creator_name}}') || item.content.includes('{{creator_unit_title}}'))));
 const typeLabel = computed(() => ({ incoming: 'نامه وارده', outgoing: 'نامه صادره', internal: 'نامه داخلی' })[props.letter.type]);
 const recipientLines = computed(() => {
     const a = props.letter.recipient_addressing;
@@ -146,8 +147,8 @@ function printLetter(): void {
                 <div class="letter-body text-justify text-sm leading-8" v-html="letter.body || ''"></div>
             </section>
 
-            <footer v-if="(!templateElements.length && printOptions.show_creator_identity) || (!templateHasSignature && printOptions.show_department_signature && signatureDataUri) || (!templateHasStamp && printOptions.show_stamp && stampDataUri)" class="signature-area mt-12 flex items-end justify-between gap-8">
-                <div v-if="!templateElements.length && printOptions.show_creator_identity" class="min-w-0 text-center text-sm leading-7">
+            <footer v-if="(!templateHasCreatorIdentity && printOptions.show_creator_identity) || (!templateHasSignature && printOptions.show_department_signature && signatureDataUri) || (!templateHasStamp && printOptions.show_stamp && stampDataUri)" class="signature-area mt-12 flex items-end justify-between gap-8">
+                <div v-if="!templateHasCreatorIdentity && printOptions.show_creator_identity" class="min-w-0 text-center text-sm leading-7">
                     <p v-if="creatorUnitTitle" class="font-semibold">{{ creatorUnitTitle }}</p>
                     <p v-if="creatorName" class="font-bold">{{ creatorName }}</p>
                 </div>
