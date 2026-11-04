@@ -1517,3 +1517,16 @@ Incoming letter numbers are captured from the original document, never auto-gene
 - بعد از حذف مکاتبه باید فیلترهای فعال فهرست دوباره اعمال شوند.
 - مدیر واحد دبیرخانه باید پیش‌نویس‌های وارده ثبت‌شده توسط دبیرخانه را که در انتظار ثبت/تأیید هستند در «نیاز به اقدام» ببیند؛ این استثنا فقط برای مدیر جاری دبیرخانه است و نباید دسترسی عمومی به پیش‌نویس‌ها ایجاد کند.
 - اصلاحات کد در development ثبت شده‌اند؛ اجرای تست‌های Correspondence و build پس از pull هنوز لازم است. master بدون تغییر.
+
+
+
+## 2026-11-04 — Phase 3 technical audit checkpoint
+
+The phase-3 repository audit on `development` verified:
+- Organization settings already hold organization name, short name, national/registration/economic identifiers, address, phone, email and website through the Core settings service. Reuse these values as independent letterhead elements; do not create duplicate organization-detail fields.
+- Departments already hold `manager_id`, but there is no manager-signature asset/path or upload lifecycle in the department model/forms/actions.
+- There is no organization stamp asset/path or upload lifecycle in Core organization settings.
+- Correspondence detail has no print/PDF route or dedicated print template. The current show page is a workflow/detail UI, not a page-layout surface.
+- No PDF renderer is listed in `composer.json`. The Documents module already abstracts storage using a contract and stores disk/path/version metadata; its download endpoint checks authorization. Public profile-avatar storage is not an adequate default security model for official stamp/signature assets.
+
+No code or database changes were made during this audit. The implementation choice between browser-native Print/Save as PDF from a shared HTML/CSS A4 template and server-side PDF generation remains a product/architecture decision requiring confirmation before the output pipeline is implemented.
