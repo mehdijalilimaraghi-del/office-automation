@@ -235,6 +235,7 @@ function registerCorrespondence(): void {
                     </div>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
+                    <Link v-if="correspondence.status === 'registered'" :href="route('correspondence.print', correspondence.id)" class="rounded-xl border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-100">پیش‌نمایش چاپ / PDF</Link>
                     <Link :href="route('correspondence.index')" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">بازگشت به فهرست</Link>
                     <button v-if="canRegister && correspondence.status === 'draft'" type="button" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700" @click="registerCorrespondence">ثبت نهایی</button>
                 </div>
