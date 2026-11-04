@@ -112,11 +112,22 @@ class CorrespondenceNumberingService
             'organization.website' => null,
             'organization.stamp.path' => null,
             'organization.stamp.active' => '0',
+            'organization.letterhead.path' => null,
         ]);
 
         $snapshotPath = 'correspondence/'.$correspondence->id.'/print-snapshots';
         $stampPath = null;
+        $letterheadPath = null;
         $signaturePath = null;
+
+        if (filled($settings['organization.letterhead.path'])
+            && Storage::disk('local')->exists($settings['organization.letterhead.path'])) {
+            $extension = pathinfo($settings['organization.letterhead.path'], PATHINFO_EXTENSION) ?: 'png';
+            $letterheadPath = $snapshotPath.'/organization-letterhead.'.$extension;
+            if (! Storage::disk('local')->copy($settings['organization.letterhead.path'], $letterheadPath)) {
+                throw new RuntimeException('تهیه تصویر ثابت سربرگ سازمان برای نامه انجام نشد.');
+            }
+        }
 
         if ($settings['organization.stamp.active'] === '1'
             && filled($settings['organization.stamp.path'])
@@ -152,6 +163,7 @@ class CorrespondenceNumberingService
                 'website' => $settings['organization.website'],
             ],
             'stamp_path' => $stampPath,
+            'letterhead_path' => $letterheadPath,
             'signature_path' => $signaturePath,
             'finalized_at' => now()->toIso8601String(),
         ];
