@@ -60,7 +60,7 @@ class CorrespondenceTemplateController extends Controller
             'elements.*.x' => ['required', 'numeric', 'min:0', 'max:100'],
             'elements.*.y' => ['required', 'numeric', 'min:0', 'max:100'],
             'elements.*.width' => ['required', 'numeric', 'min:5', 'max:100'],
-            'elements.*.height' => ['required', 'numeric', 'min:3', 'max:80'],
+            
             'elements.*.font_size' => ['required', 'integer', 'min:7', 'max:48'],
             'elements.*.bold' => ['required', 'boolean'],
             'elements.*.align' => ['required', 'in:right,center,left'],
@@ -70,7 +70,7 @@ class CorrespondenceTemplateController extends Controller
         $elements = array_map(static fn (array $element): array => [...$element, 'content' => $element['content'] ?? ''], $data['elements']);
 
         foreach ($elements as $element) {
-            abort_if($element['x'] + $element['width'] > 100 || $element['y'] + $element['height'] > 100, 422, 'ابعاد کادر از محدوده صفحه خارج است.');
+            abort_if($element['role'] === 'repeat' && ($element['x'] + $element['width'] > 100 || $element['y'] > 100), 422, 'ابعاد کادر از محدوده صفحه خارج است.');
         }
 
         $settings->set(['correspondence.print.template' => json_encode($elements, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)]);
