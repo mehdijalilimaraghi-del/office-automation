@@ -356,6 +356,8 @@ The legacy `users.department_id` field is removed after migration of existing as
 
 External organizations (customers, suppliers, partners, and their contacts) are a separate future domain and must not be merged with the internal organization structure.
 
+External organizational units own their external manager/addressee configuration. An ExternalDepartment may select one active ExternalContact from that same unit and stores the unit-level organizational title prefix, position, personal salutation and professional title. These fields must not be moved to internal Departments or required on every ExternalContact. Legacy contact-level fields may remain for historical compatibility only.
+
 
 ---
 
