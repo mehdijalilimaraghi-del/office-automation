@@ -23,10 +23,11 @@ class ExternalDepartment extends Model
             ->where('entity_type', self::class);
     }
 
-    protected $fillable = ['external_organization_id', 'parent_id', 'name', 'code', 'phone', 'extension', 'email', 'status'];
+    protected $fillable = ['external_organization_id', 'parent_id', 'manager_contact_id', 'name', 'code', 'phone', 'extension', 'email', 'organizational_title_prefix', 'position', 'personal_salutation', 'professional_title', 'status'];
 
     public function organization(): BelongsTo { return $this->belongsTo(ExternalOrganization::class, 'external_organization_id'); }
     public function parent(): BelongsTo { return $this->belongsTo(self::class, 'parent_id'); }
     public function children(): HasMany { return $this->hasMany(self::class, 'parent_id'); }
     public function contacts(): HasMany { return $this->hasMany(ExternalContact::class); }
+    public function managerContact(): BelongsTo { return $this->belongsTo(ExternalContact::class, 'manager_contact_id'); }
 }
