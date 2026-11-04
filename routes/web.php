@@ -21,6 +21,7 @@ use App\Modules\Dashboard\Http\Controllers\DashboardController;
 use App\Modules\Cartable\Http\Controllers\CartableController;
 use App\Modules\Notifications\Http\Controllers\NotificationController;
 use App\Modules\Correspondence\Http\Controllers\CorrespondenceController;
+use App\Modules\Correspondence\Http\Controllers\CorrespondencePrintController;
 use App\Modules\Correspondence\Http\Controllers\CreateProjectFromCorrespondenceController;
 use App\Modules\Correspondence\Http\Controllers\CorrespondenceScannerController;
 use Illuminate\Support\Facades\Route;
@@ -46,6 +47,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/create', [CorrespondenceController::class, 'create'])->middleware('permission:correspondence.create')->name('create');
         Route::get('/{correspondence}/edit', [CorrespondenceController::class, 'edit'])->name('edit');
         Route::get('/related-search', [CorrespondenceController::class, 'searchRelated'])->middleware('permission:correspondence.create')->name('related-search');
+        Route::get('/{correspondence}/print', CorrespondencePrintController::class)->middleware('permission:correspondence.view')->name('print');
         Route::get('/{correspondence}', [CorrespondenceController::class, 'show'])->middleware('permission:correspondence.view')->name('show');
         Route::post('/', [CorrespondenceController::class, 'store'])->middleware('permission:correspondence.create')->name('store');
         Route::put('/{correspondence}', [CorrespondenceController::class, 'update'])->name('update');
