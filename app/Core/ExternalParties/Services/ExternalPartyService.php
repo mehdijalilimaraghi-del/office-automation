@@ -178,6 +178,7 @@ class ExternalPartyService implements ExternalPartyServiceInterface
                     $customFields = $data['custom_fields'] ?? [];
                     unset($data['code'], $data['custom_fields']);
                     $contact = ExternalContact::create($data);
+                    $this->syncDefaultContact($contact);
                     $this->customFieldService->sync($contact, $customFields);
                     return $contact->refresh();
         });
@@ -191,6 +192,7 @@ class ExternalPartyService implements ExternalPartyServiceInterface
                     $customFields = $data['custom_fields'] ?? [];
                     unset($data['code'], $data['custom_fields']);
                     $contact->update($data);
+                    $this->syncDefaultContact($contact);
                     $this->customFieldService->sync($contact, $customFields);
                     return $contact->refresh();
         });
@@ -241,6 +243,25 @@ class ExternalPartyService implements ExternalPartyServiceInterface
                 $cursor = $cursor->parent;
             }
         }
+    }
+
+    private function syncDefaultContact(ExternalContact $contact): void
+    {
+        if (! $contact->is_default) {
+            return;
+        }
+
+        $query = ExternalContact::query()
+            ->where('external_organization_id', $contact->external_organization_id)
+            ->whereKeyNot($contact->id);
+
+        if ($contact->external_department_id === null) {
+            $query->whereNull('external_department_id');
+        } else {
+            $query->where('external_department_id', $contact->external_department_id);
+        }
+
+        $query->update(['is_default' => false]);
     }
 
     private function validateContactDepartment(array $data): void
