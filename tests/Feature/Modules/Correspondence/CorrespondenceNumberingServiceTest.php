@@ -198,7 +198,7 @@ class CorrespondenceNumberingServiceTest extends TestCase
             'type' => Correspondence::TYPE_OUTGOING,
             'subject' => 'نامه دارای مشخصات صادرکننده',
             'status' => Correspondence::STATUS_DRAFT,
-            'workflow_state' => 'awaiting_registration',
+            'workflow_state' => 'approved_for_registration',
             'created_by' => $creator->id,
             'created_department_id' => $department->id,
         ]);
