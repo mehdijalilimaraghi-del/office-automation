@@ -11,6 +11,7 @@ import axios from 'axios';
 interface Department { id: number; name: string; parent_id: number | null; icon?: string | null; }
 interface ExternalOrganization { id: number; name: string; }
 interface ExternalDepartment { id: number; external_organization_id: number; parent_id?: number | null; name: string; }
+interface ExternalContact { id: number; external_organization_id: number; external_department_id: number | null; name: string; position: string | null; organizational_title_prefix: string | null; personal_salutation: string | null; professional_title: string | null; is_default: boolean; }
 interface ReplyOption { id: number; letter_number: string | null; registration_number: string | null; external_registration_number: string | null; subject: string; type: string; letter_date: string | null; created_department: string | null; recipient_department: string | null; external_organization: string | null; external_organization_code: string | null; external_department: string | null; external_department_code: string | null; created_department_code: string | null; recipient_department_code: string | null; }
 interface CreatedDepartment { id: number; name: string; parent_id?: number | null; icon?: string | null; }
 type CompositionMode = 'editor' | 'file' | 'both';
@@ -21,7 +22,7 @@ interface ExistingCorrespondence {
     subject: string; letter_number: string | null; body: string | null;
     sender_name: string | null; recipient_name: string | null; received_at: string | null; sent_at: string | null;
     created_department_id: number | null; recipient_department_id: number | null;
-    external_organization_id: number | null; external_department_id: number | null;
+    external_organization_id: number | null; external_department_id: number | null; external_contact_id: number | null;
     related_letters: ReplyOption[]; copy_department_ids: number[];
     original_documents: Array<{ id: number; title: string }>;
 }
@@ -31,6 +32,7 @@ const props = defineProps<{
     departments: Department[];
     externalOrganizations: ExternalOrganization[];
     externalDepartments: ExternalDepartment[];
+    externalContacts: ExternalContact[];
     createdDepartment: CreatedDepartment | null;
     createdDepartments: CreatedDepartment[];
     correspondenceFontFamily: string;
@@ -120,6 +122,7 @@ const form = useForm({
     recipient_name: existing?.recipient_name ?? '',
     external_organization_id: existing?.external_organization_id ?? '' as number | '',
     external_department_id: existing?.external_department_id ?? '' as number | '',
+    external_contact_id: existing?.external_contact_id ?? '' as number | '',
     received_at: existing?.received_at ?? '',
     sent_at: existing?.sent_at ?? '',
     recipient_department_id: existing?.recipient_department_id ?? '' as number | '',
@@ -177,6 +180,32 @@ watch(() => form.external_organization_id, (organizationId) => {
         form.external_department_id = '';
     }
     if (!organizationId) form.external_department_id = '';
+});
+
+function selectDefaultExternalContact(): void {
+    if (form.type !== 'outgoing' || !form.external_organization_id) {
+        form.external_contact_id = '';
+        return;
+    }
+    const departmentId = form.external_department_id || null;
+    const defaultContact = props.externalContacts.find((contact) =>
+        contact.is_default
+        && contact.external_organization_id === Number(form.external_organization_id)
+        && contact.external_department_id === (departmentId ? Number(departmentId) : null),
+    );
+    form.external_contact_id = defaultContact?.id ?? '';
+}
+
+watch(() => [form.external_organization_id, form.external_department_id], () => {
+    if (props.isEditing && form.external_contact_id) {
+        const selected = props.externalContacts.find((contact) => contact.id === Number(form.external_contact_id));
+        if (selected
+            && selected.external_organization_id === Number(form.external_organization_id)
+            && selected.external_department_id === (form.external_department_id ? Number(form.external_department_id) : null)) {
+            return;
+        }
+    }
+    selectDefaultExternalContact();
 });
 
 function syncBody(): void {
@@ -551,6 +580,16 @@ async function scanOriginalLetter(): Promise<void> {
                                     <label for="sender_name" class="mb-1.5 block text-sm font-semibold text-slate-700">نام شخص یا سمت فرستنده (اختیاری)</label>
                                     <input id="sender_name" v-model="form.sender_name" maxlength="255" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
                                     <InputError class="mt-1" :message="form.errors.sender_name" />
+                                </div>
+                                <div v-if="form.type === 'outgoing'">
+                                    <label for="external_contact_id" class="mb-1.5 block text-sm font-semibold text-slate-700">مخاطب شخصی (اختیاری)</label>
+                                    <AppSelect id="external_contact_id" v-model="form.external_contact_id" :disabled="!form.external_organization_id" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                        <option value="">بدون انتخاب شخص؛ خطاب به سازمان یا واحد</option>
+                                        <option v-for="contact in externalContacts.filter(item => item.external_organization_id === Number(form.external_organization_id) && item.external_department_id === (form.external_department_id ? Number(form.external_department_id) : null))" :key="contact.id" :value="contact.id">
+                                            {{ [contact.organizational_title_prefix, contact.position, contact.personal_salutation, contact.professional_title, contact.name].filter(Boolean).join(' ') }}{{ contact.is_default ? ' (پیش‌فرض)' : '' }}
+                                        </option>
+                                    </AppSelect>
+                                    <InputError class="mt-1" :message="form.errors.external_contact_id" />
                                 </div>
                                 <div v-if="form.type === 'outgoing'">
                                     <label for="recipient_name" class="mb-1.5 block text-sm font-semibold text-slate-700">نام شخص یا سمت گیرنده (اختیاری)</label>
