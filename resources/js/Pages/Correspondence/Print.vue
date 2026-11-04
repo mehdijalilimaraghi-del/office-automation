@@ -45,6 +45,11 @@ const props = defineProps<{
         show_creator_identity: boolean;
         show_stamp: boolean;
         show_department_signature: boolean;
+        letterhead_show_name: boolean;
+        letterhead_show_address: boolean;
+        letterhead_show_phone: boolean;
+        letterhead_show_email: boolean;
+        letterhead_show_website: boolean;
         font_family: string;
     };
 }>();
@@ -91,14 +96,14 @@ function printLetter(): void {
             <header class="letterhead-slot" :class="{ 'letterhead-hidden': !withLetterhead }">
                 <div class="flex items-start justify-between gap-6 border-b-2 border-slate-700 pb-4">
                     <div class="min-w-0">
-                        <h1 class="text-xl font-bold">{{ organization.name }}</h1>
-                        <p v-if="organization.short_name" class="mt-1 text-sm">{{ organization.short_name }}</p>
+                        <h1 v-if="printOptions.letterhead_show_name && organization.name" class="text-xl font-bold">{{ organization.name }}</h1>
+                        <p v-if="printOptions.letterhead_show_name && organization.short_name" class="mt-1 text-sm">{{ organization.short_name }}</p>
                         <div class="mt-3 space-y-1 text-xs leading-5 text-slate-600">
-                            <p v-if="organization.address">{{ organization.address }}</p>
+                            <p v-if="printOptions.letterhead_show_address && organization.address">{{ organization.address }}</p>
                             <p class="flex flex-wrap gap-x-4 gap-y-1">
-                                <span v-if="organization.phone">تلفن: {{ organization.phone }}</span>
-                                <span v-if="organization.email">{{ organization.email }}</span>
-                                <span v-if="organization.website">{{ organization.website }}</span>
+                                <span v-if="printOptions.letterhead_show_phone && organization.phone">تلفن: {{ organization.phone }}</span>
+                                <span v-if="printOptions.letterhead_show_email && organization.email">{{ organization.email }}</span>
+                                <span v-if="printOptions.letterhead_show_website && organization.website">{{ organization.website }}</span>
                             </p>
                         </div>
                     </div>
