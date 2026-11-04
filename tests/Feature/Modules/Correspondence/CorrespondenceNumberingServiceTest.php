@@ -179,6 +179,7 @@ class CorrespondenceNumberingServiceTest extends TestCase
     {
         Storage::fake('local');
         Storage::disk('local')->put('organization/stamp/stamp.png', 'stamp-image');
+        Storage::disk('local')->put('organization/letterhead/header.png', 'letterhead-image');
         Storage::disk('local')->put('organization/signatures/finance.png', 'signature-image');
 
         $creator = User::factory()->create(['status' => 'active', 'name' => 'مهدی جلیلی']);
@@ -196,6 +197,7 @@ class CorrespondenceNumberingServiceTest extends TestCase
             'organization.address' => 'تهران',
             'organization.stamp.path' => 'organization/stamp/stamp.png',
             'organization.stamp.active' => '1',
+            'organization.letterhead.path' => 'organization/letterhead/header.png',
         ]);
         $letter = Correspondence::query()->create([
             'type' => Correspondence::TYPE_OUTGOING,
@@ -213,8 +215,10 @@ class CorrespondenceNumberingServiceTest extends TestCase
         $this->assertSame('مدیریت واحد مالی', $snapshot['creator_unit_title']);
         $this->assertSame('سازمان نمونه', $snapshot['organization']['name']);
         $this->assertNotEmpty($snapshot['stamp_path']);
+        $this->assertNotEmpty($snapshot['letterhead_path']);
         $this->assertNotEmpty($snapshot['signature_path']);
         Storage::disk('local')->assertExists($snapshot['stamp_path']);
+        Storage::disk('local')->assertExists($snapshot['letterhead_path']);
         Storage::disk('local')->assertExists($snapshot['signature_path']);
     }
 
