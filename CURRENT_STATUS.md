@@ -1,3 +1,10 @@
+## 2026-11-04 — Approved office-automation enhancements plan
+
+- Approved manager self-acceptance of responsibility in both Correspondence and Tasks as a distinct action, without self-referral; history and audit must be preserved.
+- Approved external-recipient defaults: the department's default contact is auto-selected but remains changeable. Addressing is split into organizational title prefix (e.g. مدیریت/مدیرعامل/معاونت/ریاست), organizational position, personal salutation, professional title and name. Organizational-only addressees remain supported. Finalized letters must retain an addressing snapshot.
+- Approved one shared correspondence template/coordinate system for PDF and physical printing, with per-output choice of letterhead or no letterhead. Address, phone, email, website and other company details are optional independently configurable letterhead elements.
+- Detailed scope and staged acceptance criteria recorded in `docs/OFFICE_AUTOMATION_ENHANCEMENTS.md`. Stage 0 complete; implementation stages 1–4 not started. Development only; master/server untouched. No application code changed in this planning commit.
+
 ## 2026-11-04 — Direct correspondence registration follow-up
 
 - Fixed the create-page contract: `Correspondence/Create` now receives the per-type `approvalSettings` used by its submit label and explanatory text. Previously this prop was omitted on the create action (although it was supplied by the edit action), so a type configured for direct registration could still display «ذخیره پیش‌نویس».
