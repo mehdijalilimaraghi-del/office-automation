@@ -1,3 +1,7 @@
+## 2026-11-04 — Template designer scope update
+
+This entry supersedes earlier first-slice notes that described stamp/signature elements as future work: the visual A4 editor now supports text, organization-stamp and manager-signature element kinds, and print preview binds the latter two to correspondence-specific snapshot assets. Creator and recipient/letter metadata tokens are also available. Configurable body/recipient/footer flow zones, repeating headers/footers, snapping/guides/zoom, and local validation remain open.
+
 ## 2026-11-04 — Template designer image elements follow-up
 
 - Added selectable template element kinds: text, organization stamp, and issuing-unit manager signature. Stamp/signature elements use the existing protected, snapshotted image assets; their position and dimensions are configured in the A4 editor. Text elements support creator identity tokens as well.
