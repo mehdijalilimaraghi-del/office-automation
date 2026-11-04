@@ -22,7 +22,7 @@ type CustomFieldValue = {
 
 type Organization={id:number;name:string;code:string|null;phone:string|null;email:string|null;address:string|null;status:string;departments_count:number;contacts_count:number;customFieldValues?:CustomFieldValue[]};
 type Department={id:number;external_organization_id:number;parent_id:number|null;name:string;code:string|null;phone:string|null;extension:string|null;email:string|null;status:string;organization?:{id:number;name:string};customFieldValues?:CustomFieldValue[]};
-type Contact={id:number;external_organization_id:number;external_department_id:number|null;code:string|null;name:string;position:string|null;mobile:string|null;phone:string|null;extension:string|null;email:string|null;notes:string|null;status:string;organization?:{id:number;name:string};department?:{id:number;name:string};customFieldValues?:CustomFieldValue[]};
+type Contact={id:number;external_organization_id:number;external_department_id:number|null;code:string|null;name:string;position:string|null;organizational_title_prefix:string|null;personal_salutation:string|null;professional_title:string|null;is_default:boolean;mobile:string|null;phone:string|null;extension:string|null;email:string|null;notes:string|null;status:string;organization?:{id:number;name:string};department?:{id:number;name:string};customFieldValues?:CustomFieldValue[]};
 
 const props=defineProps<{
     organizations: Organization[];
@@ -39,7 +39,7 @@ const tab=ref<'organizations'|'departments'|'contacts'>('organizations');
 const saving=ref(false);
 const orgForm=reactive<any>({id:null,name:'',phone:'',email:'',address:'',status:'active',custom_fields:{}});
 const depForm=reactive<any>({id:null,external_organization_id:'',parent_id:'',name:'',phone:'',extension:'',email:'',status:'active',custom_fields:{}});
-const contactForm=reactive<any>({id:null,external_organization_id:'',external_department_id:'',name:'',position:'',mobile:'',phone:'',extension:'',email:'',notes:'',status:'active',custom_fields:{}});
+const contactForm=reactive<any>({id:null,external_organization_id:'',external_department_id:'',name:'',position:'',organizational_title_prefix:'',personal_salutation:'',professional_title:'',is_default:false,mobile:'',phone:'',extension:'',email:'',notes:'',status:'active',custom_fields:{}});
 
 const departmentsForContact=computed(()=>props.departments.filter(d=>String(d.external_organization_id)===String(contactForm.external_organization_id)));
 const departmentsForEdit=computed(()=>props.departments.filter(d=>String(d.external_organization_id)===String(depForm.external_organization_id) && d.id!==depForm.id));
@@ -245,7 +245,11 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
           <DepartmentTreeSelect v-model="contactForm.external_department_id" :departments="departmentsForContact" placeholder="واحد اختیاری" />
           <label class="block text-sm font-semibold text-slate-700">نام و نام خانوادگی</label>
           <input v-model="contactForm.name" required placeholder="نام و نام خانوادگی" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
-          <input v-model="contactForm.position" placeholder="سمت" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
+          <input v-model="contactForm.organizational_title_prefix" placeholder="پیشوند عنوان سازمانی؛ مانند مدیریت یا ریاست" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
+          <input v-model="contactForm.position" placeholder="سمت سازمانی؛ مانند مدیر واحد مالی" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
+          <input v-model="contactForm.personal_salutation" placeholder="پیشوند خطاب شخصی؛ مانند جناب آقای یا سرکار خانم" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
+          <input v-model="contactForm.professional_title" placeholder="عنوان حرفه‌ای؛ مانند مهندس یا دکتر" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
+          <label class="flex items-center gap-2 text-sm font-semibold text-slate-700"><input v-model="contactForm.is_default" type="checkbox" class="rounded border-slate-300 text-teal-600"> مخاطب پیش‌فرض این سازمان/واحد</label>
           <div class="grid grid-cols-2 gap-3"><input v-model="contactForm.mobile" placeholder="موبایل" class="rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr"><input v-model="contactForm.phone" placeholder="تلفن ثابت" class="rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr"></div>
           <input v-model="contactForm.email" type="email" placeholder="ایمیل" class="w-full rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr">
           <textarea v-model="contactForm.notes" rows="3" placeholder="یادداشت" class="w-full rounded-xl border border-slate-200 px-3 py-2.5"></textarea>
@@ -264,7 +268,7 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
         <div class="border-b p-5"><h2 class="font-black">افراد طرف تعامل</h2></div>
         <div v-if="!contacts.length" class="p-12 text-center text-sm text-slate-400">هنوز فردی ثبت نشده است.</div>
         <div v-else class="divide-y divide-slate-100">
-          <div v-for="c in contacts" :key="c.id" class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"><div class="min-w-0"><h3 class="font-bold text-slate-900">{{c.name}}</h3><p class="mt-1 text-xs text-slate-500">{{c.position||'بدون سمت'}} · {{c.organization?.name||'—'}}{{c.department?.name?' · '+c.department.name:''}}</p><p class="mt-1 text-xs text-slate-400" dir="ltr">{{c.mobile||c.phone||'بدون شماره'}}{{c.email?' · '+c.email:''}}</p><p class="mt-1 font-mono text-[10px] text-slate-400" dir="ltr">کد سیستمی: {{c.code||'—'}}</p></div><div class="flex gap-2"><button @click="edit(contactForm,c)" class="rounded-lg px-3 py-2 text-xs font-bold text-teal-700 hover:bg-teal-50">ویرایش</button><button @click="destroy('external-parties.contacts.destroy',c.id)" class="rounded-lg px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">حذف</button></div></div>
+          <div v-for="c in contacts" :key="c.id" class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"><div class="min-w-0"><h3 class="font-bold text-slate-900">{{c.name}}</h3><p class="mt-1 text-xs text-slate-500">{{[c.organizational_title_prefix,c.position,c.personal_salutation,c.professional_title].filter(Boolean).join(' ')||c.position||'بدون سمت'}} · {{c.organization?.name||'—'}}{{c.is_default?' · پیش‌فرض':''}}{{c.department?.name?' · '+c.department.name:''}}</p><p class="mt-1 text-xs text-slate-400" dir="ltr">{{c.mobile||c.phone||'بدون شماره'}}{{c.email?' · '+c.email:''}}</p><p class="mt-1 font-mono text-[10px] text-slate-400" dir="ltr">کد سیستمی: {{c.code||'—'}}</p></div><div class="flex gap-2"><button @click="edit(contactForm,c)" class="rounded-lg px-3 py-2 text-xs font-bold text-teal-700 hover:bg-teal-50">ویرایش</button><button @click="destroy('external-parties.contacts.destroy',c.id)" class="rounded-lg px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">حذف</button></div></div>
         </div>
       </div>
     </section>
