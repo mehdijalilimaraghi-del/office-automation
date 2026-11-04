@@ -134,6 +134,8 @@ class OrganizationSettingsTest extends TestCase
         $elements = [[
             'id' => 'header_contact',
             'kind' => 'text',
+            'role' => 'repeat',
+            'spacing' => 0,
             'label' => 'اطلاعات تماس',
             'content' => 'آدرس: {{address}} | تلفن تماس: {{tel}} | ایمیل: {{email}}',
             'x' => 8,
@@ -149,6 +151,8 @@ class OrganizationSettingsTest extends TestCase
         $elements[] = [
             'id' => 'stamp_box',
             'kind' => 'stamp',
+            'role' => 'issuer',
+            'spacing' => 0,
             'label' => 'مهر سازمان',
             'content' => '',
             'x' => 75,
