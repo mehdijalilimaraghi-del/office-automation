@@ -34,7 +34,7 @@ function printLetter():void{window.print();}
   <article class="paper mx-auto bg-white px-[18mm] py-[14mm]" :style="{fontFamily:printOptions.font_family||'Vazirmatn'}" dir="rtl">
    <div v-if="withLetterhead && letterheadDataUri" class="letterhead-background" :style="{backgroundImage:'url('+letterheadDataUri+')'}" aria-hidden="true"></div>
    <div v-for="item in repeating" :key="item.id" class="repeat-item" :style="{right:item.x+'%',top:item.y+'%',width:item.width+'%',fontSize:item.font_size+'pt',fontWeight:item.bold?'700':'400',textAlign:item.align}">{{resolveTemplate(item.content)}}</div>
-   <div v-if="pageNumberEnabled" class="page-number">صفحه <span class="page-counter"></span></div>
+   <div v-if="pageNumberEnabled" class="page-number">صفحه <span class="page-counter"></span> از <span class="pages-counter"></span></div>
    <div class="document-content">
     <div v-for="item in flowMeta" :key="item.id" class="flow-item" :style="boxStyle(item)">{{item.kind==='stamp'&&stampDataUri?'':item.kind==='signature'&&signatureDataUri?'':resolveTemplate(item.content)}}<img v-if="item.kind==='stamp'&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="inline-asset"/><img v-else-if="item.kind==='signature'&&signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="inline-asset"/></div>
     <div v-for="item in flowHeading" :key="item.id" class="flow-item" :style="boxStyle(item)">
@@ -80,7 +80,7 @@ function printLetter():void{window.print();}
  .no-print{display:none!important;}
  .paper{width:auto;min-height:0;margin:0;padding:0 18mm;box-shadow:none;overflow:visible;}
  .letterhead-background{position:fixed;}\n .repeat-item{position:fixed;}\n .page-number{display:block;position:fixed;z-index:4;bottom:-13mm;left:0;right:0;text-align:center;font:9pt Tahoma,sans-serif;color:#475569;}
- .page-counter:before{content:counter(page);}
+ .page-counter:before{content:counter(page);}\n .pages-counter:before{content:counter(pages);}
 }
 @media screen and (max-width:800px){.paper{width:100%;min-height:0;padding:24px;}}
 </style>
