@@ -113,6 +113,8 @@ class TaskReferralHttpTest extends TestCase
     public function test_department_manager_can_accept_task_responsibility_and_history_is_recorded(): void
     {
         $manager = $this->userWithPermission('tasks.assign');
+        $this->grantDepartmentTaskAssignmentScope($manager);
+        $manager = $manager->fresh();
         $employee = User::factory()->create(['status' => 'active']);
         $department = \App\Core\Departments\Models\Department::query()->create([
             'name' => 'واحد پذیرش مسئولیت',
@@ -196,6 +198,13 @@ class TaskReferralHttpTest extends TestCase
             ]);
             $this->actingAs($manager)->post(route('tasks.accept-responsibility', $task))->assertForbidden();
         }
+    }
+
+    private function grantDepartmentTaskAssignmentScope(User $user): void
+    {
+        $permission = Permission::query()->where('code', 'tasks.assign')->firstOrFail();
+        $role = $user->roles()->firstOrFail();
+        $role->permissions()->updateExistingPivot($permission->id, ['scope' => 'department']);
     }
 
     private function userWithPermission(string $permissionCode): User
