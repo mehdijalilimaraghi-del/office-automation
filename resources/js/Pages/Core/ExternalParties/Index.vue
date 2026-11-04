@@ -208,6 +208,14 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
           
           <div class="grid grid-cols-2 gap-3"><input v-model="depForm.phone" placeholder="تلفن" class="rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr"><input v-model="depForm.extension" placeholder="داخلی" class="rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr"></div>
           <input v-model="depForm.email" type="email" placeholder="ایمیل" class="w-full rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr">
+          <div class="mt-5 border-t border-slate-100 pt-5"><h3 class="font-bold text-slate-800">مدیر و اطلاعات خطاب واحد</h3><p class="mt-1 text-xs leading-5 text-slate-500">این مشخصات یک‌بار برای واحد ثبت می‌شود و در مکاتبات خطاب به این واحد استفاده خواهد شد.</p></div>
+          <label class="block text-sm font-semibold text-slate-700">مدیر / مخاطب اصلی واحد</label>
+          <AppSelect v-model="depForm.manager_contact_id" class="w-full rounded-xl border border-slate-200 px-3 py-2.5"><option value="">انتخاب مدیر واحد</option><option v-for="c in contactsForDepartment" :key="c.id" :value="c.id">{{c.name}}</option></AppSelect>
+          <p v-if="!depForm.id" class="text-xs text-amber-700">برای تعیین مدیر، ابتدا واحد را ثبت کنید؛ سپس یک فرد را به این واحد اختصاص دهید و در ویرایش واحد به‌عنوان مدیر انتخاب کنید.</p>
+          <input v-model="depForm.organizational_title_prefix" placeholder="پیشوند عنوان سازمانی؛ مدیریت، مدیرعامل، معاونت، ریاست" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
+          <input v-model="depForm.position" placeholder="سمت سازمانی؛ مدیر واحد مالی، معاون اداری" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
+          <input v-model="depForm.personal_salutation" placeholder="پیشوند شخصی؛ جناب آقای، سرکار خانم" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
+          <input v-model="depForm.professional_title" placeholder="عنوان حرفه‌ای؛ مهندس، دکتر" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
         </div>
                 <CustomFieldsForm
           v-if="props.customFields.department.length"
