@@ -7,6 +7,7 @@ namespace App\Modules\Correspondence\Models;
 use App\Core\Departments\Models\Department;
 use App\Core\ExternalParties\Models\ExternalOrganization;
 use App\Core\ExternalParties\Models\ExternalDepartment;
+use App\Core\ExternalParties\Models\ExternalContact;
 use App\Models\User;
 use App\Modules\Documents\Models\DocumentLink;
 use App\Modules\Workflows\Models\WorkflowInstance;
@@ -53,6 +54,8 @@ class Correspondence extends Model
         'recipient_department_id',
         'external_organization_id',
         'external_department_id',
+        'external_contact_id',
+        'recipient_addressing_snapshot',
         'workflow_instance_id',
         'reply_to_id',
         'task_id',
@@ -73,6 +76,7 @@ class Correspondence extends Model
             'received_at' => 'datetime',
             'sent_at' => 'datetime',
             'external_registered_at' => 'date',
+            'recipient_addressing_snapshot' => 'array',
         ];
     }
 
@@ -118,6 +122,11 @@ class Correspondence extends Model
     public function externalDepartment(): BelongsTo
     {
         return $this->belongsTo(ExternalDepartment::class, 'external_department_id');
+    }
+
+    public function externalContact(): BelongsTo
+    {
+        return $this->belongsTo(ExternalContact::class, 'external_contact_id');
     }
 
     public function workflowInstance(): BelongsTo
