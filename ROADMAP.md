@@ -939,3 +939,8 @@ Status: correspondence list/draft/registration HTTP flow and editor/file/both co
 ### Correspondence letter-template designer — 2026-11-04 status
 
 First implementation slice exists: a settings-managed A4 text-box editor with move/resize, content editing, visibility, typography/alignment controls, and typed token insertion; saved JSON is rendered in first-page print preview. Remaining work before acceptance: image elements for stamp/signature, explicit recipient/body/footer zones, robust multi-page header/footer behavior, visual guides/snapping/zoom, token completeness and output verification, focused tests, frontend build and manual print/PDF review. This is in progress, not complete.
+
+
+### 2026-11-04 — Settings UI update
+
+Organization Settings now uses three tabs. Organization letterhead upload is separate from the stamp and can be positioned through the template editor. Validation is pending.
