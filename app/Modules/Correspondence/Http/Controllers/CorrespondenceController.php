@@ -917,7 +917,7 @@ class CorrespondenceController extends Controller
                     'external_organization_id' => $data['external_organization_id'] ?? null,
                     'external_department_id' => $data['external_department_id'] ?? null,
                     'external_contact_id' => $data['external_contact_id'] ?? null,
-                    'reply_to_id => ! empty($data['reply_to_ids']) ? (int) $data['reply_to_ids'][0] : (($data['reply_to_id'] ?? null) ?: $sourceProjectCorrespondenceId),
+                    'reply_to_id' => ! empty($data['reply_to_ids']) ? (int) $data['reply_to_ids'][0] : (($data['reply_to_id'] ?? null) ?: $sourceProjectCorrespondenceId),
                     'task_id' => $data['task_id'] ?? null,
                     'project_id' => $linkedTask?->project_id,
                 ], $request->user());
