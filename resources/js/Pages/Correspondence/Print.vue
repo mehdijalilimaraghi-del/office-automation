@@ -67,7 +67,7 @@ function printLetter():void{window.print();}
 .letterhead-background{position:absolute;inset:0;z-index:0;background-position:center top;background-repeat:no-repeat;background-size:100% 100%;pointer-events:none;}
 .repeat-item{position:absolute;z-index:3;white-space:pre-wrap;line-height:1.5;direction:rtl;}
 .flow-item{position:relative;z-index:2;white-space:pre-wrap;line-height:1.8;max-width:100%;}
-.letter-body{position:relative;z-index:2;direction:rtl;text-align:right;unicode-bidi:plaintext;white-space:pre-wrap;overflow-wrap:anywhere;font-size:11pt;line-height:2;}
+.letter-body{position:relative;z-index:2;direction:rtl;unicode-bidi:plaintext;white-space:pre-wrap;overflow-wrap:anywhere;}
 .letter-body *{max-width:100%;}
 .letter-body p{margin:0 0 .75rem;}
 .letter-body img{max-width:100%;height:auto;}
