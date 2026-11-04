@@ -1,11 +1,12 @@
-## 2026-11-04 — Fix correspondence controller parse error
+## 2026-11-04 — Fix correspondence controller parse error — validated
 
+- Owner confirmed PHP lint, `ExternalPartyControllerTest`, and `CorrespondenceHttpTest` all pass after pulling the fix. This validates the syntax correction and the focused correspondence/external-party regression suites; it does not represent a full-suite run, frontend build, or end-to-end acceptance.
 - Root cause of the widespread HTTP 500/test failures: the `createDraft()` attribute array in `CorrespondenceController::store()` had a malformed key (`'reply_to_id => ...`) introduced while wiring multi-letter relations. PHP could not parse the controller, so unrelated routes/tests also failed when Laravel attempted to load routes/controllers.
 - Corrected the key to `'reply_to_id' => ...`; retained the existing first-related-letter fallback and source-project correspondence fallback. No workflow, validation, authorization, or database behavior was changed.
-- Existing `CorrespondenceHttpTest` and `ExternalPartyControllerTest` cover the affected route-loading and create/update behavior. Validation is pending on the project owner's Windows environment; run PHP lint plus both focused feature suites in the single validation step provided in the handoff.
+- Existing `CorrespondenceHttpTest` and `ExternalPartyControllerTest` cover the affected route-loading and create/update behavior. Validation completed by the project owner: PHP lint, `ExternalPartyControllerTest`, and `CorrespondenceHttpTest` passed.
 - Development only. `master`, release branch, migrations, and server are untouched.
 
-## 2026-11-04 — مرحله ۲: مخاطب بیرونی و snapshot خطاب
+## 2026-11-04 — مرحله ۲: مخاطب بیرونی و snapshot خطاب — تست‌های متمرکز پاس شد
 
 - در `ExternalContact` فیلدهای مستقل پیشوند عنوان سازمانی، سمت سازمانی، پیشوند خطاب شخصی و عنوان حرفه‌ای اضافه شدند.
 - فیلد `is_default` و منطق سرویس برای نگهداری یک مخاطب پیش‌فرض در هر سازمان/واحد اضافه شد؛ مخاطب پیش‌فرض سازمان (بدون واحد) از پیش‌فرض واحد مستقل است. مخاطب غیرفعال نمی‌تواند پیش‌فرض باقی بماند.
@@ -15,8 +16,8 @@
 - Migration: `2026_11_04_120000_add_external_contact_addressing_and_defaults`.
 - فرم ایجاد و ویرایش مخاطب هر دو اجزای خطاب و وضعیت پیش‌فرض را اعتبارسنجی و ذخیره می‌کنند.
 - حذف مخاطب متصل به مکاتبه یا تسک ثبت‌شده مسدود شد تا ارجاعات تاریخی نشکنند؛ غیرفعال‌سازی همچنان ممکن است. تغییر مخاطب پیش‌فرض با قفل تراکنشی سازمان serialize می‌شود.
-- تست‌های regression در `ExternalPartyControllerTest` و `CorrespondenceHttpTest` اضافه/توسعه یافتند. تست و build محلی هنوز توسط مالک پروژه اجرا نشده‌اند.
-- وضعیت پنج مرحله: ۱ تست‌های متمرکز پاس؛ ۲ پیاده‌سازی اولیه در انتظار تست؛ ۳ مستند شده/شروع نشده؛ ۴ شروع نشده؛ ۵ شروع نشده.
+- تست‌های regression در `ExternalPartyControllerTest` و `CorrespondenceHttpTest` اضافه/توسعه یافتند. مالک پروژه اجرای تست‌های متمرکز `ExternalPartyControllerTest` و `CorrespondenceHttpTest` را پس از دریافت اصلاح نحوی تأیید کرد؛ تست‌های این دو مجموعه پاس شدند. این نتیجه، build فرانت‌اند یا پذیرش end-to-end را تأیید نمی‌کند.
+- وضعیت پنج مرحله: ۱ تست‌های متمرکز پاس؛ ۲ پیاده‌سازی اولیه و تست‌های متمرکز پاس؛ ۳ مستند شده/شروع نشده؛ ۴ شروع نشده؛ ۵ در انتظار build و پذیرش end-to-end.
 - فقط شاخه `development` تغییر کرده؛ `master` و سرور دست‌نخورده‌اند.
 
 ## 2026-11-04 — تأیید تست‌های متمرکز مرحله ۱
