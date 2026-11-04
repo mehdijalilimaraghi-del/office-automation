@@ -92,6 +92,7 @@ interface TimelineItem {
 }
 interface Abilities {
     refer: boolean;
+    accept_responsibility: boolean;
     comment: boolean;
     log_work: boolean;
     create_reminder: boolean;
@@ -477,6 +478,11 @@ const deleteTask = (): void => {
     });
 };
 
+const acceptResponsibility = (): void => {
+    if (!window.confirm('مسئولیت این دستورکار را شخصاً می‌پذیرید؟')) return;
+    router.post(route('tasks.accept-responsibility', props.task.id), {}, { preserveScroll: true });
+};
+
 const submitReferral = (): void => {
     referralForm.patch(route('tasks.refer', props.task.id), {
         preserveScroll: true,
@@ -593,6 +599,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                     <button v-if="abilities.review && task.review_status === 'pending' && task.sub_status === 'manager_review'" type="button" :disabled="reviewForm.processing" class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800 disabled:opacity-50" @click="approveReview">{{ reviewForm.processing ? 'در حال ثبت...' : 'تأیید و تکمیل دستورکار' }}</button>
                     <button v-if="abilities.review && task.review_status === 'pending' && task.sub_status === 'manager_review'" type="button" :disabled="reviewForm.processing" class="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-50" @click="showReturnReviewModal = true">برگشت برای اصلاح</button>
                     <button v-if="abilities.update && canEditTaskContent" type="button" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-800" @click="showEditModal = true">ویرایش</button>
+                    <button v-if="abilities.accept_responsibility && !isFinalized && !isReviewLocked" type="button" class="rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-800 shadow-sm hover:bg-indigo-100" @click="acceptResponsibility">پذیرش مسئولیت</button>
                     <button v-if="abilities.refer && !isFinalized && !isReviewLocked" type="button" class="rounded-lg border bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50" @click="showReferralModal = true">ارجاع دستورکار</button>
                 </div>
             </div>
