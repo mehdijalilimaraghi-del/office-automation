@@ -94,6 +94,11 @@ class CorrespondencePrintController extends Controller
                 'show_creator_identity' => $settings->get(['correspondence.print.show_creator_identity' => '1'])['correspondence.print.show_creator_identity'] === '1',
                 'show_stamp' => $settings->get(['correspondence.print.show_stamp' => '1'])['correspondence.print.show_stamp'] === '1',
                 'show_department_signature' => $settings->get(['correspondence.print.show_department_signature' => '1'])['correspondence.print.show_department_signature'] === '1',
+                'letterhead_show_name' => $settings->get(['correspondence.print.letterhead.show_name' => '1'])['correspondence.print.letterhead.show_name'] === '1',
+                'letterhead_show_address' => $settings->get(['correspondence.print.letterhead.show_address' => '1'])['correspondence.print.letterhead.show_address'] === '1',
+                'letterhead_show_phone' => $settings->get(['correspondence.print.letterhead.show_phone' => '1'])['correspondence.print.letterhead.show_phone'] === '1',
+                'letterhead_show_email' => $settings->get(['correspondence.print.letterhead.show_email' => '1'])['correspondence.print.letterhead.show_email'] === '1',
+                'letterhead_show_website' => $settings->get(['correspondence.print.letterhead.show_website' => '1'])['correspondence.print.letterhead.show_website'] === '1',
                 'font_family' => $settings->get(['correspondence.composition.font_family' => 'Vazirmatn'])['correspondence.composition.font_family'],
             ],
         ]);
