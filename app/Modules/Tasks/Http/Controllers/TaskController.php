@@ -450,7 +450,7 @@ class TaskController extends Controller
                 task: $task,
                 assignee: $request->user(),
                 actor: $request->user(),
-                type: 'manager_accept_responsibility',
+                type: 'manager_accept',
                 note: 'پذیرش مسئولیت توسط مدیر واحد',
             );
         } catch (InvalidArgumentException $exception) {
