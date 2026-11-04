@@ -68,7 +68,7 @@ In Correspondence > outgoing letter composition, specifically the «روش ته�
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Manager accepts responsibility in Correspondence and Tasks, with authorization, audit/history and regression tests | Implemented; focused tests passed (owner-reported) |
-| 2 | External recipient defaults, organizational title prefix and addressing snapshot | Backend and form implementation added; awaiting focused tests |
+| 2 | External recipient defaults, organizational title prefix and addressing snapshot | Backend/form implementation added; focused regression suites passed (owner-reported); frontend build and end-to-end acceptance remain pending |
 | 3 | Shared letterhead/template, creator identity block, organization stamp, per-department manager signature, configurable fields, multipage layout and page numbering for PDF/print | Not started |
 | 4 | Reusable outgoing-letter body templates in the letter editor, editable after insertion | Not started |
 | 5 | End-to-end regression, build and manual acceptance of all five feature areas | Not started |
@@ -84,7 +84,7 @@ In Correspondence > outgoing letter composition, specifically the «روش ته�
 | مرحله | شرح | وضعیت |
 |---|---|---|
 | ۱ | پذیرش مسئولیت مدیر در مکاتبات و تسک‌ها، همراه با مجوز، history/audit و regression tests | پیاده‌سازی انجام شد؛ تست‌های متمرکز پاس شد |
-| ۲ | مخاطب پیش‌فرض، ساختار خطاب و snapshot تاریخی | پیاده‌سازی اولیه backend و فرم‌ها انجام شد؛ در انتظار تست متمرکز |
+| ۲ | مخاطب پیش‌فرض، ساختار خطاب و snapshot تاریخی | پیاده‌سازی backend و فرم‌ها انجام شد؛ تست‌های متمرکز `ExternalPartyControllerTest` و `CorrespondenceHttpTest` پاس شد؛ build و پذیرش end-to-end باقی است |
 | ۳ | قالب مشترک سربرگ، PDF/چاپ، مشخصات ایجادکننده، مهر/امضای مدیر، صفحه‌بندی و شماره صفحات | مستند شده؛ شروع نشده |
 | ۴ | قالب‌های متنی قابل استفاده مجدد در نامه صادره | شروع نشده |
 | ۵ | تست end-to-end، build و پذیرش دستی همه موارد | شروع نشده |
@@ -98,4 +98,4 @@ In Correspondence > outgoing letter composition, specifically the «روش ته�
 - Migration جدید: `2026_11_04_120000_add_external_contact_addressing_and_defaults`.
 - فرم ایجاد و ویرایش مخاطب هر دو اجزای خطاب و وضعیت پیش‌فرض را اعتبارسنجی و ذخیره می‌کنند.
 - حذف مخاطبی که به مکاتبه یا تسک ثبت‌شده متصل است مسدود می‌شود؛ برای حفظ سوابق باید آن را غیرفعال کرد. تغییر مخاطب پیش‌فرض در تراکنش با قفل سازمان انجام می‌شود.
-- تست‌های regression برای یکتایی پیش‌فرض در هر محدوده و حفظ snapshot بعد از تغییر مخاطب اضافه/به‌روزرسانی شدند. اجرای تست‌ها و build هنوز توسط مالک پروژه تأیید نشده است.
+- تست‌های regression برای یکتایی پیش‌فرض در هر محدوده و حفظ snapshot بعد از تغییر مخاطب اضافه/به‌روزرسانی شدند. مالک پروژه پس از دریافت اصلاح نحوی، پاس شدن `ExternalPartyControllerTest` و `CorrespondenceHttpTest` را اعلام کرد. این دو مجموعه تست regression مرحله ۲ را نیز اجرا می‌کنند؛ build فرانت‌اند و پذیرش دستی همچنان باقی است.
