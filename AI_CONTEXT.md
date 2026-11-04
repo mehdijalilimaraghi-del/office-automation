@@ -1,3 +1,10 @@
+## 2026-11-04 — Flow-based template preview
+
+- The A4 designer preview now renders metadata, addressee/subject, the automatic body placeholder, issuer/signature and page-number indicator as a document-flow sequence; non-repeating roles no longer use hard-coded Y positions in the preview.
+- Repeating elements remain independently positioned. The preview indicates order and approximate occupied regions; actual body length, pagination and final issuer position depend on the real letter HTML.
+- The current development feature-test fixture excludes obsolete `height` fields. The reported local failure still expects them, indicating the local test file/revision is stale; pull before rerunning.
+- Local tests, frontend checks and multi-page print acceptance remain pending. Development only; master/server unchanged.
+
 ## 2026-11-04 — Template preview uses semantic document flow
 
 - Corrected the A4 designer preview: metadata, addressee/subject, automatic body placeholder, issuer/signature and page-number indicator are now displayed as a vertical document-flow sequence, not placed at hard-coded Y percentages. Only repeating elements retain independent page coordinates.
