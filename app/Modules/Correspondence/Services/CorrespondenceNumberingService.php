@@ -10,6 +10,7 @@ use App\Core\ExternalParties\Models\ExternalContact;
 use App\Modules\Correspondence\Models\Correspondence;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 
 class CorrespondenceNumberingService
@@ -73,6 +74,10 @@ class CorrespondenceNumberingService
                 ];
             }
 
+            if ($locked->type === Correspondence::TYPE_OUTGOING && $locked->document_identity_snapshot === null) {
+                $this->snapshotDocumentIdentity($locked);
+            }
+
             $registrationConfig = $this->registrationConfiguration();
             $this->assertFormatIsValid($registrationConfig['format'], $registrationConfig['custom_order']);
             $this->assertSeparator($registrationConfig['separator']);
@@ -88,6 +93,63 @@ class CorrespondenceNumberingService
 
             return $locked->refresh()->load(['creator', 'registrar', 'createdDepartment', 'recipientDepartment', 'replyTo']);
         });
+    }
+
+    private function snapshotDocumentIdentity(Correspondence $correspondence): void
+    {
+        $correspondence->loadMissing(['creator:id,name', 'createdDepartment']);
+        $department = $correspondence->createdDepartment;
+        $settings = $this->settings->get([
+            'organization.name' => null,
+            'organization.short_name' => null,
+            'organization.address' => null,
+            'organization.phone' => null,
+            'organization.email' => null,
+            'organization.website' => null,
+            'organization.stamp.path' => null,
+            'organization.stamp.active' => '0',
+        ]);
+
+        $snapshotPath = 'correspondence/'.$correspondence->id.'/print-snapshots';
+        $stampPath = null;
+        $signaturePath = null;
+
+        if ($settings['organization.stamp.active'] === '1'
+            && filled($settings['organization.stamp.path'])
+            && Storage::disk('local')->exists($settings['organization.stamp.path'])) {
+            $extension = pathinfo($settings['organization.stamp.path'], PATHINFO_EXTENSION) ?: 'png';
+            $stampPath = $snapshotPath.'/organization-stamp.'.$extension;
+            if (! Storage::disk('local')->copy($settings['organization.stamp.path'], $stampPath)) {
+                throw new RuntimeException('تهیه تصویر ثابت مهر سازمان برای نامه انجام نشد.');
+            }
+        }
+
+        if ($department?->manager_signature_active
+            && filled($department->manager_signature_path)
+            && Storage::disk('local')->exists($department->manager_signature_path)) {
+            $extension = pathinfo($department->manager_signature_path, PATHINFO_EXTENSION) ?: 'png';
+            $signaturePath = $snapshotPath.'/department-manager-signature.'.$extension;
+            if (! Storage::disk('local')->copy($department->manager_signature_path, $signaturePath)) {
+                throw new RuntimeException('تهیه تصویر ثابت امضای مدیر واحد برای نامه انجام نشد.');
+            }
+        }
+
+        $correspondence->document_identity_snapshot = [
+            'creator_name' => $correspondence->creator?->name,
+            'creator_unit_title' => $department?->name ? 'مدیریت '.$department->name : null,
+            'department_name' => $department?->name,
+            'organization' => [
+                'name' => $settings['organization.name'],
+                'short_name' => $settings['organization.short_name'],
+                'address' => $settings['organization.address'],
+                'phone' => $settings['organization.phone'],
+                'email' => $settings['organization.email'],
+                'website' => $settings['organization.website'],
+            ],
+            'stamp_path' => $stampPath,
+            'signature_path' => $signaturePath,
+            'finalized_at' => now()->toIso8601String(),
+        ];
     }
 
     /**
