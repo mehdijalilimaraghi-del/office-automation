@@ -1,3 +1,10 @@
+## 2026-11-04 — Template preview uses semantic document flow
+
+- The A4 editor preview now lays out metadata, addressee/subject, the automatic body placeholder, issuer/signature and page-number indicator in document flow. Non-repeating roles no longer use fixed Y coordinates in the preview.
+- Repeating elements remain page-positioned. The preview shows sequence and approximate occupied space over the actual letterhead background; the final body length and issuer position are determined by the letter's real HTML and print pagination.
+- The current `development` feature test fixture no longer expects the removed `height` properties. The reported local output still contains them in its expected array, so that run is from a stale local revision. Pull before rerunning.
+- Validation remains pending: focused tests, `vue-tsc`, production build and multi-page print acceptance. Development only; master/server untouched.
+
 ## 2026-11-04 — Fix semantic template persistence test
 
 - Updated the visual-template feature fixture to match the new role-based schema: flow elements use width and spacing rather than a fixed height. The previous failure was an outdated test expectation; request validation correctly excludes the removed `height` property from persisted data.
