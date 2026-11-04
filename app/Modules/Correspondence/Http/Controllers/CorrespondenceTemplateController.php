@@ -14,9 +14,9 @@ use Inertia\Response;
 class CorrespondenceTemplateController extends Controller
 {
     private const DEFAULT_TEMPLATE = [
-        ['id' => 'organization', 'kind' => 'text', 'label' => 'نام سازمان', 'content' => '{{organization_name}}', 'x' => 8, 'y' => 5, 'width' => 58, 'height' => 7, 'font_size' => 20, 'bold' => true, 'align' => 'right', 'visible' => true],
-        ['id' => 'contact', 'kind' => 'text', 'label' => 'اطلاعات تماس', 'content' => 'آدرس: {{address}} | تلفن تماس: {{tel}} | ایمیل: {{email}}', 'x' => 8, 'y' => 14, 'width' => 84, 'height' => 8, 'font_size' => 9, 'bold' => false, 'align' => 'right', 'visible' => true],
-        ['id' => 'letter_meta', 'kind' => 'text', 'label' => 'شماره و تاریخ', 'content' => "شماره: {{letter_number}}\nتاریخ: {{date}}", 'x' => 72, 'y' => 5, 'width' => 20, 'height' => 15, 'font_size' => 10, 'bold' => false, 'align' => 'left', 'visible' => true],
+        ['id' => 'organization', 'kind' => 'text', 'role' => 'repeat', 'spacing' => 0, 'label' => 'نام سازمان', 'content' => '{{organization_name}}', 'x' => 8, 'y' => 5, 'width' => 58, 'height' => 7, 'font_size' => 20, 'bold' => true, 'align' => 'right', 'visible' => true],
+        ['id' => 'contact', 'kind' => 'text', 'role' => 'repeat', 'spacing' => 0, 'label' => 'اطلاعات تماس', 'content' => 'آدرس: {{address}} | تلفن تماس: {{tel}} | ایمیل: {{email}}', 'x' => 8, 'y' => 14, 'width' => 84, 'height' => 8, 'font_size' => 9, 'bold' => false, 'align' => 'right', 'visible' => true],
+        ['id' => 'letter_meta', 'kind' => 'text', 'role' => 'meta', 'spacing' => 0, 'label' => 'شماره و تاریخ', 'content' => "شماره: {{letter_number}}\nتاریخ: {{date}}", 'x' => 72, 'y' => 5, 'width' => 20, 'height' => 15, 'font_size' => 10, 'bold' => false, 'align' => 'left', 'visible' => true],
     ];
 
     public function edit(SystemSettingsService $settings): Response
@@ -67,10 +67,10 @@ class CorrespondenceTemplateController extends Controller
             'elements.*.visible' => ['required', 'boolean'],
         ]);
 
-        $elements = array_map(static fn (array $element): array => [...$element, 'content' => $element['content'] ?? ''], $data['elements']);
+        $elements = array_map(static fn (array $element): array => [...$element, 'kind' => ($element['kind'] ?? 'text') === 'letterhead' ? 'text' : ($element['kind'] ?? 'text'), 'role' => $element['role'] ?? 'repeat', 'spacing' => $element['spacing'] ?? 0, 'content' => $element['content'] ?? ''], $data['elements']);
 
         foreach ($elements as $element) {
-            abort_if($element['role'] === 'repeat' && ($element['x'] + $element['width'] > 100 || $element['y'] > 100), 422, 'ابعاد کادر از محدوده صفحه خارج است.');
+            abort_if(($element['role'] ?? 'repeat') === 'repeat' && ($element['x'] + $element['width'] > 100 || $element['y'] > 100), 422, 'ابعاد کادر از محدوده صفحه خارج است.');
         }
 
         $settings->set(['correspondence.print.template' => json_encode($elements, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)]);
