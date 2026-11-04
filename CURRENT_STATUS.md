@@ -1,3 +1,10 @@
+## 2026-11-04 — تأیید تست‌های متمرکز مرحله ۱
+
+- مالک پروژه اعلام کرد تست‌های متمرکز `TaskReferralHttpTest` و `CorrespondenceHttpTest` پس از اصلاح مقدار نوع تخصیص تسک (`manager_accept`) پاس شده‌اند.
+- مرحله ۱ از نظر تست‌های Feature متمرکز تأیید شد؛ این تأیید به معنی اجرای کل مجموعه تست‌ها، build یا پذیرش دستی end-to-end نیست. موارد اخیر در مرحله ۵ باقی می‌مانند.
+- وضعیت پنج مرحله: ۱ پیاده‌سازی و تست‌های متمرکز پاس؛ ۲ شروع نشده؛ ۳ مستند شده/شروع نشده؛ ۴ شروع نشده؛ ۵ شروع نشده.
+- شاخه `development`؛ `master` و سرور دست‌نخورده‌اند.
+
 ## 2026-11-04 — Creator identity, organization stamp and department signature requirements
 
 - Added the creator/issuer identity block to the bottom of the finalized letter (organizational unit/title plus creator full name), with a finalization-time snapshot so historical letters remain unchanged.
