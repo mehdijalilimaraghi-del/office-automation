@@ -14,9 +14,9 @@ use Inertia\Response;
 class CorrespondenceTemplateController extends Controller
 {
     private const DEFAULT_TEMPLATE = [
-        ['id' => 'organization', 'label' => 'نام سازمان', 'content' => '{{organization_name}}', 'x' => 8, 'y' => 5, 'width' => 58, 'height' => 7, 'font_size' => 20, 'bold' => true, 'align' => 'right', 'visible' => true],
-        ['id' => 'contact', 'label' => 'اطلاعات تماس', 'content' => 'آدرس: {{address}} | تلفن تماس: {{tel}} | ایمیل: {{email}}', 'x' => 8, 'y' => 14, 'width' => 84, 'height' => 8, 'font_size' => 9, 'bold' => false, 'align' => 'right', 'visible' => true],
-        ['id' => 'letter_meta', 'label' => 'شماره و تاریخ', 'content' => 'شماره: {{letter_number}}\nتاریخ: {{date}}', 'x' => 72, 'y' => 5, 'width' => 20, 'height' => 15, 'font_size' => 10, 'bold' => false, 'align' => 'left', 'visible' => true],
+        ['id' => 'organization', 'kind' => 'text', 'label' => 'نام سازمان', 'content' => '{{organization_name}}', 'x' => 8, 'y' => 5, 'width' => 58, 'height' => 7, 'font_size' => 20, 'bold' => true, 'align' => 'right', 'visible' => true],
+        ['id' => 'contact', 'kind' => 'text', 'label' => 'اطلاعات تماس', 'content' => 'آدرس: {{address}} | تلفن تماس: {{tel}} | ایمیل: {{email}}', 'x' => 8, 'y' => 14, 'width' => 84, 'height' => 8, 'font_size' => 9, 'bold' => false, 'align' => 'right', 'visible' => true],
+        ['id' => 'letter_meta', 'kind' => 'text', 'label' => 'شماره و تاریخ', 'content' => 'شماره: {{letter_number}}\nتاریخ: {{date}}', 'x' => 72, 'y' => 5, 'width' => 20, 'height' => 15, 'font_size' => 10, 'bold' => false, 'align' => 'left', 'visible' => true],
     ];
 
     public function edit(SystemSettingsService $settings): Response
@@ -46,6 +46,7 @@ class CorrespondenceTemplateController extends Controller
     {
         $data = $request->validate([
             'elements' => ['required', 'array', 'min:1', 'max:20'],
+            'elements.*.kind' => ['required', 'in:text,stamp,signature'],
             'elements.*.id' => ['required', 'string', 'max:40'],
             'elements.*.label' => ['required', 'string', 'max:80'],
             'elements.*.content' => ['required', 'string', 'max:2000'],
