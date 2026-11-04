@@ -7,7 +7,7 @@ namespace App\Modules\Correspondence\Http\Controllers;
 use App\Core\Settings\Services\SystemSettingsService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
+use Illuminate\Http\Request;\nuse Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -25,7 +25,7 @@ class CorrespondenceTemplateController extends Controller
         $template = is_string($raw) ? json_decode($raw, true) : null;
 
         return Inertia::render('Correspondence/Template', [
-            'elements' => is_array($template) ? $template : self::DEFAULT_TEMPLATE,
+            'elements' => is_array($template) ? array_values(array_map(static fn (array $item): array => [...$item, 'kind' => ($item['kind'] ?? 'text') === 'letterhead' ? 'text' : ($item['kind'] ?? 'text'), 'role' => $item['role'] ?? 'repeat', 'spacing' => $item['spacing'] ?? 0], array_filter($template, static fn (array $item): bool => ($item['kind'] ?? null) !== 'letterhead'))) : self::DEFAULT_TEMPLATE,\n            'letterheadDataUri' => $this->imageDataUri($settings->get(['organization.letterhead.path' => null])['organization.letterhead.path']),
             'tokens' => [
                 ['key' => '{{organization_name}}', 'label' => 'نام سازمان'],
                 ['key' => '{{short_name}}', 'label' => 'نام اختصاری'],
@@ -52,8 +52,8 @@ class CorrespondenceTemplateController extends Controller
     public function update(Request $request, SystemSettingsService $settings): RedirectResponse
     {
         $data = $request->validate([
-            'elements' => ['required', 'array', 'min:1', 'max:20'],
-            'elements.*.kind' => ['required', 'in:text,stamp,signature,letterhead'],
+            'elements' => ['present', 'array', 'max:30'],
+            'elements.*.kind' => ['required', 'in:text,stamp,signature,letterhead'],\n            'elements.*.role' => ['nullable', 'in:meta,heading,page_number,issuer,repeat'],\n            'elements.*.spacing' => ['nullable', 'numeric', 'min:0', 'max:80'],
             'elements.*.id' => ['required', 'string', 'max:40', 'distinct'],
             'elements.*.label' => ['required', 'string', 'max:80'],
             'elements.*.content' => ['nullable', 'string', 'max:2000'],
