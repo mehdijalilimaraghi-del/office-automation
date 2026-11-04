@@ -21,7 +21,7 @@ type CustomFieldValue = {
 };
 
 type Organization={id:number;name:string;code:string|null;phone:string|null;email:string|null;address:string|null;status:string;departments_count:number;contacts_count:number;customFieldValues?:CustomFieldValue[]};
-type Department={id:number;external_organization_id:number;parent_id:number|null;name:string;code:string|null;phone:string|null;extension:string|null;email:string|null;status:string;organization?:{id:number;name:string};customFieldValues?:CustomFieldValue[]};
+type Department={id:number;external_organization_id:number;parent_id:number|null;manager_contact_id:number|null;name:string;code:string|null;phone:string|null;extension:string|null;email:string|null;organizational_title_prefix:string|null;position:string|null;personal_salutation:string|null;professional_title:string|null;managerContact?:{id:number;name:string};status:string;organization?:{id:number;name:string};customFieldValues?:CustomFieldValue[]};
 type Contact={id:number;external_organization_id:number;external_department_id:number|null;code:string|null;name:string;position:string|null;organizational_title_prefix:string|null;personal_salutation:string|null;professional_title:string|null;is_default:boolean;mobile:string|null;phone:string|null;extension:string|null;email:string|null;notes:string|null;status:string;organization?:{id:number;name:string};department?:{id:number;name:string};customFieldValues?:CustomFieldValue[]};
 
 const props=defineProps<{
@@ -38,11 +38,12 @@ const page=usePage();
 const tab=ref<'organizations'|'departments'|'contacts'>('organizations');
 const saving=ref(false);
 const orgForm=reactive<any>({id:null,name:'',phone:'',email:'',address:'',status:'active',custom_fields:{}});
-const depForm=reactive<any>({id:null,external_organization_id:'',parent_id:'',name:'',phone:'',extension:'',email:'',status:'active',custom_fields:{}});
+const depForm=reactive<any>({id:null,external_organization_id:'',parent_id:'',manager_contact_id:'',name:'',phone:'',extension:'',email:'',organizational_title_prefix:'',position:'',personal_salutation:'',professional_title:'',status:'active',custom_fields:{}});
 const contactForm=reactive<any>({id:null,external_organization_id:'',external_department_id:'',name:'',position:'',organizational_title_prefix:'',personal_salutation:'',professional_title:'',is_default:false,mobile:'',phone:'',extension:'',email:'',notes:'',status:'active',custom_fields:{}});
 
 const departmentsForContact=computed(()=>props.departments.filter(d=>String(d.external_organization_id)===String(contactForm.external_organization_id)));
 const departmentsForEdit=computed(()=>props.departments.filter(d=>String(d.external_organization_id)===String(depForm.external_organization_id) && d.id!==depForm.id));
+const contactsForDepartment=computed(()=>props.contacts.filter(c=>String(c.external_organization_id)===String(depForm.external_organization_id) && String(c.external_department_id)===String(depForm.id) && c.status==='active'));
 
 type DepartmentTreeRow = Department & { depth: number };
 
@@ -101,7 +102,8 @@ function edit(f:any,item:any){
     f.custom_fields = customFieldValueMap(item.customFieldValues);
     delete f.customFieldValues;
     delete f.code;
-    if(f===depForm) f.parent_id=item.parent_id??'';
+    delete f.managerContact;
+    if(f===depForm) { f.parent_id=item.parent_id??''; f.manager_contact_id=item.manager_contact_id??''; }
     if(f===contactForm) f.external_department_id=item.external_department_id??'';
     window.scrollTo({top:0,behavior:'smooth'});
 }
