@@ -1530,3 +1530,18 @@ The phase-3 repository audit on `development` verified:
 - No PDF renderer is listed in `composer.json`. The Documents module already abstracts storage using a contract and stores disk/path/version metadata; its download endpoint checks authorization. Public profile-avatar storage is not an adequate default security model for official stamp/signature assets.
 
 No code or database changes were made during this audit. The implementation choice between browser-native Print/Save as PDF from a shared HTML/CSS A4 template and server-side PDF generation remains a product/architecture decision requiring confirmation before the output pipeline is implemented.
+
+
+## 2026-11-04 — Phase 3 implementation slice 1
+
+The selected output pipeline is one shared HTML/CSS A4 print view with browser-native Print / Save as PDF; no server-side PDF dependency was introduced.
+
+Implementation added on `development`:
+- Department-level manager signature asset and activation flag. This is a property of the unit, not each user. If the manager changes, the previous signature is deactivated until a new one is uploaded.
+- Organization-level stamp asset and activation setting under Core → Organization Settings. Stamp and manager signature remain separate private files.
+- Protected authenticated image access, image upload validation (PNG/JPG/WEBP, max 2 MB, dimension limits), and hidden storage paths.
+- At outgoing-letter finalization, snapshot creator name, issuing unit title, organization contact details, stamp and manager signature. The manager signature is included only when the workflow reached `approved_for_registration`; direct registration is not treated as manager approval.
+- A registered-letter A4 preview/print page with per-operation letterhead on/off, independently configured creator/stamp/signature visibility, and browser Print / Save as PDF.
+- Focused tests added for unit signature upload, organization stamp upload and immutable finalization snapshot.
+
+Validation has not yet been run locally. Phase 3 remains partial pending PHP tests, migration execution, frontend type-check/build, manual multi-page pagination/print checks, plus remaining detailed layout coordinate, logo/background and page-number placement configuration. Development only; master, release and server unchanged.
