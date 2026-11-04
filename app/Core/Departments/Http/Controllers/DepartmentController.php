@@ -69,12 +69,16 @@ class DepartmentController extends Controller
         $data = $request->validated();
         unset($data['manager_signature'], $data['remove_manager_signature']);
         $oldSignature = $department->manager_signature_path;
+        $managerChanged = (int) ($data['manager_id'] ?? 0) !== (int) ($department->manager_id ?? 0);
         if ($request->boolean('remove_manager_signature')) {
             $data['manager_signature_path'] = null;
             $data['manager_signature_active'] = false;
         } elseif ($request->hasFile('manager_signature')) {
             $data['manager_signature_path'] = $request->file('manager_signature')->store('organization/department-signatures', 'local');
             $data['manager_signature_active'] = (bool) ($data['manager_signature_active'] ?? true);
+        }
+        if ($managerChanged && ! $request->hasFile('manager_signature') && ! $request->boolean('remove_manager_signature')) {
+            $data['manager_signature_active'] = false;
         }
         if (! $department->manager_signature_path && ! $request->hasFile('manager_signature')) {
             $data['manager_signature_active'] = false;
