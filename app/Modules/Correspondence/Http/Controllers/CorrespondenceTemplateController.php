@@ -28,7 +28,7 @@ class CorrespondenceTemplateController extends Controller
         $template = is_string($raw) ? json_decode($raw, true) : null;
 
         return Inertia::render('Correspondence/Template', [
-            'elements' => is_array($template) ? array_values(array_map(static fn (array $item): array => [...$item, 'kind' => ($item['kind'] ?? 'text') === 'letterhead' ? 'text' : ($item['kind'] ?? 'text'), 'role' => $item['role'] ?? 'repeat', 'spacing' => $item['spacing'] ?? 0], array_filter($template, static fn (array $item): bool => ($item['kind'] ?? null) !== 'letterhead'))) : self::DEFAULT_TEMPLATE,
+            'elements' => is_array($template) ? array_values(array_map(static fn (array $item): array => [...$item, 'kind' => ($item['kind'] ?? 'text') === 'letterhead' ? 'text' : ($item['kind'] ?? 'text'), 'role' => $item['role'] ?? (in_array(($item['kind'] ?? null), ['stamp', 'signature'], true) ? 'issuer' : ((float) ($item['y'] ?? 0) < 25 ? 'repeat' : 'meta')), 'spacing' => $item['spacing'] ?? 0], array_filter($template, static fn (array $item): bool => ($item['kind'] ?? null) !== 'letterhead'))) : self::DEFAULT_TEMPLATE,
             'letterheadDataUri' => $this->imageDataUri($settings->get(['organization.letterhead.path' => null])['organization.letterhead.path']),
             'tokens' => [
                 ['key' => '{{organization_name}}', 'label' => 'نام سازمان'],
