@@ -1,3 +1,10 @@
+## 2026-11-04 — External addressee display and letter-template boundary
+
+- Outgoing correspondence contact options display only the person's name. Addressing components are sourced from the selected external unit and its configured manager; the old per-contact default fallback is not used for new outgoing selection.
+- Organization Settings no longer presents the fixed print-visibility/letterhead checkbox panel. Organization identity and stamp asset management remain there; layout/visibility belongs to the letter-template designer.
+- The letter-template designer is not yet implemented. Its planned model is a shared A4 layout with movable/resizable content boxes, editable text, standard variable tokens such as `{{address}}`, `{{tel}}`, `{{email}}`, `{{website}}`, `{{organization_name}}`, `{{letter_number}}`, and `{{date}}`, preview, and a single rendering model for print/PDF. Header, recipient, body, stamp and signature are separate configurable regions.
+- Local migration/tests/type-check/build/manual acceptance remain pending. Development only; master and server untouched.
+
 ## 2026-11-04 — External unit owns manager and addressee data (implementation follow-up)
 
 - The four addressee components are owned by `ExternalDepartment` only: organizational title prefix, organizational position, personal salutation, and professional title. This applies only to external organizational units; internal Core Department manager selection and behavior are unchanged.
