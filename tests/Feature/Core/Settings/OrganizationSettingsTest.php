@@ -161,10 +161,8 @@ class OrganizationSettingsTest extends TestCase
             ->assertRedirect()
             ->assertSessionHas('success');
 
-        $this->assertDatabaseHas('system_settings', [
-            'key' => 'correspondence.print.template',
-            'value' => json_encode($elements, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
-        ]);
+        $storedTemplate = SystemSetting::query()->where('key', 'correspondence.print.template')->value('value');
+        $this->assertSame($elements, json_decode($storedTemplate, true, 512, JSON_THROW_ON_ERROR));
     }
 
     public function test_user_without_settings_permission_cannot_manage_correspondence_template(): void
