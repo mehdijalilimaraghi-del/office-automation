@@ -37,6 +37,19 @@ class ExternalPartyService implements ExternalPartyServiceInterface
     public function contacts(): Collection
     {
         return ExternalContact::query()
+            ->select([
+                'id',
+                'external_organization_id',
+                'external_department_id',
+                'code',
+                'name',
+                'mobile',
+                'phone',
+                'extension',
+                'email',
+                'notes',
+                'status',
+            ])
             ->with(['organization:id,name', 'department:id,name', 'customFieldValues.field'])
             ->orderBy('name')
             ->get();
