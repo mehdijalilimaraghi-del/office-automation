@@ -19,6 +19,9 @@ interface OrganizationSettings {
     address: string | null;
     stamp_url?: string | null;
     stamp_active?: boolean;
+    print_show_creator_identity?: boolean;
+    print_show_stamp?: boolean;
+    print_show_department_signature?: boolean;
     management_department_id: string | null;
     project_management_department_id: string | null;
     secretariat_department_id: string | null;
@@ -67,6 +70,9 @@ const form = useForm({
     stamp: null as File | null,
     stamp_active: props.settings.stamp_active ?? false,
     remove_stamp: false,
+    print_show_creator_identity: props.settings.print_show_creator_identity ?? true,
+    print_show_stamp: props.settings.print_show_stamp ?? true,
+    print_show_department_signature: props.settings.print_show_department_signature ?? true,
     management_department_id: props.settings.management_department_id ?? '',
     project_management_department_id: props.settings.project_management_department_id ?? '',
     secretariat_department_id: props.settings.secretariat_department_id ?? '',
@@ -199,6 +205,18 @@ function submit(): void {
                             </div>
                             <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700"><input v-model="form.stamp_active" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> استفاده از مهر در خروجی نامه</label>
                         </div>
+
+                        <section class="space-y-3 rounded-xl border border-slate-200 bg-white p-4 md:col-span-2">
+                            <div>
+                                <h4 class="font-bold text-slate-900">اجزای قابل نمایش در خروجی نامه</h4>
+                                <p class="mt-1 text-xs text-slate-500">این گزینه‌ها مستقل از وجود تصویر هستند و فقط تعیین می‌کنند هر جزء در قالب چاپ نمایش داده شود یا خیر.</p>
+                            </div>
+                            <div class="grid gap-3 sm:grid-cols-3">
+                                <label class="flex items-center gap-2 text-sm text-slate-700"><input v-model="form.print_show_creator_identity" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> مشخصات ایجادکننده و واحد</label>
+                                <label class="flex items-center gap-2 text-sm text-slate-700"><input v-model="form.print_show_stamp" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> مهر سازمان</label>
+                                <label class="flex items-center gap-2 text-sm text-slate-700"><input v-model="form.print_show_department_signature" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> امضای مدیر واحد</label>
+                            </div>
+                        </section>
 
                         <section class="space-y-5 rounded-xl border border-slate-200 bg-slate-50 p-5">
                             <div>
