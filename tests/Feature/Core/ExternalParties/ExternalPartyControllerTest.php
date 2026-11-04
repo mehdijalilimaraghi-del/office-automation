@@ -76,29 +76,22 @@ class ExternalPartyControllerTest extends TestCase
         $this->assertDatabaseMissing('external_contacts', ['id' => $contact->id]);
     }
 
-    public function test_only_one_default_contact_is_kept_per_organization_or_department_scope(): void
+    public function test_contact_endpoint_does_not_accept_unit_level_addressing_fields(): void
     {
         $user = User::factory()->create(['status' => 'active']);
-        $this->grantPermissions($user, ['external_parties.view', 'external_parties.create', 'external_parties.edit']);
-        $organization = ExternalOrganization::query()->create(['name' => 'سازمان پیش‌فرض', 'status' => 'active']);
+        $this->grantPermissions($user, ['external_parties.view', 'external_parties.create']);
+
+        $organization = ExternalOrganization::query()->create(['name' => 'سازمان اشخاص', 'status' => 'active']);
         $department = ExternalDepartment::query()->create([
             'external_organization_id' => $organization->id,
-            'name' => 'واحد پیش‌فرض',
-            'status' => 'active',
-        ]);
-
-        $first = ExternalContact::query()->create([
-            'external_organization_id' => $organization->id,
-            'external_department_id' => $department->id,
-            'name' => 'مخاطب اول',
-            'is_default' => true,
+            'name' => 'واحد اشخاص',
             'status' => 'active',
         ]);
 
         $this->actingAs($user)->post('/external-parties/contacts', [
             'external_organization_id' => $organization->id,
             'external_department_id' => $department->id,
-            'name' => 'مخاطب دوم',
+            'name' => 'فرد بدون خطاب مستقل',
             'organizational_title_prefix' => 'مدیریت',
             'position' => 'مدیر واحد مالی',
             'personal_salutation' => 'جناب آقای',
@@ -107,21 +100,15 @@ class ExternalPartyControllerTest extends TestCase
             'status' => 'active',
         ])->assertRedirect();
 
-        $this->assertDatabaseHas('external_contacts', ['id' => $first->id, 'is_default' => false]);
-        $second = ExternalContact::query()->where('name', 'مخاطب دوم')->firstOrFail();
-        $this->assertTrue($second->is_default);
-        $this->assertSame('مدیریت', $second->organizational_title_prefix);
-        $this->assertSame('جناب آقای', $second->personal_salutation);
+        $contact = ExternalContact::query()->where('name', 'فرد بدون خطاب مستقل')->firstOrFail();
 
-        $organizationDefault = ExternalContact::query()->create([
-            'external_organization_id' => $organization->id,
-            'name' => 'مخاطب پیش‌فرض سازمان',
-            'is_default' => true,
-            'status' => 'active',
-        ]);
-
-        $this->assertTrue($organizationDefault->fresh()->is_default);
-        $this->assertTrue($second->fresh()->is_default);
+        $this->assertNull($contact->organizational_title_prefix);
+        $this->assertNull($contact->position);
+        $this->assertNull($contact->personal_salutation);
+        $this->assertNull($contact->professional_title);
+        $this->assertFalse($contact->is_default);
+        $this->assertNull($department->fresh()->manager_contact_id);
+        $this->assertNull($department->fresh()->organizational_title_prefix);
     }
 
 
