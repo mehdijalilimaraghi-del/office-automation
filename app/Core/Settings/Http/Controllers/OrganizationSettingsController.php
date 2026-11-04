@@ -72,7 +72,7 @@ class OrganizationSettingsController extends Controller
                 'email' => $stored['organization.email'],
                 'website' => $stored['organization.website'],
                 'address' => $stored['organization.address'],
-                'stamp_url' => $stored['organization.stamp.path'] && $stored['organization.stamp.active'] === '1' ? route('settings.organization.stamp') : null,
+                'stamp_url' => $stored['organization.stamp.path'] ? route('settings.organization.stamp') : null,
                 'stamp_active' => $stored['organization.stamp.active'] === '1',
                 'print_show_creator_identity' => $stored['correspondence.print.show_creator_identity'] === '1',
                 'print_show_stamp' => $stored['correspondence.print.show_stamp'] === '1',
@@ -161,7 +161,7 @@ class OrganizationSettingsController extends Controller
     {
         abort_unless($request->user()->hasPermission('settings.manage'), 403);
         $stored = $this->settings->get(['organization.stamp.path' => null, 'organization.stamp.active' => '0']);
-        abort_unless($stored['organization.stamp.active'] === '1' && filled($stored['organization.stamp.path']), 404);
+        abort_unless(filled($stored['organization.stamp.path']), 404);
         abort_unless(Storage::disk('local')->exists($stored['organization.stamp.path']), 404);
 
         return Storage::disk('local')->response($stored['organization.stamp.path'], null, [
