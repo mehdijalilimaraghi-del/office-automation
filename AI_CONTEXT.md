@@ -869,3 +869,11 @@ Before making the first code change in a new conversation:
 - Secretariat managers must see incoming Secretariat drafts awaiting registration/approval in “my correspondence” and “needs action”; this is limited to the active configured Secretariat manager and does not broaden access for other users.
 - Validation pending: focused correspondence Feature tests and frontend build must be run after pulling `development`. `master` unchanged.
 - Root cause follow-up: Secretariat draft visibility now recognizes the configured active Secretariat department manager even when the manager is not separately attached as a department member. This aligns `isSecretariat()` visibility with `canRegister()` authorization.
+
+
+
+## 2026-11-04 — Phase 3 technical audit checkpoint
+
+Audited branch `development` before implementation. Existing Core organization settings already contain organization name, short name, identifiers, address, phone, email and website, backed by `SystemSettingsService`; reuse these settings as independently enabled/disabled letterhead data. `Department` has `manager_id` but no signature asset/path or upload flow. Organization settings have no stamp asset/path or upload flow. Correspondence detail has no print/PDF route or print-specific template; `Correspondence/Show.vue` is an operational detail/workflow page. The composer manifest contains no PDF renderer. The Documents module has a storage contract and disk/path version metadata, and its download controller authorizes file access. Profile avatars use the public disk; do not copy that access model blindly to stamp/signature assets.
+
+No application code, migrations, dependencies, master/release branch or server were changed during this audit. Before implementing the shared A4 output, obtain the product owner's decision between browser-native Print/Save as PDF using a shared HTML/CSS template (no server-side renderer) and a server-generated downloadable PDF (requires selecting/adding a renderer). Preserve the requirement that the stamp and department signature remain separate assets and that finalized documents retain immutable identity/asset snapshots.
