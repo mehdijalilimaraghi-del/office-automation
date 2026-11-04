@@ -27,6 +27,8 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'website' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:1000'],
             'stamp' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:max_width=2000,max_height=2000'],
+            'letterhead' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120', 'dimensions:min_width=600,max_width=5000,min_height=150,max_height=2500'],
+            'remove_letterhead' => ['sometimes', 'boolean'],
             'stamp_active' => ['sometimes', 'boolean'],
             'remove_stamp' => ['sometimes', 'boolean'],
             'numbering_format' => ['required', 'string', Rule::in(['simple', 'year', 'year_department', 'custom'])],
