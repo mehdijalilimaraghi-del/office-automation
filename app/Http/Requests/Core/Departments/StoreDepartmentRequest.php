@@ -63,6 +63,7 @@ class StoreDepartmentRequest extends FormRequest
         return [
             'parent_id' => 'دپارتمان والد',
             'manager_id' => 'مدیر دپارتمان',
+            'manager_signature' => 'تصویر امضای مدیر واحد',
             'name' => 'نام دپارتمان',
             'code' => 'کد واحد',
                         'icon' => 'آیکون واحد',
