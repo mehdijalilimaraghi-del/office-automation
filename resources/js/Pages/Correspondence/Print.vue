@@ -58,6 +58,8 @@ const props = defineProps<{
 }>();
 
 const withLetterhead = ref(true);
+const templateHasStamp = computed(() => props.templateElements.some(item => item.kind === 'stamp' && item.visible));
+const templateHasSignature = computed(() => props.templateElements.some(item => item.kind === 'signature' && item.visible));
 const typeLabel = computed(() => ({ incoming: 'نامه وارده', outgoing: 'نامه صادره', internal: 'نامه داخلی' })[props.letter.type]);
 const recipientLines = computed(() => {
     const a = props.letter.recipient_addressing;
@@ -78,6 +80,7 @@ function resolveTemplate(content: string): string {
         address: props.organization.address ?? '', tel: props.organization.phone ?? '', email: props.organization.email ?? '', website: props.organization.website ?? '',
         letter_number: props.letter.letter_number ?? '', registration_number: props.letter.registration_number ?? '', date: letterDate.value,
         recipient_name: props.letter.recipient_name ?? props.letter.recipient_addressing?.name ?? '', recipient_address: '',
+        creator_name: props.creatorName ?? '', creator_unit_title: props.creatorUnitTitle ?? '',
     };
     return content.replace(/\{\{([a-z_]+)\}\}/g, (token, key: string) => Object.prototype.hasOwnProperty.call(values, key) ? values[key] : token);
 }
@@ -143,15 +146,15 @@ function printLetter(): void {
                 <div class="letter-body text-justify text-sm leading-8" v-html="letter.body || ''"></div>
             </section>
 
-            <footer v-if="printOptions.show_creator_identity || (printOptions.show_department_signature && signatureDataUri) || (printOptions.show_stamp && stampDataUri)" class="signature-area mt-12 flex items-end justify-between gap-8">
-                <div v-if="printOptions.show_creator_identity" class="min-w-0 text-center text-sm leading-7">
+            <footer v-if="(!templateElements.length && printOptions.show_creator_identity) || (!templateHasSignature && printOptions.show_department_signature && signatureDataUri) || (!templateHasStamp && printOptions.show_stamp && stampDataUri)" class="signature-area mt-12 flex items-end justify-between gap-8">
+                <div v-if="!templateElements.length && printOptions.show_creator_identity" class="min-w-0 text-center text-sm leading-7">
                     <p v-if="creatorUnitTitle" class="font-semibold">{{ creatorUnitTitle }}</p>
                     <p v-if="creatorName" class="font-bold">{{ creatorName }}</p>
                 </div>
-                <div v-if="printOptions.show_department_signature && signatureDataUri" class="text-center">
+                <div v-if="!templateHasSignature && printOptions.show_department_signature && signatureDataUri" class="text-center">
                     <img :src="signatureDataUri" alt="امضای مدیر واحد" class="mx-auto h-20 max-w-44 object-contain" />
                 </div>
-                <div v-if="printOptions.show_stamp && stampDataUri" class="mr-auto text-center">
+                <div v-if="!templateHasStamp && printOptions.show_stamp && stampDataUri" class="mr-auto text-center">
                     <img :src="stampDataUri" alt="مهر سازمان" class="h-28 w-28 object-contain" />
                 </div>
             </footer>
