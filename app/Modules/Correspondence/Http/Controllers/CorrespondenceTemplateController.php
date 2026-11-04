@@ -7,7 +7,8 @@ namespace App\Modules\Correspondence\Http\Controllers;
 use App\Core\Settings\Services\SystemSettingsService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;\nuse Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -16,7 +17,9 @@ class CorrespondenceTemplateController extends Controller
     private const DEFAULT_TEMPLATE = [
         ['id' => 'organization', 'kind' => 'text', 'role' => 'repeat', 'spacing' => 0, 'label' => 'نام سازمان', 'content' => '{{organization_name}}', 'x' => 8, 'y' => 5, 'width' => 58, 'height' => 7, 'font_size' => 20, 'bold' => true, 'align' => 'right', 'visible' => true],
         ['id' => 'contact', 'kind' => 'text', 'role' => 'repeat', 'spacing' => 0, 'label' => 'اطلاعات تماس', 'content' => 'آدرس: {{address}} | تلفن تماس: {{tel}} | ایمیل: {{email}}', 'x' => 8, 'y' => 14, 'width' => 84, 'height' => 8, 'font_size' => 9, 'bold' => false, 'align' => 'right', 'visible' => true],
-        ['id' => 'letter_meta', 'kind' => 'text', 'role' => 'meta', 'spacing' => 0, 'label' => 'شماره و تاریخ', 'content' => "شماره: {{letter_number}}\nتاریخ: {{date}}", 'x' => 72, 'y' => 5, 'width' => 20, 'height' => 15, 'font_size' => 10, 'bold' => false, 'align' => 'left', 'visible' => true],
+        ['id' => 'letter_heading', 'kind' => 'text', 'role' => 'heading', 'spacing' => 8, 'label' => 'خطاب و موضوع', 'content' => '', 'x' => 8, 'y' => 0, 'width' => 84, 'font_size' => 12, 'bold' => true, 'align' => 'right', 'visible' => true],
+        ['id' => 'letter_meta', 'kind' => 'text', 'role' => 'meta', 'spacing' => 0, 'label' => 'شماره و تاریخ', 'content' => "شماره: {{letter_number}}
+تاریخ: {{date}}", 'x' => 72, 'y' => 5, 'width' => 20, 'height' => 15, 'font_size' => 10, 'bold' => false, 'align' => 'left', 'visible' => true],
     ];
 
     public function edit(SystemSettingsService $settings): Response
@@ -25,7 +28,8 @@ class CorrespondenceTemplateController extends Controller
         $template = is_string($raw) ? json_decode($raw, true) : null;
 
         return Inertia::render('Correspondence/Template', [
-            'elements' => is_array($template) ? array_values(array_map(static fn (array $item): array => [...$item, 'kind' => ($item['kind'] ?? 'text') === 'letterhead' ? 'text' : ($item['kind'] ?? 'text'), 'role' => $item['role'] ?? 'repeat', 'spacing' => $item['spacing'] ?? 0], array_filter($template, static fn (array $item): bool => ($item['kind'] ?? null) !== 'letterhead'))) : self::DEFAULT_TEMPLATE,\n            'letterheadDataUri' => $this->imageDataUri($settings->get(['organization.letterhead.path' => null])['organization.letterhead.path']),
+            'elements' => is_array($template) ? array_values(array_map(static fn (array $item): array => [...$item, 'kind' => ($item['kind'] ?? 'text') === 'letterhead' ? 'text' : ($item['kind'] ?? 'text'), 'role' => $item['role'] ?? 'repeat', 'spacing' => $item['spacing'] ?? 0], array_filter($template, static fn (array $item): bool => ($item['kind'] ?? null) !== 'letterhead'))) : self::DEFAULT_TEMPLATE,
+            'letterheadDataUri' => $this->imageDataUri($settings->get(['organization.letterhead.path' => null])['organization.letterhead.path']),
             'tokens' => [
                 ['key' => '{{organization_name}}', 'label' => 'نام سازمان'],
                 ['key' => '{{short_name}}', 'label' => 'نام اختصاری'],
@@ -53,7 +57,9 @@ class CorrespondenceTemplateController extends Controller
     {
         $data = $request->validate([
             'elements' => ['present', 'array', 'max:30'],
-            'elements.*.kind' => ['required', 'in:text,stamp,signature,letterhead'],\n            'elements.*.role' => ['nullable', 'in:meta,heading,page_number,issuer,repeat'],\n            'elements.*.spacing' => ['nullable', 'numeric', 'min:0', 'max:80'],
+            'elements.*.kind' => ['required', 'in:text,stamp,signature,letterhead'],
+            'elements.*.role' => ['nullable', 'in:meta,heading,page_number,issuer,repeat'],
+            'elements.*.spacing' => ['nullable', 'numeric', 'min:0', 'max:80'],
             'elements.*.id' => ['required', 'string', 'max:40', 'distinct'],
             'elements.*.label' => ['required', 'string', 'max:80'],
             'elements.*.content' => ['nullable', 'string', 'max:2000'],
@@ -76,5 +82,19 @@ class CorrespondenceTemplateController extends Controller
         $settings->set(['correspondence.print.template' => json_encode($elements, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)]);
 
         return back()->with('success', 'قالب نامه ذخیره شد.');
+    }
+
+    private function imageDataUri(?string $path): ?string
+    {
+        if (! filled($path) || ! Storage::disk('local')->exists($path)) {
+            return null;
+        }
+
+        $mime = Storage::disk('local')->mimeType($path);
+        if (! in_array($mime, ['image/png', 'image/jpeg', 'image/webp'], true)) {
+            return null;
+        }
+
+        return 'data:'.$mime.';base64,'.base64_encode(Storage::disk('local')->get($path));
     }
 }
