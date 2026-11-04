@@ -31,6 +31,9 @@ class UpdateDepartmentRequest extends FormRequest
                 'integer',
                 'exists:users,id',
             ],
+            'manager_signature' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:max_width=2000,max_height=1000'],
+            'manager_signature_active' => ['sometimes', 'boolean'],
+            'remove_manager_signature' => ['sometimes', 'boolean'],
 
             'name' => [
                 'required',
