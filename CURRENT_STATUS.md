@@ -1,3 +1,7 @@
+## 2026-11-04 — Correspondence approval-test fixture correction
+
+- Two remaining `CorrespondenceHttpTest` failures were caused by incomplete approval fixtures: the tests enabled internal approval but their creators had no primary department with an active manager. Both tests now create an active manager, create an active creator department with that manager, and attach the creator as its primary member. Application validation remains intact. Rerun focused correspondence tests; validation pending. Development only; master/server untouched.
+
 ## 2026-11-04 — Correspondence test alignment with direct-registration policy
 
 - Local correspondence test run exposed four failures caused by stale test assumptions, not four distinct runtime regressions: two HTTP tests still expected internal letters to remain drafts although the default internal policy is direct registration; two numbering-service tests attempted to register an internal letter as a separate Secretariat registrar although direct internal registration is creator-only.
