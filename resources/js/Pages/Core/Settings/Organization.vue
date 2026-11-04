@@ -22,6 +22,11 @@ interface OrganizationSettings {
     print_show_creator_identity?: boolean;
     print_show_stamp?: boolean;
     print_show_department_signature?: boolean;
+    letterhead_show_name?: boolean;
+    letterhead_show_address?: boolean;
+    letterhead_show_phone?: boolean;
+    letterhead_show_email?: boolean;
+    letterhead_show_website?: boolean;
     management_department_id: string | null;
     project_management_department_id: string | null;
     secretariat_department_id: string | null;
@@ -73,6 +78,11 @@ const form = useForm({
     print_show_creator_identity: props.settings.print_show_creator_identity ?? true,
     print_show_stamp: props.settings.print_show_stamp ?? true,
     print_show_department_signature: props.settings.print_show_department_signature ?? true,
+    letterhead_show_name: props.settings.letterhead_show_name ?? true,
+    letterhead_show_address: props.settings.letterhead_show_address ?? true,
+    letterhead_show_phone: props.settings.letterhead_show_phone ?? true,
+    letterhead_show_email: props.settings.letterhead_show_email ?? true,
+    letterhead_show_website: props.settings.letterhead_show_website ?? true,
     management_department_id: props.settings.management_department_id ?? '',
     project_management_department_id: props.settings.project_management_department_id ?? '',
     secretariat_department_id: props.settings.secretariat_department_id ?? '',
@@ -215,6 +225,16 @@ function submit(): void {
                                 <label class="flex items-center gap-2 text-sm text-slate-700"><input v-model="form.print_show_creator_identity" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> مشخصات ایجادکننده و واحد</label>
                                 <label class="flex items-center gap-2 text-sm text-slate-700"><input v-model="form.print_show_stamp" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> مهر سازمان</label>
                                 <label class="flex items-center gap-2 text-sm text-slate-700"><input v-model="form.print_show_department_signature" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> امضای مدیر واحد</label>
+                            </div>
+                            <div class="border-t border-slate-100 pt-3">
+                                <p class="mb-3 text-xs font-semibold text-slate-600">اجزای سربرگ (هر مورد مستقل)</p>
+                                <div class="grid gap-3 sm:grid-cols-3">
+                                    <label class="flex items-center gap-2 text-sm text-slate-700"><input v-model="form.letterhead_show_name" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> نام سازمان</label>
+                                    <label class="flex items-center gap-2 text-sm text-slate-700"><input v-model="form.letterhead_show_address" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> نشانی</label>
+                                    <label class="flex items-center gap-2 text-sm text-slate-700"><input v-model="form.letterhead_show_phone" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> تلفن</label>
+                                    <label class="flex items-center gap-2 text-sm text-slate-700"><input v-model="form.letterhead_show_email" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> ایمیل</label>
+                                    <label class="flex items-center gap-2 text-sm text-slate-700"><input v-model="form.letterhead_show_website" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> وب‌سایت</label>
+                                </div>
                             </div>
                         </section>
 
