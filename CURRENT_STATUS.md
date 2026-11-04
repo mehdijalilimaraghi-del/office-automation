@@ -1884,3 +1884,16 @@ Implementation has started for the agreed cross-department project model:
 - گزارش تست نشان داد ستون `task_assignments.type` در migration با طول ۲۰ کاراکتر تعریف شده و مقدار `manager_accept_responsibility` باعث خطای SQL Server از نوع truncation می‌شد.
 - کد نوع تخصیص تسک به شناسه کوتاه `manager_accept` تغییر کرد که در ظرفیت فعلی ستون جا می‌گیرد؛ action مکاتبات همچنان شناسه مستقل `manager_accept_responsibility` خود را دارد.
 - تست مربوطه نیز برای شناسه کوتاه به‌روزرسانی شد. تست مجدد توسط کاربر لازم است.
+
+
+
+## 2026-11-04 — Phase 3 repository audit checkpoint (implementation not started)
+
+- Audited the current `development` implementation for organization settings, department configuration, correspondence detail/output, routes, filesystem handling, and the existing Documents module.
+- Verified that organization settings already persist organization name, address, phone, email and website through `SystemSettingsService`; these existing values should be reused as independent letterhead elements rather than duplicated.
+- Verified that `Department` already stores `manager_id`, but no manager-signature image field or upload flow exists. Organization settings likewise have no stamp-image field/upload flow.
+- Verified that correspondence detail currently has no print/PDF endpoint or dedicated document-template view. `CorrespondenceController::show` supplies correspondence metadata/body, while `Correspondence/Show.vue` is an operational detail/workflow screen rather than a print layout.
+- Verified that `composer.json` has no PDF-generation dependency. The existing Documents module uses a storage contract and logical disk/path metadata; file downloads are authorization-checked. The profile avatar is stored on the public disk, which is not sufficient precedent for private official stamp/signature assets without a separate access decision.
+- No application code, migrations, dependencies, master branch, release branch or server were changed in this audit checkpoint.
+- Phase 3 implementation is blocked on one output-architecture decision: use one HTML/CSS A4 template and the browser's native Print / Save as PDF flow (no server-side PDF dependency), or add a server-side PDF renderer for downloadable generated PDFs. The choice determines rendering, preview, pagination and asset-delivery implementation.
+- Five-phase status: Phase 1 focused tests passed (owner-reported); Phase 2 implementation and focused tests passed (owner-reported; build/E2E pending); Phase 3 audited, implementation not started; Phase 4 not started; Phase 5 not started.
