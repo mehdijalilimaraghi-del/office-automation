@@ -1,3 +1,7 @@
+## 2026-11-04 — External-unit addressing ownership correction
+
+The approved business rule is that external organizational units own their manager/addressee and addressing components. Do not confuse external departments with internal Core Departments. Internal Department.manager_id and its membership/approval model remain unchanged. ExternalDepartment now has manager_contact_id plus organizational_title_prefix, position, personal_salutation and professional_title. The manager is an ExternalContact assigned to that same external unit; individual contacts are not required to carry these addressing fields. Existing legacy contact fields remain in the schema for compatibility, but new UI entry is at the external-unit level. Migration 2026_11_04_140000_move_external_addressing_to_departments promotes each active per-unit default contact and copies its addressing values. Outgoing-letter finalization snapshots unit addressing and manager identity; external_contact_id is optional. Preserve old contact data and legacy snapshot fallback. Validation of migration/tests/build is pending owner run. Development only; do not touch master or server.
+
 ## 2026-11-04 — Fix correspondence controller parse error — validated
 
 - Owner confirmed PHP lint, `ExternalPartyControllerTest`, and `CorrespondenceHttpTest` pass after pulling the fix; full-suite/build/manual acceptance remain pending.
