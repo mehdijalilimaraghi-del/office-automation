@@ -8,6 +8,9 @@ use App\Core\Departments\Models\Department;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Core\Settings\UpdateOrganizationSettingsRequest;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -23,6 +26,8 @@ class OrganizationSettingsController extends Controller
         'organization.email' => null,
         'organization.website' => null,
         'organization.address' => null,
+        'organization.stamp.path' => null,
+        'organization.stamp.active' => '0',
         'correspondence.numbering.format' => 'year',
         'correspondence.numbering.custom_order' => 'year,department,sequence',
         'correspondence.numbering.separator' => '/',
@@ -64,6 +69,8 @@ class OrganizationSettingsController extends Controller
                 'email' => $stored['organization.email'],
                 'website' => $stored['organization.website'],
                 'address' => $stored['organization.address'],
+                'stamp_url' => $stored['organization.stamp.path'] && $stored['organization.stamp.active'] === '1' ? route('settings.organization.stamp') : null,
+                'stamp_active' => $stored['organization.stamp.active'] === '1',
                 'numbering_format' => $stored['correspondence.numbering.format'],
                 'numbering_custom_order' => $stored['correspondence.numbering.custom_order'],
                 'numbering_separator' => $stored['correspondence.numbering.separator'],
@@ -92,6 +99,16 @@ class OrganizationSettingsController extends Controller
         UpdateOrganizationSettingsRequest $request,
     ): RedirectResponse {
         $data = $request->validated();
+        unset($data['stamp'], $data['remove_stamp']);
+        $previous = $this->settings->get(['organization.stamp.path' => null, 'organization.stamp.active' => '0']);
+        $stampPath = $previous['organization.stamp.path'];
+        if ($request->boolean('remove_stamp')) {
+            $stampPath = null;
+            $data['stamp_active'] = false;
+        } elseif ($request->hasFile('stamp')) {
+            $stampPath = $request->file('stamp')->store('organization/stamp', 'local');
+        }
+        $stampActive = (bool) ($data['stamp_active'] ?? ($previous['organization.stamp.active'] === '1')) && filled($stampPath);
 
         $this->settings->set([
             'organization.name' => $data['name'],
@@ -103,6 +120,8 @@ class OrganizationSettingsController extends Controller
             'organization.email' => $data['email'] ?? null,
             'organization.website' => $data['website'] ?? null,
             'organization.address' => $data['address'] ?? null,
+            'organization.stamp.path' => $stampPath,
+            'organization.stamp.active' => $stampActive ? '1' : '0',
             'correspondence.numbering.format' => $data['numbering_format'],
             'correspondence.numbering.custom_order' => implode(',', array_slice([$data['numbering_order_first'], $data['numbering_order_second'], $data['numbering_order_third'] ?? 'sequence'], 0, (int) ($data['numbering_custom_fields_count'] ?? 3))),
             'correspondence.numbering.separator' => $data['numbering_separator'],
@@ -122,6 +141,24 @@ class OrganizationSettingsController extends Controller
             'projects.response_department.default' => $data['default_response_department_id'] ?? null,
         ]);
 
+        if ($previous['organization.stamp.path'] && $previous['organization.stamp.path'] !== $stampPath) {
+            Storage::disk('local')->delete($previous['organization.stamp.path']);
+        }
+
         return back()->with('success', 'تنظیمات سازمان با موفقیت ذخیره شد.');
+    }
+
+    public function stamp(Request $request): StreamedResponse
+    {
+        abort_unless($request->user()->hasPermission('settings.manage'), 403);
+        $stored = $this->settings->get(['organization.stamp.path' => null, 'organization.stamp.active' => '0']);
+        abort_unless($stored['organization.stamp.active'] === '1' && filled($stored['organization.stamp.path']), 404);
+        abort_unless(Storage::disk('local')->exists($stored['organization.stamp.path']), 404);
+
+        return Storage::disk('local')->response($stored['organization.stamp.path'], null, [
+            'Content-Disposition' => 'inline',
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 }
