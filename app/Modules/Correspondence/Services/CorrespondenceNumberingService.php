@@ -57,17 +57,20 @@ class CorrespondenceNumberingService
                     $locked->letter_number = $this->formatNumber($locked, $this->incrementLetterCounter(), $config);
                 }
             }
-            if ($locked->type === Correspondence::TYPE_OUTGOING && $locked->external_contact_id !== null && $locked->recipient_addressing_snapshot === null) {
-                $contact = ExternalContact::query()->whereKey($locked->external_contact_id)->first();
-                if ($contact !== null) {
-                    $locked->recipient_addressing_snapshot = [
-                        'organizational_title_prefix' => $contact->organizational_title_prefix,
-                        'position' => $contact->position,
-                        'personal_salutation' => $contact->personal_salutation,
-                        'professional_title' => $contact->professional_title,
-                        'name' => $contact->name,
-                    ];
-                }
+            if ($locked->type === Correspondence::TYPE_OUTGOING && $locked->recipient_addressing_snapshot === null) {
+                $contact = $locked->external_contact_id === null
+                    ? null
+                    : ExternalContact::query()->whereKey($locked->external_contact_id)->first();
+                $locked->loadMissing(['externalOrganization', 'externalDepartment']);
+                $locked->recipient_addressing_snapshot = [
+                    'organizational_title_prefix' => $contact?->organizational_title_prefix,
+                    'position' => $contact?->position,
+                    'personal_salutation' => $contact?->personal_salutation,
+                    'professional_title' => $contact?->professional_title,
+                    'name' => $contact?->name ?? $locked->recipient_name,
+                    'organization_name' => $locked->externalOrganization?->name,
+                    'department_name' => $locked->externalDepartment?->name,
+                ];
             }
 
             $registrationConfig = $this->registrationConfiguration();
