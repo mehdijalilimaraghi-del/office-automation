@@ -180,3 +180,11 @@ A change is complete only when intended behavior is implemented, relevant tests 
 
 Current environment target: Windows + PHP 8.5.x + Composer 2.10.x + Node.js 24.x + NPM 11.x + Laravel 12.x + Microsoft SQL Server.
 
+
+
+
+## 2026-11-04 — Phase 3 output architecture decision gate
+
+The active product version is V2 — Office Automation, which is authorized and underway according to `ROADMAP.md`. Any older wording in this guide describing V1 as the current checkpoint / V2 as not yet started is historical and must not override the roadmap or `CURRENT_STATUS.md`.
+
+Before implementing the phase-3 shared letter output, inspect and reuse existing Core organization settings for organization details, existing Department manager ownership, and the Documents storage abstraction. The repository currently has no PDF-rendering dependency and no correspondence print/PDF route or print-specific page. The owner must choose whether phase 3 uses browser-native Print / Save as PDF over one shared HTML/CSS A4 template, or a server-side PDF renderer for downloadable generated PDFs. Do not silently introduce a PDF package or external binary. Keep stamp and per-department manager signature as distinct assets, use controlled access, and preserve finalization-time snapshots for historical letters.
