@@ -28,6 +28,7 @@ class OrganizationSettingsController extends Controller
         'organization.address' => null,
         'organization.stamp.path' => null,
         'organization.stamp.active' => '0',
+        'organization.letterhead.path' => null,
         'correspondence.numbering.format' => 'year',
         'correspondence.numbering.custom_order' => 'year,department,sequence',
         'correspondence.numbering.separator' => '/',
@@ -70,6 +71,7 @@ class OrganizationSettingsController extends Controller
                 'website' => $stored['organization.website'],
                 'address' => $stored['organization.address'],
                 'stamp_url' => $stored['organization.stamp.path'] ? route('settings.organization.stamp') : null,
+                'letterhead_url' => $stored['organization.letterhead.path'] ? route('settings.organization.letterhead') : null,
                 'stamp_active' => $stored['organization.stamp.active'] === '1',
                 'numbering_format' => $stored['correspondence.numbering.format'],
                 'numbering_custom_order' => $stored['correspondence.numbering.custom_order'],
@@ -99,8 +101,8 @@ class OrganizationSettingsController extends Controller
         UpdateOrganizationSettingsRequest $request,
     ): RedirectResponse {
         $data = $request->validated();
-        unset($data['stamp'], $data['remove_stamp']);
-        $previous = $this->settings->get(['organization.stamp.path' => null, 'organization.stamp.active' => '0']);
+        unset($data['stamp'], $data['remove_stamp'], $data['letterhead'], $data['remove_letterhead']);
+        $previous = $this->settings->get(['organization.stamp.path' => null, 'organization.stamp.active' => '0', 'organization.letterhead.path' => null]);
         $stampPath = $previous['organization.stamp.path'];
         if ($request->boolean('remove_stamp')) {
             $stampPath = null;
@@ -109,6 +111,13 @@ class OrganizationSettingsController extends Controller
             $stampPath = $request->file('stamp')->store('organization/stamp', 'local');
         }
         $stampActive = (bool) ($data['stamp_active'] ?? ($previous['organization.stamp.active'] === '1')) && filled($stampPath);
+
+        $letterheadPath = $previous['organization.letterhead.path'];
+        if ($request->boolean('remove_letterhead')) {
+            $letterheadPath = null;
+        } elseif ($request->hasFile('letterhead')) {
+            $letterheadPath = $request->file('letterhead')->store('organization/letterhead', 'local');
+        }
 
         $this->settings->set([
             'organization.name' => $data['name'],
@@ -122,6 +131,7 @@ class OrganizationSettingsController extends Controller
             'organization.address' => $data['address'] ?? null,
             'organization.stamp.path' => $stampPath,
             'organization.stamp.active' => $stampActive ? '1' : '0',
+            'organization.letterhead.path' => $letterheadPath,
             'correspondence.numbering.format' => $data['numbering_format'],
             'correspondence.numbering.custom_order' => implode(',', array_slice([$data['numbering_order_first'], $data['numbering_order_second'], $data['numbering_order_third'] ?? 'sequence'], 0, (int) ($data['numbering_custom_fields_count'] ?? 3))),
             'correspondence.numbering.separator' => $data['numbering_separator'],
@@ -141,11 +151,29 @@ class OrganizationSettingsController extends Controller
             'projects.response_department.default' => $data['default_response_department_id'] ?? null,
         ]);
 
+        if ($previous['organization.letterhead.path'] && $previous['organization.letterhead.path'] !== $letterheadPath) {
+            Storage::disk('local')->delete($previous['organization.letterhead.path']);
+        }
+
         if ($previous['organization.stamp.path'] && $previous['organization.stamp.path'] !== $stampPath) {
             Storage::disk('local')->delete($previous['organization.stamp.path']);
         }
 
         return back()->with('success', 'تنظیمات سازمان با موفقیت ذخیره شد.');
+    }
+
+
+    public function letterhead(Request $request): StreamedResponse
+    {
+        abort_unless($request->user()->hasPermission('settings.manage'), 403);
+        $path = $this->settings->get(['organization.letterhead.path' => null])['organization.letterhead.path'];
+        abort_unless(filled($path) && Storage::disk('local')->exists($path), 404);
+
+        return Storage::disk('local')->response($path, null, [
+            'Content-Disposition' => 'inline',
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     public function stamp(Request $request): StreamedResponse
