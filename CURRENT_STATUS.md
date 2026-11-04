@@ -1,3 +1,10 @@
+## 2026-11-04 — Direct correspondence registration follow-up
+
+- Fixed the create-page contract: `Correspondence/Create` now receives the per-type `approvalSettings` used by its submit label and explanatory text. Previously this prop was omitted on the create action (although it was supplied by the edit action), so a type configured for direct registration could still display «ذخیره پیش‌نویس».
+- Made the server's immediate-registration decision explicitly use the same `CorrespondenceCompositionSettings::requiresApproval(type)` policy instead of inferring the decision from the created record's workflow state. When approval is disabled for the selected type, the create request invokes numbering/final registration immediately; approval-enabled types remain drafts assigned for approval. Reply/request-generated correspondence remains on its dedicated workflow.
+- Added an HTTP regression test asserting the create page receives the direct setting and a direct internal letter is persisted as registered in the initial create request, not as a draft.
+- Validation pending on the project owner's machine. Development only; master and server untouched.
+
 ## 2026-11-04 — Correspondence approval-test fixture correction
 
 - Two remaining `CorrespondenceHttpTest` failures were caused by incomplete approval fixtures: the tests enabled internal approval but their creators had no primary department with an active manager. Both tests now create an active manager, create an active creator department with that manager, and attach the creator as its primary member. Application validation remains intact. Rerun focused correspondence tests; validation pending. Development only; master/server untouched.
