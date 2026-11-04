@@ -1132,9 +1132,35 @@ class CorrespondenceHttpTest extends TestCase
         ]);
 
         $outgoingCreator = User::factory()->create(['status' => 'active']);
-        $letter = Correspondence::query()->create(['type' => Correspondence::TYPE_OUTGOING, 'subject' => 'پیش‌نویس صادره برای دبیرخانه', 'status' => Correspondence::STATUS_DRAFT, 'created_by' => $outgoingCreator->id]);
+        $outgoingOrganization = ExternalOrganization::query()->create(['name' => 'سازمان مخاطب صادره', 'status' => 'active']);
+        $outgoingContact = \App\Core\ExternalParties\Models\ExternalContact::query()->create([
+            'external_organization_id' => $outgoingOrganization->id,
+            'name' => 'مخاطب زمان ثبت',
+            'organizational_title_prefix' => 'مدیریت',
+            'position' => 'مدیر واحد مالی',
+            'personal_salutation' => 'جناب آقای',
+            'professional_title' => 'مهندس',
+            'status' => 'active',
+        ]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_OUTGOING,
+            'subject' => 'پیش‌نویس صادره برای دبیرخانه',
+            'status' => Correspondence::STATUS_DRAFT,
+            'created_by' => $outgoingCreator->id,
+            'external_organization_id' => $outgoingOrganization->id,
+            'external_contact_id' => $outgoingContact->id,
+        ]);
         $this->actingAs($secretariatUser)->post(route('correspondence.register', $letter))->assertRedirect();
         $this->assertDatabaseHas('correspondences', ['id' => $letter->id, 'status' => Correspondence::STATUS_REGISTERED, 'registered_by' => $secretariatUser->id, 'workflow_state' => 'awaiting_dispatch']);
+
+        $snapshot = $letter->fresh()->recipient_addressing_snapshot;
+        $this->assertSame('مدیریت', $snapshot['organizational_title_prefix']);
+        $this->assertSame('مدیر واحد مالی', $snapshot['position']);
+        $this->assertSame('مخاطب زمان ثبت', $snapshot['name']);
+
+        $outgoingContact->update(['name' => 'نام تغییر یافته پس از ثبت', 'position' => 'سمت جدید']);
+        $this->assertSame('مخاطب زمان ثبت', $letter->fresh()->recipient_addressing_snapshot['name']);
+        $this->assertSame('مدیر واحد مالی', $letter->fresh()->recipient_addressing_snapshot['position']);
 
         $this->actingAs($secretariatUser)->put(route('correspondence.external-tracking.update', $letter), [
             'sent_at' => '2026-10-27 10:30:00',
