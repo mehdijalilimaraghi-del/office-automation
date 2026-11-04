@@ -5,7 +5,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
-interface ElementBox { id: string; kind: 'text'|'stamp'|'signature'; label: string; content: string; x: number; y: number; width: number; height: number; font_size: number; bold: boolean; align: 'right'|'center'|'left'; visible: boolean; }
+interface ElementBox { id: string; kind: 'text'|'stamp'|'signature'|'letterhead'; label: string; content: string; x: number; y: number; width: number; height: number; font_size: number; bold: boolean; align: 'right'|'center'|'left'; visible: boolean; }
 interface Token { key: string; label: string; }
 const props = defineProps<{ elements: ElementBox[]; tokens: Token[] }>();
 const form = useForm({ elements: props.elements.map(item => ({ ...item })) });
@@ -15,7 +15,7 @@ const page = ref<HTMLElement|null>(null);
 const dragging = ref<{id:string; mode:'move'|'resize'; startX:number; startY:number; x:number; y:number; width:number; height:number}|null>(null);
 function addBox(kind: ElementBox['kind'] = 'text'): void {
     const id = 'custom_' + Math.random().toString(36).slice(2, 9);
-    form.elements.push({ id, kind, label: kind === 'stamp' ? 'مهر سازمان' : kind === 'signature' ? 'امضای مدیر واحد' : 'کادر جدید', content: '', x: 10, y: 30, width: 40, height: 8, font_size: 12, bold: false, align: 'right', visible: true });
+    form.elements.push({ id, kind, label: kind === 'stamp' ? 'مهر سازمان' : kind === 'signature' ? 'امضای مدیر واحد' : kind === 'letterhead' ? 'تصویر سربرگ' : 'کادر جدید', content: '', x: 10, y: 30, width: 40, height: 8, font_size: 12, bold: false, align: 'right', visible: true });
     selectedId.value = id;
 }
 function removeBox(): void {
@@ -63,10 +63,10 @@ function pointerUp(): void { dragging.value = null; }
         <div class="bg-slate-50 py-6" dir="rtl">
             <div class="mx-auto grid max-w-[1500px] gap-5 px-4 xl:grid-cols-[minmax(0,1fr)_340px]">
                 <section class="overflow-auto rounded-2xl border border-slate-200 bg-slate-200 p-4">
-                    <div class="mx-auto mb-3 flex max-w-[210mm] items-center justify-between text-xs text-slate-600"><span>صفحه A4 · برای جابه‌جایی کادر آن را بکشید</span><div class="flex flex-wrap gap-2"><button type="button" class="rounded-lg bg-white px-3 py-2 font-semibold" @click="addBox('text')">کادر متنی +</button><button type="button" class="rounded-lg bg-white px-3 py-2 font-semibold" @click="addBox('stamp')">محل مهر +</button><button type="button" class="rounded-lg bg-white px-3 py-2 font-semibold" @click="addBox('signature')">محل امضا +</button></div></div>
+                    <div class="mx-auto mb-3 flex max-w-[210mm] items-center justify-between text-xs text-slate-600"><span>صفحه A4 · برای جابه‌جایی کادر آن را بکشید</span><div class="flex flex-wrap gap-2"><button type="button" class="rounded-lg bg-white px-3 py-2 font-semibold" @click="addBox('text')">کادر متنی +</button><button type="button" class="rounded-lg bg-white px-3 py-2 font-semibold" @click="addBox('stamp')">محل مهر +</button><button type="button" class="rounded-lg bg-white px-3 py-2 font-semibold" @click="addBox('signature')">محل امضا +</button><button type="button" class="rounded-lg bg-white px-3 py-2 font-semibold" @click="addBox('letterhead')">تصویر سربرگ +</button></div></div>
                     <div ref="page" class="relative mx-auto aspect-[210/297] w-full max-w-[210mm] overflow-hidden bg-white shadow-xl" @pointermove="pointerMove" @pointerup="pointerUp" @pointercancel="pointerUp">
                         <div v-for="item in form.elements" :key="item.id" class="absolute cursor-move whitespace-pre-wrap border border-dashed p-2 text-slate-900" :class="selectedId===item.id ? 'border-teal-600 bg-teal-50/40 ring-1 ring-teal-500' : 'border-slate-300'" :style="{ left:item.x+'%', top:item.y+'%', width:item.width+'%', height:item.height+'%', fontSize:item.font_size+'px', fontWeight:item.bold?'700':'400', textAlign:item.align, display:item.visible?'block':'none' }" @pointerdown="pointerDown($event,item,'move')">
-                            <span class="pointer-events-none">{{ item.kind === 'text' ? (item.content || item.label) : (item.kind === 'stamp' ? 'مهر سازمان' : 'امضای مدیر واحد') }}</span>
+                            <span class="pointer-events-none">{{ item.kind === 'text' ? (item.content || item.label) : (item.kind === 'stamp' ? 'مهر سازمان' : item.kind === 'signature' ? 'امضای مدیر واحد' : 'تصویر سربرگ') }}</span>
                             <button type="button" aria-label="تغییر اندازه کادر" class="absolute bottom-0 left-0 h-3 w-3 cursor-nwse-resize rounded-sm bg-teal-600" @pointerdown.stop="pointerDown($event,item,'resize')"></button>
                         </div>
                     </div>
@@ -81,7 +81,7 @@ function pointerUp(): void { dragging.value = null; }
                     <section v-if="selected" class="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
                         <h3 class="font-bold">تنظیم کادر انتخابی</h3>
                         <label class="block text-xs font-semibold">عنوان کادر<input v-model="selected.label" class="mt-1 w-full rounded-lg border-slate-300 text-sm" /></label>
-                        <label v-if="selected.kind === 'text'" class="block text-xs font-semibold">محتوا<textarea v-model="selected.content" rows="4" class="mt-1 w-full rounded-lg border-slate-300 text-sm" /></label><p v-else class="rounded-lg bg-slate-50 p-2 text-xs leading-5 text-slate-600">تصویر این کادر از مهر فعال سازمان یا امضای مدیر واحد صادرکننده در زمان چاپ دریافت می‌شود.</p>
+                        <label v-if="selected.kind === 'text'" class="block text-xs font-semibold">محتوا<textarea v-model="selected.content" rows="4" class="mt-1 w-full rounded-lg border-slate-300 text-sm" /></label><p v-else class="rounded-lg bg-slate-50 p-2 text-xs leading-5 text-slate-600">تصویر این کادر از فایل فعال سربرگ، مهر سازمان یا امضای مدیر واحد در زمان چاپ دریافت می‌شود.</p>
                         <div class="grid grid-cols-2 gap-2">
                             <label class="text-xs">اندازه قلم<input v-model.number="selected.font_size" type="number" min="7" max="48" class="mt-1 w-full rounded-lg border-slate-300" /></label>
                             <label class="text-xs">تراز<select v-model="selected.align" class="mt-1 w-full rounded-lg border-slate-300"><option value="right">راست</option><option value="center">وسط</option><option value="left">چپ</option></select></label>
