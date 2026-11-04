@@ -133,3 +133,10 @@ No application code, migration, dependency, master/release branch or server chan
 - Added registered-letter A4 preview/print page, per-operation letterhead toggle, independent creator/stamp/signature visibility controls and CSS page counters.
 - Focused tests were added for asset uploads and finalization snapshots. Local execution is pending.
 - Remaining Phase 3 work: verify the migration, tests and build; manually validate long multi-page letters and printer output; complete detailed placement/coordinate controls, logo/background support and configurable page-number placement.
+
+
+## Letter template designer — refined implementation direction (2026-11-04)
+
+The fixed print-visibility controls do not belong in Organization Settings. That screen owns organization identity and asset upload/activation (including the organization stamp). A dedicated letter-template designer owns layout and per-template visibility.
+
+The designer should use one shared A4 coordinate/layout model for browser print and Save as PDF. Users can add, move, resize and edit text boxes, set typography/alignment, and insert typed variable tokens from a searchable variable picker. Initial tokens: `{{organization_name}}`, `{{short_name}}`, `{{address}}`, `{{tel}}`, `{{email}}`, `{{website}}`, `{{letter_number}}`, `{{registration_number}}`, `{{date}}`, `{{recipient_name}}`, `{{recipient_address}}`. Image elements include organization stamp and the selected department manager signature. Regions include header/letterhead, recipient, body, metadata and signature/stamp. The editor must show a live A4 preview, preserve multipage body flow, and use the same renderer for preview and print/PDF. Tokens must be escaped/typed rather than evaluated as arbitrary code. Existing saved print settings remain backward-compatible until template migration is implemented.
