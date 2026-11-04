@@ -729,6 +729,7 @@ class CorrespondenceController extends Controller
             ],
             'correspondence' => null,
             'correspondenceFontFamily' => $settings->get(['correspondence.composition.font_family' => 'Vazirmatn'])['correspondence.composition.font_family'],
+            'approvalSettings' => app(\\App\\Modules\\Correspondence\\Services\\CorrespondenceCompositionSettings::class)->get()['approval'],
             'createdDepartment' => $createdDepartment,
             'createdDepartments' => $createdDepartments,
             'externalOrganizations' => ExternalOrganization::query()->where('status', 'active')->orderBy('name')->get(['id', 'name']),
@@ -969,7 +970,7 @@ class CorrespondenceController extends Controller
 
         $registeredImmediately = false;
         if ($sourceCorrespondenceId === null && $requestedLetterSource === null
-            && $correspondence->workflow_state === 'awaiting_registration') {
+            && ! app(\\App\\Modules\\Correspondence\\Services\\CorrespondenceCompositionSettings::class)->requiresApproval($data['type'])) {
             try {
                 $numbering->register($correspondence, $request->user());
                 $workflow->onRegistered($correspondence, $request->user());
