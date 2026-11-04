@@ -12,6 +12,7 @@ use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Services\CorrespondenceNumberingService;
 use InvalidArgumentException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class CorrespondenceNumberingServiceTest extends TestCase
@@ -169,6 +170,49 @@ class CorrespondenceNumberingServiceTest extends TestCase
         try { app(CorrespondenceNumberingService::class)->register($letter,$registrar); $this->fail('Incoming letters must require original number.'); }
         catch (InvalidArgumentException $exception) { $this->assertSame('شماره نامه وارده باید عیناً از روی نامه اصلی وارد شود.',$exception->getMessage()); }
         $this->assertDatabaseHas('correspondences',['id'=>$letter->id,'letter_number'=>null,'registration_number'=>null]);
+    }
+
+    public function test_finalizing_outgoing_letter_snapshots_creator_unit_stamp_and_manager_signature(): void
+    {
+        Storage::fake('local');
+        Storage::disk('local')->put('organization/stamp/stamp.png', 'stamp-image');
+        Storage::disk('local')->put('organization/signatures/finance.png', 'signature-image');
+
+        $creator = User::factory()->create(['status' => 'active', 'name' => 'مهدی جلیلی']);
+        $department = Department::query()->create([
+            'name' => 'واحد مالی',
+            'code' => 'FIN-'.strtoupper(bin2hex(random_bytes(2))),
+            'manager_id' => User::factory()->create(['status' => 'active'])->id,
+            'manager_signature_path' => 'organization/signatures/finance.png',
+            'manager_signature_active' => true,
+            'is_active' => true,
+        ]);
+        $registrar = $this->createSecretariatUser();
+        app(SystemSettingsService::class)->set([
+            'organization.name' => 'سازمان نمونه',
+            'organization.address' => 'تهران',
+            'organization.stamp.path' => 'organization/stamp/stamp.png',
+            'organization.stamp.active' => '1',
+        ]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_OUTGOING,
+            'subject' => 'نامه دارای مشخصات صادرکننده',
+            'status' => Correspondence::STATUS_DRAFT,
+            'workflow_state' => 'awaiting_registration',
+            'created_by' => $creator->id,
+            'created_department_id' => $department->id,
+        ]);
+
+        $registered = app(CorrespondenceNumberingService::class)->register($letter, $registrar);
+        $snapshot = $registered->document_identity_snapshot;
+
+        $this->assertSame('مهدی جلیلی', $snapshot['creator_name']);
+        $this->assertSame('مدیریت واحد مالی', $snapshot['creator_unit_title']);
+        $this->assertSame('سازمان نمونه', $snapshot['organization']['name']);
+        $this->assertNotEmpty($snapshot['stamp_path']);
+        $this->assertNotEmpty($snapshot['signature_path']);
+        Storage::disk('local')->assertExists($snapshot['stamp_path']);
+        Storage::disk('local')->assertExists($snapshot['signature_path']);
     }
 
     private function createSecretariatUser(): User
