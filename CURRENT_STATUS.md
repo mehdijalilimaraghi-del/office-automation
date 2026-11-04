@@ -1,3 +1,10 @@
+## 2026-11-04 — Correspondence test alignment with direct-registration policy
+
+- Local correspondence test run exposed four failures caused by stale test assumptions, not four distinct runtime regressions: two HTTP tests still expected internal letters to remain drafts although the default internal policy is direct registration; two numbering-service tests attempted to register an internal letter as a separate Secretariat registrar although direct internal registration is creator-only.
+- Updated the two draft-specific HTTP tests to explicitly set internal approval to `approval`, preserving the purpose of those tests (draft persistence and attachment handling).
+- Updated the two numbering tests to register internal letters as their creator, matching the documented direct-registration authorization policy.
+- The previous run had 71 passing tests and 4 failing assertions/exceptions. Rerun the focused correspondence suites locally; validation remains pending. Development only; master and server untouched.
+
 ## 2026-11-03 — Dropdown and correspondence registration corrections
 
 - Both shared selectors now measure their rendered popup height before choosing above/below placement, preventing incorrect offsets near the bottom of the viewport.
