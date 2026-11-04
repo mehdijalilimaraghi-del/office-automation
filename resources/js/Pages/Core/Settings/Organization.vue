@@ -200,6 +200,11 @@ function submit(): void {
                             <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700"><input v-model="form.stamp_active" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> استفاده از مهر در خروجی نامه</label>
                         </div>
 
+                        <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal-200 bg-teal-50 p-4">
+                            <div><h3 class="font-bold text-teal-950">قالب و سربرگ نامه</h3><p class="mt-1 text-sm text-teal-800">چیدمان کادرها، متن‌های ثابت و متغیرهای اطلاعات سازمان را در صفحه A4 طراحی کنید.</p></div>
+                            <a :href="route('correspondence.template.edit')" class="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">باز کردن طراح قالب</a>
+                        </div>
+
                         <section class="space-y-5 rounded-xl border border-slate-200 bg-slate-50 p-5">
                             <div>
                                 <h3 class="font-bold text-slate-900">تخصیص نقش به واحدها</h3>
