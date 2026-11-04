@@ -216,28 +216,6 @@ function submit(): void {
                             <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700"><input v-model="form.stamp_active" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> استفاده از مهر در خروجی نامه</label>
                         </div>
 
-                        <section class="space-y-3 rounded-xl border border-slate-200 bg-white p-4 md:col-span-2">
-                            <div>
-                                <h4 class="font-bold text-slate-900">اجزای قابل نمایش در خروجی نامه</h4>
-                                <p class="mt-1 text-xs text-slate-500">این گزینه‌ها مستقل از وجود تصویر هستند و فقط تعیین می‌کنند هر جزء در قالب چاپ نمایش داده شود یا خیر.</p>
-                            </div>
-                            <div class="grid gap-3 sm:grid-cols-3">
-                                <label class="flex items-center gap-2 text-sm text-slate-700"><input v-model="form.print_show_creator_identity" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> مشخصات ایجادکننده و واحد</label>
-                                <label class="flex items-center gap-2 text-sm text-slate-700"><input v-model="form.print_show_stamp" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> مهر سازمان</label>
-                                <label class="flex items-center gap-2 text-sm text-slate-700"><input v-model="form.print_show_department_signature" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> امضای مدیر واحد</label>
-                            </div>
-                            <div class="border-t border-slate-100 pt-3">
-                                <p class="mb-3 text-xs font-semibold text-slate-600">اجزای سربرگ (هر مورد مستقل)</p>
-                                <div class="grid gap-3 sm:grid-cols-3">
-                                    <label class="flex items-center gap-2 text-sm text-slate-700"><input v-model="form.letterhead_show_name" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> نام سازمان</label>
-                                    <label class="flex items-center gap-2 text-sm text-slate-700"><input v-model="form.letterhead_show_address" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> نشانی</label>
-                                    <label class="flex items-center gap-2 text-sm text-slate-700"><input v-model="form.letterhead_show_phone" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> تلفن</label>
-                                    <label class="flex items-center gap-2 text-sm text-slate-700"><input v-model="form.letterhead_show_email" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> ایمیل</label>
-                                    <label class="flex items-center gap-2 text-sm text-slate-700"><input v-model="form.letterhead_show_website" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" /> وب‌سایت</label>
-                                </div>
-                            </div>
-                        </section>
-
                         <section class="space-y-5 rounded-xl border border-slate-200 bg-slate-50 p-5">
                             <div>
                                 <h3 class="font-bold text-slate-900">تخصیص نقش به واحدها</h3>
