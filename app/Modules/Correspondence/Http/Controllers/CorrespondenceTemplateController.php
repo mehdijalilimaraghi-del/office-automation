@@ -2,21 +2,21 @@
 
 declare(strict_types=1);
 
-namespace App\\Modules\\Correspondence\\Http\\Controllers;
+namespace App\Modules\Correspondence\Http\Controllers;
 
-use App\\Core\\Settings\\Services\\SystemSettingsService;
-use App\\Http\\Controllers\\Controller;
-use Illuminate\\Http\\RedirectResponse;
-use Illuminate\\Http\\Request;
-use Inertia\\Inertia;
-use Inertia\\Response;
+use App\Core\Settings\Services\SystemSettingsService;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class CorrespondenceTemplateController extends Controller
 {
     private const DEFAULT_TEMPLATE = [
         ['id' => 'organization', 'label' => 'نام سازمان', 'content' => '{{organization_name}}', 'x' => 8, 'y' => 5, 'width' => 58, 'height' => 7, 'font_size' => 20, 'bold' => true, 'align' => 'right', 'visible' => true],
         ['id' => 'contact', 'label' => 'اطلاعات تماس', 'content' => 'آدرس: {{address}} | تلفن تماس: {{tel}} | ایمیل: {{email}}', 'x' => 8, 'y' => 14, 'width' => 84, 'height' => 8, 'font_size' => 9, 'bold' => false, 'align' => 'right', 'visible' => true],
-        ['id' => 'letter_meta', 'label' => 'شماره و تاریخ', 'content' => 'شماره: {{letter_number}}\\nتاریخ: {{date}}', 'x' => 72, 'y' => 5, 'width' => 20, 'height' => 15, 'font_size' => 10, 'bold' => false, 'align' => 'left', 'visible' => true],
+        ['id' => 'letter_meta', 'label' => 'شماره و تاریخ', 'content' => 'شماره: {{letter_number}}\nتاریخ: {{date}}', 'x' => 72, 'y' => 5, 'width' => 20, 'height' => 15, 'font_size' => 10, 'bold' => false, 'align' => 'left', 'visible' => true],
     ];
 
     public function edit(SystemSettingsService $settings): Response
