@@ -28,7 +28,7 @@ class DepartmentController extends Controller
     public function index(): Response
     {
         $departments = $this->departmentService->list()->map(function (Department $department): Department {
-            $department->setAttribute('manager_signature_url', $department->manager_signature_path && $department->manager_signature_active
+            $department->setAttribute('manager_signature_url', $department->manager_signature_path
                 ? route('departments.signature', $department)
                 : null);
             return $department;
@@ -93,7 +93,11 @@ class DepartmentController extends Controller
     public function destroy(
         Department $department
     ): RedirectResponse {
+        $signaturePath = $department->manager_signature_path;
         $this->departmentService->delete($department);
+        if ($signaturePath) {
+            Storage::disk('local')->delete($signaturePath);
+        }
 
         return back()->with(
             'success',
@@ -104,7 +108,7 @@ class DepartmentController extends Controller
     public function signature(Request $request, Department $department): StreamedResponse
     {
         abort_unless($request->user()->hasPermission('departments.view'), 403);
-        abort_unless($department->manager_signature_path && $department->manager_signature_active, 404);
+        abort_unless($department->manager_signature_path, 404);
         abort_unless(Storage::disk('local')->exists($department->manager_signature_path), 404);
 
         return Storage::disk('local')->response($department->manager_signature_path, null, [
