@@ -42,6 +42,9 @@ Route::get('/dashboard', DashboardController::class)
 Route::middleware('auth')->group(function () {
     Route::get('/cartable', [CartableController::class, 'index'])->middleware('permission:cartable.view')->name('cartable.index');
 
+    Route::get('/settings/correspondence-template', [CorrespondenceTemplateController::class, 'edit'])->middleware('permission:settings.manage')->name('correspondence.template.edit');
+    Route::put('/settings/correspondence-template', [CorrespondenceTemplateController::class, 'update'])->middleware('permission:settings.manage')->name('correspondence.template.update');
+
     Route::prefix('correspondence')->name('correspondence.')->group(function (): void {
         Route::get('/', [CorrespondenceController::class, 'index'])->middleware('permission:correspondence.view')->name('index');
         Route::get('/create', [CorrespondenceController::class, 'create'])->middleware('permission:correspondence.create')->name('create');
