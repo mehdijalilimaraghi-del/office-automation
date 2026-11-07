@@ -44,7 +44,7 @@ function addBox(role:Role, kind:Kind='text'):void {
 function removeBox():void { if(!selected.value)return; form.elements=form.elements.filter(item=>item.id!==selectedId.value);selectedId.value=form.elements[0]?.id??''; }
 function insertToken(token:string):void { if(selected.value)selected.value.content+=token; }
 function pointerDown(event:PointerEvent,item:ElementBox):void {
- if(!page.value)return;event.preventDefault();selectedId.value=item.id;
+ if(!page.value || item.role==='body' || item.role==='issuer')return;event.preventDefault();selectedId.value=item.id;
  dragging.value={id:item.id,startX:event.clientX,startY:event.clientY,x:item.x,y:item.y};
  (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
 }
@@ -70,7 +70,7 @@ function pageNumberPreview(item:ElementBox):string { const format=item.page_form
   <div class="bg-slate-50 py-6" dir="rtl">
    <div class="mx-auto grid max-w-[1500px] gap-5 px-4 xl:grid-cols-[minmax(0,1fr)_340px]">
     <section class="overflow-auto rounded-2xl border border-slate-200 bg-slate-200 p-4">
-     <div class="mx-auto mb-3 flex max-w-[210mm] flex-wrap items-center justify-between gap-2 text-xs text-slate-600"><span>پیش‌نمایش A4 · سربرگ به‌صورت پس‌زمینه</span><button type="button" class="rounded-lg bg-slate-900 px-3 py-2 font-semibold text-white" @click="previewMode = !previewMode">{{ previewMode ? 'بازگشت به ویرایش' : 'پیش‌نمایش قالب' }}</button><div class="flex flex-wrap gap-2"><button v-for="(label,role) in roleLabels" :key="role" type="button" class="rounded-lg bg-white px-3 py-2 font-semibold" @click="addRole(role)">{{label}} +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','stamp')">مهر +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','signature')">امضا +</button></div></div>
+     <div class="mx-auto mb-3 flex max-w-[210mm] flex-wrap items-center justify-between gap-2 text-xs text-slate-600"><span>پیش‌نمایش A4 · سربرگ به‌صورت پس‌زمینه</span><button type="button" class="rounded-lg bg-slate-900 px-3 py-2 font-semibold text-white" @click="previewMode = !previewMode">{{ previewMode ? 'بازگشت به ویرایش' : 'پیش‌نمایش قالب' }}</button><div class="flex flex-wrap gap-2"><button v-for="(label,role) in roleLabels" :key="role" type="button" :disabled="role==='body' && form.elements.some(item=>item.role==='body')" class="rounded-lg bg-white px-3 py-2 font-semibold disabled:cursor-not-allowed disabled:opacity-40" @click="addRole(role)">{{label}} +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','stamp')">مهر +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','signature')">امضا +</button></div></div>
      <div ref="page" class="relative mx-auto aspect-[210/297] w-full max-w-[210mm] overflow-hidden bg-white shadow-xl" :style="letterheadDataUri?{backgroundImage:'url('+letterheadDataUri+')',backgroundSize:'100% 100%',backgroundPosition:'center'}:{}" @pointermove="pointerMove" @pointerup="pointerUp" @pointercancel="pointerUp">
       <div class="pointer-events-none absolute inset-x-[8%] top-[7%] bottom-[7%] border-y border-dashed border-slate-300"></div>
       <div class="absolute whitespace-pre-wrap border border-dashed border-slate-300 bg-white/70 p-3 text-right text-sm leading-8 text-slate-500" :style="bodyPreviewStyle()">
@@ -86,7 +86,7 @@ function pageNumberPreview(item:ElementBox):string { const format=item.page_form
       <h3 class="font-bold">تنظیمات بخش</h3>
       <label class="block text-xs font-semibold">نوع بخش<select v-model="selected.role" class="mt-1 w-full rounded-lg border-slate-300 text-sm"><option v-for="(label,role) in roleLabels" :key="role" :value="role">{{label}}</option></select></label>
       <label class="block text-xs font-semibold">عنوان<input v-model="selected.label" class="mt-1 w-full rounded-lg border-slate-300 text-sm"/></label>
-      <label v-if="selected.kind==='text' && selected.role!=='page_number'" class="block text-xs font-semibold">متن / الگو<textarea v-model="selected.content" rows="3" class="mt-1 w-full rounded-lg border-slate-300 text-sm"/></label>
+      <label v-if="selected.kind==='text' && !['page_number','body'].includes(selected.role)" class="block text-xs font-semibold">متن / الگو<textarea v-model="selected.content" rows="3" class="mt-1 w-full rounded-lg border-slate-300 text-sm"/></label>
       <p v-if="selected.role==='page_number'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">قالب نمایش شماره صفحه را انتخاب کنید؛ شماره و تعداد صفحات در خروجی چاپ به‌صورت خودکار محاسبه می‌شوند.</p>
       <p v-if="selected.role==='body'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">این المان محتوای نامه را کنترل نمی‌کند؛ فاصله شروع متن، عرض و قلم بدنه را تنظیم می‌کند. متن واقعی به‌صورت خودکار از نامه خوانده می‌شود.</p>
       <p v-if="selected.role==='issuer'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">این بخش فقط یک‌بار و بعد از متن نامه قرار می‌گیرد؛ فاصله آن از انتهای متن با گزینه فاصله از بخش قبل تنظیم می‌شود.</p>
