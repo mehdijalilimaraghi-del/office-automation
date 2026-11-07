@@ -6,6 +6,7 @@ return [
     'boolean' => 'فیلد :attribute باید درست یا نادرست باشد.',
     'confirmed' => 'تأیید :attribute با آن مطابقت ندارد.',
     'date' => ':attribute باید یک تاریخ معتبر باشد.',
+    'dimensions' => 'ابعاد تصویر :attribute باید با شرایط تعیین‌شده مطابقت داشته باشد.',
     'email' => ':attribute باید یک آدرس ایمیل معتبر باشد.',
     'exists' => ':attribute انتخاب‌شده معتبر نیست.',
     'image' => ':attribute باید یک تصویر معتبر باشد.',
@@ -51,5 +52,7 @@ return [
         'national_id' => 'کد ملی',
         'birth_date' => 'تاریخ تولد',
         'avatar' => 'تصویر پروفایل',
+        'letterhead' => 'تصویر سربرگ',
+        'stamp' => 'تصویر مهر سازمان',
     ],
 ];
