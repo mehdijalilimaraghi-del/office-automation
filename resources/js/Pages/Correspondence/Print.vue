@@ -68,10 +68,10 @@ function printLetter():void{window.print();}
 </template>
 
 <style>
-@page{size:A4;margin:14mm 0 18mm;}
+@page{size:A4;margin:0;}
  .paper{position:relative;box-sizing:border-box;width:210mm;min-height:297mm;color:#111827;background:#fff;}
 .template-coordinate-plane{position:absolute;inset:0;z-index:1;pointer-events:none;}
-.document-content{position:relative;z-index:2;direction:rtl;text-align:right;unicode-bidi:plaintext;padding:14mm 18mm;}
+ .document-content{position:relative;z-index:2;direction:rtl;text-align:right;unicode-bidi:plaintext;padding:14mm 18mm 18mm;}
 .letterhead-background{position:absolute;inset:0;z-index:0;background-position:center top;background-repeat:no-repeat;background-size:100% 100%;pointer-events:none;}
 .repeat-item{position:absolute;z-index:3;white-space:pre-wrap;line-height:1.5;direction:rtl;}
  .flow-item{position:relative;z-index:2;white-space:pre-wrap;line-height:1.8;max-width:100%;}.first-page-positioned{position:absolute;top:0;right:0;}
@@ -90,7 +90,7 @@ function printLetter():void{window.print();}
  main{min-height:0!important;padding:0!important;background:#fff!important;}
  .no-print{display:none!important;}
  .paper{width:auto;min-height:297mm;margin:0;box-shadow:none;overflow:visible;}
- .document-content{padding:14mm 18mm;}
+ .document-content{padding:14mm 18mm 18mm;}
  .letterhead-background{position:fixed;}
  .repeat-item{position:fixed;}
   .page-number{position:fixed;z-index:4;left:auto;right:auto;bottom:auto;text-align:center;font:9pt Tahoma,sans-serif;color:#475569;}
