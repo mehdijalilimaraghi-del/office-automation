@@ -16,7 +16,7 @@ const selectedId = ref(form.elements[0]?.id ?? '');
 const previewMode = ref(false);
 const selected = computed(() => form.elements.find(item => item.id === selectedId.value) ?? null);
 const page = ref<HTMLElement|null>(null);
-const dragging = ref<{id:string; startX:number; startY:number; x:number; y:number}|null>(null);
+const dragging = ref<{id:string; lastX:number; lastY:number}|null>(null);
 const roleLabels:Record<Role,string> = { meta:'شماره و تاریخ', heading:'خطاب و موضوع', page_number:'شماره صفحه', issuer:'تنظیم‌کننده و امضا', repeat:'متن تکرارشونده', body:'متن اصلی نامه' };
 const fontOptions = [{value:'default',label:'فونت پیش‌فرض تنظیمات'},{value:'Vazirmatn',label:'وزیرمتن'},{value:'Tahoma',label:'Tahoma'},{value:'Arial',label:'Arial'},{value:'B Nazanin',label:'B Nazanin'},{value:'B Mitra',label:'B Mitra'},{value:'IRANSans',label:'IRANSans'},{value:'Times New Roman',label:'Times New Roman'}];
 const roleTokens:Record<Role,string[]> = {
@@ -45,14 +45,27 @@ function removeBox():void { if(!selected.value)return; form.elements=form.elemen
 function insertToken(token:string):void { if(selected.value)selected.value.content+=token; }
 function pointerDown(event:PointerEvent,item:ElementBox):void {
  if(!page.value || item.role==='body' || item.role==='issuer')return;event.preventDefault();selectedId.value=item.id;
- dragging.value={id:item.id,startX:event.clientX,startY:event.clientY,x:item.x,y:item.y};
+ dragging.value={id:item.id,lastX:event.clientX,lastY:event.clientY};
  (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+}
+function roundCoordinate(value:number):number { return Math.round(value*100)/100; }
+function normalizeSelectedBounds():void {
+ if(!selected.value)return;
+ selected.value.width=Math.max(5,Math.min(100,roundCoordinate(Number(selected.value.width)||5)));
+ selected.value.x=Math.max(0,Math.min(100-selected.value.width,roundCoordinate(Number(selected.value.x)||0)));
+ selected.value.y=Math.max(0,Math.min(100,roundCoordinate(Number(selected.value.y)||0)));
 }
 function pointerMove(event:PointerEvent):void {
  if(!dragging.value||!page.value)return;
- const rect=page.value.getBoundingClientRect(),dx=(event.clientX-dragging.value.startX)/rect.width*100,dy=(event.clientY-dragging.value.startY)/rect.height*100;
+ const rect=page.value.getBoundingClientRect();
+ if(rect.width<=0||rect.height<=0)return;
+ const dx=(event.clientX-dragging.value.lastX)/rect.width*100;
+ const dy=(event.clientY-dragging.value.lastY)/rect.height*100;
  const item=form.elements.find(entry=>entry.id===dragging.value?.id);if(!item)return;
- item.x=Math.max(0,Math.min(100-item.width,dragging.value.x-dx));item.y=Math.max(0,Math.min(100,dragging.value.y+dy));
+ dragging.value.lastX=event.clientX;
+ dragging.value.lastY=event.clientY;
+ item.x=roundCoordinate(Math.max(0,Math.min(100-item.width,item.x-dx)));
+ item.y=roundCoordinate(Math.max(0,Math.min(100,item.y+dy)));
 }
 function pointerUp():void{dragging.value=null;}
 function displayText(item:ElementBox):string { if(item.kind==='stamp')return 'مهر سازمان';if(item.kind==='signature')return 'امضای مدیر واحد';return item.content||item.label; }
