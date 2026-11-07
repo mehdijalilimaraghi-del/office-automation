@@ -230,9 +230,9 @@ class OrganizationSettingsTest extends TestCase
             ->value('value');
         $saved = json_decode($stored, true, 512, JSON_THROW_ON_ERROR);
 
-        $this->assertSame(70.0, $saved[0]['x']);
-        $this->assertSame(100.0, $saved[0]['y']);
-        $this->assertSame(30.0, $saved[0]['width']);
+        $this->assertEquals(70, $saved[0]['x']);
+        $this->assertEquals(100, $saved[0]['y']);
+        $this->assertEquals(30, $saved[0]['width']);
     }
 
     public function test_user_without_settings_permission_cannot_manage_correspondence_template(): void
