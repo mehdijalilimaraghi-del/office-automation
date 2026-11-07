@@ -19,7 +19,7 @@ type TextDirection = 'rtl' | 'ltr';
 
 interface ExistingCorrespondence {
     id: number; type: 'incoming' | 'outgoing' | 'internal'; classification: string;
-    subject: string; letter_number: string | null; body: string | null;
+    subject: string; attachment_pages: number | null; letter_number: string | null; body: string | null;
     sender_name: string | null; recipient_name: string | null; received_at: string | null; sent_at: string | null;
     created_department_id: number | null; recipient_department_id: number | null;
     external_organization_id: number | null; external_department_id: number | null; external_contact_id: number | null;
@@ -115,6 +115,7 @@ const form = useForm({
     created_department_id: existing?.created_department_id ?? props.createdDepartment?.id ?? '' as number | '',
     classification: existing?.classification ?? 'ordinary',
     subject: existing?.subject ?? '',
+    attachment_pages: existing?.attachment_pages ?? null,
     letter_number: existing?.letter_number ?? '',
     composition_mode: (existing?.type === 'incoming' ? 'file' : (existing?.body && existing.body.includes('<') ? 'editor' : 'file')) as CompositionMode,
     body: existing?.body ?? '',
@@ -764,6 +765,12 @@ async function scanOriginalLetter(): Promise<void> {
                 </section>
 
                 <section class="space-y-3 border-t border-slate-100 pt-5">
+                    <div class="max-w-xs">
+                        <label for="attachment_pages" class="mb-2 block text-sm font-semibold">تعداد صفحات پیوست</label>
+                        <input id="attachment_pages" v-model.number="form.attachment_pages" type="number" min="1" max="9999" placeholder="مثلاً ۲" class="w-full rounded-xl border-slate-300 text-sm" />
+                        <p class="mt-1 text-xs text-slate-500">تعداد صفحات را خودتان وارد کنید؛ اگر پیوست ندارد خالی بگذارید.</p>
+                        <InputError :message="form.errors.attachment_pages" />
+                    </div>
                     <div>
                         <h3 class="text-base font-bold text-slate-900">{{ form.type === 'outgoing' && form.composition_mode === 'file' ? 'فایل نامه' : 'فایل‌های پیوست' }}</h3>
                         <p class="mt-1 text-sm text-slate-500">{{ form.type === 'outgoing' && form.composition_mode === 'file' ? 'فایل نهایی نامه را بارگذاری کنید. این فایل همراه با توضیحات فایل نامه ثبت می‌شود. PDF، Word و تصویر پذیرفته می‌شود؛ حداکثر ۲۰ مگابایت برای هر فایل و ۱۰ فایل.' : 'PDF، Word، Excel، PowerPoint، تصویر و فایل متنی؛ حداکثر ۲۰ مگابایت برای هر فایل و ۱۰ فایل.' }}</p>
