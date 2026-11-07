@@ -136,6 +136,8 @@ class OrganizationSettingsTest extends TestCase
             'kind' => 'text',
             'role' => 'repeat',
             'spacing' => 0,
+            'font_family' => 'Arial',
+            'page_format' => 'number_of',
             'label' => 'اطلاعات تماس',
             'content' => 'آدرس: {{address}} | تلفن تماس: {{tel}} | ایمیل: {{email}}',
             'x' => 8,
@@ -152,6 +154,8 @@ class OrganizationSettingsTest extends TestCase
             'kind' => 'stamp',
             'role' => 'issuer',
             'spacing' => 0,
+            'font_family' => 'default',
+            'page_format' => 'number_of',
             'label' => 'مهر سازمان',
             'content' => '',
             'x' => 75,
@@ -162,6 +166,14 @@ class OrganizationSettingsTest extends TestCase
             'align' => 'center',
             'visible' => true,
         ];
+
+        $elements[] = [
+            'id' => 'letter_body', 'kind' => 'text', 'role' => 'body', 'spacing' => 36,
+            'label' => 'متن اصلی نامه', 'content' => '', 'x' => 8, 'y' => 0, 'width' => 84,
+            'font_size' => 13, 'font_family' => 'B Nazanin', 'page_format' => 'number_of',
+            'bold' => false, 'align' => 'right', 'visible' => true,
+        ];
+        $elements[1]['page_format'] = 'slash';
 
         $this->actingAs($admin)
             ->put(route('correspondence.template.update'), ['elements' => $elements])
