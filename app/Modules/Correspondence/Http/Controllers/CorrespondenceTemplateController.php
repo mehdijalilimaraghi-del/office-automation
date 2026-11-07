@@ -47,6 +47,12 @@ class CorrespondenceTemplateController extends Controller
         if (! collect($elements)->contains(static fn (array $item): bool => ($item['role'] ?? null) === 'body')) {
             $elements[] = self::BODY_TEMPLATE;
         }
+        foreach ($elements as &$element) {
+            if (($element['role'] ?? null) === 'meta' && ! str_contains((string) ($element['content'] ?? ''), '{{attachment_pages}}')) {
+                $element['content'] = rtrim((string) ($element['content'] ?? ''))."\n{{attachment_pages}}";
+            }
+        }
+        unset($element);
 
         $organization = $settings->get([
             'organization.name' => null,
