@@ -23,8 +23,8 @@ function resolveTemplate(content:string):string {
  const values:Record<string,string>={organization_name:props.organization.name??'',short_name:props.organization.short_name??'',address:props.organization.address??'',tel:props.organization.phone??'',email:props.organization.email??'',website:props.organization.website??'',letter_number:props.letter.letter_number??'',registration_number:props.letter.registration_number??'',date:letterDate.value,recipient_name:props.letter.recipient_name??props.letter.recipient_addressing?.name??'',recipient_organization:props.letter.recipient_addressing?.organization_name??props.letter.external_organization??'',recipient_unit:props.letter.recipient_addressing?.department_name??props.letter.external_department??'',recipient_position:props.letter.recipient_addressing?.position??'',recipient_title:[props.letter.recipient_addressing?.personal_salutation,props.letter.recipient_addressing?.professional_title].filter(Boolean).join(' '),subject:props.letter.subject,letter_type:typeLabel.value,creator_name:props.creatorName??'',creator_unit_title:props.creatorUnitTitle??'',page_number:'',pages:''};
  return content.replace(/\{\{([a-z_]+)\}\}/g,(token,key:string)=>Object.prototype.hasOwnProperty.call(values,key)?values[key]:token);
 }
-function boxStyle(item:TemplateElement):Record<string,string>{return {width:item.width+'%',marginTop:item.spacing+'mm',marginRight:item.x+'%',fontSize:item.font_size+'pt',fontWeight:item.bold?'700':'400',textAlign:item.align};}
-function positionedStyle(item:TemplateElement):Record<string,string>{return {right:item.x+'%',top:item.y+'%',width:item.width+'%',fontSize:item.font_size+'pt',fontWeight:item.bold?'700':'400',textAlign:item.align};}
+function boxStyle(item:TemplateElement):Record<string,string>{return {width:item.width+'%',marginTop:(item.spacing+item.y*2.97)+'mm',marginRight:item.x+'%',fontSize:item.font_size+'pt',fontWeight:item.bold?'700':'400',textAlign:item.align};}
+function positionedStyle(item:TemplateElement):Record<string,string>{return {right:item.x+'%',top:(item.y*2.97)+'mm',bottom:'auto',width:item.width+'%',fontSize:item.font_size+'pt',fontWeight:item.bold?'700':'400',textAlign:item.align};}
 function printLetter():void{window.print();}
 </script>
 
@@ -68,7 +68,7 @@ function printLetter():void{window.print();}
 .letterhead-background{position:absolute;inset:0;z-index:0;background-position:center top;background-repeat:no-repeat;background-size:100% 100%;pointer-events:none;}
 .repeat-item{position:absolute;z-index:3;white-space:pre-wrap;line-height:1.5;direction:rtl;}
 .flow-item{position:relative;z-index:2;white-space:pre-wrap;line-height:1.8;max-width:100%;}.first-page-positioned{position:absolute;top:0;right:0;}
-.letter-body{position:relative;z-index:2;direction:rtl;unicode-bidi:plaintext;white-space:pre-wrap;overflow-wrap:anywhere;}
+.letter-body{position:relative;z-index:2;direction:rtl;unicode-bidi:plaintext;white-space:pre-wrap;overflow-wrap:anywhere;margin-top:42mm;}
 .letter-body *{max-width:100%;}
 .letter-body p{margin:0 0 .75rem;}
 .letter-body img{max-width:100%;height:auto;}
