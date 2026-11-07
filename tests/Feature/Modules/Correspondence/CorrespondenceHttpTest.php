@@ -120,6 +120,7 @@ class CorrespondenceHttpTest extends TestCase
         $letter = Correspondence::query()->create([
             'type' => Correspondence::TYPE_OUTGOING,
             'subject' => 'نامه برای پیش‌نمایش چاپ',
+            'attachment_pages' => 2,
             'body' => '<p>متن نامه</p>',
             'status' => Correspondence::STATUS_REGISTERED,
             'classification' => Correspondence::CLASSIFICATION_ORDINARY,
@@ -138,6 +139,7 @@ class CorrespondenceHttpTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('Correspondence/Print')
                 ->where('letter.subject', 'نامه برای پیش‌نمایش چاپ')
+                ->where('letter.attachment_pages', 2)
                 ->where('creatorUnitTitle', 'مدیریت فناوری اطلاعات'));
     }
 
