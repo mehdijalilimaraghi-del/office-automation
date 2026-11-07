@@ -776,6 +776,7 @@ class CorrespondenceController extends Controller
             'created_department_id' => $createdDepartmentRules,
             'classification' => ['sometimes', 'required', Rule::in([Correspondence::CLASSIFICATION_ORDINARY, Correspondence::CLASSIFICATION_CONFIDENTIAL])],
             'subject' => ['required', 'string', 'max:255'],
+            'attachment_pages' => ['nullable', 'integer', 'min:1', 'max:9999'],
             'letter_number' => ['nullable', 'required_if:type,'.Correspondence::TYPE_INCOMING, 'string', 'max:100', Rule::unique('correspondences', 'letter_number')->where(fn ($query) => $query->where('type', Correspondence::TYPE_INCOMING)->where('external_organization_id', $request->input('external_organization_id')))],
             'composition_mode' => [Rule::requiredIf($request->input('type') !== Correspondence::TYPE_INCOMING), 'nullable', Rule::in(['editor', 'file', 'both'])],
             'body' => ['nullable', 'string', 'max:100000'],
@@ -904,6 +905,7 @@ class CorrespondenceController extends Controller
                     'type' => $data['type'],
                     'classification' => $data['classification'] ?? Correspondence::CLASSIFICATION_ORDINARY,
                     'subject' => $data['subject'],
+                    'attachment_pages' => $data['attachment_pages'] ?? null,
                     'letter_number' => $data['letter_number'] ?? null,
                     'body' => $body !== '' ? $body : null,
                     'sender_name' => $data['sender_name'] ?? null,
@@ -1065,6 +1067,7 @@ class CorrespondenceController extends Controller
         $data = $request->validate([
             'created_department_id' => ['nullable', 'integer', Rule::in($allowedCreatedDepartmentIds)],
             'subject' => ['required', 'string', 'max:255'],
+            'attachment_pages' => ['nullable', 'integer', 'min:1', 'max:9999'],
             'classification' => ['required', Rule::in([Correspondence::CLASSIFICATION_ORDINARY, Correspondence::CLASSIFICATION_CONFIDENTIAL])],
             'letter_number' => [Rule::requiredIf($correspondence->type === Correspondence::TYPE_INCOMING), 'nullable', 'string', 'max:100', Rule::unique('correspondences', 'letter_number')->ignore($correspondence->id)->where(fn ($query) => $query->where('type', Correspondence::TYPE_INCOMING)->where('external_organization_id', $request->input('external_organization_id')))],
             'body' => ['nullable', 'string', 'max:100000'], 'composition_mode' => ['nullable', Rule::in(['editor', 'file', 'both'])],
@@ -1116,7 +1119,7 @@ class CorrespondenceController extends Controller
             $locked = Correspondence::query()->whereKey($correspondence->id)->lockForUpdate()->firstOrFail();
             abort_unless($access->canManageBeforeAction($locked, $request->user()), 403);
             $locked->fill([
-                'subject' => $data['subject'], 'classification' => $data['classification'],
+                'subject' => $data['subject'], 'attachment_pages' => $data['attachment_pages'] ?? null, 'classification' => $data['classification'],
                 'letter_number' => $locked->type === Correspondence::TYPE_INCOMING ? $data['letter_number'] : $locked->letter_number,
                 'body' => $body !== '' ? $body : null, 'sender_name' => $data['sender_name'] ?? null, 'recipient_name' => $data['recipient_name'] ?? null,
                 'received_at' => $data['received_at'] ?? null, 'sent_at' => $data['sent_at'] ?? null,
