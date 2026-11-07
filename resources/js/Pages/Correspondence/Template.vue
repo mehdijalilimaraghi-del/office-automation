@@ -12,6 +12,7 @@ interface Token { key:string; label:string; }
 const props = defineProps<{ elements:ElementBox[]; tokens:Token[]; letterheadDataUri:string|null }>();
 const form = useForm({ elements: props.elements.map(item => ({ ...item, role: item.role ?? 'repeat', spacing: item.spacing ?? 0 })) });
 const selectedId = ref(form.elements[0]?.id ?? '');
+const previewMode = ref(false);
 const selected = computed(() => form.elements.find(item => item.id === selectedId.value) ?? null);
 const page = ref<HTMLElement|null>(null);
 const dragging = ref<{id:string; startX:number; startY:number; x:number; y:number}|null>(null);
@@ -62,7 +63,7 @@ function elementStyle(item:ElementBox):Record<string,string> { return { right:it
   <div class="bg-slate-50 py-6" dir="rtl">
    <div class="mx-auto grid max-w-[1500px] gap-5 px-4 xl:grid-cols-[minmax(0,1fr)_340px]">
     <section class="overflow-auto rounded-2xl border border-slate-200 bg-slate-200 p-4">
-     <div class="mx-auto mb-3 flex max-w-[210mm] flex-wrap items-center justify-between gap-2 text-xs text-slate-600"><span>پیش‌نمایش A4 · سربرگ به‌صورت پس‌زمینه</span><div class="flex flex-wrap gap-2"><button v-for="(label,role) in roleLabels" :key="role" type="button" class="rounded-lg bg-white px-3 py-2 font-semibold" @click="addRole(role)">{{label}} +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','stamp')">مهر +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','signature')">امضا +</button></div></div>
+     <div class="mx-auto mb-3 flex max-w-[210mm] flex-wrap items-center justify-between gap-2 text-xs text-slate-600"><span>پیش‌نمایش A4 · سربرگ به‌صورت پس‌زمینه</span><button type="button" class="rounded-lg bg-slate-900 px-3 py-2 font-semibold text-white" @click="previewMode = !previewMode">{{ previewMode ? 'بازگشت به ویرایش' : 'پیش‌نمایش قالب' }}</button><div class="flex flex-wrap gap-2"><button v-for="(label,role) in roleLabels" :key="role" type="button" class="rounded-lg bg-white px-3 py-2 font-semibold" @click="addRole(role)">{{label}} +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','stamp')">مهر +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','signature')">امضا +</button></div></div>
      <div ref="page" class="relative mx-auto aspect-[210/297] w-full max-w-[210mm] overflow-hidden bg-white shadow-xl" :style="letterheadDataUri?{backgroundImage:'url('+letterheadDataUri+')',backgroundSize:'100% 100%',backgroundPosition:'center'}:{}" @pointermove="pointerMove" @pointerup="pointerUp" @pointercancel="pointerUp">
       <div class="absolute inset-x-[8%] top-[7%] bottom-[7%] border-y border-dashed border-slate-200 bg-white/10">
        <div class="absolute inset-x-0 top-[28%] bottom-[12%] border-y border-dashed border-slate-300 bg-white/35 p-3 text-right text-sm leading-8 text-slate-400">
@@ -73,7 +74,7 @@ function elementStyle(item:ElementBox):Record<string,string> { return { right:it
       </div>
      </div>
     </section>
-    <aside class="space-y-4">
+    <aside v-if="!previewMode" class="space-y-4">
      <section class="rounded-2xl border border-slate-200 bg-white p-4"><div class="mb-3 flex items-center justify-between"><h3 class="font-bold">بخش‌های قالب</h3><button type="button" class="text-xs text-rose-600" @click="removeBox">حذف انتخابی</button></div><div class="space-y-1"><button v-for="item in form.elements" :key="item.id" type="button" class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm" :class="selectedId===item.id?'bg-teal-50 text-teal-800':'hover:bg-slate-50'" @click="selectedId=item.id"><span>{{item.label}}</span><span class="text-xs text-slate-400">{{roleLabels[item.role]}}</span></button></div></section>
      <section v-if="selected" class="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
       <h3 class="font-bold">تنظیمات بخش</h3>
