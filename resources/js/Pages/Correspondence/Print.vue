@@ -26,7 +26,7 @@ function resolveTemplate(content:string):string {
  return content.replace(/\{\{([a-z_]+)\}\}/g,(token,key:string)=>Object.prototype.hasOwnProperty.call(values,key)?values[key]:token);
 }
 function fontFamily(item:TemplateElement):string{return item.font_family==='default'||!item.font_family?(props.printOptions.font_family||'Vazirmatn'):item.font_family;}
-function boxStyle(item:TemplateElement):Record<string,string>{return {width:item.width+'%',marginTop:item.spacing+'mm',marginRight:item.x+'%',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
+function boxStyle(item:TemplateElement):Record<string,string>{return {width:(item.width*2.1)+'mm',marginTop:item.spacing+'mm',marginRight:`calc(${item.x*2.1}mm - 18mm)`,fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
 function positionedStyle(item:TemplateElement):Record<string,string>{return {right:item.x+'%',top:item.y+'%',bottom:'auto',width:item.width+'%',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
 function bodyStyle():Record<string,string>{const item=bodyElement.value;return {width:item.width+'%',marginTop:item.spacing+'mm',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
 function printLetter():void{window.print();}
@@ -70,7 +70,7 @@ function printLetter():void{window.print();}
 <style>
 @page{size:A4;margin:0;}
  .paper{position:relative;box-sizing:border-box;width:210mm;min-height:297mm;color:#111827;background:#fff;}
-.template-coordinate-plane{position:absolute;inset:0;z-index:1;pointer-events:none;}
+ .template-coordinate-plane{position:absolute;top:0;right:0;left:0;height:297mm;z-index:1;pointer-events:none;}
  .document-content{position:relative;z-index:2;direction:rtl;text-align:right;unicode-bidi:plaintext;padding:14mm 18mm 18mm;}
 .letterhead-background{position:absolute;inset:0;z-index:0;background-position:center top;background-repeat:no-repeat;background-size:100% 100%;pointer-events:none;}
 .repeat-item{position:absolute;z-index:3;white-space:pre-wrap;line-height:1.5;direction:rtl;}
