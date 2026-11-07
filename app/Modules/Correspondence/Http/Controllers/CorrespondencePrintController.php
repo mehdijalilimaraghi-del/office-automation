@@ -59,6 +59,13 @@ class CorrespondencePrintController extends Controller
             $templateElements[] = ['id' => 'letter_body', 'kind' => 'text', 'role' => 'body', 'spacing' => 42, 'label' => 'متن اصلی نامه', 'content' => '', 'x' => 8, 'y' => 0, 'width' => 84, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true];
         }
 
+        foreach ($templateElements as &$element) {
+            if (($element['role'] ?? null) === 'meta' && ! str_contains((string) ($element['content'] ?? ''), '{{attachment_pages}}')) {
+                $element['content'] = rtrim((string) ($element['content'] ?? ''))."\n{{attachment_pages}}";
+            }
+        }
+        unset($element);
+
         $stampPath = $snapshot['stamp_path'] ?? null;
         $letterheadPath = $snapshot['letterhead_path'] ?? null;
         $signaturePath = $snapshot['signature_path'] ?? null;
