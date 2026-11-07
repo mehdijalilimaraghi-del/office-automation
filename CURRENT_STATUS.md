@@ -1,3 +1,13 @@
+## 2026-11-07 — Template positioning and preview follow-up
+
+- Designer now exposes top and right coordinates for all element roles, not only repeating text; the A4 canvas renders elements at their selected coordinates and supports pointer dragging.
+- Added an explicit preview mode that hides the settings sidebar while showing the A4 template canvas.
+- Print rendering uses template coordinates for first-page metadata and heading elements; issuer/signature/stamp remain in document flow after the body and use configured horizontal/vertical offsets, so they are not repeated on subsequent pages.
+- Page-number element uses the configured position and CSS paged-media page counters (counter(page) and counter(pages)) rather than fixed literal numbering. Browser-specific correctness across multi-page print output still requires Chromium print/PDF acceptance.
+- Added Persian translation for Laravel image dimensions validation failures and Persian field labels for letterhead/stamp uploads.
+- Template update validation now checks position/width bounds for every element role.
+- Local PHP tests, TypeScript check, frontend build, and real multi-page print acceptance have not been run in this GitHub-only edit session. Development branch only; master/server unchanged.
+
 ## 2026-11-04 — Flow-based template preview
 
 - A4 designer preview now shows metadata, addressee/subject, automatic body placeholder, issuer/signature and page-number indicator in document flow rather than hard-coded Y positions. Only repeating elements retain independent page coordinates.
