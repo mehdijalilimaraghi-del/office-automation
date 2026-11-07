@@ -29,7 +29,21 @@ class CorrespondenceTemplateController extends Controller
         $raw = $settings->get(['correspondence.print.template' => null])['correspondence.print.template'];
         $template = is_string($raw) ? json_decode($raw, true) : null;
 
-        $elements = is_array($template) ? array_values(array_map(static fn (array $item): array => [...$item, 'kind' => ($item['kind'] ?? 'text') === 'letterhead' ? 'text' : ($item['kind'] ?? 'text'), 'role' => $item['role'] ?? (in_array(($item['kind'] ?? null), ['stamp', 'signature'], true) ? 'issuer' : ((float) ($item['y'] ?? 0) < 25 ? 'repeat' : 'meta')), 'spacing' => $item['spacing'] ?? 0, 'font_family' => $item['font_family'] ?? 'default', 'page_format' => $item['page_format'] ?? 'number_of'], array_filter($template, static fn (array $item): bool => ($item['kind'] ?? null) !== 'letterhead')) : self::DEFAULT_TEMPLATE;
+        $elements = self::DEFAULT_TEMPLATE;
+        if (is_array($template)) {
+            $savedElements = array_filter($template, static fn (array $item): bool => ($item['kind'] ?? null) !== 'letterhead');
+            $elements = array_values(array_map(
+                static fn (array $item): array => [
+                    ...$item,
+                    'kind' => ($item['kind'] ?? 'text') === 'letterhead' ? 'text' : ($item['kind'] ?? 'text'),
+                    'role' => $item['role'] ?? (in_array(($item['kind'] ?? null), ['stamp', 'signature'], true) ? 'issuer' : ((float) ($item['y'] ?? 0) < 25 ? 'repeat' : 'meta')),
+                    'spacing' => $item['spacing'] ?? 0,
+                    'font_family' => $item['font_family'] ?? 'default',
+                    'page_format' => $item['page_format'] ?? 'number_of',
+                ],
+                $savedElements,
+            ));
+        }
         if (! collect($elements)->contains(static fn (array $item): bool => ($item['role'] ?? null) === 'body')) {
             $elements[] = self::BODY_TEMPLATE;
         }
