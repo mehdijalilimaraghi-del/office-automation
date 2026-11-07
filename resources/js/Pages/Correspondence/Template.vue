@@ -20,7 +20,7 @@ const dragging = ref<{id:string; lastX:number; lastY:number}|null>(null);
 const roleLabels:Record<Role,string> = { meta:'شماره و تاریخ', heading:'خطاب و موضوع', page_number:'شماره صفحه', issuer:'تنظیم‌کننده و امضا', repeat:'متن تکرارشونده', body:'متن اصلی نامه' };
 const fontOptions = [{value:'default',label:'فونت پیش‌فرض تنظیمات'},{value:'Vazirmatn',label:'وزیرمتن'},{value:'Tahoma',label:'Tahoma'},{value:'Arial',label:'Arial'},{value:'B Nazanin',label:'B Nazanin'},{value:'B Mitra',label:'B Mitra'},{value:'IRANSans',label:'IRANSans'},{value:'Times New Roman',label:'Times New Roman'}];
 const roleTokens:Record<Role,string[]> = {
- meta:['{{letter_number}}','{{registration_number}}','{{date}}','{{letter_type}}'],
+ meta:['{{letter_number}}','{{registration_number}}','{{date}}','{{attachment_pages}}','{{letter_type}}'],
  heading:['{{recipient_name}}','{{recipient_organization}}','{{recipient_unit}}','{{recipient_position}}','{{recipient_title}}','{{subject}}'],
  page_number:[],
  issuer:['{{creator_name}}','{{creator_unit_title}}'],
@@ -38,13 +38,13 @@ function addRole(role:string):void { if (role in roleLabels) addBox(role as Role
 function addBox(role:Role, kind:Kind='text'):void {
  const id='item_'+Math.random().toString(36).slice(2,9);
  const labels:Record<Role,string> = roleLabels;
- form.elements.push({id,kind,role,label:kind==='stamp'?'مهر سازمان':kind==='signature'?'امضای مدیر واحد':labels[role],content:role==='page_number'||role==='body'?'':role==='meta'?'شماره: {{letter_number}}\nتاریخ: {{date}}':role==='issuer'?'{{creator_unit_title}}\n{{creator_name}}':'',x:8,y:role==='repeat'?8:0,width:84,spacing:role==='body'?42:role==='issuer'?16:0,font_size:role==='meta'?10:12,font_family:'default',page_format:'number_of',bold:role==='heading',align:'right',visible:true});
+ form.elements.push({id,kind,role,label:kind==='stamp'?'مهر سازمان':kind==='signature'?'امضای مدیر واحد':labels[role],content:role==='page_number'||role==='body'?'':role==='meta'?'شماره: {{letter_number}}\nتاریخ: {{date}}\n{{attachment_pages}}':role==='issuer'?'{{creator_unit_title}}\n{{creator_name}}':'',x:8,y:role==='repeat'?8:0,width:84,spacing:role==='body'?42:role==='issuer'?16:0,font_size:role==='meta'?10:12,font_family:'default',page_format:'number_of',bold:role==='heading',align:'right',visible:true});
  selectedId.value=id;
 }
 function removeBox():void { if(!selected.value)return; form.elements=form.elements.filter(item=>item.id!==selectedId.value);selectedId.value=form.elements[0]?.id??''; }
 function insertToken(token:string):void { if(selected.value)selected.value.content+=token; }
 function pointerDown(event:PointerEvent,item:ElementBox):void {
- if(!page.value || item.role==='body' || item.role==='issuer')return;event.preventDefault();selectedId.value=item.id;
+ if(!page.value || item.role==='body')return;event.preventDefault();selectedId.value=item.id;
  dragging.value={id:item.id,lastX:event.clientX,lastY:event.clientY};
  (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
 }
@@ -99,7 +99,7 @@ function pageNumberPreview(item:ElementBox):string { const format=item.page_form
        <p v-if="!previewMode" class="mb-2 font-semibold">متن اصلی نامه — درج خودکار</p>
        <p>{{ previewMode ? previewBody : 'متن نامه از این قسمت آغاز می‌شود و در صورت نیاز به صفحات بعد ادامه می‌یابد.' }}</p>
       </div>
-      <div v-for="item in flowIssuer" :key="item.id" class="absolute whitespace-pre-wrap p-2 text-slate-900" :class="previewMode?'':'border border-dashed border-slate-300 bg-white/70'" :style="issuerPreviewStyle(item)"><img v-if="item.kind==='stamp'&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="max-h-16 max-w-24 object-contain"/><span v-else class="pointer-events-none">{{displayText(item)}}</span></div>
+      <div v-for="item in flowIssuer" :key="item.id" class="absolute whitespace-pre-wrap p-2 text-slate-900 touch-none" :class="previewMode?'':(selectedId===item.id?'border border-dashed border-teal-600 bg-teal-50/80 ring-1 ring-teal-500':'border border-dashed border-slate-300 bg-white/70')" :style="issuerPreviewStyle(item)" @pointerdown="!previewMode&&pointerDown($event,item)"><img v-if="item.kind==='stamp'&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="pointer-events-none max-h-16 max-w-24 object-contain"/><span v-else class="pointer-events-none">{{displayText(item)}}</span></div>
       <div v-for="item in form.elements.filter(entry=>entry.visible && entry.role!=='body' && entry.role!=='issuer')" :key="item.id" class="absolute whitespace-pre-wrap p-2 text-slate-900" :class="previewMode?'':(selectedId===item.id?'border border-dashed border-teal-600 bg-teal-50/80 ring-1 ring-teal-500':'border border-dashed border-slate-300 bg-white/70')" :style="elementStyle(item)" @pointerdown="!previewMode&&pointerDown($event,item)"><span class="pointer-events-none">{{item.role==='page_number'?pageNumberPreview(item):displayText(item)}}</span></div>
      </div>
     </section>
