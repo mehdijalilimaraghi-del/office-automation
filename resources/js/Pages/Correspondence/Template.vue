@@ -10,7 +10,7 @@ type Kind = 'text'|'stamp'|'signature';
 type PageFormat = 'number_of'|'slash'|'short'|'page';
 interface ElementBox { id:string; kind:Kind; role:Role; label:string; content:string; x:number; y:number; width:number; spacing:number; font_size:number; font_family:string; page_format:PageFormat; bold:boolean; align:'right'|'center'|'left'; visible:boolean; }
 interface Token { key:string; label:string; }
-const props = defineProps<{ elements:ElementBox[]; tokens:Token[]; letterheadDataUri:string|null; defaultFontFamily:string }>();
+const props = defineProps<{ elements:ElementBox[]; tokens:Token[]; letterheadDataUri:string|null; stampDataUri:string|null; defaultFontFamily:string; previewValues:Record<string,string>; previewBody:string }>();
 const form = useForm({ elements: props.elements.map(item => ({ ...item, role: item.role ?? 'repeat', spacing: item.spacing ?? 0, font_family: item.font_family ?? 'default', page_format: item.page_format ?? 'number_of' })) });
 const selectedId = ref(form.elements[0]?.id ?? '');
 const previewMode = ref(false);
@@ -68,7 +68,15 @@ function pointerMove(event:PointerEvent):void {
  item.y=roundCoordinate(Math.max(0,Math.min(100,item.y+dy)));
 }
 function pointerUp():void{dragging.value=null;}
-function displayText(item:ElementBox):string { if(item.kind==='stamp')return 'مهر سازمان';if(item.kind==='signature')return 'امضای مدیر واحد';return item.content||item.label; }
+function resolvePreviewText(content:string):string {
+ return content.replace(/\{\{([a-z_]+)\}\}/g,(_token,key:string)=>props.previewValues[key]??'');
+}
+function displayText(item:ElementBox):string {
+ if(item.kind==='stamp')return props.stampDataUri?'': 'مهر سازمان';
+ if(item.kind==='signature')return 'محل امضای مدیر واحد';
+ if(item.role==='heading'&&!item.content.trim())return [props.previewValues.recipient_title,props.previewValues.recipient_name,props.previewValues.recipient_organization,props.previewValues.recipient_unit,'موضوع: '+props.previewValues.subject].filter(Boolean).join('\n');
+ return resolvePreviewText(item.content||item.label);
+}
 function flowStyle(item:ElementBox):Record<string,string> { return { width:item.width+'%', marginTop:item.spacing+'mm', fontSize:item.font_size+'px', fontWeight:item.bold?'700':'400', textAlign:item.align }; }
 function resolvedFont(item:ElementBox):string { return item.font_family==='default'?props.defaultFontFamily:item.font_family; }
 function elementStyle(item:ElementBox):Record<string,string> { return { right:item.x+'%', top:item.y+'%', width:item.width+'%', fontSize:item.font_size+'px', fontFamily:resolvedFont(item), fontWeight:item.bold?'700':'400', textAlign:item.align }; }
@@ -84,15 +92,15 @@ function pageNumberPreview(item:ElementBox):string { const format=item.page_form
   <div class="bg-slate-50 py-6" dir="rtl">
    <div class="mx-auto grid max-w-[1500px] gap-5 px-4 xl:grid-cols-[minmax(0,1fr)_340px]">
     <section class="overflow-auto rounded-2xl border border-slate-200 bg-slate-200 p-4">
-     <div class="mx-auto mb-3 flex max-w-[210mm] flex-wrap items-center justify-between gap-2 text-xs text-slate-600"><span>پیش‌نمایش A4 · سربرگ به‌صورت پس‌زمینه</span><button type="button" class="rounded-lg bg-slate-900 px-3 py-2 font-semibold text-white" @click="previewMode = !previewMode">{{ previewMode ? 'بازگشت به ویرایش' : 'پیش‌نمایش قالب' }}</button><div class="flex flex-wrap gap-2"><button v-for="(label,role) in roleLabels" :key="role" type="button" :disabled="role==='body' && form.elements.some(item=>item.role==='body')" class="rounded-lg bg-white px-3 py-2 font-semibold disabled:cursor-not-allowed disabled:opacity-40" @click="addRole(role)">{{label}} +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','stamp')">مهر +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','signature')">امضا +</button></div></div>
+     <div class="mx-auto mb-3 flex max-w-[210mm] flex-wrap items-center justify-between gap-2 text-xs text-slate-600"><span>{{ previewMode ? 'پیش‌نمایش نمونه با اطلاعات تنظیمات سازمان' : 'پیش‌نمایش A4 · سربرگ به‌صورت پس‌زمینه' }}</span><button type="button" class="rounded-lg bg-slate-900 px-3 py-2 font-semibold text-white" @click="previewMode = !previewMode">{{ previewMode ? 'بازگشت به ویرایش' : 'پیش‌نمایش قالب' }}</button><div v-if="!previewMode" class="flex flex-wrap gap-2"><button v-for="(label,role) in roleLabels" :key="role" type="button" :disabled="role==='body' && form.elements.some(item=>item.role==='body')" class="rounded-lg bg-white px-3 py-2 font-semibold disabled:cursor-not-allowed disabled:opacity-40" @click="addRole(role)">{{label}} +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','stamp')">مهر +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','signature')">امضا +</button></div></div>
      <div ref="page" class="relative mx-auto aspect-[210/297] w-full max-w-[210mm] overflow-hidden bg-white shadow-xl" :style="letterheadDataUri?{backgroundImage:'url('+letterheadDataUri+')',backgroundSize:'100% 100%',backgroundPosition:'center'}:{}" @pointermove="pointerMove" @pointerup="pointerUp" @pointercancel="pointerUp">
       <div class="pointer-events-none absolute inset-x-[8%] top-[7%] bottom-[7%] border-y border-dashed border-slate-300"></div>
       <div class="absolute whitespace-pre-wrap border border-dashed border-slate-300 bg-white/70 p-3 text-right text-sm leading-8 text-slate-500" :style="bodyPreviewStyle()">
        <p class="mb-2 font-semibold">متن اصلی نامه — درج خودکار</p>
        <p>متن نامه از این قسمت آغاز می‌شود و در صورت نیاز به صفحات بعد ادامه می‌یابد.</p>
       </div>
-      <div v-for="item in flowIssuer" :key="item.id" class="absolute whitespace-pre-wrap border border-dashed border-slate-300 bg-white/70 p-2 text-slate-900" :class="selectedId===item.id?'border-teal-600 bg-teal-50/80 ring-1 ring-teal-500':''" :style="issuerPreviewStyle(item)"><span class="pointer-events-none">{{displayText(item)}}</span></div>
-      <div v-for="item in form.elements.filter(entry=>entry.visible && entry.role!=='body' && entry.role!=='issuer')" :key="item.id" class="absolute whitespace-pre-wrap border border-dashed p-2 text-slate-900" :class="selectedId===item.id?'border-teal-600 bg-teal-50/80 ring-1 ring-teal-500':'border-slate-300 bg-white/70'" :style="elementStyle(item)" @pointerdown="pointerDown($event,item)"><span class="pointer-events-none">{{item.role==='page_number'?pageNumberPreview(item):displayText(item)}}</span></div>
+      <div v-for="item in flowIssuer" :key="item.id" class="absolute whitespace-pre-wrap p-2 text-slate-900" :class="previewMode?'':'border border-dashed border-slate-300 bg-white/70'" :style="issuerPreviewStyle(item)"><img v-if="item.kind==='stamp'&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="max-h-16 max-w-24 object-contain"/><span v-else class="pointer-events-none">{{displayText(item)}}</span></div>
+      <div v-for="item in form.elements.filter(entry=>entry.visible && entry.role!=='body' && entry.role!=='issuer')" :key="item.id" class="absolute whitespace-pre-wrap p-2 text-slate-900" :class="previewMode?'':(selectedId===item.id?'border border-dashed border-teal-600 bg-teal-50/80 ring-1 ring-teal-500':'border border-dashed border-slate-300 bg-white/70')" :style="elementStyle(item)" @pointerdown="!previewMode&&pointerDown($event,item)"><span class="pointer-events-none">{{item.role==='page_number'?pageNumberPreview(item):displayText(item)}}</span></div>
      </div>
     </section>
     <aside v-if="!previewMode" class="space-y-4">
