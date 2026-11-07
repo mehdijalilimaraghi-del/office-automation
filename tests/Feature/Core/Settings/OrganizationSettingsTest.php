@@ -173,7 +173,12 @@ class OrganizationSettingsTest extends TestCase
             'font_size' => 13, 'font_family' => 'B Nazanin', 'page_format' => 'number_of',
             'bold' => false, 'align' => 'right', 'visible' => true,
         ];
-        $elements[1]['page_format'] = 'slash';
+        $elements[] = [
+            'id' => 'page_number', 'kind' => 'text', 'role' => 'page_number', 'spacing' => 0,
+            'label' => 'شماره صفحه', 'content' => '', 'x' => 8, 'y' => 94, 'width' => 30,
+            'font_size' => 9, 'font_family' => 'default', 'page_format' => 'slash',
+            'bold' => false, 'align' => 'center', 'visible' => true,
+        ];
 
         $this->actingAs($admin)
             ->put(route('correspondence.template.update'), ['elements' => $elements])
