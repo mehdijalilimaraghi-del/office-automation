@@ -48,8 +48,44 @@ class CorrespondenceTemplateController extends Controller
             $elements[] = self::BODY_TEMPLATE;
         }
 
+        $organization = $settings->get([
+            'organization.name' => null,
+            'organization.short_name' => null,
+            'organization.address' => null,
+            'organization.phone' => null,
+            'organization.email' => null,
+            'organization.website' => null,
+            'organization.stamp.path' => null,
+            'organization.stamp.active' => '0',
+        ]);
+        $previewValues = [
+            'organization_name' => $organization['organization.name'] ?: 'نام سازمان شما',
+            'short_name' => $organization['organization.short_name'] ?: 'نام اختصاری',
+            'address' => $organization['organization.address'] ?: 'نشانی سازمان',
+            'tel' => $organization['organization.phone'] ?: '۰۲۱-۱۲۳۴۵۶۷۸',
+            'email' => $organization['organization.email'] ?: 'info@example.com',
+            'website' => $organization['organization.website'] ?: 'www.example.com',
+            'letter_number' => '۱۴۰۵/۰۰۱۲',
+            'registration_number' => '۱۴۰۵/۰۰۰۸',
+            'date' => 'تاریخ نمونه',
+            'recipient_name' => 'نام مخاطب',
+            'recipient_organization' => 'سازمان مخاطب',
+            'recipient_unit' => 'واحد مخاطب',
+            'recipient_position' => 'سمت مخاطب',
+            'recipient_title' => 'با سلام و احترام',
+            'subject' => 'موضوع نمونه نامه',
+            'letter_type' => 'نامه صادره',
+            'creator_name' => 'نام تنظیم‌کننده',
+            'creator_unit_title' => 'واحد صادرکننده',
+        ];
+
         return Inertia::render('Correspondence/Template', [
             'elements' => $elements,
+            'previewValues' => $previewValues,
+            'previewBody' => 'با سلام و احترام؛\nپیرو موضوع مطرح‌شده، به استحضار می‌رساند متن این نامه به‌صورت نمونه برای بررسی چیدمان، قلم و فاصله‌گذاری درج شده است.\n\nخواهشمند است دستور فرمایید اقدامات لازم در این خصوص انجام شود.\n\nبا سپاس',
+            'stampDataUri' => $organization['organization.stamp.active'] === '1'
+                ? $this->imageDataUri($organization['organization.stamp.path'])
+                : null,
             'defaultFontFamily' => $settings->get(['correspondence.composition.font_family' => 'Vazirmatn'])['correspondence.composition.font_family'],
             'letterheadDataUri' => $this->imageDataUri($settings->get(['organization.letterhead.path' => null])['organization.letterhead.path']),
             'tokens' => [
