@@ -112,6 +112,7 @@ class CorrespondenceTemplateController extends Controller
                 ['key' => '{{letter_number}}', 'label' => 'شماره نامه'],
                 ['key' => '{{registration_number}}', 'label' => 'شماره ثبت'],
                 ['key' => '{{date}}', 'label' => 'تاریخ'],
+                ['key' => '{{attachment_pages}}', 'label' => 'تعداد صفحات پیوست'],
                 ['key' => '{{recipient_name}}', 'label' => 'نام مخاطب'],
                 ['key' => '{{recipient_organization}}', 'label' => 'سازمان مخاطب'],
                 ['key' => '{{recipient_unit}}', 'label' => 'واحد مخاطب'],
