@@ -216,7 +216,7 @@ function submit(): void {
                             <div>
                                 <label for="organization_letterhead" class="mb-2 block text-sm font-semibold text-slate-700">تصویر سربرگ سازمان</label>
                                 <input id="organization_letterhead" type="file" accept="image/png,image/jpeg,image/webp" class="block w-full text-sm text-slate-600 file:ml-3 file:rounded-lg file:border-0 file:bg-white file:px-4 file:py-2 file:font-semibold file:text-slate-700" @change="(event) => { form.letterhead = (event.target as HTMLInputElement).files?.[0] ?? null; form.remove_letterhead = false; }" />
-                                <p class="mt-1 text-xs leading-5 text-slate-500">تصویر سربرگ را جدا از مهر بارگذاری کنید. محل، اندازه و نحوه نمایش آن در طراح قالب نامه تنظیم می‌شود. فرمت PNG، JPG یا WEBP و حداکثر حجم ۵ مگابایت؛ تصویر افقی با عرض حداقل ۶۰۰ پیکسل پیشنهاد می‌شود.</p>
+                                <p class="mt-1 text-xs leading-5 text-slate-500">تصویر سربرگ را جدا از مهر بارگذاری کنید. محل، اندازه و نحوه نمایش آن در طراح قالب نامه تنظیم می‌شود. فرمت PNG، JPG یا WEBP، حداکثر حجم ۵ مگابایت؛ عرض مجاز: ۱۵۰ تا ۲۵۰۰ پیکسل و ارتفاع مجاز: ۶۰۰ تا ۵۰۰۰ پیکسل.</p>
                                 <InputError class="mt-1.5" :message="form.errors.letterhead" />
                             </div>
                             <div v-if="props.settings.letterhead_url" class="flex flex-wrap items-center gap-3">
