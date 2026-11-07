@@ -245,6 +245,15 @@ class OrganizationSettingsTest extends TestCase
         SystemSetting::query()->create(['key' => 'organization.address', 'value' => 'تهران، خیابان نمونه']);
         SystemSetting::query()->create(['key' => 'organization.phone', 'value' => '۰۲۱۱۲۳۴۵۶۷۸']);
 
+        $expectedBody = implode("\n", [
+            'با سلام و احترام؛',
+            'پیرو موضوع مطرح‌شده، به استحضار می‌رساند متن این نامه به‌صورت نمونه برای بررسی چیدمان، قلم و فاصله‌گذاری درج شده است.',
+            '',
+            'خواهشمند است دستور فرمایید اقدامات لازم در این خصوص انجام شود.',
+            '',
+            'با سپاس',
+        ]);
+
         $this->actingAs($admin)
             ->get(route('correspondence.template.edit'))
             ->assertOk()
@@ -255,14 +264,7 @@ class OrganizationSettingsTest extends TestCase
                 ->where('previewValues.tel', '۰۲۱۱۲۳۴۵۶۷۸')
                 ->where('previewValues.subject', 'موضوع نمونه نامه')
                 ->where('previewValues.creator_name', 'نام تنظیم‌کننده')
-                ->where('previewBody', implode("\n", [
-                    'با سلام و احترام؛',
-                    'پیرو موضوع مطرح‌شده، به استحضار می‌رساند متن این نامه به‌صورت نمونه برای بررسی چیدمان، قلم و فاصله‌گذاری درج شده است.',
-                    '',
-                    'خواهشمند است دستور فرمایید اقدامات لازم در این خصوص انجام شود.',
-                    '',
-                    'با سپاس',
-                ]))                    'با سلام و احترام؛',\n                    'پیرو موضوع مطرح‌شده، به استحضار می‌رساند متن این نامه به‌صورت نمونه برای بررسی چیدمان، قلم و فاصله‌گذاری درج شده است.',\n                    '',\n                    'خواهشمند است دستور فرمایید اقدامات لازم در این خصوص انجام شود.',\n                    '',\n                    'با سپاس',\n                ]))
+                ->where('previewBody', $expectedBody)
             );
     }
 
