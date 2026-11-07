@@ -81,7 +81,7 @@ function flowStyle(item:ElementBox):Record<string,string> { return { width:item.
 function resolvedFont(item:ElementBox):string { return item.font_family==='default'?props.defaultFontFamily:item.font_family; }
 function elementStyle(item:ElementBox):Record<string,string> { return { right:item.x+'%', top:item.y+'%', width:item.width+'%', fontSize:item.font_size+'px', fontFamily:resolvedFont(item), fontWeight:item.bold?'700':'400', textAlign:item.align }; }
 function bodyPreviewStyle():Record<string,string> { const item=flowBody.value; return { right:'8.57%', top:((14+(item?.spacing??42))/297*100)+'%', width:((item?.width??84)*0.8286)+'%', fontSize:(item?.font_size??12)+'px', fontFamily:item?resolvedFont(item):props.defaultFontFamily, fontWeight:item?.bold?'700':'400', textAlign:item?.align??'right' }; }
-function issuerPreviewStyle(item:ElementBox):Record<string,string> { return { right:item.x+'%', top:((14+(flowBody.value?.spacing??42)+26+item.spacing)/297*100)+'%', width:item.width+'%', fontSize:item.font_size+'px', fontFamily:resolvedFont(item), fontWeight:item.bold?'700':'400', textAlign:item.align }; }
+function issuerPreviewStyle(item:ElementBox):Record<string,string> { return elementStyle(item); }
 function pageNumberPreview(item:ElementBox):string { const format=item.page_format??'number_of'; if(format==='slash')return '۱/۵'; if(format==='short')return 'ص۱ از ۵'; if(format==='page')return 'صفحه ۱ از ۵'; return '۱ از ۵'; }
 </script>
 
