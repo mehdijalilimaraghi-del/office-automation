@@ -978,3 +978,11 @@ First implementation slice exists: a settings-managed A4 text-box editor with mo
 ### 2026-11-04 — Settings UI update
 
 Organization Settings now uses three tabs. Organization letterhead upload is separate from the stamp and can be positioned through the template editor. Validation is pending.
+
+
+## 2026-11-07 — اصلاح جابه‌جایی و محدوده مختصات طراح قالب نامه
+
+- در طراح قالب، هنگام Drag مختصات افقی و عمودی به دو رقم اعشار گرد می‌شوند و محاسبه با ابعاد واقعی صفحه A4 و کنترل محدوده صفحه انجام می‌شود.
+- مقدار مجاز عرض اکنون با فاصله افقی المان هماهنگ است؛ با تغییر دستی عرض یا موقعیت نیز مختصات به محدوده معتبر بازگردانده می‌شوند.
+- در زمان ذخیره، مختصات و عرض سمت سرور تا دو رقم اعشار نرمال می‌شوند و تلورانس بسیار کوچک ممیز شناور مانع رد شدن مقدار مرزی ۱۰۰٪ می‌شود؛ خروج واقعی از محدوده همچنان رد می‌شود.
+- تست PHP و build پس از pull توسط کاربر اجرا و تأیید می‌شوند. شاخه development؛ master و سرور بدون تغییر.
