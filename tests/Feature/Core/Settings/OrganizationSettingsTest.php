@@ -51,7 +51,7 @@ class OrganizationSettingsTest extends TestCase
             'website' => 'https://example.com',
             'address' => 'تهران',
             'stamp' => UploadedFile::fake()->image('stamp.png', 300, 300),
-            'letterhead' => UploadedFile::fake()->image('letterhead.png', 1200, 300),
+            'letterhead' => UploadedFile::fake()->image('letterhead.png', 2481, 3508),
             'stamp_active' => true,
             'numbering_format' => 'custom',
             'numbering_order_first' => 'sequence',
