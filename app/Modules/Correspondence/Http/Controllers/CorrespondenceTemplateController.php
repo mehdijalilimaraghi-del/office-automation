@@ -76,7 +76,7 @@ class CorrespondenceTemplateController extends Controller
         $elements = array_map(static fn (array $element): array => [...$element, 'kind' => ($element['kind'] ?? 'text') === 'letterhead' ? 'text' : ($element['kind'] ?? 'text'), 'role' => $element['role'] ?? 'repeat', 'spacing' => $element['spacing'] ?? 0, 'content' => $element['content'] ?? ''], $data['elements']);
 
         foreach ($elements as $element) {
-            abort_if(($element['role'] ?? 'repeat') === 'repeat' && ($element['x'] + $element['width'] > 100 || $element['y'] > 100), 422, 'ابعاد کادر از محدوده صفحه خارج است.');
+            abort_if($element['x'] + $element['width'] > 100 || $element['y'] > 100, 422, 'موقعیت یا عرض المان از محدوده صفحه خارج است.');
         }
 
         $settings->set(['correspondence.print.template' => json_encode($elements, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)]);
