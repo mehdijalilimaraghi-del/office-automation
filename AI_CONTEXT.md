@@ -965,3 +965,11 @@ No application code, migrations, dependencies, master/release branch or server w
 Selected output architecture: shared HTML/CSS A4 print view using browser-native Print / Save as PDF; no server PDF package. Department manager signature belongs to the Department, not User; a department manager change deactivates the previous signature until replaced. Organization stamp is an independent Core organization setting. Both images are validated, stored on the private local disk, delivered through authenticated endpoints and snapshotted at outgoing-letter finalization. Creator name, issuing unit title and organization contact details are also snapshotted. The department signature is copied into the immutable snapshot only for the `approved_for_registration` workflow state, so direct registration does not imply manager approval.
 
 Added `CorrespondencePrintController`, `Correspondence/Print.vue`, protected print route, department signature upload/configuration, organization stamp upload/configuration, independent output visibility settings and regression tests. The print page offers a per-operation letterhead toggle and CSS A4 page counters. Phase 3 remains partial: local tests/build and manual pagination checks are pending; logo/background assets, detailed coordinate controls and configurable page-number placement remain outstanding. No new PDF dependency; development branch only; no master/deploy.
+
+
+## 2026-11-07 — اصلاح جابه‌جایی و محدوده مختصات طراح قالب نامه
+
+- در طراح قالب، هنگام Drag مختصات افقی و عمودی به دو رقم اعشار گرد می‌شوند و محاسبه با ابعاد واقعی صفحه A4 و کنترل محدوده صفحه انجام می‌شود.
+- مقدار مجاز عرض اکنون با فاصله افقی المان هماهنگ است؛ با تغییر دستی عرض یا موقعیت نیز مختصات به محدوده معتبر بازگردانده می‌شوند.
+- در زمان ذخیره، مختصات و عرض سمت سرور تا دو رقم اعشار نرمال می‌شوند و تلورانس بسیار کوچک ممیز شناور مانع رد شدن مقدار مرزی ۱۰۰٪ می‌شود؛ خروج واقعی از محدوده همچنان رد می‌شود.
+- تست PHP و build پس از pull توسط کاربر اجرا و تأیید می‌شوند. شاخه development؛ master و سرور بدون تغییر.
