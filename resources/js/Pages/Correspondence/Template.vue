@@ -52,6 +52,7 @@ function pointerMove(event:PointerEvent):void {
 function pointerUp():void{dragging.value=null;}
 function displayText(item:ElementBox):string { if(item.kind==='stamp')return 'مهر سازمان';if(item.kind==='signature')return 'امضای مدیر واحد';return item.content||item.label; }
 function flowStyle(item:ElementBox):Record<string,string> { return { width:item.width+'%', marginTop:item.spacing+'mm', fontSize:item.font_size+'px', fontWeight:item.bold?'700':'400', textAlign:item.align }; }
+function elementStyle(item:ElementBox):Record<string,string> { return { right:item.x+'%', top:item.y+'%', width:item.width+'%', fontSize:item.font_size+'px', fontWeight:item.bold?'700':'400', textAlign:item.align }; }
 </script>
 
 <template>
@@ -63,17 +64,13 @@ function flowStyle(item:ElementBox):Record<string,string> { return { width:item.
     <section class="overflow-auto rounded-2xl border border-slate-200 bg-slate-200 p-4">
      <div class="mx-auto mb-3 flex max-w-[210mm] flex-wrap items-center justify-between gap-2 text-xs text-slate-600"><span>پیش‌نمایش A4 · سربرگ به‌صورت پس‌زمینه</span><div class="flex flex-wrap gap-2"><button v-for="(label,role) in roleLabels" :key="role" type="button" class="rounded-lg bg-white px-3 py-2 font-semibold" @click="addRole(role)">{{label}} +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','stamp')">مهر +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','signature')">امضا +</button></div></div>
      <div ref="page" class="relative mx-auto aspect-[210/297] w-full max-w-[210mm] overflow-hidden bg-white shadow-xl" :style="letterheadDataUri?{backgroundImage:'url('+letterheadDataUri+')',backgroundSize:'100% 100%',backgroundPosition:'center'}:{}" @pointermove="pointerMove" @pointerup="pointerUp" @pointercancel="pointerUp">
-      <div class="absolute inset-x-[8%] top-[7%] bottom-[7%] flex flex-col overflow-hidden text-slate-900">
-       <div v-for="item in flowMeta" :key="item.id" class="relative shrink-0 whitespace-pre-wrap border border-dashed p-2" :class="selectedId===item.id?'border-teal-600 bg-teal-50/70 ring-1 ring-teal-500':'border-slate-300 bg-white/60'" :style="flowStyle(item)" @click="selectedId=item.id">{{displayText(item)}}</div>
-       <div v-for="item in flowHeading" :key="item.id" class="relative shrink-0 whitespace-pre-wrap border border-dashed p-2" :class="selectedId===item.id?'border-teal-600 bg-teal-50/70 ring-1 ring-teal-500':'border-slate-300 bg-white/60'" :style="flowStyle(item)" @click="selectedId=item.id">{{displayText(item) || 'خطاب و موضوع نامه'}}</div>
-       <div class="my-3 min-h-0 flex-1 border-y border-dashed border-slate-300 bg-white/35 p-3 text-right text-sm leading-8 text-slate-400">
+      <div class="absolute inset-x-[8%] top-[7%] bottom-[7%] border-y border-dashed border-slate-200 bg-white/10">
+       <div class="absolute inset-x-0 top-[28%] bottom-[12%] border-y border-dashed border-slate-300 bg-white/35 p-3 text-right text-sm leading-8 text-slate-400">
         <p class="mb-2 font-semibold">متن اصلی نامه — درج خودکار</p>
-        <p>متن نامه با قالب‌بندی ثبت‌شده، از این نقطه در جریان عادی سند آغاز می‌شود و در صورت نیاز به صفحات بعد ادامه می‌یابد.</p>
+        <p>متن نامه در جریان عادی سند قرار می‌گیرد و در صورت نیاز به صفحات بعد ادامه می‌یابد.</p>
        </div>
-       <div v-for="item in flowIssuer" :key="item.id" class="relative shrink-0 whitespace-pre-wrap border border-dashed p-2" :class="selectedId===item.id?'border-teal-600 bg-teal-50/70 ring-1 ring-teal-500':'border-slate-300 bg-white/60'" :style="flowStyle(item)" @click="selectedId=item.id">{{displayText(item)}}</div>
-       <div v-if="pageNumberEnabled" class="mt-auto border-t border-dashed border-slate-300 pt-2 text-center text-xs text-slate-500">پیش‌نمایش شماره صفحه در پابرگ</div>
+       <div v-for="item in form.elements.filter(entry=>entry.visible)" :key="item.id" class="absolute whitespace-pre-wrap border border-dashed p-2 text-slate-900" :class="selectedId===item.id?'border-teal-600 bg-teal-50/80 ring-1 ring-teal-500':'border-slate-300 bg-white/70'" :style="elementStyle(item)" @pointerdown="pointerDown($event,item)"><span class="pointer-events-none">{{item.role==='page_number'?'صفحه ۱ از ۲':displayText(item)}}</span></div>
       </div>
-      <div v-for="item in repeating" :key="item.id" class="absolute whitespace-pre-wrap border border-dashed p-2 text-slate-900" :class="selectedId===item.id?'border-teal-600 bg-teal-50/70 ring-1 ring-teal-500':'border-slate-300 bg-white/60'" :style="{left:item.x+'%',top:item.y+'%',width:item.width+'%',fontSize:item.font_size+'px',fontWeight:item.bold?'700':'400',textAlign:item.align}" @pointerdown="pointerDown($event,item)"><span class="pointer-events-none">{{displayText(item)}}</span></div>
      </div>
     </section>
     <aside class="space-y-4">
@@ -83,14 +80,14 @@ function flowStyle(item:ElementBox):Record<string,string> { return { width:item.
       <label class="block text-xs font-semibold">نوع بخش<select v-model="selected.role" class="mt-1 w-full rounded-lg border-slate-300 text-sm"><option v-for="(label,role) in roleLabels" :key="role" :value="role">{{label}}</option></select></label>
       <label class="block text-xs font-semibold">عنوان<input v-model="selected.label" class="mt-1 w-full rounded-lg border-slate-300 text-sm"/></label>
       <label v-if="selected.kind==='text' && selected.role!=='page_number'" class="block text-xs font-semibold">متن / الگو<textarea v-model="selected.content" rows="3" class="mt-1 w-full rounded-lg border-slate-300 text-sm"/></label>
-      <p v-if="selected.role==='page_number'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">شماره صفحه به‌صورت خودکار در پابرگ تمام صفحات چاپ می‌شود.</p>
-      <p v-if="selected.role==='issuer'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">این بخش بعد از متن نامه قرار می‌گیرد؛ مهر و امضا نیز در همین ناحیه جانمایی می‌شوند.</p>
+      <p v-if="selected.role==='page_number'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">شماره صفحه در تمام صفحات با شماره واقعی همان صفحه و تعداد کل صفحات چاپ می‌شود.</p>
+      <p v-if="selected.role==='issuer'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">این بخش فقط یک‌بار و بعد از متن نامه قرار می‌گیرد؛ مهر و امضا نیز در همین ناحیه هستند.</p>
       <p v-if="selected.role==='repeat'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">این بخش در مختصات تعیین‌شده در تمام صفحات تکرار می‌شود.</p>
       <div class="grid grid-cols-2 gap-2">
        <label class="text-xs">عرض (%)<input v-model.number="selected.width" type="number" min="5" max="100" class="mt-1 w-full rounded-lg border-slate-300"/></label>
        <label v-if="selected.role!=='repeat'" class="text-xs">فاصله از بخش قبل (mm)<input v-model.number="selected.spacing" type="number" min="0" max="80" class="mt-1 w-full rounded-lg border-slate-300"/></label>
-       <label v-if="selected.role==='repeat'" class="text-xs">فاصله از بالای صفحه (%)<input v-model.number="selected.y" type="number" min="0" max="100" class="mt-1 w-full rounded-lg border-slate-300"/></label>
-       <label v-if="selected.role==='repeat'" class="text-xs">فاصله از راست (%)<input v-model.number="selected.x" type="number" min="0" max="100" class="mt-1 w-full rounded-lg border-slate-300"/></label>
+       <label class="text-xs">فاصله از بالای صفحه (%)<input v-model.number="selected.y" type="number" min="0" max="100" class="mt-1 w-full rounded-lg border-slate-300"/></label>
+       <label class="text-xs">فاصله از راست (%)<input v-model.number="selected.x" type="number" min="0" max="100" class="mt-1 w-full rounded-lg border-slate-300"/></label>
        <label class="text-xs">اندازه قلم<input v-model.number="selected.font_size" type="number" min="7" max="48" class="mt-1 w-full rounded-lg border-slate-300"/></label>
        <label class="text-xs">تراز<select v-model="selected.align" class="mt-1 w-full rounded-lg border-slate-300"><option value="right">راست</option><option value="center">وسط</option><option value="left">چپ</option></select></label>
       </div>
@@ -98,7 +95,7 @@ function flowStyle(item:ElementBox):Record<string,string> { return { width:item.
       <label class="flex items-center gap-2 text-sm"><input v-model="selected.visible" type="checkbox"/> نمایش در خروجی</label>
       <div v-if="selected.kind==='text' && availableTokens.length" class="border-t pt-3"><p class="mb-2 text-xs font-bold">متغیرهای مرتبط با این بخش</p><div class="flex flex-wrap gap-1.5"><button v-for="token in availableTokens" :key="token.key" type="button" class="rounded-md bg-slate-100 px-2 py-1 text-xs hover:bg-teal-50" :title="token.key" @click="insertToken(token.key)">{{token.label}}</button></div></div>
      </section>
-     <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-6 text-amber-900">متن اصلی نامه المان نیست و خودکار درج می‌شود. برای بخش‌های ابتدا و انتها فقط عرض و فاصله تنظیم می‌شود؛ مختصات صفحه فقط برای بخش‌های تکرارشونده کاربرد دارد.</div>
+     <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-6 text-amber-900">متن اصلی نامه المان نیست و خودکار درج می‌شود. اجزای یک‌باره در صفحه اول یا انتهای متن قرار می‌گیرند؛ متن تکرارشونده و شماره صفحه در همه صفحات نمایش داده می‌شوند.</div>
      <PrimaryButton class="w-full justify-center" :disabled="form.processing" @click="form.put(route('correspondence.template.update'))">ذخیره قالب نامه</PrimaryButton><InputError :message="form.errors.elements"/>
     </aside>
    </div>
