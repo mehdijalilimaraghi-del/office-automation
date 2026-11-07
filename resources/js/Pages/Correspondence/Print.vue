@@ -23,7 +23,8 @@ function resolveTemplate(content:string):string {
  const values:Record<string,string>={organization_name:props.organization.name??'',short_name:props.organization.short_name??'',address:props.organization.address??'',tel:props.organization.phone??'',email:props.organization.email??'',website:props.organization.website??'',letter_number:props.letter.letter_number??'',registration_number:props.letter.registration_number??'',date:letterDate.value,recipient_name:props.letter.recipient_name??props.letter.recipient_addressing?.name??'',recipient_organization:props.letter.recipient_addressing?.organization_name??props.letter.external_organization??'',recipient_unit:props.letter.recipient_addressing?.department_name??props.letter.external_department??'',recipient_position:props.letter.recipient_addressing?.position??'',recipient_title:[props.letter.recipient_addressing?.personal_salutation,props.letter.recipient_addressing?.professional_title].filter(Boolean).join(' '),subject:props.letter.subject,letter_type:typeLabel.value,creator_name:props.creatorName??'',creator_unit_title:props.creatorUnitTitle??'',page_number:'',pages:''};
  return content.replace(/\{\{([a-z_]+)\}\}/g,(token,key:string)=>Object.prototype.hasOwnProperty.call(values,key)?values[key]:token);
 }
-function boxStyle(item:TemplateElement):Record<string,string>{return {width:item.width+'%',marginTop:item.spacing+'mm',fontSize:item.font_size+'pt',fontWeight:item.bold?'700':'400',textAlign:item.align};}
+function boxStyle(item:TemplateElement):Record<string,string>{return {width:item.width+'%',marginTop:item.spacing+'mm',marginRight:item.x+'%',fontSize:item.font_size+'pt',fontWeight:item.bold?'700':'400',textAlign:item.align};}
+function positionedStyle(item:TemplateElement):Record<string,string>{return {right:item.x+'%',top:item.y+'%',width:item.width+'%',fontSize:item.font_size+'pt',fontWeight:item.bold?'700':'400',textAlign:item.align};}
 function printLetter():void{window.print();}
 </script>
 
@@ -37,10 +38,10 @@ function printLetter():void{window.print();}
   <article class="paper mx-auto bg-white px-[18mm] py-[14mm]" :style="{fontFamily:printOptions.font_family||'Vazirmatn'}" dir="rtl">
    <div v-if="withLetterhead && letterheadDataUri" class="letterhead-background" :style="{backgroundImage:'url('+letterheadDataUri+')'}" aria-hidden="true"></div>
    <div v-for="item in repeating" :key="item.id" class="repeat-item" :style="{right:item.x+'%',top:item.y+'%',width:item.width+'%',fontSize:item.font_size+'pt',fontWeight:item.bold?'700':'400',textAlign:item.align}">{{resolveTemplate(item.content)}}</div>
-   <div v-if="pageNumberEnabled" class="page-number">صفحه <span class="page-counter"></span> از <span class="pages-counter"></span></div>
+   <div v-for="item in elements.filter(entry=>entry.role==='page_number')" :key="item.id" class="page-number" :style="positionedStyle(item)">صفحه <span class="page-counter"></span> از <span class="pages-counter"></span></div>
    <div class="document-content">
-    <div v-for="item in flowMeta" :key="item.id" class="flow-item" :style="boxStyle(item)">{{item.kind==='stamp'&&stampDataUri?'':item.kind==='signature'&&signatureDataUri?'':resolveTemplate(item.content)}}<img v-if="item.kind==='stamp'&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="inline-asset"/><img v-else-if="item.kind==='signature'&&signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="inline-asset"/></div>
-    <div v-for="item in flowHeading" :key="item.id" class="flow-item" :style="boxStyle(item)">
+    <div v-for="item in flowMeta" :key="item.id" class="flow-item first-page-positioned" :style="positionedStyle(item)">{{item.kind==='stamp'&&stampDataUri?'':item.kind==='signature'&&signatureDataUri?'':resolveTemplate(item.content)}}<img v-if="item.kind==='stamp'&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="inline-asset"/><img v-else-if="item.kind==='signature'&&signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="inline-asset"/></div>
+    <div v-for="item in flowHeading" :key="item.id" class="flow-item first-page-positioned" :style="positionedStyle(item)">
      <template v-if="item.content">{{resolveTemplate(item.content)}}</template>
      <template v-else><div v-if="recipientLines.length" class="mb-4 space-y-1 text-sm font-semibold leading-7"><p v-for="(line,index) in recipientLines" :key="index">{{line}}</p></div><h2 class="text-center text-base font-bold leading-8">{{letter.subject}}</h2></template>
     </div>
@@ -66,7 +67,7 @@ function printLetter():void{window.print();}
 .document-content{position:relative;z-index:2;direction:rtl;text-align:right;unicode-bidi:plaintext;}
 .letterhead-background{position:absolute;inset:0;z-index:0;background-position:center top;background-repeat:no-repeat;background-size:100% 100%;pointer-events:none;}
 .repeat-item{position:absolute;z-index:3;white-space:pre-wrap;line-height:1.5;direction:rtl;}
-.flow-item{position:relative;z-index:2;white-space:pre-wrap;line-height:1.8;max-width:100%;}
+.flow-item{position:relative;z-index:2;white-space:pre-wrap;line-height:1.8;max-width:100%;}.first-page-positioned{position:absolute;top:0;right:0;}
 .letter-body{position:relative;z-index:2;direction:rtl;unicode-bidi:plaintext;white-space:pre-wrap;overflow-wrap:anywhere;}
 .letter-body *{max-width:100%;}
 .letter-body p{margin:0 0 .75rem;}
@@ -84,7 +85,7 @@ function printLetter():void{window.print();}
  .paper{width:auto;min-height:0;margin:0;padding:0 18mm;box-shadow:none;overflow:visible;}
  .letterhead-background{position:fixed;}
  .repeat-item{position:fixed;}
- .page-number{display:block;position:fixed;z-index:4;bottom:-13mm;left:0;right:0;text-align:center;font:9pt Tahoma,sans-serif;color:#475569;}
+ .page-number{display:block;position:fixed;z-index:4;left:auto;right:0;top:auto;bottom:-13mm;text-align:center;font:9pt Tahoma,sans-serif;color:#475569;}
  .page-counter:before{content:counter(page);}
  .pages-counter:before{content:counter(pages);}
 }
