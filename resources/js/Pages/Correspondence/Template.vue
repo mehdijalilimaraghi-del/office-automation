@@ -59,7 +59,8 @@ function displayText(item:ElementBox):string { if(item.kind==='stamp')return 'م
 function flowStyle(item:ElementBox):Record<string,string> { return { width:item.width+'%', marginTop:item.spacing+'mm', fontSize:item.font_size+'px', fontWeight:item.bold?'700':'400', textAlign:item.align }; }
 function resolvedFont(item:ElementBox):string { return item.font_family==='default'?props.defaultFontFamily:item.font_family; }
 function elementStyle(item:ElementBox):Record<string,string> { return { right:item.x+'%', top:item.y+'%', width:item.width+'%', fontSize:item.font_size+'px', fontFamily:resolvedFont(item), fontWeight:item.bold?'700':'400', textAlign:item.align }; }
-function bodyPreviewStyle():Record<string,string> { const item=flowBody.value; return { right:'8%', top:((14+(item?.spacing??42))/297*100)+'%', width:(item?.width??84)+'%', fontSize:(item?.font_size??12)+'px', fontFamily:item?resolvedFont(item):props.defaultFontFamily, fontWeight:item?.bold?'700':'400', textAlign:item?.align??'right' }; }
+function bodyPreviewStyle():Record<string,string> { const item=flowBody.value; return { right:'8.57%', top:((14+(item?.spacing??42))/297*100)+'%', width:((item?.width??84)*0.8286)+'%', fontSize:(item?.font_size??12)+'px', fontFamily:item?resolvedFont(item):props.defaultFontFamily, fontWeight:item?.bold?'700':'400', textAlign:item?.align??'right' }; }
+function issuerPreviewStyle(item:ElementBox):Record<string,string> { return { right:item.x+'%', top:((14+(flowBody.value?.spacing??42)+26+item.spacing)/297*100)+'%', width:item.width+'%', fontSize:item.font_size+'px', fontFamily:resolvedFont(item), fontWeight:item.bold?'700':'400', textAlign:item.align }; }
 function pageNumberPreview(item:ElementBox):string { const format=item.page_format??'number_of'; if(format==='slash')return '۱/۵'; if(format==='short')return 'ص۱ از ۵'; if(format==='page')return 'صفحه ۱ از ۵'; return '۱ از ۵'; }
 </script>
 
@@ -77,7 +78,8 @@ function pageNumberPreview(item:ElementBox):string { const format=item.page_form
        <p class="mb-2 font-semibold">متن اصلی نامه — درج خودکار</p>
        <p>متن نامه از این قسمت آغاز می‌شود و در صورت نیاز به صفحات بعد ادامه می‌یابد.</p>
       </div>
-      <div v-for="item in form.elements.filter(entry=>entry.visible && entry.role!=='body')" :key="item.id" class="absolute whitespace-pre-wrap border border-dashed p-2 text-slate-900" :class="selectedId===item.id?'border-teal-600 bg-teal-50/80 ring-1 ring-teal-500':'border-slate-300 bg-white/70'" :style="elementStyle(item)" @pointerdown="pointerDown($event,item)"><span class="pointer-events-none">{{item.role==='page_number'?pageNumberPreview(item):displayText(item)}}</span></div>
+      <div v-for="item in flowIssuer" :key="item.id" class="absolute whitespace-pre-wrap border border-dashed border-slate-300 bg-white/70 p-2 text-slate-900" :class="selectedId===item.id?'border-teal-600 bg-teal-50/80 ring-1 ring-teal-500':''" :style="issuerPreviewStyle(item)"><span class="pointer-events-none">{{displayText(item)}}</span></div>
+      <div v-for="item in form.elements.filter(entry=>entry.visible && entry.role!=='body' && entry.role!=='issuer')" :key="item.id" class="absolute whitespace-pre-wrap border border-dashed p-2 text-slate-900" :class="selectedId===item.id?'border-teal-600 bg-teal-50/80 ring-1 ring-teal-500':'border-slate-300 bg-white/70'" :style="elementStyle(item)" @pointerdown="pointerDown($event,item)"><span class="pointer-events-none">{{item.role==='page_number'?pageNumberPreview(item):displayText(item)}}</span></div>
      </div>
     </section>
     <aside v-if="!previewMode" class="space-y-4">
