@@ -258,3 +258,11 @@ The owner selected browser-native Print / Save as PDF from a shared HTML/CSS A4 
 ## 2026-11-04 — Letterhead and settings navigation
 
 Organization Settings now has three tabs. A separate organization letterhead image can be uploaded and previewed; it is snapshotted per registered letter and placed through a dedicated image element in the A4 template editor. The template persistence regression compares decoded JSON after normalizing key order. Upload/preview and snapshot coverage has been added. Local validation remains pending.
+
+
+## 2026-11-07 — Manual attachment page count and draggable stamp/signature
+
+- Added nullable `correspondences.attachment_pages` with a reversible migration. Correspondence create/edit captures a manually entered page count (1–9999); the value is validated, persisted, returned to the print view, and covered by a correspondence HTTP regression assertion. Blank means no attachment pages are declared.
+- Added the `{{attachment_pages}}` metadata variable and included it on the default metadata line immediately below the date. Printed text is «پیوست: دارد (N صفحه)» or «پیوست: ندارد» when the field is empty.
+- Fixed the designer interaction path for issuer assets: stamp/signature elements now receive pointer selection and dragging, use their actual canvas coordinates, and their image pixels no longer intercept pointer input. Print output applies the stored x/y position to these elements.
+- Owner validation remains pending: migration, focused correspondence HTTP test, frontend production build, and manual A4/drag acceptance. Development only; master/server untouched.
