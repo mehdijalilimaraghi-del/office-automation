@@ -1037,7 +1037,7 @@ class CorrespondenceController extends Controller
             'departments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'parent_id', 'icon']),
             'correspondence' => [
                 'id' => $correspondence->id, 'type' => $correspondence->type, 'classification' => $correspondence->classification,
-                'subject' => $correspondence->subject, 'letter_number' => $correspondence->letter_number, 'body' => $correspondence->body,
+                'subject' => $correspondence->subject, 'attachment_pages' => $correspondence->attachment_pages, 'letter_number' => $correspondence->letter_number, 'body' => $correspondence->body,
                 'sender_name' => $correspondence->sender_name, 'recipient_name' => $correspondence->recipient_name,
                 'received_at' => $correspondence->received_at?->toDateString(), 'sent_at' => $correspondence->sent_at?->toDateString(),
                 'created_department_id' => $correspondence->created_department_id, 'recipient_department_id' => $correspondence->recipient_department_id,
