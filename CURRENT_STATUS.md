@@ -1995,3 +1995,11 @@ Implementation has started for the agreed cross-department project model:
 ## 2026-11-04 — Settings interface update
 
 Organization Settings now uses three tabs. A separate organization letterhead image is uploaded in settings, served through a protected preview route, snapshotted per registered letter, and selectable as a positioned image element in the A4 template. Template JSON regression comparison now normalizes object key order. Letterhead upload/preview and snapshot test coverage has been added. Local validation is pending.
+
+
+## 2026-11-07 — اصلاح محدوده ابعاد تصویر سربرگ سازمان
+
+- محدودیت اعتبارسنجی تصویر سربرگ در سمت سرور اصلاح شد: عرض مجاز ۱۵۰ تا ۲۵۰۰ پیکسل و ارتفاع مجاز ۶۰۰ تا ۵۰۰۰ پیکسل است؛ محدودیت حجم ۵ مگابایت و فرمت‌های PNG/JPG/WEBP بدون تغییر باقی ماند.
+- متن راهنمای زیر فیلد آپلود با همین بازه‌های دقیق هماهنگ شد و عبارت «تصویر افقی» که با محدوده ابعاد مورد انتظار تناقض داشت حذف شد.
+- تست تنظیمات سازمان اکنون تصویر ۲۴۸۱ × ۳۵۰۸ را برای سربرگ بارگذاری می‌کند تا پذیرش ابعاد اعلام‌شده به‌صورت رگرسیون پوشش داده شود.
+- کد، UI و تست در شاخه development ثبت شده‌اند. اجرای واقعی تست PHP و build در محیط توسعه کاربر هنوز تأیید نشده است؛ master و سرور تغییری نکرده‌اند.
