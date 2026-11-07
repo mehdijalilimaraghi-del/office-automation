@@ -85,6 +85,7 @@ class CorrespondencePrintController extends Controller
                 'id' => $correspondence->id,
                 'type' => $correspondence->type,
                 'subject' => $correspondence->subject,
+                'attachment_pages' => $correspondence->attachment_pages,
                 'body' => $correspondence->body,
                 'letter_number' => $correspondence->letter_number,
                 'registration_number' => $correspondence->registration_number,
