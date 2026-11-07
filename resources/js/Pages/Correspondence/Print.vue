@@ -93,7 +93,7 @@ function printLetter():void{window.print();}
  .document-content{padding:14mm 18mm;}
  .letterhead-background{position:fixed;}
  .repeat-item{position:fixed;}
- .page-number{position:fixed;z-index:4;left:auto;right:0;top:auto;bottom:-13mm;text-align:center;font:9pt Tahoma,sans-serif;color:#475569;}
+  .page-number{position:fixed;z-index:4;left:auto;right:auto;bottom:auto;text-align:center;font:9pt Tahoma,sans-serif;color:#475569;}
  .page-counter:before{content:counter(page);}
  .pages-counter:before{content:counter(pages);}
 }
