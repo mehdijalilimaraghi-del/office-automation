@@ -197,6 +197,44 @@ class OrganizationSettingsTest extends TestCase
         $this->assertSame($normalize($elements), $normalize($actual));
     }
 
+    public function test_template_coordinates_are_rounded_before_page_bounds_validation(): void
+    {
+        $admin = User::factory()->create();
+        $this->grantPermissions($admin, ['settings.manage']);
+
+        $elements = [[
+            'id' => 'edge_item',
+            'kind' => 'text',
+            'role' => 'repeat',
+            'spacing' => 0,
+            'font_family' => 'default',
+            'page_format' => 'number_of',
+            'label' => 'المان لبه صفحه',
+            'content' => 'نمونه',
+            'x' => 70.000000001,
+            'y' => 99.999999999,
+            'width' => 30,
+            'font_size' => 10,
+            'bold' => false,
+            'align' => 'right',
+            'visible' => true,
+        ]];
+
+        $this->actingAs($admin)
+            ->put(route('correspondence.template.update'), ['elements' => $elements])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $stored = SystemSetting::query()
+            ->where('key', 'correspondence.print.template')
+            ->value('value');
+        $saved = json_decode($stored, true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame(70.0, $saved[0]['x']);
+        $this->assertSame(100.0, $saved[0]['y']);
+        $this->assertSame(30.0, $saved[0]['width']);
+    }
+
     public function test_user_without_settings_permission_cannot_manage_correspondence_template(): void
     {
         $user = User::factory()->create();
