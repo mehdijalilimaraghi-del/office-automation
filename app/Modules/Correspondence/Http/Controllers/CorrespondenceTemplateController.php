@@ -97,12 +97,23 @@ class CorrespondenceTemplateController extends Controller
             'elements.*.visible' => ['required', 'boolean'],
         ]);
 
-        $elements = array_map(static fn (array $element): array => [...$element, 'kind' => ($element['kind'] ?? 'text') === 'letterhead' ? 'text' : ($element['kind'] ?? 'text'), 'role' => $element['role'] ?? 'repeat', 'spacing' => $element['spacing'] ?? 0, 'font_family' => $element['font_family'] ?? 'default', 'page_format' => $element['page_format'] ?? 'number_of', 'content' => $element['content'] ?? ''], $data['elements']);
+        $elements = array_map(static fn (array $element): array => [
+            ...$element,
+            'kind' => ($element['kind'] ?? 'text') === 'letterhead' ? 'text' : ($element['kind'] ?? 'text'),
+            'role' => $element['role'] ?? 'repeat',
+            'spacing' => $element['spacing'] ?? 0,
+            'font_family' => $element['font_family'] ?? 'default',
+            'page_format' => $element['page_format'] ?? 'number_of',
+            'content' => $element['content'] ?? '',
+            'x' => round((float) $element['x'], 2),
+            'y' => round((float) $element['y'], 2),
+            'width' => round((float) $element['width'], 2),
+        ], $data['elements']);
 
         abort_if(collect($elements)->where('role', 'body')->count() > 1, 422, 'فقط یک بخش برای متن اصلی نامه مجاز است.');
 
         foreach ($elements as $element) {
-            abort_if($element['x'] + $element['width'] > 100 || $element['y'] > 100, 422, 'موقعیت یا عرض المان از محدوده صفحه خارج است.');
+            abort_if($element['x'] + $element['width'] > 100.000001 || $element['y'] > 100, 422, 'موقعیت یا عرض المان از محدوده صفحه خارج است.');
         }
 
         $settings->set(['correspondence.print.template' => json_encode($elements, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)]);
