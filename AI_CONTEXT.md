@@ -1,3 +1,8 @@
+## 2026-11-07 — Fix Vue template preview build syntax
+
+- Fixed the missing closing quote in the preview-mode grid class binding in Correspondence/Template.vue. The malformed attribute caused Vue's template compiler to report an unterminated JavaScript expression at line 93.
+- No runtime behavior or data contract changed; this is a template syntax correction. Owner-run production build is pending.
+
 ## 2026-11-07 — Organization-backed template designer preview
 
 - Corrected the designer's preview mode so the A4 page expands to a single-column layout rather than leaving the editor's sidebar column reserved.
