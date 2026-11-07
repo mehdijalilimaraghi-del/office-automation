@@ -43,7 +43,7 @@ function printLetter():void{window.print();}
    <div class="template-coordinate-plane">
     <div v-if="withLetterhead && letterheadDataUri" class="letterhead-background" :style="{backgroundImage:'url('+letterheadDataUri+')'}" aria-hidden="true"></div>
     <div v-for="item in repeating" :key="item.id" class="repeat-item" :style="positionedStyle(item)">{{resolveTemplate(item.content)}}</div>
-    <div v-for="item in elements.filter(entry=>entry.role==='page_number')" :key="item.id" class="page-number" :style="positionedStyle(item)"><span v-if="item.page_format==='short'">ص</span><span v-else-if="item.page_format==='page'">صفحه </span><span class="page-counter"></span><template v-if="item.page_format==='slash'">/</template><template v-else> از </template><span class="pages-counter"></span></div>
+    <div v-for="item in elements.filter(entry=>entry.role==='page_number')" :key="item.id" class="page-number" :class="{'page-number-slash':item.page_format==='slash'}" :style="positionedStyle(item)"><span v-if="item.page_format==='short'">ص</span><span v-else-if="item.page_format==='page'">صفحه </span><span class="page-counter"></span><template v-if="item.page_format==='slash'">/</template><template v-else> از </template><span class="pages-counter"></span></div>
     <div v-for="item in flowMeta" :key="item.id" class="flow-item first-page-positioned" :style="positionedStyle(item)">{{item.kind==='stamp'&&stampDataUri?'':item.kind==='signature'&&signatureDataUri?'':resolveTemplate(item.content)}}<img v-if="item.kind==='stamp'&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="inline-asset"/><img v-else-if="item.kind==='signature'&&signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="inline-asset"/></div>
     <div v-for="item in flowHeading" :key="item.id" class="flow-item first-page-positioned" :style="positionedStyle(item)">
      <template v-if="item.content">{{resolveTemplate(item.content)}}</template>
@@ -85,6 +85,7 @@ function printLetter():void{window.print();}
 .issuer-item{break-inside:avoid;page-break-inside:avoid;}
 .signature-area{position:relative;z-index:2;display:flex;align-items:flex-end;justify-content:space-between;gap:8mm;margin-top:16mm;break-inside:avoid;page-break-inside:avoid;}
 .page-number{position:absolute;z-index:4;white-space:nowrap;text-align:center;font:9pt Tahoma,sans-serif;color:#475569;}
+.page-number-slash{direction:ltr;unicode-bidi:isolate;}
 @media print{
  html,body{background:#fff!important;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
  main{min-height:0!important;padding:0!important;background:#fff!important;}
