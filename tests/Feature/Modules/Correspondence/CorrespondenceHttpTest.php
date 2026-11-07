@@ -818,6 +818,7 @@ class CorrespondenceHttpTest extends TestCase
             'type' => 'internal',
             'recipient_department_id' => $recipientDepartmentId,
             'subject' => '  نامه داخلی  ',
+            'attachment_pages' => 2,
             'composition_mode' => 'editor',
             'body' => '<p>متن <strong>مهم</strong><img src=x onerror=alert(1)></p>',
             'sender_name' => 'فرستنده',
@@ -826,6 +827,7 @@ class CorrespondenceHttpTest extends TestCase
         $this->assertDatabaseHas('correspondences', [
             'type' => 'internal',
             'subject' => 'نامه داخلی',
+            'attachment_pages' => 2,
             'body' => '<p>متن <strong>مهم</strong></p>',
             'status' => 'draft',
             'registration_number' => null,
