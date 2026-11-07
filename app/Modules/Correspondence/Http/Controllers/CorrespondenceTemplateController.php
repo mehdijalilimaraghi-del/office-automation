@@ -20,7 +20,7 @@ class CorrespondenceTemplateController extends Controller
         ['id' => 'organization', 'kind' => 'text', 'role' => 'repeat', 'spacing' => 0, 'label' => 'نام سازمان', 'content' => '{{organization_name}}', 'x' => 8, 'y' => 5, 'width' => 58, 'height' => 7, 'font_size' => 20, 'bold' => true, 'align' => 'right', 'visible' => true],
         ['id' => 'contact', 'kind' => 'text', 'role' => 'repeat', 'spacing' => 0, 'label' => 'اطلاعات تماس', 'content' => 'آدرس: {{address}} | تلفن تماس: {{tel}} | ایمیل: {{email}}', 'x' => 8, 'y' => 14, 'width' => 84, 'height' => 8, 'font_size' => 9, 'bold' => false, 'align' => 'right', 'visible' => true],
         ['id' => 'letter_heading', 'kind' => 'text', 'role' => 'heading', 'spacing' => 8, 'label' => 'خطاب و موضوع', 'content' => '', 'x' => 8, 'y' => 0, 'width' => 84, 'font_size' => 12, 'bold' => true, 'align' => 'right', 'visible' => true],
-        ['id' => 'letter_meta', 'kind' => 'text', 'role' => 'meta', 'spacing' => 0, 'label' => 'شماره و تاریخ', 'content' => "شماره: {{letter_number}}\nتاریخ: {{date}}", 'x' => 72, 'y' => 5, 'width' => 20, 'height' => 15, 'font_size' => 10, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'left', 'visible' => true],
+        ['id' => 'letter_meta', 'kind' => 'text', 'role' => 'meta', 'spacing' => 0, 'label' => 'شماره و تاریخ', 'content' => "شماره: {{letter_number}}\nتاریخ: {{date}}\n{{attachment_pages}}", 'x' => 72, 'y' => 5, 'width' => 20, 'height' => 15, 'font_size' => 10, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'left', 'visible' => true],
         self::BODY_TEMPLATE,
     ];
 
@@ -68,6 +68,7 @@ class CorrespondenceTemplateController extends Controller
             'letter_number' => '۱۴۰۵/۰۰۱۲',
             'registration_number' => '۱۴۰۵/۰۰۰۸',
             'date' => 'تاریخ نمونه',
+            'attachment_pages' => 'پیوست: دارد (۲ صفحه)',
             'recipient_name' => 'نام مخاطب',
             'recipient_organization' => 'سازمان مخاطب',
             'recipient_unit' => 'واحد مخاطب',
