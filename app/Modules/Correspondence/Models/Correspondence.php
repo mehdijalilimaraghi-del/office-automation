@@ -40,6 +40,7 @@ class Correspondence extends Model
         'classification',
         'subject',
         'body',
+        'attachment_pages',
         'status',
         'registration_number',
         'letter_number',
