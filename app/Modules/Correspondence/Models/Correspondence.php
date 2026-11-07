@@ -75,6 +75,7 @@ class Correspondence extends Model
     {
         return [
             'registered_at' => 'datetime',
+            'attachment_pages' => 'integer',
             'received_at' => 'datetime',
             'sent_at' => 'datetime',
             'external_registered_at' => 'date',
