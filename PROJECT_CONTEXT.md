@@ -1599,3 +1599,11 @@ Implementation added on `development`:
 - Focused tests added for unit signature upload, organization stamp upload and immutable finalization snapshot.
 
 Validation has not yet been run locally. Phase 3 remains partial pending PHP tests, migration execution, frontend type-check/build, manual multi-page pagination/print checks, plus remaining detailed layout coordinate, logo/background and page-number placement configuration. Development only; master, release and server unchanged.
+
+
+## 2026-11-07 — اصلاح جابه‌جایی و محدوده مختصات طراح قالب نامه
+
+- در طراح قالب، هنگام Drag مختصات افقی و عمودی به دو رقم اعشار گرد می‌شوند و محاسبه با ابعاد واقعی صفحه A4 و کنترل محدوده صفحه انجام می‌شود.
+- مقدار مجاز عرض اکنون با فاصله افقی المان هماهنگ است؛ با تغییر دستی عرض یا موقعیت نیز مختصات به محدوده معتبر بازگردانده می‌شوند.
+- در زمان ذخیره، مختصات و عرض سمت سرور تا دو رقم اعشار نرمال می‌شوند و تلورانس بسیار کوچک ممیز شناور مانع رد شدن مقدار مرزی ۱۰۰٪ می‌شود؛ خروج واقعی از محدوده همچنان رد می‌شود.
+- تست PHP و build پس از pull توسط کاربر اجرا و تأیید می‌شوند. شاخه development؛ master و سرور بدون تغییر.
