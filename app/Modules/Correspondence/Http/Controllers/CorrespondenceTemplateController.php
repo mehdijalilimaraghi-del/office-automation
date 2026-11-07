@@ -82,7 +82,14 @@ class CorrespondenceTemplateController extends Controller
         return Inertia::render('Correspondence/Template', [
             'elements' => $elements,
             'previewValues' => $previewValues,
-            'previewBody' => implode("\n", [\n                'با سلام و احترام؛',\n                'پیرو موضوع مطرح‌شده، به استحضار می‌رساند متن این نامه به‌صورت نمونه برای بررسی چیدمان، قلم و فاصله‌گذاری درج شده است.',\n                '',\n                'خواهشمند است دستور فرمایید اقدامات لازم در این خصوص انجام شود.',\n                '',\n                'با سپاس',\n            ]),
+            'previewBody' => implode("\n", [
+                'با سلام و احترام؛',
+                'پیرو موضوع مطرح‌شده، به استحضار می‌رساند متن این نامه به‌صورت نمونه برای بررسی چیدمان، قلم و فاصله‌گذاری درج شده است.',
+                '',
+                'خواهشمند است دستور فرمایید اقدامات لازم در این خصوص انجام شود.',
+                '',
+                'با سپاس',
+            ]),
             'stampDataUri' => $organization['organization.stamp.active'] === '1'
                 ? $this->imageDataUri($organization['organization.stamp.path'])
                 : null,
