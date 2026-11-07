@@ -235,6 +235,30 @@ class OrganizationSettingsTest extends TestCase
         $this->assertEquals(30, $saved[0]['width']);
     }
 
+
+    public function test_template_designer_preview_uses_organization_settings_and_sample_letter_values(): void
+    {
+        $admin = User::factory()->create();
+        $this->grantPermissions($admin, ['settings.manage']);
+
+        SystemSetting::query()->create(['key' => 'organization.name', 'value' => 'سازمان آزمایشی']);
+        SystemSetting::query()->create(['key' => 'organization.address', 'value' => 'تهران، خیابان نمونه']);
+        SystemSetting::query()->create(['key' => 'organization.phone', 'value' => '۰۲۱۱۲۳۴۵۶۷۸']);
+
+        $this->actingAs($admin)
+            ->get(route('correspondence.template.edit'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Correspondence/Template')
+                ->where('previewValues.organization_name', 'سازمان آزمایشی')
+                ->where('previewValues.address', 'تهران، خیابان نمونه')
+                ->where('previewValues.tel', '۰۲۱۱۲۳۴۵۶۷۸')
+                ->where('previewValues.subject', 'موضوع نمونه نامه')
+                ->where('previewValues.creator_name', 'نام تنظیم‌کننده')
+                ->where('previewBody', fn ($body) => str_contains($body, 'متن این نامه به‌صورت نمونه'))
+            );
+    }
+
     public function test_user_without_settings_permission_cannot_manage_correspondence_template(): void
     {
         $user = User::factory()->create();
