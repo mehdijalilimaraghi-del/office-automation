@@ -14,12 +14,14 @@ use Inertia\Response;
 
 class CorrespondenceTemplateController extends Controller
 {
+    private const BODY_TEMPLATE = ['id' => 'letter_body', 'kind' => 'text', 'role' => 'body', 'spacing' => 42, 'label' => 'متن اصلی نامه', 'content' => '', 'x' => 8, 'y' => 0, 'width' => 84, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true];
+
     private const DEFAULT_TEMPLATE = [
         ['id' => 'organization', 'kind' => 'text', 'role' => 'repeat', 'spacing' => 0, 'label' => 'نام سازمان', 'content' => '{{organization_name}}', 'x' => 8, 'y' => 5, 'width' => 58, 'height' => 7, 'font_size' => 20, 'bold' => true, 'align' => 'right', 'visible' => true],
         ['id' => 'contact', 'kind' => 'text', 'role' => 'repeat', 'spacing' => 0, 'label' => 'اطلاعات تماس', 'content' => 'آدرس: {{address}} | تلفن تماس: {{tel}} | ایمیل: {{email}}', 'x' => 8, 'y' => 14, 'width' => 84, 'height' => 8, 'font_size' => 9, 'bold' => false, 'align' => 'right', 'visible' => true],
         ['id' => 'letter_heading', 'kind' => 'text', 'role' => 'heading', 'spacing' => 8, 'label' => 'خطاب و موضوع', 'content' => '', 'x' => 8, 'y' => 0, 'width' => 84, 'font_size' => 12, 'bold' => true, 'align' => 'right', 'visible' => true],
-        ['id' => 'letter_meta', 'kind' => 'text', 'role' => 'meta', 'spacing' => 0, 'label' => 'شماره و تاریخ', 'content' => "شماره: {{letter_number}}
-تاریخ: {{date}}", 'x' => 72, 'y' => 5, 'width' => 20, 'height' => 15, 'font_size' => 10, 'bold' => false, 'align' => 'left', 'visible' => true],
+        ['id' => 'letter_meta', 'kind' => 'text', 'role' => 'meta', 'spacing' => 0, 'label' => 'شماره و تاریخ', 'content' => "شماره: {{letter_number}}\nتاریخ: {{date}}", 'x' => 72, 'y' => 5, 'width' => 20, 'height' => 15, 'font_size' => 10, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'left', 'visible' => true],
+        self::BODY_TEMPLATE,
     ];
 
     public function edit(SystemSettingsService $settings): Response
@@ -27,8 +29,14 @@ class CorrespondenceTemplateController extends Controller
         $raw = $settings->get(['correspondence.print.template' => null])['correspondence.print.template'];
         $template = is_string($raw) ? json_decode($raw, true) : null;
 
+        $elements = is_array($template) ? array_values(array_map(static fn (array $item): array => [...$item, 'kind' => ($item['kind'] ?? 'text') === 'letterhead' ? 'text' : ($item['kind'] ?? 'text'), 'role' => $item['role'] ?? (in_array(($item['kind'] ?? null), ['stamp', 'signature'], true) ? 'issuer' : ((float) ($item['y'] ?? 0) < 25 ? 'repeat' : 'meta')), 'spacing' => $item['spacing'] ?? 0, 'font_family' => $item['font_family'] ?? 'default', 'page_format' => $item['page_format'] ?? 'number_of'], array_filter($template, static fn (array $item): bool => ($item['kind'] ?? null) !== 'letterhead')) : self::DEFAULT_TEMPLATE;
+        if (! collect($elements)->contains(static fn (array $item): bool => ($item['role'] ?? null) === 'body')) {
+            $elements[] = self::BODY_TEMPLATE;
+        }
+
         return Inertia::render('Correspondence/Template', [
-            'elements' => is_array($template) ? array_values(array_map(static fn (array $item): array => [...$item, 'kind' => ($item['kind'] ?? 'text') === 'letterhead' ? 'text' : ($item['kind'] ?? 'text'), 'role' => $item['role'] ?? (in_array(($item['kind'] ?? null), ['stamp', 'signature'], true) ? 'issuer' : ((float) ($item['y'] ?? 0) < 25 ? 'repeat' : 'meta')), 'spacing' => $item['spacing'] ?? 0], array_filter($template, static fn (array $item): bool => ($item['kind'] ?? null) !== 'letterhead'))) : self::DEFAULT_TEMPLATE,
+            'elements' => $elements,
+            'defaultFontFamily' => $settings->get(['correspondence.composition.font_family' => 'Vazirmatn'])['correspondence.composition.font_family'],
             'letterheadDataUri' => $this->imageDataUri($settings->get(['organization.letterhead.path' => null])['organization.letterhead.path']),
             'tokens' => [
                 ['key' => '{{organization_name}}', 'label' => 'نام سازمان'],
@@ -58,8 +66,10 @@ class CorrespondenceTemplateController extends Controller
         $data = $request->validate([
             'elements' => ['present', 'array', 'max:30'],
             'elements.*.kind' => ['required', 'in:text,stamp,signature,letterhead'],
-            'elements.*.role' => ['nullable', 'in:meta,heading,page_number,issuer,repeat'],
+            'elements.*.role' => ['nullable', 'in:meta,heading,page_number,issuer,repeat,body'],
             'elements.*.spacing' => ['nullable', 'numeric', 'min:0', 'max:80'],
+            'elements.*.font_family' => ['nullable', 'in:default,Vazirmatn,Tahoma,Arial,B Nazanin,B Mitra,IRANSans,Times New Roman'],
+            'elements.*.page_format' => ['nullable', 'in:number_of,slash,short,page'],
             'elements.*.id' => ['required', 'string', 'max:40', 'distinct'],
             'elements.*.label' => ['required', 'string', 'max:80'],
             'elements.*.content' => ['nullable', 'string', 'max:2000'],
@@ -73,7 +83,7 @@ class CorrespondenceTemplateController extends Controller
             'elements.*.visible' => ['required', 'boolean'],
         ]);
 
-        $elements = array_map(static fn (array $element): array => [...$element, 'kind' => ($element['kind'] ?? 'text') === 'letterhead' ? 'text' : ($element['kind'] ?? 'text'), 'role' => $element['role'] ?? 'repeat', 'spacing' => $element['spacing'] ?? 0, 'content' => $element['content'] ?? ''], $data['elements']);
+        $elements = array_map(static fn (array $element): array => [...$element, 'kind' => ($element['kind'] ?? 'text') === 'letterhead' ? 'text' : ($element['kind'] ?? 'text'), 'role' => $element['role'] ?? 'repeat', 'spacing' => $element['spacing'] ?? 0, 'font_family' => $element['font_family'] ?? 'default', 'page_format' => $element['page_format'] ?? 'number_of', 'content' => $element['content'] ?? ''], $data['elements']);
 
         foreach ($elements as $element) {
             abort_if($element['x'] + $element['width'] > 100 || $element['y'] > 100, 422, 'موقعیت یا عرض المان از محدوده صفحه خارج است.');
