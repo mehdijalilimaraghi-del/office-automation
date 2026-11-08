@@ -1,3 +1,11 @@
+## 2026-11-08 — Print issuer assets and spacing follow-up
+
+- Root cause: the print page rendered every issuer item (stamp, signature and issuer text) inside the absolutely positioned template-coordinate plane. Consequently, issuer `spacing` was never applied, and multiple issuer elements sharing similar template coordinates visually overlapped, making creator/unit identity appear attached to stamp/signature assets.
+- Moved issuer elements into the normal document flow immediately after the actual letter body and now apply the existing flow box styling (configured width, right offset, typography and spacing-before). Each issuer element is laid out sequentially; the actual body height determines where the issuer section begins, including when the body spans pages.
+- Stamp/signature images remain image-only elements. Creator/unit identity is rendered only by an explicitly configured text issuer element; the legacy creator footer remains suppressed when explicit issuer assets/text are present, avoiding an additional automatic identity block.
+- Extended the protected print-page feature fixture to include stamp, signature and a separate creator-identity text element with a nonzero spacing value, asserting the saved spacing/content contract.
+- Owner-run focused PHP test, production build and browser print acceptance remain pending. Development only; master, release branch and server unchanged.
+
 ## 2026-11-08 — Fix PHPUnit parse error in print regression test
 
 - Corrected the over-escaped fully-qualified `SystemSettingsService` class name in `CorrespondenceHttpTest.php` (line 136), which caused PHPUnit to stop during test-file loading with `unexpected token \\`.
