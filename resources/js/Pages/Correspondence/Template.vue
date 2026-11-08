@@ -23,7 +23,7 @@ const roleTokens:Record<Role,string[]> = {
  meta:['{{letter_number}}','{{registration_number}}','{{date}}','{{attachment_pages}}','{{letter_type}}'],
  heading:['{{recipient_name}}','{{recipient_organization}}','{{recipient_unit}}','{{recipient_position}}','{{recipient_title}}','{{subject}}'],
  page_number:[],
- issuer:['{{creator_name}}','{{creator_unit_title}}'],
+ issuer:['{{creator_name}}','{{creator_unit_title}}','{{manager_name}}','{{manager_position}}'],
  repeat:['{{organization_name}}','{{short_name}}','{{address}}','{{tel}}','{{email}}','{{website}}'],
  body:[]
 };
@@ -114,11 +114,11 @@ function pageNumberPreview(item:ElementBox):string { const format=item.page_form
       <label v-if="selected.kind==='text' && !['page_number','body'].includes(selected.role)" class="block text-xs font-semibold">متن / الگو<textarea v-model="selected.content" rows="3" class="mt-1 w-full rounded-lg border-slate-300 text-sm"/></label>
       <p v-if="selected.role==='page_number'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">قالب نمایش شماره صفحه را انتخاب کنید؛ شماره و تعداد صفحات در خروجی چاپ به‌صورت خودکار محاسبه می‌شوند.</p>
       <p v-if="selected.role==='body'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">این المان محتوای نامه را کنترل نمی‌کند؛ فاصله شروع متن، عرض و قلم بدنه را تنظیم می‌کند. متن واقعی به‌صورت خودکار از نامه خوانده می‌شود.</p>
-      <p v-if="selected.role==='issuer'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">این بخش فقط یک‌بار و بعد از متن نامه قرار می‌گیرد؛ فاصله آن از انتهای متن با گزینه فاصله از بخش قبل تنظیم می‌شود.</p>
+      <p v-if="selected.role==='issuer'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">این بخش پس از متن نامه قرار می‌گیرد. فاصله منفی باعث هم‌پوشانی با بخش قبلی می‌شود؛ برای قرار گرفتن مهر یا امضا روی نام تنظیم‌کننده از مقدار منفی استفاده کنید.</p>
       <p v-if="selected.role==='repeat'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">این بخش در مختصات تعیین‌شده در تمام صفحات تکرار می‌شود.</p>
       <div class="grid grid-cols-2 gap-2">
        <label class="text-xs">عرض (%)<input v-model.number="selected.width" type="number" min="5" :max="100-selected.x" @change="normalizeSelectedBounds" class="mt-1 w-full rounded-lg border-slate-300"/></label>
-       <label v-if="selected.role==='body' || selected.role==='issuer'" class="text-xs">فاصله از بخش قبل (mm)<input v-model.number="selected.spacing" type="number" min="0" max="80" class="mt-1 w-full rounded-lg border-slate-300"/></label>
+       <label v-if="selected.role==='body' || selected.role==='issuer'" class="text-xs">فاصله از بخش قبل (mm)<input v-model.number="selected.spacing" type="number" min="-80" max="80" class="mt-1 w-full rounded-lg border-slate-300"/></label>
        <label v-if="['meta','heading','repeat','page_number'].includes(selected.role)" class="text-xs">فاصله از بالای صفحه (%)<input v-model.number="selected.y" type="number" min="0" max="100" class="mt-1 w-full rounded-lg border-slate-300"/></label>
        <label v-if="selected.role!=='body'" class="text-xs">فاصله از راست (%)<input v-model.number="selected.x" type="number" min="0" :max="100-selected.width" @change="normalizeSelectedBounds" class="mt-1 w-full rounded-lg border-slate-300"/></label>
        <label v-if="selected.kind==='text' && selected.role!=='page_number'" class="text-xs">اندازه قلم<input v-model.number="selected.font_size" type="number" min="7" max="48" class="mt-1 w-full rounded-lg border-slate-300"/></label>
@@ -130,7 +130,7 @@ function pageNumberPreview(item:ElementBox):string { const format=item.page_form
       <label class="flex items-center gap-2 text-sm"><input v-model="selected.visible" type="checkbox"/> نمایش در خروجی</label>
       <div v-if="selected.kind==='text' && availableTokens.length" class="border-t pt-3"><p class="mb-2 text-xs font-bold">متغیرهای مرتبط با این بخش</p><div class="flex flex-wrap gap-1.5"><button v-for="token in availableTokens" :key="token.key" type="button" class="rounded-md bg-slate-100 px-2 py-1 text-xs hover:bg-teal-50" :title="token.key" @click="insertToken(token.key)">{{token.label}}</button></div></div>
      </section>
-     <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-6 text-amber-900">محتوای نامه به‌صورت خودکار از متن ثبت‌شده نامه درج می‌شود؛ المان «متن اصلی نامه» فقط محل شروع، عرض و ظاهر بدنه را کنترل می‌کند. مهر و امضا پس از متن قرار می‌گیرند و اجزای تکرارشونده و شماره صفحه در همه صفحات چاپ نمایش داده می‌شوند.</div>
+     <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-6 text-amber-900">محتوای نامه به‌صورت خودکار از متن ثبت‌شده نامه درج می‌شود؛ المان «متن اصلی نامه» فقط محل شروع، عرض و ظاهر بدنه را کنترل می‌کند. فاصله منفی امکان هم‌پوشانی مهر و امضا با نام تنظیم‌کننده را فراهم می‌کند. اجزای تکرارشونده و شماره صفحه در همه صفحات چاپ نمایش داده می‌شوند.</div>
      <PrimaryButton class="w-full justify-center" :disabled="form.processing" @click="form.put(route('correspondence.template.update'))">ذخیره قالب نامه</PrimaryButton><InputError :message="form.errors.elements"/>
     </aside>
    </div>
