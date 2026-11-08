@@ -23,7 +23,7 @@ const roleTokens:Record<Role,string[]> = {
  meta:['{{letter_number}}','{{registration_number}}','{{date}}','{{attachment_pages}}','{{letter_type}}'],
  heading:['{{recipient_name}}','{{recipient_organization}}','{{recipient_unit}}','{{recipient_position}}','{{recipient_title}}','{{subject}}'],
  page_number:[],
- issuer:['{{creator_name}}','{{creator_unit_title}}','{{manager_name}}','{{manager_position}}'],
+ issuer:['{{creator_name}}','{{creator_unit_title}}','{{creator_department_name}}','{{manager_name}}','{{manager_position}}','{{manager_title}}'],
  repeat:['{{organization_name}}','{{short_name}}','{{address}}','{{tel}}','{{email}}','{{website}}'],
  body:[]
 };
