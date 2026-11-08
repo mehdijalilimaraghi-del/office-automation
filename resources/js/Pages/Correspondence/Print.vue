@@ -89,6 +89,7 @@ function printLetter():void{window.print();}
 .letter-body td,.letter-body th{border:1px solid #cbd5e1;padding:4px 7px;}
  .inline-asset{display:block;width:100%;height:auto;max-width:none;max-height:none;object-fit:contain;margin-top:2mm;}
 .issuer-item{break-inside:avoid;page-break-inside:avoid;}
+.signature-area .inline-asset{width:auto;max-width:42mm;max-height:28mm;}
 .signature-area{position:relative;z-index:2;display:flex;align-items:flex-end;justify-content:space-between;gap:8mm;margin-top:16mm;break-inside:avoid;page-break-inside:avoid;}
 .page-number{position:absolute;z-index:4;white-space:nowrap;text-align:center;font:9pt Tahoma,sans-serif;color:#475569;}
 .page-number-slash{direction:ltr;unicode-bidi:isolate;}
