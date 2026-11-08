@@ -77,7 +77,7 @@ function printLetter():void{window.print();}
 .letterhead-background{position:absolute;inset:0;z-index:0;background-position:center top;background-repeat:no-repeat;background-size:100% 100%;pointer-events:none;}
 .repeat-item{position:absolute;z-index:3;white-space:pre-wrap;line-height:1.5;direction:rtl;}
  .flow-item{position:relative;z-index:2;white-space:pre-wrap;line-height:1.8;max-width:100%;}.first-page-positioned{position:absolute;top:0;right:0;}
-.letter-body{position:relative;z-index:2;box-sizing:border-box;min-width:0;direction:rtl;text-align:inherit;unicode-bidi:plaintext;white-space:pre-wrap;overflow-wrap:break-word;line-height:1.9;}
+.letter-body{position:relative;z-index:2;box-sizing:border-box;min-width:0;direction:rtl;text-align:inherit;unicode-bidi:plaintext;white-space:normal;overflow-wrap:break-word;line-height:1.9;}
 .letter-body *{box-sizing:border-box;max-width:100%;}
 .letter-body p,.letter-body div,.letter-body li{overflow-wrap:break-word;}
 .letter-body ul,.letter-body ol{padding-inline-start:1.5rem;}
