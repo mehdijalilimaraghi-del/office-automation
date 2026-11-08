@@ -1040,3 +1040,11 @@ Added `CorrespondencePrintController`, `Correspondence/Print.vue`, protected pri
 - Root cause of the failing `signatureDataUri` assertion: `createdDepartment` was eager-loaded with a restricted projection (`id,name`), so the controller's later fallback could not read `manager_signature_path` or `manager_signature_active` from the already-loaded model.
 - Expanded the relation projection to include both signature fields. Snapshot-first behavior and fallback conditions are unchanged. The existing protected A4 print-preview feature test covers both stamp and signature data URIs.
 - Local focused test/build verification is pending. Development only; master and production server untouched.
+
+
+## 2026-11-08 — Print asset sizing, overlap spacing, and manager position tokens
+
+- Stamp/signature image rendering now follows the configured element width and uses automatic height with the source aspect ratio preserved; fixed max-width/max-height caps were removed from the print asset style and the stamp designer preview.
+- Issuer-flow spacing accepts -80..80 mm, allowing deliberate overlap between the stamp/signature and issuer identity. The same margin-based spacing is used in designer preview and print output.
+- Added `{{manager_name}}` and `{{manager_position}}` template tokens. The print controller resolves the manager's active position assignment scoped to the issuing department, preferring the primary assignment. Missing position data resolves to an empty value rather than an inferred title.
+- Extended the protected print-preview regression test to assert manager name and department-specific position. Local PHP tests and frontend build remain pending; development only, master/server untouched.
