@@ -84,6 +84,8 @@ class CorrespondenceTemplateController extends Controller
             'letter_type' => 'نامه صادره',
             'creator_name' => 'نام تنظیم‌کننده',
             'creator_unit_title' => 'واحد صادرکننده',
+            'manager_name' => 'نام مدیر واحد',
+            'manager_position' => 'مدیر واحد',
         ];
 
         return Inertia::render('Correspondence/Template', [
@@ -122,6 +124,8 @@ class CorrespondenceTemplateController extends Controller
                 ['key' => '{{letter_type}}', 'label' => 'نوع نامه'],
                 ['key' => '{{creator_name}}', 'label' => 'نام تنظیم‌کننده'],
                 ['key' => '{{creator_unit_title}}', 'label' => 'عنوان واحد صادرکننده'],
+                ['key' => '{{manager_name}}', 'label' => 'نام مدیر واحد'],
+                ['key' => '{{manager_position}}', 'label' => 'سمت سازمانی مدیر'],
             ],
         ]);
     }
