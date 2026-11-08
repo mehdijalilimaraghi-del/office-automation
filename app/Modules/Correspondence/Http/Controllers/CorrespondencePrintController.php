@@ -27,7 +27,7 @@ class CorrespondencePrintController extends Controller
 
         $correspondence->loadMissing([
             'creator:id,name',
-            'createdDepartment:id,name,manager_signature_path,manager_signature_active',
+            'createdDepartment:id,name,manager_id,manager_signature_path,manager_signature_active',
             'externalOrganization:id,name',
             'externalDepartment:id,name',
         ]);
