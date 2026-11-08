@@ -1,3 +1,11 @@
+## 2026-11-08 — Correspondence print preview layout and page-number correction
+
+- Rich-text HTML in the print body now uses normal document whitespace rather than preserving indentation/newlines from the HTML source as visible whitespace. Preformatted blocks retain pre-wrap behavior; line-height and table-cell wrapping are normalized to reduce broken layout.
+- The on-screen page-number preview now shows a complete one-page sample («۱ از ۱», or the selected slash/prefix format). Print media replaces sample values with actual paged-media counters.
+- The legacy creator-identity footer is suppressed when stamp/signature image elements are explicitly present, preventing creator details from appearing as an unintended companion to those image elements. Creator identity can still be placed with its own text issuer element.
+- Added HTTP regression coverage for the saved page-number, stamp and signature element definitions passed to the protected print page.
+- GitHub commits: a983fce, 9994ff6, a3e6e6e. Owner-run focused PHP test, frontend build and Chromium one-/multi-page print acceptance remain pending. Development only; master, release branch and server unchanged.
+
 ## 2026-11-07 — Fix Vue template preview build syntax
 
 - Fixed the missing closing quote in the preview-mode grid class binding in Correspondence/Template.vue. The malformed attribute caused Vue's template compiler to report an unterminated JavaScript expression at line 93.
