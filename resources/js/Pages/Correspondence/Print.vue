@@ -17,6 +17,7 @@ const repeating=computed(()=>elements.value.filter(item=>item.role==='repeat'));
 const pageNumberEnabled=computed(()=>elements.value.some(item=>item.role==='page_number'));
 const hasCreatorElement=computed(()=>flowIssuer.value.some(item=>item.kind==='text'&&(item.content.includes('{{creator_name}}')||item.content.includes('{{creator_unit_title}}'))));
 const hasSignatureElement=computed(()=>flowIssuer.value.some(item=>item.kind==='signature'));
+const hasIssuerAssetElement=computed(()=>hasStampElement.value||hasSignatureElement.value);
 const hasStampElement=computed(()=>flowIssuer.value.some(item=>item.kind==='stamp'));
 const typeLabel=computed(()=>({incoming:'نامه وارده',outgoing:'نامه صادره',internal:'نامه داخلی'})[props.letter.type]);
 const recipientLines=computed(()=>{const a=props.letter.recipient_addressing;if(!a)return [props.letter.recipient_name].filter(Boolean) as string[];return [[a.organizational_title_prefix,a.position].filter(Boolean).join(' '),[a.personal_salutation,a.professional_title,a.name].filter(Boolean).join(' '),[a.organization_name,a.department_name].filter(Boolean).join(' - ')].filter(Boolean) as string[];});
@@ -58,7 +59,7 @@ function printLetter():void{window.print();}
    <div class="document-content">
     <section class="letter-body" :style="bodyStyle()" v-html="letter.body||''"></section>
 
-    <footer v-if="(!hasCreatorElement&&printOptions.show_creator_identity)||(!hasSignatureElement&&printOptions.show_department_signature&&signatureDataUri)||(!hasStampElement&&printOptions.show_stamp&&stampDataUri)" class="signature-area">
+    <footer v-if="(!hasCreatorElement&&!hasIssuerAssetElement&&printOptions.show_creator_identity)||(!hasSignatureElement&&printOptions.show_department_signature&&signatureDataUri)||(!hasStampElement&&printOptions.show_stamp&&stampDataUri)" class="signature-area">
      <div v-if="!hasCreatorElement&&printOptions.show_creator_identity" class="text-center text-sm leading-7"><p v-if="creatorUnitTitle" class="font-semibold">{{creatorUnitTitle}}</p><p v-if="creatorName" class="font-bold">{{creatorName}}</p></div>
      <img v-if="!hasSignatureElement&&printOptions.show_department_signature&&signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="inline-asset"/>
      <img v-if="!hasStampElement&&printOptions.show_stamp&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="inline-asset"/>
@@ -76,8 +77,11 @@ function printLetter():void{window.print();}
 .letterhead-background{position:absolute;inset:0;z-index:0;background-position:center top;background-repeat:no-repeat;background-size:100% 100%;pointer-events:none;}
 .repeat-item{position:absolute;z-index:3;white-space:pre-wrap;line-height:1.5;direction:rtl;}
  .flow-item{position:relative;z-index:2;white-space:pre-wrap;line-height:1.8;max-width:100%;}.first-page-positioned{position:absolute;top:0;right:0;}
-.letter-body{position:relative;z-index:2;direction:rtl;unicode-bidi:plaintext;white-space:pre-wrap;overflow-wrap:anywhere;}
-.letter-body *{max-width:100%;}
+.letter-body{position:relative;z-index:2;box-sizing:border-box;min-width:0;direction:rtl;text-align:inherit;unicode-bidi:plaintext;white-space:pre-wrap;overflow-wrap:break-word;line-height:1.9;}
+.letter-body *{box-sizing:border-box;max-width:100%;}
+.letter-body p,.letter-body div,.letter-body li{overflow-wrap:break-word;}
+.letter-body ul,.letter-body ol{padding-inline-start:1.5rem;}
+.letter-body pre{white-space:pre-wrap;overflow-wrap:anywhere;}
 .letter-body p{margin:0 0 .75rem;}
 .letter-body img{max-width:100%;height:auto;}
 .letter-body table{max-width:100%;border-collapse:collapse;}
@@ -87,6 +91,7 @@ function printLetter():void{window.print();}
 .signature-area{position:relative;z-index:2;display:flex;align-items:flex-end;justify-content:space-between;gap:8mm;margin-top:16mm;break-inside:avoid;page-break-inside:avoid;}
 .page-number{position:absolute;z-index:4;white-space:nowrap;text-align:center;font:9pt Tahoma,sans-serif;color:#475569;}
 .page-number-slash{direction:ltr;unicode-bidi:isolate;}
+.page-counter:before,.pages-counter:before{content:'۱';}
 @media print{
  html,body{background:#fff!important;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
  main{min-height:0!important;padding:0!important;background:#fff!important;}
