@@ -128,6 +128,8 @@ class CorrespondencePrintController extends Controller
             'creatorUnitTitle' => $snapshot['creator_unit_title'] ?? ($correspondence->createdDepartment?->name ? 'مدیریت '.$correspondence->createdDepartment->name : null),
             'managerName' => $department?->manager?->name,
             'managerPosition' => $managerPosition,
+            'managerTitle' => $managerPosition,
+            'creatorDepartmentName' => $department?->name,
             'stampDataUri' => $this->imageDataUri($stampPath),
             'letterheadDataUri' => $this->imageDataUri($letterheadPath),
             'signatureDataUri' => $this->imageDataUri($signaturePath),
