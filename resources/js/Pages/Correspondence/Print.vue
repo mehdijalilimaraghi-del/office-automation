@@ -45,7 +45,7 @@ function printLetter():void{window.print();}
     <div v-if="withLetterhead && letterheadDataUri" class="letterhead-background" :style="{backgroundImage:'url('+letterheadDataUri+')'}" aria-hidden="true"></div>
     <div v-for="item in repeating" :key="item.id" class="repeat-item" :style="positionedStyle(item)">{{resolveTemplate(item.content)}}</div>
     <div v-for="item in elements.filter(entry=>entry.role==='page_number')" :key="item.id" class="page-number" :class="{'page-number-slash':item.page_format==='slash'}" :style="positionedStyle(item)"><span v-if="item.page_format==='short'">ص</span><span v-else-if="item.page_format==='page'">صفحه </span><span class="page-counter"></span><template v-if="item.page_format==='slash'">/</template><template v-else> از </template><span class="pages-counter"></span></div>
-    <div v-for="item in flowMeta" :key="item.id" class="flow-item first-page-positioned" :style="positionedStyle(item)">{{item.kind==='stamp'&&stampDataUri?'':item.kind==='signature'&&signatureDataUri?'':resolveTemplate(item.content)}}<img v-if="item.kind==='stamp'&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="inline-asset"/><img v-else-if="item.kind==='signature'&&signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="inline-asset"/></div>
+    <div v-for="item in flowMeta" :key="item.id" class="flow-item first-page-positioned" :style="positionedStyle(item)">{{item.kind==='text'?resolveTemplate(item.content):''}}<img v-if="item.kind==='stamp'&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="inline-asset"/><img v-else-if="item.kind==='signature'&&signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="inline-asset"/></div>
     <div v-for="item in flowHeading" :key="item.id" class="flow-item first-page-positioned" :style="positionedStyle(item)">
      <template v-if="item.content">{{resolveTemplate(item.content)}}</template>
      <template v-else><div v-if="recipientLines.length" class="mb-4 space-y-1 text-sm font-semibold leading-7"><p v-for="(line,index) in recipientLines" :key="index">{{line}}</p></div><h2 class="text-center text-base font-bold leading-8">{{letter.subject}}</h2></template>
@@ -57,7 +57,7 @@ function printLetter():void{window.print();}
     <div v-for="item in flowIssuer" :key="item.id" class="flow-item issuer-item" :style="boxStyle(item)">
      <img v-if="item.kind==='stamp'&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="inline-asset"/>
      <img v-else-if="item.kind==='signature'&&signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="inline-asset"/>
-     <template v-else>{{resolveTemplate(item.content)}}</template>
+     <template v-else-if="item.kind==='text'">{{resolveTemplate(item.content)}}</template>
     </div>
 
     <footer v-if="(!hasCreatorElement&&!hasIssuerAssetElement&&printOptions.show_creator_identity)||(!hasSignatureElement&&printOptions.show_department_signature&&signatureDataUri)||(!hasStampElement&&printOptions.show_stamp&&stampDataUri)" class="signature-area">
