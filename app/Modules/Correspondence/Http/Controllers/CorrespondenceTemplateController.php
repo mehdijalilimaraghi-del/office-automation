@@ -132,7 +132,7 @@ class CorrespondenceTemplateController extends Controller
             'elements' => ['present', 'array', 'max:30'],
             'elements.*.kind' => ['required', 'in:text,stamp,signature,letterhead'],
             'elements.*.role' => ['nullable', 'in:meta,heading,page_number,issuer,repeat,body'],
-            'elements.*.spacing' => ['nullable', 'numeric', 'min:0', 'max:80'],
+            'elements.*.spacing' => ['nullable', 'numeric', 'min:-80', 'max:80'],
             'elements.*.font_family' => ['nullable', 'in:default,Vazirmatn,Tahoma,Arial,B Nazanin,B Mitra,IRANSans,Times New Roman'],
             'elements.*.page_format' => ['nullable', 'in:number_of,slash,short,page'],
             'elements.*.id' => ['required', 'string', 'max:40', 'distinct'],
