@@ -1033,3 +1033,10 @@ Added `CorrespondencePrintController`, `Correspondence/Print.vue`, protected pri
 - Added the `{{attachment_pages}}` metadata variable and included it on the default metadata line immediately below the date. Printed text is «پیوست: دارد (N صفحه)» or «پیوست: ندارد» when the field is empty.
 - Fixed the designer interaction path for issuer assets: stamp/signature elements now receive pointer selection and dragging, use their actual canvas coordinates, and their image pixels no longer intercept pointer input. Print output applies the stored x/y position to these elements.
 - Owner validation remains pending: migration, focused correspondence HTTP test, frontend production build, and manual A4/drag acceptance. Development only; master/server untouched.
+
+
+## 2026-11-08 — Print preview department signature loading fix
+
+- Root cause of the failing `signatureDataUri` assertion: `createdDepartment` was eager-loaded with a restricted projection (`id,name`), so the controller's later fallback could not read `manager_signature_path` or `manager_signature_active` from the already-loaded model.
+- Expanded the relation projection to include both signature fields. Snapshot-first behavior and fallback conditions are unchanged. The existing protected A4 print-preview feature test covers both stamp and signature data URIs.
+- Local focused test/build verification is pending. Development only; master and production server untouched.
