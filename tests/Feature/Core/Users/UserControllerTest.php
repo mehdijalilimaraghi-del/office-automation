@@ -101,6 +101,38 @@ class UserControllerTest extends TestCase
     }
 
 
+    public function test_multiple_users_can_be_created_without_optional_profile_identifiers(): void
+    {
+        $admin = User::factory()->create();
+        $this->grantPermissions($admin, ['users.create']);
+
+        foreach ([
+            ['username' => 'profile-null-one', 'email' => 'profile-null-one@example.com'],
+            ['username' => 'profile-null-two', 'email' => 'profile-null-two@example.com'],
+        ] as $identity) {
+            $this->actingAs($admin)->post(route('users.store'), [
+                ...$identity,
+                'first_name' => 'کاربر',
+                'last_name' => 'آزمایشی',
+                'status' => 'inactive',
+                'role_ids' => [],
+            ])->assertRedirect()->assertSessionHasNoErrors();
+        }
+
+        $userIds = User::query()
+            ->whereIn('username', ['profile-null-one', 'profile-null-two'])
+            ->pluck('id');
+
+        $this->assertSame(
+            2,
+            DB::table('user_profiles')
+                ->whereIn('user_id', $userIds)
+                ->whereNull('employee_code')
+                ->whereNull('national_id')
+                ->count()
+        );
+    }
+
     public function test_user_display_name_is_derived_from_first_and_last_name(): void
     {
         $admin = User::factory()->create();
