@@ -1,3 +1,11 @@
+## 2026-11-08 — Restore missing stamp/signature images in print output
+
+- Root cause: the print controller exclusively used asset paths frozen in `document_identity_snapshot` whenever a snapshot array existed. Letters registered before the stamp/signature was configured, or whose snapshot omitted an asset path, therefore received a null image data URI even when a current active image was configured. Vue then fell through to the text-template branch for non-text elements, allowing creator identity text to appear in stamp/signature slots.
+- Print controller now prefers a still-existing snapshot asset, but falls back to the currently active organization stamp and the created department's active manager signature when the snapshot path is missing or its file no longer exists. Existing valid snapshot assets remain preferred.
+- Print rendering now renders template text only for `kind=text`; stamp/signature elements never substitute their content/creator identity for a missing image.
+- Extended the print feature test with local fake stamp/signature images and an existing identity snapshot that omits asset paths; the test asserts both image data URIs are passed to the print page.
+- Focused test and production build are pending local execution. Development only; master/release/server unchanged.
+
 ## 2026-11-08 — Align designer preview with final issuer flow
 
 - Updated the template designer's sample preview to render the body placeholder and issuer elements in one vertical flow region. Issuer spacing is measured after the sample body, rather than from an independent absolute Y coordinate; horizontal offset and width remain configurable.
