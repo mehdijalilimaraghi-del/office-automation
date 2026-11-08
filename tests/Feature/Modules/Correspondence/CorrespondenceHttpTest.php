@@ -115,8 +115,23 @@ class CorrespondenceHttpTest extends TestCase
 
     public function test_registered_correspondence_has_a_protected_a4_print_preview(): void
     {
+        Storage::fake('local');
+        $stampPath = UploadedFile::fake()->image('stamp.png', 10, 10)->store('organization/stamp', 'local');
+        $signaturePath = UploadedFile::fake()->image('signature.png', 10, 10)->store('organization/department-signatures', 'local');
+
         $viewer = $this->userWithPermission('correspondence.view');
         $creator = $this->userWithPermission('correspondence.create');
+        $department = Department::query()->create([
+            'name' => 'واحد دارای امضای مدیر',
+            'code' => 'SIG-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_signature_path' => $signaturePath,
+            'manager_signature_active' => true,
+        ]);
+        app(SystemSettingsService::class)->set([
+            'organization.stamp.path' => $stampPath,
+            'organization.stamp.active' => '1',
+        ]);
         $letter = Correspondence::query()->create([
             'type' => Correspondence::TYPE_OUTGOING,
             'subject' => 'نامه برای پیش‌نمایش چاپ',
@@ -126,6 +141,7 @@ class CorrespondenceHttpTest extends TestCase
             'classification' => Correspondence::CLASSIFICATION_ORDINARY,
             'registration_number' => '1405/PRINT01',
             'created_by' => $creator->id,
+            'created_department_id' => $department->id,
             'document_identity_snapshot' => [
                 'creator_name' => $creator->name,
                 'creator_unit_title' => 'مدیریت فناوری اطلاعات',
@@ -154,7 +170,9 @@ class CorrespondenceHttpTest extends TestCase
                 ->where('templateElements.1.kind', 'stamp')
                 ->where('templateElements.2.kind', 'signature')
                 ->where('templateElements.3.spacing', 14)
-                ->where('templateElements.3.content', '{{creator_unit_title}}\\n{{creator_name}}'));
+                ->where('templateElements.3.content', '{{creator_unit_title}}\\n{{creator_name}}')
+                ->where('stampDataUri', fn ($value) => is_string($value) && str_starts_with($value, 'data:image/png;base64,'))
+                ->where('signatureDataUri', fn ($value) => is_string($value) && str_starts_with($value, 'data:image/png;base64,')));
     }
 
     public function test_correspondence_index_supports_mine_department_and_all_scopes(): void
