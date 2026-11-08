@@ -15,7 +15,7 @@ const flowIssuer=computed(()=>elements.value.filter(item=>item.role==='issuer'))
 const bodyElement=computed(()=>elements.value.find(item=>item.role==='body')??{spacing:42,width:84,font_size:12,font_family:'default',bold:false,align:'right'} as TemplateElement);
 const repeating=computed(()=>elements.value.filter(item=>item.role==='repeat'));
 const pageNumberEnabled=computed(()=>elements.value.some(item=>item.role==='page_number'));
-const hasCreatorElement=computed(()=>flowIssuer.value.some(item=>item.kind==='text'&&(item.content.includes('{{creator_name}}')||item.content.includes('{{creator_unit_title}}'))));
+const hasCreatorElement=computed(()=>flowIssuer.value.some(item=>item.kind==='text'&&(item.content.includes('{{creator_name}}')||item.content.includes('{{creator_unit_title}}')||item.content.includes('{{manager_name}}')||item.content.includes('{{manager_position}}'))));
 const hasSignatureElement=computed(()=>flowIssuer.value.some(item=>item.kind==='signature'));
 const hasIssuerAssetElement=computed(()=>hasStampElement.value||hasSignatureElement.value);
 const hasStampElement=computed(()=>flowIssuer.value.some(item=>item.kind==='stamp'));
