@@ -1,3 +1,10 @@
+## 2026-11-08 — Align designer preview with final issuer flow
+
+- Updated the template designer's sample preview to render the body placeholder and issuer elements in one vertical flow region. Issuer spacing is measured after the sample body, rather than from an independent absolute Y coordinate; horizontal offset and width remain configurable.
+- Updated print issuer width to use the printable content area (matching the A4 inner region) while retaining the configured right offset and spacing-before.
+- Regression fixture now includes a separate issuer identity text element after stamp/signature assets and asserts its configured spacing/content are passed to the protected print page.
+- Local focused test and production build are still required; no test/build success is claimed. Development only.
+
 ## 2026-11-08 — Print issuer assets and spacing follow-up
 
 - Root cause: the print page rendered every issuer item (stamp, signature and issuer text) inside the absolutely positioned template-coordinate plane. Consequently, issuer `spacing` was never applied, and multiple issuer elements sharing similar template coordinates visually overlapped, making creator/unit identity appear attached to stamp/signature assets.
