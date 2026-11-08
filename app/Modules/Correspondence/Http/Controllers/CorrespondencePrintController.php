@@ -6,6 +6,7 @@ namespace App\Modules\Correspondence\Http\Controllers;
 
 use App\Core\Settings\Services\SystemSettingsService;
 use App\Http\Controllers\Controller;
+use App\Core\Departments\Models\PositionAssignment;
 use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Services\CorrespondenceAccessService;
 use Illuminate\Http\Request;
@@ -90,6 +91,15 @@ class CorrespondencePrintController extends Controller
         }
 
         $department = $correspondence->createdDepartment;
+        $managerPosition = $department?->manager_id
+            ? PositionAssignment::query()
+                ->where('user_id', $department->manager_id)
+                ->where('is_active', true)
+                ->whereHas('position', fn ($query) => $query->where('department_id', $department->id)->where('is_active', true))
+                ->with('position:id,name')
+                ->orderByDesc('is_primary')
+                ->first()?->position?->name
+            : null;
         if (! filled($signaturePath) || ! Storage::disk('local')->exists($signaturePath)) {
             $signaturePath = $department?->manager_signature_active
                 ? $department->manager_signature_path
@@ -116,6 +126,8 @@ class CorrespondencePrintController extends Controller
             'templateElements' => $templateElements,
             'creatorName' => $snapshot['creator_name'] ?? $correspondence->creator?->name,
             'creatorUnitTitle' => $snapshot['creator_unit_title'] ?? ($correspondence->createdDepartment?->name ? 'مدیریت '.$correspondence->createdDepartment->name : null),
+            'managerName' => $department?->manager?->name,
+            'managerPosition' => $managerPosition,
             'stampDataUri' => $this->imageDataUri($stampPath),
             'letterheadDataUri' => $this->imageDataUri($letterheadPath),
             'signatureDataUri' => $this->imageDataUri($signaturePath),
