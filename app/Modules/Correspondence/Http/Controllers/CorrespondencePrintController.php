@@ -70,21 +70,30 @@ class CorrespondencePrintController extends Controller
         $letterheadPath = $snapshot['letterhead_path'] ?? null;
         $signaturePath = $snapshot['signature_path'] ?? null;
 
-        if ($correspondence->document_identity_snapshot === null) {
-            $live = $settings->get([
-                'organization.stamp.path' => null,
-                'organization.stamp.active' => '0',
-                'organization.letterhead.path' => null,
-            ]);
-            $letterheadPath = $live['organization.letterhead.path'];
-            if ($live['organization.stamp.active'] === '1') {
-                $stampPath = $live['organization.stamp.path'];
-            }
+        // A registered letter can predate the upload/activation of its print assets.
+        // Prefer its immutable snapshot when the file still exists, but fall back to
+        // the currently configured asset when the snapshot has no usable file.
+        $live = $settings->get([
+            'organization.stamp.path' => null,
+            'organization.stamp.active' => '0',
+            'organization.letterhead.path' => null,
+        ]);
 
-            $department = $correspondence->createdDepartment;
-            if ($department !== null && $department->manager_signature_active && $correspondence->workflow_state === 'approved_for_registration') {
-                $signaturePath = $department->manager_signature_path;
-            }
+        if (! filled($stampPath) || ! Storage::disk('local')->exists($stampPath)) {
+            $stampPath = $live['organization.stamp.active'] === '1'
+                ? $live['organization.stamp.path']
+                : null;
+        }
+
+        if (! filled($letterheadPath) || ! Storage::disk('local')->exists($letterheadPath)) {
+            $letterheadPath = $live['organization.letterhead.path'];
+        }
+
+        $department = $correspondence->createdDepartment;
+        if (! filled($signaturePath) || ! Storage::disk('local')->exists($signaturePath)) {
+            $signaturePath = $department?->manager_signature_active
+                ? $department->manager_signature_path
+                : null;
         }
 
         return Inertia::render('Correspondence/Print', [
