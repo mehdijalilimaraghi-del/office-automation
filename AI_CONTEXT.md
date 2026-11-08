@@ -1,3 +1,11 @@
+## 2026-11-08 — Complete issuer identity variables in correspondence templates
+
+- Expanded the issuer text-element variable set with explicit identity fields: creator full name, issuing-unit title, issuing department name, department manager full name, manager organizational position, and the clearer `{{manager_title}}` alias.
+- The template designer preview supplies readable sample values for every new variable. The print resolver maps them to the actual correspondence creator, its created department, the department's configured manager, and the manager's active primary position assignment in that same department.
+- Added Inertia print props for manager title and creator department name, retained `{{manager_position}}` for compatibility, and made explicit issuer identity detection recognize the added variables so the legacy automatic footer is not duplicated.
+- Extended the protected print-page regression fixture to include the new variables and assert manager title and creator department values.
+- Implementation and test changes are committed on development. Owner-run focused correspondence HTTP test and frontend production build remain pending; master, release branch and server are unchanged.
+
 ## 2026-11-08 — Fix multiple user creation with blank profile identifiers
 
 - Root cause: SQL Server unique indexes treat NULL as an indexed value for uniqueness, so the original unique indexes on nullable user_profiles.employee_code and national_id allowed only one row with NULL. Creating a second user without these optional identifiers failed with SQLSTATE 23000.
