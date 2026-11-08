@@ -8,6 +8,8 @@ use App\Core\Permissions\Models\Permission;
 use App\Core\Permissions\Enums\PermissionScope;
 use App\Core\Roles\Models\Role;
 use App\Core\Departments\Models\Department;
+use App\Core\Departments\Models\Position;
+use App\Core\Departments\Models\PositionAssignment;
 use App\Core\ExternalParties\Models\ExternalOrganization;
 use App\Core\ExternalParties\Models\ExternalDepartment;
 use App\Core\Settings\Services\OrganizationDepartmentRoleService;
@@ -125,9 +127,23 @@ class CorrespondenceHttpTest extends TestCase
             'name' => 'واحد دارای امضای مدیر',
             'code' => 'SIG-'.Str::upper(Str::random(6)),
             'is_active' => true,
+            'manager_id' => $viewer->id,
             'manager_signature_path' => $signaturePath,
             'manager_signature_active' => true,
         ]);
+        $managerPosition = Position::query()->create([
+            'department_id' => $department->id,
+            'name' => 'مدیر فناوری اطلاعات',
+            'code' => 'POS-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+        ]);
+        PositionAssignment::query()->create([
+            'position_id' => $managerPosition->id,
+            'user_id' => $viewer->id,
+            'is_primary' => true,
+            'is_active' => true,
+        ]);
+
         app(SystemSettingsService::class)->set([
             'organization.stamp.path' => $stampPath,
             'organization.stamp.active' => '1',
@@ -166,6 +182,8 @@ class CorrespondenceHttpTest extends TestCase
                 ->where('letter.subject', 'نامه برای پیش‌نمایش چاپ')
                 ->where('letter.attachment_pages', 2)
                 ->where('creatorUnitTitle', 'مدیریت فناوری اطلاعات')
+                ->where('managerName', $viewer->name)
+                ->where('managerPosition', 'مدیر فناوری اطلاعات')
                 ->where('templateElements.0.role', 'page_number')
                 ->where('templateElements.1.kind', 'stamp')
                 ->where('templateElements.2.kind', 'signature')
