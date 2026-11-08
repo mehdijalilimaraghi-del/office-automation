@@ -133,7 +133,7 @@ class CorrespondenceHttpTest extends TestCase
             ],
         ]);
 
-        app(\\App\\Core\\Settings\\Services\\SystemSettingsService::class)->set([
+        app(\App\Core\Settings\Services\SystemSettingsService::class)->set([
             'correspondence.print.template' => json_encode([
                 ['id' => 'page-number', 'kind' => 'text', 'role' => 'page_number', 'label' => 'شماره صفحه', 'content' => '', 'x' => 8, 'y' => 95, 'width' => 20, 'spacing' => 0, 'font_size' => 9, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'center', 'visible' => true],
                 ['id' => 'stamp', 'kind' => 'stamp', 'role' => 'issuer', 'label' => 'مهر سازمان', 'content' => '', 'x' => 8, 'y' => 80, 'width' => 20, 'spacing' => 0, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true],
