@@ -8,6 +8,7 @@ use App\Core\Roles\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Tests\Feature\Core\Concerns\InteractsWithPermissions;
 use Tests\TestCase;
