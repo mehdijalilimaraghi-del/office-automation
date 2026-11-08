@@ -152,7 +152,9 @@ class CorrespondenceHttpTest extends TestCase
                 ->where('creatorUnitTitle', 'مدیریت فناوری اطلاعات')
                 ->where('templateElements.0.role', 'page_number')
                 ->where('templateElements.1.kind', 'stamp')
-                ->where('templateElements.2.kind', 'signature'));
+                ->where('templateElements.2.kind', 'signature')
+                ->where('templateElements.3.spacing', 14)
+                ->where('templateElements.3.content', '{{creator_unit_title}}\\n{{creator_name}}'));
     }
 
     public function test_correspondence_index_supports_mine_department_and_all_scopes(): void
