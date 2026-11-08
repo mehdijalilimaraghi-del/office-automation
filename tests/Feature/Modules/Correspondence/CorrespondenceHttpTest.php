@@ -138,6 +138,7 @@ class CorrespondenceHttpTest extends TestCase
                 ['id' => 'page-number', 'kind' => 'text', 'role' => 'page_number', 'label' => 'شماره صفحه', 'content' => '', 'x' => 8, 'y' => 95, 'width' => 20, 'spacing' => 0, 'font_size' => 9, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'center', 'visible' => true],
                 ['id' => 'stamp', 'kind' => 'stamp', 'role' => 'issuer', 'label' => 'مهر سازمان', 'content' => '', 'x' => 8, 'y' => 80, 'width' => 20, 'spacing' => 0, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true],
                 ['id' => 'signature', 'kind' => 'signature', 'role' => 'issuer', 'label' => 'امضای مدیر واحد', 'content' => '', 'x' => 30, 'y' => 80, 'width' => 20, 'spacing' => 0, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true],
+                ['id' => 'issuer-identity', 'kind' => 'text', 'role' => 'issuer', 'label' => 'هویت صادرکننده', 'content' => '{{creator_unit_title}}\\n{{creator_name}}', 'x' => 8, 'y' => 80, 'width' => 40, 'spacing' => 14, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true],
             ], JSON_UNESCAPED_UNICODE),
         ]);
 
