@@ -170,7 +170,7 @@ class CorrespondenceHttpTest extends TestCase
                 ['id' => 'page-number', 'kind' => 'text', 'role' => 'page_number', 'label' => 'شماره صفحه', 'content' => '', 'x' => 8, 'y' => 95, 'width' => 20, 'spacing' => 0, 'font_size' => 9, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'center', 'visible' => true],
                 ['id' => 'stamp', 'kind' => 'stamp', 'role' => 'issuer', 'label' => 'مهر سازمان', 'content' => '', 'x' => 8, 'y' => 80, 'width' => 20, 'spacing' => 0, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true],
                 ['id' => 'signature', 'kind' => 'signature', 'role' => 'issuer', 'label' => 'امضای مدیر واحد', 'content' => '', 'x' => 30, 'y' => 80, 'width' => 20, 'spacing' => 0, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true],
-                ['id' => 'issuer-identity', 'kind' => 'text', 'role' => 'issuer', 'label' => 'هویت صادرکننده', 'content' => '{{creator_unit_title}}\\n{{creator_name}}', 'x' => 8, 'y' => 80, 'width' => 40, 'spacing' => 14, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true],
+                ['id' => 'issuer-identity', 'kind' => 'text', 'role' => 'issuer', 'label' => 'هویت صادرکننده', 'content' => '{{creator_unit_title}}\\n{{creator_department_name}}\\n{{creator_name}}\\n{{manager_name}}\\n{{manager_title}}', 'x' => 8, 'y' => 80, 'width' => 40, 'spacing' => 14, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true],
             ], JSON_UNESCAPED_UNICODE),
         ]);
 
@@ -184,11 +184,13 @@ class CorrespondenceHttpTest extends TestCase
                 ->where('creatorUnitTitle', 'مدیریت فناوری اطلاعات')
                 ->where('managerName', $viewer->name)
                 ->where('managerPosition', 'مدیر فناوری اطلاعات')
+                ->where('managerTitle', 'مدیر فناوری اطلاعات')
+                ->where('creatorDepartmentName', 'واحد دارای امضای مدیر')
                 ->where('templateElements.0.role', 'page_number')
                 ->where('templateElements.1.kind', 'stamp')
                 ->where('templateElements.2.kind', 'signature')
                 ->where('templateElements.3.spacing', 14)
-                ->where('templateElements.3.content', '{{creator_unit_title}}\\n{{creator_name}}')
+                ->where('templateElements.3.content', '{{creator_unit_title}}\\n{{creator_department_name}}\\n{{creator_name}}\\n{{manager_name}}\\n{{manager_title}}')
                 ->where('stampDataUri', fn ($value) => is_string($value) && str_starts_with($value, 'data:image/png;base64,'))
                 ->where('signatureDataUri', fn ($value) => is_string($value) && str_starts_with($value, 'data:image/png;base64,')));
     }
