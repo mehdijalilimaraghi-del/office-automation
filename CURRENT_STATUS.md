@@ -1,3 +1,8 @@
+## 2026-11-08 — Fix PHPUnit parse error in print regression test
+
+- Corrected the over-escaped fully-qualified `SystemSettingsService` class name in `CorrespondenceHttpTest.php` (line 136), which caused PHPUnit to stop during test-file loading with `unexpected token \\`.
+- Commit: `15a409b37b735c086da599e05235e1adf09c3f38`. The test has not yet been executed in the local environment; rerun the focused test after pulling development.
+
 ## 2026-11-08 — Correspondence print preview layout and page-number correction
 
 - Rich-text HTML in the print body now uses normal document whitespace rather than preserving indentation/newlines from the HTML source as visible whitespace. Preformatted blocks retain pre-wrap behavior; line-height and table-cell wrapping are normalized to reduce broken layout.
