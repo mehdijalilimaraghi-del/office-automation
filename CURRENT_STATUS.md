@@ -1,3 +1,10 @@
+## 2026-11-08 — Fix multiple user creation with blank profile identifiers
+
+- Root cause: SQL Server unique indexes treat NULL as an indexed value for uniqueness, so the original unique indexes on nullable user_profiles.employee_code and national_id allowed only one row with NULL. Creating a second user without these optional identifiers failed with SQLSTATE 23000.
+- Added a forward-only migration replacing both indexes with filtered unique indexes (WHERE column IS NOT NULL) on SQL Server and SQLite. Other supported drivers retain ordinary unique indexes, which already allow multiple NULL values. Non-null employee codes and national IDs remain unique.
+- Added a user-controller regression test creating two users without employee_code or national_id and asserting both profile rows persist with NULL identifiers.
+- Migration and focused regression test are committed on development. Local migration/test execution against the project's SQL Server database is pending; master, release branch and server are unchanged.
+
 ## 2026-11-08 — Restore missing stamp/signature images in print output
 
 - Root cause: the print controller exclusively used asset paths frozen in `document_identity_snapshot` whenever a snapshot array existed. Letters registered before the stamp/signature was configured, or whose snapshot omitted an asset path, therefore received a null image data URI even when a current active image was configured. Vue then fell through to the text-template branch for non-text elements, allowing creator identity text to appear in stamp/signature slots.
