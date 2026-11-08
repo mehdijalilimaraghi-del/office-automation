@@ -93,6 +93,10 @@ class CorrespondenceService
                 $currentUserId = (int) $managerId;
             }
 
+            $attachmentPages = array_key_exists('attachment_pages', $data) && $data['attachment_pages'] !== null && $data['attachment_pages'] !== ''
+                ? (int) $data['attachment_pages']
+                : null;
+
             $correspondence = Correspondence::query()->create([
                 'workflow_state' => $initialState,
                 'current_department_id' => $createdDepartmentId,
@@ -102,6 +106,7 @@ class CorrespondenceService
                 'subject' => $subject,
                 'letter_number' => $type === Correspondence::TYPE_INCOMING ? trim((string) ($data['letter_number'] ?? '')) : null,
                 'body' => $data['body'] ?? null,
+                'attachment_pages' => $attachmentPages,
                 'status' => Correspondence::STATUS_DRAFT,
                 'sender_name' => $type === Correspondence::TYPE_INTERNAL
                     ? $creator->name
