@@ -2089,3 +2089,10 @@ Organization Settings now uses three tabs. A separate organization letterhead im
 - Added the `{{attachment_pages}}` metadata variable and included it on the default metadata line immediately below the date. Printed text is «پیوست: دارد (N صفحه)» or «پیوست: ندارد» when the field is empty.
 - Fixed the designer interaction path for issuer assets: stamp/signature elements now receive pointer selection and dragging, use their actual canvas coordinates, and their image pixels no longer intercept pointer input. Print output applies the stored x/y position to these elements.
 - Owner validation remains pending: migration, focused correspondence HTTP test, frontend production build, and manual A4/drag acceptance. Development only; master/server untouched.
+
+
+## 2026-11-08 — اصلاح بارگذاری تصویر امضای مدیر در پیش‌نمایش چاپ
+
+- علت شکست تست چاپ مشخص شد: رابطه `createdDepartment` با انتخاب محدود ستون‌ها (`id,name`) بارگذاری می‌شد؛ در نتیجه فیلدهای `manager_signature_path` و `manager_signature_active` در مدل بارگذاری‌شده وجود نداشتند و fallback امضای مدیر همیشه مسیر خالی دریافت می‌کرد.
+- انتخاب ستون‌های رابطه اکنون شامل دو فیلد تصویر امضای مدیر نیز هست. مسیر snapshot همچنان اولویت دارد و fallback فقط برای تصویر snapshot ناموجود/غیرقابل‌استفاده اعمال می‌شود.
+- تست رگرسیون موجود، دریافت هم‌زمان data URI مهر و امضا را بررسی می‌کند. نتیجه اجرای مجدد تست و build در محیط محلی کاربر هنوز در انتظار است. شاخه development؛ master و سرور بدون تغییر.
