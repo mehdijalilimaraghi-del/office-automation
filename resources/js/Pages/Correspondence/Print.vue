@@ -73,7 +73,10 @@ function resolveTemplate(content:string):string {
 }
 function fontFamily(item:TemplateElement):string{return item.font_family==='default'||!item.font_family?(props.printOptions.font_family||'Vazirmatn'):item.font_family;}
 function boxStyle(item:TemplateElement):Record<string,string>{return {width:item.width+'%',marginTop:item.spacing+'mm',marginRight:`calc(${item.x*2.1}mm - ${props.pageLayout.right}mm)`,fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
-function positionedStyle(item:TemplateElement):Record<string,string>{return {right:item.x+'%',top:item.y+'%',bottom:'auto',width:item.width+'%',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
+function positionedStyle(item:TemplateElement):Record<string,string>{
+ const contentTop=Math.max(props.pageLayout.top,props.pageLayout.header_height);
+ return {right:item.x+'%',top:item.y+'%',bottom:'auto',width:item.width+'%',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align,'--print-repeat-top':(item.y*2.97-contentTop)+'mm','--print-repeat-right':(item.x*2.1)+'mm','--print-repeat-width':(item.width*2.1)+'mm'};
+}
 function pageNumberScreenStyle(item:TemplateElement):Record<string,string> {
  const topEdge=Math.max(props.pageLayout.top,props.pageLayout.header_height);
  const bottomEdge=297-Math.max(props.pageLayout.bottom,props.pageLayout.footer_height);
@@ -153,7 +156,7 @@ function printLetter():void{window.print();}
    <div class="template-coordinate-plane" :ref="pageIndex===1 ? setFirstPagePlane : undefined">
     <div v-if="withLetterhead && letterheadDataUri" class="letterhead-background" :style="{backgroundImage:'url('+letterheadDataUri+')'}" aria-hidden="true"></div>
     <div v-for="item in repeating" :key="item.id" class="repeat-item" :style="positionedStyle(item)">{{resolveTemplate(item.content)}}</div>
-    <div v-for="item in elements.filter(entry=>entry.role==='page_number')" :key="item.id" class="page-number" :style="pageNumberScreenStyle(item)"><bdi :dir="item.page_format==='slash'?'ltr':'rtl'">{{pageNumberSample(item,pageIndex)}}</bdi></div>
+    <div v-for="item in elements.filter(entry=>entry.role==='page_number')" :key="item.id" class="page-number" :class="'page-number-format-'+item.page_format" :style="pageNumberScreenStyle(item)"><bdi :dir="item.page_format==='slash'?'ltr':'rtl'">{{pageNumberSample(item,pageIndex)}}</bdi></div>
     <template v-if="pageIndex===1"><div v-for="item in flowMeta" :key="item.id" class="flow-item first-page-positioned" :style="positionedStyle(item)">{{item.kind==='text'?resolveTemplate(item.content):''}}<img v-if="item.kind==='stamp'&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="inline-asset"/><img v-else-if="item.kind==='signature'&&signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="inline-asset"/></div>
     <div v-for="item in flowHeading" :key="item.id" class="flow-item first-page-positioned" :style="positionedStyle(item)">
      <template v-if="item.content">{{resolveTemplate(item.content)}}</template>
@@ -218,7 +221,7 @@ function printLetter():void{window.print();}
  .document-content{position:relative;top:auto;right:auto;left:auto;transform:none!important;box-sizing:border-box;width:210mm;padding-left:var(--print-content-left, 0mm);padding-right:var(--print-content-right, 0mm);}
 
  .letterhead-background{position:fixed;}
- .repeat-item{position:fixed;}
+ .repeat-item{position:fixed!important;top:var(--print-repeat-top)!important;right:var(--print-repeat-right)!important;left:auto!important;width:var(--print-repeat-width)!important;}
   .page-number{position:fixed!important;top:var(--print-page-number-top)!important;right:var(--print-page-number-right)!important;bottom:auto!important;left:auto!important;width:var(--print-page-number-width)!important;transform:none!important;z-index:20;}
  .page-number bdi{visibility:hidden;}
  .page-number::after{display:block;direction:rtl;unicode-bidi:isolate;white-space:nowrap;}
