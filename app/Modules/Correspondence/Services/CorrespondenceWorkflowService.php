@@ -349,12 +349,43 @@ class CorrespondenceWorkflowService
                 return;
             }
 
+            if ($type === CorrespondenceAction::MANAGER_RETURN_FOR_CORRECTION) {
+                abort_unless(
+                    $isManager
+                    && $letter->type === Correspondence::TYPE_OUTGOING
+                    && $letter->status === Correspondence::STATUS_DRAFT
+                    && $letter->workflow_state === 'awaiting_manager_approval'
+                    && $currentDepartmentId === (int) $letter->created_department_id,
+                    403,
+                    'برگشت پیش‌نویس برای اصلاح فقط توسط مدیر واحد ایجادکننده و پیش از تأیید نامه مجاز است.',
+                );
+                if ($note === '') {
+                    throw new InvalidArgumentException('برای برگشت نامه، شرح اصلاحات موردنیاز الزامی است.');
+                }
+
+                $this->record(
+                    $letter,
+                    $actor,
+                    $type,
+                    $note,
+                    $currentDepartmentId,
+                    $currentDepartmentId,
+                    $actor->id,
+                    (int) $letter->created_by,
+                );
+                $letter->forceFill([
+                    'current_user_id' => (int) $letter->created_by,
+                    'workflow_state' => 'returned_for_correction',
+                ])->save();
+                return;
+            }
+
             if ($type === CorrespondenceAction::SECRETARIAT_RETURN) {
                 abort_unless($isSecretariat
                     && $letter->type === Correspondence::TYPE_OUTGOING
-                    && $letter->status === Correspondence::STATUS_REGISTERED
-                    && $letter->workflow_state === 'awaiting_dispatch', 403,
-                    'برگشت برای اصلاح فقط توسط دبیرخانه و پیش از ثبت ارسال نهایی مجاز است.');
+                    && $letter->status === Correspondence::STATUS_DRAFT
+                    && $letter->workflow_state === 'approved_for_registration', 403,
+                    'برگشت برای اصلاح فقط توسط دبیرخانه و پیش از ثبت نهایی نامه مجاز است.');
                 if ($note === '') {
                     throw new InvalidArgumentException('برای برگشت نامه، شرح ایراد و علت برگشت الزامی است.');
                 }
