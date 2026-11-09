@@ -2247,3 +2247,10 @@ Organization Settings now uses three tabs. A separate organization letterhead im
 - `@page` retains only effective top/bottom safe-area margins (`max(text margin, header/footer height)`), so body pagination reserves the header/footer zones on every page. The absolute template plane is shifted from the page content origin to physical A4 top; the body remains normal flow.
 - This removes the previous combination of CSS horizontal page margins plus negative right offset. It targets the reported duplicate top/side offset and ignored header/footer area.
 - Status: code committed to `development`; frontend build, focused PHP feature test and Chromium PDF comparison have NOT been run/confirmed. Do not mark print parity complete until the owner validates the same letter in preview and PDF, including a multi-page case and asymmetric left/right margins. `master`, release and server unchanged.
+
+## 2026-11-09 — Outgoing dispatch stage and recipient title prefix
+
+- The existing external tracking columns are reused; no duplicate schema was introduced. Outgoing letters in `awaiting_dispatch` are now included in the Secretariat manager's `needs_action` state filter, fixing the hand-off that previously made the newly registered outgoing letter disappear from the actionable list.
+- Final dispatch now requires both a dispatch method and a sent date while the letter is in `awaiting_dispatch`. The workflow service independently enforces the same invariant before recording `dispatched`; external registration number/date remain optional tracking metadata.
+- Added `{{recipient_organizational_title_prefix}}` to the addressing element token allow-list, designer token catalog/sample values, and print resolver. It reads the immutable `organizational_title_prefix` captured from the selected external contact at registration.
+- Frontend build, focused correspondence tests, and manual Secretariat workflow verification are pending. Development only; master/release/server unchanged.
