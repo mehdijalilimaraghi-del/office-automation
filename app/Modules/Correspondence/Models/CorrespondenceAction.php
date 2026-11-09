@@ -13,6 +13,7 @@ class CorrespondenceAction extends Model
 {
     public const SUBMIT_RESULT = 'submit_result';
     public const MANAGER_APPROVE = 'manager_approve';
+    public const MANAGER_RETURN_FOR_CORRECTION = 'manager_return_for_correction';
     public const MANAGER_REFER = 'manager_refer';
     public const MANAGER_ACCEPT_RESPONSIBILITY = 'manager_accept_responsibility';
     public const MANAGER_RECALL_REFERRAL = 'manager_recall_referral';
