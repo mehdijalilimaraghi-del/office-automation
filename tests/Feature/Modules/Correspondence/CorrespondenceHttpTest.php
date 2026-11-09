@@ -117,7 +117,7 @@ class CorrespondenceHttpTest extends TestCase
         $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
             'action_type' => CorrespondenceAction::MANAGER_APPROVE,
             'note' => 'تأیید مدیر واحد',
-        ])->assertRedirect();
+        ])->assertRedirect(route('correspondence.index'));
 
         $this->assertDatabaseHas('correspondences', [
             'id' => $letter->id,
@@ -1789,13 +1789,47 @@ class CorrespondenceHttpTest extends TestCase
         ]);
     }
 
-    public function test_secretariat_can_return_outgoing_letter_for_correction_and_creator_can_resubmit(): void
+    public function test_manager_can_return_outgoing_draft_for_correction_before_approval(): void
+    {
+        $creator = $this->userWithPermission('correspondence.create');
+        $manager = $this->userWithPermission('correspondence.view');
+        $department = Department::query()->create([
+            'name' => 'واحد برگشت مدیر '.Str::upper(Str::random(5)),
+            'code' => 'MRET-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+        $creator->departments()->attach($department->id, ['is_primary' => true, 'joined_at' => now()]);
+        app(SystemSettingsService::class)->set(['correspondence.approval.outgoing' => 'approval']);
+        $letter = app(\\App\\Modules\\Correspondence\\Services\\CorrespondenceService::class)->createDraft([
+            'type' => Correspondence::TYPE_OUTGOING,
+            'subject' => 'پیش‌نویس نیازمند اصلاح',
+            'created_department_id' => $department->id,
+        ], $creator);
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::MANAGER_RETURN_FOR_CORRECTION,
+            'note' => 'اصلاح متن و مشخصات مخاطب',
+        ])->assertRedirect(route('correspondence.index'));
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $letter->id,
+            'status' => Correspondence::STATUS_DRAFT,
+            'workflow_state' => 'returned_for_correction',
+            'current_user_id' => $creator->id,
+            'current_department_id' => $department->id,
+        ]);
+
+        $this->actingAs($creator)->get(route('correspondence.edit', $letter))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->component('Correspondence/Create'));
+    }
+
+    public function test_secretariat_can_return_outgoing_draft_before_registration_but_not_after_registration(): void
     {
         $secretariat = $this->userWithPermission('correspondence.view');
         $creator = $this->userWithPermission('correspondence.create');
-        $viewRoleUser = $this->userWithPermission('correspondence.view');
-        $creator->roles()->attach($viewRoleUser->roles()->firstOrFail()->id);
-        $creator = $creator->fresh();
+        $manager = $this->userWithPermission('correspondence.view');
         $secretariatDepartment = Department::query()->create([
             'name' => 'دبیرخانه برگشت '.Str::upper(Str::random(5)),
             'code' => 'RET-'.Str::upper(Str::random(6)),
@@ -1806,14 +1840,39 @@ class CorrespondenceHttpTest extends TestCase
             'name' => 'واحد ایجادکننده '.Str::upper(Str::random(5)),
             'code' => 'ORG-'.Str::upper(Str::random(6)),
             'is_active' => true,
+            'manager_id' => $manager->id,
         ]);
         $creator->departments()->attach($originDepartment->id, ['is_primary' => true, 'joined_at' => now()]);
         app(SystemSettingsService::class)->set([
             OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT) => (string) $secretariatDepartment->id,
         ]);
-        $letter = Correspondence::query()->create([
+        $draft = Correspondence::query()->create([
             'type' => Correspondence::TYPE_OUTGOING,
-            'subject' => 'نامه صادره دارای ایراد',
+            'subject' => 'پیش‌نویس صادره برای بررسی دبیرخانه',
+            'status' => Correspondence::STATUS_DRAFT,
+            'workflow_state' => 'approved_for_registration',
+            'current_department_id' => $secretariatDepartment->id,
+            'current_user_id' => $secretariat->id,
+            'created_department_id' => $originDepartment->id,
+            'created_by' => $creator->id,
+        ]);
+
+        $this->actingAs($secretariat)->post(route('correspondence.actions.store', $draft), [
+            'action_type' => CorrespondenceAction::SECRETARIAT_RETURN,
+            'note' => 'مشخصات مخاطب باید اصلاح شود.',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $draft->id,
+            'status' => Correspondence::STATUS_DRAFT,
+            'workflow_state' => 'returned_for_correction',
+            'current_user_id' => $creator->id,
+            'current_department_id' => $originDepartment->id,
+        ]);
+
+        $registered = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_OUTGOING,
+            'subject' => 'نامه صادره ثبت نهایی شده',
             'status' => Correspondence::STATUS_REGISTERED,
             'workflow_state' => 'awaiting_dispatch',
             'current_department_id' => $secretariatDepartment->id,
@@ -1822,39 +1881,15 @@ class CorrespondenceHttpTest extends TestCase
             'registered_by' => $secretariat->id,
         ]);
 
-        $this->actingAs($secretariat)->post(route('correspondence.actions.store', $letter), [
-            'action_type' => 'secretariat_return',
-            'note' => 'نام سازمان مخاطب با متن نامه مطابقت ندارد.',
-        ])->assertRedirect();
+        $this->actingAs($secretariat)->post(route('correspondence.actions.store', $registered), [
+            'action_type' => CorrespondenceAction::SECRETARIAT_RETURN,
+            'note' => 'این اقدام پس از ثبت نهایی نباید مجاز باشد.',
+        ])->assertForbidden();
 
         $this->assertDatabaseHas('correspondences', [
-            'id' => $letter->id,
-            'workflow_state' => 'returned_for_correction',
-            'current_department_id' => $originDepartment->id,
-            'current_user_id' => $creator->id,
-        ]);
-        $this->actingAs($creator)->get(route('correspondence.edit', $letter))
-            ->assertOk()
-            ->assertInertia(fn ($page) => $page->component('Correspondence/Create'));
-
-        $this->actingAs($creator)->post(route('correspondence.actions.store', $letter), [
-            'action_type' => 'resubmit_to_secretariat',
-            'note' => 'اصلاحات انجام شد.',
-        ])->assertRedirect();
-
-        $this->assertDatabaseHas('correspondences', [
-            'id' => $letter->id,
+            'id' => $registered->id,
+            'status' => Correspondence::STATUS_REGISTERED,
             'workflow_state' => 'awaiting_dispatch',
-            'current_department_id' => $secretariatDepartment->id,
-        ]);
-        $this->assertDatabaseHas('correspondence_actions', [
-            'correspondence_id' => $letter->id,
-            'action_type' => 'secretariat_return',
-            'note' => 'نام سازمان مخاطب با متن نامه مطابقت ندارد.',
-        ]);
-        $this->assertDatabaseHas('correspondence_actions', [
-            'correspondence_id' => $letter->id,
-            'action_type' => 'resubmit_to_secretariat',
         ]);
     }
 
