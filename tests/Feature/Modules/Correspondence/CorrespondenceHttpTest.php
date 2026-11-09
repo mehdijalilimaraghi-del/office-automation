@@ -1310,6 +1310,10 @@ class CorrespondenceHttpTest extends TestCase
                 ->where('filters.action_filter', 'needs_action')
                 ->where('correspondences.data.0.id', $letter->id));
 
+        $this->actingAs($outgoingCreator)->put(route('correspondence.external-tracking.update', $letter), [
+            'external_registration_number' => 'OUT-1405-01',
+        ])->assertForbidden();
+
 
         $snapshot = $letter->fresh()->recipient_addressing_snapshot;
         $this->assertSame('مدیریت', $snapshot['organizational_title_prefix']);
