@@ -189,5 +189,5 @@ function printLetter():void{window.print();}
  .paper.page-format-short{page:short;}
  .paper.page-format-page{page:page;}
 }
-@media screen and (max-width:800px){.paper{width:100%;min-height:0;}.document-content{padding:24px;}}
+@media screen and (max-width:800px){.paper{width:210mm;}}
 </style>
