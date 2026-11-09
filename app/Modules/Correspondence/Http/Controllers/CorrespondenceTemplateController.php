@@ -20,7 +20,7 @@ class CorrespondenceTemplateController extends Controller
 
     private const DEFAULT_TEMPLATE = [
         ['id' => 'organization', 'kind' => 'text', 'role' => 'repeat', 'spacing' => 0, 'label' => 'نام سازمان', 'content' => '{{organization_name}}', 'x' => 8, 'y' => 5, 'width' => 58, 'height' => 7, 'font_size' => 20, 'bold' => true, 'align' => 'right', 'visible' => true],
-        ['id' => 'contact', 'kind' => 'text', 'role' => 'repeat', 'spacing' => 0, 'label' => 'اطلاعات تماس', 'content' => 'آدرس: {{address}} | تلفن تماس: {{tel}} | ایمیل: {{email}}', 'x' => 8, 'y' => 14, 'width' => 84, 'height' => 8, 'font_size' => 9, 'bold' => false, 'align' => 'right', 'visible' => true],
+        ['id' => 'contact', 'kind' => 'text', 'role' => 'repeat', 'spacing' => 0, 'label' => 'اطلاعات تماس', 'content' => 'آدرس: {{address}} | کد پستی: {{postal_code}} | تلفن تماس: {{tel}} | ایمیل: {{email}}', 'x' => 8, 'y' => 14, 'width' => 84, 'height' => 8, 'font_size' => 9, 'bold' => false, 'align' => 'right', 'visible' => true],
         ['id' => 'letter_heading', 'kind' => 'text', 'role' => 'heading', 'spacing' => 8, 'label' => 'خطاب و موضوع', 'content' => '', 'x' => 8, 'y' => 0, 'width' => 84, 'font_size' => 12, 'bold' => true, 'align' => 'right', 'visible' => true],
         ['id' => 'letter_meta', 'kind' => 'text', 'role' => 'meta', 'spacing' => 0, 'label' => 'شماره و تاریخ', 'content' => "شماره: {{letter_number}}\nتاریخ: {{date}}\n{{attachment_pages}}", 'x' => 72, 'y' => 5, 'width' => 20, 'height' => 15, 'font_size' => 10, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'left', 'visible' => true],
         self::BODY_TEMPLATE,
@@ -64,6 +64,7 @@ class CorrespondenceTemplateController extends Controller
             'organization.name' => null,
             'organization.short_name' => null,
             'organization.address' => null,
+            'organization.postal_code' => null,
             'organization.phone' => null,
             'organization.email' => null,
             'organization.website' => null,
@@ -74,6 +75,7 @@ class CorrespondenceTemplateController extends Controller
             'organization_name' => $organization['organization.name'] ?: 'نام سازمان شما',
             'short_name' => $organization['organization.short_name'] ?: 'نام اختصاری',
             'address' => $organization['organization.address'] ?: 'نشانی سازمان',
+            'postal_code' => $organization['organization.postal_code'] ?: '۱۲۳۴۵۶۷۸۹۰',
             'tel' => $organization['organization.phone'] ?: '۰۲۱-۱۲۳۴۵۶۷۸',
             'email' => $organization['organization.email'] ?: 'info@example.com',
             'website' => $organization['organization.website'] ?: 'www.example.com',
@@ -117,6 +119,7 @@ class CorrespondenceTemplateController extends Controller
                 ['key' => '{{organization_name}}', 'label' => 'نام سازمان'],
                 ['key' => '{{short_name}}', 'label' => 'نام اختصاری'],
                 ['key' => '{{address}}', 'label' => 'آدرس'],
+                ['key' => '{{postal_code}}', 'label' => 'کد پستی سازمان'],
                 ['key' => '{{tel}}', 'label' => 'تلفن'],
                 ['key' => '{{email}}', 'label' => 'ایمیل'],
                 ['key' => '{{website}}', 'label' => 'وب‌سایت'],
