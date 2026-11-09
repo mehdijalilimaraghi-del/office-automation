@@ -16,6 +16,8 @@ class CorrespondenceTemplateController extends Controller
 {
     private const BODY_TEMPLATE = ['id' => 'letter_body', 'kind' => 'text', 'role' => 'body', 'spacing' => 42, 'label' => 'متن اصلی نامه', 'content' => '', 'x' => 8, 'y' => 0, 'width' => 84, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true];
 
+    private const DEFAULT_PAGE_LAYOUT = ['top' => 14, 'right' => 18, 'bottom' => 22, 'left' => 18];
+
     private const DEFAULT_TEMPLATE = [
         ['id' => 'organization', 'kind' => 'text', 'role' => 'repeat', 'spacing' => 0, 'label' => 'نام سازمان', 'content' => '{{organization_name}}', 'x' => 8, 'y' => 5, 'width' => 58, 'height' => 7, 'font_size' => 20, 'bold' => true, 'align' => 'right', 'visible' => true],
         ['id' => 'contact', 'kind' => 'text', 'role' => 'repeat', 'spacing' => 0, 'label' => 'اطلاعات تماس', 'content' => 'آدرس: {{address}} | تلفن تماس: {{tel}} | ایمیل: {{email}}', 'x' => 8, 'y' => 14, 'width' => 84, 'height' => 8, 'font_size' => 9, 'bold' => false, 'align' => 'right', 'visible' => true],
@@ -53,6 +55,10 @@ class CorrespondenceTemplateController extends Controller
             }
         }
         unset($element);
+
+        $pageLayoutRaw = $settings->get(['correspondence.print.page_layout' => null])['correspondence.print.page_layout'];
+        $pageLayout = is_string($pageLayoutRaw) ? json_decode($pageLayoutRaw, true) : null;
+        $pageLayout = array_replace(self::DEFAULT_PAGE_LAYOUT, is_array($pageLayout) ? $pageLayout : []);
 
         $organization = $settings->get([
             'organization.name' => null,
@@ -92,6 +98,7 @@ class CorrespondenceTemplateController extends Controller
 
         return Inertia::render('Correspondence/Template', [
             'elements' => $elements,
+            'pageLayout' => $pageLayout,
             'previewValues' => $previewValues,
             'previewBody' => implode("\n", [
                 'با سلام و احترام؛',
@@ -138,6 +145,11 @@ class CorrespondenceTemplateController extends Controller
     {
         $data = $request->validate([
             'elements' => ['present', 'array', 'max:30'],
+            'page_layout' => ['required', 'array'],
+            'page_layout.top' => ['required', 'numeric', 'min:5', 'max:60'],
+            'page_layout.right' => ['required', 'numeric', 'min:5', 'max:50'],
+            'page_layout.bottom' => ['required', 'numeric', 'min:5', 'max:60'],
+            'page_layout.left' => ['required', 'numeric', 'min:5', 'max:50'],
             'elements.*.kind' => ['required', 'in:text,stamp,signature,letterhead'],
             'elements.*.role' => ['nullable', 'in:meta,heading,page_number,issuer,repeat,body'],
             'elements.*.spacing' => ['nullable', 'numeric', 'min:-80', 'max:80'],
@@ -175,7 +187,13 @@ class CorrespondenceTemplateController extends Controller
             abort_if($element['x'] + $element['width'] > 100.000001 || $element['y'] > 100, 422, 'موقعیت یا عرض المان از محدوده صفحه خارج است.');
         }
 
-        $settings->set(['correspondence.print.template' => json_encode($elements, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)]);
+        abort_if($data['page_layout']['top'] + $data['page_layout']['bottom'] > 120, 422, 'مجموع حاشیه بالا و پایین بیش از حد مجاز است.');
+        abort_if($data['page_layout']['left'] + $data['page_layout']['right'] > 100, 422, 'مجموع حاشیه چپ و راست بیش از حد مجاز است.');
+
+        $settings->set([
+            'correspondence.print.template' => json_encode($elements, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+            'correspondence.print.page_layout' => json_encode(array_map(static fn ($value): float => round((float) $value, 2), $data['page_layout']), JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+        ]);
 
         return back()->with('success', 'قالب نامه ذخیره شد.');
     }
