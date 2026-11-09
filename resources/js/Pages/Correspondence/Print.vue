@@ -37,11 +37,7 @@ const pageNumberPosition=computed(()=>{
   const horizontal=anchorX<33.333?'right':anchorX>66.667?'left':'center';
  return '@'+vertical+'-'+horizontal;
 });
-const pageCss=computed(()=>{
- const contentTop=Math.max(props.pageLayout.top,props.pageLayout.header_height);
- const contentBottom=Math.max(props.pageLayout.bottom,props.pageLayout.footer_height);
- return '@page{size:A4;margin:'+contentTop+'mm 0mm '+contentBottom+'mm 0mm;}';
-});
+const pageCss='@page{size:A4;margin:0;}';
 const pageWindowStyle=computed(()=>({
  top:Math.max(props.pageLayout.top,props.pageLayout.header_height)+'mm',
  right:props.pageLayout.right+'mm',
@@ -206,29 +202,19 @@ function printLetter():void{window.print();}
 .page-number-slash{direction:ltr;unicode-bidi:isolate;}
 
 @media print{
- html,body{background:#fff!important;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
- main{min-height:0!important;padding:0!important;background:#fff!important;}
+ html,body{width:210mm!important;margin:0!important;padding:0!important;background:#fff!important;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
+ main{display:block!important;width:210mm!important;min-height:0!important;margin:0!important;padding:0!important;background:#fff!important;}
  .no-print{display:none!important;}
- .paper{width:auto;height:auto;min-height:0!important;margin:0 0 0!important;box-shadow:none;overflow:visible;}
- .paper.screen-page:not(:first-of-type){display:none!important;}
- /* Print content starts at the @page content edge, unlike the screen A4 origin. */
- 
- /* @page owns vertical pagination boundaries; the flow box owns horizontal text margins. */
- .paper{width:210mm;}
- .template-coordinate-plane{top:calc(-1 * var(--print-content-top, 0mm));right:0;left:auto;width:210mm;height:297mm;}
- .page-content-window{position:static;display:block;width:210mm;overflow:visible;}
- .document-content{position:relative;top:auto;right:auto;left:auto;transform:none!important;box-sizing:border-box;width:210mm;padding-left:var(--print-content-left, 0mm);padding-right:var(--print-content-right, 0mm);}
-
- /* Chromium anchors fixed print elements to the @page content box. Restore the letterhead to the physical A4 page instead of stretching it into the reduced content box. */
- .letterhead-background{position:fixed!important;top:calc(-1 * var(--print-content-top, 0mm))!important;right:auto!important;bottom:auto!important;left:0!important;width:210mm!important;height:297mm!important;inset-inline:auto!important;}
- .repeat-item{position:fixed!important;top:var(--print-repeat-top)!important;right:var(--print-repeat-right)!important;left:auto!important;width:var(--print-repeat-width)!important;}
-  .page-number{position:fixed!important;top:var(--print-page-number-top)!important;right:var(--print-page-number-right)!important;bottom:auto!important;left:auto!important;width:var(--print-page-number-width)!important;transform:none!important;z-index:20;}
- .page-number bdi{visibility:hidden;}
- .page-number::after{display:block;direction:rtl;unicode-bidi:isolate;white-space:nowrap;}
- .page-number-format-number_of::after{content:counter(page) " از " counter(pages);}
- .page-number-format-slash::after{content:counter(page) "/" counter(pages);direction:ltr;}
- .page-number-format-short::after{content:"ص" counter(page) " از " counter(pages);}
- .page-number-format-page::after{content:"صفحه " counter(page) " از " counter(pages);}
+ /* Print the exact A4 page slices already rendered by the preview. Do not ask Chromium to repaginate the letter body. */
+ .paper,.paper.screen-page{display:block!important;position:relative!important;box-sizing:border-box!important;width:210mm!important;height:297mm!important;min-height:297mm!important;margin:0!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;break-after:page;page-break-after:always;}
+ .paper:last-child{break-after:auto;page-break-after:auto;}
+ .template-coordinate-plane{position:absolute!important;top:0!important;right:0!important;left:0!important;width:100%!important;height:297mm!important;}
+ .letterhead-background{position:absolute!important;inset:0!important;width:auto!important;height:auto!important;background-position:center top!important;background-size:100% 100%!important;}
+ .repeat-item,.page-number,.first-page-positioned{position:absolute!important;}
+ .page-content-window{position:absolute!important;display:block!important;overflow:hidden!important;}
+ .document-content{position:absolute!important;top:0!important;right:0!important;left:0!important;width:100%!important;transform:inherit!important;padding-left:0!important;padding-right:0!important;}
+ .page-number bdi{visibility:visible!important;}
+ .page-number::after{content:none!important;display:none!important;}
 }
 @media screen and (max-width:800px){.paper{width:210mm;}}
 </style>
