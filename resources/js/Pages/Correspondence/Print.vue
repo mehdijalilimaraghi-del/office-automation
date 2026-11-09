@@ -79,9 +79,8 @@ function positionedStyle(item:TemplateElement):Record<string,string>{
 }
 function pageNumberScreenStyle(item:TemplateElement):Record<string,string> {
  const topEdge=Math.max(props.pageLayout.top,props.pageLayout.header_height);
- const bottomEdge=297-Math.max(props.pageLayout.bottom,props.pageLayout.footer_height);
  const requestedY=item.y*2.97;
- const mappedY=requestedY<topEdge?requestedY:requestedY>bottomEdge?requestedY:(requestedY-topEdge<=bottomEdge-requestedY?topEdge:bottomEdge);
+ const mappedY=requestedY;
  const anchorX=item.align==='right'?item.x:item.align==='left'?item.x+item.width:item.x+(item.width/2);
  const slot=anchorX<33.333?'right':anchorX>66.667?'left':'center';
  const slotRight=slot==='right'?0:slot==='center'?33.333:66.667;
