@@ -142,7 +142,15 @@ function pageNumberElementStyle(item:ElementBox):Record<string,string> {
  const bottomEdge=297-Math.max(form.page_layout.bottom,form.page_layout.footer_height??0);
  const requestedY=item.y*2.97;
  const mappedY=requestedY<topEdge?requestedY:requestedY>bottomEdge?requestedY:(requestedY-topEdge<=bottomEdge-requestedY?topEdge:bottomEdge);
- return {...elementStyle(item),top:(mappedY/297*100)+'%'};
+ const anchorX=item.align==='right'?item.x:item.align==='left'?item.x+item.width:item.x+(item.width/2);
+ const slot=anchorX<33.333?'right':anchorX>66.667?'left':'center';
+ const slotRight=slot==='right'?0:slot==='center'?33.333:66.667;
+ const slotLeft=slotRight+33.333;
+ const style:Record<string,string>={right:slotRight+'%',top:(mappedY/297*100)+'%',width:'33.333%',fontSize:item.font_size+'px',fontFamily:resolvedFont(item),fontWeight:item.bold?'700':'400',textAlign:item.align};
+ if(item.align==='right')style.paddingRight=Math.max(0,anchorX-slotRight)*2.1+'mm';
+ if(item.align==='left')style.paddingLeft=Math.max(0,slotLeft-anchorX)*2.1+'mm';
+ if(item.align==='center')style.transform='translateX('+((slotRight+16.6665-anchorX)*2.1)+'mm)';
+ return style;
 }
 </script>
 
