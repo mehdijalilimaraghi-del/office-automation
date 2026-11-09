@@ -1743,3 +1743,13 @@ Validation has not yet been run locally. Phase 3 remains partial pending PHP tes
 - Restored body-element spacing as a separate «فاصله از بخش قبل» setting. New body elements default to 12 mm; existing saved body spacing is preserved by both template and print controllers and is applied only at the beginning of the flowing body, not as a replacement for the page's top margin.
 - Corrected the number_of page-counter content with an RTL isolate around the Persian «از» separator; other counter formats retain their existing output.
 - Added a print-controller regression assertion that a saved body spacing value reaches the print page unchanged. Local feature test, npm run build, and browser print/manual layout acceptance are pending. Development branch only; master, release and server remain unchanged.
+
+## 2026-11-09 — Correspondence print coordinate model update
+
+The print renderer now separates the physical A4 coordinate plane from the flowing text area without layering duplicate horizontal margins:
+- Physical template elements use a 210 mm wide A4 plane, with its top aligned to physical page top.
+- CSS paged media reserves only effective top and bottom zones, each calculated as the greater of the configured text margin and header/footer height.
+- The flowing text container spans 210 mm and applies configured left/right text margins as padding exactly once. Body content therefore wraps within the same physical horizontal boundaries as the screen preview.
+- Body content remains normal flow for Chromium pagination; header/footer/repeat elements remain on the physical-page coordinate plane.
+
+This is committed implementation, not verified acceptance. Build, PHP feature test and Chromium PDF comparison are pending. Do not claim parity until first-page and later-page placement are checked. Development only; master/release/server unchanged.
