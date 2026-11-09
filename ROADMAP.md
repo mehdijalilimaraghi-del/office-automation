@@ -1,3 +1,8 @@
+## 2026-11-09 — Print coordinate-origin mismatch correction
+
+- Corrected the first-page coordinate origin in print mode: the absolute meta/heading plane is shifted from the `@page` content origin back to the physical A4 top edge. The flowing body remains in the printable content area, preserving the measured spacing relationship used by the screen preview.
+- Pending local build, focused PHP tests and Chromium print/PDF comparison before marking print parity complete. Development only; master, release and server unchanged.
+
 ## 2026-11-09 — Page-number coordinate reconciliation and organization postal code
 
 - Root cause confirmed in the current print implementation: the designer and screen print preview positioned the page-number element at its raw A4 percentage Y coordinate, while Chromium print output maps that element into a page-margin box. When the configured Y coordinate fell inside the body area, the actual printed counter snapped to the nearest reserved top/bottom margin but the screen previews did not, creating a visible position mismatch. Horizontal margin-box selection also used only the element's starting X coordinate, ignoring text alignment and width.
