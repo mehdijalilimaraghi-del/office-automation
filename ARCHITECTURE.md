@@ -568,3 +568,10 @@ The browser-native print renderer uses two coordinated layers with one physical 
 Horizontal `@page` margins must remain zero in this model; applying them as well as flow-box padding would create a second margin layer and shrink/shift the coordinate plane. The physical template plane is vertically offset from the `@page` content origin by the effective top safe area. Body content remains in normal flow so Chromium can fragment it across pages; repeating template elements remain page-positioned.
 
 The screen A4 preview and browser PDF still require explicit visual acceptance. Browser-specific pagination and fixed-element behavior must not be treated as verified solely from CSS or PHP tests.
+
+## 2026-11-09 — Outgoing dispatch stage and recipient title prefix
+
+- The existing external tracking columns are reused; no duplicate schema was introduced. Outgoing letters in `awaiting_dispatch` are now included in the Secretariat manager's `needs_action` state filter, fixing the hand-off that previously made the newly registered outgoing letter disappear from the actionable list.
+- Final dispatch now requires both a dispatch method and a sent date while the letter is in `awaiting_dispatch`. The workflow service independently enforces the same invariant before recording `dispatched`; external registration number/date remain optional tracking metadata.
+- Added `{{recipient_organizational_title_prefix}}` to the addressing element token allow-list, designer token catalog/sample values, and print resolver. It reads the immutable `organizational_title_prefix` captured from the selected external contact at registration.
+- Frontend build, focused correspondence tests, and manual Secretariat workflow verification are pending. Development only; master/release/server unchanged.
