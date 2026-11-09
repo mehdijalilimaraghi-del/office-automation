@@ -3,7 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch, nextTick } from 'vue';
 
 type Role = 'meta'|'heading'|'page_number'|'issuer'|'header'|'footer'|'repeat'|'body';
 type Kind = 'text'|'stamp'|'signature';
@@ -17,6 +17,8 @@ const previewMode = ref(false);
 const showPageLayoutDialog = ref(false);
 const selected = computed(() => form.elements.find(item => item.id === selectedId.value) ?? null);
 const page = ref<HTMLElement|null>(null);
+const measuredBodyOffsetMm = ref(0);
+let previewLayoutObserver:ResizeObserver|null=null;
 const dragging = ref<{id:string; lastX:number; lastY:number}|null>(null);
 const roleLabels:Record<Role,string> = { meta:'شماره و تاریخ', heading:'خطاب و موضوع', page_number:'شماره صفحه', issuer:'تنظیم‌کننده و امضا', header:'سربرگ تکرارشونده', footer:'پاصفحه تکرارشونده', repeat:'سربرگ/پاصفحه قدیمی', body:'متن اصلی نامه' };
 const addableRoles = computed(() => Object.fromEntries(Object.entries(roleLabels).filter(([role]) => role !== 'repeat')) as Partial<Record<Role,string>>);
@@ -109,7 +111,30 @@ function displayText(item:ElementBox):string {
 function flowStyle(item:ElementBox):Record<string,string> { return { width:item.width+'%', marginTop:item.spacing+'mm', fontSize:item.font_size+'px', fontWeight:item.bold?'700':'400', textAlign:item.align }; }
 function resolvedFont(item:ElementBox):string { return item.font_family==='default'?props.defaultFontFamily:item.font_family; }
 function elementStyle(item:ElementBox):Record<string,string> { return { right:item.x+'%', top:item.y+'%', width:item.width+'%', fontSize:item.font_size+'px', fontFamily:resolvedFont(item), fontWeight:item.bold?'700':'400', textAlign:item.align }; }
-function bodyPreviewStyle():Record<string,string> { const item=flowBody.value; return { width:(item?.width??84)+'%', marginTop:(item?.spacing??0)+'mm', fontSize:(item?.font_size??12)+'px', fontFamily:item?resolvedFont(item):props.defaultFontFamily, fontWeight:item?.bold?'700':'400', textAlign:item?.align??'right' }; }
+function updateBodyPreviewOffset():void {
+ if(!page.value)return;
+ const rect=page.value.getBoundingClientRect();
+ const pxPerMm=rect.height/297;
+ if(pxPerMm<=0)return;
+ const safeTop=rect.top+Math.max(form.page_layout.top,form.page_layout.header_height??0)*pxPerMm;
+ const preceding=Array.from(page.value.querySelectorAll<HTMLElement>('.template-flow-previous'));
+ const lastBottom=preceding.reduce((bottom,element)=>Math.max(bottom,element.getBoundingClientRect().bottom),safeTop);
+ measuredBodyOffsetMm.value=Math.max(0,(lastBottom-safeTop)/pxPerMm);
+}
+async function observePreviewLayout():Promise<void> {
+ await nextTick();
+ updateBodyPreviewOffset();
+ previewLayoutObserver?.disconnect();
+ if(typeof ResizeObserver!=='undefined'&&page.value){
+  previewLayoutObserver=new ResizeObserver(()=>updateBodyPreviewOffset());
+  previewLayoutObserver.observe(page.value);
+  page.value.querySelectorAll<HTMLElement>('.template-flow-previous').forEach(element=>previewLayoutObserver?.observe(element));
+ }
+}
+function bodyPreviewStyle():Record<string,string> { const item=flowBody.value; return { width:(item?.width??84)+'%', marginTop:((item?.spacing??0)+measuredBodyOffsetMm.value)+'mm', fontSize:(item?.font_size??12)+'px', fontFamily:item?resolvedFont(item):props.defaultFontFamily, fontWeight:item?.bold?'700':'400', textAlign:item?.align??'right' }; }
+onMounted(()=>{void observePreviewLayout();});
+watch(()=>form.elements.map(item=>[item.role,item.content,item.x,item.y,item.width,item.font_size,item.visible]),()=>{void observePreviewLayout();},{deep:true});
+onBeforeUnmount(()=>previewLayoutObserver?.disconnect());
 function issuerPreviewStyle(item:ElementBox):Record<string,string> { return { width:item.width+'%', marginTop:item.spacing+'mm', marginRight:`calc(${item.x*2.1}mm - ${props.pageLayout.right}mm)`, fontSize:item.font_size+'px', fontFamily:resolvedFont(item), fontWeight:item.bold?'700':'400', textAlign:item.align }; }
 function pageNumberPreview(item:ElementBox):string { const format=item.page_format??'number_of'; if(format==='slash')return '۱/۵'; if(format==='short')return 'ص۱ از ۵'; if(format==='page')return 'صفحه ۱ از ۵'; return '۱ از ۵'; }
 </script>
@@ -133,7 +158,7 @@ function pageNumberPreview(item:ElementBox):string { const format=item.page_form
        </div>
        <div v-for="item in flowIssuer" :key="item.id" class="whitespace-pre-wrap p-2 text-slate-900" :class="previewMode?'':(selectedId===item.id?'border border-dashed border-teal-600 bg-teal-50/80 ring-1 ring-teal-500':'border border-dashed border-slate-300 bg-white/70')" :style="issuerPreviewStyle(item)" @click="selectedId=item.id"><img v-if="item.kind==='stamp'&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="pointer-events-none block h-auto w-full max-w-none object-contain"/><span v-else class="pointer-events-none">{{displayText(item)}}</span></div>
       </div>
-      <div v-for="item in form.elements.filter(entry=>entry.visible && entry.role!=='body' && entry.role!=='issuer')" :key="item.id" class="absolute z-10 whitespace-pre-wrap p-2 text-slate-900" :class="previewMode?'':(selectedId===item.id?'border border-dashed border-teal-600 bg-teal-50/80 ring-1 ring-teal-500':'border border-dashed border-slate-300 bg-white/70')" :style="elementStyle(item)" @pointerdown="!previewMode&&pointerDown($event,item)"><span class="pointer-events-none"><bdi v-if="item.role==='page_number'" dir="ltr">{{pageNumberPreview(item)}}</bdi><template v-else>{{displayText(item)}}</template></span></div>
+      <div v-for="item in form.elements.filter(entry=>entry.visible && entry.role!=='body' && entry.role!=='issuer')" :key="item.id" class="absolute z-10 whitespace-pre-wrap p-2 text-slate-900" :class="[previewMode?'':(selectedId===item.id?'border border-dashed border-teal-600 bg-teal-50/80 ring-1 ring-teal-500':'border border-dashed border-slate-300 bg-white/70'),['meta','heading'].includes(item.role)?'template-flow-previous':'']" :style="elementStyle(item)" @pointerdown="!previewMode&&pointerDown($event,item)"><span class="pointer-events-none"><bdi v-if="item.role==='page_number'" dir="ltr">{{pageNumberPreview(item)}}</bdi><template v-else>{{displayText(item)}}</template></span></div>
      </div>
     </section>
     <aside v-if="!previewMode" class="space-y-4">
