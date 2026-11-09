@@ -57,7 +57,7 @@ class CorrespondencePrintController extends Controller
         $templateElements = is_string($templateRaw) ? json_decode($templateRaw, true) : null;
         $templateElements = is_array($templateElements) ? array_values(array_map(static fn (array $item): array => [...$item, 'kind' => ($item['kind'] ?? 'text') === 'letterhead' ? 'text' : ($item['kind'] ?? 'text'), 'role' => $item['role'] ?? (in_array(($item['kind'] ?? null), ['stamp', 'signature'], true) ? 'issuer' : ((float) ($item['y'] ?? 0) < 25 ? 'repeat' : 'meta')), 'spacing' => $item['spacing'] ?? 0, 'font_family' => $item['font_family'] ?? 'default', 'page_format' => $item['page_format'] ?? 'number_of'], array_filter($templateElements, static fn (array $item): bool => ($item['kind'] ?? null) !== 'letterhead'))) : [];
         if (! collect($templateElements)->contains(static fn (array $item): bool => ($item['role'] ?? null) === 'body')) {
-            $templateElements[] = ['id' => 'letter_body', 'kind' => 'text', 'role' => 'body', 'spacing' => 42, 'label' => 'متن اصلی نامه', 'content' => '', 'x' => 8, 'y' => 0, 'width' => 84, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true];
+            $templateElements[] = ['id' => 'letter_body', 'kind' => 'text', 'role' => 'body', 'spacing' => 0, 'label' => 'متن اصلی نامه', 'content' => '', 'x' => 8, 'y' => 0, 'width' => 84, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true];
         }
 
         foreach ($templateElements as &$element) {
