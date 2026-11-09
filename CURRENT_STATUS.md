@@ -2169,3 +2169,9 @@ Organization Settings now uses three tabs. A separate organization letterhead im
 - فاصله از بخش قبل برای المان‌های جریان صادرکننده اکنون مقدار منفی تا ۸۰ میلی‌متر را می‌پذیرد. این امکان برای قرارگیری مهر و امضا روی نام تنظیم‌کننده در طراح و چاپ واقعی فراهم شده است.
 - دو متغیر `{{manager_name}}` و `{{manager_position}}` به قالب اضافه شدند. نام مدیر و سمت فعال او از انتساب سمت در همان واحد دریافت می‌شود؛ سمت اصلی فعال در اولویت است. اگر سمت تعریف نشده باشد، متغیر خالی می‌ماند و متن ساختگی تولید نمی‌شود.
 - تست پیش‌نمایش چاپ برای دریافت نام و سمت مدیر واحد گسترش یافت. اجرای تست محلی و build هنوز در انتظار گزارش کاربر است. شاخه development؛ master و سرور بدون تغییر.
+
+## 2026-11-09 — Print page-layout TypeScript contract correction
+
+- Fixed the frontend prop contract in `Correspondence/Print.vue`: `pageLayout` now explicitly types `header_height` and `footer_height`, matching the defaults and values supplied by `CorrespondencePrintController`.
+- This resolves the reported `vue-tsc` property-not-found errors without changing print calculations, persisted settings, or runtime behavior.
+- The owner must rerun the frontend production build. Browser print acceptance remains pending; development branch only, with master/release/server unchanged.
