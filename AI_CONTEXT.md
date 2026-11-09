@@ -1162,3 +1162,11 @@ Added `CorrespondencePrintController`, `Correspondence/Print.vue`, protected pri
 - Restored body-element spacing as a separate «فاصله از بخش قبل» setting. New body elements default to 12 mm; existing saved body spacing is preserved by both template and print controllers and is applied only at the beginning of the flowing body, not as a replacement for the page's top margin.
 - Corrected the number_of page-counter content with an RTL isolate around the Persian «از» separator; other counter formats retain their existing output.
 - Added a print-controller regression assertion that a saved body spacing value reaches the print page unchanged. Local feature test, npm run build, and browser print/manual layout acceptance are pending. Development branch only; master, release and server remain unchanged.
+
+## 2026-11-09 — Single-origin correspondence print layout
+
+- Reworked the print page so the CSS paged-media box owns only the effective vertical safe zones: top = max(text top margin, header height), bottom = max(text bottom margin, footer height). Browser/page CSS no longer adds a second left/right margin layer.
+- The print page now uses a full-width 210 mm A4 coordinate plane from the physical horizontal origin. The body flow box is also 210 mm wide and applies the configured left/right text margins as padding, keeping the physical x-coordinate system consistent with the screen A4 preview.
+- The positioned header/footer/repeat plane is shifted vertically from the @page content origin to the physical A4 top. The body remains in normal document flow inside the vertical safe area, preserving natural browser pagination and first-page measured spacing after metadata/heading.
+- Removed the previous print-only right-offset compensation. The page layout's left/right values are now applied once as body padding; header/footer heights are represented once by @page top/bottom margins.
+- This is an implementation step, not acceptance: run frontend build, focused CorrespondenceHttpTest, then compare the same letter in screen preview and Chromium PDF using non-symmetric margins and distinct header/footer heights. Confirm first and subsequent pages, repeated elements, body start and page counters. Development only; master/release/server unchanged; all validation pending.
