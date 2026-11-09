@@ -50,6 +50,7 @@ class OrganizationSettingsTest extends TestCase
             'email' => 'info@example.com',
             'website' => 'https://example.com',
             'address' => 'تهران',
+            'postal_code' => '1234567890',
             'stamp' => UploadedFile::fake()->image('stamp.png', 300, 300),
             'letterhead' => UploadedFile::fake()->image('letterhead.png', 2481, 3508),
             'stamp_active' => true,
@@ -87,6 +88,7 @@ class OrganizationSettingsTest extends TestCase
             'key' => 'organization.national_id',
             'value' => '1234567890',
         ]);
+        $this->assertDatabaseHas('system_settings', ['key' => 'organization.postal_code', 'value' => '1234567890']);
         $this->assertDatabaseHas('system_settings', ['key' => 'organization.stamp.active', 'value' => '1']);
         $letterheadPath = SystemSetting::query()->where('key', 'organization.letterhead.path')->value('value');
         $this->assertNotEmpty($letterheadPath);
