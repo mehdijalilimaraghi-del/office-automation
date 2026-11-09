@@ -18,6 +18,7 @@ interface OrganizationSettings {
     email: string | null;
     website: string | null;
     address: string | null;
+    postal_code: string | null;
     stamp_url?: string | null;
     letterhead_url?: string | null;
     stamp_active?: boolean;
@@ -68,6 +69,7 @@ const form = useForm({
     email: props.settings.email ?? '',
     website: props.settings.website ?? '',
     address: props.settings.address ?? '',
+    postal_code: props.settings.postal_code ?? '',
     stamp: null as File | null,
     stamp_active: props.settings.stamp_active ?? false,
     letterhead: null as File | null,
@@ -189,6 +191,11 @@ function submit(): void {
                                 <label for="website" class="mb-2 block text-sm font-semibold text-slate-700">وب‌سایت</label>
                                 <TextInput id="website" v-model="form.website" dir="ltr" class="block min-h-11 w-full rounded-xl text-left" placeholder="https://example.com" />
                                 <InputError class="mt-1.5" :message="form.errors.website" />
+                            </div>
+                            <div>
+                                <label for="postal_code" class="mb-2 block text-sm font-semibold text-slate-700">کد پستی</label>
+                                <TextInput id="postal_code" v-model="form.postal_code" dir="ltr" maxlength="20" class="block min-h-11 w-full rounded-xl text-left" placeholder="کد پستی سازمان" />
+                                <InputError class="mt-1.5" :message="form.errors.postal_code" />
                             </div>
                         </div>
 
