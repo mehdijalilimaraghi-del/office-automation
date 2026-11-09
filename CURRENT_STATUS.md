@@ -1,3 +1,9 @@
+## 2026-11-09 — Align first-page template elements between screen preview and print
+
+- Root cause: screen A4 coordinates start at the physical page top; in print, the `.paper` containing block starts at the `@page` content edge after the top margin. Absolute first-page meta/heading elements were consequently shifted down by the reserved top margin while the body stayed at the printable content edge, causing overlap and spacing mismatch.
+- Print CSS now shifts the absolute coordinate plane upward by the effective content-top margin without moving the flowing body. The screen preview is unchanged. Build, focused PHP tests, and Chromium print/PDF acceptance remain pending.
+- Development only; master, release and server unchanged.
+
 ## 2026-11-09 — Page-number coordinate reconciliation and organization postal code
 
 - Root cause confirmed in the current print implementation: the designer and screen print preview positioned the page-number element at its raw A4 percentage Y coordinate, while Chromium print output maps that element into a page-margin box. When the configured Y coordinate fell inside the body area, the actual printed counter snapped to the nearest reserved top/bottom margin but the screen previews did not, creating a visible position mismatch. Horizontal margin-box selection also used only the element's starting X coordinate, ignoring text alignment and width.
