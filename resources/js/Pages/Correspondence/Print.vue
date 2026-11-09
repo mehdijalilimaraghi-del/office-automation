@@ -36,7 +36,7 @@ const pageCss=computed(()=>{
  const margins=contentTop+'mm '+props.pageLayout.right+'mm '+contentBottom+'mm '+props.pageLayout.left+'mm';
  const item=pageNumberElement.value;
  const position=pageNumberPosition.value;
- let counterContent='counter(page) " از " counter(pages)';
+ let counterContent='counter(page) " \\2067از\\2069 " counter(pages)';
  if(pageNumberFormat.value==='slash')counterContent='counter(page) "/" counter(pages)';
  if(pageNumberFormat.value==='short')counterContent='"ص" counter(page) " از " counter(pages)';
  if(pageNumberFormat.value==='page')counterContent='"صفحه " counter(page) " از " counter(pages)';
@@ -85,7 +85,7 @@ function resolveTemplate(content:string):string {
 function fontFamily(item:TemplateElement):string{return item.font_family==='default'||!item.font_family?(props.printOptions.font_family||'Vazirmatn'):item.font_family;}
 function boxStyle(item:TemplateElement):Record<string,string>{return {width:item.width+'%',marginTop:item.spacing+'mm',marginRight:`calc(${item.x*2.1}mm - ${props.pageLayout.right}mm)`,fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
 function positionedStyle(item:TemplateElement):Record<string,string>{return {right:item.x+'%',top:item.y+'%',bottom:'auto',width:item.width+'%',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
-function bodyStyle():Record<string,string>{const item=bodyElement.value;return {width:item.width+'%',marginTop:'0mm',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
+function bodyStyle():Record<string,string>{const item=bodyElement.value;return {width:item.width+'%',marginTop:item.spacing+'mm',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
 function updateEstimatedPageCount():void {
  const element=documentContent.value[0];
  if(!element)return;
