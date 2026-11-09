@@ -85,6 +85,7 @@ function pageContentStyle(pageIndex:number):Record<string,string> {
 const paperStyle=computed(()=>({
  fontFamily:props.printOptions.font_family||'Vazirmatn',
  minHeight:'297mm',
+ '--print-content-top':Math.max(props.pageLayout.top,props.pageLayout.header_height)+'mm',
 }));
 const hasCreatorElement=computed(()=>flowIssuer.value.some(item=>item.kind==='text'&&(item.content.includes('{{creator_name}}')||item.content.includes('{{creator_unit_title}}')||item.content.includes('{{manager_name}}')||item.content.includes('{{manager_position}}')||item.content.includes('{{manager_title}}')||item.content.includes('{{creator_department_name}}'))));
 const hasSignatureElement=computed(()=>flowIssuer.value.some(item=>item.kind==='signature'));
@@ -232,6 +233,8 @@ function printLetter():void{window.print();}
  .no-print{display:none!important;}
  .paper{width:auto;height:auto;min-height:0!important;margin:0 0 0!important;box-shadow:none;overflow:visible;}
  .paper.screen-page:not(:first-of-type){display:none!important;}
+ /* Print content starts at the @page content edge, unlike the screen A4 origin. */
+ .template-coordinate-plane{top:calc(-1 * var(--print-content-top, 0mm));}
  .page-content-window{position:static;overflow:visible;}
  .document-content{position:relative;top:auto;right:auto;left:auto;transform:none!important;width:auto;}
 
