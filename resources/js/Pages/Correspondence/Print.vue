@@ -35,7 +35,12 @@ const pageCss=computed(()=>{
  if(pageNumberFormat.value==='slash')counterContent='counter(page) "/" counter(pages)';
  if(pageNumberFormat.value==='short')counterContent='"ص" counter(page) " از " counter(pages)';
  if(pageNumberFormat.value==='page')counterContent='"صفحه " counter(page) " از " counter(pages)';
- const rule=item?position+'{content:'+counterContent+';font:9pt Tahoma,sans-serif;color:#475569;direction:ltr;unicode-bidi:isolate;text-align:'+item.align+';white-space:nowrap;}':'';
+ const yMm=item?item.y*2.97:0;
+ const verticalPadding=item?(item.y<50?yMm:Math.max(0,yMm-(297-props.pageLayout.bottom))):0;
+ const horizontalPadding=item?(item.x<34?item.x*2.1:item.x>66?(100-item.x)*2.1:0):0;
+ const horizontalSide=item?(item.x<34?'padding-right':item.x>66?'padding-left':''):'';
+ const extraPadding=horizontalSide?horizontalSide+':'+horizontalPadding.toFixed(2)+'mm;':'';
+ const rule=item?position+'{content:'+counterContent+';font:9pt Tahoma,sans-serif;color:#475569;direction:ltr;unicode-bidi:isolate;text-align:'+item.align+';white-space:nowrap;vertical-align:top;padding-top:'+verticalPadding.toFixed(2)+'mm;'+extraPadding+'}':'';
  return '@page{size:A4;margin:'+margins+';}'
   +'@page number_of{size:A4;margin:'+margins+';'+(pageNumberFormat.value==='number_of'?rule:'')+'}'
   +'@page slash{size:A4;margin:'+margins+';'+(pageNumberFormat.value==='slash'?rule:'')+'}'
