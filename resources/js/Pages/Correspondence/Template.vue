@@ -10,8 +10,8 @@ type Kind = 'text'|'stamp'|'signature';
 type PageFormat = 'number_of'|'slash'|'short'|'page';
 interface ElementBox { id:string; kind:Kind; role:Role; label:string; content:string; x:number; y:number; width:number; spacing:number; font_size:number; font_family:string; page_format:PageFormat; bold:boolean; align:'right'|'center'|'left'; visible:boolean; }
 interface Token { key:string; label:string; }
-const props = defineProps<{ elements:ElementBox[]; tokens:Token[]; letterheadDataUri:string|null; stampDataUri:string|null; defaultFontFamily:string; previewValues:Record<string,string>; previewBody:string }>();
-const form = useForm({ elements: props.elements.map(item => ({ ...item, role: item.role ?? 'repeat', spacing: item.spacing ?? 0, font_family: item.font_family ?? 'default', page_format: item.page_format ?? 'number_of' })) });
+const props = defineProps<{ elements:ElementBox[]; pageLayout:{top:number;right:number;bottom:number;left:number}; tokens:Token[]; letterheadDataUri:string|null; stampDataUri:string|null; defaultFontFamily:string; previewValues:Record<string,string>; previewBody:string }>();
+const form = useForm({ elements: props.elements.map(item => ({ ...item, role: item.role ?? 'repeat', spacing: item.spacing ?? 0, font_family: item.font_family ?? 'default', page_format: item.page_format ?? 'number_of' })), page_layout: { ...props.pageLayout } });
 const selectedId = ref(form.elements[0]?.id ?? '');
 const previewMode = ref(false);
 const selected = computed(() => form.elements.find(item => item.id === selectedId.value) ?? null);
@@ -34,6 +34,18 @@ const flowIssuer = computed(() => form.elements.filter(item => item.visible && i
 const flowBody = computed(() => form.elements.find(item => item.role === 'body' && item.visible) ?? null);
 const repeating = computed(() => form.elements.filter(item => item.visible && item.role === 'repeat'));
 const pageNumberEnabled = computed(() => form.elements.some(item => item.visible && item.role === 'page_number'));
+const safeAreaStyle = computed(() => ({
+ top: (form.page_layout.top / 297 * 100) + '%',
+ right: (form.page_layout.right / 210 * 100) + '%',
+ bottom: (form.page_layout.bottom / 297 * 100) + '%',
+ left: (form.page_layout.left / 210 * 100) + '%',
+}));
+const contentPreviewStyle = computed(() => ({
+ top: form.page_layout.top + 'mm',
+ right: form.page_layout.right + 'mm',
+ left: form.page_layout.left + 'mm',
+ bottom: form.page_layout.bottom + 'mm',
+}));
 function addRole(role:string):void { if (role in roleLabels) addBox(role as Role); }
 function addBox(role:Role, kind:Kind='text'):void {
  const id='item_'+Math.random().toString(36).slice(2,9);
@@ -94,8 +106,8 @@ function pageNumberPreview(item:ElementBox):string { const format=item.page_form
     <section class="overflow-auto rounded-2xl border border-slate-200 bg-slate-200 p-4">
      <div class="mx-auto mb-3 flex max-w-[210mm] flex-wrap items-center justify-between gap-2 text-xs text-slate-600"><span>{{ previewMode ? 'پیش‌نمایش نمونه با اطلاعات تنظیمات سازمان' : 'پیش‌نمایش A4 · سربرگ به‌صورت پس‌زمینه' }}</span><button type="button" class="rounded-lg bg-slate-900 px-3 py-2 font-semibold text-white" @click="previewMode = !previewMode">{{ previewMode ? 'بازگشت به ویرایش' : 'پیش‌نمایش قالب' }}</button><div v-if="!previewMode" class="flex flex-wrap gap-2"><button v-for="(label,role) in roleLabels" :key="role" type="button" :disabled="role==='body' && form.elements.some(item=>item.role==='body')" class="rounded-lg bg-white px-3 py-2 font-semibold disabled:cursor-not-allowed disabled:opacity-40" @click="addRole(role)">{{label}} +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','stamp')">مهر +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','signature')">امضا +</button></div></div>
      <div ref="page" class="relative mx-auto aspect-[210/297] w-full max-w-[210mm] overflow-hidden bg-white shadow-xl" :style="letterheadDataUri?{backgroundImage:'url('+letterheadDataUri+')',backgroundSize:'100% 100%',backgroundPosition:'center'}:{}" @pointermove="pointerMove" @pointerup="pointerUp" @pointercancel="pointerUp">
-      <div v-if="!previewMode" class="pointer-events-none absolute inset-x-[8%] top-[4.7%] bottom-[7.4%] border-y border-dashed border-slate-300"></div>
-      <div class="absolute inset-x-[18mm] top-[14mm] whitespace-pre-wrap text-right">
+      <div v-if="!previewMode" class="pointer-events-none absolute border-y border-dashed border-slate-300" :style="safeAreaStyle"></div>
+      <div class="absolute whitespace-pre-wrap text-right" :style="contentPreviewStyle">
        <div v-if="flowBody" class="whitespace-pre-wrap p-3 text-sm leading-8" :class="previewMode?'text-slate-900':'border border-dashed border-slate-300 bg-white/70 text-slate-500'" :style="bodyPreviewStyle()">
         <p v-if="!previewMode" class="mb-2 font-semibold">متن اصلی نامه — درج خودکار</p>
         <p>{{ previewMode ? previewBody : 'متن نامه از این قسمت آغاز می‌شود و در صورت نیاز به صفحات بعد ادامه می‌یابد.' }}</p>
@@ -106,6 +118,16 @@ function pageNumberPreview(item:ElementBox):string { const format=item.page_form
      </div>
     </section>
     <aside v-if="!previewMode" class="space-y-4">
+     <section class="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
+      <h3 class="font-bold">محدوده چاپ A4</h3>
+      <p class="text-xs leading-5 text-slate-500">حاشیه‌ها محدوده مجاز متن را در تمام صفحات تعیین می‌کنند. سربرگ و پاصفحه تکرارشونده می‌توانند در فضای حاشیه قرار بگیرند.</p>
+      <div class="grid grid-cols-2 gap-2">
+       <label class="text-xs">حاشیه بالا (mm)<input v-model.number="form.page_layout.top" type="number" min="5" max="60" class="mt-1 w-full rounded-lg border-slate-300"/></label>
+       <label class="text-xs">حاشیه پایین (mm)<input v-model.number="form.page_layout.bottom" type="number" min="5" max="60" class="mt-1 w-full rounded-lg border-slate-300"/></label>
+       <label class="text-xs">حاشیه راست (mm)<input v-model.number="form.page_layout.right" type="number" min="5" max="50" class="mt-1 w-full rounded-lg border-slate-300"/></label>
+       <label class="text-xs">حاشیه چپ (mm)<input v-model.number="form.page_layout.left" type="number" min="5" max="50" class="mt-1 w-full rounded-lg border-slate-300"/></label>
+      </div>
+     </section>
      <section class="rounded-2xl border border-slate-200 bg-white p-4"><div class="mb-3 flex items-center justify-between"><h3 class="font-bold">بخش‌های قالب</h3><button type="button" class="text-xs text-rose-600" @click="removeBox">حذف انتخابی</button></div><div class="space-y-1"><button v-for="item in form.elements" :key="item.id" type="button" class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm" :class="selectedId===item.id?'bg-teal-50 text-teal-800':'hover:bg-slate-50'" @click="selectedId=item.id"><span>{{item.label}}</span><span class="text-xs text-slate-400">{{roleLabels[item.role]}}</span></button></div></section>
      <section v-if="selected" class="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
       <h3 class="font-bold">تنظیمات بخش</h3>
@@ -115,7 +137,7 @@ function pageNumberPreview(item:ElementBox):string { const format=item.page_form
       <p v-if="selected.role==='page_number'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">قالب نمایش شماره صفحه را انتخاب کنید؛ شماره و تعداد صفحات در خروجی چاپ به‌صورت خودکار محاسبه می‌شوند.</p>
       <p v-if="selected.role==='body'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">این المان محتوای نامه را کنترل نمی‌کند؛ فاصله شروع متن، عرض و قلم بدنه را تنظیم می‌کند. متن واقعی به‌صورت خودکار از نامه خوانده می‌شود.</p>
       <p v-if="selected.role==='issuer'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">این بخش پس از متن نامه قرار می‌گیرد. برای المان متنی این بخش، متغیرهای نام تنظیم‌کننده، عنوان و نام واحد ایجادکننده، نام مدیر واحد و سمت/عنوان سازمانی مدیر در دسترس است. فاصله منفی باعث هم‌پوشانی با بخش قبلی می‌شود؛ برای قرار گرفتن مهر یا امضا روی نام تنظیم‌کننده از مقدار منفی استفاده کنید.</p>
-      <p v-if="selected.role==='repeat'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">این بخش در مختصات تعیین‌شده در تمام صفحات تکرار می‌شود؛ برای هدر آن را نزدیک بالای صفحه و برای فوتر نزدیک پایین صفحه قرار دهید. محدوده بدنه چاپ با حاشیه‌های صفحه محافظت می‌شود.</p>
+      <p v-if="selected.role==='repeat'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">این بخش در مختصات تعیین‌شده در تمام صفحات تکرار می‌شود؛ برای هدر آن را نزدیک بالای صفحه و برای فوتر نزدیک پایین صفحه قرار دهید. محدوده بدنه چاپ با حاشیه‌های قابل تنظیم در بخش «محدوده چاپ A4» محافظت می‌شود.</p>
       <div class="grid grid-cols-2 gap-2">
        <label class="text-xs">عرض (%)<input v-model.number="selected.width" type="number" min="5" :max="100-selected.x" @change="normalizeSelectedBounds" class="mt-1 w-full rounded-lg border-slate-300"/></label>
        <label v-if="selected.role==='body' || selected.role==='issuer'" class="text-xs">فاصله از بخش قبل (mm)<input v-model.number="selected.spacing" type="number" min="-80" max="80" class="mt-1 w-full rounded-lg border-slate-300"/></label>
@@ -130,7 +152,7 @@ function pageNumberPreview(item:ElementBox):string { const format=item.page_form
       <label class="flex items-center gap-2 text-sm"><input v-model="selected.visible" type="checkbox"/> نمایش در خروجی</label>
       <div v-if="selected.kind==='text' && availableTokens.length" class="border-t pt-3"><p class="mb-2 text-xs font-bold">متغیرهای مرتبط با این بخش</p><div class="flex flex-wrap gap-1.5"><button v-for="token in availableTokens" :key="token.key" type="button" class="rounded-md bg-slate-100 px-2 py-1 text-xs hover:bg-teal-50" :title="token.key" @click="insertToken(token.key)">{{token.label}}</button></div></div>
      </section>
-     <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-6 text-amber-900">محتوای نامه به‌صورت خودکار از متن ثبت‌شده نامه درج می‌شود؛ المان «متن اصلی نامه» فقط محل شروع، عرض و ظاهر بدنه را کنترل می‌کند. فاصله منفی امکان هم‌پوشانی مهر و امضا با نام تنظیم‌کننده را فراهم می‌کند. اجزای تکرارشونده (هدر و فوتر) و شماره صفحه در همه صفحات چاپ نمایش داده می‌شوند. حاشیه چاپ A4 شامل ۱۴ میلی‌متر بالا، ۱۸ میلی‌متر طرفین و ۲۲ میلی‌متر پایین است؛ فاصله متن از موضوع فقط در ابتدای صفحه اول اعمال می‌شود و ادامه متن در صفحات بعد از ابتدای محدوده بدنه ادامه پیدا می‌کند.</div>
+     <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-6 text-amber-900">محتوای نامه به‌صورت خودکار از متن ثبت‌شده نامه درج می‌شود؛ المان «متن اصلی نامه» فقط محل شروع، عرض و ظاهر بدنه را کنترل می‌کند. فاصله منفی امکان هم‌پوشانی مهر و امضا با نام تنظیم‌کننده را فراهم می‌کند. اجزای تکرارشونده (هدر و فوتر) و شماره صفحه در همه صفحات چاپ نمایش داده می‌شوند. حاشیه‌های چاپ A4 از بخش «محدوده چاپ A4» قابل تنظیم هستند؛ فاصله اولیه بدنه فقط در شروع متن اعمال می‌شود و در صفحه‌های بعد تکرار نمی‌شود.</div>
      <PrimaryButton class="w-full justify-center" :disabled="form.processing" @click="form.put(route('correspondence.template.update'))">ذخیره قالب نامه</PrimaryButton><InputError :message="form.errors.elements"/>
     </aside>
    </div>
