@@ -167,6 +167,7 @@ class CorrespondenceController extends Controller
                                 'awaiting_manager_approval',
                                 'project_review_pending_manager',
                                 'project_request_approved',
+                                'awaiting_dispatch',
                                 'general_review_pending_manager',
                                 'approved_for_registration',
                             ])->whereHas('currentDepartment', fn ($currentDepartment) => $currentDepartment
@@ -1220,9 +1221,9 @@ class CorrespondenceController extends Controller
             'task_id' => ['nullable', 'integer', Rule::exists('tasks', 'id')],
             'external_registration_number' => ['nullable', 'string', 'max:100'],
             'external_registered_at' => ['nullable', 'date'],
-            'dispatch_method' => ['nullable', 'string', 'max:50'],
+            'dispatch_method' => [Rule::requiredIf($correspondence->workflow_state === 'awaiting_dispatch'), 'nullable', 'string', 'max:50'],
             'external_tracking_notes' => ['nullable', 'string', 'max:5000'],
-            'sent_at' => ['nullable', 'date'],
+            'sent_at' => [Rule::requiredIf($correspondence->workflow_state === 'awaiting_dispatch'), 'nullable', 'date'],
         ]);
 
         if (array_key_exists('sent_at', $data)) {
