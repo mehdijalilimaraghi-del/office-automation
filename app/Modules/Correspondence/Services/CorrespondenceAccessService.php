@@ -60,10 +60,13 @@ class CorrespondenceAccessService
             ->exists();
 
         $isReturnedForCorrection = $correspondence->type === Correspondence::TYPE_OUTGOING
-            && $correspondence->status === Correspondence::STATUS_REGISTERED
+            && in_array($correspondence->status, [Correspondence::STATUS_DRAFT, Correspondence::STATUS_REGISTERED], true)
             && $correspondence->workflow_state === 'returned_for_correction'
             && (int) $correspondence->created_by === (int) $user->id
-            && $correspondence->actions()->where('action_type', CorrespondenceAction::SECRETARIAT_RETURN)->exists();
+            && $correspondence->actions()->whereIn('action_type', [
+                CorrespondenceAction::MANAGER_RETURN_FOR_CORRECTION,
+                CorrespondenceAction::SECRETARIAT_RETURN,
+            ])->exists();
 
         if (! $user->isActive() || ($hasWorkflowAction && ! $isReturnedForCorrection)
             || $correspondence->replies()->exists() || $correspondence->task_id !== null) {
