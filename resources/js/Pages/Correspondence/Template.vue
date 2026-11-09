@@ -146,7 +146,7 @@ function pageNumberElementStyle(item:ElementBox):Record<string,string> {
  const slot=anchorX<33.333?'right':anchorX>66.667?'left':'center';
  const slotRight=slot==='right'?0:slot==='center'?33.333:66.667;
  const slotLeft=slotRight+33.333;
- const style:Record<string,string>={right:slotRight+'%',top:(mappedY/297*100)+'%',width:'33.333%',fontSize:item.font_size+'pt',fontFamily:resolvedFont(item),fontWeight:item.bold?'700':'400',textAlign:item.align,padding:'0',whiteSpace:'nowrap'};
+ const style:Record<string,string>={right:slotRight+'%',top:(mappedY/297*100)+'%',width:'33.333%',fontSize:item.font_size+'pt',fontFamily:resolvedFont(item),fontWeight:item.bold?'700':'400',textAlign:item.align,direction:item.page_format==='slash'?'ltr':'rtl',padding:'0',whiteSpace:'nowrap'};
  if(item.align==='right')style.paddingRight=Math.max(0,anchorX-slotRight)*2.1+'mm';
  if(item.align==='left')style.paddingLeft=Math.max(0,slotLeft-anchorX)*2.1+'mm';
  if(item.align==='center')style.transform='translateX('+((slotRight+16.6665-anchorX)*2.1)+'mm)';
@@ -173,7 +173,7 @@ function pageNumberElementStyle(item:ElementBox):Record<string,string> {
        </div>
        <div v-for="item in flowIssuer" :key="item.id" class="whitespace-pre-wrap p-2 text-slate-900" :class="previewMode?'':(selectedId===item.id?'border border-dashed border-teal-600 bg-teal-50/80 ring-1 ring-teal-500':'border border-dashed border-slate-300 bg-white/70')" :style="issuerPreviewStyle(item)" @click="selectedId=item.id"><img v-if="item.kind==='stamp'&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="pointer-events-none block h-auto w-full max-w-none object-contain"/><span v-else class="pointer-events-none">{{displayText(item)}}</span></div>
       </div>
-      <div v-for="item in form.elements.filter(entry=>entry.visible && entry.role!=='body' && entry.role!=='issuer')" :key="item.id" class="absolute z-10 whitespace-pre-wrap p-2 text-slate-900" :class="[previewMode?'':(selectedId===item.id?'border border-dashed border-teal-600 bg-teal-50/80 ring-1 ring-teal-500':'border border-dashed border-slate-300 bg-white/70'),['meta','heading'].includes(item.role)?'template-flow-previous':'']" :style="item.role==='page_number'?pageNumberElementStyle(item):elementStyle(item)" @pointerdown="!previewMode&&pointerDown($event,item)"><span class="pointer-events-none"><bdi v-if="item.role==='page_number'" dir="ltr">{{pageNumberPreview(item)}}</bdi><template v-else>{{displayText(item)}}</template></span></div>
+      <div v-for="item in form.elements.filter(entry=>entry.visible && entry.role!=='body' && entry.role!=='issuer')" :key="item.id" class="absolute z-10 whitespace-pre-wrap p-2 text-slate-900" :class="[previewMode?'':(selectedId===item.id?'border border-dashed border-teal-600 bg-teal-50/80 ring-1 ring-teal-500':'border border-dashed border-slate-300 bg-white/70'),['meta','heading'].includes(item.role)?'template-flow-previous':'']" :style="item.role==='page_number'?pageNumberElementStyle(item):elementStyle(item)" @pointerdown="!previewMode&&pointerDown($event,item)"><span class="pointer-events-none"><bdi v-if="item.role==='page_number'" :dir="item.page_format==='slash'?'ltr':'rtl'">{{pageNumberPreview(item)}}</bdi><template v-else>{{displayText(item)}}</template></span></div>
      </div>
     </section>
     <aside v-if="!previewMode" class="space-y-4">
