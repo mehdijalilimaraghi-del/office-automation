@@ -914,7 +914,8 @@ class CorrespondenceWorkflowService
 
             if ($letter->type !== Correspondence::TYPE_OUTGOING
                 || $letter->status !== Correspondence::STATUS_REGISTERED
-                || $letter->sent_at === null) {
+                || $letter->sent_at === null
+                || blank($letter->dispatch_method)) {
                 throw new InvalidArgumentException('ثبت ارسال نهایی فقط برای نامه صادره ثبت‌شده مجاز است.');
             }
 
