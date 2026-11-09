@@ -1,3 +1,11 @@
+## 2026-11-09 — Print coordinate follow-up: repeating elements and page counter
+
+- The print page now emits one explicit A4 `@page` rule with only the configured effective top/bottom reserved zones and zero CSS side margins; horizontal text margins remain applied once to the flowing document box. This is intended to prevent a second browser-side horizontal margin from being compounded with template margins. The browser/printer's non-printable hardware area remains outside CSS control.
+- Repeating header/footer/legacy-repeat elements now receive physical A4 millimetre coordinates for print: their Y coordinate is translated from physical page top by the effective top reserved zone, and X/width are expressed in millimetres against the full 210mm page width.
+- Page numbering no longer uses CSS page-margin boxes, which could only snap to a top/bottom margin segment. The print counter is a fixed repeated element positioned from the saved page_number element's physical A4 X/Y/width; its displayed value uses paged-media page/pages counters and the configured format/typography.
+- First-page meta/heading elements and the body-flow safe area retain their existing distinct roles. This is an implementation iteration, not yet accepted: frontend build, focused PHP tests, and Chromium PDF comparison remain pending. Specifically verify default vs minimum print-dialog margins, header/footer clearance, page-number X/Y, and multi-page repeat behavior.
+- Development only; master/release/server unchanged.
+
 ## 2026-11-09 — Preserve full A4 coordinate plane in browser print
 
 - Follow-up analysis found a second coordinate mismatch: `@page` margins correctly reserve the configured top/bottom and left/right print areas, but the `.paper` containing block in Chromium becomes only the remaining printable rectangle. The absolute template plane was still `width:auto; right:0; left:0`, so all percentage-based x/width coordinates were recalculated against the narrower printable rectangle. This made side margins and element positions appear ignored or shifted even after the vertical origin correction.
