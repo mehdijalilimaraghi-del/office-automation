@@ -1304,6 +1304,13 @@ class CorrespondenceHttpTest extends TestCase
         $this->actingAs($secretariatUser)->post(route('correspondence.register', $letter))->assertRedirect();
         $this->assertDatabaseHas('correspondences', ['id' => $letter->id, 'status' => Correspondence::STATUS_REGISTERED, 'registered_by' => $secretariatUser->id, 'workflow_state' => 'awaiting_dispatch']);
 
+        $this->actingAs($secretariatUser)->get(route('correspondence.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('filters.action_filter', 'needs_action')
+                ->where('correspondences.data.0.id', $letter->id));
+
+
         $snapshot = $letter->fresh()->recipient_addressing_snapshot;
         $this->assertSame('مدیریت', $snapshot['organizational_title_prefix']);
         $this->assertSame('مدیر واحد مالی', $snapshot['position']);
@@ -1312,6 +1319,10 @@ class CorrespondenceHttpTest extends TestCase
         $outgoingContact->update(['name' => 'نام تغییر یافته پس از ثبت', 'position' => 'سمت جدید']);
         $this->assertSame('مخاطب زمان ثبت', $letter->fresh()->recipient_addressing_snapshot['name']);
         $this->assertSame('مدیر واحد مالی', $letter->fresh()->recipient_addressing_snapshot['position']);
+
+        $this->actingAs($secretariatUser)->put(route('correspondence.external-tracking.update', $letter), [
+            'sent_at' => '2026-10-27 10:30:00',
+        ])->assertSessionHasErrors('dispatch_method');
 
         $this->actingAs($secretariatUser)->put(route('correspondence.external-tracking.update', $letter), [
             'sent_at' => '2026-10-27 10:30:00',
