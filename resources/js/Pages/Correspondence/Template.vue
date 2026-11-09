@@ -139,9 +139,8 @@ function issuerPreviewStyle(item:ElementBox):Record<string,string> { return { wi
 function pageNumberPreview(item:ElementBox):string { const format=item.page_format??'number_of'; if(format==='slash')return '۱/۵'; if(format==='short')return 'ص۱ از ۵'; if(format==='page')return 'صفحه ۱ از ۵'; return '۱ از ۵'; }
 function pageNumberElementStyle(item:ElementBox):Record<string,string> {
  const topEdge=Math.max(form.page_layout.top,form.page_layout.header_height??0);
- const bottomEdge=297-Math.max(form.page_layout.bottom,form.page_layout.footer_height??0);
  const requestedY=item.y*2.97;
- const mappedY=requestedY<topEdge?requestedY:requestedY>bottomEdge?requestedY:(requestedY-topEdge<=bottomEdge-requestedY?topEdge:bottomEdge);
+ const mappedY=requestedY;
  const anchorX=item.align==='right'?item.x:item.align==='left'?item.x+item.width:item.x+(item.width/2);
  const slot=anchorX<33.333?'right':anchorX>66.667?'left':'center';
  const slotRight=slot==='right'?0:slot==='center'?33.333:66.667;
