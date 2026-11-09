@@ -40,7 +40,7 @@ const pageNumberPosition=computed(()=>{
 const pageCss=computed(()=>{
  const contentTop=Math.max(props.pageLayout.top,props.pageLayout.header_height);
  const contentBottom=Math.max(props.pageLayout.bottom,props.pageLayout.footer_height);
- const margins=contentTop+'mm '+props.pageLayout.right+'mm '+contentBottom+'mm '+props.pageLayout.left+'mm';
+ const margins=contentTop+'mm 0mm '+contentBottom+'mm 0mm';
  const item=pageNumberElement.value;
  const position=pageNumberPosition.value;
  let counterContent='counter(page) " از " counter(pages)';
@@ -86,6 +86,7 @@ const paperStyle=computed(()=>({
  fontFamily:props.printOptions.font_family||'Vazirmatn',
  minHeight:'297mm',
  '--print-content-top':Math.max(props.pageLayout.top,props.pageLayout.header_height)+'mm',
+ '--print-content-left':props.pageLayout.left+'mm',
  '--print-content-right':props.pageLayout.right+'mm',
 }));
 const hasCreatorElement=computed(()=>flowIssuer.value.some(item=>item.kind==='text'&&(item.content.includes('{{creator_name}}')||item.content.includes('{{creator_unit_title}}')||item.content.includes('{{manager_name}}')||item.content.includes('{{manager_position}}')||item.content.includes('{{manager_title}}')||item.content.includes('{{creator_department_name}}'))));
@@ -235,9 +236,12 @@ function printLetter():void{window.print();}
  .paper{width:auto;height:auto;min-height:0!important;margin:0 0 0!important;box-shadow:none;overflow:visible;}
  .paper.screen-page:not(:first-of-type){display:none!important;}
  /* Print content starts at the @page content edge, unlike the screen A4 origin. */
- .template-coordinate-plane{top:calc(-1 * var(--print-content-top, 0mm));right:calc(-1 * var(--print-content-right, 0mm));left:auto;width:210mm;height:297mm;}
- .page-content-window{position:static;overflow:visible;}
- .document-content{position:relative;top:auto;right:auto;left:auto;transform:none!important;width:auto;}
+ 
+ /* @page owns vertical pagination boundaries; the flow box owns horizontal text margins. */
+ .paper{width:210mm;}
+ .template-coordinate-plane{top:calc(-1 * var(--print-content-top, 0mm));right:0;left:auto;width:210mm;height:297mm;}
+ .page-content-window{position:static;display:block;width:210mm;overflow:visible;}
+ .document-content{position:relative;top:auto;right:auto;left:auto;transform:none!important;box-sizing:border-box;width:210mm;padding-left:var(--print-content-left, 0mm);padding-right:var(--print-content-right, 0mm);}
 
  .letterhead-background{position:fixed;}
  .repeat-item{position:fixed;}
