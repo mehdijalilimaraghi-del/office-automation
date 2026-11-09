@@ -50,8 +50,10 @@ const pageCss=computed(()=>{
  const yMm=item?item.y*2.97:0;
  const effectiveTop=Math.max(props.pageLayout.top,props.pageLayout.header_height);
  const effectiveBottom=Math.max(props.pageLayout.bottom,props.pageLayout.footer_height);
- const topPadding=item?Math.min(effectiveTop,Math.max(0,yMm)):0;
- const bottomPadding=item?Math.min(effectiveBottom,Math.max(0,yMm-(297-effectiveBottom))):0;
+ const bottomBoundary=297-effectiveBottom;
+  const mappedY=item?(yMm<effectiveTop?yMm:yMm>bottomBoundary?yMm:(yMm-effectiveTop<=bottomBoundary-yMm?effectiveTop:bottomBoundary)):0;
+  const topPadding=item&&position.startsWith('@top')?Math.min(effectiveTop,Math.max(0,mappedY)):0;
+ const bottomPadding=item&&position.startsWith('@bottom')?Math.min(effectiveBottom,Math.max(0,mappedY-bottomBoundary)):0;
  const verticalPadding=item?(pageNumberPosition.value.startsWith('@top')?topPadding:bottomPadding):0;
  const horizontalPadding=item?(item.align==='right'?item.x*2.1:item.align==='left'?Math.max(0,100-item.x-item.width)*2.1:0):0;
  const horizontalSide=item?(item.align==='right'?'padding-right':item.align==='left'?'padding-left':''):'';
