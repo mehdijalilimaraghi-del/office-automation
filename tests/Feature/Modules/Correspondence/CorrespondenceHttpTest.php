@@ -185,6 +185,7 @@ class CorrespondenceHttpTest extends TestCase
         app(SystemSettingsService::class)->set([
             'organization.stamp.path' => $stampPath,
             'organization.stamp.active' => '1',
+            'organization.postal_code' => '1234567890',
         ]);
         $letter = Correspondence::query()->create([
             'type' => Correspondence::TYPE_OUTGOING,
@@ -221,6 +222,7 @@ class CorrespondenceHttpTest extends TestCase
                 ->component('Correspondence/Print')
                 ->where('letter.subject', 'نامه برای پیش‌نمایش چاپ')
                 ->where('letter.attachment_pages', 2)
+                ->where('organization.postal_code', '1234567890')
                 ->where('pageLayout.top', 16)
                 ->where('pageLayout.right', 20)
                 ->where('pageLayout.bottom', 24)
