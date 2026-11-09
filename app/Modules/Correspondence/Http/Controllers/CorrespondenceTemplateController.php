@@ -16,7 +16,7 @@ class CorrespondenceTemplateController extends Controller
 {
     private const BODY_TEMPLATE = ['id' => 'letter_body', 'kind' => 'text', 'role' => 'body', 'spacing' => 42, 'label' => 'متن اصلی نامه', 'content' => '', 'x' => 8, 'y' => 0, 'width' => 84, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true];
 
-    private const DEFAULT_PAGE_LAYOUT = ['top' => 14, 'right' => 18, 'bottom' => 22, 'left' => 18];
+    private const DEFAULT_PAGE_LAYOUT = ['top' => 14, 'right' => 18, 'bottom' => 22, 'left' => 18, 'header_height' => 70, 'footer_height' => 25];
 
     private const DEFAULT_TEMPLATE = [
         ['id' => 'organization', 'kind' => 'text', 'role' => 'repeat', 'spacing' => 0, 'label' => 'نام سازمان', 'content' => '{{organization_name}}', 'x' => 8, 'y' => 5, 'width' => 58, 'height' => 7, 'font_size' => 20, 'bold' => true, 'align' => 'right', 'visible' => true],
@@ -50,6 +50,9 @@ class CorrespondenceTemplateController extends Controller
             $elements[] = self::BODY_TEMPLATE;
         }
         foreach ($elements as &$element) {
+            if (($element['role'] ?? null) === 'body') {
+                $element['spacing'] = 0;
+            }
             if (($element['role'] ?? null) === 'meta' && ! str_contains((string) ($element['content'] ?? ''), '{{attachment_pages}}')) {
                 $element['content'] = rtrim((string) ($element['content'] ?? ''))."\n{{attachment_pages}}";
             }
@@ -146,12 +149,14 @@ class CorrespondenceTemplateController extends Controller
         $data = $request->validate([
             'elements' => ['present', 'array', 'max:30'],
             'page_layout' => ['sometimes', 'array'],
-            'page_layout.top' => ['required_with:page_layout', 'numeric', 'min:5', 'max:60'],
+            'page_layout.top' => ['required_with:page_layout', 'numeric', 'min:5', 'max:80'],
             'page_layout.right' => ['required_with:page_layout', 'numeric', 'min:5', 'max:50'],
-            'page_layout.bottom' => ['required_with:page_layout', 'numeric', 'min:5', 'max:60'],
+            'page_layout.bottom' => ['required_with:page_layout', 'numeric', 'min:5', 'max:70'],
             'page_layout.left' => ['required_with:page_layout', 'numeric', 'min:5', 'max:50'],
+            'page_layout.header_height' => ['required_with:page_layout', 'numeric', 'min:0', 'max:100'],
+            'page_layout.footer_height' => ['required_with:page_layout', 'numeric', 'min:0', 'max:70'],
             'elements.*.kind' => ['required', 'in:text,stamp,signature,letterhead'],
-            'elements.*.role' => ['nullable', 'in:meta,heading,page_number,issuer,repeat,body'],
+            'elements.*.role' => ['nullable', 'in:meta,heading,page_number,issuer,header,footer,repeat,body'],
             'elements.*.spacing' => ['nullable', 'numeric', 'min:-80', 'max:80'],
             'elements.*.font_family' => ['nullable', 'in:default,Vazirmatn,Tahoma,Arial,B Nazanin,B Mitra,IRANSans,Times New Roman'],
             'elements.*.page_format' => ['nullable', 'in:number_of,slash,short,page'],
@@ -188,7 +193,7 @@ class CorrespondenceTemplateController extends Controller
         }
 
         $pageLayout = array_replace(self::DEFAULT_PAGE_LAYOUT, $data['page_layout'] ?? []);
-        abort_if($pageLayout['top'] + $pageLayout['bottom'] > 120, 422, 'مجموع حاشیه بالا و پایین بیش از حد مجاز است.');
+        abort_if(max($pageLayout['top'], $pageLayout['header_height']) + max($pageLayout['bottom'], $pageLayout['footer_height']) > 180, 422, 'مجموع محدوده سربرگ، متن و پاصفحه فضای کافی برای متن باقی نمی‌گذارد.');
         abort_if($pageLayout['left'] + $pageLayout['right'] > 100, 422, 'مجموع حاشیه چپ و راست بیش از حد مجاز است.');
 
         $settings->set([
