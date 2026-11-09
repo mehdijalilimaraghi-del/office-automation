@@ -204,6 +204,7 @@ class CorrespondenceHttpTest extends TestCase
         ]);
 
         app(\App\Core\Settings\Services\SystemSettingsService::class)->set([
+            'correspondence.print.page_layout' => json_encode(['top' => 16, 'right' => 20, 'bottom' => 24, 'left' => 19]),
             'correspondence.print.template' => json_encode([
                 ['id' => 'page-number', 'kind' => 'text', 'role' => 'page_number', 'label' => 'شماره صفحه', 'content' => '', 'x' => 8, 'y' => 95, 'width' => 20, 'spacing' => 0, 'font_size' => 9, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'center', 'visible' => true],
                 ['id' => 'stamp', 'kind' => 'stamp', 'role' => 'issuer', 'label' => 'مهر سازمان', 'content' => '', 'x' => 8, 'y' => 80, 'width' => 20, 'spacing' => 0, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true],
@@ -219,6 +220,10 @@ class CorrespondenceHttpTest extends TestCase
                 ->component('Correspondence/Print')
                 ->where('letter.subject', 'نامه برای پیش‌نمایش چاپ')
                 ->where('letter.attachment_pages', 2)
+                ->where('pageLayout.top', 16)
+                ->where('pageLayout.right', 20)
+                ->where('pageLayout.bottom', 24)
+                ->where('pageLayout.left', 19)
                 ->where('creatorUnitTitle', 'مدیریت فناوری اطلاعات')
                 ->where('managerName', $viewer->name)
                 ->where('managerPosition', 'مدیر فناوری اطلاعات')
