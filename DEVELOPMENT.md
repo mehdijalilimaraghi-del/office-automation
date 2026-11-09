@@ -363,3 +363,10 @@ Organization Settings now has three tabs. A separate organization letterhead ima
 - Restored body-element spacing as a separate «فاصله از بخش قبل» setting. New body elements default to 12 mm; existing saved body spacing is preserved by both template and print controllers and is applied only at the beginning of the flowing body, not as a replacement for the page's top margin.
 - Corrected the number_of page-counter content with an RTL isolate around the Persian «از» separator; other counter formats retain their existing output.
 - Added a print-controller regression assertion that a saved body spacing value reaches the print page unchanged. Local feature test, npm run build, and browser print/manual layout acceptance are pending. Development branch only; master, release and server remain unchanged.
+
+## 2026-11-09 — Correspondence print single-origin layout refactor
+
+- Removed the previous print model that combined horizontal `@page` margins with a negative right offset on the absolute coordinate plane. Print `@page` now reserves only the effective vertical safe areas; left/right CSS page margins are zero.
+- The print paper, absolute template coordinate plane and normal-flow container use a full 210 mm A4 width. The normal-flow container applies configured left/right margins as padding once, matching the screen preview's physical x boundaries without shrinking percentage-based template coordinates.
+- The absolute plane is shifted upward by the effective top safe area to restore physical A4 top alignment. Body flow remains normal and is paginated by Chromium, with top/bottom `@page` margins preserving header/footer clearance on every page.
+- Validation sequence: `git pull origin development`, `npm run build`; then `git pull origin development`, `php artisan test --filter=CorrespondenceHttpTest`; then Chromium PDF comparison using A4, 100% scale, browser headers/footers off and default margins. Compare first and later pages with asymmetric left/right margins and non-default header/footer heights. Build, PHP tests and PDF acceptance are pending owner execution. Development only; master/release/server unchanged.
