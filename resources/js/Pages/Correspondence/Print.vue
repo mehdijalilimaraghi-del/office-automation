@@ -219,7 +219,8 @@ function printLetter():void{window.print();}
  .page-content-window{position:static;display:block;width:210mm;overflow:visible;}
  .document-content{position:relative;top:auto;right:auto;left:auto;transform:none!important;box-sizing:border-box;width:210mm;padding-left:var(--print-content-left, 0mm);padding-right:var(--print-content-right, 0mm);}
 
- .letterhead-background{position:fixed;}
+ /* Chromium anchors fixed print elements to the @page content box. Restore the letterhead to the physical A4 page instead of stretching it into the reduced content box. */
+ .letterhead-background{position:fixed!important;top:calc(-1 * var(--print-content-top, 0mm))!important;right:auto!important;bottom:auto!important;left:0!important;width:210mm!important;height:297mm!important;inset-inline:auto!important;}
  .repeat-item{position:fixed!important;top:var(--print-repeat-top)!important;right:var(--print-repeat-right)!important;left:auto!important;width:var(--print-repeat-width)!important;}
   .page-number{position:fixed!important;top:var(--print-page-number-top)!important;right:var(--print-page-number-right)!important;bottom:auto!important;left:auto!important;width:var(--print-page-number-width)!important;transform:none!important;z-index:20;}
  .page-number bdi{visibility:hidden;}
