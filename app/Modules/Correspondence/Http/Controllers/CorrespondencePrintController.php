@@ -89,7 +89,7 @@ class CorrespondencePrintController extends Controller
             'organization.letterhead.path' => null,
             'organization.postal_code' => null,
         ]);
-        $organization['postal_code'] = $organization['postal_code'] ?? $live['organization.postal_code'];
+        $organization['postal_code'] = filled($organization['postal_code'] ?? null) ? $organization['postal_code'] : $live['organization.postal_code'];
 
         if (! filled($stampPath) || ! Storage::disk('local')->exists($stampPath)) {
             $stampPath = $live['organization.stamp.active'] === '1'
