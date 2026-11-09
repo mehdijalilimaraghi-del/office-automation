@@ -1,3 +1,8 @@
+## 2026-11-09 — Full-page print coordinate alignment
+
+- Restored physical A4 dimensions for the absolute template coordinate plane in print mode. The plane now spans 210 × 297 mm and is aligned to the physical page origin using the configured top/right margin offsets, while the flowing letter body remains within the `@page` content area.
+- This addresses horizontal percentage scaling and repeat/header/footer positions being calculated against the reduced printable width. Browser margin-dialog interaction and end-to-end PDF acceptance remain pending. Development only; master/release/server unchanged.
+
 ## 2026-11-09 — Print coordinate-origin mismatch correction
 
 - Corrected the first-page coordinate origin in print mode: the absolute meta/heading plane is shifted from the `@page` content origin back to the physical A4 top edge. The flowing body remains in the printable content area, preserving the measured spacing relationship used by the screen preview.
