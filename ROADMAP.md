@@ -1107,3 +1107,9 @@ Organization Settings now uses three tabs. Organization letterhead upload is sep
 - Restored body-element spacing as a separate «فاصله از بخش قبل» setting. New body elements default to 12 mm; existing saved body spacing is preserved by both template and print controllers and is applied only at the beginning of the flowing body, not as a replacement for the page's top margin.
 - Corrected the number_of page-counter content with an RTL isolate around the Persian «از» separator; other counter formats retain their existing output.
 - Added a print-controller regression assertion that a saved body spacing value reaches the print page unchanged. Local feature test, npm run build, and browser print/manual layout acceptance are pending. Development branch only; master, release and server remain unchanged.
+
+## 2026-11-09 — Print layout single-origin refactor
+
+- Replaced the previous horizontal print compensation with a single physical A4 origin: zero horizontal `@page` margins, a 210 mm coordinate plane and flow box, and left/right text margins applied once as flow-box padding.
+- Retained only effective top/bottom `@page` margins so header/footer reserved heights constrain body flow on every printed page. The template plane is shifted back to physical A4 top while body content remains naturally paginated.
+- Implementation committed on `development`. Build, focused PHP test and Chromium preview/PDF acceptance remain pending; print parity is not yet complete. Master/release/server untouched.
