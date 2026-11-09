@@ -58,6 +58,7 @@ class CorrespondenceController extends Controller
             ->activeDepartmentId(OrganizationDepartmentRoleService::SECRETARIAT);
         $isSecretariatManager = $secretariatDepartmentId !== null
             && (int) Department::query()->whereKey($secretariatDepartmentId)->value('manager_id') === (int) $user->id;
+        $isSecretariatUser = $access->isSecretariat($user);
         $managedDepartmentIds = $user->managedDepartments()->pluck('departments.id')->unique()->values();
         $departmentIds = $user->departments()->pluck('departments.id')
             ->merge($managedDepartmentIds)
@@ -125,8 +126,8 @@ class CorrespondenceController extends Controller
                             ->orWhereIn('to_department_id', $departmentIds));
                 });
             })
-            ->when($actionFilter === 'needs_action', function ($query) use ($user, $isSecretariatManager, $secretariatDepartmentId): void {
-                $query->where(function ($pending) use ($user, $isSecretariatManager, $secretariatDepartmentId): void {
+            ->when($actionFilter === 'needs_action', function ($query) use ($user, $isSecretariatManager, $isSecretariatUser, $secretariatDepartmentId): void {
+                $query->where(function ($pending) use ($user, $isSecretariatManager, $isSecretariatUser, $secretariatDepartmentId): void {
                     // Current assignment is authoritative; historical action rows may be incomplete.
                     $pending->where(function ($direct) use ($user): void {
                         $direct->where('current_user_id', $user->id)
@@ -159,6 +160,17 @@ class CorrespondenceController extends Controller
                                 ->where('type', Correspondence::TYPE_INCOMING)
                                 ->where('created_department_id', $secretariatDepartmentId)
                                 ->whereIn('workflow_state', ['awaiting_registration', 'awaiting_manager_approval', 'approved_for_registration']);
+                        })
+                        ->orWhere(function ($secretariatDispatch) use ($isSecretariatUser, $secretariatDepartmentId): void {
+                            if (! $isSecretariatUser || $secretariatDepartmentId === null) {
+                                $secretariatDispatch->whereRaw('1 = 0');
+                                return;
+                            }
+
+                            $secretariatDispatch->where('type', Correspondence::TYPE_OUTGOING)
+                                ->where('status', Correspondence::STATUS_REGISTERED)
+                                ->where('workflow_state', 'awaiting_dispatch')
+                                ->where('current_department_id', $secretariatDepartmentId);
                         })
                         ->orWhere(function ($department) use ($user): void {
                             $department->whereIn('workflow_state', [
