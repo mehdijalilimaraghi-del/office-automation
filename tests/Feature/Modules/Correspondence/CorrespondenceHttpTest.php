@@ -210,6 +210,7 @@ class CorrespondenceHttpTest extends TestCase
                 ['id' => 'stamp', 'kind' => 'stamp', 'role' => 'issuer', 'label' => 'مهر سازمان', 'content' => '', 'x' => 8, 'y' => 80, 'width' => 20, 'spacing' => 0, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true],
                 ['id' => 'signature', 'kind' => 'signature', 'role' => 'issuer', 'label' => 'امضای مدیر واحد', 'content' => '', 'x' => 30, 'y' => 80, 'width' => 20, 'spacing' => 0, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true],
                 ['id' => 'issuer-identity', 'kind' => 'text', 'role' => 'issuer', 'label' => 'هویت صادرکننده', 'content' => '{{creator_unit_title}}\\n{{creator_department_name}}\\n{{creator_name}}\\n{{manager_name}}\\n{{manager_title}}', 'x' => 8, 'y' => 80, 'width' => 40, 'spacing' => 14, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true],
+                ['id' => 'letter-body', 'kind' => 'text', 'role' => 'body', 'label' => 'متن اصلی نامه', 'content' => '', 'x' => 8, 'y' => 0, 'width' => 84, 'spacing' => 18, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true],
             ], JSON_UNESCAPED_UNICODE),
         ]);
 
@@ -235,6 +236,7 @@ class CorrespondenceHttpTest extends TestCase
                 ->where('templateElements.1.kind', 'stamp')
                 ->where('templateElements.2.kind', 'signature')
                 ->where('templateElements.3.spacing', 14)
+                ->where('templateElements.4.spacing', 18)
                 ->where('templateElements.3.content', '{{creator_unit_title}}\\n{{creator_department_name}}\\n{{creator_name}}\\n{{manager_name}}\\n{{manager_title}}')
                 ->where('stampDataUri', fn ($value) => is_string($value) && str_starts_with($value, 'data:image/png;base64,'))
                 ->where('signatureDataUri', fn ($value) => is_string($value) && str_starts_with($value, 'data:image/png;base64,')));
