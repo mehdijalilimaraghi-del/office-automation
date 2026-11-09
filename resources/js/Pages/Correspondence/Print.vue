@@ -55,9 +55,14 @@ const pageCss=computed(()=>{
   const topPadding=item&&position.startsWith('@top')?Math.min(effectiveTop,Math.max(0,mappedY)):0;
  const bottomPadding=item&&position.startsWith('@bottom')?Math.min(effectiveBottom,Math.max(0,mappedY-bottomBoundary)):0;
  const verticalPadding=item?(pageNumberPosition.value.startsWith('@top')?topPadding:bottomPadding):0;
- const horizontalPadding=item?(item.align==='right'?item.x*2.1:item.align==='left'?Math.max(0,100-item.x-item.width)*2.1:0):0;
+ const anchorX=item?(item.align==='right'?item.x:item.align==='left'?item.x+item.width:item.x+(item.width/2)):50;
+ const horizontal=position.slice(position.lastIndexOf('-')+1);
+ const slotRight=horizontal==='right'?0:horizontal==='center'?33.333:66.667;
+ const slotLeft=slotRight+33.333;
+ const horizontalPadding=item?(item.align==='right'?Math.max(0,anchorX-slotRight)*2.1:item.align==='left'?Math.max(0,slotLeft-anchorX)*2.1:0):0;
  const horizontalSide=item?(item.align==='right'?'padding-right':item.align==='left'?'padding-left':''):'';
- const extraPadding=horizontalSide?horizontalSide+':'+horizontalPadding.toFixed(2)+'mm;':'';
+ const centerShift=item&&item.align==='center'?(slotRight+16.6665-anchorX)*2.1:0;
+ const extraPadding=(horizontalSide?horizontalSide+':'+horizontalPadding.toFixed(2)+'mm;':'')+(item&&item.align==='center'?'transform:translateX('+centerShift.toFixed(2)+'mm);':'');
  const counterDirection=pageNumberFormat.value==='slash'?'ltr':'rtl';
  const rule=item?position+'{content:'+counterContent+';font:9pt Tahoma,sans-serif;color:#475569;direction:'+counterDirection+';unicode-bidi:isolate;text-align:'+item.align+';white-space:nowrap;vertical-align:top;padding-top:'+verticalPadding.toFixed(2)+'mm;'+extraPadding+'}':'';
  return '@page{size:A4;margin:'+margins+';}'
@@ -100,7 +105,15 @@ function pageNumberScreenStyle(item:TemplateElement):Record<string,string> {
  const bottomEdge=297-Math.max(props.pageLayout.bottom,props.pageLayout.footer_height);
  const requestedY=item.y*2.97;
  const mappedY=requestedY<topEdge?requestedY:requestedY>bottomEdge?requestedY:(requestedY-topEdge<=bottomEdge-requestedY?topEdge:bottomEdge);
- return {...positionedStyle(item),top:(mappedY/297*100)+'%'};
+ const anchorX=item.align==='right'?item.x:item.align==='left'?item.x+item.width:item.x+(item.width/2);
+ const slot=anchorX<33.333?'right':anchorX>66.667?'left':'center';
+ const slotRight=slot==='right'?0:slot==='center'?33.333:66.667;
+ const slotLeft=slotRight+33.333;
+ const style:Record<string,string>={right:slotRight+'%',top:(mappedY/297*100)+'%',width:'33.333%',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};
+ if(item.align==='right')style.paddingRight=Math.max(0,anchorX-slotRight)*2.1+'mm';
+ if(item.align==='left')style.paddingLeft=Math.max(0,slotLeft-anchorX)*2.1+'mm';
+ if(item.align==='center')style.transform='translateX('+((slotRight+16.6665-anchorX)*2.1)+'mm)';
+ return style;
 }
 function bodyStyle():Record<string,string>{const item=bodyElement.value;return {width:item.width+'%',marginTop:(item.spacing+measuredBodyOffsetMm.value)+'mm',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
 function updateBodyStartOffset():void {
