@@ -11,6 +11,8 @@ const withLetterhead=ref(true);
 const documentContent=ref<HTMLElement[]>([]);
 const firstPagePlane=ref<HTMLElement|null>(null);
 const firstPageContentWindow=ref<HTMLElement|null>(null);
+function setFirstPagePlane(element:unknown):void { firstPagePlane.value=element instanceof HTMLElement?element:null; }
+function setFirstPageContentWindow(element:unknown):void { firstPageContentWindow.value=element instanceof HTMLElement?element:null; }
 const measuredBodyOffsetMm=ref(0);
 const estimatedPageCount=ref(1);
 let contentObserver:ResizeObserver|null=null;
@@ -148,7 +150,7 @@ function printLetter():void{window.print();}
    <div class="flex flex-wrap items-center gap-3"><label class="inline-flex items-center gap-2 text-sm"><input v-model="withLetterhead" type="checkbox" class="rounded border-slate-300 text-teal-600"/>چاپ با سربرگ</label><button type="button" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white" @click="printLetter">چاپ / ذخیره PDF</button><Link :href="route('correspondence.show',letter.id)" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold">بازگشت به نامه</Link></div>
   </div>
   <article v-for="pageIndex in estimatedPageCount" :key="pageIndex" class="paper screen-page mx-auto mb-6 bg-white" :class="'page-format-'+pageNumberFormat" :style="paperStyle" dir="rtl">
-   <div class="template-coordinate-plane" :ref="pageIndex===1 ? firstPagePlane : undefined">
+   <div class="template-coordinate-plane" :ref="pageIndex===1 ? setFirstPagePlane : undefined">
     <div v-if="withLetterhead && letterheadDataUri" class="letterhead-background" :style="{backgroundImage:'url('+letterheadDataUri+')'}" aria-hidden="true"></div>
     <div v-for="item in repeating" :key="item.id" class="repeat-item" :style="positionedStyle(item)">{{resolveTemplate(item.content)}}</div>
     <div v-for="item in elements.filter(entry=>entry.role==='page_number')" :key="item.id" class="page-number" :style="positionedStyle(item)"><bdi dir="ltr">{{pageNumberSample(item,pageIndex)}}</bdi></div>
@@ -158,7 +160,7 @@ function printLetter():void{window.print();}
      <template v-else><div v-if="recipientLines.length" class="mb-4 space-y-1 text-sm font-semibold leading-7"><p v-for="(line,index) in recipientLines" :key="index">{{line}}</p></div><h2 class="text-center text-base font-bold leading-8">{{letter.subject}}</h2></template>
     </div></template>
    </div>
-   <div class="page-content-window" :ref="pageIndex===1 ? firstPageContentWindow : undefined" :style="pageWindowStyle">
+   <div class="page-content-window" :ref="pageIndex===1 ? setFirstPageContentWindow : undefined" :style="pageWindowStyle">
     <div ref="documentContent" class="document-content" :style="pageContentStyle(pageIndex)">
     <section class="letter-body" :style="bodyStyle()" v-html="letter.body||''"></section>
 
