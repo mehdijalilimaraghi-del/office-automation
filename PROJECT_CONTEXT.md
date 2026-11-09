@@ -1,3 +1,8 @@
+## 2026-11-09 — Full-page print coordinate alignment
+
+- The print page's containing block is reduced to the printable area by `@page` margins; using it as the percentage-coordinate plane compressed x/width values. Print mode now expands the absolute template plane back to physical A4 (210 × 297 mm), aligning its right and top edges to the physical page using the configured right and effective top margin offsets. Flowing body content remains bounded by the page margins.
+- Browser print margin controls and PDF parity still require manual Chromium verification. Development only; master/release/server unchanged.
+
 ## 2026-11-09 — Print coordinate-origin mismatch correction
 
 - Print mode now compensates for the fact that `.paper` begins at the `@page` printable content edge rather than the physical A4 top edge. The absolute first-page template plane is moved upward by the effective top margin; the flowing body remains in the page content area. This addresses first-page meta/heading displacement and resulting overlap with the body.
