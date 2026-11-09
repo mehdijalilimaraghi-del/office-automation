@@ -579,9 +579,10 @@ class CorrespondenceController extends Controller
                 ->get(['id', 'title', 'status']),
             'canUpdateExternalTracking' => $request->user()->isSystemAdmin()
                 || $access->isSecretariat($request->user())
-                || (int) $correspondence->created_by === (int) $request->user()->id
-                || (int) $correspondence->task?->assignee_id === (int) $request->user()->id
-                || (int) $correspondence->task?->created_by === (int) $request->user()->id,
+                || ($correspondence->workflow_state !== 'awaiting_dispatch'
+                    && ((int) $correspondence->created_by === (int) $request->user()->id
+                        || (int) $correspondence->task?->assignee_id === (int) $request->user()->id
+                        || (int) $correspondence->task?->created_by === (int) $request->user()->id)),
             'correspondenceFontFamily' => $settings->get(['correspondence.composition.font_family' => 'Vazirmatn'])['correspondence.composition.font_family'],
             'approvalSettings' => app(\App\Modules\Correspondence\Services\CorrespondenceCompositionSettings::class)->get()['approval'],
         ]);
@@ -1211,9 +1212,10 @@ class CorrespondenceController extends Controller
         $user = $request->user();
         $canUpdate = $user->isSystemAdmin()
             || $access->isSecretariat($user)
-            || (int) $correspondence->created_by === (int) $user->id
-            || (int) $correspondence->task?->assignee_id === (int) $user->id
-            || (int) $correspondence->task?->created_by === (int) $user->id;
+            || ($correspondence->workflow_state !== 'awaiting_dispatch'
+                && ((int) $correspondence->created_by === (int) $user->id
+                    || (int) $correspondence->task?->assignee_id === (int) $user->id
+                    || (int) $correspondence->task?->created_by === (int) $user->id));
 
         abort_unless($canUpdate, 403);
 
@@ -1244,9 +1246,10 @@ class CorrespondenceController extends Controller
             $wasSent = $letter->sent_at !== null;
             $canUpdateLocked = $user->isSystemAdmin()
                 || $access->isSecretariat($user)
-                || (int) $letter->created_by === (int) $user->id
-                || (int) $letter->task()->value('assignee_id') === (int) $user->id
-                || (int) $letter->task()->value('created_by') === (int) $user->id;
+                || ($letter->workflow_state !== 'awaiting_dispatch'
+                    && ((int) $letter->created_by === (int) $user->id
+                        || (int) $letter->task()->value('assignee_id') === (int) $user->id
+                        || (int) $letter->task()->value('created_by') === (int) $user->id));
 
             abort_unless($letter->type === Correspondence::TYPE_OUTGOING && $canUpdateLocked, 403);
 
