@@ -541,8 +541,8 @@ function registerCorrespondence(): void {
             </section>
             <section v-if="correspondence.type === 'outgoing'" class="rounded-2xl border border-indigo-100 bg-white shadow-sm">
                 <div class="border-b border-indigo-100 px-5 py-4">
-                    <h2 class="font-bold text-slate-900">پیگیری نامه صادره</h2>
-                    <p class="mt-1 text-sm text-slate-500">اطلاعات ارسال و شماره ثبت نامه در سازمان مقصد مستقل از وضعیت تکمیل تسک نگهداری می‌شود.</p>
+                    <h2 class="font-bold text-slate-900">{{ correspondence.workflow_state === 'awaiting_dispatch' ? 'مرحله ثبت ارسال نامه' : 'پیگیری نامه صادره' }}</h2>
+                    <p class="mt-1 text-sm text-slate-500">پس از ثبت نهایی، دبیرخانه روش و تاریخ ارسال را ثبت می‌کند. شماره و تاریخ ثبت در سازمان مقصد نیز در همین پرونده نگهداری می‌شود.</p>
                 </div>
                 <form class="grid gap-4 p-5 sm:grid-cols-2" @submit.prevent="saveExternalTracking">
                     <div>
