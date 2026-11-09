@@ -1113,3 +1113,9 @@ Added `CorrespondencePrintController`, `Correspondence/Print.vue`, protected pri
 - Issuer-flow spacing accepts -80..80 mm, allowing deliberate overlap between the stamp/signature and issuer identity. The same margin-based spacing is used in designer preview and print output.
 - Added `{{manager_name}}` and `{{manager_position}}` template tokens. The print controller resolves the manager's active position assignment scoped to the issuing department, preferring the primary assignment. Missing position data resolves to an empty value rather than an inferred title.
 - Extended the protected print-preview regression test to assert manager name and department-specific position. Local PHP tests and frontend build remain pending; development only, master/server untouched.
+
+## 2026-11-09 — Print page-layout TypeScript contract correction
+
+- Fixed the frontend prop contract in `Correspondence/Print.vue`: `pageLayout` now explicitly types `header_height` and `footer_height`, matching the defaults and values supplied by `CorrespondencePrintController`.
+- This resolves the reported `vue-tsc` property-not-found errors without changing print calculations, persisted settings, or runtime behavior.
+- The owner must rerun the frontend production build. Browser print acceptance remains pending; development branch only, with master/release/server unchanged.
