@@ -17,7 +17,7 @@ const previewMode = ref(false);
 const selected = computed(() => form.elements.find(item => item.id === selectedId.value) ?? null);
 const page = ref<HTMLElement|null>(null);
 const dragging = ref<{id:string; lastX:number; lastY:number}|null>(null);
-const roleLabels:Record<Role,string> = { meta:'شماره و تاریخ', heading:'خطاب و موضوع', page_number:'شماره صفحه', issuer:'تنظیم‌کننده و امضا', repeat:'متن تکرارشونده', body:'متن اصلی نامه' };
+const roleLabels:Record<Role,string> = { meta:'شماره و تاریخ', heading:'خطاب و موضوع', page_number:'شماره صفحه', issuer:'تنظیم‌کننده و امضا', repeat:'سربرگ و پاصفحه تکرارشونده', body:'متن اصلی نامه' };
 const fontOptions = [{value:'default',label:'فونت پیش‌فرض تنظیمات'},{value:'Vazirmatn',label:'وزیرمتن'},{value:'Tahoma',label:'Tahoma'},{value:'Arial',label:'Arial'},{value:'B Nazanin',label:'B Nazanin'},{value:'B Mitra',label:'B Mitra'},{value:'IRANSans',label:'IRANSans'},{value:'Times New Roman',label:'Times New Roman'}];
 const roleTokens:Record<Role,string[]> = {
  meta:['{{letter_number}}','{{registration_number}}','{{date}}','{{attachment_pages}}','{{letter_type}}'],
@@ -94,7 +94,7 @@ function pageNumberPreview(item:ElementBox):string { const format=item.page_form
     <section class="overflow-auto rounded-2xl border border-slate-200 bg-slate-200 p-4">
      <div class="mx-auto mb-3 flex max-w-[210mm] flex-wrap items-center justify-between gap-2 text-xs text-slate-600"><span>{{ previewMode ? 'پیش‌نمایش نمونه با اطلاعات تنظیمات سازمان' : 'پیش‌نمایش A4 · سربرگ به‌صورت پس‌زمینه' }}</span><button type="button" class="rounded-lg bg-slate-900 px-3 py-2 font-semibold text-white" @click="previewMode = !previewMode">{{ previewMode ? 'بازگشت به ویرایش' : 'پیش‌نمایش قالب' }}</button><div v-if="!previewMode" class="flex flex-wrap gap-2"><button v-for="(label,role) in roleLabels" :key="role" type="button" :disabled="role==='body' && form.elements.some(item=>item.role==='body')" class="rounded-lg bg-white px-3 py-2 font-semibold disabled:cursor-not-allowed disabled:opacity-40" @click="addRole(role)">{{label}} +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','stamp')">مهر +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','signature')">امضا +</button></div></div>
      <div ref="page" class="relative mx-auto aspect-[210/297] w-full max-w-[210mm] overflow-hidden bg-white shadow-xl" :style="letterheadDataUri?{backgroundImage:'url('+letterheadDataUri+')',backgroundSize:'100% 100%',backgroundPosition:'center'}:{}" @pointermove="pointerMove" @pointerup="pointerUp" @pointercancel="pointerUp">
-      <div v-if="!previewMode" class="pointer-events-none absolute inset-x-[8%] top-[7%] bottom-[7%] border-y border-dashed border-slate-300"></div>
+      <div v-if="!previewMode" class="pointer-events-none absolute inset-x-[8%] top-[4.7%] bottom-[7.4%] border-y border-dashed border-slate-300"></div>
       <div class="absolute inset-x-[18mm] top-[14mm] whitespace-pre-wrap text-right">
        <div v-if="flowBody" class="whitespace-pre-wrap p-3 text-sm leading-8" :class="previewMode?'text-slate-900':'border border-dashed border-slate-300 bg-white/70 text-slate-500'" :style="bodyPreviewStyle()">
         <p v-if="!previewMode" class="mb-2 font-semibold">متن اصلی نامه — درج خودکار</p>
@@ -115,7 +115,7 @@ function pageNumberPreview(item:ElementBox):string { const format=item.page_form
       <p v-if="selected.role==='page_number'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">قالب نمایش شماره صفحه را انتخاب کنید؛ شماره و تعداد صفحات در خروجی چاپ به‌صورت خودکار محاسبه می‌شوند.</p>
       <p v-if="selected.role==='body'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">این المان محتوای نامه را کنترل نمی‌کند؛ فاصله شروع متن، عرض و قلم بدنه را تنظیم می‌کند. متن واقعی به‌صورت خودکار از نامه خوانده می‌شود.</p>
       <p v-if="selected.role==='issuer'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">این بخش پس از متن نامه قرار می‌گیرد. برای المان متنی این بخش، متغیرهای نام تنظیم‌کننده، عنوان و نام واحد ایجادکننده، نام مدیر واحد و سمت/عنوان سازمانی مدیر در دسترس است. فاصله منفی باعث هم‌پوشانی با بخش قبلی می‌شود؛ برای قرار گرفتن مهر یا امضا روی نام تنظیم‌کننده از مقدار منفی استفاده کنید.</p>
-      <p v-if="selected.role==='repeat'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">این بخش در مختصات تعیین‌شده در تمام صفحات تکرار می‌شود.</p>
+      <p v-if="selected.role==='repeat'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">این بخش در مختصات تعیین‌شده در تمام صفحات تکرار می‌شود؛ برای هدر آن را نزدیک بالای صفحه و برای فوتر نزدیک پایین صفحه قرار دهید. محدوده بدنه چاپ با حاشیه‌های صفحه محافظت می‌شود.</p>
       <div class="grid grid-cols-2 gap-2">
        <label class="text-xs">عرض (%)<input v-model.number="selected.width" type="number" min="5" :max="100-selected.x" @change="normalizeSelectedBounds" class="mt-1 w-full rounded-lg border-slate-300"/></label>
        <label v-if="selected.role==='body' || selected.role==='issuer'" class="text-xs">فاصله از بخش قبل (mm)<input v-model.number="selected.spacing" type="number" min="-80" max="80" class="mt-1 w-full rounded-lg border-slate-300"/></label>
@@ -130,7 +130,7 @@ function pageNumberPreview(item:ElementBox):string { const format=item.page_form
       <label class="flex items-center gap-2 text-sm"><input v-model="selected.visible" type="checkbox"/> نمایش در خروجی</label>
       <div v-if="selected.kind==='text' && availableTokens.length" class="border-t pt-3"><p class="mb-2 text-xs font-bold">متغیرهای مرتبط با این بخش</p><div class="flex flex-wrap gap-1.5"><button v-for="token in availableTokens" :key="token.key" type="button" class="rounded-md bg-slate-100 px-2 py-1 text-xs hover:bg-teal-50" :title="token.key" @click="insertToken(token.key)">{{token.label}}</button></div></div>
      </section>
-     <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-6 text-amber-900">محتوای نامه به‌صورت خودکار از متن ثبت‌شده نامه درج می‌شود؛ المان «متن اصلی نامه» فقط محل شروع، عرض و ظاهر بدنه را کنترل می‌کند. فاصله منفی امکان هم‌پوشانی مهر و امضا با نام تنظیم‌کننده را فراهم می‌کند. اجزای تکرارشونده و شماره صفحه در همه صفحات چاپ نمایش داده می‌شوند.</div>
+     <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-6 text-amber-900">محتوای نامه به‌صورت خودکار از متن ثبت‌شده نامه درج می‌شود؛ المان «متن اصلی نامه» فقط محل شروع، عرض و ظاهر بدنه را کنترل می‌کند. فاصله منفی امکان هم‌پوشانی مهر و امضا با نام تنظیم‌کننده را فراهم می‌کند. اجزای تکرارشونده (هدر و فوتر) و شماره صفحه در همه صفحات چاپ نمایش داده می‌شوند. حاشیه چاپ A4 شامل ۱۴ میلی‌متر بالا، ۱۸ میلی‌متر طرفین و ۲۲ میلی‌متر پایین است؛ فاصله متن از موضوع فقط در ابتدای صفحه اول اعمال می‌شود و ادامه متن در صفحات بعد از ابتدای محدوده بدنه ادامه پیدا می‌کند.</div>
      <PrimaryButton class="w-full justify-center" :disabled="form.processing" @click="form.put(route('correspondence.template.update'))">ذخیره قالب نامه</PrimaryButton><InputError :message="form.errors.elements"/>
     </aside>
    </div>
