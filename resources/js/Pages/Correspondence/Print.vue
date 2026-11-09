@@ -9,8 +9,12 @@ interface PrintLetter { id:number; attachment_pages:number|null; type:'incoming'
 const props=defineProps<{letter:PrintLetter;templateElements:TemplateElement[];pageLayout:{top:number;right:number;bottom:number;left:number;header_height:number;footer_height:number};organization:{name?:string|null;short_name?:string|null;address?:string|null;phone?:string|null;email?:string|null;website?:string|null};creatorName:string|null;creatorUnitTitle:string|null;managerName:string|null;managerPosition:string|null;managerTitle:string|null;creatorDepartmentName:string|null;stampDataUri:string|null;letterheadDataUri:string|null;signatureDataUri:string|null;printOptions:{show_creator_identity:boolean;show_stamp:boolean;show_department_signature:boolean;letterhead_show_name:boolean;letterhead_show_address:boolean;letterhead_show_phone:boolean;letterhead_show_email:boolean;letterhead_show_website:boolean;font_family:string;};}>();
 const withLetterhead=ref(true);
 const documentContent=ref<HTMLElement[]>([]);
+const firstPagePlane=ref<HTMLElement|null>(null);
+const firstPageContentWindow=ref<HTMLElement|null>(null);
+const measuredBodyOffsetMm=ref(0);
 const estimatedPageCount=ref(1);
 let contentObserver:ResizeObserver|null=null;
+let layoutObserver:ResizeObserver|null=null;
 const elements=computed(()=>props.templateElements.filter(item=>item.visible));
 const flowMeta=computed(()=>elements.value.filter(item=>item.role==='meta'));
 const flowHeading=computed(()=>elements.value.filter(item=>item.role==='heading'));
@@ -36,7 +40,7 @@ const pageCss=computed(()=>{
  const margins=contentTop+'mm '+props.pageLayout.right+'mm '+contentBottom+'mm '+props.pageLayout.left+'mm';
  const item=pageNumberElement.value;
  const position=pageNumberPosition.value;
- let counterContent='counter(page) " \\2067از\\2069 " counter(pages)';
+ let counterContent='counter(page) " از " counter(pages)';
  if(pageNumberFormat.value==='slash')counterContent='counter(page) "/" counter(pages)';
  if(pageNumberFormat.value==='short')counterContent='"ص" counter(page) " از " counter(pages)';
  if(pageNumberFormat.value==='page')counterContent='"صفحه " counter(page) " از " counter(pages)';
@@ -49,7 +53,8 @@ const pageCss=computed(()=>{
  const horizontalPadding=item?(item.align==='right'?item.x*2.1:item.align==='left'?Math.max(0,100-item.x-item.width)*2.1:0):0;
  const horizontalSide=item?(item.align==='right'?'padding-right':item.align==='left'?'padding-left':''):'';
  const extraPadding=horizontalSide?horizontalSide+':'+horizontalPadding.toFixed(2)+'mm;':'';
- const rule=item?position+'{content:'+counterContent+';font:9pt Tahoma,sans-serif;color:#475569;direction:ltr;unicode-bidi:isolate;text-align:'+item.align+';white-space:nowrap;vertical-align:top;padding-top:'+verticalPadding.toFixed(2)+'mm;'+extraPadding+'}':'';
+ const counterDirection=pageNumberFormat.value==='slash'?'ltr':'rtl';
+ const rule=item?position+'{content:'+counterContent+';font:9pt Tahoma,sans-serif;color:#475569;direction:'+counterDirection+';unicode-bidi:isolate;text-align:'+item.align+';white-space:nowrap;vertical-align:top;padding-top:'+verticalPadding.toFixed(2)+'mm;'+extraPadding+'}':'';
  return '@page{size:A4;margin:'+margins+';}'
   +'@page number_of{size:A4;margin:'+margins+';'+(pageNumberFormat.value==='number_of'?rule:'')+'}'
   +'@page slash{size:A4;margin:'+margins+';'+(pageNumberFormat.value==='slash'?rule:'')+'}'
@@ -85,7 +90,20 @@ function resolveTemplate(content:string):string {
 function fontFamily(item:TemplateElement):string{return item.font_family==='default'||!item.font_family?(props.printOptions.font_family||'Vazirmatn'):item.font_family;}
 function boxStyle(item:TemplateElement):Record<string,string>{return {width:item.width+'%',marginTop:item.spacing+'mm',marginRight:`calc(${item.x*2.1}mm - ${props.pageLayout.right}mm)`,fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
 function positionedStyle(item:TemplateElement):Record<string,string>{return {right:item.x+'%',top:item.y+'%',bottom:'auto',width:item.width+'%',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
-function bodyStyle():Record<string,string>{const item=bodyElement.value;return {width:item.width+'%',marginTop:item.spacing+'mm',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
+function bodyStyle():Record<string,string>{const item=bodyElement.value;return {width:item.width+'%',marginTop:(item.spacing+measuredBodyOffsetMm.value)+'mm',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
+function updateBodyStartOffset():void {
+ const plane=firstPagePlane.value;
+ const contentWindow=firstPageContentWindow.value;
+ const paper=plane?.closest('.paper') as HTMLElement|null;
+ if(!plane||!contentWindow||!paper)return;
+ const paperRect=paper.getBoundingClientRect();
+ const safeTop=contentWindow.getBoundingClientRect().top;
+ const pxPerMm=paperRect.width/210;
+ if(pxPerMm<=0)return;
+ const preceding=Array.from(plane.querySelectorAll<HTMLElement>('.first-page-positioned'));
+ const lastBottom=preceding.reduce((bottom,element)=>Math.max(bottom,element.getBoundingClientRect().bottom),safeTop);
+ measuredBodyOffsetMm.value=Math.max(0,(lastBottom-safeTop)/pxPerMm);
+}
 function updateEstimatedPageCount():void {
  const element=documentContent.value[0];
  if(!element)return;
@@ -96,13 +114,21 @@ function updateEstimatedPageCount():void {
 }
 onMounted(async()=>{
  await nextTick();
+ updateBodyStartOffset();
  updateEstimatedPageCount();
- if(documentContent.value[0]&&typeof ResizeObserver!=='undefined'){
-  contentObserver=new ResizeObserver(()=>updateEstimatedPageCount());
-  contentObserver.observe(documentContent.value[0]);
+ if(typeof ResizeObserver!=='undefined'){
+  if(documentContent.value[0]){
+   contentObserver=new ResizeObserver(()=>{updateBodyStartOffset();updateEstimatedPageCount();});
+   contentObserver.observe(documentContent.value[0]);
+  }
+  if(firstPagePlane.value){
+   layoutObserver=new ResizeObserver(()=>{updateBodyStartOffset();updateEstimatedPageCount();});
+   layoutObserver.observe(firstPagePlane.value);
+   firstPagePlane.value.querySelectorAll<HTMLElement>('.first-page-positioned').forEach(element=>layoutObserver?.observe(element));
+  }
  }
 });
-onBeforeUnmount(()=>contentObserver?.disconnect());
+onBeforeUnmount(()=>{contentObserver?.disconnect();layoutObserver?.disconnect();});
 function pageNumberSample(item:TemplateElement,pageIndex:number):string {
  const current=new Intl.NumberFormat('fa-IR').format(pageIndex), total=new Intl.NumberFormat('fa-IR').format(estimatedPageCount.value);
  if(item.page_format==='slash')return current+'/'+total;
@@ -122,7 +148,7 @@ function printLetter():void{window.print();}
    <div class="flex flex-wrap items-center gap-3"><label class="inline-flex items-center gap-2 text-sm"><input v-model="withLetterhead" type="checkbox" class="rounded border-slate-300 text-teal-600"/>چاپ با سربرگ</label><button type="button" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white" @click="printLetter">چاپ / ذخیره PDF</button><Link :href="route('correspondence.show',letter.id)" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold">بازگشت به نامه</Link></div>
   </div>
   <article v-for="pageIndex in estimatedPageCount" :key="pageIndex" class="paper screen-page mx-auto mb-6 bg-white" :class="'page-format-'+pageNumberFormat" :style="paperStyle" dir="rtl">
-   <div class="template-coordinate-plane">
+   <div class="template-coordinate-plane" :ref="pageIndex===1 ? firstPagePlane : undefined">
     <div v-if="withLetterhead && letterheadDataUri" class="letterhead-background" :style="{backgroundImage:'url('+letterheadDataUri+')'}" aria-hidden="true"></div>
     <div v-for="item in repeating" :key="item.id" class="repeat-item" :style="positionedStyle(item)">{{resolveTemplate(item.content)}}</div>
     <div v-for="item in elements.filter(entry=>entry.role==='page_number')" :key="item.id" class="page-number" :style="positionedStyle(item)"><bdi dir="ltr">{{pageNumberSample(item,pageIndex)}}</bdi></div>
@@ -132,7 +158,7 @@ function printLetter():void{window.print();}
      <template v-else><div v-if="recipientLines.length" class="mb-4 space-y-1 text-sm font-semibold leading-7"><p v-for="(line,index) in recipientLines" :key="index">{{line}}</p></div><h2 class="text-center text-base font-bold leading-8">{{letter.subject}}</h2></template>
     </div></template>
    </div>
-   <div class="page-content-window" :style="pageWindowStyle">
+   <div class="page-content-window" :ref="pageIndex===1 ? firstPageContentWindow : undefined" :style="pageWindowStyle">
     <div ref="documentContent" class="document-content" :style="pageContentStyle(pageIndex)">
     <section class="letter-body" :style="bodyStyle()" v-html="letter.body||''"></section>
 
@@ -142,10 +168,9 @@ function printLetter():void{window.print();}
      <template v-else-if="item.kind==='text'">{{resolveTemplate(item.content)}}</template>
     </div>
 
-    <footer v-if="(!hasCreatorElement&&!hasIssuerAssetElement&&printOptions.show_creator_identity)||(!hasSignatureElement&&printOptions.show_department_signature&&signatureDataUri)||(!hasStampElement&&printOptions.show_stamp&&stampDataUri)" class="signature-area">
+    <footer v-if="!hasCreatorElement&&!hasIssuerAssetElement&&printOptions.show_creator_identity" class="signature-area">
      <div v-if="!hasCreatorElement&&printOptions.show_creator_identity" class="text-center text-sm leading-7"><p v-if="creatorUnitTitle" class="font-semibold">{{creatorUnitTitle}}</p><p v-if="creatorName" class="font-bold">{{creatorName}}</p></div>
-     <img v-if="!hasSignatureElement&&printOptions.show_department_signature&&signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="inline-asset"/>
-     <img v-if="!hasStampElement&&printOptions.show_stamp&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="inline-asset"/>
+ 
     </footer>
     </div>
    </div>
