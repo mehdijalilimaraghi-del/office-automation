@@ -40,36 +40,7 @@ const pageNumberPosition=computed(()=>{
 const pageCss=computed(()=>{
  const contentTop=Math.max(props.pageLayout.top,props.pageLayout.header_height);
  const contentBottom=Math.max(props.pageLayout.bottom,props.pageLayout.footer_height);
- const margins=contentTop+'mm 0mm '+contentBottom+'mm 0mm';
- const item=pageNumberElement.value;
- const position=pageNumberPosition.value;
- let counterContent='counter(page) " از " counter(pages)';
- if(pageNumberFormat.value==='slash')counterContent='counter(page) "/" counter(pages)';
- if(pageNumberFormat.value==='short')counterContent='"ص" counter(page) " از " counter(pages)';
- if(pageNumberFormat.value==='page')counterContent='"صفحه " counter(page) " از " counter(pages)';
- const yMm=item?item.y*2.97:0;
- const effectiveTop=Math.max(props.pageLayout.top,props.pageLayout.header_height);
- const effectiveBottom=Math.max(props.pageLayout.bottom,props.pageLayout.footer_height);
- const bottomBoundary=297-effectiveBottom;
-  const mappedY=item?(yMm<effectiveTop?yMm:yMm>bottomBoundary?yMm:(yMm-effectiveTop<=bottomBoundary-yMm?effectiveTop:bottomBoundary)):0;
-  const topPadding=item&&position.startsWith('@top')?Math.min(effectiveTop,Math.max(0,mappedY)):0;
- const bottomPadding=item&&position.startsWith('@bottom')?Math.min(effectiveBottom,Math.max(0,mappedY-bottomBoundary)):0;
- const verticalPadding=item?(pageNumberPosition.value.startsWith('@top')?topPadding:bottomPadding):0;
- const anchorX=item?(item.align==='right'?item.x:item.align==='left'?item.x+item.width:item.x+(item.width/2)):50;
- const horizontal=position.slice(position.lastIndexOf('-')+1);
- const slotRight=horizontal==='right'?0:horizontal==='center'?33.333:66.667;
- const slotLeft=slotRight+33.333;
- const horizontalPadding=item?(item.align==='right'?Math.max(0,anchorX-slotRight)*2.1:item.align==='left'?Math.max(0,slotLeft-anchorX)*2.1:0):0;
- const horizontalSide=item?(item.align==='right'?'padding-right':item.align==='left'?'padding-left':''):'';
- const centerShift=item&&item.align==='center'?(slotRight+16.6665-anchorX)*2.1:0;
- const extraPadding=(horizontalSide?horizontalSide+':'+horizontalPadding.toFixed(2)+'mm;':'')+(item&&item.align==='center'?'transform:translateX('+centerShift.toFixed(2)+'mm);':'');
- const counterDirection=pageNumberFormat.value==='slash'?'ltr':'rtl';
- const rule=item?position+'{content:'+counterContent+';font-size:'+item.font_size+'pt;font-family:'+fontFamily(item)+';font-weight:'+(item.bold?'700':'400')+';color:#475569;direction:'+counterDirection+';unicode-bidi:isolate;text-align:'+item.align+';white-space:nowrap;vertical-align:top;padding-top:'+verticalPadding.toFixed(2)+'mm;'+extraPadding+'}':'';
- return '@page{size:A4;margin:'+margins+';}'
-  +'@page number_of{size:A4;margin:'+margins+';'+(pageNumberFormat.value==='number_of'?rule:'')+'}'
-  +'@page slash{size:A4;margin:'+margins+';'+(pageNumberFormat.value==='slash'?rule:'')+'}'
-  +'@page short{size:A4;margin:'+margins+';'+(pageNumberFormat.value==='short'?rule:'')+'}'
-  +'@page page{size:A4;margin:'+margins+';'+(pageNumberFormat.value==='page'?rule:'')+'}';
+ return '@page{size:A4;margin:'+contentTop+'mm 0mm '+contentBottom+'mm 0mm;}';
 });
 const pageWindowStyle=computed(()=>({
  top:Math.max(props.pageLayout.top,props.pageLayout.header_height)+'mm',
@@ -116,6 +87,9 @@ function pageNumberScreenStyle(item:TemplateElement):Record<string,string> {
  if(item.align==='right')style.paddingRight=Math.max(0,anchorX-slotRight)*2.1+'mm';
  if(item.align==='left')style.paddingLeft=Math.max(0,slotLeft-anchorX)*2.1+'mm';
  if(item.align==='center')style.transform='translateX('+((slotRight+16.6665-anchorX)*2.1)+'mm)';
+ style['--print-page-number-top']=(mappedY-topEdge)+'mm';
+ style['--print-page-number-right']=(item.x*2.1)+'mm';
+ style['--print-page-number-width']=(item.width*2.1)+'mm';
  return style;
 }
 function bodyStyle():Record<string,string>{const item=bodyElement.value;return {width:item.width+'%',marginTop:(item.spacing+measuredBodyOffsetMm.value)+'mm',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
@@ -245,11 +219,13 @@ function printLetter():void{window.print();}
 
  .letterhead-background{position:fixed;}
  .repeat-item{position:fixed;}
-  .page-number{display:none!important;}
- .paper.page-format-number_of{page:number_of;}
- .paper.page-format-slash{page:slash;}
- .paper.page-format-short{page:short;}
- .paper.page-format-page{page:page;}
+  .page-number{position:fixed!important;top:var(--print-page-number-top)!important;right:var(--print-page-number-right)!important;bottom:auto!important;left:auto!important;width:var(--print-page-number-width)!important;transform:none!important;z-index:20;}
+ .page-number bdi{visibility:hidden;}
+ .page-number::after{display:block;direction:rtl;unicode-bidi:isolate;white-space:nowrap;}
+ .page-number-format-number_of::after{content:counter(page) " از " counter(pages);}
+ .page-number-format-slash::after{content:counter(page) "/" counter(pages);direction:ltr;}
+ .page-number-format-short::after{content:"ص" counter(page) " از " counter(pages);}
+ .page-number-format-page::after{content:"صفحه " counter(page) " از " counter(pages);}
 }
 @media screen and (max-width:800px){.paper{width:210mm;}}
 </style>
