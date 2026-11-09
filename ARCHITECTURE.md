@@ -535,3 +535,14 @@ This boundary is mandatory for long-term maintainability.
 - Initial department membership may be supplied during user creation. Subsequent department membership changes use the dedicated `users.manage_departments` permission and endpoint rather than general user editing.
 - New users are created inactive by default and receive an invitation link. The user activates the account by choosing their own password.
 - Direct password creation remains possible only when an administrator explicitly creates an active user.
+
+## Correspondence print rendering — physical A4 coordinate model (2026-11-09)
+
+The browser-native print renderer uses two coordinated layers with one physical page origin:
+
+- **Physical template plane:** 210 × 297 mm, positioned against the physical A4 page origin for absolute metadata, heading, repeating header/footer and other template elements.
+- **Flowing text plane:** natural document flow for browser pagination. Its horizontal box spans 210 mm and applies the configured left/right text margins once as padding. Its vertical start/end are constrained by `@page` top/bottom margins, each equal to the greater of the text-edge margin and reserved header/footer height.
+
+Horizontal `@page` margins must remain zero in this model; applying them as well as flow-box padding would create a second margin layer and shrink/shift the coordinate plane. The physical template plane is vertically offset from the `@page` content origin by the effective top safe area. Body content remains in normal flow so Chromium can fragment it across pages; repeating template elements remain page-positioned.
+
+The screen A4 preview and browser PDF still require explicit visual acceptance. Browser-specific pagination and fixed-element behavior must not be treated as verified solely from CSS or PHP tests.
