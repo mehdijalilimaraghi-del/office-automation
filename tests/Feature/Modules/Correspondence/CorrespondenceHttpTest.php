@@ -240,6 +240,24 @@ class CorrespondenceHttpTest extends TestCase
                 ->where('templateElements.3.content', '{{creator_unit_title}}\\n{{creator_department_name}}\\n{{creator_name}}\\n{{manager_name}}\\n{{manager_title}}')
                 ->where('stampDataUri', fn ($value) => is_string($value) && str_starts_with($value, 'data:image/png;base64,'))
                 ->where('signatureDataUri', fn ($value) => is_string($value) && str_starts_with($value, 'data:image/png;base64,')));
+
+        $savedTemplate = json_decode(
+            app(SystemSettingsService::class)->get(['correspondence.print.template' => null])['correspondence.print.template'],
+            true,
+        );
+        $savedTemplate = array_values(array_filter(
+            $savedTemplate,
+            static fn (array $item): bool => ! in_array($item['kind'] ?? null, ['stamp', 'signature'], true),
+        ));
+        app(SystemSettingsService::class)->set([
+            'correspondence.print.template' => json_encode($savedTemplate, JSON_UNESCAPED_UNICODE),
+        ]);
+
+        $this->actingAs($viewer)->get(route('correspondence.print', $letter))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('stampDataUri', null)
+                ->where('signatureDataUri', null));
     }
 
     public function test_correspondence_index_supports_mine_department_and_all_scopes(): void
