@@ -38,6 +38,7 @@ class CorrespondencePrintController extends Controller
                 'organization.name' => null,
                 'organization.short_name' => null,
                 'organization.address' => null,
+                'organization.postal_code' => null,
                 'organization.phone' => null,
                 'organization.email' => null,
                 'organization.website' => null,
@@ -47,6 +48,7 @@ class CorrespondencePrintController extends Controller
                 'name' => $values['organization.name'],
                 'short_name' => $values['organization.short_name'],
                 'address' => $values['organization.address'],
+                'postal_code' => $values['organization.postal_code'],
                 'phone' => $values['organization.phone'],
                 'email' => $values['organization.email'],
                 'website' => $values['organization.website'],
@@ -85,7 +87,9 @@ class CorrespondencePrintController extends Controller
             'organization.stamp.path' => null,
             'organization.stamp.active' => '0',
             'organization.letterhead.path' => null,
+            'organization.postal_code' => null,
         ]);
+        $organization['postal_code'] = $organization['postal_code'] ?? $live['organization.postal_code'];
 
         if (! filled($stampPath) || ! Storage::disk('local')->exists($stampPath)) {
             $stampPath = $live['organization.stamp.active'] === '1'
