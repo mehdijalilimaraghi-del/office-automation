@@ -77,7 +77,9 @@ function updateEstimatedPageCount():void {
  if(!element)return;
  const pageHeightMm=297-props.pageLayout.top-props.pageLayout.bottom;
  const pageHeightPx=pageHeightMm*96/25.4;
- estimatedPageCount.value=Math.max(1,Math.ceil(element.scrollHeight/Math.max(1,pageHeightPx)));
+ const outerMarginsPx=(props.pageLayout.top+props.pageLayout.bottom)*96/25.4;
+ const flowingHeight=Math.max(0,element.scrollHeight-outerMarginsPx);
+ estimatedPageCount.value=Math.max(1,Math.ceil(flowingHeight/Math.max(1,pageHeightPx)));
 }
 onMounted(async()=>{
  await nextTick();
