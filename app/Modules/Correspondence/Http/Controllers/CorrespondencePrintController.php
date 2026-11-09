@@ -67,6 +67,10 @@ class CorrespondencePrintController extends Controller
         }
         unset($element);
 
+        $pageLayoutRaw = $settings->get(['correspondence.print.page_layout' => null])['correspondence.print.page_layout'];
+        $pageLayout = is_string($pageLayoutRaw) ? json_decode($pageLayoutRaw, true) : null;
+        $pageLayout = array_replace(['top' => 14, 'right' => 18, 'bottom' => 22, 'left' => 18], is_array($pageLayout) ? $pageLayout : []);
+
         $stampPath = $snapshot['stamp_path'] ?? null;
         $letterheadPath = $snapshot['letterhead_path'] ?? null;
         $signaturePath = $snapshot['signature_path'] ?? null;
@@ -124,6 +128,7 @@ class CorrespondencePrintController extends Controller
             ],
             'organization' => $organization,
             'templateElements' => $templateElements,
+            'pageLayout' => $pageLayout,
             'creatorName' => $snapshot['creator_name'] ?? $correspondence->creator?->name,
             'creatorUnitTitle' => $snapshot['creator_unit_title'] ?? ($correspondence->createdDepartment?->name ? 'مدیریت '.$correspondence->createdDepartment->name : null),
             'managerName' => $department?->manager?->name,
