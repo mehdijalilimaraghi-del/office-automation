@@ -1,3 +1,8 @@
+## 2026-11-09 — Print coordinate-origin mismatch correction
+
+- The print containing block starts after the `@page` top margin, unlike the screen A4 card whose origin is the physical page top. First-page positioned meta/heading elements were therefore displaced downward in print. Added a print-only negative top offset to the coordinate plane, based on the effective top content margin; body flow remains anchored to the printable content area.
+- Requires local build, focused correspondence PHP test, and Chromium print/PDF comparison. Development only; master, release and server unchanged.
+
 ## 2026-11-09 — Page-number coordinate reconciliation and organization postal code
 
 - The page-number mismatch was caused by different coordinate systems: screen previews used raw A4 percentages, while Chromium's print counters are rendered in page-margin boxes. A counter placed inside the body region was moved to the nearest top/bottom print margin only in actual print. Both screen previews now emulate the same margin-box segment, vertical boundary, horizontal anchor/padding and alignment. The printed counter also honors the configured font family, size, weight and format-specific bidi direction instead of hard-coded 9pt Tahoma/LTR preview behavior.
