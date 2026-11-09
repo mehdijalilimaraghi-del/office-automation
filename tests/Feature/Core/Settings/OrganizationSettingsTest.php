@@ -134,7 +134,7 @@ class OrganizationSettingsTest extends TestCase
         $elements = [[
             'id' => 'header_contact',
             'kind' => 'text',
-            'role' => 'repeat',
+            'role' => 'header',
             'spacing' => 0,
             'font_family' => 'Arial',
             'page_format' => 'number_of',
@@ -148,6 +148,24 @@ class OrganizationSettingsTest extends TestCase
             'align' => 'right',
             'visible' => true,
         ]];
+
+        $elements[] = [
+            'id' => 'footer_contact',
+            'kind' => 'text',
+            'role' => 'footer',
+            'spacing' => 0,
+            'font_family' => 'Arial',
+            'page_format' => 'number_of',
+            'label' => 'اطلاعات پاصفحه',
+            'content' => '{{website}}',
+            'x' => 8,
+            'y' => 94,
+            'width' => 84,
+            'font_size' => 9,
+            'bold' => false,
+            'align' => 'center',
+            'visible' => true,
+        ];
 
         $elements[] = [
             'id' => 'stamp_box',
