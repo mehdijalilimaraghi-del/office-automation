@@ -57,7 +57,7 @@ class CorrespondenceHttpTest extends TestCase
             'classification' => Correspondence::CLASSIFICATION_ORDINARY,
             'subject' => 'نامه داخلی با ثبت مستقیم',
             'composition_mode' => 'editor',
-            'body' => '<p>متن نامه</p>',
+            'body' => '<p style="text-align: justify">متن نامه</p>',
             'recipient_department_id' => $department->id,
         ])->assertRedirect(route('correspondence.index'));
 
@@ -67,6 +67,7 @@ class CorrespondenceHttpTest extends TestCase
             'status' => Correspondence::STATUS_REGISTERED,
             'registered_by' => $creator->id,
             'workflow_state' => 'in_progress',
+            'body' => '<p style="text-align: justify">متن نامه</p>',
         ]);
     }
 
@@ -95,6 +96,34 @@ class CorrespondenceHttpTest extends TestCase
         ]))->assertOk()->assertInertia(fn ($page) => $page
             ->where('correspondences.total', 1)
             ->where('correspondences.data.0.id', $letter->id));
+
+        $secretariatManager = $this->userWithPermission('correspondence.view');
+        $secretariat = Department::query()->create([
+            'name' => 'دبیرخانه آزمون تأیید صادره',
+            'code' => 'SEC-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $secretariatManager->id,
+        ]);
+        app(SystemSettingsService::class)->set([
+            'organization.department_roles.secretariat' => (string) $secretariat->id,
+        ]);
+
+        $this->actingAs($manager)->get(route('correspondence.show', $letter))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('canManageWorkflow', true));
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::MANAGER_APPROVE,
+            'note' => 'تأیید مدیر واحد',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $letter->id,
+            'status' => Correspondence::STATUS_DRAFT,
+            'workflow_state' => 'approved_for_registration',
+            'current_department_id' => $secretariat->id,
+            'current_user_id' => $secretariatManager->id,
+        ]);
     }
 
     public function test_user_with_view_permission_can_open_correspondence_index(): void
