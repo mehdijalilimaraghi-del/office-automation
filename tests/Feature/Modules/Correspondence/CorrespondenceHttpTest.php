@@ -1801,7 +1801,7 @@ class CorrespondenceHttpTest extends TestCase
         ]);
         $creator->departments()->attach($department->id, ['is_primary' => true, 'joined_at' => now()]);
         app(SystemSettingsService::class)->set(['correspondence.approval.outgoing' => 'approval']);
-        $letter = app(\\App\\Modules\\Correspondence\\Services\\CorrespondenceService::class)->createDraft([
+        $letter = app(\App\Modules\Correspondence\Services\CorrespondenceService::class)->createDraft([
             'type' => Correspondence::TYPE_OUTGOING,
             'subject' => 'پیش‌نویس نیازمند اصلاح',
             'created_department_id' => $department->id,
