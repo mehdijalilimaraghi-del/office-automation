@@ -2218,3 +2218,10 @@ Organization Settings now uses three tabs. A separate organization letterhead im
 - Restored body-element spacing as a separate «فاصله از بخش قبل» setting. New body elements default to 12 mm; existing saved body spacing is preserved by both template and print controllers and is applied only at the beginning of the flowing body, not as a replacement for the page's top margin.
 - Corrected the number_of page-counter content with an RTL isolate around the Persian «از» separator; other counter formats retain their existing output.
 - Added a print-controller regression assertion that a saved body spacing value reaches the print page unchanged. Local feature test, npm run build, and browser print/manual layout acceptance are pending. Development branch only; master, release and server remain unchanged.
+
+## 2026-11-09 — Print layout single-origin refactor (validation pending)
+
+- `Correspondence/Print.vue` now uses one physical A4 horizontal coordinate system for print: `@page` has zero left/right margins, the paper/coordinate plane and print flow box are 210 mm wide, and configured left/right text margins are applied once as flow-box padding.
+- `@page` retains only effective top/bottom safe-area margins (`max(text margin, header/footer height)`), so body pagination reserves the header/footer zones on every page. The absolute template plane is shifted from the page content origin to physical A4 top; the body remains normal flow.
+- This removes the previous combination of CSS horizontal page margins plus negative right offset. It targets the reported duplicate top/side offset and ignored header/footer area.
+- Status: code committed to `development`; frontend build, focused PHP feature test and Chromium PDF comparison have NOT been run/confirmed. Do not mark print parity complete until the owner validates the same letter in preview and PDF, including a multi-page case and asymmetric left/right margins. `master`, release and server unchanged.
