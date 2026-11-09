@@ -37,8 +37,8 @@ const pageCss=computed(()=>{
  if(pageNumberFormat.value==='page')counterContent='"صفحه " counter(page) " از " counter(pages)';
  const yMm=item?item.y*2.97:0;
  const verticalPadding=item?(item.y<50?yMm:Math.max(0,yMm-(297-props.pageLayout.bottom))):0;
- const horizontalPadding=item?(item.x<34?item.x*2.1:item.x>66?(100-item.x)*2.1:0):0;
- const horizontalSide=item?(item.x<34?'padding-right':item.x>66?'padding-left':''):'';
+ const horizontalPadding=item?(item.align==='right'?item.x*2.1:item.align==='left'?Math.max(0,100-item.x-item.width)*2.1:0):0;
+ const horizontalSide=item?(item.align==='right'?'padding-right':item.align==='left'?'padding-left':''):'';
  const extraPadding=horizontalSide?horizontalSide+':'+horizontalPadding.toFixed(2)+'mm;':'';
  const rule=item?position+'{content:'+counterContent+';font:9pt Tahoma,sans-serif;color:#475569;direction:ltr;unicode-bidi:isolate;text-align:'+item.align+';white-space:nowrap;vertical-align:top;padding-top:'+verticalPadding.toFixed(2)+'mm;'+extraPadding+'}':'';
  return '@page{size:A4;margin:'+margins+';}'
