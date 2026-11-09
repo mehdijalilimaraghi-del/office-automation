@@ -11,6 +11,7 @@ use App\Core\ExternalParties\Models\ExternalOrganization;
 use App\Core\ExternalParties\Models\ExternalContact;
 use App\Core\ExternalParties\Models\ExternalDepartment;
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Models\CorrespondenceAction;
 use App\Modules\Tasks\Models\Task;
