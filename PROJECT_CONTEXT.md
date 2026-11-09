@@ -1,3 +1,8 @@
+## 2026-11-09 — Print coordinate-origin mismatch correction
+
+- Print mode now compensates for the fact that `.paper` begins at the `@page` printable content edge rather than the physical A4 top edge. The absolute first-page template plane is moved upward by the effective top margin; the flowing body remains in the page content area. This addresses first-page meta/heading displacement and resulting overlap with the body.
+- Browser print/PDF parity and local tests remain pending owner verification. Development only; master, release and server unchanged.
+
 ## 2026-11-09 — Page-number coordinate reconciliation and organization postal code
 
 - The page-number mismatch was caused by different coordinate systems: screen previews used raw A4 percentages, while Chromium's print counters are rendered in page-margin boxes. A counter placed inside the body region was moved to the nearest top/bottom print margin only in actual print. Both screen previews now emulate the same margin-box segment, vertical boundary, horizontal anchor/padding and alignment. The printed counter also honors the configured font family, size, weight and format-specific bidi direction instead of hard-coded 9pt Tahoma/LTR preview behavior.
