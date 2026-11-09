@@ -5,25 +5,27 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
-type Role = 'meta'|'heading'|'page_number'|'issuer'|'repeat'|'body';
+type Role = 'meta'|'heading'|'page_number'|'issuer'|'header'|'footer'|'repeat'|'body';
 type Kind = 'text'|'stamp'|'signature';
 type PageFormat = 'number_of'|'slash'|'short'|'page';
 interface ElementBox { id:string; kind:Kind; role:Role; label:string; content:string; x:number; y:number; width:number; spacing:number; font_size:number; font_family:string; page_format:PageFormat; bold:boolean; align:'right'|'center'|'left'; visible:boolean; }
 interface Token { key:string; label:string; }
-const props = defineProps<{ elements:ElementBox[]; pageLayout:{top:number;right:number;bottom:number;left:number}; tokens:Token[]; letterheadDataUri:string|null; stampDataUri:string|null; defaultFontFamily:string; previewValues:Record<string,string>; previewBody:string }>();
+const props = defineProps<{ elements:ElementBox[]; pageLayout:{top:number;right:number;bottom:number;left:number;header_height:number;footer_height:number}; tokens:Token[]; letterheadDataUri:string|null; stampDataUri:string|null; defaultFontFamily:string; previewValues:Record<string,string>; previewBody:string }>();
 const form = useForm({ elements: props.elements.map(item => ({ ...item, role: item.role ?? 'repeat', spacing: item.spacing ?? 0, font_family: item.font_family ?? 'default', page_format: item.page_format ?? 'number_of' })), page_layout: { ...props.pageLayout } });
 const selectedId = ref(form.elements[0]?.id ?? '');
 const previewMode = ref(false);
 const selected = computed(() => form.elements.find(item => item.id === selectedId.value) ?? null);
 const page = ref<HTMLElement|null>(null);
 const dragging = ref<{id:string; lastX:number; lastY:number}|null>(null);
-const roleLabels:Record<Role,string> = { meta:'شماره و تاریخ', heading:'خطاب و موضوع', page_number:'شماره صفحه', issuer:'تنظیم‌کننده و امضا', repeat:'سربرگ و پاصفحه تکرارشونده', body:'متن اصلی نامه' };
+const roleLabels:Record<Role,string> = { meta:'شماره و تاریخ', heading:'خطاب و موضوع', page_number:'شماره صفحه', issuer:'تنظیم‌کننده و امضا', header:'سربرگ تکرارشونده', footer:'پاصفحه تکرارشونده', repeat:'سربرگ/پاصفحه قدیمی', body:'متن اصلی نامه' };
 const fontOptions = [{value:'default',label:'فونت پیش‌فرض تنظیمات'},{value:'Vazirmatn',label:'وزیرمتن'},{value:'Tahoma',label:'Tahoma'},{value:'Arial',label:'Arial'},{value:'B Nazanin',label:'B Nazanin'},{value:'B Mitra',label:'B Mitra'},{value:'IRANSans',label:'IRANSans'},{value:'Times New Roman',label:'Times New Roman'}];
 const roleTokens:Record<Role,string[]> = {
  meta:['{{letter_number}}','{{registration_number}}','{{date}}','{{attachment_pages}}','{{letter_type}}'],
  heading:['{{recipient_name}}','{{recipient_organization}}','{{recipient_unit}}','{{recipient_position}}','{{recipient_title}}','{{subject}}'],
  page_number:[],
  issuer:['{{creator_name}}','{{creator_unit_title}}','{{creator_department_name}}','{{manager_name}}','{{manager_position}}','{{manager_title}}'],
+ header:['{{organization_name}}','{{short_name}}','{{address}}','{{tel}}','{{email}}','{{website}}'],
+ footer:['{{organization_name}}','{{short_name}}','{{address}}','{{tel}}','{{email}}','{{website}}'],
  repeat:['{{organization_name}}','{{short_name}}','{{address}}','{{tel}}','{{email}}','{{website}}'],
  body:[]
 };
@@ -32,25 +34,25 @@ const flowMeta = computed(() => form.elements.filter(item => item.visible && ite
 const flowHeading = computed(() => form.elements.filter(item => item.visible && item.role === 'heading'));
 const flowIssuer = computed(() => form.elements.filter(item => item.visible && item.role === 'issuer'));
 const flowBody = computed(() => form.elements.find(item => item.role === 'body' && item.visible) ?? null);
-const repeating = computed(() => form.elements.filter(item => item.visible && item.role === 'repeat'));
+const repeating = computed(() => form.elements.filter(item => item.visible && ['header','footer','repeat'].includes(item.role)));
 const pageNumberEnabled = computed(() => form.elements.some(item => item.visible && item.role === 'page_number'));
 const safeAreaStyle = computed(() => ({
- top: (form.page_layout.top / 297 * 100) + '%',
+ top: (Math.max(form.page_layout.top,form.page_layout.header_height??0) / 297 * 100) + '%',
  right: (form.page_layout.right / 210 * 100) + '%',
- bottom: (form.page_layout.bottom / 297 * 100) + '%',
+ bottom: (Math.max(form.page_layout.bottom,form.page_layout.footer_height??0) / 297 * 100) + '%',
  left: (form.page_layout.left / 210 * 100) + '%',
 }));
 const contentPreviewStyle = computed(() => ({
- top: form.page_layout.top + 'mm',
+ top: Math.max(form.page_layout.top,form.page_layout.header_height??0) + 'mm',
  right: form.page_layout.right + 'mm',
  left: form.page_layout.left + 'mm',
- bottom: form.page_layout.bottom + 'mm',
+ bottom: Math.max(form.page_layout.bottom,form.page_layout.footer_height??0) + 'mm',
 }));
 function addRole(role:string):void { if (role in roleLabels) addBox(role as Role); }
 function addBox(role:Role, kind:Kind='text'):void {
  const id='item_'+Math.random().toString(36).slice(2,9);
  const labels:Record<Role,string> = roleLabels;
- form.elements.push({id,kind,role,label:kind==='stamp'?'مهر سازمان':kind==='signature'?'امضای مدیر واحد':labels[role],content:role==='page_number'||role==='body'?'':role==='meta'?'شماره: {{letter_number}}\nتاریخ: {{date}}\n{{attachment_pages}}':role==='issuer'?'{{creator_unit_title}}\n{{creator_name}}':'',x:8,y:role==='repeat'?8:0,width:84,spacing:role==='body'?42:role==='issuer'?16:0,font_size:role==='meta'?10:12,font_family:'default',page_format:'number_of',bold:role==='heading',align:'right',visible:true});
+ form.elements.push({id,kind,role,label:kind==='stamp'?'مهر سازمان':kind==='signature'?'امضای مدیر واحد':labels[role],content:role==='page_number'||role==='body'?'':role==='meta'?'شماره: {{letter_number}}\nتاریخ: {{date}}\n{{attachment_pages}}':role==='issuer'?'{{creator_unit_title}}\n{{creator_name}}':'',x:8,y:role==='header'?8:role==='footer'?92:role==='repeat'?8:0,width:84,spacing:role==='body'?42:role==='issuer'?16:0,font_size:role==='meta'?10:12,font_family:'default',page_format:'number_of',bold:role==='heading',align:'right',visible:true});
  selectedId.value=id;
 }
 function removeBox():void { if(!selected.value)return; form.elements=form.elements.filter(item=>item.id!==selectedId.value);selectedId.value=form.elements[0]?.id??''; }
@@ -92,7 +94,7 @@ function displayText(item:ElementBox):string {
 function flowStyle(item:ElementBox):Record<string,string> { return { width:item.width+'%', marginTop:item.spacing+'mm', fontSize:item.font_size+'px', fontWeight:item.bold?'700':'400', textAlign:item.align }; }
 function resolvedFont(item:ElementBox):string { return item.font_family==='default'?props.defaultFontFamily:item.font_family; }
 function elementStyle(item:ElementBox):Record<string,string> { return { right:item.x+'%', top:item.y+'%', width:item.width+'%', fontSize:item.font_size+'px', fontFamily:resolvedFont(item), fontWeight:item.bold?'700':'400', textAlign:item.align }; }
-function bodyPreviewStyle():Record<string,string> { const item=flowBody.value; return { width:(item?.width??84)+'%', marginTop:(item?.spacing??42)+'mm', fontSize:(item?.font_size??12)+'px', fontFamily:item?resolvedFont(item):props.defaultFontFamily, fontWeight:item?.bold?'700':'400', textAlign:item?.align??'right' }; }
+function bodyPreviewStyle():Record<string,string> { const item=flowBody.value; return { width:(item?.width??84)+'%', marginTop:(item?.spacing??0)+'mm', fontSize:(item?.font_size??12)+'px', fontFamily:item?resolvedFont(item):props.defaultFontFamily, fontWeight:item?.bold?'700':'400', textAlign:item?.align??'right' }; }
 function issuerPreviewStyle(item:ElementBox):Record<string,string> { return { width:item.width+'%', marginTop:item.spacing+'mm', marginRight:`calc(${item.x*2.1}mm - ${props.pageLayout.right}mm)`, fontSize:item.font_size+'px', fontFamily:resolvedFont(item), fontWeight:item.bold?'700':'400', textAlign:item.align }; }
 function pageNumberPreview(item:ElementBox):string { const format=item.page_format??'number_of'; if(format==='slash')return '۱/۵'; if(format==='short')return 'ص۱ از ۵'; if(format==='page')return 'صفحه ۱ از ۵'; return '۱ از ۵'; }
 </script>
@@ -120,12 +122,14 @@ function pageNumberPreview(item:ElementBox):string { const format=item.page_form
     <aside v-if="!previewMode" class="space-y-4">
      <section class="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
       <h3 class="font-bold">محدوده چاپ A4</h3>
-      <p class="text-xs leading-5 text-slate-500">حاشیه‌ها محدوده مجاز متن را در تمام صفحات تعیین می‌کنند. سربرگ و پاصفحه تکرارشونده می‌توانند در فضای حاشیه قرار بگیرند.</p>
+      <p class="text-xs leading-5 text-slate-500">این تنظیمات فضای امن متن نامه را از لبه‌های کاغذ مشخص می‌کنند. فضای سربرگ و پاصفحه جداگانه رزرو می‌شود تا متن وارد محدوده آن‌ها نشود.</p>
       <div class="grid grid-cols-2 gap-2">
-       <label class="text-xs">حاشیه بالا (mm)<input v-model.number="form.page_layout.top" type="number" min="5" max="60" class="mt-1 w-full rounded-lg border-slate-300"/></label>
-       <label class="text-xs">حاشیه پایین (mm)<input v-model.number="form.page_layout.bottom" type="number" min="5" max="60" class="mt-1 w-full rounded-lg border-slate-300"/></label>
-       <label class="text-xs">حاشیه راست (mm)<input v-model.number="form.page_layout.right" type="number" min="5" max="50" class="mt-1 w-full rounded-lg border-slate-300"/></label>
-       <label class="text-xs">حاشیه چپ (mm)<input v-model.number="form.page_layout.left" type="number" min="5" max="50" class="mt-1 w-full rounded-lg border-slate-300"/></label>
+       <label class="text-xs">فاصله متن از بالا (mm)<input v-model.number="form.page_layout.top" type="number" min="5" max="60" class="mt-1 w-full rounded-lg border-slate-300"/></label>
+       <label class="text-xs">فاصله متن از پایین (mm)<input v-model.number="form.page_layout.bottom" type="number" min="5" max="60" class="mt-1 w-full rounded-lg border-slate-300"/></label>
+       <label class="text-xs">فاصله متن از راست (mm)<input v-model.number="form.page_layout.right" type="number" min="5" max="50" class="mt-1 w-full rounded-lg border-slate-300"/></label>
+       <label class="text-xs">فاصله متن از چپ (mm)<input v-model.number="form.page_layout.left" type="number" min="5" max="50" class="mt-1 w-full rounded-lg border-slate-300"/></label>
+       <label class="text-xs">فضای رزروشده سربرگ (mm)<input v-model.number="form.page_layout.header_height" type="number" min="0" max="100" class="mt-1 w-full rounded-lg border-slate-300"/></label>
+       <label class="text-xs">فضای رزروشده پاصفحه (mm)<input v-model.number="form.page_layout.footer_height" type="number" min="0" max="70" class="mt-1 w-full rounded-lg border-slate-300"/></label>
       </div>
      </section>
      <section class="rounded-2xl border border-slate-200 bg-white p-4"><div class="mb-3 flex items-center justify-between"><h3 class="font-bold">بخش‌های قالب</h3><button type="button" class="text-xs text-rose-600" @click="removeBox">حذف انتخابی</button></div><div class="space-y-1"><button v-for="item in form.elements" :key="item.id" type="button" class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm" :class="selectedId===item.id?'bg-teal-50 text-teal-800':'hover:bg-slate-50'" @click="selectedId=item.id"><span>{{item.label}}</span><span class="text-xs text-slate-400">{{roleLabels[item.role]}}</span></button></div></section>
