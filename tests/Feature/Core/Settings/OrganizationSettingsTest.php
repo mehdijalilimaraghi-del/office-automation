@@ -200,7 +200,7 @@ class OrganizationSettingsTest extends TestCase
         $this->assertSame($normalize($elements), $normalize($actual));
         $storedLayout = SystemSetting::query()->where('key', 'correspondence.print.page_layout')->value('value');
         $this->assertSame(
-            ['top' => 16.0, 'right' => 20.0, 'bottom' => 24.0, 'left' => 19.0],
+            ['top' => 16, 'right' => 20, 'bottom' => 24, 'left' => 19],
             json_decode($storedLayout, true, 512, JSON_THROW_ON_ERROR),
         );
     }
