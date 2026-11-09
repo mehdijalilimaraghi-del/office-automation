@@ -1,3 +1,8 @@
+## 2026-11-09 — Full-page print coordinate alignment
+
+- Chromium lays out the document inside the `@page` printable rectangle, not the physical A4 dimensions. The previous `width:auto` coordinate plane therefore shrank with left/right margins, distorting percentage-based template positions and widths. Print CSS now restores a 210 × 297 mm plane and offsets it to the physical page origin using configured right/top margins; body flow stays inside the printable content box.
+- Verify in Chromium with A4, 100% scale, browser headers/footers disabled, and no additional custom browser margins layered over the CSS-defined template margins. Build, focused PHP tests, and PDF acceptance remain pending. Development only; master/release/server unchanged.
+
 ## 2026-11-09 — Print coordinate-origin mismatch correction
 
 - The print containing block starts after the `@page` top margin, unlike the screen A4 card whose origin is the physical page top. First-page positioned meta/heading elements were therefore displaced downward in print. Added a print-only negative top offset to the coordinate plane, based on the effective top content margin; body flow remains anchored to the printable content area.
