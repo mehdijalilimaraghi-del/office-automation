@@ -1,3 +1,9 @@
+## 2026-11-09 — Preserve full A4 coordinate plane in browser print
+
+- Found that Chromium's print `.paper` box represents only the printable area after `@page` margins, while the template's percentage-based absolute elements must remain relative to the full physical A4 page. The previous print CSS left the coordinate plane at `width:auto`, compressing its width to the printable area and distorting x/width positions when left/right margins were nonzero.
+- Print CSS now restores a 210 × 297 mm coordinate plane and offsets it by the configured right and effective top margins. The flowing body remains inside the `@page` printable rectangle.
+- Pending frontend build, focused PHP tests, and Chromium PDF validation including browser margin setting behavior. Development only; master/release/server unchanged.
+
 ## 2026-11-09 — Align first-page template elements between screen preview and print
 
 - Root cause: screen A4 coordinates start at the physical page top; in print, the `.paper` containing block starts at the `@page` content edge after the top margin. Absolute first-page meta/heading elements were consequently shifted down by the reserved top margin while the body stayed at the printable content edge, causing overlap and spacing mismatch.
