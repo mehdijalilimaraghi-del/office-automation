@@ -1,3 +1,9 @@
+## 2026-11-09 — Print preview TypeScript ref typing fix
+
+- Replaced element-ref object bindings in the correspondence print preview with typed-safe callback ref setters. This resolves vue-tsc errors where nullable HTMLElement refs were not assignable to Vue's VNodeRef type.
+- No runtime layout behavior was intentionally changed. Frontend build remains pending owner verification.
+- Development only; master, release and server remain unchanged.
+
 ## 2026-11-09 — Correct body flow, template-controlled print assets and RTL page counter
 
 - The printable letter body now measures the rendered bottom edge of first-page metadata/heading elements and adds the body element's configured spacing after that edge. The same measured offset is applied in the template designer preview and print preview; the A4 safe-area boundary remains a minimum start boundary, not a substitute for spacing from the preceding element.
