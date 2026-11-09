@@ -8,7 +8,7 @@ interface TemplateElement { id:string; kind:'text'|'stamp'|'signature'; role:Rol
 interface PrintLetter { id:number; attachment_pages:number|null; type:'incoming'|'outgoing'|'internal'; subject:string; body:string|null; letter_number:string|null; registration_number:string|null; registered_at:string|null; sent_at:string|null; recipient_name:string|null; recipient_addressing:AddressingSnapshot|null; external_organization:string|null; external_department:string|null; }
 const props=defineProps<{letter:PrintLetter;templateElements:TemplateElement[];pageLayout:{top:number;right:number;bottom:number;left:number};organization:{name?:string|null;short_name?:string|null;address?:string|null;phone?:string|null;email?:string|null;website?:string|null};creatorName:string|null;creatorUnitTitle:string|null;managerName:string|null;managerPosition:string|null;managerTitle:string|null;creatorDepartmentName:string|null;stampDataUri:string|null;letterheadDataUri:string|null;signatureDataUri:string|null;printOptions:{show_creator_identity:boolean;show_stamp:boolean;show_department_signature:boolean;letterhead_show_name:boolean;letterhead_show_address:boolean;letterhead_show_phone:boolean;letterhead_show_email:boolean;letterhead_show_website:boolean;font_family:string;};}>();
 const withLetterhead=ref(true);
-const documentContent=ref<HTMLElement|null>(null);
+const documentContent=ref<HTMLElement[]>([]);
 const estimatedPageCount=ref(1);
 let contentObserver:ResizeObserver|null=null;
 const elements=computed(()=>props.templateElements.filter(item=>item.visible));
@@ -83,7 +83,7 @@ function boxStyle(item:TemplateElement):Record<string,string>{return {width:item
 function positionedStyle(item:TemplateElement):Record<string,string>{return {right:item.x+'%',top:item.y+'%',bottom:'auto',width:item.width+'%',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
 function bodyStyle():Record<string,string>{const item=bodyElement.value;return {width:item.width+'%',marginTop:item.spacing+'mm',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
 function updateEstimatedPageCount():void {
- const element=documentContent.value;
+ const element=documentContent.value[0];
  if(!element)return;
  const pageHeightMm=297-props.pageLayout.top-props.pageLayout.bottom;
  const pageHeightPx=pageHeightMm*96/25.4;
@@ -93,9 +93,9 @@ function updateEstimatedPageCount():void {
 onMounted(async()=>{
  await nextTick();
  updateEstimatedPageCount();
- if(documentContent.value&&typeof ResizeObserver!=='undefined'){
+ if(documentContent.value[0]&&typeof ResizeObserver!=='undefined'){
   contentObserver=new ResizeObserver(()=>updateEstimatedPageCount());
-  contentObserver.observe(documentContent.value);
+  contentObserver.observe(documentContent.value[0]);
  }
 });
 onBeforeUnmount(()=>contentObserver?.disconnect());
@@ -129,7 +129,7 @@ function printLetter():void{window.print();}
     </div></template>
    </div>
    <div class="page-content-window" :style="pageWindowStyle">
-    <div :ref="pageIndex===1 ? documentContent : undefined" class="document-content" :style="pageContentStyle(pageIndex)">
+    <div ref="documentContent" class="document-content" :style="pageContentStyle(pageIndex)">
     <section class="letter-body" :style="bodyStyle()" v-html="letter.body||''"></section>
 
     <div v-for="item in flowIssuer" :key="item.id" class="flow-item issuer-item" :style="boxStyle(item)">
