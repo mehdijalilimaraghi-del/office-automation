@@ -14,7 +14,7 @@ use Inertia\Response;
 
 class CorrespondenceTemplateController extends Controller
 {
-    private const BODY_TEMPLATE = ['id' => 'letter_body', 'kind' => 'text', 'role' => 'body', 'spacing' => 42, 'label' => 'متن اصلی نامه', 'content' => '', 'x' => 8, 'y' => 0, 'width' => 84, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true];
+    private const BODY_TEMPLATE = ['id' => 'letter_body', 'kind' => 'text', 'role' => 'body', 'spacing' => 0, 'label' => 'متن اصلی نامه', 'content' => '', 'x' => 8, 'y' => 0, 'width' => 84, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true];
 
     private const DEFAULT_PAGE_LAYOUT = ['top' => 14, 'right' => 18, 'bottom' => 22, 'left' => 18, 'header_height' => 70, 'footer_height' => 25];
 
