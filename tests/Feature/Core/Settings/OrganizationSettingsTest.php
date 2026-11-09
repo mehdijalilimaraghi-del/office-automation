@@ -183,7 +183,7 @@ class OrganizationSettingsTest extends TestCase
         $this->actingAs($admin)
             ->put(route('correspondence.template.update'), [
                 'elements' => $elements,
-                'page_layout' => ['top' => 16, 'right' => 20, 'bottom' => 24, 'left' => 19],
+                'page_layout' => ['top' => 16, 'right' => 20, 'bottom' => 24, 'left' => 19, 'header_height' => 72, 'footer_height' => 28],
             ])
             ->assertRedirect()
             ->assertSessionHas('success');
@@ -200,7 +200,7 @@ class OrganizationSettingsTest extends TestCase
         $this->assertSame($normalize($elements), $normalize($actual));
         $storedLayout = SystemSetting::query()->where('key', 'correspondence.print.page_layout')->value('value');
         $this->assertSame(
-            ['top' => 16, 'right' => 20, 'bottom' => 24, 'left' => 19],
+            ['top' => 16, 'right' => 20, 'bottom' => 24, 'left' => 19, 'header_height' => 72, 'footer_height' => 28],
             json_decode($storedLayout, true, 512, JSON_THROW_ON_ERROR),
         );
     }
@@ -276,6 +276,8 @@ class OrganizationSettingsTest extends TestCase
                 ->where('pageLayout.right', 18)
                 ->where('pageLayout.bottom', 22)
                 ->where('pageLayout.left', 18)
+                ->where('pageLayout.header_height', 70)
+                ->where('pageLayout.footer_height', 25)
                 ->where('previewBody', $expectedBody)
             );
     }
