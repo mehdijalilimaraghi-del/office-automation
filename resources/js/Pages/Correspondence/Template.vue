@@ -28,9 +28,9 @@ const roleTokens:Record<Role,string[]> = {
  heading:['{{recipient_name}}','{{recipient_organization}}','{{recipient_unit}}','{{recipient_position}}','{{recipient_title}}','{{subject}}'],
  page_number:[],
  issuer:['{{creator_name}}','{{creator_unit_title}}','{{creator_department_name}}','{{manager_name}}','{{manager_position}}','{{manager_title}}'],
- header:['{{organization_name}}','{{short_name}}','{{address}}','{{tel}}','{{email}}','{{website}}'],
- footer:['{{organization_name}}','{{short_name}}','{{address}}','{{tel}}','{{email}}','{{website}}'],
- repeat:['{{organization_name}}','{{short_name}}','{{address}}','{{tel}}','{{email}}','{{website}}'],
+ header:['{{organization_name}}','{{short_name}}','{{address}}','{{postal_code}}','{{tel}}','{{email}}','{{website}}'],
+ footer:['{{organization_name}}','{{short_name}}','{{address}}','{{postal_code}}','{{tel}}','{{email}}','{{website}}'],
+ repeat:['{{organization_name}}','{{short_name}}','{{address}}','{{postal_code}}','{{tel}}','{{email}}','{{website}}'],
  body:[]
 };
 const availableTokens = computed(() => props.tokens.filter(token => selected.value && roleTokens[selected.value.role].includes(token.key)));
@@ -137,6 +137,13 @@ watch(()=>form.elements.map(item=>[item.role,item.content,item.x,item.y,item.wid
 onBeforeUnmount(()=>previewLayoutObserver?.disconnect());
 function issuerPreviewStyle(item:ElementBox):Record<string,string> { return { width:item.width+'%', marginTop:item.spacing+'mm', marginRight:`calc(${item.x*2.1}mm - ${props.pageLayout.right}mm)`, fontSize:item.font_size+'px', fontFamily:resolvedFont(item), fontWeight:item.bold?'700':'400', textAlign:item.align }; }
 function pageNumberPreview(item:ElementBox):string { const format=item.page_format??'number_of'; if(format==='slash')return '۱/۵'; if(format==='short')return 'ص۱ از ۵'; if(format==='page')return 'صفحه ۱ از ۵'; return '۱ از ۵'; }
+function pageNumberElementStyle(item:ElementBox):Record<string,string> {
+ const topEdge=Math.max(form.page_layout.top,form.page_layout.header_height??0);
+ const bottomEdge=297-Math.max(form.page_layout.bottom,form.page_layout.footer_height??0);
+ const requestedY=item.y*2.97;
+ const mappedY=requestedY<topEdge?requestedY:requestedY>bottomEdge?requestedY:(requestedY-topEdge<=bottomEdge-requestedY?topEdge:bottomEdge);
+ return {...elementStyle(item),top:(mappedY/297*100)+'%'};
+}
 </script>
 
 <template>
@@ -158,7 +165,7 @@ function pageNumberPreview(item:ElementBox):string { const format=item.page_form
        </div>
        <div v-for="item in flowIssuer" :key="item.id" class="whitespace-pre-wrap p-2 text-slate-900" :class="previewMode?'':(selectedId===item.id?'border border-dashed border-teal-600 bg-teal-50/80 ring-1 ring-teal-500':'border border-dashed border-slate-300 bg-white/70')" :style="issuerPreviewStyle(item)" @click="selectedId=item.id"><img v-if="item.kind==='stamp'&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="pointer-events-none block h-auto w-full max-w-none object-contain"/><span v-else class="pointer-events-none">{{displayText(item)}}</span></div>
       </div>
-      <div v-for="item in form.elements.filter(entry=>entry.visible && entry.role!=='body' && entry.role!=='issuer')" :key="item.id" class="absolute z-10 whitespace-pre-wrap p-2 text-slate-900" :class="[previewMode?'':(selectedId===item.id?'border border-dashed border-teal-600 bg-teal-50/80 ring-1 ring-teal-500':'border border-dashed border-slate-300 bg-white/70'),['meta','heading'].includes(item.role)?'template-flow-previous':'']" :style="elementStyle(item)" @pointerdown="!previewMode&&pointerDown($event,item)"><span class="pointer-events-none"><bdi v-if="item.role==='page_number'" dir="ltr">{{pageNumberPreview(item)}}</bdi><template v-else>{{displayText(item)}}</template></span></div>
+      <div v-for="item in form.elements.filter(entry=>entry.visible && entry.role!=='body' && entry.role!=='issuer')" :key="item.id" class="absolute z-10 whitespace-pre-wrap p-2 text-slate-900" :class="[previewMode?'':(selectedId===item.id?'border border-dashed border-teal-600 bg-teal-50/80 ring-1 ring-teal-500':'border border-dashed border-slate-300 bg-white/70'),['meta','heading'].includes(item.role)?'template-flow-previous':'']" :style="item.role==='page_number'?pageNumberElementStyle(item):elementStyle(item)" @pointerdown="!previewMode&&pointerDown($event,item)"><span class="pointer-events-none"><bdi v-if="item.role==='page_number'" dir="ltr">{{pageNumberPreview(item)}}</bdi><template v-else>{{displayText(item)}}</template></span></div>
      </div>
     </section>
     <aside v-if="!previewMode" class="space-y-4">
