@@ -146,7 +146,7 @@ function pageNumberElementStyle(item:ElementBox):Record<string,string> {
  const slot=anchorX<33.333?'right':anchorX>66.667?'left':'center';
  const slotRight=slot==='right'?0:slot==='center'?33.333:66.667;
  const slotLeft=slotRight+33.333;
- const style:Record<string,string>={right:slotRight+'%',top:(mappedY/297*100)+'%',width:'33.333%',fontSize:item.font_size+'px',fontFamily:resolvedFont(item),fontWeight:item.bold?'700':'400',textAlign:item.align};
+ const style:Record<string,string>={right:slotRight+'%',top:(mappedY/297*100)+'%',width:'33.333%',fontSize:item.font_size+'pt',fontFamily:resolvedFont(item),fontWeight:item.bold?'700':'400',textAlign:item.align,padding:'0',whiteSpace:'nowrap'};
  if(item.align==='right')style.paddingRight=Math.max(0,anchorX-slotRight)*2.1+'mm';
  if(item.align==='left')style.paddingLeft=Math.max(0,slotLeft-anchorX)*2.1+'mm';
  if(item.align==='center')style.transform='translateX('+((slotRight+16.6665-anchorX)*2.1)+'mm)';
