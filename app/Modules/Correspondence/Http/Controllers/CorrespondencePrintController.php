@@ -61,6 +61,9 @@ class CorrespondencePrintController extends Controller
         }
 
         foreach ($templateElements as &$element) {
+            if (($element['role'] ?? null) === 'body') {
+                $element['spacing'] = 0;
+            }
             if (($element['role'] ?? null) === 'meta' && ! str_contains((string) ($element['content'] ?? ''), '{{attachment_pages}}')) {
                 $element['content'] = rtrim((string) ($element['content'] ?? ''))."\n{{attachment_pages}}";
             }
@@ -69,7 +72,7 @@ class CorrespondencePrintController extends Controller
 
         $pageLayoutRaw = $settings->get(['correspondence.print.page_layout' => null])['correspondence.print.page_layout'];
         $pageLayout = is_string($pageLayoutRaw) ? json_decode($pageLayoutRaw, true) : null;
-        $pageLayout = array_replace(['top' => 14, 'right' => 18, 'bottom' => 22, 'left' => 18], is_array($pageLayout) ? $pageLayout : []);
+        $pageLayout = array_replace(['top' => 14, 'right' => 18, 'bottom' => 22, 'left' => 18, 'header_height' => 70, 'footer_height' => 25], is_array($pageLayout) ? $pageLayout : []);
 
         $stampPath = $snapshot['stamp_path'] ?? null;
         $letterheadPath = $snapshot['letterhead_path'] ?? null;
