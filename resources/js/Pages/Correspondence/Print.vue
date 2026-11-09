@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, nextTick } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 interface AddressingSnapshot { organizational_title_prefix?:string|null; position?:string|null; personal_salutation?:string|null; professional_title?:string|null; name?:string|null; organization_name?:string|null; department_name?:string|null; }
-type Role='meta'|'heading'|'page_number'|'issuer'|'repeat'|'body';
+type Role='meta'|'heading'|'page_number'|'issuer'|'header'|'footer'|'repeat'|'body';
 type PageFormat='number_of'|'slash'|'short'|'page';
 interface TemplateElement { id:string; kind:'text'|'stamp'|'signature'; role:Role; label:string; content:string; x:number; y:number; width:number; spacing:number; font_size:number; font_family:string; page_format:PageFormat; bold:boolean; align:'right'|'center'|'left'; visible:boolean; }
 interface PrintLetter { id:number; attachment_pages:number|null; type:'incoming'|'outgoing'|'internal'; subject:string; body:string|null; letter_number:string|null; registration_number:string|null; registered_at:string|null; sent_at:string|null; recipient_name:string|null; recipient_addressing:AddressingSnapshot|null; external_organization:string|null; external_department:string|null; }
@@ -16,7 +16,7 @@ const flowMeta=computed(()=>elements.value.filter(item=>item.role==='meta'));
 const flowHeading=computed(()=>elements.value.filter(item=>item.role==='heading'));
 const flowIssuer=computed(()=>elements.value.filter(item=>item.role==='issuer'));
 const bodyElement=computed(()=>elements.value.find(item=>item.role==='body')??{spacing:42,width:84,font_size:12,font_family:'default',bold:false,align:'right'} as TemplateElement);
-const repeating=computed(()=>elements.value.filter(item=>item.role==='repeat'));
+const repeating=computed(()=>elements.value.filter(item=>['header','footer','repeat'].includes(item.role)));
 const pageNumberEnabled=computed(()=>elements.value.some(item=>item.role==='page_number'));
 const pageNumberFormat=computed(()=>elements.value.find(item=>item.role==='page_number')?.page_format??'number_of');
 const pageNumberElement=computed(()=>elements.value.find(item=>item.role==='page_number')??null);
@@ -26,12 +26,14 @@ const pageNumberPosition=computed(()=>{
  const yMm=item.y*2.97;
  const topEdge=props.pageLayout.top;
  const bottomEdge=297-props.pageLayout.bottom;
- const vertical=yMm-topEdge<=bottomEdge-yMm?'top':'bottom';
+ const vertical=yMm-Math.max(topEdge,props.pageLayout.header_height)<=bottomEdge-yMm?'top':'bottom';
  const horizontal=item.x<34?'right':item.x>66?'left':'center';
  return '@'+vertical+'-'+horizontal;
 });
 const pageCss=computed(()=>{
- const margins=props.pageLayout.top+'mm '+props.pageLayout.right+'mm '+props.pageLayout.bottom+'mm '+props.pageLayout.left+'mm';
+ const contentTop=Math.max(props.pageLayout.top,props.pageLayout.header_height);
+ const contentBottom=Math.max(props.pageLayout.bottom,props.pageLayout.footer_height);
+ const margins=contentTop+'mm '+props.pageLayout.right+'mm '+contentBottom+'mm '+props.pageLayout.left+'mm';
  const item=pageNumberElement.value;
  const position=pageNumberPosition.value;
  let counterContent='counter(page) " از " counter(pages)';
@@ -53,13 +55,13 @@ const pageCss=computed(()=>{
   +'@page page{size:A4;margin:'+margins+';'+(pageNumberFormat.value==='page'?rule:'')+'}';
 });
 const pageWindowStyle=computed(()=>({
- top:props.pageLayout.top+'mm',
+ top:Math.max(props.pageLayout.top,props.pageLayout.header_height)+'mm',
  right:props.pageLayout.right+'mm',
- bottom:props.pageLayout.bottom+'mm',
+ bottom:Math.max(props.pageLayout.bottom,props.pageLayout.footer_height)+'mm',
  left:props.pageLayout.left+'mm',
 }));
 function pageContentStyle(pageIndex:number):Record<string,string> {
- const pageHeight=297-props.pageLayout.top-props.pageLayout.bottom;
+ const pageHeight=297-Math.max(props.pageLayout.top,props.pageLayout.header_height)-Math.max(props.pageLayout.bottom,props.pageLayout.footer_height);
  const offset=Math.max(0,(pageIndex-1)*pageHeight);
  return { transform:'translateY(-'+offset+'mm)' };
 }
@@ -81,11 +83,11 @@ function resolveTemplate(content:string):string {
 function fontFamily(item:TemplateElement):string{return item.font_family==='default'||!item.font_family?(props.printOptions.font_family||'Vazirmatn'):item.font_family;}
 function boxStyle(item:TemplateElement):Record<string,string>{return {width:item.width+'%',marginTop:item.spacing+'mm',marginRight:`calc(${item.x*2.1}mm - ${props.pageLayout.right}mm)`,fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
 function positionedStyle(item:TemplateElement):Record<string,string>{return {right:item.x+'%',top:item.y+'%',bottom:'auto',width:item.width+'%',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
-function bodyStyle():Record<string,string>{const item=bodyElement.value;return {width:item.width+'%',marginTop:item.spacing+'mm',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
+function bodyStyle():Record<string,string>{const item=bodyElement.value;return {width:item.width+'%',marginTop:'0mm',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
 function updateEstimatedPageCount():void {
  const element=documentContent.value[0];
  if(!element)return;
- const pageHeightMm=297-props.pageLayout.top-props.pageLayout.bottom;
+ const pageHeightMm=297-Math.max(props.pageLayout.top,props.pageLayout.header_height)-Math.max(props.pageLayout.bottom,props.pageLayout.footer_height);
  const pageHeightPx=pageHeightMm*96/25.4;
  const flowingHeight=Math.max(0,element.scrollHeight);
  estimatedPageCount.value=Math.max(1,Math.ceil(flowingHeight/Math.max(1,pageHeightPx)));
