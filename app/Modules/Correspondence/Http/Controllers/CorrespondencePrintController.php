@@ -61,9 +61,6 @@ class CorrespondencePrintController extends Controller
         }
 
         foreach ($templateElements as &$element) {
-            if (($element['role'] ?? null) === 'body') {
-                $element['spacing'] = 0;
-            }
             if (($element['role'] ?? null) === 'meta' && ! str_contains((string) ($element['content'] ?? ''), '{{attachment_pages}}')) {
                 $element['content'] = rtrim((string) ($element['content'] ?? ''))."\n{{attachment_pages}}";
             }
