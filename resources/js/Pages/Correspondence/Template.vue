@@ -52,7 +52,7 @@ function addRole(role:string):void { if (role in roleLabels) addBox(role as Role
 function addBox(role:Role, kind:Kind='text'):void {
  const id='item_'+Math.random().toString(36).slice(2,9);
  const labels:Record<Role,string> = roleLabels;
- form.elements.push({id,kind,role,label:kind==='stamp'?'مهر سازمان':kind==='signature'?'امضای مدیر واحد':labels[role],content:role==='page_number'||role==='body'?'':role==='meta'?'شماره: {{letter_number}}\nتاریخ: {{date}}\n{{attachment_pages}}':role==='issuer'?'{{creator_unit_title}}\n{{creator_name}}':'',x:8,y:role==='header'?8:role==='footer'?92:role==='repeat'?8:0,width:84,spacing:role==='body'?42:role==='issuer'?16:0,font_size:role==='meta'?10:12,font_family:'default',page_format:'number_of',bold:role==='heading',align:'right',visible:true});
+ form.elements.push({id,kind,role,label:kind==='stamp'?'مهر سازمان':kind==='signature'?'امضای مدیر واحد':labels[role],content:role==='page_number'||role==='body'?'':role==='meta'?'شماره: {{letter_number}}\nتاریخ: {{date}}\n{{attachment_pages}}':role==='issuer'?'{{creator_unit_title}}\n{{creator_name}}':'',x:8,y:role==='header'?8:role==='footer'?92:role==='repeat'?8:0,width:84,spacing:role==='issuer'?16:0,font_size:role==='meta'?10:12,font_family:'default',page_format:'number_of',bold:role==='heading',align:'right',visible:true});
  selectedId.value=id;
 }
 function removeBox():void { if(!selected.value)return; form.elements=form.elements.filter(item=>item.id!==selectedId.value);selectedId.value=form.elements[0]?.id??''; }
@@ -144,8 +144,8 @@ function pageNumberPreview(item:ElementBox):string { const format=item.page_form
       <p v-if="selected.role==='repeat'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">این بخش در مختصات تعیین‌شده در تمام صفحات تکرار می‌شود؛ برای هدر آن را نزدیک بالای صفحه و برای فوتر نزدیک پایین صفحه قرار دهید. محدوده بدنه چاپ با حاشیه‌های قابل تنظیم در بخش «محدوده چاپ A4» محافظت می‌شود.</p>
       <div class="grid grid-cols-2 gap-2">
        <label class="text-xs">عرض (%)<input v-model.number="selected.width" type="number" min="5" :max="100-selected.x" @change="normalizeSelectedBounds" class="mt-1 w-full rounded-lg border-slate-300"/></label>
-       <label v-if="selected.role==='body' || selected.role==='issuer'" class="text-xs">فاصله از بخش قبل (mm)<input v-model.number="selected.spacing" type="number" min="-80" max="80" class="mt-1 w-full rounded-lg border-slate-300"/></label>
-       <label v-if="['meta','heading','repeat','page_number'].includes(selected.role)" class="text-xs">فاصله از بالای صفحه (%)<input v-model.number="selected.y" type="number" min="0" max="100" class="mt-1 w-full rounded-lg border-slate-300"/></label>
+       <label v-if="selected.role==='issuer'" class="text-xs">فاصله از بخش قبل (mm)<input v-model.number="selected.spacing" type="number" min="-80" max="80" class="mt-1 w-full rounded-lg border-slate-300"/></label>
+       <label v-if="['meta','heading','header','footer','repeat','page_number'].includes(selected.role)" class="text-xs">فاصله از بالای صفحه (%)<input v-model.number="selected.y" type="number" min="0" max="100" class="mt-1 w-full rounded-lg border-slate-300"/></label>
        <label v-if="selected.role!=='body'" class="text-xs">فاصله از راست (%)<input v-model.number="selected.x" type="number" min="0" :max="100-selected.width" @change="normalizeSelectedBounds" class="mt-1 w-full rounded-lg border-slate-300"/></label>
        <label v-if="selected.kind==='text' && selected.role!=='page_number'" class="text-xs">اندازه قلم<input v-model.number="selected.font_size" type="number" min="7" max="48" class="mt-1 w-full rounded-lg border-slate-300"/></label>
        <label v-if="selected.kind==='text' && selected.role!=='page_number'" class="text-xs">نوع قلم<select v-model="selected.font_family" class="mt-1 w-full rounded-lg border-slate-300"><option v-for="font in fontOptions" :key="font.value" :value="font.value">{{font.label}}</option></select></label>
