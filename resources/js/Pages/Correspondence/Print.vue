@@ -47,12 +47,17 @@ const pageCss=computed(()=>{
   +'@page short{size:A4;margin:'+margins+';'+(pageNumberFormat.value==='short'?rule:'')+'}'
   +'@page page{size:A4;margin:'+margins+';'+(pageNumberFormat.value==='page'?rule:'')+'}';
 });
-const documentStyle=computed(()=>({
- paddingTop:props.pageLayout.top+'mm',
- paddingRight:props.pageLayout.right+'mm',
- paddingBottom:props.pageLayout.bottom+'mm',
- paddingLeft:props.pageLayout.left+'mm',
+const pageWindowStyle=computed(()=>({
+ top:props.pageLayout.top+'mm',
+ right:props.pageLayout.right+'mm',
+ bottom:props.pageLayout.bottom+'mm',
+ left:props.pageLayout.left+'mm',
 }));
+function pageContentStyle(pageIndex:number):Record<string,string> {
+ const pageHeight=297-props.pageLayout.top-props.pageLayout.bottom;
+ const offset=Math.max(0,(pageIndex-1)*pageHeight);
+ return { transform:'translateY(-'+offset+'mm)' };
+}
 const paperStyle=computed(()=>({
  fontFamily:props.printOptions.font_family||'Vazirmatn',
  minHeight:'297mm',
@@ -77,8 +82,7 @@ function updateEstimatedPageCount():void {
  if(!element)return;
  const pageHeightMm=297-props.pageLayout.top-props.pageLayout.bottom;
  const pageHeightPx=pageHeightMm*96/25.4;
- const outerMarginsPx=(props.pageLayout.top+props.pageLayout.bottom)*96/25.4;
- const flowingHeight=Math.max(0,element.scrollHeight-outerMarginsPx);
+ const flowingHeight=Math.max(0,element.scrollHeight);
  estimatedPageCount.value=Math.max(1,Math.ceil(flowingHeight/Math.max(1,pageHeightPx)));
 }
 onMounted(async()=>{
@@ -90,8 +94,8 @@ onMounted(async()=>{
  }
 });
 onBeforeUnmount(()=>contentObserver?.disconnect());
-function pageNumberSample(item:TemplateElement):string {
- const current='۱', total=new Intl.NumberFormat('fa-IR').format(estimatedPageCount.value);
+function pageNumberSample(item:TemplateElement,pageIndex:number):string {
+ const current=new Intl.NumberFormat('fa-IR').format(pageIndex), total=new Intl.NumberFormat('fa-IR').format(estimatedPageCount.value);
  if(item.page_format==='slash')return current+'/'+total;
  if(item.page_format==='short')return 'ص'+current+' از '+total;
  if(item.page_format==='page')return 'صفحه '+current+' از '+total;
@@ -108,18 +112,19 @@ function printLetter():void{window.print();}
    <div><p class="text-sm font-bold">پیش‌نمایش چاپ نامه</p><p class="mt-1 text-xs text-slate-500">قالب A4 · برآورد پیش‌نمایش: {{estimatedPageCount}} صفحه</p></div>
    <div class="flex flex-wrap items-center gap-3"><label class="inline-flex items-center gap-2 text-sm"><input v-model="withLetterhead" type="checkbox" class="rounded border-slate-300 text-teal-600"/>چاپ با سربرگ</label><button type="button" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white" @click="printLetter">چاپ / ذخیره PDF</button><Link :href="route('correspondence.show',letter.id)" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold">بازگشت به نامه</Link></div>
   </div>
-  <article class="paper mx-auto bg-white" :class="'page-format-'+pageNumberFormat" :style="paperStyle" dir="rtl">
+  <article v-for="pageIndex in estimatedPageCount" :key="pageIndex" class="paper screen-page mx-auto mb-6 bg-white" :class="'page-format-'+pageNumberFormat" :style="paperStyle" dir="rtl">
    <div class="template-coordinate-plane">
     <div v-if="withLetterhead && letterheadDataUri" class="letterhead-background" :style="{backgroundImage:'url('+letterheadDataUri+')'}" aria-hidden="true"></div>
     <div v-for="item in repeating" :key="item.id" class="repeat-item" :style="positionedStyle(item)">{{resolveTemplate(item.content)}}</div>
-    <div v-for="item in elements.filter(entry=>entry.role==='page_number')" :key="item.id" class="page-number" :style="positionedStyle(item)"><bdi dir="ltr">{{pageNumberSample(item)}}</bdi></div>
-    <div v-for="item in flowMeta" :key="item.id" class="flow-item first-page-positioned" :style="positionedStyle(item)">{{item.kind==='text'?resolveTemplate(item.content):''}}<img v-if="item.kind==='stamp'&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="inline-asset"/><img v-else-if="item.kind==='signature'&&signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="inline-asset"/></div>
+    <div v-for="item in elements.filter(entry=>entry.role==='page_number')" :key="item.id" class="page-number" :style="positionedStyle(item)"><bdi dir="ltr">{{pageNumberSample(item,pageIndex)}}</bdi></div>
+    <template v-if="pageIndex===1"><div v-for="item in flowMeta" :key="item.id" class="flow-item first-page-positioned" :style="positionedStyle(item)">{{item.kind==='text'?resolveTemplate(item.content):''}}<img v-if="item.kind==='stamp'&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="inline-asset"/><img v-else-if="item.kind==='signature'&&signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="inline-asset"/></div>
     <div v-for="item in flowHeading" :key="item.id" class="flow-item first-page-positioned" :style="positionedStyle(item)">
      <template v-if="item.content">{{resolveTemplate(item.content)}}</template>
      <template v-else><div v-if="recipientLines.length" class="mb-4 space-y-1 text-sm font-semibold leading-7"><p v-for="(line,index) in recipientLines" :key="index">{{line}}</p></div><h2 class="text-center text-base font-bold leading-8">{{letter.subject}}</h2></template>
-    </div>
+    </div></template>
    </div>
-   <div ref="documentContent" class="document-content" :style="documentStyle">
+   <div class="page-content-window" :style="pageWindowStyle">
+    <div :ref="pageIndex===1 ? documentContent : undefined" class="document-content" :style="pageContentStyle(pageIndex)">
     <section class="letter-body" :style="bodyStyle()" v-html="letter.body||''"></section>
 
     <div v-for="item in flowIssuer" :key="item.id" class="flow-item issuer-item" :style="boxStyle(item)">
@@ -133,15 +138,16 @@ function printLetter():void{window.print();}
      <img v-if="!hasSignatureElement&&printOptions.show_department_signature&&signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="inline-asset"/>
      <img v-if="!hasStampElement&&printOptions.show_stamp&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="inline-asset"/>
     </footer>
+    </div>
    </div>
   </article>
  </main>
 </template>
 
 <style>
- .paper{position:relative;box-sizing:border-box;width:210mm;min-height:261mm;color:#111827;background:#fff;}
+ .paper{position:relative;box-sizing:border-box;width:210mm;height:297mm;min-height:297mm;color:#111827;background:#fff;overflow:hidden;}
  .template-coordinate-plane{position:absolute;top:0;right:0;left:0;height:297mm;z-index:1;pointer-events:none;}
- .document-content{position:relative;z-index:2;direction:rtl;text-align:right;unicode-bidi:plaintext;}
+ .page-content-window{position:absolute;z-index:2;overflow:hidden;}.document-content{position:absolute;top:0;right:0;left:0;display:flow-root;box-sizing:border-box;width:100%;direction:rtl;text-align:right;unicode-bidi:plaintext;}
 .letterhead-background{position:absolute;inset:0;z-index:0;background-position:center top;background-repeat:no-repeat;background-size:100% 100%;pointer-events:none;}
 .repeat-item{position:absolute;z-index:3;white-space:pre-wrap;line-height:1.5;direction:rtl;}
  .flow-item{position:relative;z-index:2;white-space:pre-wrap;line-height:1.8;max-width:100%;}.first-page-positioned{position:absolute;top:0;right:0;}
@@ -165,8 +171,11 @@ function printLetter():void{window.print();}
  html,body{background:#fff!important;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
  main{min-height:0!important;padding:0!important;background:#fff!important;}
  .no-print{display:none!important;}
- .paper{width:auto;min-height:0!important;margin:0;box-shadow:none;overflow:visible;}
- .document-content{padding:0!important;}
+ .paper{width:auto;height:auto;min-height:0!important;margin:0 0 0!important;box-shadow:none;overflow:visible;}
+ .paper.screen-page:not(:first-of-type){display:none!important;}
+ .page-content-window{position:static;overflow:visible;}
+ .document-content{position:relative;top:auto;right:auto;left:auto;transform:none!important;width:auto;}
+
  .letterhead-background{position:fixed;}
  .repeat-item{position:fixed;}
   .page-number{display:none!important;}
