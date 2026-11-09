@@ -1,3 +1,11 @@
+## 2026-11-09 — Page-number coordinate reconciliation and organization postal code
+
+- Root cause confirmed in the current print implementation: the designer and screen print preview positioned the page-number element at its raw A4 percentage Y coordinate, while Chromium print output maps that element into a page-margin box. When the configured Y coordinate fell inside the body area, the actual printed counter snapped to the nearest reserved top/bottom margin but the screen previews did not, creating a visible position mismatch. Horizontal margin-box selection also used only the element's starting X coordinate, ignoring text alignment and width.
+- The designer and print preview now map the screen page-number sample to the same nearest printable margin boundary used by the print renderer. The print renderer now selects the left/center/right margin box using the actual text anchor derived from alignment and element width, and computes vertical padding from the mapped coordinate. Page counters are browser margin-box content and therefore remain constrained to the reserved top/bottom print margins; placing the element in the body area snaps it to the nearest margin boundary, now consistently shown in both previews.
+- Added optional organization postal-code setting end-to-end: organization settings form, request validation, settings controller read/write, template editor sample values and token list, repeatable header/footer/legacy-repeat token availability, and print template resolution. Token: `{{postal_code}}`. Print output falls back to the current organization postal code for older identity snapshots that predate this field.
+- Added regression assertions for saving organization postal code and passing it to correspondence print props. PHP tests, frontend production build, and Chromium print comparison are still pending owner execution.
+- Development branch only; master, release branch, and server remain unchanged.
+
 ## 2026-11-09 — Print preview TypeScript ref typing fix
 
 - Replaced element-ref object bindings in the correspondence print preview with typed-safe callback ref setters. This resolves vue-tsc errors where nullable HTMLElement refs were not assignable to Vue's VNodeRef type.
