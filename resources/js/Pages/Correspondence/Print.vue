@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, nextTick } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 interface AddressingSnapshot { organizational_title_prefix?:string|null; position?:string|null; personal_salutation?:string|null; professional_title?:string|null; name?:string|null; organization_name?:string|null; department_name?:string|null; }
 type Role='meta'|'heading'|'page_number'|'issuer'|'repeat'|'body';
 type PageFormat='number_of'|'slash'|'short'|'page';
 interface TemplateElement { id:string; kind:'text'|'stamp'|'signature'; role:Role; label:string; content:string; x:number; y:number; width:number; spacing:number; font_size:number; font_family:string; page_format:PageFormat; bold:boolean; align:'right'|'center'|'left'; visible:boolean; }
 interface PrintLetter { id:number; attachment_pages:number|null; type:'incoming'|'outgoing'|'internal'; subject:string; body:string|null; letter_number:string|null; registration_number:string|null; registered_at:string|null; sent_at:string|null; recipient_name:string|null; recipient_addressing:AddressingSnapshot|null; external_organization:string|null; external_department:string|null; }
-const props=defineProps<{letter:PrintLetter;templateElements:TemplateElement[];organization:{name?:string|null;short_name?:string|null;address?:string|null;phone?:string|null;email?:string|null;website?:string|null};creatorName:string|null;creatorUnitTitle:string|null;managerName:string|null;managerPosition:string|null;managerTitle:string|null;creatorDepartmentName:string|null;stampDataUri:string|null;letterheadDataUri:string|null;signatureDataUri:string|null;printOptions:{show_creator_identity:boolean;show_stamp:boolean;show_department_signature:boolean;letterhead_show_name:boolean;letterhead_show_address:boolean;letterhead_show_phone:boolean;letterhead_show_email:boolean;letterhead_show_website:boolean;font_family:string;};}>();
+const props=defineProps<{letter:PrintLetter;templateElements:TemplateElement[];pageLayout:{top:number;right:number;bottom:number;left:number};organization:{name?:string|null;short_name?:string|null;address?:string|null;phone?:string|null;email?:string|null;website?:string|null};creatorName:string|null;creatorUnitTitle:string|null;managerName:string|null;managerPosition:string|null;managerTitle:string|null;creatorDepartmentName:string|null;stampDataUri:string|null;letterheadDataUri:string|null;signatureDataUri:string|null;printOptions:{show_creator_identity:boolean;show_stamp:boolean;show_department_signature:boolean;letterhead_show_name:boolean;letterhead_show_address:boolean;letterhead_show_phone:boolean;letterhead_show_email:boolean;letterhead_show_website:boolean;font_family:string;};}>();
 const withLetterhead=ref(true);
+const documentContent=ref<HTMLElement|null>(null);
+const estimatedPageCount=ref(1);
+let contentObserver:ResizeObserver|null=null;
 const elements=computed(()=>props.templateElements.filter(item=>item.visible));
 const flowMeta=computed(()=>elements.value.filter(item=>item.role==='meta'));
 const flowHeading=computed(()=>elements.value.filter(item=>item.role==='heading'));
@@ -16,6 +19,39 @@ const bodyElement=computed(()=>elements.value.find(item=>item.role==='body')??{s
 const repeating=computed(()=>elements.value.filter(item=>item.role==='repeat'));
 const pageNumberEnabled=computed(()=>elements.value.some(item=>item.role==='page_number'));
 const pageNumberFormat=computed(()=>elements.value.find(item=>item.role==='page_number')?.page_format??'number_of');
+const pageNumberElement=computed(()=>elements.value.find(item=>item.role==='page_number')??null);
+const pageNumberPosition=computed(()=>{
+ const item=pageNumberElement.value;
+ if(!item)return '@bottom-center';
+ const vertical=item.y<50?'top':'bottom';
+ const horizontal=item.x<34?'right':item.x>66?'left':'center';
+ return '@'+vertical+'-'+horizontal;
+});
+const pageCss=computed(()=>{
+ const margins=props.pageLayout.top+'mm '+props.pageLayout.right+'mm '+props.pageLayout.bottom+'mm '+props.pageLayout.left+'mm';
+ const item=pageNumberElement.value;
+ const position=pageNumberPosition.value;
+ let counterContent='counter(page) " از " counter(pages)';
+ if(pageNumberFormat.value==='slash')counterContent='counter(page) "/" counter(pages)';
+ if(pageNumberFormat.value==='short')counterContent='"ص" counter(page) " از " counter(pages)';
+ if(pageNumberFormat.value==='page')counterContent='"صفحه " counter(page) " از " counter(pages)';
+ const rule=item?position+'{content:'+counterContent+';font:9pt Tahoma,sans-serif;color:#475569;direction:ltr;unicode-bidi:isolate;text-align:'+item.align+';white-space:nowrap;}':'';
+ return '@page{size:A4;margin:'+margins+';}'
+  +'@page number_of{size:A4;margin:'+margins+';'+(pageNumberFormat.value==='number_of'?rule:'')+'}'
+  +'@page slash{size:A4;margin:'+margins+';'+(pageNumberFormat.value==='slash'?rule:'')+'}'
+  +'@page short{size:A4;margin:'+margins+';'+(pageNumberFormat.value==='short'?rule:'')+'}'
+  +'@page page{size:A4;margin:'+margins+';'+(pageNumberFormat.value==='page'?rule:'')+'}';
+});
+const documentStyle=computed(()=>({
+ paddingTop:props.pageLayout.top+'mm',
+ paddingRight:props.pageLayout.right+'mm',
+ paddingBottom:props.pageLayout.bottom+'mm',
+ paddingLeft:props.pageLayout.left+'mm',
+}));
+const paperStyle=computed(()=>({
+ fontFamily:props.printOptions.font_family||'Vazirmatn',
+ minHeight:'calc(297mm - '+props.pageLayout.top+'mm - '+props.pageLayout.bottom+'mm)',
+}));
 const hasCreatorElement=computed(()=>flowIssuer.value.some(item=>item.kind==='text'&&(item.content.includes('{{creator_name}}')||item.content.includes('{{creator_unit_title}}')||item.content.includes('{{manager_name}}')||item.content.includes('{{manager_position}}')||item.content.includes('{{manager_title}}')||item.content.includes('{{creator_department_name}}'))));
 const hasSignatureElement=computed(()=>flowIssuer.value.some(item=>item.kind==='signature'));
 const hasIssuerAssetElement=computed(()=>hasStampElement.value||hasSignatureElement.value);
@@ -31,28 +67,52 @@ function fontFamily(item:TemplateElement):string{return item.font_family==='defa
 function boxStyle(item:TemplateElement):Record<string,string>{return {width:item.width+'%',marginTop:item.spacing+'mm',marginRight:`calc(${item.x*2.1}mm - 18mm)`,fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
 function positionedStyle(item:TemplateElement):Record<string,string>{return {right:item.x+'%',top:item.y+'%',bottom:'auto',width:item.width+'%',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
 function bodyStyle():Record<string,string>{const item=bodyElement.value;return {width:item.width+'%',marginTop:item.spacing+'mm',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
+function updateEstimatedPageCount():void {
+ const element=documentContent.value;
+ if(!element)return;
+ const pageHeightMm=297-props.pageLayout.top-props.pageLayout.bottom;
+ const pageHeightPx=pageHeightMm*96/25.4;
+ estimatedPageCount.value=Math.max(1,Math.ceil(element.scrollHeight/Math.max(1,pageHeightPx)));
+}
+onMounted(async()=>{
+ await nextTick();
+ updateEstimatedPageCount();
+ if(documentContent.value&&typeof ResizeObserver!=='undefined'){
+  contentObserver=new ResizeObserver(()=>updateEstimatedPageCount());
+  contentObserver.observe(documentContent.value);
+ }
+});
+onBeforeUnmount(()=>contentObserver?.disconnect());
+function pageNumberSample(item:TemplateElement):string {
+ const current='۱', total=new Intl.NumberFormat('fa-IR').format(estimatedPageCount.value);
+ if(item.page_format==='slash')return current+'/'+total;
+ if(item.page_format==='short')return 'ص'+current+' از '+total;
+ if(item.page_format==='page')return 'صفحه '+current+' از '+total;
+ return current+' از '+total;
+}
 function printLetter():void{window.print();}
 </script>
 
 <template>
  <Head :title="'پیش‌نمایش چاپ - '+letter.subject"/>
+  <component :is="'style'">{{pageCss}}</component>
  <main class="min-h-screen bg-slate-100 px-4 py-6 text-slate-900" dir="rtl">
   <div class="no-print mx-auto mb-4 flex max-w-[210mm] flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-   <div><p class="text-sm font-bold">پیش‌نمایش چاپ نامه</p><p class="mt-1 text-xs text-slate-500">قالب A4 مشترک برای چاپ کاغذی و ذخیره PDF</p></div>
+   <div><p class="text-sm font-bold">پیش‌نمایش چاپ نامه</p><p class="mt-1 text-xs text-slate-500">قالب A4 · برآورد پیش‌نمایش: {{estimatedPageCount}} صفحه</p></div>
    <div class="flex flex-wrap items-center gap-3"><label class="inline-flex items-center gap-2 text-sm"><input v-model="withLetterhead" type="checkbox" class="rounded border-slate-300 text-teal-600"/>چاپ با سربرگ</label><button type="button" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white" @click="printLetter">چاپ / ذخیره PDF</button><Link :href="route('correspondence.show',letter.id)" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold">بازگشت به نامه</Link></div>
   </div>
-  <article class="paper mx-auto bg-white" :class="'page-format-'+pageNumberFormat" :style="{fontFamily:printOptions.font_family||'Vazirmatn'}" dir="rtl">
+  <article class="paper mx-auto bg-white" :class="'page-format-'+pageNumberFormat" :style="paperStyle" dir="rtl">
    <div class="template-coordinate-plane">
     <div v-if="withLetterhead && letterheadDataUri" class="letterhead-background" :style="{backgroundImage:'url('+letterheadDataUri+')'}" aria-hidden="true"></div>
     <div v-for="item in repeating" :key="item.id" class="repeat-item" :style="positionedStyle(item)">{{resolveTemplate(item.content)}}</div>
-    <div v-for="item in elements.filter(entry=>entry.role==='page_number')" :key="item.id" class="page-number" :class="{'page-number-slash':item.page_format==='slash'}" :style="positionedStyle(item)"><span v-if="item.page_format==='short'">ص</span><span v-else-if="item.page_format==='page'">صفحه </span><span class="page-counter"></span><template v-if="item.page_format==='slash'">/</template><template v-else> از </template><span class="pages-counter"></span></div>
+    <div v-for="item in elements.filter(entry=>entry.role==='page_number')" :key="item.id" class="page-number" :style="positionedStyle(item)"><bdi dir="ltr">{{pageNumberSample(item)}}</bdi></div>
     <div v-for="item in flowMeta" :key="item.id" class="flow-item first-page-positioned" :style="positionedStyle(item)">{{item.kind==='text'?resolveTemplate(item.content):''}}<img v-if="item.kind==='stamp'&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="inline-asset"/><img v-else-if="item.kind==='signature'&&signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="inline-asset"/></div>
     <div v-for="item in flowHeading" :key="item.id" class="flow-item first-page-positioned" :style="positionedStyle(item)">
      <template v-if="item.content">{{resolveTemplate(item.content)}}</template>
      <template v-else><div v-if="recipientLines.length" class="mb-4 space-y-1 text-sm font-semibold leading-7"><p v-for="(line,index) in recipientLines" :key="index">{{line}}</p></div><h2 class="text-center text-base font-bold leading-8">{{letter.subject}}</h2></template>
     </div>
    </div>
-   <div class="document-content">
+   <div ref="documentContent" class="document-content" :style="documentStyle">
     <section class="letter-body" :style="bodyStyle()" v-html="letter.body||''"></section>
 
     <div v-for="item in flowIssuer" :key="item.id" class="flow-item issuer-item" :style="boxStyle(item)">
@@ -72,14 +132,9 @@ function printLetter():void{window.print();}
 </template>
 
 <style>
-@page{size:A4;margin:14mm 18mm 22mm;}
-@page number_of{size:A4;margin:14mm 18mm 22mm;@bottom-center{content:counter(page) " از " counter(pages);font:9pt Tahoma,sans-serif;color:#475569;}}
-@page slash{size:A4;margin:14mm 18mm 22mm;@bottom-center{content:counter(page) "/" counter(pages);font:9pt Tahoma,sans-serif;color:#475569;}}
-@page short{size:A4;margin:14mm 18mm 22mm;@bottom-center{content:"ص" counter(page) " از " counter(pages);font:9pt Tahoma,sans-serif;color:#475569;}}
-@page page{size:A4;margin:14mm 18mm 22mm;@bottom-center{content:"صفحه " counter(page) " از " counter(pages);font:9pt Tahoma,sans-serif;color:#475569;}}
- .paper{position:relative;box-sizing:border-box;width:210mm;min-height:297mm;color:#111827;background:#fff;}
+ .paper{position:relative;box-sizing:border-box;width:210mm;min-height:261mm;color:#111827;background:#fff;}
  .template-coordinate-plane{position:absolute;top:0;right:0;left:0;height:297mm;z-index:1;pointer-events:none;}
- .document-content{position:relative;z-index:2;direction:rtl;text-align:right;unicode-bidi:plaintext;padding:14mm 18mm 18mm;}
+ .document-content{position:relative;z-index:2;direction:rtl;text-align:right;unicode-bidi:plaintext;}
 .letterhead-background{position:absolute;inset:0;z-index:0;background-position:center top;background-repeat:no-repeat;background-size:100% 100%;pointer-events:none;}
 .repeat-item{position:absolute;z-index:3;white-space:pre-wrap;line-height:1.5;direction:rtl;}
  .flow-item{position:relative;z-index:2;white-space:pre-wrap;line-height:1.8;max-width:100%;}.first-page-positioned{position:absolute;top:0;right:0;}
@@ -96,15 +151,15 @@ function printLetter():void{window.print();}
 .issuer-item{break-inside:avoid;page-break-inside:avoid;}
 .signature-area .inline-asset{width:auto;max-width:42mm;max-height:28mm;}
 .signature-area{position:relative;z-index:2;display:flex;align-items:flex-end;justify-content:space-between;gap:8mm;margin-top:16mm;break-inside:avoid;page-break-inside:avoid;}
-.page-number{position:absolute;z-index:4;white-space:nowrap;text-align:center;font:9pt Tahoma,sans-serif;color:#475569;}
+.page-number{position:absolute;z-index:4;white-space:nowrap;text-align:center;font:9pt Tahoma,sans-serif;color:#475569;direction:ltr;unicode-bidi:isolate;}
 .page-number-slash{direction:ltr;unicode-bidi:isolate;}
 
 @media print{
  html,body{background:#fff!important;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
  main{min-height:0!important;padding:0!important;background:#fff!important;}
  .no-print{display:none!important;}
- .paper{width:auto;min-height:261mm;margin:0;box-shadow:none;overflow:visible;}
- .document-content{padding:0;}
+ .paper{width:auto;margin:0;box-shadow:none;overflow:visible;}
+ .document-content{padding:0!important;}
  .letterhead-background{position:fixed;}
  .repeat-item{position:fixed;}
   .page-number{display:none!important;}
