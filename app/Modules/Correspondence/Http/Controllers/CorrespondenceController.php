@@ -1376,7 +1376,14 @@ class CorrespondenceController extends Controller
                 $direction = preg_match('/\bdir\s*=\s*["\'](rtl|ltr)["\']/i', $match[3], $dirMatch)
                     ? strtolower($dirMatch[1])
                     : null;
-                return '<'.$tag.($direction !== null ? ' dir="'.$direction.'"' : '').'>';
+                $alignment = preg_match('/\bstyle\s*=\s*["\'][^"\']*text-align\s*:\s*(left|right|center|justify)\s*;?[^"\']*["\']/i', $match[3], $alignMatch)
+                    ? strtolower($alignMatch[1])
+                    : null;
+
+                return '<'.$tag
+                    .($direction !== null ? ' dir="'.$direction.'"' : '')
+                    .($alignment !== null ? ' style="text-align: '.$alignment.'"' : '')
+                    .'>';
             },
             $body,
         );
