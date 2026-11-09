@@ -24,8 +24,8 @@ const pageNumberPosition=computed(()=>{
  const item=pageNumberElement.value;
  if(!item)return '@bottom-center';
  const yMm=item.y*2.97;
- const topEdge=props.pageLayout.top;
- const bottomEdge=297-props.pageLayout.bottom;
+ const topEdge=Math.max(props.pageLayout.top,props.pageLayout.header_height);
+ const bottomEdge=297-Math.max(props.pageLayout.bottom,props.pageLayout.footer_height);
  const vertical=yMm-Math.max(topEdge,props.pageLayout.header_height)<=bottomEdge-yMm?'top':'bottom';
  const horizontal=item.x<34?'right':item.x>66?'left':'center';
  return '@'+vertical+'-'+horizontal;
@@ -41,8 +41,10 @@ const pageCss=computed(()=>{
  if(pageNumberFormat.value==='short')counterContent='"ص" counter(page) " از " counter(pages)';
  if(pageNumberFormat.value==='page')counterContent='"صفحه " counter(page) " از " counter(pages)';
  const yMm=item?item.y*2.97:0;
- const topPadding=item?Math.min(props.pageLayout.top,Math.max(0,yMm)):0;
- const bottomPadding=item?Math.min(props.pageLayout.bottom,Math.max(0,yMm-(297-props.pageLayout.bottom))):0;
+ const effectiveTop=Math.max(props.pageLayout.top,props.pageLayout.header_height);
+ const effectiveBottom=Math.max(props.pageLayout.bottom,props.pageLayout.footer_height);
+ const topPadding=item?Math.min(effectiveTop,Math.max(0,yMm)):0;
+ const bottomPadding=item?Math.min(effectiveBottom,Math.max(0,yMm-(297-effectiveBottom))):0;
  const verticalPadding=item?(pageNumberPosition.value.startsWith('@top')?topPadding:bottomPadding):0;
  const horizontalPadding=item?(item.align==='right'?item.x*2.1:item.align==='left'?Math.max(0,100-item.x-item.width)*2.1:0):0;
  const horizontalSide=item?(item.align==='right'?'padding-right':item.align==='left'?'padding-left':''):'';
