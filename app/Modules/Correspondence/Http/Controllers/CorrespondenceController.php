@@ -552,8 +552,8 @@ class CorrespondenceController extends Controller
                 && $correspondence->current_department_id !== null
                 && (int) Department::query()->whereKey($correspondence->current_department_id)->value('manager_id') === (int) $request->user()->id,
             'canSecretariatReturn' => $correspondence->type === Correspondence::TYPE_OUTGOING
-                && $correspondence->status === Correspondence::STATUS_REGISTERED
-                && $correspondence->workflow_state === 'awaiting_dispatch'
+                && $correspondence->status === Correspondence::STATUS_DRAFT
+                && $correspondence->workflow_state === 'approved_for_registration'
                 && $access->isSecretariat($request->user()),
             'canResubmitToSecretariat' => $correspondence->type === Correspondence::TYPE_OUTGOING
                 && $correspondence->status === Correspondence::STATUS_REGISTERED
@@ -1129,6 +1129,22 @@ class CorrespondenceController extends Controller
                 'external_department_id' => $data['external_department_id'] ?? null,
                 'external_contact_id' => $data['external_contact_id'] ?? null, 'reply_to_id' => $relatedLetterIds[0] ?? null,
             ])->save();
+
+            if ($locked->type === Correspondence::TYPE_OUTGOING
+                && $locked->status === Correspondence::STATUS_DRAFT
+                && $locked->workflow_state === 'returned_for_correction') {
+                $managerId = $locked->created_department_id === null
+                    ? null
+                    : Department::query()->whereKey($locked->created_department_id)->value('manager_id');
+                if ($managerId === null || ! User::query()->whereKey($managerId)->where('status', 'active')->exists()) {
+                    throw new InvalidArgumentException('مدیر فعال واحد ایجادکننده برای بررسی مجدد پیش‌نویس مشخص نیست.');
+                }
+                $locked->forceFill([
+                    'current_department_id' => (int) $locked->created_department_id,
+                    'current_user_id' => (int) $managerId,
+                    'workflow_state' => 'awaiting_manager_approval',
+                ])->save();
+            }
             $locked->relatedLetters()->sync($relatedLetterIds);
             $locked->copies()->syncWithPivotValues(array_map('intval', $data['copy_department_ids'] ?? []), ['created_by' => $request->user()->id]);
             foreach ($originalLetters as $file) {
@@ -1300,6 +1316,7 @@ class CorrespondenceController extends Controller
             'action_type' => ['required', Rule::in([
                 CorrespondenceAction::SUBMIT_RESULT,
                 CorrespondenceAction::MANAGER_APPROVE,
+                CorrespondenceAction::MANAGER_RETURN_FOR_CORRECTION,
                 CorrespondenceAction::CONFIRM_RESULT,
                 CorrespondenceAction::MANAGER_REFER,
                 CorrespondenceAction::MANAGER_ACCEPT_RESPONSIBILITY,
@@ -1334,6 +1351,13 @@ class CorrespondenceController extends Controller
             $workflow->handleAction($correspondence, $request->user(), $data);
         } catch (InvalidArgumentException $exception) {
             return back()->withErrors(['workflow_action' => $exception->getMessage()])->withInput();
+        }
+
+        // An approval can transfer a private draft away from its manager. Do not
+        // redirect that manager back to a show page they are no longer authorized to open.
+        $correspondence->refresh();
+        if (! $access->canView($correspondence, $request->user())) {
+            return redirect()->route('correspondence.index')->with('success', 'اقدام گردش مکاتبه ثبت شد و نامه به مسئول مرحله بعد تحویل گردید.');
         }
 
         return back()->with('success', $data['action_type'] === CorrespondenceAction::MANAGER_ACCEPT_RESPONSIBILITY
