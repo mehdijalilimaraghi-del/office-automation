@@ -110,7 +110,9 @@ class CorrespondenceHttpTest extends TestCase
 
         $this->actingAs($manager)->get(route('correspondence.show', $letter))
             ->assertOk()
-            ->assertInertia(fn ($page) => $page->where('canManageWorkflow', true));
+            ->assertInertia(fn ($page) => $page
+                ->where('canManageWorkflow', true)
+                ->where('workflowUsers.0.id', $creator->id));
 
         $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
             'action_type' => CorrespondenceAction::MANAGER_APPROVE,
@@ -124,6 +126,13 @@ class CorrespondenceHttpTest extends TestCase
             'current_department_id' => $secretariat->id,
             'current_user_id' => $secretariatManager->id,
         ]);
+
+        $this->actingAs($secretariatManager)->get(route('correspondence.index', [
+            'scope' => 'mine',
+            'action_filter' => 'needs_action',
+        ]))->assertOk()->assertInertia(fn ($page) => $page
+            ->where('correspondences.total', 1)
+            ->where('correspondences.data.0.id', $letter->id));
     }
 
     public function test_user_with_view_permission_can_open_correspondence_index(): void
