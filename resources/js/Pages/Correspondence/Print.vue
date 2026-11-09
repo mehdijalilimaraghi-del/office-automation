@@ -212,7 +212,7 @@ function printLetter():void{window.print();}
  .letterhead-background{position:absolute!important;inset:0!important;width:auto!important;height:auto!important;background-position:center top!important;background-size:100% 100%!important;}
  .repeat-item,.page-number,.first-page-positioned{position:absolute!important;}
  .page-content-window{position:absolute!important;display:block!important;overflow:hidden!important;}
- .document-content{position:absolute!important;top:0!important;right:0!important;left:0!important;width:100%!important;transform:inherit!important;padding-left:0!important;padding-right:0!important;}
+ .document-content{position:absolute!important;top:0!important;right:0!important;left:0!important;width:100%!important;padding-left:0!important;padding-right:0!important;}
  .page-number bdi{visibility:visible!important;}
  .page-number::after{content:none!important;display:none!important;}
 }
