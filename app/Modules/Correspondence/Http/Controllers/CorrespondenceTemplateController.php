@@ -145,11 +145,11 @@ class CorrespondenceTemplateController extends Controller
     {
         $data = $request->validate([
             'elements' => ['present', 'array', 'max:30'],
-            'page_layout' => ['required', 'array'],
-            'page_layout.top' => ['required', 'numeric', 'min:5', 'max:60'],
-            'page_layout.right' => ['required', 'numeric', 'min:5', 'max:50'],
-            'page_layout.bottom' => ['required', 'numeric', 'min:5', 'max:60'],
-            'page_layout.left' => ['required', 'numeric', 'min:5', 'max:50'],
+            'page_layout' => ['sometimes', 'array'],
+            'page_layout.top' => ['required_with:page_layout', 'numeric', 'min:5', 'max:60'],
+            'page_layout.right' => ['required_with:page_layout', 'numeric', 'min:5', 'max:50'],
+            'page_layout.bottom' => ['required_with:page_layout', 'numeric', 'min:5', 'max:60'],
+            'page_layout.left' => ['required_with:page_layout', 'numeric', 'min:5', 'max:50'],
             'elements.*.kind' => ['required', 'in:text,stamp,signature,letterhead'],
             'elements.*.role' => ['nullable', 'in:meta,heading,page_number,issuer,repeat,body'],
             'elements.*.spacing' => ['nullable', 'numeric', 'min:-80', 'max:80'],
@@ -187,12 +187,13 @@ class CorrespondenceTemplateController extends Controller
             abort_if($element['x'] + $element['width'] > 100.000001 || $element['y'] > 100, 422, 'موقعیت یا عرض المان از محدوده صفحه خارج است.');
         }
 
-        abort_if($data['page_layout']['top'] + $data['page_layout']['bottom'] > 120, 422, 'مجموع حاشیه بالا و پایین بیش از حد مجاز است.');
-        abort_if($data['page_layout']['left'] + $data['page_layout']['right'] > 100, 422, 'مجموع حاشیه چپ و راست بیش از حد مجاز است.');
+        $pageLayout = array_replace(self::DEFAULT_PAGE_LAYOUT, $data['page_layout'] ?? []);
+        abort_if($pageLayout['top'] + $pageLayout['bottom'] > 120, 422, 'مجموع حاشیه بالا و پایین بیش از حد مجاز است.');
+        abort_if($pageLayout['left'] + $pageLayout['right'] > 100, 422, 'مجموع حاشیه چپ و راست بیش از حد مجاز است.');
 
         $settings->set([
             'correspondence.print.template' => json_encode($elements, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
-            'correspondence.print.page_layout' => json_encode(array_map(static fn ($value): float => round((float) $value, 2), $data['page_layout']), JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+            'correspondence.print.page_layout' => json_encode(array_map(static fn ($value): float => round((float) $value, 2), $pageLayout), JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
         ]);
 
         return back()->with('success', 'قالب نامه ذخیره شد.');
