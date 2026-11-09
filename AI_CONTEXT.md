@@ -1192,3 +1192,10 @@ Added `CorrespondencePrintController`, `Correspondence/Print.vue`, protected pri
 - The positioned header/footer/repeat plane is shifted vertically from the @page content origin to the physical A4 top. The body remains in normal document flow inside the vertical safe area, preserving natural browser pagination and first-page measured spacing after metadata/heading.
 - Removed the previous print-only right-offset compensation. The page layout's left/right values are now applied once as body padding; header/footer heights are represented once by @page top/bottom margins.
 - This is an implementation step, not acceptance: run frontend build, focused CorrespondenceHttpTest, then compare the same letter in screen preview and Chromium PDF using non-symmetric margins and distinct header/footer heights. Confirm first and subsequent pages, repeated elements, body start and page counters. Development only; master/release/server unchanged; all validation pending.
+
+## 2026-11-09 — Outgoing dispatch stage and recipient title prefix
+
+- The existing external tracking columns are reused; no duplicate schema was introduced. Outgoing letters in `awaiting_dispatch` are now included in the Secretariat manager's `needs_action` state filter, fixing the hand-off that previously made the newly registered outgoing letter disappear from the actionable list.
+- Final dispatch now requires both a dispatch method and a sent date while the letter is in `awaiting_dispatch`. The workflow service independently enforces the same invariant before recording `dispatched`; external registration number/date remain optional tracking metadata.
+- Added `{{recipient_organizational_title_prefix}}` to the addressing element token allow-list, designer token catalog/sample values, and print resolver. It reads the immutable `organizational_title_prefix` captured from the selected external contact at registration.
+- Frontend build, focused correspondence tests, and manual Secretariat workflow verification are pending. Development only; master/release/server unchanged.
