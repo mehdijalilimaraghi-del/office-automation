@@ -50,7 +50,7 @@ const documentStyle=computed(()=>({
 }));
 const paperStyle=computed(()=>({
  fontFamily:props.printOptions.font_family||'Vazirmatn',
- minHeight:'calc(297mm - '+props.pageLayout.top+'mm - '+props.pageLayout.bottom+'mm)',
+ minHeight:'297mm',
 }));
 const hasCreatorElement=computed(()=>flowIssuer.value.some(item=>item.kind==='text'&&(item.content.includes('{{creator_name}}')||item.content.includes('{{creator_unit_title}}')||item.content.includes('{{manager_name}}')||item.content.includes('{{manager_position}}')||item.content.includes('{{manager_title}}')||item.content.includes('{{creator_department_name}}'))));
 const hasSignatureElement=computed(()=>flowIssuer.value.some(item=>item.kind==='signature'));
@@ -158,7 +158,7 @@ function printLetter():void{window.print();}
  html,body{background:#fff!important;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
  main{min-height:0!important;padding:0!important;background:#fff!important;}
  .no-print{display:none!important;}
- .paper{width:auto;margin:0;box-shadow:none;overflow:visible;}
+ .paper{width:auto;min-height:0!important;margin:0;box-shadow:none;overflow:visible;}
  .document-content{padding:0!important;}
  .letterhead-background{position:fixed;}
  .repeat-item{position:fixed;}
