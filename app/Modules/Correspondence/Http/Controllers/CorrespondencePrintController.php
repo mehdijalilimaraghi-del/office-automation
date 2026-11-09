@@ -60,6 +60,9 @@ class CorrespondencePrintController extends Controller
             $templateElements[] = ['id' => 'letter_body', 'kind' => 'text', 'role' => 'body', 'spacing' => 12, 'label' => 'متن اصلی نامه', 'content' => '', 'x' => 8, 'y' => 0, 'width' => 84, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true];
         }
 
+        $hasVisibleStampElement = collect($templateElements)->contains(static fn (array $item): bool => ($item['visible'] ?? true) && ($item['role'] ?? null) === 'issuer' && ($item['kind'] ?? null) === 'stamp');
+        $hasVisibleSignatureElement = collect($templateElements)->contains(static fn (array $item): bool => ($item['visible'] ?? true) && ($item['role'] ?? null) === 'issuer' && ($item['kind'] ?? null) === 'signature');
+
         foreach ($templateElements as &$element) {
             if (($element['role'] ?? null) === 'meta' && ! str_contains((string) ($element['content'] ?? ''), '{{attachment_pages}}')) {
                 $element['content'] = rtrim((string) ($element['content'] ?? ''))."\n{{attachment_pages}}";
@@ -135,9 +138,9 @@ class CorrespondencePrintController extends Controller
             'managerPosition' => $managerPosition,
             'managerTitle' => $managerPosition,
             'creatorDepartmentName' => $department?->name,
-            'stampDataUri' => $this->imageDataUri($stampPath),
+            'stampDataUri' => $hasVisibleStampElement ? $this->imageDataUri($stampPath) : null,
             'letterheadDataUri' => $this->imageDataUri($letterheadPath),
-            'signatureDataUri' => $this->imageDataUri($signaturePath),
+            'signatureDataUri' => $hasVisibleSignatureElement ? $this->imageDataUri($signaturePath) : null,
             'printOptions' => [
                 'show_creator_identity' => $settings->get(['correspondence.print.show_creator_identity' => '1'])['correspondence.print.show_creator_identity'] === '1',
                 'show_stamp' => $settings->get(['correspondence.print.show_stamp' => '1'])['correspondence.print.show_stamp'] === '1',
