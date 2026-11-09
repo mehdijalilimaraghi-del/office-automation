@@ -72,11 +72,11 @@ function printLetter():void{window.print();}
 </template>
 
 <style>
-@page{size:A4;margin:0 0 12mm 0;}
-@page number_of{size:A4;margin:0 0 12mm 0;@bottom-center{content:counter(page) " از " counter(pages);font:9pt Tahoma,sans-serif;color:#475569;}}
-@page slash{size:A4;margin:0 0 12mm 0;@bottom-center{content:counter(page) "/" counter(pages);font:9pt Tahoma,sans-serif;color:#475569;}}
-@page short{size:A4;margin:0 0 12mm 0;@bottom-center{content:"ص" counter(page) " از " counter(pages);font:9pt Tahoma,sans-serif;color:#475569;}}
-@page page{size:A4;margin:0 0 12mm 0;@bottom-center{content:"صفحه " counter(page) " از " counter(pages);font:9pt Tahoma,sans-serif;color:#475569;}}
+@page{size:A4;margin:14mm 18mm 22mm;}
+@page number_of{size:A4;margin:14mm 18mm 22mm;@bottom-center{content:counter(page) " از " counter(pages);font:9pt Tahoma,sans-serif;color:#475569;}}
+@page slash{size:A4;margin:14mm 18mm 22mm;@bottom-center{content:counter(page) "/" counter(pages);font:9pt Tahoma,sans-serif;color:#475569;}}
+@page short{size:A4;margin:14mm 18mm 22mm;@bottom-center{content:"ص" counter(page) " از " counter(pages);font:9pt Tahoma,sans-serif;color:#475569;}}
+@page page{size:A4;margin:14mm 18mm 22mm;@bottom-center{content:"صفحه " counter(page) " از " counter(pages);font:9pt Tahoma,sans-serif;color:#475569;}}
  .paper{position:relative;box-sizing:border-box;width:210mm;min-height:297mm;color:#111827;background:#fff;}
  .template-coordinate-plane{position:absolute;top:0;right:0;left:0;height:297mm;z-index:1;pointer-events:none;}
  .document-content{position:relative;z-index:2;direction:rtl;text-align:right;unicode-bidi:plaintext;padding:14mm 18mm 18mm;}
@@ -103,8 +103,8 @@ function printLetter():void{window.print();}
  html,body{background:#fff!important;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
  main{min-height:0!important;padding:0!important;background:#fff!important;}
  .no-print{display:none!important;}
- .paper{width:auto;min-height:285mm;margin:0;box-shadow:none;overflow:visible;}
- .document-content{padding:14mm 18mm 18mm;}
+ .paper{width:auto;min-height:261mm;margin:0;box-shadow:none;overflow:visible;}
+ .document-content{padding:0;}
  .letterhead-background{position:fixed;}
  .repeat-item{position:fixed;}
   .page-number{display:none!important;}
