@@ -181,7 +181,10 @@ class OrganizationSettingsTest extends TestCase
         ];
 
         $this->actingAs($admin)
-            ->put(route('correspondence.template.update'), ['elements' => $elements])
+            ->put(route('correspondence.template.update'), [
+                'elements' => $elements,
+                'page_layout' => ['top' => 16, 'right' => 20, 'bottom' => 24, 'left' => 19],
+            ])
             ->assertRedirect()
             ->assertSessionHas('success');
 
@@ -195,6 +198,11 @@ class OrganizationSettingsTest extends TestCase
             return $items;
         };
         $this->assertSame($normalize($elements), $normalize($actual));
+        $storedLayout = SystemSetting::query()->where('key', 'correspondence.print.page_layout')->value('value');
+        $this->assertSame(
+            ['top' => 16.0, 'right' => 20.0, 'bottom' => 24.0, 'left' => 19.0],
+            json_decode($storedLayout, true, 512, JSON_THROW_ON_ERROR),
+        );
     }
 
     public function test_template_coordinates_are_rounded_before_page_bounds_validation(): void
@@ -264,6 +272,10 @@ class OrganizationSettingsTest extends TestCase
                 ->where('previewValues.tel', '۰۲۱۱۲۳۴۵۶۷۸')
                 ->where('previewValues.subject', 'موضوع نمونه نامه')
                 ->where('previewValues.creator_name', 'نام تنظیم‌کننده')
+                ->where('pageLayout.top', 14)
+                ->where('pageLayout.right', 18)
+                ->where('pageLayout.bottom', 22)
+                ->where('pageLayout.left', 18)
                 ->where('previewBody', $expectedBody)
             );
     }
