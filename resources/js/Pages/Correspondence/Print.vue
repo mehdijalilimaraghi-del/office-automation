@@ -15,6 +15,7 @@ const flowIssuer=computed(()=>elements.value.filter(item=>item.role==='issuer'))
 const bodyElement=computed(()=>elements.value.find(item=>item.role==='body')??{spacing:42,width:84,font_size:12,font_family:'default',bold:false,align:'right'} as TemplateElement);
 const repeating=computed(()=>elements.value.filter(item=>item.role==='repeat'));
 const pageNumberEnabled=computed(()=>elements.value.some(item=>item.role==='page_number'));
+const pageNumberFormat=computed(()=>elements.value.find(item=>item.role==='page_number')?.page_format??'number_of');
 const hasCreatorElement=computed(()=>flowIssuer.value.some(item=>item.kind==='text'&&(item.content.includes('{{creator_name}}')||item.content.includes('{{creator_unit_title}}')||item.content.includes('{{manager_name}}')||item.content.includes('{{manager_position}}')||item.content.includes('{{manager_title}}')||item.content.includes('{{creator_department_name}}'))));
 const hasSignatureElement=computed(()=>flowIssuer.value.some(item=>item.kind==='signature'));
 const hasIssuerAssetElement=computed(()=>hasStampElement.value||hasSignatureElement.value);
@@ -40,7 +41,7 @@ function printLetter():void{window.print();}
    <div><p class="text-sm font-bold">پیش‌نمایش چاپ نامه</p><p class="mt-1 text-xs text-slate-500">قالب A4 مشترک برای چاپ کاغذی و ذخیره PDF</p></div>
    <div class="flex flex-wrap items-center gap-3"><label class="inline-flex items-center gap-2 text-sm"><input v-model="withLetterhead" type="checkbox" class="rounded border-slate-300 text-teal-600"/>چاپ با سربرگ</label><button type="button" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white" @click="printLetter">چاپ / ذخیره PDF</button><Link :href="route('correspondence.show',letter.id)" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold">بازگشت به نامه</Link></div>
   </div>
-  <article class="paper mx-auto bg-white" :style="{fontFamily:printOptions.font_family||'Vazirmatn'}" dir="rtl">
+  <article class="paper mx-auto bg-white" :class="'page-format-'+pageNumberFormat" :style="{fontFamily:printOptions.font_family||'Vazirmatn'}" dir="rtl">
    <div class="template-coordinate-plane">
     <div v-if="withLetterhead && letterheadDataUri" class="letterhead-background" :style="{backgroundImage:'url('+letterheadDataUri+')'}" aria-hidden="true"></div>
     <div v-for="item in repeating" :key="item.id" class="repeat-item" :style="positionedStyle(item)">{{resolveTemplate(item.content)}}</div>
@@ -71,7 +72,11 @@ function printLetter():void{window.print();}
 </template>
 
 <style>
-@page{size:A4;margin:0;}
+@page{size:A4;margin:0 0 12mm 0;}
+@page number_of{size:A4;margin:0 0 12mm 0;@bottom-center{content:counter(page) " از " counter(pages);font:9pt Tahoma,sans-serif;color:#475569;}}
+@page slash{size:A4;margin:0 0 12mm 0;@bottom-center{content:counter(page) "/" counter(pages);font:9pt Tahoma,sans-serif;color:#475569;}}
+@page short{size:A4;margin:0 0 12mm 0;@bottom-center{content:"ص" counter(page) " از " counter(pages);font:9pt Tahoma,sans-serif;color:#475569;}}
+@page page{size:A4;margin:0 0 12mm 0;@bottom-center{content:"صفحه " counter(page) " از " counter(pages);font:9pt Tahoma,sans-serif;color:#475569;}}
  .paper{position:relative;box-sizing:border-box;width:210mm;min-height:297mm;color:#111827;background:#fff;}
  .template-coordinate-plane{position:absolute;top:0;right:0;left:0;height:297mm;z-index:1;pointer-events:none;}
  .document-content{position:relative;z-index:2;direction:rtl;text-align:right;unicode-bidi:plaintext;padding:14mm 18mm 18mm;}
@@ -93,18 +98,20 @@ function printLetter():void{window.print();}
 .signature-area{position:relative;z-index:2;display:flex;align-items:flex-end;justify-content:space-between;gap:8mm;margin-top:16mm;break-inside:avoid;page-break-inside:avoid;}
 .page-number{position:absolute;z-index:4;white-space:nowrap;text-align:center;font:9pt Tahoma,sans-serif;color:#475569;}
 .page-number-slash{direction:ltr;unicode-bidi:isolate;}
-.page-counter:before,.pages-counter:before{content:'۱';}
+
 @media print{
  html,body{background:#fff!important;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
  main{min-height:0!important;padding:0!important;background:#fff!important;}
  .no-print{display:none!important;}
- .paper{width:auto;min-height:297mm;margin:0;box-shadow:none;overflow:visible;}
+ .paper{width:auto;min-height:285mm;margin:0;box-shadow:none;overflow:visible;}
  .document-content{padding:14mm 18mm 18mm;}
  .letterhead-background{position:fixed;}
  .repeat-item{position:fixed;}
-  .page-number{position:fixed;z-index:4;left:auto;right:auto;bottom:auto;text-align:center;font:9pt Tahoma,sans-serif;color:#475569;}
- .page-counter:before{content:counter(page);}
- .pages-counter:before{content:counter(pages);}
+  .page-number{display:none!important;}
+ .paper.page-format-number_of{page:number_of;}
+ .paper.page-format-slash{page:slash;}
+ .paper.page-format-short{page:short;}
+ .paper.page-format-page{page:page;}
 }
 @media screen and (max-width:800px){.paper{width:100%;min-height:0;}.document-content{padding:24px;}}
 </style>
