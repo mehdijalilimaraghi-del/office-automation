@@ -189,7 +189,7 @@ function printLetter():void{window.print();}
     </div>
    </div>
   </article>
-  <div ref="appendixMeasure" class="appendix-measure-root" :style="{width:(210-pageLayout.left-pageLayout.right)+'mm'}" aria-hidden="true"><section class="letter-body" :style="appendixBodyStyle()" v-html="letter.appendix_body||''"></section></div>
+  <div ref="appendixMeasure" class="appendix-measure-root" :style="{width:(210-pageLayout.left-pageLayout.right)+'mm'}" aria-hidden="true"><div class="appendix-heading">پیوست</div><section class="letter-body" :style="appendixBodyStyle()" v-html="letter.appendix_body||''"></section></div>
  </main>
 </template>
 
