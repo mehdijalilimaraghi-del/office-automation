@@ -526,6 +526,29 @@ function redo(): void {
     syncing = false;
     refreshContext();
 }
+let resizeState: { cell: HTMLTableCellElement; axis: 'width'|'height'; start: number; initial: number } | null = null;
+function onEditorPointerDown(event: PointerEvent): void {
+    const target=event.target;
+    if(!(target instanceof HTMLTableCellElement))return;
+    const rect=target.getBoundingClientRect(), edge=6;
+    const nearRight=Math.abs(event.clientX-rect.right)<=edge;
+    const nearBottom=Math.abs(event.clientY-rect.bottom)<=edge;
+    if(!nearRight&&!nearBottom)return;
+    resizeState={cell:target,axis:nearRight?'width':'height',start:nearRight?event.clientX:event.clientY,initial:nearRight?rect.width:rect.height};
+    event.preventDefault();
+    document.addEventListener('pointermove',onEditorPointerMove);
+    document.addEventListener('pointerup',onEditorPointerUp,{once:true});
+}
+function onEditorPointerMove(event:PointerEvent):void {
+    if(!resizeState)return;
+    const delta=(resizeState.axis==='width'?event.clientX:event.clientY)-resizeState.start;
+    const px=Math.max(20,resizeState.initial+delta);
+    resizeState.cell.style[resizeState.axis]=`${px}px`;
+}
+function onEditorPointerUp():void {
+    document.removeEventListener('pointermove',onEditorPointerMove);
+    if(resizeState){resizeState=null;commit();}
+}
 function onEditorClick(event: MouseEvent): void {
     const target = event.target;
     if (!(target instanceof Element) || !editor.value?.contains(target)) return;
@@ -668,6 +691,7 @@ onBeforeUnmount(() => window.removeEventListener('selectionchange', onSelectionC
             class="rte-content min-h-72 whitespace-normal p-4 text-sm leading-8 text-slate-800 outline-none"
             data-placeholder="متن را اینجا بنویسید..."
             @input="onInput"
+            @pointerdown="onEditorPointerDown"
             @click="onEditorClick"
             @mouseup="refreshContext"
             @keyup="refreshContext"
@@ -686,7 +710,9 @@ onBeforeUnmount(() => window.removeEventListener('selectionchange', onSelectionC
 .rte-content{min-height:18rem;line-height:1.9;direction:rtl;text-align:right;overflow-wrap:anywhere}
 .rte-content:empty:before{content:attr(data-placeholder);color:#94a3b8;pointer-events:none}
 .rte-content :deep(table){width:100%;border-collapse:collapse;margin:8px 0}
-.rte-content :deep(td),.rte-content :deep(th){border:1px solid #94a3b8;padding:6px;min-width:35px}
+.rte-content :deep(td),.rte-content :deep(th){border:1px solid #94a3b8;padding:6px;min-width:35px;position:relative;cursor:cell}
+.rte-content :deep(td:hover),.rte-content :deep(th:hover){outline:1px dashed #94a3b8;outline-offset:-1px}
+.rte-content :deep(td),.rte-content :deep(th){user-select:text}
 .rte-content :deep(img){max-width:100%;height:auto;vertical-align:middle}
 .rte-content :deep([data-editor-shape]){margin:3px;min-width:12px;min-height:2px}
 </style>
