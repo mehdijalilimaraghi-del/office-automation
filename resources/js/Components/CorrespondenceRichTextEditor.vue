@@ -369,18 +369,16 @@ function setCellDimension(dimension: 'width' | 'height', value: string, unit: 'm
 function setCellVerticalAlignment(value: string): void { cellsForFormatting().forEach(cell=>cell.style.verticalAlign=value); commit(); }
 function setCellPadding(value: string, unit: 'mm'|'px'): void { if(value)cellsForFormatting().forEach(cell=>cell.style.padding=`${value}${unit}`);commit(); }
 function applyCellBorders(callback:(cell:HTMLTableCellElement,side:string)=>void):void {
-    cellsForFormatting().forEach(cell=>{
+    const cells=cellsForFormatting(), selected=new Set(cells);
+    cells.forEach(cell=>{
+        const row=cell.parentElement as HTMLTableRowElement, table=cell.closest('table') as HTMLTableElement;
+        const rows=Array.from(table.rows), ri=rows.indexOf(row), ci=cell.cellIndex;
+        const neighbors:{top?:Element|null;right?:Element|null;bottom?:Element|null;left?:Element|null}={top:rows[ri-1]?.cells[ci],right:row.cells[ci+1],bottom:rows[ri+1]?.cells[ci],left:row.cells[ci-1]};
         let sides:string[];
         if(['top','bottom','left','right'].includes(borderTarget.value)) sides=[borderTarget.value];
-        else if(borderTarget.value==='outer') {
-            const row=cell.parentElement as HTMLTableRowElement, table=cell.closest('table') as HTMLTableElement;
-            const rows=Array.from(table.rows), rowIndex=rows.indexOf(row);
-            sides=[];
-            if(rowIndex===0)sides.push('top');
-            if(rowIndex===rows.length-1)sides.push('bottom');
-            if(cell.cellIndex===0)sides.push('left');
-            if(cell.cellIndex===row.cells.length-1)sides.push('right');
-        } else sides=['top','right','bottom','left'];
+        else if(borderTarget.value==='outer') sides=(['top','right','bottom','left'] as const).filter(side=>!neighbors[side]||!selected.has(neighbors[side] as HTMLTableCellElement));
+        else if(borderTarget.value==='inner') sides=(['top','right','bottom','left'] as const).filter(side=>!!neighbors[side]&&selected.has(neighbors[side] as HTMLTableCellElement));
+        else sides=['top','right','bottom','left'];
         sides.forEach(side=>callback(cell,side));
     });
 }
@@ -693,8 +691,8 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
             <button type="button" class="rte-tool text-rose-700" @click="removeImage"><Trash2 :size="16" /> حذف</button>
         </div>
         <div v-else-if="activeTab === 'shape'" class="rte-toolbar flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white p-3">
-            <label class="rte-tool">رنگ زمینه <input type="color" @input="setShapeColor(($event.target as HTMLInputElement).value)" /></label>
-            <label class="rte-tool">رنگ خط <input type="color" @input="setShapeBorderColor(($event.target as HTMLInputElement).value)" /></label>
+            <div class="rte-tool">رنگ زمینه <button v-for="color in colorPalette" :key="'shape-fill-'+color" type="button" class="h-4 w-4 rounded-sm border border-slate-300" :style="{backgroundColor:color}" :title="color" @click="setShapeColor(color)"></button><input type="color" title="رنگ دلخواه زمینه شکل" @input="setShapeColor(($event.target as HTMLInputElement).value)" /></div>
+            <div class="rte-tool">رنگ خط <button v-for="color in colorPalette" :key="'shape-line-'+color" type="button" class="h-4 w-4 rounded-sm border border-slate-300" :style="{backgroundColor:color}" :title="color" @click="setShapeBorderColor(color)"></button><input type="color" title="رنگ دلخواه خط شکل" @input="setShapeBorderColor(($event.target as HTMLInputElement).value)" /></div>
             <label class="text-xs">عرض <input class="rte-number" type="number" min="1" value="30" @change="setShapeDimension('width',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
             <label class="text-xs">ارتفاع <input class="rte-number" type="number" min="1" value="15" @change="setShapeDimension('height',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
             <button type="button" class="rte-tool text-rose-700" @click="removeShape"><Trash2 :size="16" /> حذف شکل</button>
