@@ -422,6 +422,8 @@ class CorrespondenceController extends Controller
                 'classification' => $correspondence->classification,
                 'subject' => $correspondence->subject,
                 'body' => $correspondence->body,
+                'appendix_mode' => $correspondence->appendix_mode ?? 'editor',
+                'appendix_body' => $correspondence->appendix_body,
                 'status' => $correspondence->status,
                 'letter_number' => $correspondence->letter_number,
                 'registration_number' => $correspondence->registration_number,
@@ -791,10 +793,11 @@ class CorrespondenceController extends Controller
             'created_department_id' => $createdDepartmentRules,
             'classification' => ['sometimes', 'required', Rule::in([Correspondence::CLASSIFICATION_ORDINARY, Correspondence::CLASSIFICATION_CONFIDENTIAL])],
             'subject' => ['required', 'string', 'max:255'],
-            'attachment_pages' => ['nullable', 'integer', 'min:1', 'max:9999'],
             'letter_number' => ['nullable', 'required_if:type,'.Correspondence::TYPE_INCOMING, 'string', 'max:100', Rule::unique('correspondences', 'letter_number')->where(fn ($query) => $query->where('type', Correspondence::TYPE_INCOMING)->where('external_organization_id', $request->input('external_organization_id')))],
             'composition_mode' => [Rule::requiredIf($request->input('type') !== Correspondence::TYPE_INCOMING), 'nullable', Rule::in(['editor', 'file', 'both'])],
             'body' => ['nullable', 'string', 'max:100000'],
+            'appendix_mode' => ['nullable', Rule::in(['editor', 'file', 'both'])],
+            'appendix_body' => ['nullable', 'string', 'max:500000'],
             'sender_name' => ['nullable', 'string', 'max:255'],
             'recipient_name' => ['nullable', 'string', 'max:255'],
             'external_organization_id' => ['nullable', Rule::requiredIf(in_array($request->input('type'), [Correspondence::TYPE_INCOMING, Correspondence::TYPE_OUTGOING], true)), 'integer', Rule::exists('external_organizations', 'id')->where('status', 'active')],
@@ -814,6 +817,8 @@ class CorrespondenceController extends Controller
             'original_letters' => ['nullable', 'array', 'max:10'],
             'original_letters.*' => ['file', 'max:20480', 'mimes:pdf,jpg,jpeg,png'],
             'attachments' => ['nullable', 'array', 'max:10'],
+            'appendix_files' => ['nullable', 'array', 'max:10'],
+            'appendix_files.*' => ['file', 'max:20480', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,txt,csv,zip'],
             'attachments.*' => [
                 'file',
                 'max:20480',
@@ -874,6 +879,10 @@ class CorrespondenceController extends Controller
         $mode = $data['type'] === Correspondence::TYPE_INCOMING
             ? 'file'
             : ($data['composition_mode'] ?? 'editor');
+        $appendixMode = $data['type'] === Correspondence::TYPE_INCOMING ? 'file' : ($data['appendix_mode'] ?? 'editor');
+        $appendixBody = in_array($appendixMode, ['editor', 'both'], true)
+            ? $this->sanitizeBody((string) ($data['appendix_body'] ?? ''))
+            : null;
         $body = $data['type'] === Correspondence::TYPE_INCOMING || ($data['type'] === Correspondence::TYPE_OUTGOING && $mode === 'file')
             ? trim(strip_tags((string) ($data['body'] ?? '')))
             : ($mode === 'file' ? '' : $this->sanitizeBody((string) ($data['body'] ?? '')));
@@ -910,17 +919,26 @@ class CorrespondenceController extends Controller
         }
 
         $attachments = array_values(array_filter((array) $request->file('attachments', [])));
+        $appendixFiles = array_values(array_filter((array) $request->file('appendix_files', [])));
+        if ($appendixMode === 'editor' && trim(strip_tags((string) $appendixBody)) === '') {
+            return back()->withErrors(['appendix_body' => 'متن پیوست را وارد کنید.'])->withInput();
+        }
+        if (in_array($appendixMode, ['file', 'both'], true) && count($appendixFiles) === 0) {
+            return back()->withErrors(['appendix_files' => 'برای روش انتخاب‌شده حداقل یک فایل پیوست کنید.'])->withInput();
+        }
         if ($data['type'] !== Correspondence::TYPE_INCOMING && in_array($mode, ['file', 'both'], true) && count($attachments) === 0) {
             return back()->withErrors(['attachments' => 'برای روش انتخاب‌شده حداقل یک فایل پیوست کنید.'])->withInput();
         }
 
         try {
-            $correspondence = DB::transaction(function () use ($data, $mode, $body, $originalLetters, $attachments, $service, $documents, $request, $linkedTask, $sourceProjectCorrespondenceId, $requestedLetterSource, $workflow): Correspondence {
+            $correspondence = DB::transaction(function () use ($data, $mode, $body, $appendixMode, $appendixBody, $originalLetters, $attachments, $appendixFiles, $service, $documents, $request, $linkedTask, $sourceProjectCorrespondenceId, $requestedLetterSource, $workflow): Correspondence {
                 $correspondence = $service->createDraft([
                     'type' => $data['type'],
                     'classification' => $data['classification'] ?? Correspondence::CLASSIFICATION_ORDINARY,
                     'subject' => $data['subject'],
-                    'attachment_pages' => $data['attachment_pages'] ?? null,
+                    'attachment_pages' => null,
+                    'appendix_mode' => $appendixMode,
+                    'appendix_body' => $appendixBody,
                     'letter_number' => $data['letter_number'] ?? null,
                     'body' => $body !== '' ? $body : null,
                     'sender_name' => $data['sender_name'] ?? null,
@@ -971,6 +989,10 @@ class CorrespondenceController extends Controller
                         linkable: $correspondence,
                         purpose: 'correspondence_attachment',
                     );
+                }
+
+                foreach ($appendixFiles as $file) {
+                    $documents->create(data: ['title' => Str::limit(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME), 255, ''), 'document_type' => 'correspondence_appendix'], file: $file, creator: $request->user(), linkable: $correspondence, purpose: 'correspondence_appendix');
                 }
 
                 if ($requestedLetterSource !== null) {
@@ -1053,6 +1075,7 @@ class CorrespondenceController extends Controller
             'correspondence' => [
                 'id' => $correspondence->id, 'type' => $correspondence->type, 'classification' => $correspondence->classification,
                 'subject' => $correspondence->subject, 'attachment_pages' => $correspondence->attachment_pages, 'letter_number' => $correspondence->letter_number, 'body' => $correspondence->body,
+                'appendix_mode' => $correspondence->appendix_mode ?? 'editor', 'appendix_body' => $correspondence->appendix_body,
                 'sender_name' => $correspondence->sender_name, 'recipient_name' => $correspondence->recipient_name,
                 'received_at' => $correspondence->received_at?->toDateString(), 'sent_at' => $correspondence->sent_at?->toDateString(),
                 'created_department_id' => $correspondence->created_department_id, 'recipient_department_id' => $correspondence->recipient_department_id,
@@ -1070,6 +1093,8 @@ class CorrespondenceController extends Controller
                 'copy_department_ids' => $correspondence->copies->pluck('id')->map(fn ($id): int => (int) $id)->all(),
                 'original_documents' => $correspondence->documents->where('purpose', 'correspondence_original')
                     ->map(fn ($link): array => ['id' => $link->id, 'title' => $link->document?->title ?? 'فایل پیوست‌شده'])->values(),
+                'appendix_documents' => $correspondence->documents->where('purpose', 'correspondence_appendix')
+                    ->map(fn ($link): array => ['id' => $link->id, 'title' => $link->document?->title ?? 'فایل پیوست‌شده'])->values(),
             ],
         ]);
     }
@@ -1086,6 +1111,7 @@ class CorrespondenceController extends Controller
             'classification' => ['required', Rule::in([Correspondence::CLASSIFICATION_ORDINARY, Correspondence::CLASSIFICATION_CONFIDENTIAL])],
             'letter_number' => [Rule::requiredIf($correspondence->type === Correspondence::TYPE_INCOMING), 'nullable', 'string', 'max:100', Rule::unique('correspondences', 'letter_number')->ignore($correspondence->id)->where(fn ($query) => $query->where('type', Correspondence::TYPE_INCOMING)->where('external_organization_id', $request->input('external_organization_id')))],
             'body' => ['nullable', 'string', 'max:100000'], 'composition_mode' => ['nullable', Rule::in(['editor', 'file', 'both'])],
+            'appendix_mode' => ['nullable', Rule::in(['editor', 'file', 'both'])], 'appendix_body' => ['nullable', 'string', 'max:500000'],
             'sender_name' => ['nullable', 'string', 'max:255'], 'recipient_name' => ['nullable', 'string', 'max:255'],
             'received_at' => [Rule::requiredIf($correspondence->type === Correspondence::TYPE_INCOMING), 'nullable', 'date'],
             'sent_at' => [Rule::requiredIf($correspondence->type === Correspondence::TYPE_OUTGOING), 'nullable', 'date'],
@@ -1098,12 +1124,20 @@ class CorrespondenceController extends Controller
             'copy_department_ids' => ['nullable', 'array', 'max:20'], 'copy_department_ids.*' => ['integer', 'distinct', Rule::exists('departments', 'id')->where('is_active', true)],
             'original_letters' => ['nullable', 'array', 'max:10'], 'original_letters.*' => ['file', 'max:20480', 'mimes:pdf,jpg,jpeg,png'],
             'attachments' => ['nullable', 'array', 'max:10'], 'attachments.*' => ['file', 'max:20480', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,txt,csv,zip'],
+            'appendix_files' => ['nullable', 'array', 'max:10'], 'appendix_files.*' => ['file', 'max:20480', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,txt,csv,zip'],
         ], [
             'letter_number.unique' => 'شماره نامه با این سازمان مبدأ قبلاً ثبت شده است.',
         ]);
         $mode = $correspondence->type === Correspondence::TYPE_INCOMING
             ? 'file'
             : ($data['composition_mode'] ?? (filled($data['body'] ?? $correspondence->body) ? 'editor' : 'file'));
+        $appendixMode = $correspondence->type === Correspondence::TYPE_INCOMING ? 'file' : ($data['appendix_mode'] ?? $correspondence->appendix_mode ?? 'editor');
+        $appendixBody = in_array($appendixMode, ['editor', 'both'], true)
+            ? $this->sanitizeBody((string) ($data['appendix_body'] ?? $correspondence->appendix_body ?? ''))
+            : null;
+        if ($appendixMode === 'editor' && trim(strip_tags((string) $appendixBody)) === '') {
+            return back()->withErrors(['appendix_body' => 'متن پیوست را وارد کنید.'])->withInput();
+        }
         $body = $correspondence->type === Correspondence::TYPE_INCOMING || ($correspondence->type === Correspondence::TYPE_OUTGOING && $mode === 'file')
             ? trim(strip_tags((string) ($data['body'] ?? $correspondence->body ?? '')))
             : ($mode === 'file' ? null : $this->sanitizeBody((string) ($data['body'] ?? $correspondence->body ?? '')));
@@ -1123,6 +1157,10 @@ class CorrespondenceController extends Controller
         }
         $originalLetters = array_values(array_filter((array) $request->file('original_letters', [])));
         $attachments = array_values(array_filter((array) $request->file('attachments', [])));
+        $appendixFiles = array_values(array_filter((array) $request->file('appendix_files', [])));
+        $existingAppendixCount = $correspondence->documents()->where('purpose', 'correspondence_appendix')->count();
+        if (in_array($appendixMode, ['file', 'both'], true) && count($appendixFiles) + $existingAppendixCount === 0) return back()->withErrors(['appendix_files' => 'برای روش انتخاب‌شده حداقل یک فایل پیوست کنید.'])->withInput();
+        if (count($appendixFiles) + $existingAppendixCount > 10) return back()->withErrors(['appendix_files' => 'حداکثر ۱۰ فایل پیوست قابل نگهداری است.'])->withInput();
         $existingOriginalCount = $correspondence->documents()->where('purpose', 'correspondence_original')->count();
         if ($correspondence->type === Correspondence::TYPE_INCOMING && count($originalLetters) + $existingOriginalCount === 0) {
             return back()->withErrors(['original_letters' => 'برای نامه وارده باید تصویر یا PDF اصل نامه پیوست باشد.'])->withInput();
@@ -1130,11 +1168,11 @@ class CorrespondenceController extends Controller
         if (count($originalLetters) + $existingOriginalCount > 10) return back()->withErrors(['original_letters' => 'حداکثر ۱۰ فایل برای اصل نامه قابل نگهداری است.'])->withInput();
         if (count($attachments) + $correspondence->documents()->where('purpose', 'correspondence_attachment')->count() > 10) return back()->withErrors(['attachments' => 'حداکثر ۱۰ فایل پیوست قابل نگهداری است.'])->withInput();
 
-        DB::transaction(function () use ($correspondence, $data, $body, $relatedLetterIds, $originalLetters, $attachments, $documents, $access, $request): void {
+        DB::transaction(function () use ($correspondence, $data, $body, $appendixMode, $appendixBody, $relatedLetterIds, $originalLetters, $attachments, $appendixFiles, $documents, $access, $request): void {
             $locked = Correspondence::query()->whereKey($correspondence->id)->lockForUpdate()->firstOrFail();
             abort_unless($access->canManageBeforeAction($locked, $request->user()), 403);
             $locked->fill([
-                'subject' => $data['subject'], 'attachment_pages' => $data['attachment_pages'] ?? null, 'classification' => $data['classification'],
+                'subject' => $data['subject'], 'appendix_mode' => $appendixMode, 'appendix_body' => $appendixBody, 'classification' => $data['classification'],
                 'letter_number' => $locked->type === Correspondence::TYPE_INCOMING ? $data['letter_number'] : $locked->letter_number,
                 'body' => $body !== '' ? $body : null, 'sender_name' => $data['sender_name'] ?? null, 'recipient_name' => $data['recipient_name'] ?? null,
                 'received_at' => $data['received_at'] ?? null, 'sent_at' => $data['sent_at'] ?? null,
@@ -1167,6 +1205,9 @@ class CorrespondenceController extends Controller
             }
             foreach ($attachments as $file) {
                 $documents->create(data: ['title' => Str::limit(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME), 255, ''), 'document_type' => 'correspondence_attachment'], file: $file, creator: $request->user(), linkable: $locked, purpose: 'correspondence_attachment');
+            }
+            foreach ($appendixFiles as $file) {
+                $documents->create(data: ['title' => Str::limit(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME), 255, ''), 'document_type' => 'correspondence_appendix'], file: $file, creator: $request->user(), linkable: $locked, purpose: 'correspondence_appendix');
             }
             app(AuditServiceInterface::class)->record('correspondence.updated_before_action', $locked, null, null, [
                 'changed_fields' => array_keys($locked->getChanges()), 'related_letter_ids' => $relatedLetterIds,
