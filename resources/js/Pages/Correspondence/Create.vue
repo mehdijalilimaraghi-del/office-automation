@@ -780,7 +780,7 @@ async function scanOriginalLetter(): Promise<void> {
                         <p class="mt-1 text-sm leading-6 text-slate-500">پیوست می‌تواند متن چندصفحه‌ای، فایل یا ترکیبی از هر دو باشد. تعداد برگ‌های متن در پیش‌نمایش چاپ محاسبه می‌شود و نیازی به ورود دستی تعداد صفحات نیست.</p>
                     </div>
                     <div class="grid gap-3 md:grid-cols-3">
-                        <label v-for="mode in [{value:'editor',label:'متن پیوست'},{value:'file',label:'فایل پیوست'},{value:'both',label:'متن و فایل'}]" :key="mode.value" class="flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-sm font-semibold" :class="form.appendix_mode === mode.value ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200'">
+                        <label v-for="mode in [{value:'none',label:'بدون پیوست'},{value:'editor',label:'متن پیوست'},{value:'file',label:'فایل پیوست'},{value:'both',label:'متن و فایل'}]" :key="mode.value" class="flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-sm font-semibold" :class="form.appendix_mode === mode.value ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200'">
                             <input v-model="form.appendix_mode" type="radio" name="appendix_mode" :value="mode.value" class="border-slate-300 text-indigo-600 focus:ring-indigo-500" />
                             {{ mode.label }}
                         </label>
