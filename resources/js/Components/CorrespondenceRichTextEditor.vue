@@ -366,6 +366,15 @@ function setCellDimension(dimension: 'width' | 'height', value: string, unit: 'm
     commit();
 }
 
+function setCellVerticalAlignment(value: string): void { cellsForFormatting().forEach(cell=>cell.style.verticalAlign=value); commit(); }
+function setCellPadding(value: string, unit: 'mm'|'px'): void { if(value)cellsForFormatting().forEach(cell=>cell.style.padding=`${value}${unit}`);commit(); }
+function applyCellBorders(callback:(cell:HTMLTableCellElement,side:string)=>void):void {
+    const sides=borderTarget.value==='top'||borderTarget.value==='bottom'||borderTarget.value==='left'||borderTarget.value==='right'?[borderTarget.value]:['top','right','bottom','left'];
+    cellsForFormatting().forEach(cell=>sides.forEach(side=>callback(cell,side)));
+}
+function setCellBorderColor(value:string):void {applyCellBorders((cell,side)=>cell.style.setProperty(`border-${side}-color`,value));commit();}
+function setCellBorderWidth(value:string,unit:'mm'|'px'):void {applyCellBorders((cell,side)=>cell.style.setProperty(`border-${side}-width`,`${value}${unit}`));commit();}
+function setCellBorderStyle(value:string):void {applyCellBorders((cell,side)=>cell.style.setProperty(`border-${side}-style`,value));commit();}
 function setImageWidth(value: string): void {
     if (currentImage.value) currentImage.value.style.width = value;
     commit();
@@ -603,38 +612,51 @@ onBeforeUnmount(() => window.removeEventListener('selectionchange', onSelectionC
         </div>
 
         <div v-else-if="activeTab === 'table'" class="rte-toolbar flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white p-3">
-            <button type="button" class="rte-tool" title="افزودن ردیف" @click="addTableRow"><Rows3 :size="16" /> ردیف +</button>
-            <button type="button" class="rte-tool" title="افزودن ستون" @click="addTableColumn"><Columns3 :size="16" /> ستون +</button>
-            <button type="button" class="rte-tool" title="حذف ردیف" @click="deleteTableRow"><Rows3 :size="16" /> ردیف −</button>
-            <button type="button" class="rte-tool" title="حذف ستون" @click="deleteTableColumn"><Columns3 :size="16" /> ستون −</button>
-            <button type="button" class="rte-tool text-rose-700" title="حذف جدول" @click="deleteTable"><Trash2 :size="16" /></button>
-            <label class="rte-tool" title="رنگ زمینه سلول"><PaintBucket :size="16" /> زمینه<input type="color" class="h-5 w-5" @input="setCellBackground(($event.target as HTMLInputElement).value)" /></label>
-            <label class="text-xs">عرض جدول<select class="mr-1 h-9 rounded-lg border-slate-300 text-xs" @change="setTableWidth(($event.target as HTMLSelectElement).value)"><option value="50%">۵۰٪</option><option value="75%">۷۵٪</option><option value="100%" selected>۱۰۰٪</option></select></label>
-            <label class="text-xs">حاشیه سلول<input type="color" class="mr-1 h-6 w-7 align-middle" title="رنگ خطوط" @input="setCellBorderColor(($event.target as HTMLInputElement).value)" /></label>
-            <select class="h-9 rounded-lg border-slate-300 text-xs" title="ضخامت خطوط" @change="setCellBorderWidth(($event.target as HTMLSelectElement).value)"><option value="0">بدون خط</option><option value="1px">نازک</option><option value="2px">متوسط</option><option value="3px">ضخیم</option></select>
-            <select class="h-9 rounded-lg border-slate-300 text-xs" title="فاصله داخلی سلول" @change="setCellPadding(($event.target as HTMLSelectElement).value)"><option value="2px">حاشیه داخلی کم</option><option value="6px" selected>معمولی</option><option value="10px">زیاد</option><option value="14px">خیلی زیاد</option></select>
-            <select class="h-9 rounded-lg border-slate-300 text-xs" title="تراز افقی" @change="setCellAlignment(($event.target as HTMLSelectElement).value)"><option value="right">راست</option><option value="center">وسط</option><option value="left">چپ</option></select>
-            <select class="h-9 rounded-lg border-slate-300 text-xs" title="تراز عمودی" @change="setCellVerticalAlignment(($event.target as HTMLSelectElement).value)"><option value="top">بالا</option><option value="middle">وسط</option><option value="bottom">پایین</option></select>
+            <button type="button" class="rte-tool" @click="addTableRow"><Rows3 :size="16" /> ردیف +</button>
+            <button type="button" class="rte-tool" @click="addTableColumn"><Columns3 :size="16" /> ستون +</button>
+            <button type="button" class="rte-tool" @click="deleteTableRow">ردیف −</button>
+            <button type="button" class="rte-tool" @click="deleteTableColumn">ستون −</button>
+            <button type="button" class="rte-tool" @click="selectTablePart('table')">انتخاب جدول</button>
+            <button type="button" class="rte-tool" @click="selectTablePart('row')">انتخاب ردیف</button>
+            <button type="button" class="rte-tool" @click="selectTablePart('column')">انتخاب ستون</button>
+            <button type="button" class="rte-tool" @click="mergeSelectedCells">ادغام سلول‌ها</button>
+            <button type="button" class="rte-tool" @click="splitSelectedCell">تقسیم سلول</button>
+            <button type="button" class="rte-tool text-rose-700" @click="deleteTable"><Trash2 :size="16" /> حذف جدول</button>
+            <label class="text-xs">عرض جدول <input class="rte-number" type="number" min="10" max="210" value="180" @change="setTableDimension('width',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
+            <label class="text-xs">عرض ستون/ارتفاع ردیف <input class="rte-number" type="number" min="1" value="30" @change="setCellDimension('width',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
+            <label class="text-xs">ارتفاع ردیف <input class="rte-number" type="number" min="1" value="10" @change="setCellDimension('height',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
+            <label class="text-xs">حاشیه داخلی <input class="rte-number" type="number" min="0" value="2" @change="setCellPadding(($event.target as HTMLInputElement).value,'mm')" /> mm</label>
+            <label class="text-xs">اعمال حاشیه
+                <select v-model="borderTarget" class="rte-select"><option value="all">همه اضلاع</option><option value="outer">کادر بیرونی</option><option value="inner">خطوط داخلی</option><option value="top">بالا</option><option value="bottom">پایین</option><option value="left">چپ</option><option value="right">راست</option></select>
+            </label>
+            <label class="text-xs">رنگ خط <input type="color" value="#94a3b8" @input="setCellBorderColor(($event.target as HTMLInputElement).value)" /></label>
+            <label class="text-xs">ضخامت خط <input class="rte-number" type="number" min="0" max="10" step="0.25" value="0.25" @change="setCellBorderWidth(($event.target as HTMLInputElement).value,'mm')" /> mm</label>
+            <label class="text-xs">نوع خط <select class="rte-select" @change="setCellBorderStyle(($event.target as HTMLSelectElement).value)"><option value="solid">پیوسته</option><option value="dashed">خط‌چین</option><option value="dotted">نقطه‌چین</option><option value="double">دوتایی</option><option value="none">بدون خط</option></select></label>
+            <label class="text-xs">زمینه سلول</label>
+            <div class="flex flex-wrap gap-1">
+                <button v-for="color in colorPalette" :key="color" type="button" class="h-6 w-6 rounded border border-slate-300" :style="{backgroundColor:color}" :title="color" @click="setCellBackground(color)"></button>
+                <input type="color" title="رنگ دلخواه" @input="setCellBackground(($event.target as HTMLInputElement).value)" />
+                <button type="button" class="rte-tool" @click="setCellBackground('transparent')">بدون رنگ</button>
+            </div>
+            <label class="text-xs">تراز افقی <select class="rte-select" @change="setCellAlignment(($event.target as HTMLSelectElement).value)"><option value="right">راست</option><option value="center">وسط</option><option value="left">چپ</option><option value="justify">دوطرفه</option></select></label>
+            <label class="text-xs">تراز عمودی <select class="rte-select" @change="setCellVerticalAlignment(($event.target as HTMLSelectElement).value)"><option value="top">بالا</option><option value="middle">وسط</option><option value="bottom">پایین</option></select></label>
         </div>
-
         <div v-else-if="activeTab === 'picture'" class="rte-toolbar flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white p-3">
-            <label class="text-xs">اندازه تصویر<select class="mr-2 h-9 rounded-lg border-slate-300 text-xs" @change="setImageWidth(($event.target as HTMLSelectElement).value)"><option value="25%">۲۵٪</option><option value="50%">۵۰٪</option><option value="75%">۷۵٪</option><option value="100%">۱۰۰٪</option></select></label>
-            <label class="text-xs">جایگاه<select class="mr-2 h-9 rounded-lg border-slate-300 text-xs" @change="setImageAlignment(($event.target as HTMLSelectElement).value)"><option value="right">راست</option><option value="center">وسط</option><option value="left">چپ</option></select></label>
-            <label class="text-xs">ارتفاع<select class="mr-2 h-9 rounded-lg border-slate-300 text-xs" @change="setImageHeight(($event.target as HTMLSelectElement).value)"><option value="auto">خودکار</option><option value="100px">۱۰۰ پیکسل</option><option value="150px">۱۵۰ پیکسل</option><option value="200px">۲۰۰ پیکسل</option></select></label>
-            <label class="text-xs">کادر<select class="mr-2 h-9 rounded-lg border-slate-300 text-xs" @change="setImageBorder(($event.target as HTMLSelectElement).value)"><option value="none">بدون کادر</option><option value="1px solid #64748b">نازک</option><option value="2px solid #334155">متوسط</option><option value="3px solid #334155">ضخیم</option></select></label>
+            <label class="text-xs">عرض <input class="rte-number" type="number" min="1" value="50" @change="setImageDimension('width',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
+            <label class="text-xs">ارتفاع <input class="rte-number" type="number" min="1" value="30" @change="setImageDimension('height',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
+            <label class="text-xs">جایگاه <select class="rte-select" @change="setImageAlignment(($event.target as HTMLSelectElement).value)"><option value="right">راست</option><option value="center">وسط</option><option value="left">چپ</option></select></label>
+            <label class="text-xs">قرارگیری نسبت به متن <select class="rte-select" @change="setImageWrap(($event.target as HTMLSelectElement).value as 'inline'|'block'|'left'|'right')"><option value="inline">همراه متن</option><option value="block">بالا و پایین متن</option><option value="right">شناور راست</option><option value="left">شناور چپ</option></select></label>
+            <label class="text-xs">رنگ کادر <input type="color" @input="setImageBorder('1px solid '+($event.target as HTMLInputElement).value)" /></label>
             <button type="button" class="rte-tool" @click="chooseImage"><Image :size="16" /> جایگزینی</button>
             <button type="button" class="rte-tool text-rose-700" @click="removeImage"><Trash2 :size="16" /> حذف</button>
         </div>
-
         <div v-else-if="activeTab === 'shape'" class="rte-toolbar flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white p-3">
-            <label class="rte-tool" title="رنگ داخل شکل"><PaintBucket :size="16" /> زمینه<input type="color" class="h-5 w-5" @input="setShapeColor(($event.target as HTMLInputElement).value)" /></label>
-            <label class="rte-tool" title="رنگ خط">خط<input type="color" class="h-5 w-5" @input="setShapeBorderColor(($event.target as HTMLInputElement).value)" /></label>
-            <label class="text-xs">عرض<select class="mr-1 h-9 rounded-lg border-slate-300 text-xs" @change="setShapeWidth(($event.target as HTMLSelectElement).value)"><option value="60px">۶۰</option><option value="100px" selected>۱۰۰</option><option value="160px">۱۶۰</option><option value="220px">۲۲۰</option></select></label>
-            <label class="text-xs">ارتفاع<select class="mr-1 h-9 rounded-lg border-slate-300 text-xs" @change="setShapeHeight(($event.target as HTMLSelectElement).value)"><option value="30px">۳۰</option><option value="54px" selected>۵۴</option><option value="80px">۸۰</option><option value="120px">۱۲۰</option></select></label>
-            <label class="text-xs">ضخامت خط<select class="mr-1 h-9 rounded-lg border-slate-300 text-xs" @change="setShapeBorderWidth(($event.target as HTMLSelectElement).value)"><option value="1px">۱</option><option value="2px">۲</option><option value="3px">۳</option><option value="4px">۴</option></select></label>
-            <button type="button" class="rte-tool text-rose-700" title="حذف شکل" @click="removeShape"><Trash2 :size="16" /></button>
+            <label class="rte-tool">رنگ زمینه <input type="color" @input="setShapeColor(($event.target as HTMLInputElement).value)" /></label>
+            <label class="rte-tool">رنگ خط <input type="color" @input="setShapeBorderColor(($event.target as HTMLInputElement).value)" /></label>
+            <label class="text-xs">عرض <input class="rte-number" type="number" min="1" value="30" @change="setShapeDimension('width',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
+            <label class="text-xs">ارتفاع <input class="rte-number" type="number" min="1" value="15" @change="setShapeDimension('height',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
+            <button type="button" class="rte-tool text-rose-700" @click="removeShape"><Trash2 :size="16" /> حذف شکل</button>
         </div>
-
         <div
             ref="editor"
             role="textbox"
@@ -658,6 +680,9 @@ onBeforeUnmount(() => window.removeEventListener('selectionchange', onSelectionC
 .rte-tool{position:relative;display:inline-flex;min-height:34px;align-items:center;justify-content:center;gap:5px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;padding:5px 9px;font-size:12px;color:#334155}
 .rte-tool:hover{background:#f1f5f9}
 .rte-tool:disabled{opacity:.4;cursor:not-allowed}
+.rte-number{width:76px;height:32px;margin:0 4px;padding:3px 6px;border:1px solid #cbd5e1;border-radius:6px;direction:ltr}
+.rte-select{height:32px;margin:0 4px;padding:3px 6px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px}
+.rte-content :deep(.rte-cell-selected){outline:2px solid #2563eb;outline-offset:-2px;background-image:linear-gradient(#dbeafe66,#dbeafe66)}
 .rte-content{min-height:18rem;line-height:1.9;direction:rtl;text-align:right;overflow-wrap:anywhere}
 .rte-content:empty:before{content:attr(data-placeholder);color:#94a3b8;pointer-events:none}
 .rte-content :deep(table){width:100%;border-collapse:collapse;margin:8px 0}
