@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { AlignCenter, AlignJustify, AlignLeft, AlignRight, ArrowRight, Bold, Circle, Columns3, Image, IndentDecrease, IndentIncrease, Italic, Link, List, ListOrdered, Minus, PaintBucket, Redo2, RectangleHorizontal, Rows3, Strikethrough, Table2, Trash2, Underline, Undo2 } from '@lucide/vue';
 
 type Tab = 'home' | 'insert' | 'table' | 'picture' | 'shape';
 const props = withDefaults(defineProps<{ modelValue: string; label: string; fontFamily?: string; disabled?: boolean }>(), {
@@ -304,6 +305,27 @@ function setCellAlignment(value: string): void {
     if (currentCell.value) currentCell.value.style.textAlign = value;
     commit();
 }
+function setTableWidth(value: string): void {
+    const table = currentCell.value?.closest('table');
+    if (table instanceof HTMLTableElement) table.style.width = value;
+    commit();
+}
+function setCellVerticalAlignment(value: string): void {
+    if (currentCell.value) currentCell.value.style.verticalAlign = value;
+    commit();
+}
+function setCellBorderColor(value: string): void {
+    if (currentCell.value) currentCell.value.style.borderColor = value;
+    commit();
+}
+function setCellBorderWidth(value: string): void {
+    if (currentCell.value) currentCell.value.style.borderWidth = value;
+    commit();
+}
+function setCellPadding(value: string): void {
+    if (currentCell.value) currentCell.value.style.padding = value;
+    commit();
+}
 function setImageWidth(value: string): void {
     if (currentImage.value) currentImage.value.style.width = value;
     commit();
@@ -313,6 +335,14 @@ function setImageAlignment(value: string): void {
     currentImage.value.style.display = 'block';
     currentImage.value.style.marginLeft = value === 'right' ? 'auto' : value === 'left' ? '0' : 'auto';
     currentImage.value.style.marginRight = value === 'left' ? 'auto' : value === 'right' ? '0' : 'auto';
+    commit();
+}
+function setImageHeight(value: string): void {
+    if (currentImage.value) currentImage.value.style.height = value;
+    commit();
+}
+function setImageBorder(value: string): void {
+    if (currentImage.value) currentImage.value.style.border = value;
     commit();
 }
 function chooseImage(): void { imageInput.value?.click(); }
@@ -387,6 +417,16 @@ function setShapeBorderColor(value: string): void {
 function setShapeWidth(value: string): void {
     if (!currentShape.value) return;
     currentShape.value.style.width = value;
+    commit();
+}
+function setShapeHeight(value: string): void {
+    if (!currentShape.value) return;
+    currentShape.value.style.height = value;
+    commit();
+}
+function setShapeBorderWidth(value: string): void {
+    if (!currentShape.value) return;
+    currentShape.value.style.borderWidth = value;
     commit();
 }
 function insertLink(): void {
@@ -464,64 +504,73 @@ onBeforeUnmount(() => window.removeEventListener('selectionchange', onSelectionC
             <select class="h-9 w-20 rounded-lg border-slate-300 text-xs" aria-label="اندازه قلم" @change="applyFontSize(($event.target as HTMLSelectElement).value)">
                 <option value="10pt">۱۰</option><option value="11pt">۱۱</option><option value="12pt" selected>۱۲</option><option value="14pt">۱۴</option><option value="16pt">۱۶</option><option value="18pt">۱۸</option><option value="24pt">۲۴</option><option value="32pt">۳۲</option>
             </select>
-            <button type="button" class="rte-tool font-bold" title="پررنگ" @click="applyFormat('strong')">B</button>
-            <button type="button" class="rte-tool italic" title="مورب" @click="applyFormat('em')">I</button>
-            <button type="button" class="rte-tool underline" title="زیرخط" @click="applyFormat('u')">U</button>
-            <button type="button" class="rte-tool line-through" title="خط‌خورده" @click="applyFormat('s')">S</button>
+            <button type="button" class="rte-tool" title="پررنگ" aria-label="پررنگ" @click="applyFormat('strong')"><Bold :size="16" /></button>
+            <button type="button" class="rte-tool" title="مورب" aria-label="مورب" @click="applyFormat('em')"><Italic :size="16" /></button>
+            <button type="button" class="rte-tool" title="زیرخط" aria-label="زیرخط" @click="applyFormat('u')"><Underline :size="16" /></button>
+            <button type="button" class="rte-tool" title="خط‌خورده" aria-label="خط‌خورده" @click="applyFormat('s')"><Strikethrough :size="16" /></button>
             <label class="rte-tool" title="رنگ متن">A<input type="color" class="absolute h-px w-px opacity-0" @input="applyTextColor(($event.target as HTMLInputElement).value)" /></label>
             <label class="rte-tool" title="رنگ زمینه متن">▰<input type="color" value="#fff59d" class="absolute h-px w-px opacity-0" @input="applyHighlight(($event.target as HTMLInputElement).value)" /></label>
             <span class="mx-1 h-6 w-px bg-slate-200"></span>
-            <button type="button" class="rte-tool" title="راست‌چین" @click="align('right')">≡ راست</button>
-            <button type="button" class="rte-tool" title="وسط‌چین" @click="align('center')">≡ وسط</button>
-            <button type="button" class="rte-tool" title="چپ‌چین" @click="align('left')">≡ چپ</button>
-            <button type="button" class="rte-tool" title="تراز دوطرفه" @click="align('justify')">≋</button>
+            <button type="button" class="rte-tool" title="راست‌چین" aria-label="راست‌چین" @click="align('right')"><AlignRight :size="16" /></button>
+            <button type="button" class="rte-tool" title="وسط‌چین" aria-label="وسط‌چین" @click="align('center')"><AlignCenter :size="16" /></button>
+            <button type="button" class="rte-tool" title="چپ‌چین" aria-label="چپ‌چین" @click="align('left')"><AlignLeft :size="16" /></button>
+            <button type="button" class="rte-tool" title="تراز دوطرفه" aria-label="تراز دوطرفه" @click="align('justify')"><AlignJustify :size="16" /></button>
             <select class="h-9 w-24 rounded-lg border-slate-300 text-xs" aria-label="فاصله خطوط" @change="setLineHeight(($event.target as HTMLSelectElement).value)"><option value="1.5">فاصله ۱٫۵</option><option value="1.8" selected>فاصله ۱٫۸</option><option value="2">فاصله ۲</option></select>
             <select class="h-9 w-24 rounded-lg border-slate-300 text-xs" aria-label="فاصله پاراگراف" @change="setParagraphSpacing(($event.target as HTMLSelectElement).value)"><option value="4px">کم</option><option value="12px" selected>معمولی</option><option value="20px">زیاد</option></select>
-            <button type="button" class="rte-tool" title="فهرست نشانه‌دار" @click="toggleList(false)">• فهرست</button>
-            <button type="button" class="rte-tool" title="فهرست شماره‌دار" @click="toggleList(true)">۱. فهرست</button>
-            <button type="button" class="rte-tool" title="افزایش تورفتگی" @click="indent(true)">⇥</button>
-            <button type="button" class="rte-tool" title="کاهش تورفتگی" @click="indent(false)">⇤</button>
+            <button type="button" class="rte-tool" title="فهرست نشانه‌دار" aria-label="فهرست نشانه‌دار" @click="toggleList(false)"><List :size="16" /></button>
+            <button type="button" class="rte-tool" title="فهرست شماره‌دار" aria-label="فهرست شماره‌دار" @click="toggleList(true)"><ListOrdered :size="16" /></button>
+            <button type="button" class="rte-tool" title="افزایش تورفتگی" aria-label="افزایش تورفتگی" @click="indent(true)"><IndentIncrease :size="16" /></button>
+            <button type="button" class="rte-tool" title="کاهش تورفتگی" aria-label="کاهش تورفتگی" @click="indent(false)"><IndentDecrease :size="16" /></button>
             <button type="button" class="rte-tool" title="راست به چپ" @click="setDirection('rtl')">RTL</button>
             <button type="button" class="rte-tool" title="چپ به راست" @click="setDirection('ltr')">LTR</button>
-            <button type="button" class="rte-tool" title="واگرد" :disabled="historyIndex === 0" @click="undo">↶</button>
-            <button type="button" class="rte-tool" title="ازنو" :disabled="historyIndex >= history.length - 1" @click="redo">↷</button>
+            <button type="button" class="rte-tool" title="واگرد" aria-label="واگرد" :disabled="historyIndex === 0" @click="undo"><Undo2 :size="16" /></button>
+            <button type="button" class="rte-tool" title="ازنو" aria-label="ازنو" :disabled="historyIndex >= history.length - 1" @click="redo"><Redo2 :size="16" /></button>
             <button type="button" class="rte-tool text-rose-700" title="حذف قالب‌بندی" @click="clearFormatting">پاک‌سازی قالب</button>
         </div>
 
         <div v-else-if="activeTab === 'insert'" class="rte-toolbar flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white p-3">
-            <button type="button" class="rte-tool" @click="insertTable">درج جدول ۳×۳</button>
-            <button type="button" class="rte-tool" @click="chooseImage">درج تصویر</button>
-            <button type="button" class="rte-tool" @click="insertShape('rectangle')">مستطیل</button>
-            <button type="button" class="rte-tool" @click="insertShape('ellipse')">بیضی</button>
-            <button type="button" class="rte-tool" @click="insertShape('line')">خط</button>
-            <button type="button" class="rte-tool" @click="insertShape('arrow')">پیکان</button>
-            <button type="button" class="rte-tool" @click="insertLink">پیوند</button>
+            <button type="button" class="rte-tool" title="درج جدول ۳×۳" @click="insertTable"><Table2 :size="16" /> جدول</button>
+            <button type="button" class="rte-tool" title="درج تصویر" @click="chooseImage"><Image :size="16" /> تصویر</button>
+            <button type="button" class="rte-tool" title="درج مستطیل" @click="insertShape('rectangle')"><RectangleHorizontal :size="16" /> مستطیل</button>
+            <button type="button" class="rte-tool" title="درج بیضی" @click="insertShape('ellipse')"><Circle :size="16" /> بیضی</button>
+            <button type="button" class="rte-tool" title="درج خط" @click="insertShape('line')"><Minus :size="16" /> خط</button>
+            <button type="button" class="rte-tool" title="درج پیکان" @click="insertShape('arrow')"><ArrowRight :size="16" /> پیکان</button>
+            <button type="button" class="rte-tool" title="درج پیوند" @click="insertLink"><Link :size="16" /> پیوند</button>
             <input ref="imageInput" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="insertImageFile" />
             <p class="w-full text-xs text-slate-500">تصویر به‌صورت امن داخل محتوای نامه ذخیره می‌شود؛ فرمت PNG، JPG یا WEBP و حداکثر ۱۸۰ کیلوبایت.</p>
         </div>
 
         <div v-else-if="activeTab === 'table'" class="rte-toolbar flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white p-3">
-            <button type="button" class="rte-tool" @click="addTableRow">افزودن ردیف</button>
-            <button type="button" class="rte-tool" @click="addTableColumn">افزودن ستون</button>
-            <button type="button" class="rte-tool" @click="deleteTableRow">حذف ردیف</button>
-            <button type="button" class="rte-tool" @click="deleteTableColumn">حذف ستون</button>
-            <button type="button" class="rte-tool text-rose-700" @click="deleteTable">حذف جدول</button>
-            <label class="rte-tool">زمینه سلول<input type="color" class="h-5 w-5" @input="setCellBackground(($event.target as HTMLInputElement).value)" /></label>
-            <select class="h-9 rounded-lg border-slate-300 text-xs" @change="setCellAlignment(($event.target as HTMLSelectElement).value)"><option value="right">راست</option><option value="center">وسط</option><option value="left">چپ</option></select>
+            <button type="button" class="rte-tool" title="افزودن ردیف" @click="addTableRow"><Rows3 :size="16" /> ردیف +</button>
+            <button type="button" class="rte-tool" title="افزودن ستون" @click="addTableColumn"><Columns3 :size="16" /> ستون +</button>
+            <button type="button" class="rte-tool" title="حذف ردیف" @click="deleteTableRow"><Rows3 :size="16" /> ردیف −</button>
+            <button type="button" class="rte-tool" title="حذف ستون" @click="deleteTableColumn"><Columns3 :size="16" /> ستون −</button>
+            <button type="button" class="rte-tool text-rose-700" title="حذف جدول" @click="deleteTable"><Trash2 :size="16" /></button>
+            <label class="rte-tool" title="رنگ زمینه سلول"><PaintBucket :size="16" /> زمینه<input type="color" class="h-5 w-5" @input="setCellBackground(($event.target as HTMLInputElement).value)" /></label>
+            <label class="text-xs">عرض جدول<select class="mr-1 h-9 rounded-lg border-slate-300 text-xs" @change="setTableWidth(($event.target as HTMLSelectElement).value)"><option value="50%">۵۰٪</option><option value="75%">۷۵٪</option><option value="100%" selected>۱۰۰٪</option></select></label>
+            <label class="text-xs">حاشیه سلول<input type="color" class="mr-1 h-6 w-7 align-middle" title="رنگ خطوط" @input="setCellBorderColor(($event.target as HTMLInputElement).value)" /></label>
+            <select class="h-9 rounded-lg border-slate-300 text-xs" title="ضخامت خطوط" @change="setCellBorderWidth(($event.target as HTMLSelectElement).value)"><option value="0">بدون خط</option><option value="1px">نازک</option><option value="2px">متوسط</option><option value="3px">ضخیم</option></select>
+            <select class="h-9 rounded-lg border-slate-300 text-xs" title="فاصله داخلی سلول" @change="setCellPadding(($event.target as HTMLSelectElement).value)"><option value="2px">حاشیه داخلی کم</option><option value="6px" selected>معمولی</option><option value="10px">زیاد</option><option value="14px">خیلی زیاد</option></select>
+            <select class="h-9 rounded-lg border-slate-300 text-xs" title="تراز افقی" @change="setCellAlignment(($event.target as HTMLSelectElement).value)"><option value="right">راست</option><option value="center">وسط</option><option value="left">چپ</option></select>
+            <select class="h-9 rounded-lg border-slate-300 text-xs" title="تراز عمودی" @change="setCellVerticalAlignment(($event.target as HTMLSelectElement).value)"><option value="top">بالا</option><option value="middle">وسط</option><option value="bottom">پایین</option></select>
         </div>
 
         <div v-else-if="activeTab === 'picture'" class="rte-toolbar flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white p-3">
             <label class="text-xs">اندازه تصویر<select class="mr-2 h-9 rounded-lg border-slate-300 text-xs" @change="setImageWidth(($event.target as HTMLSelectElement).value)"><option value="25%">۲۵٪</option><option value="50%">۵۰٪</option><option value="75%">۷۵٪</option><option value="100%">۱۰۰٪</option></select></label>
             <label class="text-xs">جایگاه<select class="mr-2 h-9 rounded-lg border-slate-300 text-xs" @change="setImageAlignment(($event.target as HTMLSelectElement).value)"><option value="right">راست</option><option value="center">وسط</option><option value="left">چپ</option></select></label>
-            <button type="button" class="rte-tool" @click="chooseImage">جایگزینی تصویر</button>
-            <button type="button" class="rte-tool text-rose-700" @click="removeImage">حذف تصویر</button>
+            <label class="text-xs">ارتفاع<select class="mr-2 h-9 rounded-lg border-slate-300 text-xs" @change="setImageHeight(($event.target as HTMLSelectElement).value)"><option value="auto">خودکار</option><option value="100px">۱۰۰ پیکسل</option><option value="150px">۱۵۰ پیکسل</option><option value="200px">۲۰۰ پیکسل</option></select></label>
+            <label class="text-xs">کادر<select class="mr-2 h-9 rounded-lg border-slate-300 text-xs" @change="setImageBorder(($event.target as HTMLSelectElement).value)"><option value="none">بدون کادر</option><option value="1px solid #64748b">نازک</option><option value="2px solid #334155">متوسط</option><option value="3px solid #334155">ضخیم</option></select></label>
+            <button type="button" class="rte-tool" @click="chooseImage"><Image :size="16" /> جایگزینی</button>
+            <button type="button" class="rte-tool text-rose-700" @click="removeImage"><Trash2 :size="16" /> حذف</button>
         </div>
 
         <div v-else-if="activeTab === 'shape'" class="rte-toolbar flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white p-3">
-            <label class="rte-tool">رنگ زمینه<input type="color" class="h-5 w-5" @input="setShapeColor(($event.target as HTMLInputElement).value)" /></label>
-            <label class="rte-tool">رنگ خط<input type="color" class="h-5 w-5" @input="setShapeBorderColor(($event.target as HTMLInputElement).value)" /></label>
-            <select class="h-9 rounded-lg border-slate-300 text-xs" @change="setShapeWidth(($event.target as HTMLSelectElement).value)"><option value="60px">کوچک</option><option value="100px">متوسط</option><option value="160px">بزرگ</option></select>
-            <button type="button" class="rte-tool text-rose-700" @click="removeShape">حذف شکل</button>
+            <label class="rte-tool" title="رنگ داخل شکل"><PaintBucket :size="16" /> زمینه<input type="color" class="h-5 w-5" @input="setShapeColor(($event.target as HTMLInputElement).value)" /></label>
+            <label class="rte-tool" title="رنگ خط">خط<input type="color" class="h-5 w-5" @input="setShapeBorderColor(($event.target as HTMLInputElement).value)" /></label>
+            <label class="text-xs">عرض<select class="mr-1 h-9 rounded-lg border-slate-300 text-xs" @change="setShapeWidth(($event.target as HTMLSelectElement).value)"><option value="60px">۶۰</option><option value="100px" selected>۱۰۰</option><option value="160px">۱۶۰</option><option value="220px">۲۲۰</option></select></label>
+            <label class="text-xs">ارتفاع<select class="mr-1 h-9 rounded-lg border-slate-300 text-xs" @change="setShapeHeight(($event.target as HTMLSelectElement).value)"><option value="30px">۳۰</option><option value="54px" selected>۵۴</option><option value="80px">۸۰</option><option value="120px">۱۲۰</option></select></label>
+            <label class="text-xs">ضخامت خط<select class="mr-1 h-9 rounded-lg border-slate-300 text-xs" @change="setShapeBorderWidth(($event.target as HTMLSelectElement).value)"><option value="1px">۱</option><option value="2px">۲</option><option value="3px">۳</option><option value="4px">۴</option></select></label>
+            <button type="button" class="rte-tool text-rose-700" title="حذف شکل" @click="removeShape"><Trash2 :size="16" /></button>
         </div>
 
         <div
