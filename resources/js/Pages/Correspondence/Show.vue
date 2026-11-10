@@ -20,6 +20,8 @@ interface CorrespondenceDetail {
     type: 'incoming' | 'outgoing' | 'internal';
     subject: string;
     body: string | null;
+    appendix_mode: 'none' | 'editor' | 'file' | 'both';
+    appendix_body: string | null;
     status: 'draft' | 'registered';
     letter_number: string | null;
     registration_number: string | null;
@@ -347,6 +349,10 @@ function registerCorrespondence(): void {
                 <div v-if="(correspondence.type === 'incoming' || (correspondence.type === 'outgoing' && correspondence.body && !correspondence.body.includes('<'))) && correspondence.body" class="whitespace-pre-wrap p-5 text-sm leading-8 text-slate-800" dir="rtl">{{ correspondence.body }}</div>
                 <div v-else-if="correspondence.type !== 'incoming' && correspondence.body" class="correspondence-body p-5 text-sm leading-8 text-slate-800" dir="rtl" :style="{ fontFamily: correspondenceFontFamily }" v-html="correspondence.body"></div>
                 <div v-else class="p-5 text-sm text-slate-500">{{ correspondence.type === 'incoming' ? 'توضیحی برای این نامه ثبت نشده است.' : 'متن داخلی ثبت نشده است؛ محتوای نامه در فایل پیوست قرار دارد.' }}</div>
+            </section>
+                    <section v-if="correspondence.appendix_body" class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">متن پیوست</h2></div>
+                <div class="correspondence-body p-5 text-sm leading-8 text-slate-800" dir="rtl" :style="{ fontFamily: correspondenceFontFamily }" v-html="correspondence.appendix_body"></div>
             </section>
                     <section v-if="correspondence.type === 'incoming' || originalLetters.length" class="rounded-2xl border border-indigo-100 bg-white shadow-sm">
                 <div class="flex items-center justify-between border-b border-indigo-100 px-5 py-4"><h2 class="font-bold text-slate-900">فایل نامه</h2><span class="text-xs text-slate-500">{{ originalLetters.length }} فایل</span></div>
