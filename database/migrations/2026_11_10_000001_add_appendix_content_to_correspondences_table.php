@@ -11,7 +11,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('correspondences', function (Blueprint $table): void {
-            $table->string('appendix_mode', 20)->default('editor')->after('attachment_pages');
+            $table->string('appendix_mode', 20)->default('none')->after('attachment_pages');
             $table->longText('appendix_body')->nullable()->after('appendix_mode');
         });
     }
