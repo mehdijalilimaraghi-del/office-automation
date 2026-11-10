@@ -17,6 +17,10 @@ const historyIndex = ref(0);
 const currentImage = ref<HTMLImageElement | null>(null);
 const currentShape = ref<HTMLElement | null>(null);
 const currentCell = ref<HTMLTableCellElement | null>(null);
+const selectedCells = ref<HTMLTableCellElement[]>([]);
+const cellSelectionAnchor = ref<HTMLTableCellElement | null>(null);
+const borderTarget = ref<'all' | 'outer' | 'inner' | 'top' | 'bottom' | 'left' | 'right'>('all');
+const colorPalette = ['#000000','#404040','#7f7f7f','#c0c0c0','#ffffff','#c00000','#ff0000','#ffc000','#ffff00','#92d050','#00b050','#00b0f0','#0070c0','#002060','#7030a0','#fce4d6','#f4cccc','#fff2cc','#e2f0d9','#d9eaf7','#e4dfec'];
 let syncing = false;
 let savedRange: Range | null = null;
 
@@ -291,18 +295,60 @@ function deleteTableColumn(): void {
     if (!table.querySelector('td,th')) table.remove();
     commit();
 }
+function selectTablePart(part: 'table' | 'row' | 'column'): void {
+    const cell = currentCell.value, table = cell?.closest('table');
+    if (!cell || !table) return;
+    selectedCells.value = part === 'table' ? Array.from(table.querySelectorAll('td,th')) :
+        part === 'row' ? Array.from(cell.parentElement?.querySelectorAll('td,th') ?? []) :
+        Array.from(table.rows).map((row) => row.cells[cell.cellIndex]).filter((item): item is HTMLTableCellElement => !!item);
+    paintCellSelection();
+}
+function paintCellSelection(): void {
+    editor.value?.querySelectorAll('.rte-cell-selected').forEach((node) => node.classList.remove('rte-cell-selected'));
+    selectedCells.value.forEach((cell) => cell.classList.add('rte-cell-selected'));
+}
+function selectCellRange(from: HTMLTableCellElement, to: HTMLTableCellElement): void {
+    const table = from.closest('table');
+    if (!table || to.closest('table') !== table) return;
+    const rows = Array.from(table.rows), r1 = rows.indexOf(from.parentElement as HTMLTableRowElement), r2 = rows.indexOf(to.parentElement as HTMLTableRowElement);
+    const c1 = Math.min(from.cellIndex,to.cellIndex), c2 = Math.max(from.cellIndex,to.cellIndex);
+    selectedCells.value = [];
+    for(let r=Math.min(r1,r2);r<=Math.max(r1,r2);r++) for(let col=c1;col<=c2;col++){const item=rows[r]?.cells[col];if(item)selectedCells.value.push(item);}
+    paintCellSelection();
+}
+function mergeSelectedCells(): void {
+    const cells=cellsForFormatting(); if(cells.length<2)return;
+    const row=cells[0].parentElement;
+    if(!row || !cells.every(cell=>cell.parentElement===row)){window.alert('برای ادغام، سلول‌های یک ردیف را انتخاب کنید.');return;}
+    const ordered=cells.slice().sort((a,b)=>a.cellIndex-b.cellIndex);
+    if(ordered.some((cell,i)=>i>0&&cell.cellIndex!==ordered[i-1].cellIndex+1))return;
+    ordered[0].colSpan=ordered.length;
+    ordered[0].innerHTML=ordered.map(cell=>cell.innerHTML).filter(Boolean).join(' ');
+    ordered.slice(1).forEach(cell=>cell.remove());
+    currentCell.value=ordered[0];selectedCells.value=[ordered[0]];commit();
+}
+function splitSelectedCell(): void {
+    const cell=currentCell.value;if(!cell)return;
+    const span=cell.colSpan||1;if(span<2)return;
+    cell.colSpan=1;
+    for(let i=1;i<span;i++){const next=document.createElement(cell.tagName.toLowerCase());next.innerHTML='<br>';next.style.cssText=cell.style.cssText;cell.after(next);}
+    commit();
+}
 function deleteTable(): void {
     const table = currentCell.value?.closest('table');
     table?.remove();
     currentCell.value = null;
     commit();
 }
+function cellsForFormatting(): HTMLTableCellElement[] {
+    return selectedCells.value.length ? selectedCells.value : currentCell.value ? [currentCell.value] : [];
+}
 function setCellBackground(value: string): void {
-    if (currentCell.value) currentCell.value.style.backgroundColor = value;
+    cellsForFormatting().forEach((cell) => { cell.style.backgroundColor = value; });
     commit();
 }
 function setCellAlignment(value: string): void {
-    if (currentCell.value) currentCell.value.style.textAlign = value;
+    cellsForFormatting().forEach((cell) => { cell.style.textAlign = value; });
     commit();
 }
 function setTableWidth(value: string): void {
@@ -310,24 +356,33 @@ function setTableWidth(value: string): void {
     if (table instanceof HTMLTableElement) table.style.width = value;
     commit();
 }
-function setCellVerticalAlignment(value: string): void {
-    if (currentCell.value) currentCell.value.style.verticalAlign = value;
+function setTableDimension(dimension: 'width' | 'height', value: string, unit: 'mm' | 'px'): void {
+    const table = currentCell.value?.closest('table');
+    if (table instanceof HTMLTableElement && value) table.style[dimension] = `${value}${unit}`;
     commit();
 }
-function setCellBorderColor(value: string): void {
-    if (currentCell.value) currentCell.value.style.borderColor = value;
+function setCellDimension(dimension: 'width' | 'height', value: string, unit: 'mm' | 'px'): void {
+    if (value) cellsForFormatting().forEach((cell) => { cell.style[dimension] = `${value}${unit}`; });
     commit();
 }
-function setCellBorderWidth(value: string): void {
-    if (currentCell.value) currentCell.value.style.borderWidth = value;
-    commit();
-}
-function setCellPadding(value: string): void {
-    if (currentCell.value) currentCell.value.style.padding = value;
-    commit();
-}
+
 function setImageWidth(value: string): void {
     if (currentImage.value) currentImage.value.style.width = value;
+    commit();
+}
+function setImageDimension(dimension: 'width' | 'height', value: string, unit: 'mm' | 'px'): void {
+    if (!currentImage.value || !value) return;
+    currentImage.value.style[dimension] = `${value}${unit}`;
+    if (dimension === 'width') currentImage.value.style.height = 'auto';
+    commit();
+}
+function setImageWrap(value: 'inline' | 'block' | 'left' | 'right'): void {
+    if (!currentImage.value) return;
+    const image=currentImage.value;
+    image.style.display=value==='inline'?'inline-block':'block';
+    image.style.float=value==='left'||value==='right'?value:'none';
+    image.style.marginLeft=value==='right'?'0':value==='left'||value==='block'?'auto':'0';
+    image.style.marginRight=value==='left'?'0':value==='right'||value==='block'?'auto':'0';
     commit();
 }
 function setImageAlignment(value: string): void {
@@ -414,6 +469,10 @@ function setShapeBorderColor(value: string): void {
     currentShape.value.style.borderColor = value;
     commit();
 }
+function setShapeDimension(dimension: 'width' | 'height', value: string, unit: 'mm' | 'px'): void {
+    if(currentShape.value&&value)currentShape.value.style[dimension]=`${value}${unit}`;
+    commit();
+}
 function setShapeWidth(value: string): void {
     if (!currentShape.value) return;
     currentShape.value.style.width = value;
@@ -463,7 +522,10 @@ function onEditorClick(event: MouseEvent): void {
     if (!(target instanceof Element) || !editor.value?.contains(target)) return;
     currentImage.value = target.closest('img') as HTMLImageElement | null;
     currentShape.value = target.closest('[data-editor-shape]') as HTMLElement | null;
-    currentCell.value = target.closest('td,th') as HTMLTableCellElement | null;
+    const clickedCell = target.closest('td,th') as HTMLTableCellElement | null;
+    if (clickedCell && event.shiftKey && cellSelectionAnchor.value) selectCellRange(cellSelectionAnchor.value, clickedCell);
+    else if (clickedCell) { currentCell.value=clickedCell;cellSelectionAnchor.value=clickedCell;selectedCells.value=[clickedCell];paintCellSelection(); }
+    else selectedCells.value=[];
     context.value = { table: !!target.closest('table'), picture: !!currentImage.value, shape: !!currentShape.value };
     if (currentImage.value) activeTab.value = 'picture';
     else if (currentShape.value) activeTab.value = 'shape';
