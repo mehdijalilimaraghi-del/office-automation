@@ -100,10 +100,12 @@ function wrapSelection(tag: string, style?: Record<string, string>): void {
     const target = editor.value;
     const selection = window.getSelection();
     if (!target) return;
-    target.focus();
-    const activeRange = selection && selection.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer) ? selection.getRangeAt(0) : savedRange;
+    const activeRange = document.activeElement?.closest('.rte-toolbar')
+        ? savedRange
+        : (selection && selection.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer) ? selection.getRangeAt(0) : savedRange);
     if (!activeRange || !insideEditor(activeRange.commonAncestorContainer)) return;
     const range = activeRange.cloneRange();
+    target.focus();
     const wrapper = document.createElement(tag);
     if (style) Object.entries(style).forEach(([key, value]) => wrapper.style.setProperty(key, value));
     if (range.collapsed) {
@@ -186,7 +188,7 @@ function toggleList(ordered: boolean): void {
 }
 function clearFormatting(): void {
     const selection = window.getSelection();
-    const range = selection?.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer) ? selection.getRangeAt(0).cloneRange() : savedRange?.cloneRange();
+    const range = document.activeElement?.closest('.rte-toolbar') ? savedRange?.cloneRange() : (selection?.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer) ? selection.getRangeAt(0).cloneRange() : savedRange?.cloneRange());
     if (!range || !insideEditor(range.commonAncestorContainer) || range.collapsed) return;
     const text = range.toString();
     range.deleteContents();
@@ -196,11 +198,11 @@ function clearFormatting(): void {
 function insertNode(node: Node): void {
     const target = editor.value;
     if (!target) return;
-    target.focus();
     const selection = window.getSelection();
-    const activeRange = selection && selection.rangeCount > 0 && insideEditor(selection.getRangeAt(0).commonAncestorContainer)
-        ? selection.getRangeAt(0)
-        : savedRange;
+    const activeRange = document.activeElement?.closest('.rte-toolbar')
+        ? savedRange
+        : (selection && selection.rangeCount > 0 && insideEditor(selection.getRangeAt(0).commonAncestorContainer) ? selection.getRangeAt(0) : savedRange);
+    target.focus();
     if (activeRange && insideEditor(activeRange.commonAncestorContainer)) {
         const range = activeRange.cloneRange();
         range.deleteContents();
