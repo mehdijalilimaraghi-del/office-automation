@@ -696,10 +696,6 @@ async function scanOriginalLetter(): Promise<void> {
                     </div>
                 </section>
 
-                <section class="space-y-3 border-t border-slate-100 pt-5">
-                    <div>
-                        <h3 class="text-base font-bold text-slate-900">{{ form.type === 'outgoing' && form.composition_mode === 'file' ? 'فایل نامه' : 'فایل‌های همراه نامه' }}</h3>
-                        <p class="mt-1 text-sm text-slate-500">{{ form.type === 'outgoing' && form.composition_mode === 'file' ? 'فایل نهایی نامه را بارگذاری کنید. PDF، Word و تصویر پذیرفته می‌شود؛ حداکثر ۲۰ مگابایت برای هر فایل و ۱۰ فایل.' : 'فایل‌های اصلی/همراه نامه را در این بخش بارگذاری کنید.' }}</p>
                 <section v-if="form.type !== 'incoming' && form.composition_mode !== 'editor'" class="space-y-3 border-t border-slate-100 pt-5">
                     <label for="attachments" class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-7 text-center transition hover:border-indigo-400 hover:bg-indigo-50/50">
                         <h3 class="text-base font-bold text-slate-900">فایل نهایی نامه</h3>
