@@ -424,6 +424,8 @@ class CorrespondenceController extends Controller
                 'body' => $correspondence->body,
                 'appendix_mode' => $correspondence->appendix_mode ?? 'none',
                 'appendix_body' => $correspondence->appendix_body,
+                'appendix_mode' => $correspondence->appendix_mode ?? 'none',
+                'appendix_body' => $correspondence->appendix_body,
                 'status' => $correspondence->status,
                 'letter_number' => $correspondence->letter_number,
                 'registration_number' => $correspondence->registration_number,
