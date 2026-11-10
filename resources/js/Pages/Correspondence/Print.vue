@@ -9,7 +9,6 @@ interface PrintLetter { id:number; attachment_pages:number|null; appendix_mode:'
 const props=defineProps<{letter:PrintLetter;templateElements:TemplateElement[];pageLayout:{top:number;right:number;bottom:number;left:number;header_height:number;footer_height:number};organization:{name?:string|null;short_name?:string|null;address?:string|null;postal_code?:string|null;phone?:string|null;email?:string|null;website?:string|null};creatorName:string|null;creatorUnitTitle:string|null;managerName:string|null;managerPosition:string|null;managerTitle:string|null;creatorDepartmentName:string|null;stampDataUri:string|null;letterheadDataUri:string|null;signatureDataUri:string|null;printOptions:{show_creator_identity:boolean;show_stamp:boolean;show_department_signature:boolean;letterhead_show_name:boolean;letterhead_show_address:boolean;letterhead_show_phone:boolean;letterhead_show_email:boolean;letterhead_show_website:boolean;font_family:string;};}>();
 const withLetterhead=ref(true);
 const mainContent=ref<HTMLElement[]>([]);
-const appendixContent=ref<HTMLElement[]>([]);
 const appendixMeasure=ref<HTMLElement|null>(null);
 const firstPagePlane=ref<HTMLElement|null>(null);
 const firstPageContentWindow=ref<HTMLElement|null>(null);
@@ -183,9 +182,9 @@ function printLetter():void{window.print();}
       <div class="text-center text-sm leading-7"><p v-if="creatorUnitTitle" class="font-semibold">{{creatorUnitTitle}}</p><p v-if="creatorName" class="font-bold">{{creatorName}}</p></div>
      </footer>
     </div>
-    <div v-else ref="appendixContent" class="document-content appendix-content" :style="pageContentStyle(pageIndex-mainPageCount)">
+    <div v-else class="document-content appendix-content" :style="pageContentStyle(pageIndex-mainPageCount)>
      <div v-if="pageIndex===mainPageCount+1" class="appendix-heading">پیوست</div>
-     <section class="letter-body appendix-body" :style="bodyStyle()" v-html="letter.appendix_body||''"></section>
+     <section class="letter-body appendix-body" :style="appendixBodyStyle()" v-html="letter.appendix_body||''"></section>
     </div>
    </div>
   </article>
