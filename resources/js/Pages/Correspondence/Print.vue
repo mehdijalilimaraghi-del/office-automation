@@ -10,6 +10,7 @@ const props=defineProps<{letter:PrintLetter;templateElements:TemplateElement[];p
 const withLetterhead=ref(true);
 const mainContent=ref<HTMLElement[]>([]);
 const appendixContent=ref<HTMLElement[]>([]);
+const appendixMeasure=ref<HTMLElement|null>(null);
 const firstPagePlane=ref<HTMLElement|null>(null);
 const firstPageContentWindow=ref<HTMLElement|null>(null);
 function setFirstPagePlane(element:unknown):void { firstPagePlane.value=element instanceof HTMLElement?element:null; }
@@ -95,6 +96,7 @@ function pageNumberScreenStyle(item:TemplateElement):Record<string,string> {
  return style;
 }
 function bodyStyle():Record<string,string>{const item=bodyElement.value;return {width:item.width+'%',marginTop:(item.spacing+measuredBodyOffsetMm.value)+'mm',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
+function appendixBodyStyle():Record<string,string>{const item=bodyElement.value;return {width:item.width+'%',marginTop:'0',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
 function updateBodyStartOffset():void {
  const plane=firstPagePlane.value;
  const contentWindow=firstPageContentWindow.value;
@@ -110,7 +112,7 @@ function updateBodyStartOffset():void {
 }
 function updateEstimatedPageCount():void {
  const main=mainContent.value[0];
- const appendix=appendixContent.value[0];
+ const appendix=appendixMeasure.value;
  const pageHeightMm=297-Math.max(props.pageLayout.top,props.pageLayout.header_height)-Math.max(props.pageLayout.bottom,props.pageLayout.footer_height);
  const pageHeightPx=pageHeightMm*96/25.4;
  const safePageHeight=Math.max(1,pageHeightPx);
@@ -127,9 +129,9 @@ onMounted(async()=>{
    contentObserver=new ResizeObserver(()=>{updateBodyStartOffset();updateEstimatedPageCount();});
    contentObserver.observe(mainContent.value[0]);
   }
-  if(appendixContent.value[0]){
+  if(appendixMeasure.value){
    contentObserver??=new ResizeObserver(()=>updateEstimatedPageCount());
-   contentObserver.observe(appendixContent.value[0]);
+   contentObserver.observe(appendixMeasure.value);
   }
   if(firstPagePlane.value){
    layoutObserver=new ResizeObserver(()=>{updateBodyStartOffset();updateEstimatedPageCount();});
@@ -187,6 +189,7 @@ function printLetter():void{window.print();}
     </div>
    </div>
   </article>
+  <div ref="appendixMeasure" class="appendix-measure-root" :style="{width:(210-pageLayout.left-pageLayout.right)+'mm'}" aria-hidden="true"><section class="letter-body" :style="appendixBodyStyle()" v-html="letter.appendix_body||''"></section></div>
  </main>
 </template>
 
@@ -205,6 +208,7 @@ function printLetter():void{window.print();}
 .letter-body p{margin:0 0 .75rem;}
 .letter-body img{max-width:100%;height:auto;}
 .appendix-heading{font-weight:700;text-align:center;margin:0 0 8mm;padding-bottom:3mm;border-bottom:1px solid #cbd5e1;}
+.appendix-measure-root{position:absolute;left:-100000px;top:0;visibility:hidden;pointer-events:none;overflow:visible;display:flow-root;}
 .appendix-content .letter-body{margin-top:0;}
 .letter-body table{max-width:100%;border-collapse:collapse;}
 .letter-body td,.letter-body th{border:1px solid #cbd5e1;padding:4px 7px;}
