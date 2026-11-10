@@ -1449,7 +1449,7 @@ class CorrespondenceController extends Controller
         $body = strip_tags($body, $allowedTags);
 
         return (string) preg_replace_callback(
-            '/<(\\/?)(p|div|br|strong|b|em|i|u|s|strike|sup|sub|ul|ol|li|h2|h3|blockquote|table|thead|tbody|tr|th|td|span|hr|img)\\b([^>]*)>/i',
+            '/<(\/?)(p|div|br|strong|b|em|i|u|s|strike|sup|sub|ul|ol|li|h2|h3|blockquote|table|thead|tbody|tr|th|td|span|hr|img)\b([^>]*)>/i',
             function (array $match): string {
                 $closing = $match[1];
                 $tag = strtolower($match[2]);
@@ -1463,20 +1463,20 @@ class CorrespondenceController extends Controller
                 }
 
                 if ($tag === 'img') {
-                    if (! preg_match('/\\bsrc\\s*=\\s*["\\'](data:image\\/(?:png|jpeg|webp);base64,[A-Za-z0-9+\\/=\\s]+)["\\']/i', $attributes, $srcMatch)) {
+                    if (! preg_match('/\bsrc\s*=\s*["\x27](data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+\/=\s]+)["\x27]/i', $attributes, $srcMatch)) {
                         return '';
                     }
-                    $src = preg_replace('/\\s+/', '', $srcMatch[1]);
+                    $src = preg_replace('/\s+/', '', $srcMatch[1]);
                     if (strlen($src) > 300000) {
                         return '';
                     }
-                    $alt = preg_match('/\\balt\\s*=\\s*["\\']([^"\\']*)["\\']/i', $attributes, $altMatch)
+                    $alt = preg_match('/\balt\s*=\s*["\x27]([^"\x27]*)["\x27]/i', $attributes, $altMatch)
                         ? e(mb_substr(strip_tags($altMatch[1]), 0, 250))
                         : '';
-                    $width = preg_match('/\\bwidth\\s*=\\s*["\\']?(\\d{1,4})["\\']?/i', $attributes, $widthMatch)
+                    $width = preg_match('/\bwidth\s*=\s*["\x27]?(\d{1,4})["\x27]?/i', $attributes, $widthMatch)
                         ? min(1200, max(1, (int) $widthMatch[1]))
                         : null;
-                    $height = preg_match('/\\bheight\\s*=\\s*["\\']?(\\d{1,4})["\\']?/i', $attributes, $heightMatch)
+                    $height = preg_match('/\bheight\s*=\s*["\x27]?(\d{1,4})["\x27]?/i', $attributes, $heightMatch)
                         ? min(1200, max(1, (int) $heightMatch[1]))
                         : null;
 
@@ -1485,19 +1485,19 @@ class CorrespondenceController extends Controller
                         .($height !== null ? ' height="'.$height.'"' : '').'>';
                 }
 
-                $direction = preg_match('/\\bdir\\s*=\\s*["\\'](rtl|ltr)["\\']/i', $attributes, $dirMatch)
+                $direction = preg_match('/\bdir\s*=\s*["\x27](rtl|ltr)["\x27]/i', $attributes, $dirMatch)
                     ? strtolower($dirMatch[1])
                     : null;
-                $style = preg_match('/\\bstyle\\s*=\\s*["\\']([^"\\']*)["\\']/i', $attributes, $styleMatch)
+                $style = preg_match('/\bstyle\s*=\s*["\x27]([^"\x27]*)["\x27]/i', $attributes, $styleMatch)
                     ? $this->sanitizeEditorStyle($styleMatch[1])
                     : '';
-                $shape = preg_match('/\\bdata-editor-shape\\s*=\\s*["\\'](rectangle|ellipse|line|arrow)["\\']/i', $attributes, $shapeMatch)
+                $shape = preg_match('/\bdata-editor-shape\s*=\s*["\x27](rectangle|ellipse|line|arrow)["\x27]/i', $attributes, $shapeMatch)
                     ? $shapeMatch[1]
                     : null;
-                $colspan = preg_match('/\\bcolspan\\s*=\\s*["\\']?(\\d{1,2})["\\']?/i', $attributes, $colspanMatch)
+                $colspan = preg_match('/\bcolspan\s*=\s*["\x27]?(\d{1,2})["\x27]?/i', $attributes, $colspanMatch)
                     ? min(20, max(1, (int) $colspanMatch[1]))
                     : null;
-                $rowspan = preg_match('/\\browspan\\s*=\\s*["\\']?(\\d{1,2})["\\']?/i', $attributes, $rowspanMatch)
+                $rowspan = preg_match('/\browspan\s*=\s*["\x27]?(\d{1,2})["\x27]?/i', $attributes, $rowspanMatch)
                     ? min(20, max(1, (int) $rowspanMatch[1]))
                     : null;
 
@@ -1519,31 +1519,31 @@ class CorrespondenceController extends Controller
             'text-align' => '/^(left|right|center|justify)$/i',
             'font-family' => '/^(Vazirmatn|Arial|Tahoma|B Nazanin|B Mitra|IRANSans|Times New Roman)$/i',
             'font-size' => '/^(8|9|1[0-9]|2[0-9]|3[0-6])(pt|px)$/i',
-            'font-weight' => '/^(normal|bold|[1-9]00)$/i',
+            'font-weight' => '/^(normal|bold|[1-9]00$/i',
             'font-style' => '/^(normal|italic)$/i',
             'text-decoration' => '/^(none|underline|line-through|underline line-through)$/i',
             'color' => '/^#[0-9a-f]{3,8}$/i',
             'background-color' => '/^#[0-9a-f]{3,8}$/i',
-            'line-height' => '/^(1|1\\.[0-9]{1,2}|2|2\\.[0-9]{1,2}|3)$/',
-            'margin' => '/^\\d{1,3}(px|pt|mm|%)$/i',
-            'margin-top' => '/^\\d{1,3}(px|pt|mm|%)$/i',
-            'margin-bottom' => '/^\\d{1,3}(px|pt|mm|%)$/i',
-            'margin-left' => '/^\\d{1,3}(px|pt|mm|%)$/i',
-            'margin-right' => '/^\\d{1,3}(px|pt|mm|%)$/i',
-            'padding' => '/^\\d{1,3}(px|pt|mm|%)$/i',
-            'padding-top' => '/^\\d{1,3}(px|pt|mm|%)$/i',
-            'padding-bottom' => '/^\\d{1,3}(px|pt|mm|%)$/i',
-            'padding-left' => '/^\\d{1,3}(px|pt|mm|%)$/i',
-            'padding-right' => '/^\\d{1,3}(px|pt|mm|%)$/i',
-            'width' => '/^\\d{1,4}(px|mm|%)$/i',
-            'height' => '/^\\d{1,4}(px|mm|%)$/i',
-            'max-width' => '/^\\d{1,4}(px|mm|%)$/i',
+            'line-height' => '/^(1|1\.[0-9]{1,2}|2|2\.[0-9]{1,2}|3)$/',
+            'margin' => '/^\d{1,3}(px|pt|mm|%)$/i',
+            'margin-top' => '/^\d{1,3}(px|pt|mm|%)$/i',
+            'margin-bottom' => '/^\d{1,3}(px|pt|mm|%)$/i',
+            'margin-left' => '/^\d{1,3}(px|pt|mm|%)$/i',
+            'margin-right' => '/^\d{1,3}(px|pt|mm|%)$/i',
+            'padding' => '/^\d{1,3}(px|pt|mm|%)$/i',
+            'padding-top' => '/^\d{1,3}(px|pt|mm|%)$/i',
+            'padding-bottom' => '/^\d{1,3}(px|pt|mm|%)$/i',
+            'padding-left' => '/^\d{1,3}(px|pt|mm|%)$/i',
+            'padding-right' => '/^\d{1,3}(px|pt|mm|%)$/i',
+            'width' => '/^\d{1,4}(px|mm|%)$/i',
+            'height' => '/^\d{1,4}(px|mm|%)$/i',
+            'max-width' => '/^\d{1,4}(px|mm|%)$/i',
             'border' => '/^(0|[1-3]px) (solid|dashed|dotted) #[0-9a-f]{3,8}$/i',
             'border-collapse' => '/^(collapse|separate)$/i',
             'vertical-align' => '/^(top|middle|bottom)$/i',
             'object-fit' => '/^(contain|cover)$/i',
             'display' => '/^(block|inline-block)$/i',
-            'text-indent' => '/^-?\\d{1,3}(px|pt|mm|%)$/i',
+            'text-indent' => '/^-?\d{1,3}(px|pt|mm|%)$/i',
         ];
         $safe = [];
         foreach (explode(';', $style) as $declaration) {
@@ -1552,7 +1552,7 @@ class CorrespondenceController extends Controller
             }
             [$property, $value] = array_map('trim', explode(':', $declaration, 2));
             $property = strtolower($property);
-            $value = trim($value, " \\t\\n\\r\\0\\x0B\\\"'");
+            $value = trim($value, " \t\n\r\0\x0B\"'");
             if (isset($allowed[$property]) && preg_match($allowed[$property], $value) === 1) {
                 $safe[] = $property.': '.$value;
             }
