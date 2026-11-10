@@ -55,6 +55,7 @@ function refreshContext(): void {
     if (!insideEditor(window.getSelection()?.anchorNode ?? null)) {
         if (document.activeElement?.closest('.rte-toolbar')) return;
         context.value = { table: false, picture: false, shape: false };
+        if (['table', 'picture', 'shape'].includes(activeTab.value)) activeTab.value = 'home';
         return;
     }
     const selection = window.getSelection();
@@ -69,6 +70,7 @@ function refreshContext(): void {
     if (image) activeTab.value = 'picture';
     else if (shape) activeTab.value = 'shape';
     else if (table) activeTab.value = 'table';
+    else if (['table', 'picture', 'shape'].includes(activeTab.value)) activeTab.value = 'home';
 }
 function onSelectionChange(): void {
     refreshContext();
@@ -392,6 +394,7 @@ function onEditorClick(event: MouseEvent): void {
     if (currentImage.value) activeTab.value = 'picture';
     else if (currentShape.value) activeTab.value = 'shape';
     else if (target.closest('table')) activeTab.value = 'table';
+    else if (['table', 'picture', 'shape'].includes(activeTab.value)) activeTab.value = 'home';
 }
 function onInput(): void {
     if (!syncing) commit();
