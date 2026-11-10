@@ -130,8 +130,8 @@ function setParagraphSpacing(value: string): void { setBlockStyle('margin-bottom
 function indent(increase: boolean): void {
     const block = findBlock(selectedElement());
     if (!block) return;
-    const current = Number.parseFloat(block.style.marginInlineStart || '0') || 0;
-    block.style.marginInlineStart = Math.max(0, current + (increase ? 18 : -18)) + 'px';
+    const current = Number.parseFloat(block.style.marginRight || '0') || 0;
+    block.style.marginRight = Math.max(0, current + (increase ? 18 : -18)) + 'px';
     commit();
 }
 function toggleList(ordered: boolean): void {
@@ -367,6 +367,17 @@ function redo(): void {
     syncing = false;
     refreshContext();
 }
+function onEditorClick(event: MouseEvent): void {
+    const target = event.target;
+    if (!(target instanceof Element) || !editor.value?.contains(target)) return;
+    currentImage.value = target.closest('img') as HTMLImageElement | null;
+    currentShape.value = target.closest('[data-editor-shape]') as HTMLElement | null;
+    currentCell.value = target.closest('td,th') as HTMLTableCellElement | null;
+    context.value = { table: !!target.closest('table'), picture: !!currentImage.value, shape: !!currentShape.value };
+    if (currentImage.value) activeTab.value = 'picture';
+    else if (currentShape.value) activeTab.value = 'shape';
+    else if (target.closest('table')) activeTab.value = 'table';
+}
 function onInput(): void {
     if (!syncing) commit();
 }
@@ -463,7 +474,6 @@ onBeforeUnmount(() => window.removeEventListener('selectionchange', onSelectionC
 
         <div
             ref="editor"
-            contenteditable="true"
             role="textbox"
             aria-multiline="true"
             :aria-label="label"
@@ -473,6 +483,7 @@ onBeforeUnmount(() => window.removeEventListener('selectionchange', onSelectionC
             class="rte-content min-h-72 whitespace-normal p-4 text-sm leading-8 text-slate-800 outline-none"
             data-placeholder="متن را اینجا بنویسید..."
             @input="onInput"
+            @click="onEditorClick"
             @mouseup="refreshContext"
             @keyup="refreshContext"
             @focus="refreshContext"
