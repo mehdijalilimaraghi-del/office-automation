@@ -890,7 +890,7 @@ class CorrespondenceController extends Controller
             ? trim(strip_tags((string) ($data['body'] ?? '')))
             : ($mode === 'file' ? '' : $this->sanitizeBody((string) ($data['body'] ?? '')));
 
-        if ($data['type'] !== Correspondence::TYPE_INCOMING && in_array($mode, ['editor', 'both'], true) && trim(strip_tags($body)) === '') {
+        if ($data['type'] !== Correspondence::TYPE_INCOMING && in_array($mode, ['editor', 'both'], true) && ! $this->hasRichContent($body)) {
             return back()->withErrors(['body' => 'متن نامه را وارد کنید.'])->withInput();
         }
         if ($data['type'] === Correspondence::TYPE_OUTGOING && $mode === 'file' && $body === '') {
@@ -923,7 +923,7 @@ class CorrespondenceController extends Controller
 
         $attachments = array_values(array_filter((array) $request->file('attachments', [])));
         $appendixFiles = array_values(array_filter((array) $request->file('appendix_files', [])));
-        if (in_array($appendixMode, ['editor', 'both'], true) && trim(strip_tags((string) $appendixBody)) === '') {
+        if (in_array($appendixMode, ['editor', 'both'], true) && ! $this->hasRichContent((string) $appendixBody)) {
             return back()->withErrors(['appendix_body' => 'متن پیوست را وارد کنید.'])->withInput();
         }
         if (in_array($appendixMode, ['file', 'both'], true) && count($appendixFiles) === 0) {
@@ -1144,7 +1144,7 @@ class CorrespondenceController extends Controller
         $body = $correspondence->type === Correspondence::TYPE_INCOMING || ($correspondence->type === Correspondence::TYPE_OUTGOING && $mode === 'file')
             ? trim(strip_tags((string) ($data['body'] ?? $correspondence->body ?? '')))
             : ($mode === 'file' ? null : $this->sanitizeBody((string) ($data['body'] ?? $correspondence->body ?? '')));
-        if ($correspondence->type !== Correspondence::TYPE_INCOMING && in_array($mode, ['editor', 'both'], true) && trim(strip_tags((string) $body)) === '') {
+        if ($correspondence->type !== Correspondence::TYPE_INCOMING && in_array($mode, ['editor', 'both'], true) && ! $this->hasRichContent((string) $body)) {
             return back()->withErrors(['body' => 'متن نامه را وارد کنید.'])->withInput();
         }
         if ($correspondence->type === Correspondence::TYPE_OUTGOING && $mode === 'file' && $body === '') {
@@ -1443,6 +1443,12 @@ class CorrespondenceController extends Controller
         }
 
         return back()->with('success', 'مکاتبه با موفقیت ثبت نهایی شد.');
+    }
+
+    private function hasRichContent(string $html): bool
+    {
+        return trim(strip_tags($html)) !== ''
+            || preg_match('/<(?:img|table|hr)\\b|<div\\b[^>]*\\bdata-editor-shape=/i', $html) === 1;
     }
 
     private function sanitizeBody(string $body): string
