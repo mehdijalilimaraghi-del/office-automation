@@ -26,7 +26,7 @@ class CorrespondencePrintController extends Controller
         abort_unless($correspondence->status === Correspondence::STATUS_REGISTERED, 404);
 
         $correspondence->loadMissing([
-            'documents.document',
+            'documents.document.latestVersion',
             'creator:id,name',
             'createdDepartment:id,name,manager_id,manager_signature_path,manager_signature_active',
             'externalOrganization:id,name',
@@ -127,7 +127,7 @@ class CorrespondencePrintController extends Controller
                 'body' => $correspondence->body,
                 'appendix_mode' => $correspondence->appendix_mode ?? 'none',
                 'appendix_body' => $correspondence->appendix_body,
-                'appendix_file_count' => $correspondence->documents->where('purpose', 'correspondence_appendix')->filter(fn ($link) => $link->document !== null)->count(),
+                'appendix_file_count' => $correspondence->documents->where('purpose', 'correspondence_appendix')->filter(fn ($link) => $link->document?->latestVersion !== null)->count(),
                 'letter_number' => $correspondence->letter_number,
                 'registration_number' => $correspondence->registration_number,
                 'registered_at' => $correspondence->registered_at?->toIso8601String(),
