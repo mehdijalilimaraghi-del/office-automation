@@ -700,10 +700,10 @@ async function scanOriginalLetter(): Promise<void> {
                     <div>
                         <h3 class="text-base font-bold text-slate-900">{{ form.type === 'outgoing' && form.composition_mode === 'file' ? 'فایل نامه' : 'فایل‌های همراه نامه' }}</h3>
                         <p class="mt-1 text-sm text-slate-500">{{ form.type === 'outgoing' && form.composition_mode === 'file' ? 'فایل نهایی نامه را بارگذاری کنید. PDF، Word و تصویر پذیرفته می‌شود؛ حداکثر ۲۰ مگابایت برای هر فایل و ۱۰ فایل.' : 'فایل‌های اصلی/همراه نامه را در این بخش بارگذاری کنید.' }}</p>
-                    </div>
+                <section v-if="form.type !== 'incoming' && form.composition_mode !== 'editor'" class="space-y-3 border-t border-slate-100 pt-5">
                     <label for="attachments" class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-7 text-center transition hover:border-indigo-400 hover:bg-indigo-50/50">
-                        <span class="text-sm font-semibold text-slate-800">انتخاب فایل از رایانه</span>
-                        <span class="mt-1 text-xs text-slate-500">{{ form.type === 'incoming' || form.composition_mode === 'editor' ? 'اختیاری' : 'برای این روش حداقل یک فایل لازم است' }}</span>
+                        <h3 class="text-base font-bold text-slate-900">فایل نهایی نامه</h3>
+                        <p class="mt-1 text-sm text-slate-500">فایل نهایی نامه را بارگذاری کنید. PDF، Word و تصویر پذیرفته می‌شود؛ حداکثر ۲۰ مگابایت برای هر فایل و ۱۰ فایل.</p>
                         <input id="attachments" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" class="mt-3 block max-w-full text-sm text-slate-600 file:ml-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-700" @change="chooseFiles" />
                     </label>
                     <InputError :message="form.errors.attachments" />
