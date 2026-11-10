@@ -25,6 +25,8 @@ interface ExistingCorrespondence {
     external_organization_id: number | null; external_department_id: number | null; external_contact_id: number | null;
     related_letters: ReplyOption[]; copy_department_ids: number[];
     original_documents: Array<{ id: number; title: string }>;
+    appendix_mode: 'editor' | 'file' | 'both'; appendix_body: string | null;
+    appendix_documents: Array<{ id: number; title: string }>;
 }
 const props = defineProps<{
     types: Array<{ value: string; label: string }>;
@@ -116,6 +118,8 @@ const form = useForm({
     classification: existing?.classification ?? 'ordinary',
     subject: existing?.subject ?? '',
     attachment_pages: existing?.attachment_pages ?? null,
+    appendix_mode: (existing?.appendix_mode ?? 'editor') as CompositionMode,
+    appendix_body: existing?.appendix_body ?? '',
     letter_number: existing?.letter_number ?? '',
     composition_mode: (existing?.type === 'incoming' ? 'file' : (existing?.body && existing.body.includes('<') ? 'editor' : 'file')) as CompositionMode,
     body: existing?.body ?? '',
@@ -134,6 +138,7 @@ const form = useForm({
     original_letters: [] as File[],
     scanner_upload_token: '',
     attachments: [] as File[],
+    appendix_files: [] as File[],
 });
 selectedRelatedLetters.value = existing?.related_letters ?? (props.sourceCorrespondence ? [props.sourceCorrespondence] : []);
 const isDirectRegistration = computed(() => !props.isEditing
@@ -293,6 +298,11 @@ function toggleCopyDepartment(departmentId: number, checked: boolean): void {
     form.copy_department_ids = checked
         ? [...new Set([...form.copy_department_ids, departmentId])]
         : form.copy_department_ids.filter((id) => id !== departmentId);
+}
+
+function chooseAppendixFiles(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    form.appendix_files = Array.from(target.files ?? []);
 }
 
 function chooseFiles(event: Event): void {
@@ -764,16 +774,47 @@ async function scanOriginalLetter(): Promise<void> {
                     </ul>
                 </section>
 
-                <section class="space-y-3 border-t border-slate-100 pt-5">
-                    <div class="max-w-xs">
-                        <label for="attachment_pages" class="mb-2 block text-sm font-semibold">تعداد صفحات پیوست</label>
-                        <input id="attachment_pages" v-model.number="form.attachment_pages" type="number" min="1" max="9999" placeholder="مثلاً ۲" class="w-full rounded-xl border-slate-300 text-sm" />
-                        <p class="mt-1 text-xs text-slate-500">تعداد صفحات را خودتان وارد کنید؛ اگر پیوست ندارد خالی بگذارید.</p>
-                        <InputError :message="form.errors.attachment_pages" />
-                    </div>
+                <section v-if="form.type !== 'incoming'" class="space-y-4 border-t border-slate-100 pt-5">
                     <div>
-                        <h3 class="text-base font-bold text-slate-900">{{ form.type === 'outgoing' && form.composition_mode === 'file' ? 'فایل نامه' : 'فایل‌های پیوست' }}</h3>
-                        <p class="mt-1 text-sm text-slate-500">{{ form.type === 'outgoing' && form.composition_mode === 'file' ? 'فایل نهایی نامه را بارگذاری کنید. این فایل همراه با توضیحات فایل نامه ثبت می‌شود. PDF، Word و تصویر پذیرفته می‌شود؛ حداکثر ۲۰ مگابایت برای هر فایل و ۱۰ فایل.' : 'PDF، Word، Excel، PowerPoint، تصویر و فایل متنی؛ حداکثر ۲۰ مگابایت برای هر فایل و ۱۰ فایل.' }}</p>
+                        <h3 class="text-base font-bold text-slate-900">پیوست نامه</h3>
+                        <p class="mt-1 text-sm leading-6 text-slate-500">پیوست می‌تواند متن چندصفحه‌ای، فایل یا ترکیبی از هر دو باشد. تعداد برگ‌های متن در پیش‌نمایش چاپ محاسبه می‌شود و نیازی به ورود دستی تعداد صفحات نیست.</p>
+                    </div>
+                    <div class="grid gap-3 md:grid-cols-3">
+                        <label v-for="mode in [{value:'editor',label:'متن پیوست'},{value:'file',label:'فایل پیوست'},{value:'both',label:'متن و فایل'}]" :key="mode.value" class="flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-sm font-semibold" :class="form.appendix_mode === mode.value ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200'">
+                            <input v-model="form.appendix_mode" type="radio" name="appendix_mode" :value="mode.value" class="border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                            {{ mode.label }}
+                        </label>
+                    </div>
+                    <InputError :message="form.errors.appendix_mode" />
+                    <div v-if="form.appendix_mode !== 'file'" class="space-y-2">
+                        <label for="appendix_body" class="block text-sm font-semibold text-slate-700">متن پیوست</label>
+                        <textarea id="appendix_body" v-model="form.appendix_body" rows="8" maxlength="500000" class="w-full rounded-xl border-slate-300 text-sm leading-8 focus:border-indigo-500 focus:ring-indigo-500" placeholder="متن پیوست را وارد کنید..."></textarea>
+                        <InputError :message="form.errors.appendix_body" />
+                    </div>
+                    <div v-if="form.appendix_mode !== 'editor'" class="space-y-2">
+                        <div>
+                            <h4 class="text-sm font-semibold text-slate-700">فایل‌های پیوست</h4>
+                            <p class="mt-1 text-xs text-slate-500">PDF، Word، Excel، PowerPoint، تصویر و فایل متنی؛ حداکثر ۲۰ مگابایت برای هر فایل و ۱۰ فایل.</p>
+                        </div>
+                        <ul v-if="isEditing && correspondence?.appendix_documents.length" class="space-y-1 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
+                            <li v-for="document in correspondence.appendix_documents" :key="document.id">فایل موجود: {{ document.title }}</li>
+                        </ul>
+                        <input id="appendix_files" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" class="block max-w-full text-sm text-slate-600 file:ml-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-700" @change="chooseAppendixFiles" />
+                        <InputError :message="form.errors.appendix_files" />
+                        <InputError :message="form.errors['appendix_files.0']" />
+                        <ul v-if="form.appendix_files.length" class="divide-y divide-slate-100 rounded-xl border border-slate-200">
+                            <li v-for="(file, index) in form.appendix_files" :key="file.name + file.size + index" class="flex items-center justify-between gap-3 px-3 py-2.5">
+                                <span class="min-w-0 truncate text-sm text-slate-700">{{ file.name }} ({{ Math.ceil(file.size / 1024) }} KB)</span>
+                                <button type="button" class="shrink-0 text-xs font-semibold text-rose-700" @click="form.appendix_files.splice(index, 1)">حذف</button>
+                            </li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="space-y-3 border-t border-slate-100 pt-5">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900">{{ form.type === 'outgoing' && form.composition_mode === 'file' ? 'فایل نامه' : 'فایل‌های همراه نامه' }}</h3>
+                        <p class="mt-1 text-sm text-slate-500">{{ form.type === 'outgoing' && form.composition_mode === 'file' ? 'فایل نهایی نامه را بارگذاری کنید. PDF، Word و تصویر پذیرفته می‌شود؛ حداکثر ۲۰ مگابایت برای هر فایل و ۱۰ فایل.' : 'فایل‌های اصلی/همراه نامه را در این بخش بارگذاری کنید.' }}</p>
                     </div>
                     <label for="attachments" class="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-5 py-7 text-center transition hover:border-indigo-400 hover:bg-indigo-50/50">
                         <span class="text-sm font-semibold text-slate-800">انتخاب فایل از رایانه</span>
