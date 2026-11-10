@@ -125,7 +125,7 @@ class CorrespondencePrintController extends Controller
                 'subject' => $correspondence->subject,
                 'attachment_pages' => $correspondence->attachment_pages,
                 'body' => $correspondence->body,
-                'appendix_mode' => $correspondence->appendix_mode ?? 'editor',
+                'appendix_mode' => $correspondence->appendix_mode ?? 'none',
                 'appendix_body' => $correspondence->appendix_body,
                 'appendix_file_count' => $correspondence->documents->where('purpose', 'correspondence_appendix')->filter(fn ($link) => $link->document !== null)->count(),
                 'letter_number' => $correspondence->letter_number,
