@@ -1214,3 +1214,15 @@ Added `CorrespondencePrintController`, `Correspondence/Print.vue`, protected pri
 - Print preview now separates main-letter pages from text-appendix pages. Main-letter issuer/signature assets remain after the main body and before the appendix. Appendix sheets use independent numbering, while existing A4 sheet printing, letterhead, and repeating elements remain shared.
 - The print template token `{{attachment_pages}}` now resolves to an automatic summary such as “پیوست: ۳ برگ + ۲ فایل”. Text page count is measured from rendered appendix content; file count is based on linked appendix documents.
 - Added feature regression tests for text-only and combined text/file appendix creation. Build, PHP tests, and browser/PDF acceptance have not yet been run. Continue to validate the pagination estimator against actual Chromium PDF output; do not restore browser-native repagination.
+
+
+## 2026-11-10 — Focused correspondence editor usability improvements
+
+- Kept the existing lightweight correspondence-body editor; no editor-engine migration or new npm dependency was introduced. The editor remains limited to the letter body/appendix body and does not own letterhead, headers, footers, stamps, signatures, or A4 pagination.
+- Replaced text-character toolbar symbols with consistent Lucide icons from the already-installed `@lucide/vue` package, using Word-familiar visual metaphors for formatting, alignment, lists, undo/redo, tables, images and shapes.
+- Expanded contextual table controls: table width, cell background, border color/thickness, cell padding, and horizontal/vertical cell alignment, alongside existing row/column insertion/deletion.
+- Expanded image controls with height and border presets, retaining width, alignment, replacement and removal.
+- Expanded shape controls with width, height and border thickness, retaining fill/border colors and removal.
+- This is a targeted UI/control improvement, not a replacement for a full Word editor. Advanced freeform resizing/positioning, multi-cell merge/split, and complex image text-wrapping are not included. Existing DOM Selection/Range behavior and HTML sanitization still require interactive verification.
+- Verification pending: run `git pull origin development`, `npm run build`, then manually verify toolbar rendering, table/image/shape controls, save/reopen, and preview/print preservation. No build, PHP tests, or browser/PDF acceptance has been run for this change.
+- Development branch only; master, release and server unchanged.
