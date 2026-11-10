@@ -148,10 +148,12 @@ function toggleList(ordered: boolean): void {
     if (!block || !editor.value) return;
     const existingList = block.closest('ul,ol');
     if (existingList && editor.value.contains(existingList)) {
-        const list = existingList as HTMLOListElement | HTMLUListElement;
+        const item = block.closest('li');
+        if (!item) return;
         const replacement = document.createElement('p');
-        replacement.innerHTML = block.innerHTML;
-        list.replaceWith(replacement);
+        replacement.innerHTML = item.innerHTML;
+        item.replaceWith(replacement);
+        if (!existingList.querySelector('li')) existingList.remove();
     } else {
         const list = document.createElement(ordered ? 'ol' : 'ul');
         const item = document.createElement('li');
