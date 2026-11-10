@@ -25,7 +25,7 @@ const addableRoles = computed(() => Object.fromEntries(Object.entries(roleLabels
 const fontOptions = [{value:'default',label:'فونت پیش‌فرض تنظیمات'},{value:'Vazirmatn',label:'وزیرمتن'},{value:'Tahoma',label:'Tahoma'},{value:'Arial',label:'Arial'},{value:'B Nazanin',label:'B Nazanin'},{value:'B Mitra',label:'B Mitra'},{value:'IRANSans',label:'IRANSans'},{value:'Times New Roman',label:'Times New Roman'}];
 const roleTokens:Record<Role,string[]> = {
  meta:['{{letter_number}}','{{registration_number}}','{{date}}','{{attachment_pages}}','{{letter_type}}'],
- heading:['{{recipient_name}}','{{recipient_organization}}','{{recipient_unit}}','{{recipient_position}}','{{recipient_organizational_title_prefix}}','{{recipient_title}}','{{subject}}'],
+ heading:['{{recipient_name}}','{{recipient_organization}}','{{recipient_unit}}','{{recipient_position}}','{{recipient_organizational_title_prefix}}','{{recipient_personal_title_prefix}}','{{recipient_title}}','{{subject}}'],
  page_number:[],
  issuer:['{{creator_name}}','{{creator_unit_title}}','{{creator_department_name}}','{{manager_name}}','{{manager_position}}','{{manager_title}}'],
  header:['{{organization_name}}','{{short_name}}','{{address}}','{{postal_code}}','{{tel}}','{{email}}','{{website}}'],
