@@ -580,3 +580,12 @@ The screen A4 preview and browser PDF still require explicit visual acceptance. 
 
 - Added `{{recipient_personal_title_prefix}}` to the addressing/heading element token catalog. It resolves from the external contact's immutable `recipient_addressing_snapshot.personal_salutation` value in print, independently of `{{recipient_title}}` (which continues to combine personal salutation and professional title for backward compatibility).
 - No database migration is needed; the personal salutation is already captured in the recipient addressing snapshot. Build and correspondence regression tests are pending. Development only; master/release/server unchanged.
+
+## 2026-11-10 — Rich-text editor and appendix print architecture
+
+- Added `CorrespondenceRichTextEditor.vue` as a shared editor for main-letter body and appendix body. It uses DOM Selection/Range operations and emits HTML through `v-model`; it does not use `document.execCommand` or introduce an npm dependency. Contextual controls are shown for table, image, and shape selections.
+- Server-side `sanitizeBody` now permits a constrained set of rich-text tags and formatting properties. Images are restricted to PNG/JPEG/WEBP base64 data URLs with a size ceiling; hyperlinks are restricted to HTTP(S)/mailto. Arbitrary event handlers, external image URLs, scripts, and unapproved styles are not retained.
+- Correspondence schema now has `appendix_mode` and `appendix_body`. Appendix files are stored as document links with purpose `correspondence_appendix`, distinct from original incoming-letter scans and main-letter uploads.
+- Print preview computes main and appendix page counts independently. Main content includes issuer/signature flow; appendix content starts on the next physical sheet and receives “پیوست ـ صفحه N از M” numbering. Automatic attachment summary combines measured text pages and linked appendix-file count.
+- Keep all physical output in the existing preview-generated A4 sheet model. Any page-count mismatch must be corrected in measurement/layout code, never by allowing Chromium to repaginate the content independently.
+- Verification remains pending: build, feature tests, interactive browser checks, and Chromium PDF comparison.
