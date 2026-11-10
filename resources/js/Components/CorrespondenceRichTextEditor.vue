@@ -43,6 +43,13 @@ function insideEditor(node: Node | null): boolean {
 }
 function selectedElement(): Element | null {
     const selection = window.getSelection();
+    const range = selection?.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer)
+        ? selection.getRangeAt(0)
+        : savedRange;
+    if (range?.collapsed && range.startContainer instanceof Element) {
+        const previous = range.startContainer.childNodes[range.startOffset - 1];
+        if (previous instanceof HTMLImageElement) return previous;
+    }
     const node = insideEditor(selection?.anchorNode ?? null) ? selection?.anchorNode : savedRange?.startContainer;
     return node instanceof Element ? node : node?.parentElement ?? null;
 }
