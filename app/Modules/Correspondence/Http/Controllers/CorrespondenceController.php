@@ -1132,7 +1132,7 @@ class CorrespondenceController extends Controller
         $mode = $correspondence->type === Correspondence::TYPE_INCOMING
             ? 'file'
             : ($data['composition_mode'] ?? (filled($data['body'] ?? $correspondence->body) ? 'editor' : 'file'));
-        $appendixMode = $correspondence->type === Correspondence::TYPE_INCOMING ? 'file' : ($data['appendix_mode'] ?? $correspondence->appendix_mode ?? 'none');
+        $appendixMode = $correspondence->type === Correspondence::TYPE_INCOMING ? 'none' : ($data['appendix_mode'] ?? $correspondence->appendix_mode ?? 'none');
         $appendixBody = in_array($appendixMode, ['editor', 'both'], true)
             ? $this->sanitizeBody((string) ($data['appendix_body'] ?? $correspondence->appendix_body ?? ''))
             : null;
