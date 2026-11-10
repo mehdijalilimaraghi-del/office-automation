@@ -5,16 +5,19 @@ interface AddressingSnapshot { organizational_title_prefix?:string|null; positio
 type Role='meta'|'heading'|'page_number'|'issuer'|'header'|'footer'|'repeat'|'body';
 type PageFormat='number_of'|'slash'|'short'|'page';
 interface TemplateElement { id:string; kind:'text'|'stamp'|'signature'; role:Role; label:string; content:string; x:number; y:number; width:number; spacing:number; font_size:number; font_family:string; page_format:PageFormat; bold:boolean; align:'right'|'center'|'left'; visible:boolean; }
-interface PrintLetter { id:number; attachment_pages:number|null; type:'incoming'|'outgoing'|'internal'; subject:string; body:string|null; letter_number:string|null; registration_number:string|null; registered_at:string|null; sent_at:string|null; recipient_name:string|null; recipient_addressing:AddressingSnapshot|null; external_organization:string|null; external_department:string|null; }
+interface PrintLetter { id:number; attachment_pages:number|null; appendix_mode:'editor'|'file'|'both'; appendix_body:string|null; appendix_file_count:number; type:'incoming'|'outgoing'|'internal'; subject:string; body:string|null; letter_number:string|null; registration_number:string|null; registered_at:string|null; sent_at:string|null; recipient_name:string|null; recipient_addressing:AddressingSnapshot|null; external_organization:string|null; external_department:string|null; }
 const props=defineProps<{letter:PrintLetter;templateElements:TemplateElement[];pageLayout:{top:number;right:number;bottom:number;left:number;header_height:number;footer_height:number};organization:{name?:string|null;short_name?:string|null;address?:string|null;postal_code?:string|null;phone?:string|null;email?:string|null;website?:string|null};creatorName:string|null;creatorUnitTitle:string|null;managerName:string|null;managerPosition:string|null;managerTitle:string|null;creatorDepartmentName:string|null;stampDataUri:string|null;letterheadDataUri:string|null;signatureDataUri:string|null;printOptions:{show_creator_identity:boolean;show_stamp:boolean;show_department_signature:boolean;letterhead_show_name:boolean;letterhead_show_address:boolean;letterhead_show_phone:boolean;letterhead_show_email:boolean;letterhead_show_website:boolean;font_family:string;};}>();
 const withLetterhead=ref(true);
-const documentContent=ref<HTMLElement[]>([]);
+const mainContent=ref<HTMLElement[]>([]);
+const appendixContent=ref<HTMLElement[]>([]);
 const firstPagePlane=ref<HTMLElement|null>(null);
 const firstPageContentWindow=ref<HTMLElement|null>(null);
 function setFirstPagePlane(element:unknown):void { firstPagePlane.value=element instanceof HTMLElement?element:null; }
 function setFirstPageContentWindow(element:unknown):void { firstPageContentWindow.value=element instanceof HTMLElement?element:null; }
 const measuredBodyOffsetMm=ref(0);
 const estimatedPageCount=ref(1);
+const mainPageCount=ref(1);
+const appendixPageCount=ref(0);
 let contentObserver:ResizeObserver|null=null;
 let layoutObserver:ResizeObserver|null=null;
 const elements=computed(()=>props.templateElements.filter(item=>item.visible));
@@ -61,10 +64,11 @@ const hasSignatureElement=computed(()=>flowIssuer.value.some(item=>item.kind==='
 const hasIssuerAssetElement=computed(()=>hasStampElement.value||hasSignatureElement.value);
 const hasStampElement=computed(()=>flowIssuer.value.some(item=>item.kind==='stamp'));
 const typeLabel=computed(()=>({incoming:'نامه وارده',outgoing:'نامه صادره',internal:'نامه داخلی'})[props.letter.type]);
+const appendixSummary=computed(()=>{const parts:string[]=[];if(appendixPageCount.value>0)parts.push(new Intl.NumberFormat('fa-IR').format(appendixPageCount.value)+' برگ');if(props.letter.appendix_file_count>0)parts.push(new Intl.NumberFormat('fa-IR').format(props.letter.appendix_file_count)+' فایل');return parts.length?'پیوست: '+parts.join(' + '):'پیوست: ندارد';});
 const recipientLines=computed(()=>{const a=props.letter.recipient_addressing;if(!a)return [props.letter.recipient_name].filter(Boolean) as string[];return [[a.organizational_title_prefix,a.position].filter(Boolean).join(' '),[a.personal_salutation,a.professional_title,a.name].filter(Boolean).join(' '),[a.organization_name,a.department_name].filter(Boolean).join(' - ')].filter(Boolean) as string[];});
 const letterDate=computed(()=>{const value=props.letter.sent_at??props.letter.registered_at;return value?new Intl.DateTimeFormat('fa-IR',{dateStyle:'long'}).format(new Date(value)):'—';});
 function resolveTemplate(content:string):string {
- const values:Record<string,string>={organization_name:props.organization.name??'',short_name:props.organization.short_name??'',address:props.organization.address??'',postal_code:props.organization.postal_code??'',tel:props.organization.phone??'',email:props.organization.email??'',website:props.organization.website??'',letter_number:props.letter.letter_number??'',registration_number:props.letter.registration_number??'',date:letterDate.value,recipient_name:props.letter.recipient_name??props.letter.recipient_addressing?.name??'',recipient_organization:props.letter.recipient_addressing?.organization_name??props.letter.external_organization??'',recipient_unit:props.letter.recipient_addressing?.department_name??props.letter.external_department??'',recipient_position:props.letter.recipient_addressing?.position??'',recipient_organizational_title_prefix:props.letter.recipient_addressing?.organizational_title_prefix??'',recipient_personal_title_prefix:props.letter.recipient_addressing?.personal_salutation??'',recipient_title:[props.letter.recipient_addressing?.personal_salutation,props.letter.recipient_addressing?.professional_title].filter(Boolean).join(' '),subject:props.letter.subject,letter_type:typeLabel.value,creator_name:props.creatorName??'',creator_unit_title:props.creatorUnitTitle??'',manager_name:props.managerName??'',manager_position:props.managerPosition??'',manager_title:props.managerTitle??props.managerPosition??'',creator_department_name:props.creatorDepartmentName??'',attachment_pages:props.letter.attachment_pages?`پیوست: دارد (${new Intl.NumberFormat('fa-IR').format(props.letter.attachment_pages)} صفحه)`:'پیوست: ندارد',page_number:'',pages:''};
+ const values:Record<string,string>={organization_name:props.organization.name??'',short_name:props.organization.short_name??'',address:props.organization.address??'',postal_code:props.organization.postal_code??'',tel:props.organization.phone??'',email:props.organization.email??'',website:props.organization.website??'',letter_number:props.letter.letter_number??'',registration_number:props.letter.registration_number??'',date:letterDate.value,recipient_name:props.letter.recipient_name??props.letter.recipient_addressing?.name??'',recipient_organization:props.letter.recipient_addressing?.organization_name??props.letter.external_organization??'',recipient_unit:props.letter.recipient_addressing?.department_name??props.letter.external_department??'',recipient_position:props.letter.recipient_addressing?.position??'',recipient_organizational_title_prefix:props.letter.recipient_addressing?.organizational_title_prefix??'',recipient_personal_title_prefix:props.letter.recipient_addressing?.personal_salutation??'',recipient_title:[props.letter.recipient_addressing?.personal_salutation,props.letter.recipient_addressing?.professional_title].filter(Boolean).join(' '),subject:props.letter.subject,letter_type:typeLabel.value,creator_name:props.creatorName??'',creator_unit_title:props.creatorUnitTitle??'',manager_name:props.managerName??'',manager_position:props.managerPosition??'',manager_title:props.managerTitle??props.managerPosition??'',creator_department_name:props.creatorDepartmentName??'',attachment_pages:appendixSummary.value,page_number:'',pages:''};
  return content.replace(/\{\{([a-z_]+)\}\}/g,(token,key:string)=>Object.prototype.hasOwnProperty.call(values,key)?values[key]:token);
 }
 function fontFamily(item:TemplateElement):string{return item.font_family==='default'||!item.font_family?(props.printOptions.font_family||'Vazirmatn'):item.font_family;}
@@ -105,21 +109,27 @@ function updateBodyStartOffset():void {
  measuredBodyOffsetMm.value=Math.max(0,(lastBottom-safeTop)/pxPerMm);
 }
 function updateEstimatedPageCount():void {
- const element=documentContent.value[0];
- if(!element)return;
+ const main=mainContent.value[0];
+ const appendix=appendixContent.value[0];
  const pageHeightMm=297-Math.max(props.pageLayout.top,props.pageLayout.header_height)-Math.max(props.pageLayout.bottom,props.pageLayout.footer_height);
  const pageHeightPx=pageHeightMm*96/25.4;
- const flowingHeight=Math.max(0,element.scrollHeight);
- estimatedPageCount.value=Math.max(1,Math.ceil(flowingHeight/Math.max(1,pageHeightPx)));
+ const safePageHeight=Math.max(1,pageHeightPx);
+ mainPageCount.value=main?Math.max(1,Math.ceil(Math.max(0,main.scrollHeight)/safePageHeight)):1;
+ appendixPageCount.value=props.letter.appendix_body?.trim()&&appendix?Math.max(1,Math.ceil(Math.max(0,appendix.scrollHeight)/safePageHeight)):0;
+ estimatedPageCount.value=mainPageCount.value+appendixPageCount.value;
 }
 onMounted(async()=>{
  await nextTick();
  updateBodyStartOffset();
  updateEstimatedPageCount();
  if(typeof ResizeObserver!=='undefined'){
-  if(documentContent.value[0]){
+  if(mainContent.value[0]){
    contentObserver=new ResizeObserver(()=>{updateBodyStartOffset();updateEstimatedPageCount();});
-   contentObserver.observe(documentContent.value[0]);
+   contentObserver.observe(mainContent.value[0]);
+  }
+  if(appendixContent.value[0]){
+   contentObserver??=new ResizeObserver(()=>updateEstimatedPageCount());
+   contentObserver.observe(appendixContent.value[0]);
   }
   if(firstPagePlane.value){
    layoutObserver=new ResizeObserver(()=>{updateBodyStartOffset();updateEstimatedPageCount();});
@@ -130,12 +140,13 @@ onMounted(async()=>{
 });
 onBeforeUnmount(()=>{contentObserver?.disconnect();layoutObserver?.disconnect();});
 function pageNumberSample(item:TemplateElement,pageIndex:number):string {
- const current=new Intl.NumberFormat('fa-IR').format(pageIndex), total=new Intl.NumberFormat('fa-IR').format(estimatedPageCount.value);
+ const current=new Intl.NumberFormat('fa-IR').format(pageIndex), total=new Intl.NumberFormat('fa-IR').format(mainPageCount.value);
  if(item.page_format==='slash')return current+'/'+total;
  if(item.page_format==='short')return 'ص'+current+' از '+total;
  if(item.page_format==='page')return 'صفحه '+current+' از '+total;
  return current+' از '+total;
 }
+function appendixPageNumberSample(pageIndex:number):string{return 'پیوست ـ صفحه '+new Intl.NumberFormat('fa-IR').format(pageIndex)+' از '+new Intl.NumberFormat('fa-IR').format(appendixPageCount.value);}
 function printLetter():void{window.print();}
 </script>
 
@@ -151,7 +162,7 @@ function printLetter():void{window.print();}
    <div class="template-coordinate-plane" :ref="pageIndex===1 ? setFirstPagePlane : undefined">
     <div v-if="withLetterhead && letterheadDataUri" class="letterhead-background" :style="{backgroundImage:'url('+letterheadDataUri+')'}" aria-hidden="true"></div>
     <div v-for="item in repeating" :key="item.id" class="repeat-item" :style="positionedStyle(item)">{{resolveTemplate(item.content)}}</div>
-    <div v-for="item in elements.filter(entry=>entry.role==='page_number')" :key="item.id" class="page-number" :class="'page-number-format-'+item.page_format" :style="pageNumberScreenStyle(item)"><bdi :dir="item.page_format==='slash'?'ltr':'rtl'">{{pageNumberSample(item,pageIndex)}}</bdi></div>
+    <div v-for="item in elements.filter(entry=>entry.role==='page_number')" :key="item.id" class="page-number" :class="'page-number-format-'+item.page_format" :style="pageNumberScreenStyle(item)"><bdi :dir="item.page_format==='slash'?'ltr':'rtl'">{{pageIndex>mainPageCount?appendixPageNumberSample(pageIndex-mainPageCount):pageNumberSample(item,pageIndex)}}</bdi></div>
     <template v-if="pageIndex===1"><div v-for="item in flowMeta" :key="item.id" class="flow-item first-page-positioned" :style="positionedStyle(item)">{{item.kind==='text'?resolveTemplate(item.content):''}}<img v-if="item.kind==='stamp'&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="inline-asset"/><img v-else-if="item.kind==='signature'&&signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="inline-asset"/></div>
     <div v-for="item in flowHeading" :key="item.id" class="flow-item first-page-positioned" :style="positionedStyle(item)">
      <template v-if="item.content">{{resolveTemplate(item.content)}}</template>
@@ -159,19 +170,20 @@ function printLetter():void{window.print();}
     </div></template>
    </div>
    <div class="page-content-window" :ref="pageIndex===1 ? setFirstPageContentWindow : undefined" :style="pageWindowStyle">
-    <div ref="documentContent" class="document-content" :style="pageContentStyle(pageIndex)">
-    <section class="letter-body" :style="bodyStyle()" v-html="letter.body||''"></section>
-
-    <div v-for="item in flowIssuer" :key="item.id" class="flow-item issuer-item" :style="boxStyle(item)">
-     <img v-if="item.kind==='stamp'&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="inline-asset"/>
-     <img v-else-if="item.kind==='signature'&&signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="inline-asset"/>
-     <template v-else-if="item.kind==='text'">{{resolveTemplate(item.content)}}</template>
+    <div v-if="pageIndex<=mainPageCount" ref="mainContent" class="document-content" :style="pageContentStyle(pageIndex)">
+     <section class="letter-body" :style="bodyStyle()" v-html="letter.body||''"></section>
+     <div v-for="item in flowIssuer" :key="item.id" class="flow-item issuer-item" :style="boxStyle(item)">
+      <img v-if="item.kind==='stamp'&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="inline-asset"/>
+      <img v-else-if="item.kind==='signature'&&signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="inline-asset"/>
+      <template v-else-if="item.kind==='text'">{{resolveTemplate(item.content)}}</template>
+     </div>
+     <footer v-if="!hasCreatorElement&&!hasIssuerAssetElement&&printOptions.show_creator_identity" class="signature-area">
+      <div class="text-center text-sm leading-7"><p v-if="creatorUnitTitle" class="font-semibold">{{creatorUnitTitle}}</p><p v-if="creatorName" class="font-bold">{{creatorName}}</p></div>
+     </footer>
     </div>
-
-    <footer v-if="!hasCreatorElement&&!hasIssuerAssetElement&&printOptions.show_creator_identity" class="signature-area">
-     <div v-if="!hasCreatorElement&&printOptions.show_creator_identity" class="text-center text-sm leading-7"><p v-if="creatorUnitTitle" class="font-semibold">{{creatorUnitTitle}}</p><p v-if="creatorName" class="font-bold">{{creatorName}}</p></div>
- 
-    </footer>
+    <div v-else ref="appendixContent" class="document-content appendix-content" :style="pageContentStyle(pageIndex-mainPageCount)">
+     <div v-if="pageIndex===mainPageCount+1" class="appendix-heading">پیوست</div>
+     <section class="letter-body appendix-body" :style="bodyStyle()" v-html="letter.appendix_body||''"></section>
     </div>
    </div>
   </article>
@@ -192,6 +204,8 @@ function printLetter():void{window.print();}
 .letter-body pre{white-space:pre-wrap;overflow-wrap:anywhere;}
 .letter-body p{margin:0 0 .75rem;}
 .letter-body img{max-width:100%;height:auto;}
+.appendix-heading{font-weight:700;text-align:center;margin:0 0 8mm;padding-bottom:3mm;border-bottom:1px solid #cbd5e1;}
+.appendix-content .letter-body{margin-top:0;}
 .letter-body table{max-width:100%;border-collapse:collapse;}
 .letter-body td,.letter-body th{border:1px solid #cbd5e1;padding:4px 7px;}
  .inline-asset{display:block;width:100%;height:auto;max-width:none;max-height:none;object-fit:contain;margin-top:2mm;}
