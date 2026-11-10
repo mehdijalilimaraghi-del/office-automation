@@ -1138,7 +1138,7 @@ class CorrespondenceController extends Controller
         $appendixBody = in_array($appendixMode, ['editor', 'both'], true)
             ? $this->sanitizeBody((string) ($data['appendix_body'] ?? $correspondence->appendix_body ?? ''))
             : null;
-        if (in_array($appendixMode, ['editor', 'both'], true) && trim(strip_tags((string) $appendixBody)) === '') {
+        if (in_array($appendixMode, ['editor', 'both'], true) && ! $this->hasRichContent((string) $appendixBody)) {
             return back()->withErrors(['appendix_body' => 'متن پیوست را وارد کنید.'])->withInput();
         }
         $body = $correspondence->type === Correspondence::TYPE_INCOMING || ($correspondence->type === Correspondence::TYPE_OUTGOING && $mode === 'file')
