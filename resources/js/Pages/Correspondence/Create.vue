@@ -566,7 +566,7 @@ async function scanOriginalLetter(): Promise<void> {
                         <h3 class="text-base font-bold text-slate-900">روش تهیه نامه</h3>
                         <p class="mt-1 text-sm text-slate-500">می‌توانید نامه را داخل سامانه بنویسید، فایل آماده را بارگذاری کنید یا هر دو را با هم داشته باشید.</p>
                     </div>
-                    <div class="grid gap-3 md:grid-cols-3">
+                    <div class="grid gap-3 md:grid-cols-4">
                         <label
                             v-for="mode in compositionModes"
                             :key="mode.value"
@@ -675,14 +675,14 @@ async function scanOriginalLetter(): Promise<void> {
                         <CorrespondenceRichTextEditor v-model="form.appendix_body" label="متن پیوست" :font-family="correspondenceFontFamily" :disabled="form.processing" />
                         <InputError :message="form.errors.appendix_body" />
                     </div>
+                        <ul v-if="isEditing && correspondence?.appendix_documents.length" class="space-y-1 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
+                            <li v-for="document in correspondence.appendix_documents" :key="document.id">فایل موجود: {{ document.title }}</li>
+                        </ul>
                     <div v-if="form.appendix_mode === 'file' || form.appendix_mode === 'both'" class="space-y-2">
                         <div>
                             <h4 class="text-sm font-semibold text-slate-700">فایل‌های پیوست</h4>
                             <p class="mt-1 text-xs text-slate-500">PDF، Word، Excel، PowerPoint، تصویر و فایل متنی؛ حداکثر ۲۰ مگابایت برای هر فایل و ۱۰ فایل.</p>
                         </div>
-                        <ul v-if="isEditing && correspondence?.appendix_documents.length" class="space-y-1 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
-                            <li v-for="document in correspondence.appendix_documents" :key="document.id">فایل موجود: {{ document.title }}</li>
-                        </ul>
                         <input id="appendix_files" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" class="block max-w-full text-sm text-slate-600 file:ml-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-indigo-700" @change="chooseAppendixFiles" />
                         <InputError :message="form.errors.appendix_files" />
                         <InputError :message="form.errors['appendix_files.0']" />
