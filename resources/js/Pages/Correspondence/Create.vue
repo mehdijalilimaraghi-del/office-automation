@@ -118,7 +118,7 @@ const form = useForm({
     classification: existing?.classification ?? 'ordinary',
     subject: existing?.subject ?? '',
     attachment_pages: existing?.attachment_pages ?? null,
-    appendix_mode: (existing?.appendix_mode ?? 'editor') as CompositionMode,
+    appendix_mode: (existing?.appendix_mode ?? 'none') as CompositionMode,
     appendix_body: existing?.appendix_body ?? '',
     letter_number: existing?.letter_number ?? '',
     composition_mode: (existing?.type === 'incoming' ? 'file' : (existing?.body && existing.body.includes('<') ? 'editor' : 'file')) as CompositionMode,
