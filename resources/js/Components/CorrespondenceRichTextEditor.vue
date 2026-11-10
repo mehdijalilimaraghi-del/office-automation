@@ -43,7 +43,7 @@ function insideEditor(node: Node | null): boolean {
 }
 function selectedElement(): Element | null {
     const selection = window.getSelection();
-    const node = selection?.anchorNode;
+    const node = insideEditor(selection?.anchorNode ?? null) ? selection?.anchorNode : savedRange?.startContainer;
     return node instanceof Element ? node : node?.parentElement ?? null;
 }
 function findBlock(element: Element | null): HTMLElement | null {
@@ -53,6 +53,7 @@ function findBlock(element: Element | null): HTMLElement | null {
 function refreshContext(): void {
     const element = selectedElement();
     if (!insideEditor(window.getSelection()?.anchorNode ?? null)) {
+        if (document.activeElement?.closest('.rte-toolbar')) return;
         context.value = { table: false, picture: false, shape: false };
         return;
     }
@@ -86,8 +87,9 @@ function wrapSelection(tag: string, style?: Record<string, string>): void {
     const selection = window.getSelection();
     if (!target || !selection || selection.rangeCount === 0) return;
     target.focus();
-    const range = selection.getRangeAt(0);
-    if (!insideEditor(range.commonAncestorContainer)) return;
+    const activeRange = selection.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer) ? selection.getRangeAt(0) : savedRange;
+    if (!activeRange || !insideEditor(activeRange.commonAncestorContainer)) return;
+    const range = activeRange.cloneRange();
     const wrapper = document.createElement(tag);
     if (style) Object.entries(style).forEach(([key, value]) => wrapper.style.setProperty(key, value));
     if (range.collapsed) {
@@ -97,12 +99,14 @@ function wrapSelection(tag: string, style?: Record<string, string>): void {
         next.setStart(wrapper.firstChild ?? wrapper, 1);
         next.collapse(true);
         restoreSelection(next);
+        savedRange = next.cloneRange();
     } else {
         wrapper.append(range.extractContents());
         range.insertNode(wrapper);
         const next = document.createRange();
         next.selectNodeContents(wrapper);
         restoreSelection(next);
+        savedRange = next.cloneRange();
     }
     commit();
 }
@@ -157,9 +161,8 @@ function toggleList(ordered: boolean): void {
 }
 function clearFormatting(): void {
     const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
-    const range = selection.getRangeAt(0);
-    if (!insideEditor(range.commonAncestorContainer) || range.collapsed) return;
+    const range = selection?.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer) ? selection.getRangeAt(0).cloneRange() : savedRange?.cloneRange();
+    if (!range || !insideEditor(range.commonAncestorContainer) || range.collapsed) return;
     const text = range.toString();
     range.deleteContents();
     range.insertNode(document.createTextNode(text));
@@ -304,7 +307,10 @@ function insertImageFile(event: Event): void {
         image.style.width = '50%';
         image.style.height = 'auto';
         image.style.display = 'block';
-        insertNode(image);
+        if (currentImage.value?.isConnected) currentImage.value.replaceWith(image);
+        else insertNode(image);
+        currentImage.value = image;
+        commit();
         refreshContext();
     };
     reader.readAsDataURL(file);
@@ -350,7 +356,7 @@ function setShapeWidth(value: string): void {
 function insertLink(): void {
     const url = window.prompt('نشانی پیوند را وارد کنید:');
     if (!url || !/^https?:\/\/|^mailto:/i.test(url)) return;
-    const text = window.getSelection()?.toString() || url;
+    const text = savedRange?.toString() || window.getSelection()?.toString() || url;
     const link = document.createElement('a');
     link.href = url;
     link.textContent = text;
@@ -414,7 +420,7 @@ onBeforeUnmount(() => window.removeEventListener('selectionchange', onSelectionC
             <button v-for="tab in tabs" :key="tab.id" type="button" role="tab" :aria-selected="activeTab === tab.id" class="rounded-lg px-3 py-2 text-xs font-semibold" :class="activeTab === tab.id ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-200'" @click="activeTab = tab.id">{{ tab.label }}</button>
         </div>
 
-        <div v-if="activeTab === 'home'" class="flex flex-wrap items-center gap-1.5 border-b border-slate-200 bg-white p-2.5">
+        <div v-if="activeTab === 'home'" class="rte-toolbar flex flex-wrap items-center gap-1.5 border-b border-slate-200 bg-white p-2.5">
             <select class="h-9 max-w-36 rounded-lg border-slate-300 text-xs" :value="fontFamily" aria-label="نوع قلم" @change="applyFontFamily(($event.target as HTMLSelectElement).value)">
                 <option value="Vazirmatn">وزیرمتن</option><option value="Arial">Arial</option><option value="Tahoma">Tahoma</option><option value="B Nazanin">B Nazanin</option><option value="B Mitra">B Mitra</option><option value="IRANSans">IRANSans</option><option value="Times New Roman">Times New Roman</option>
             </select>
@@ -445,7 +451,7 @@ onBeforeUnmount(() => window.removeEventListener('selectionchange', onSelectionC
             <button type="button" class="rte-tool text-rose-700" title="حذف قالب‌بندی" @click="clearFormatting">پاک‌سازی قالب</button>
         </div>
 
-        <div v-else-if="activeTab === 'insert'" class="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white p-3">
+        <div v-else-if="activeTab === 'insert'" class="rte-toolbar flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white p-3">
             <button type="button" class="rte-tool" @click="insertTable">درج جدول ۳×۳</button>
             <button type="button" class="rte-tool" @click="chooseImage">درج تصویر</button>
             <button type="button" class="rte-tool" @click="insertShape('rectangle')">مستطیل</button>
@@ -457,7 +463,7 @@ onBeforeUnmount(() => window.removeEventListener('selectionchange', onSelectionC
             <p class="w-full text-xs text-slate-500">تصویر به‌صورت امن داخل محتوای نامه ذخیره می‌شود؛ فرمت PNG، JPG یا WEBP و حداکثر ۱۸۰ کیلوبایت.</p>
         </div>
 
-        <div v-else-if="activeTab === 'table'" class="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white p-3">
+        <div v-else-if="activeTab === 'table'" class="rte-toolbar flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white p-3">
             <button type="button" class="rte-tool" @click="addTableRow">افزودن ردیف</button>
             <button type="button" class="rte-tool" @click="addTableColumn">افزودن ستون</button>
             <button type="button" class="rte-tool" @click="deleteTableRow">حذف ردیف</button>
@@ -467,14 +473,14 @@ onBeforeUnmount(() => window.removeEventListener('selectionchange', onSelectionC
             <select class="h-9 rounded-lg border-slate-300 text-xs" @change="setCellAlignment(($event.target as HTMLSelectElement).value)"><option value="right">راست</option><option value="center">وسط</option><option value="left">چپ</option></select>
         </div>
 
-        <div v-else-if="activeTab === 'picture'" class="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white p-3">
+        <div v-else-if="activeTab === 'picture'" class="rte-toolbar flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white p-3">
             <label class="text-xs">اندازه تصویر<select class="mr-2 h-9 rounded-lg border-slate-300 text-xs" @change="setImageWidth(($event.target as HTMLSelectElement).value)"><option value="25%">۲۵٪</option><option value="50%">۵۰٪</option><option value="75%">۷۵٪</option><option value="100%">۱۰۰٪</option></select></label>
             <label class="text-xs">جایگاه<select class="mr-2 h-9 rounded-lg border-slate-300 text-xs" @change="setImageAlignment(($event.target as HTMLSelectElement).value)"><option value="right">راست</option><option value="center">وسط</option><option value="left">چپ</option></select></label>
             <button type="button" class="rte-tool" @click="chooseImage">جایگزینی تصویر</button>
             <button type="button" class="rte-tool text-rose-700" @click="removeImage">حذف تصویر</button>
         </div>
 
-        <div v-else-if="activeTab === 'shape'" class="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white p-3">
+        <div v-else-if="activeTab === 'shape'" class="rte-toolbar flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white p-3">
             <label class="rte-tool">رنگ زمینه<input type="color" class="h-5 w-5" @input="setShapeColor(($event.target as HTMLInputElement).value)" /></label>
             <label class="rte-tool">رنگ خط<input type="color" class="h-5 w-5" @input="setShapeBorderColor(($event.target as HTMLInputElement).value)" /></label>
             <select class="h-9 rounded-lg border-slate-300 text-xs" @change="setShapeWidth(($event.target as HTMLSelectElement).value)"><option value="60px">کوچک</option><option value="100px">متوسط</option><option value="160px">بزرگ</option></select>
