@@ -55,7 +55,7 @@ function selectedElement(): Element | null {
 }
 function findBlock(element: Element | null): HTMLElement | null {
     const block = element?.closest('p,div,li,h2,h3,blockquote,td,th');
-    return block instanceof HTMLElement && editor.value?.contains(block) ? block : null;
+    return block instanceof HTMLElement && block !== editor.value && editor.value?.contains(block) ? block : null;
 }
 function refreshContext(): void {
     if (document.activeElement?.closest('.rte-toolbar')) {
