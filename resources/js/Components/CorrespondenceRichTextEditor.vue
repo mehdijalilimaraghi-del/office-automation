@@ -17,6 +17,7 @@ const currentImage = ref<HTMLImageElement | null>(null);
 const currentShape = ref<HTMLElement | null>(null);
 const currentCell = ref<HTMLTableCellElement | null>(null);
 let syncing = false;
+let savedRange: Range | null = null;
 
 const tabs = computed(() => [
     { id: 'home' as const, label: 'خانه' },
@@ -55,6 +56,8 @@ function refreshContext(): void {
         context.value = { table: false, picture: false, shape: false };
         return;
     }
+    const selection = window.getSelection();
+    if (selection?.rangeCount) savedRange = selection.getRangeAt(0).cloneRange();
     const table = element?.closest('table') ?? null;
     const image = element?.closest('img') ?? null;
     const shape = element?.closest('[data-editor-shape]') ?? null;
@@ -167,13 +170,17 @@ function insertNode(node: Node): void {
     if (!target) return;
     target.focus();
     const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0 && insideEditor(selection.getRangeAt(0).commonAncestorContainer)) {
-        const range = selection.getRangeAt(0);
+    const activeRange = selection && selection.rangeCount > 0 && insideEditor(selection.getRangeAt(0).commonAncestorContainer)
+        ? selection.getRangeAt(0)
+        : savedRange;
+    if (activeRange && insideEditor(activeRange.commonAncestorContainer)) {
+        const range = activeRange.cloneRange();
         range.deleteContents();
         range.insertNode(node);
         range.setStartAfter(node);
         range.collapse(true);
         restoreSelection(range);
+        savedRange = range.cloneRange();
     } else {
         target.append(node);
     }
@@ -349,6 +356,8 @@ function insertLink(): void {
     link.textContent = text;
     insertNode(link);
 }
+function removeImage(): void { currentImage.value?.remove(); currentImage.value = null; commit(); }
+function removeShape(): void { currentShape.value?.remove(); currentShape.value = null; commit(); }
 function undo(): void {
     if (historyIndex.value <= 0 || !editor.value) return;
     historyIndex.value -= 1;
@@ -462,14 +471,14 @@ onBeforeUnmount(() => window.removeEventListener('selectionchange', onSelectionC
             <label class="text-xs">اندازه تصویر<select class="mr-2 h-9 rounded-lg border-slate-300 text-xs" @change="setImageWidth(($event.target as HTMLSelectElement).value)"><option value="25%">۲۵٪</option><option value="50%">۵۰٪</option><option value="75%">۷۵٪</option><option value="100%">۱۰۰٪</option></select></label>
             <label class="text-xs">جایگاه<select class="mr-2 h-9 rounded-lg border-slate-300 text-xs" @change="setImageAlignment(($event.target as HTMLSelectElement).value)"><option value="right">راست</option><option value="center">وسط</option><option value="left">چپ</option></select></label>
             <button type="button" class="rte-tool" @click="chooseImage">جایگزینی تصویر</button>
-            <button type="button" class="rte-tool text-rose-700" @click="currentImage?.remove(); currentImage = null; commit()">حذف تصویر</button>
+            <button type="button" class="rte-tool text-rose-700" @click="removeImage">حذف تصویر</button>
         </div>
 
         <div v-else-if="activeTab === 'shape'" class="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white p-3">
             <label class="rte-tool">رنگ زمینه<input type="color" class="h-5 w-5" @input="setShapeColor(($event.target as HTMLInputElement).value)" /></label>
             <label class="rte-tool">رنگ خط<input type="color" class="h-5 w-5" @input="setShapeBorderColor(($event.target as HTMLInputElement).value)" /></label>
             <select class="h-9 rounded-lg border-slate-300 text-xs" @change="setShapeWidth(($event.target as HTMLSelectElement).value)"><option value="60px">کوچک</option><option value="100px">متوسط</option><option value="160px">بزرگ</option></select>
-            <button type="button" class="rte-tool text-rose-700" @click="currentShape?.remove(); currentShape = null; commit()">حذف شکل</button>
+            <button type="button" class="rte-tool text-rose-700" @click="removeShape">حذف شکل</button>
         </div>
 
         <div
