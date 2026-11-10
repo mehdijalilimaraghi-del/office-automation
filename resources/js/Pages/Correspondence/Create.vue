@@ -15,6 +15,7 @@ interface ExternalContact { id: number; external_organization_id: number; extern
 interface ReplyOption { id: number; letter_number: string | null; registration_number: string | null; external_registration_number: string | null; subject: string; type: string; letter_date: string | null; created_department: string | null; recipient_department: string | null; external_organization: string | null; external_organization_code: string | null; external_department: string | null; external_department_code: string | null; created_department_code: string | null; recipient_department_code: string | null; }
 interface CreatedDepartment { id: number; name: string; parent_id?: number | null; icon?: string | null; }
 type CompositionMode = 'editor' | 'file' | 'both';
+type AppendixMode = 'none' | 'editor' | 'file' | 'both';
 type TextDirection = 'rtl' | 'ltr';
 
 interface ExistingCorrespondence {
@@ -25,7 +26,7 @@ interface ExistingCorrespondence {
     external_organization_id: number | null; external_department_id: number | null; external_contact_id: number | null;
     related_letters: ReplyOption[]; copy_department_ids: number[];
     original_documents: Array<{ id: number; title: string }>;
-    appendix_mode: 'editor' | 'file' | 'both'; appendix_body: string | null;
+    appendix_mode: AppendixMode; appendix_body: string | null;
     appendix_documents: Array<{ id: number; title: string }>;
 }
 const props = defineProps<{
@@ -118,7 +119,7 @@ const form = useForm({
     classification: existing?.classification ?? 'ordinary',
     subject: existing?.subject ?? '',
     attachment_pages: existing?.attachment_pages ?? null,
-    appendix_mode: (existing?.appendix_mode ?? 'none') as CompositionMode,
+    appendix_mode: (existing?.appendix_mode ?? 'none') as AppendixMode,
     appendix_body: existing?.appendix_body ?? '',
     letter_number: existing?.letter_number ?? '',
     composition_mode: (existing?.type === 'incoming' ? 'file' : (existing?.body && existing.body.includes('<') ? 'editor' : 'file')) as CompositionMode,
