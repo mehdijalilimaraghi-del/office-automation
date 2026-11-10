@@ -41,6 +41,8 @@ class Correspondence extends Model
         'subject',
         'body',
         'attachment_pages',
+        'appendix_mode',
+        'appendix_body',
         'status',
         'registration_number',
         'letter_number',
