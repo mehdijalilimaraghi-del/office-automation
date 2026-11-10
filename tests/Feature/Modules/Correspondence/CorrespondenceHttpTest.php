@@ -3139,4 +3139,62 @@ class CorrespondenceHttpTest extends TestCase
             ->where('correspondences.total', 0));
     }
 
+    public function test_user_can_create_letter_with_text_appendix_without_manual_page_count(): void
+    {
+        $user = $this->userWithPermission('correspondence.create');
+        $recipientDepartmentId = $this->recipientDepartmentId();
+
+        $this->actingAs($user)->post(route('correspondence.store'), [
+            'type' => Correspondence::TYPE_INTERNAL,
+            'recipient_department_id' => $recipientDepartmentId,
+            'subject' => 'نامه دارای پیوست متنی',
+            'composition_mode' => 'editor',
+            'body' => '<p>متن اصلی</p>',
+            'appendix_mode' => 'editor',
+            'appendix_body' => '<p style="color:#ff0000;text-align:center">متن <strong>پیوست</strong></p>',
+        ])->assertRedirect(route('correspondence.index'));
+
+        $this->assertDatabaseHas('correspondences', [
+            'subject' => 'نامه دارای پیوست متنی',
+            'attachment_pages' => null,
+            'appendix_mode' => 'editor',
+            'appendix_body' => '<p style="color: #ff0000; text-align: center">متن <strong>پیوست</strong></p>',
+        ]);
+    }
+
+    public function test_user_can_create_letter_with_combined_text_and_file_appendix(): void
+    {
+        $user = $this->userWithPermission('correspondence.create');
+        $recipientDepartmentId = $this->recipientDepartmentId();
+        $documents = Mockery::mock(DocumentService::class);
+        $documents->shouldReceive('create')
+            ->once()
+            ->withArgs(function (array $data, UploadedFile $file, User $creator, Correspondence $linkable, string $purpose): bool {
+                return $data['document_type'] === 'correspondence_appendix'
+                    && $file->getClientOriginalName() === 'appendix.pdf'
+                    && $creator->is(auth()->user())
+                    && $linkable->exists
+                    && $purpose === 'correspondence_appendix';
+            })
+            ->andReturn(new Document());
+        $this->instance(DocumentService::class, $documents);
+
+        $this->actingAs($user)->post(route('correspondence.store'), [
+            'type' => Correspondence::TYPE_INTERNAL,
+            'recipient_department_id' => $recipientDepartmentId,
+            'subject' => 'نامه دارای پیوست ترکیبی',
+            'composition_mode' => 'editor',
+            'body' => '<p>متن اصلی</p>',
+            'appendix_mode' => 'both',
+            'appendix_body' => '<p>متن پیوست</p>',
+            'appendix_files' => [UploadedFile::fake()->create('appendix.pdf', 10, 'application/pdf')],
+        ])->assertRedirect(route('correspondence.index'));
+
+        $this->assertDatabaseHas('correspondences', [
+            'subject' => 'نامه دارای پیوست ترکیبی',
+            'appendix_mode' => 'both',
+            'appendix_body' => '<p>متن پیوست</p>',
+        ]);
+    }
+
 }
