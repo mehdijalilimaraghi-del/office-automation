@@ -422,7 +422,7 @@ class CorrespondenceController extends Controller
                 'classification' => $correspondence->classification,
                 'subject' => $correspondence->subject,
                 'body' => $correspondence->body,
-                'appendix_mode' => $correspondence->appendix_mode ?? 'editor',
+                'appendix_mode' => $correspondence->appendix_mode ?? 'none',
                 'appendix_body' => $correspondence->appendix_body,
                 'status' => $correspondence->status,
                 'letter_number' => $correspondence->letter_number,
@@ -1076,7 +1076,7 @@ class CorrespondenceController extends Controller
             'correspondence' => [
                 'id' => $correspondence->id, 'type' => $correspondence->type, 'classification' => $correspondence->classification,
                 'subject' => $correspondence->subject, 'attachment_pages' => $correspondence->attachment_pages, 'letter_number' => $correspondence->letter_number, 'body' => $correspondence->body,
-                'appendix_mode' => $correspondence->appendix_mode ?? 'editor', 'appendix_body' => $correspondence->appendix_body,
+                'appendix_mode' => $correspondence->appendix_mode ?? 'none', 'appendix_body' => $correspondence->appendix_body,
                 'sender_name' => $correspondence->sender_name, 'recipient_name' => $correspondence->recipient_name,
                 'received_at' => $correspondence->received_at?->toDateString(), 'sent_at' => $correspondence->sent_at?->toDateString(),
                 'created_department_id' => $correspondence->created_department_id, 'recipient_department_id' => $correspondence->recipient_department_id,
