@@ -1162,6 +1162,9 @@ class CorrespondenceController extends Controller
         $originalLetters = array_values(array_filter((array) $request->file('original_letters', [])));
         $attachments = array_values(array_filter((array) $request->file('attachments', [])));
         $appendixFiles = array_values(array_filter((array) $request->file('appendix_files', [])));
+        if (! in_array($appendixMode, ['file', 'both'], true)) {
+            $appendixFiles = [];
+        }
         $existingAppendixCount = $correspondence->documents()->where('purpose', 'correspondence_appendix')->count();
         if (in_array($appendixMode, ['file', 'both'], true) && count($appendixFiles) + $existingAppendixCount === 0) return back()->withErrors(['appendix_files' => 'برای روش انتخاب‌شده حداقل یک فایل پیوست کنید.'])->withInput();
         if (count($appendixFiles) + $existingAppendixCount > 10) return back()->withErrors(['appendix_files' => 'حداکثر ۱۰ فایل پیوست قابل نگهداری است.'])->withInput();
