@@ -1147,3 +1147,14 @@ Organization Settings now uses three tabs. Organization letterhead upload is sep
 
 - Added `{{recipient_personal_title_prefix}}` to the addressing/heading element token catalog. It resolves from the external contact's immutable `recipient_addressing_snapshot.personal_salutation` value in print, independently of `{{recipient_title}}` (which continues to combine personal salutation and professional title for backward compatibility).
 - No database migration is needed; the personal salutation is already captured in the recipient addressing snapshot. Build and correspondence regression tests are pending. Development only; master/release/server unchanged.
+
+## 2026-11-10 — Correspondence rich-text editor and structured appendix (in progress)
+
+- [x] Add persisted appendix mode and rich-text body fields.
+- [x] Separate appendix file links from the main letter's files.
+- [x] Remove manual appendix page count entry from the correspondence form while retaining the legacy database field for compatibility.
+- [x] Add automatic appendix summary token based on rendered text pages and linked appendix files.
+- [x] Split print preview into main-letter and appendix page sequences; keep issuer/signature at the end of the main letter and preserve the existing pre-paginated A4 print architecture.
+- [x] Replace the old `execCommand` toolbar with a reusable Home/Insert/contextual-tab editor.
+- [x] Add regression tests for text-only and combined appendix creation.
+- [ ] Run `npm run build`, focused PHP feature tests, and browser/PDF acceptance. Verify long text, images, tables, signature placement, independent appendix numbering, and exact preview/print sheet parity before closing this roadmap item.
