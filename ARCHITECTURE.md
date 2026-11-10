@@ -589,3 +589,15 @@ The screen A4 preview and browser PDF still require explicit visual acceptance. 
 - Print preview computes main and appendix page counts independently. Main content includes issuer/signature flow; appendix content starts on the next physical sheet and receives “پیوست ـ صفحه N از M” numbering. Automatic attachment summary combines measured text pages and linked appendix-file count.
 - Keep all physical output in the existing preview-generated A4 sheet model. Any page-count mismatch must be corrected in measurement/layout code, never by allowing Chromium to repaginate the content independently.
 - Verification remains pending: build, feature tests, interactive browser checks, and Chromium PDF comparison.
+
+
+## 2026-11-10 — Focused correspondence editor usability improvements
+
+- Kept the existing lightweight correspondence-body editor; no editor-engine migration or new npm dependency was introduced. The editor remains limited to the letter body/appendix body and does not own letterhead, headers, footers, stamps, signatures, or A4 pagination.
+- Replaced text-character toolbar symbols with consistent Lucide icons from the already-installed `@lucide/vue` package, using Word-familiar visual metaphors for formatting, alignment, lists, undo/redo, tables, images and shapes.
+- Expanded contextual table controls: table width, cell background, border color/thickness, cell padding, and horizontal/vertical cell alignment, alongside existing row/column insertion/deletion.
+- Expanded image controls with height and border presets, retaining width, alignment, replacement and removal.
+- Expanded shape controls with width, height and border thickness, retaining fill/border colors and removal.
+- This is a targeted UI/control improvement, not a replacement for a full Word editor. Advanced freeform resizing/positioning, multi-cell merge/split, and complex image text-wrapping are not included. Existing DOM Selection/Range behavior and HTML sanitization still require interactive verification.
+- Verification pending: run `git pull origin development`, `npm run build`, then manually verify toolbar rendering, table/image/shape controls, save/reopen, and preview/print preservation. No build, PHP tests, or browser/PDF acceptance has been run for this change.
+- Development branch only; master, release and server unchanged.
