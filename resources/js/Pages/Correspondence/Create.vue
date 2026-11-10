@@ -4,7 +4,7 @@ import CorrespondenceRichTextEditor from '@/Components/CorrespondenceRichTextEdi
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 import axios from 'axios';
