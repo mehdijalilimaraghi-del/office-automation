@@ -923,6 +923,9 @@ class CorrespondenceController extends Controller
 
         $attachments = array_values(array_filter((array) $request->file('attachments', [])));
         $appendixFiles = array_values(array_filter((array) $request->file('appendix_files', [])));
+        if (! in_array($appendixMode, ['file', 'both'], true)) {
+            $appendixFiles = [];
+        }
         if (in_array($appendixMode, ['editor', 'both'], true) && ! $this->hasRichContent((string) $appendixBody)) {
             return back()->withErrors(['appendix_body' => 'متن پیوست را وارد کنید.'])->withInput();
         }
