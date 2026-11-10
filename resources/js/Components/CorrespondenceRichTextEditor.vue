@@ -311,11 +311,15 @@ function insertImageFile(event: Event): void {
         image.style.width = '50%';
         image.style.height = 'auto';
         image.style.display = 'block';
-        if (currentImage.value?.isConnected) currentImage.value.replaceWith(image);
-        else insertNode(image);
+        if (currentImage.value?.isConnected) {
+            currentImage.value.replaceWith(image);
+            emitContent();
+        } else {
+            insertNode(image);
+        }
         currentImage.value = image;
-        commit();
-        refreshContext();
+        context.value = { table: false, picture: true, shape: false };
+        activeTab.value = 'picture';
     };
     reader.readAsDataURL(file);
 }
@@ -339,8 +343,13 @@ function insertShape(shape: 'rectangle' | 'ellipse' | 'line' | 'arrow'): void {
         else element.textContent = '\u00a0';
     }
     insertNode(element);
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    restoreSelection(range);
+    savedRange = range.cloneRange();
     currentShape.value = element;
-    refreshContext();
+    context.value = { table: false, picture: false, shape: true };
+    activeTab.value = 'shape';
 }
 function setShapeColor(value: string): void {
     if (!currentShape.value) return;
