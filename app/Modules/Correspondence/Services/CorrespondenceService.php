@@ -107,7 +107,7 @@ class CorrespondenceService
                 'letter_number' => $type === Correspondence::TYPE_INCOMING ? trim((string) ($data['letter_number'] ?? '')) : null,
                 'body' => $data['body'] ?? null,
                 'attachment_pages' => $attachmentPages,
-                'appendix_mode' => $data['appendix_mode'] ?? 'editor',
+                'appendix_mode' => $data['appendix_mode'] ?? 'none',
                 'appendix_body' => $data['appendix_body'] ?? null,
                 'status' => Correspondence::STATUS_DRAFT,
                 'sender_name' => $type === Correspondence::TYPE_INTERNAL
