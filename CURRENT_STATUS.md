@@ -2259,3 +2259,12 @@ Organization Settings now uses three tabs. A separate organization letterhead im
 
 - Added `{{recipient_personal_title_prefix}}` to the addressing/heading element token catalog. It resolves from the external contact's immutable `recipient_addressing_snapshot.personal_salutation` value in print, independently of `{{recipient_title}}` (which continues to combine personal salutation and professional title for backward compatibility).
 - No database migration is needed; the personal salutation is already captured in the recipient addressing snapshot. Build and correspondence regression tests are pending. Development only; master/release/server unchanged.
+
+## 2026-11-10 — Correspondence editor and appendix work (in progress)
+
+- Implemented the first integrated version of the reusable rich-text editor and replaced the old `execCommand` editor in correspondence creation/editing. Home/Insert and contextual Table/Picture/Shape tools are present.
+- Added safe rich-text sanitization for formatting, tables, raster inline images, shapes, and HTTP(S)/mailto links.
+- Added optional independent appendix modes: none, text, file, or text + file. Appendix text is stored on the correspondence; appendix files are linked with purpose `correspondence_appendix`. Manual page count entry is removed from the form; legacy `attachment_pages` is retained for existing data/tests.
+- Print preview separates main and appendix page sequences. Signature/stamp flow remains within the main-letter section. The automatic template summary reports rendered appendix text pages and attached appendix file count.
+- Added regression tests for text-only and combined appendices.
+- **Not verified yet:** npm build, PHP feature tests, browser interaction, image/table/shape round-trip, and actual print-to-PDF page alignment. Do not mark this feature complete until those checks pass.
