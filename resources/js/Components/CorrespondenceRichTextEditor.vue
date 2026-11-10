@@ -317,21 +317,35 @@ function selectCellRange(from: HTMLTableCellElement, to: HTMLTableCellElement): 
     paintCellSelection();
 }
 function mergeSelectedCells(): void {
-    const cells=cellsForFormatting(); if(cells.length<2)return;
-    const row=cells[0].parentElement;
-    if(!row || !cells.every(cell=>cell.parentElement===row)){window.alert('برای ادغام، سلول‌های یک ردیف را انتخاب کنید.');return;}
-    const ordered=cells.slice().sort((a,b)=>a.cellIndex-b.cellIndex);
-    if(ordered.some((cell,i)=>i>0&&cell.cellIndex!==ordered[i-1].cellIndex+1))return;
-    ordered[0].colSpan=ordered.length;
-    ordered[0].innerHTML=ordered.map(cell=>cell.innerHTML).filter(Boolean).join(' ');
-    ordered.slice(1).forEach(cell=>cell.remove());
-    currentCell.value=ordered[0];selectedCells.value=[ordered[0]];commit();
+    const cells=cellsForFormatting();if(cells.length<2)return;
+    const table=cells[0].closest('table') as HTMLTableElement|null;if(!table||!cells.every(cell=>cell.closest('table')===table))return;
+    const rows=Array.from(table.rows), selected=new Set(cells);
+    const coords=cells.map(cell=>({r:rows.indexOf(cell.parentElement as HTMLTableRowElement),c:cell.cellIndex}));
+    const minR=Math.min(...coords.map(x=>x.r)),maxR=Math.max(...coords.map(x=>x.r)),minC=Math.min(...coords.map(x=>x.c)),maxC=Math.max(...coords.map(x=>x.c));
+    const rectangle:HTMLTableCellElement[]=[];
+    for(let r=minR;r<=maxR;r++)for(let col=minC;col<=maxC;col++){const cell=rows[r]?.cells[col];if(!cell||!selected.has(cell)){window.alert('برای ادغام، محدوده‌ای مستطیلی و پیوسته از سلول‌ها انتخاب کنید.');return;}rectangle.push(cell);}
+    if(rectangle.some(cell=>cell.colSpan>1||cell.rowSpan>1)){window.alert('ابتدا سلول‌های ادغام‌شده موجود را تقسیم کنید.');return;}
+    const first=rows[minR].cells[minC];
+    first.innerHTML=rectangle.map(cell=>cell.innerHTML).filter(html=>html&&html!=='<br>').join('<br>')||'<br>';
+    first.colSpan=maxC-minC+1;first.rowSpan=maxR-minR+1;
+    rectangle.slice(1).forEach(cell=>cell.remove());
+    currentCell.value=first;selectedCells.value=[first];commit();
 }
 function splitSelectedCell(): void {
     const cell=currentCell.value;if(!cell)return;
-    const span=cell.colSpan||1;if(span<2)return;
-    cell.colSpan=1;
-    for(let i=1;i<span;i++){const next=document.createElement(cell.tagName.toLowerCase());next.innerHTML='<br>';next.style.cssText=cell.style.cssText;cell.after(next);}
+    const colspan=cell.colSpan||1,rowspan=cell.rowSpan||1;if(colspan===1&&rowspan===1)return;
+    const table=cell.closest('table') as HTMLTableElement|null,row=cell.parentElement as HTMLTableRowElement|null;
+    if(!table||!row)return;
+    const rows=Array.from(table.rows),rowIndex=rows.indexOf(row),cellIndex=cell.cellIndex;
+    cell.colSpan=1;cell.rowSpan=1;
+    for(let r=0;r<rowspan;r++){
+        const targetRow=rows[rowIndex+r];if(!targetRow)continue;
+        for(let col=0;col<colspan;col++){
+            if(r===0&&col===0)continue;
+            const next=document.createElement(cell.tagName.toLowerCase());next.innerHTML='<br>';next.style.cssText=cell.style.cssText;
+            targetRow.insertBefore(next,targetRow.children[cellIndex+col]??null);
+        }
+    }
     commit();
 }
 function deleteTable(): void {
@@ -536,7 +550,7 @@ function redo(): void {
     syncing = false;
     refreshContext();
 }
-let resizeState: { cell: HTMLTableCellElement; axis: 'width'|'height'; start: number; initial: number } | null = null;
+let resizeState: { cell: HTMLTableCellElement; axis: 'width'|'height'; start: number; initial: number; table: HTMLTableElement; index: number } | null = null;
 function onEditorPointerDown(event: PointerEvent): void {
     const rawTarget=event.target;
     const target=rawTarget instanceof Element ? rawTarget.closest('td,th') as HTMLTableCellElement | null : null;
@@ -545,7 +559,7 @@ function onEditorPointerDown(event: PointerEvent): void {
     const nearRight=Math.abs(event.clientX-rect.right)<=edge;
     const nearBottom=Math.abs(event.clientY-rect.bottom)<=edge;
     if(!nearRight&&!nearBottom)return;
-    resizeState={cell:target,axis:nearRight?'width':'height',start:nearRight?event.clientX:event.clientY,initial:nearRight?rect.width:rect.height};
+    const table=target.closest('table') as HTMLTableElement|null;if(!table)return;resizeState={cell:target,axis:nearRight?'width':'height',start:nearRight?event.clientX:event.clientY,initial:nearRight?rect.width:rect.height,table,index:nearRight?target.cellIndex:Array.from(table.rows).indexOf(target.parentElement as HTMLTableRowElement)};
     event.preventDefault();
     document.addEventListener('pointermove',onEditorPointerMove);
     document.addEventListener('pointerup',onEditorPointerUp,{once:true});
@@ -554,7 +568,8 @@ function onEditorPointerMove(event:PointerEvent):void {
     if(!resizeState)return;
     const delta=(resizeState.axis==='width'?event.clientX:event.clientY)-resizeState.start;
     const px=Math.max(20,resizeState.initial+delta);
-    resizeState.cell.style[resizeState.axis]=`${px}px`;
+    if(resizeState.axis==='width') Array.from(resizeState.table.rows).forEach(row=>{const cell=row.cells[resizeState!.index];if(cell)cell.style.width=`${px}px`;});
+    else Array.from(resizeState.table.rows[resizeState.index]?.cells??[]).forEach(cell=>{cell.style.height=`${px}px`;});
 }
 function onEditorPointerUp():void {
     document.removeEventListener('pointermove',onEditorPointerMove);
