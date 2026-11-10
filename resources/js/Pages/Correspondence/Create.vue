@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppSelect from '@/Components/AppSelect.vue';
+import CorrespondenceRichTextEditor from '@/Components/CorrespondenceRichTextEditor.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
@@ -47,7 +48,6 @@ const props = defineProps<{
     sourceCorrespondence?: ReplyOption | null;
 }>();
 
-const editor = ref<HTMLDivElement | null>(null);
 const relatedSearchQuery = ref('');
 const relatedSearchResults = ref<ReplyOption[]>([]);
 const selectedRelatedLetters = ref<ReplyOption[]>([]);
@@ -216,53 +216,6 @@ watch(() => [form.external_organization_id, form.external_department_id], () => 
     selectDefaultExternalContact();
 });
 
-function syncBody(): void {
-    form.body = editor.value?.innerHTML ?? '';
-}
-
-function format(command: string): void {
-    editor.value?.focus();
-    document.execCommand(command, false);
-    syncBody();
-}
-
-function formatBlock(tag: 'p' | 'h2'): void {
-    editor.value?.focus();
-    document.execCommand('formatBlock', false, tag);
-    syncBody();
-}
-
-function applyFontFamily(font: string): void {
-    editor.value?.focus();
-    document.execCommand('fontName', false, font);
-    syncBody();
-}
-
-function applyFontSize(size: string): void {
-    editor.value?.focus();
-    document.execCommand('fontSize', false, size);
-    syncBody();
-}
-
-function applyColor(color: string): void {
-    editor.value?.focus();
-    document.execCommand('foreColor', false, color);
-    syncBody();
-}
-
-function setEditorDirection(direction: TextDirection): void {
-    const target = editor.value;
-    if (!target) return;
-    target.focus();
-    const selection = window.getSelection();
-    const anchor = selection?.anchorNode;
-    const element = anchor instanceof Element ? anchor : anchor?.parentElement;
-    const block = element?.closest('p, div, li, h2, h3, blockquote');
-    if (block && target.contains(block)) block.setAttribute('dir', direction);
-    target.setAttribute('dir', direction);
-    syncBody();
-}
-
 const selectedCopyDepartmentId = ref<number | string>('');
 const departmentTreeOptions = computed(() => {
     const byParent = new Map<number | null, Department[]>();
@@ -382,13 +335,7 @@ async function prepareScannerSession(): Promise<void> {
 }
 
 onMounted(() => {
-    if (editor.value && form.body) editor.value.innerHTML = form.body;
     if (!props.isEditing && form.type === 'incoming') void prepareScannerSession();
-});
-
-watch(() => form.composition_mode, async () => {
-    await nextTick();
-    if (editor.value && form.body) editor.value.innerHTML = form.body;
 });
 
 onBeforeUnmount(() => {
@@ -668,70 +615,7 @@ async function scanOriginalLetter(): Promise<void> {
                         <h3 class="text-base font-bold text-slate-900">متن نامه</h3>
                         <p class="mt-1 text-sm text-slate-500">از نوار ابزار برای قالب‌بندی متن استفاده کنید. پیش‌نویس قبل از ثبت نهایی قابل ویرایش خواهد بود.</p>
                     </div>
-                    <div class="overflow-hidden rounded-xl border border-slate-300 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
-                        <div class="space-y-2 border-b border-slate-200 bg-slate-50 p-3" role="toolbar" aria-label="قالب‌بندی متن نامه">
-                            <div class="flex flex-wrap items-center gap-1.5">
-                                <AppSelect aria-label="نوع قلم" title="نوع قلم" :value="correspondenceFontFamily" class="h-9 max-w-36 rounded-lg border-slate-300 bg-white text-xs" @change="applyFontFamily(($event.target as HTMLSelectElement).value)">
-                                    <option value="Vazirmatn">وزیرمتن</option>
-                                    <option value="Arial">Arial</option>
-                                    <option value="Tahoma">Tahoma</option>
-                                    <option value="B Nazanin">B Nazanin</option>
-                                    <option value="B Mitra">B Mitra</option>
-                                    <option value="IRANSans">IRANSans</option>
-                                    <option value="Times New Roman">Times New Roman</option>
-                                </AppSelect>
-                                <AppSelect aria-label="اندازه قلم" title="اندازه قلم" class="h-9 w-20 rounded-lg border-slate-300 bg-white text-xs" @change="applyFontSize(($event.target as HTMLSelectElement).value)">
-                                    <option value="2">کوچک</option>
-                                    <option value="3" selected>معمولی</option>
-                                    <option value="4">بزرگ</option>
-                                    <option value="5">خیلی بزرگ</option>
-                                    <option value="6">تیتر</option>
-                                </AppSelect>
-                                <span class="mx-1 hidden h-7 w-px bg-slate-300 sm:block"></span>
-                                <button type="button" title="پررنگ" aria-label="پررنگ" class="editor-tool" @click="format('bold')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h6a4 4 0 0 1 0 8H7zM7 13h7a4 4 0 0 1 0 8H7z"/></svg></button>
-                                <button type="button" title="مورب" aria-label="مورب" class="editor-tool" @click="format('italic')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h7M3 20h7M14 4 7 20"/></svg></button>
-                                <button type="button" title="زیرخط" aria-label="زیرخط" class="editor-tool" @click="format('underline')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4v6a6 6 0 0 0 12 0V4M4 21h16"/></svg></button>
-                                <button type="button" title="خط‌خورده" aria-label="خط‌خورده" class="editor-tool" @click="format('strikeThrough')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16M7 6c1-3 9-3 10 1M17 17c-1 4-9 4-10 0"/></svg></button>
-                                <button type="button" title="بالانویس" aria-label="بالانویس" class="editor-tool" @click="format('superscript')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 17 7-8M4 9l7 8M14 7h6l-6 5h6"/></svg></button>
-                                <button type="button" title="زیرنویس" aria-label="زیرنویس" class="editor-tool" @click="format('subscript')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 7 7 8M4 15l7-8M14 14h6l-6 5h6"/></svg></button>
-                                <label title="رنگ متن" class="editor-tool relative cursor-pointer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 17 6-13h4l6 13M7 12h10M3 21h18"/></svg><input aria-label="رنگ متن" type="color" class="absolute inset-0 h-full w-full cursor-pointer opacity-0" @input="applyColor(($event.target as HTMLInputElement).value)" /></label>
-                                <button type="button" title="پاک‌کردن قالب‌بندی" aria-label="پاک‌کردن قالب‌بندی" class="editor-tool" @click="format('removeFormat')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 7 9-4 7 7-9 4zM3 21h18M6 17l4-3"/></svg></button>
-                            </div>
-                            <div class="flex flex-wrap items-center gap-1.5 border-t border-slate-200 pt-2">
-                                <button type="button" title="جهت نوشتار راست به چپ" aria-label="جهت نوشتار راست به چپ" class="editor-tool" @click="setEditorDirection('rtl')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6H8M20 10H4M20 14H8M20 18H4M8 3 4 6l4 3"/></svg></button>
-                                <button type="button" title="جهت نوشتار چپ به راست" aria-label="جهت نوشتار چپ به راست" class="editor-tool" @click="setEditorDirection('ltr')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h12M4 10h16M4 14h12M4 18h16m-4-15 4 3-4 3"/></svg></button>
-                                <span class="mx-1 hidden h-7 w-px bg-slate-300 sm:block"></span>
-                                <button type="button" title="راست‌چین" aria-label="راست‌چین" class="editor-tool" @click="format('justifyRight')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18M8 9h13M3 13h18M8 17h13M3 21h18"/></svg></button>
-                                <button type="button" title="وسط‌چین" aria-label="وسط‌چین" class="editor-tool" @click="format('justifyCenter')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18M6 9h12M3 13h18M6 17h12M3 21h18"/></svg></button>
-                                <button type="button" title="چپ‌چین" aria-label="چپ‌چین" class="editor-tool" @click="format('justifyLeft')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18M3 9h13M3 13h18M3 17h13M3 21h18"/></svg></button>
-                                <button type="button" title="تراز دوطرفه" aria-label="تراز دوطرفه" class="editor-tool" @click="format('justifyFull')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18M3 9h18M3 13h18M3 17h18M3 21h18"/></svg></button>
-                                <span class="mx-1 hidden h-7 w-px bg-slate-300 sm:block"></span>
-                                <button type="button" title="فهرست نشانه‌دار" aria-label="فهرست نشانه‌دار" class="editor-tool" @click="format('insertUnorderedList')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h12M9 12h12M9 19h12"/><circle cx="4" cy="5" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="19" r="1"/></svg></button>
-                                <button type="button" title="فهرست شماره‌دار" aria-label="فهرست شماره‌دار" class="editor-tool" @click="format('insertOrderedList')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h12M9 12h12M9 19h12M3 4h2v3M3 11h2v3H3l2-3M3 18h2l-2 3h2"/></svg></button>
-                                <button type="button" title="افزایش تورفتگی" aria-label="افزایش تورفتگی" class="editor-tool" @click="format('indent')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5h11M10 12h11M10 19h11M3 8l4 4-4 4"/></svg></button>
-                                <button type="button" title="کاهش تورفتگی" aria-label="کاهش تورفتگی" class="editor-tool" @click="format('outdent')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5h11M10 12h11M10 19h11M7 8l-4 4 4 4"/></svg></button>
-                                <span class="mx-1 hidden h-7 w-px bg-slate-300 sm:block"></span>
-                                <button type="button" title="عنوان بخش" aria-label="عنوان بخش" class="editor-tool text-xs font-bold" @click="formatBlock('h2')">H</button>
-                                <button type="button" title="پاراگراف معمولی" aria-label="پاراگراف معمولی" class="editor-tool text-xs" @click="formatBlock('p')">¶</button>
-                                <button type="button" title="خط جداکننده" aria-label="خط جداکننده" class="editor-tool" @click="format('insertHorizontalRule')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h18M5 7h14M5 17h14"/></svg></button>
-                                <span class="mx-1 hidden h-7 w-px bg-slate-300 sm:block"></span>
-                                <button type="button" title="واگرد" aria-label="واگرد" class="editor-tool" @click="format('undo')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7 4 12l5 5M4 12h10a6 6 0 0 1 6 6"/></svg></button>
-                                <button type="button" title="ازنو" aria-label="ازنو" class="editor-tool" @click="format('redo')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 7 5 5-5 5M20 12H10a6 6 0 0 0-6 6"/></svg></button>
-                            </div>
-                        </div>
-                        <div
-                            ref="editor"
-                            contenteditable="true"
-                            role="textbox"
-                            aria-label="متن نامه"
-                            aria-multiline="true"
-                            dir="rtl"
-                            :style="{ fontFamily: correspondenceFontFamily }"
-                            class="min-h-72 whitespace-normal p-4 text-sm leading-8 text-slate-800 outline-none"
-                            data-placeholder="متن نامه را اینجا بنویسید..."
-                            @input="syncBody"
-                        ></div>
-                    </div>
+                    <CorrespondenceRichTextEditor v-model="form.body" label="متن نامه" :font-family="correspondenceFontFamily" :disabled="form.processing" />
                     <InputError :message="form.errors.body" />
                 </section>
 
@@ -789,7 +673,7 @@ async function scanOriginalLetter(): Promise<void> {
                     <InputError :message="form.errors.appendix_mode" />
                     <div v-if="form.appendix_mode === 'editor' || form.appendix_mode === 'both'" class="space-y-2">
                         <label for="appendix_body" class="block text-sm font-semibold text-slate-700">متن پیوست</label>
-                        <textarea id="appendix_body" v-model="form.appendix_body" rows="8" maxlength="500000" class="w-full rounded-xl border-slate-300 text-sm leading-8 focus:border-indigo-500 focus:ring-indigo-500" placeholder="متن پیوست را وارد کنید..."></textarea>
+                        <CorrespondenceRichTextEditor v-model="form.appendix_body" label="متن پیوست" :font-family="correspondenceFontFamily" :disabled="form.processing" />
                         <InputError :message="form.errors.appendix_body" />
                     </div>
                     <div v-if="form.appendix_mode === 'file' || form.appendix_mode === 'both'" class="space-y-2">
