@@ -793,10 +793,11 @@ class CorrespondenceController extends Controller
             'created_department_id' => $createdDepartmentRules,
             'classification' => ['sometimes', 'required', Rule::in([Correspondence::CLASSIFICATION_ORDINARY, Correspondence::CLASSIFICATION_CONFIDENTIAL])],
             'subject' => ['required', 'string', 'max:255'],
+            'attachment_pages' => ['nullable', 'integer', 'min:1', 'max:9999'],
             'letter_number' => ['nullable', 'required_if:type,'.Correspondence::TYPE_INCOMING, 'string', 'max:100', Rule::unique('correspondences', 'letter_number')->where(fn ($query) => $query->where('type', Correspondence::TYPE_INCOMING)->where('external_organization_id', $request->input('external_organization_id')))],
             'composition_mode' => [Rule::requiredIf($request->input('type') !== Correspondence::TYPE_INCOMING), 'nullable', Rule::in(['editor', 'file', 'both'])],
             'body' => ['nullable', 'string', 'max:100000'],
-            'appendix_mode' => ['nullable', Rule::in(['editor', 'file', 'both'])],
+            'appendix_mode' => ['nullable', Rule::in(['none', 'editor', 'file', 'both'])],
             'appendix_body' => ['nullable', 'string', 'max:500000'],
             'sender_name' => ['nullable', 'string', 'max:255'],
             'recipient_name' => ['nullable', 'string', 'max:255'],
@@ -879,7 +880,7 @@ class CorrespondenceController extends Controller
         $mode = $data['type'] === Correspondence::TYPE_INCOMING
             ? 'file'
             : ($data['composition_mode'] ?? 'editor');
-        $appendixMode = $data['type'] === Correspondence::TYPE_INCOMING ? 'file' : ($data['appendix_mode'] ?? 'editor');
+        $appendixMode = $data['type'] === Correspondence::TYPE_INCOMING ? 'none' : ($data['appendix_mode'] ?? 'none');
         $appendixBody = in_array($appendixMode, ['editor', 'both'], true)
             ? $this->sanitizeBody((string) ($data['appendix_body'] ?? ''))
             : null;
@@ -920,7 +921,7 @@ class CorrespondenceController extends Controller
 
         $attachments = array_values(array_filter((array) $request->file('attachments', [])));
         $appendixFiles = array_values(array_filter((array) $request->file('appendix_files', [])));
-        if ($appendixMode === 'editor' && trim(strip_tags((string) $appendixBody)) === '') {
+        if (in_array($appendixMode, ['editor', 'both'], true) && trim(strip_tags((string) $appendixBody)) === '') {
             return back()->withErrors(['appendix_body' => 'متن پیوست را وارد کنید.'])->withInput();
         }
         if (in_array($appendixMode, ['file', 'both'], true) && count($appendixFiles) === 0) {
@@ -936,7 +937,7 @@ class CorrespondenceController extends Controller
                     'type' => $data['type'],
                     'classification' => $data['classification'] ?? Correspondence::CLASSIFICATION_ORDINARY,
                     'subject' => $data['subject'],
-                    'attachment_pages' => null,
+                    'attachment_pages' => $data['attachment_pages'] ?? null,
                     'appendix_mode' => $appendixMode,
                     'appendix_body' => $appendixBody,
                     'letter_number' => $data['letter_number'] ?? null,
@@ -1111,7 +1112,7 @@ class CorrespondenceController extends Controller
             'classification' => ['required', Rule::in([Correspondence::CLASSIFICATION_ORDINARY, Correspondence::CLASSIFICATION_CONFIDENTIAL])],
             'letter_number' => [Rule::requiredIf($correspondence->type === Correspondence::TYPE_INCOMING), 'nullable', 'string', 'max:100', Rule::unique('correspondences', 'letter_number')->ignore($correspondence->id)->where(fn ($query) => $query->where('type', Correspondence::TYPE_INCOMING)->where('external_organization_id', $request->input('external_organization_id')))],
             'body' => ['nullable', 'string', 'max:100000'], 'composition_mode' => ['nullable', Rule::in(['editor', 'file', 'both'])],
-            'appendix_mode' => ['nullable', Rule::in(['editor', 'file', 'both'])], 'appendix_body' => ['nullable', 'string', 'max:500000'],
+            'appendix_mode' => ['nullable', Rule::in(['none', 'editor', 'file', 'both'])], 'appendix_body' => ['nullable', 'string', 'max:500000'],
             'sender_name' => ['nullable', 'string', 'max:255'], 'recipient_name' => ['nullable', 'string', 'max:255'],
             'received_at' => [Rule::requiredIf($correspondence->type === Correspondence::TYPE_INCOMING), 'nullable', 'date'],
             'sent_at' => [Rule::requiredIf($correspondence->type === Correspondence::TYPE_OUTGOING), 'nullable', 'date'],
@@ -1131,11 +1132,11 @@ class CorrespondenceController extends Controller
         $mode = $correspondence->type === Correspondence::TYPE_INCOMING
             ? 'file'
             : ($data['composition_mode'] ?? (filled($data['body'] ?? $correspondence->body) ? 'editor' : 'file'));
-        $appendixMode = $correspondence->type === Correspondence::TYPE_INCOMING ? 'file' : ($data['appendix_mode'] ?? $correspondence->appendix_mode ?? 'editor');
+        $appendixMode = $correspondence->type === Correspondence::TYPE_INCOMING ? 'file' : ($data['appendix_mode'] ?? $correspondence->appendix_mode ?? 'none');
         $appendixBody = in_array($appendixMode, ['editor', 'both'], true)
             ? $this->sanitizeBody((string) ($data['appendix_body'] ?? $correspondence->appendix_body ?? ''))
             : null;
-        if ($appendixMode === 'editor' && trim(strip_tags((string) $appendixBody)) === '') {
+        if (in_array($appendixMode, ['editor', 'both'], true) && trim(strip_tags((string) $appendixBody)) === '') {
             return back()->withErrors(['appendix_body' => 'متن پیوست را وارد کنید.'])->withInput();
         }
         $body = $correspondence->type === Correspondence::TYPE_INCOMING || ($correspondence->type === Correspondence::TYPE_OUTGOING && $mode === 'file')
@@ -1172,7 +1173,7 @@ class CorrespondenceController extends Controller
             $locked = Correspondence::query()->whereKey($correspondence->id)->lockForUpdate()->firstOrFail();
             abort_unless($access->canManageBeforeAction($locked, $request->user()), 403);
             $locked->fill([
-                'subject' => $data['subject'], 'appendix_mode' => $appendixMode, 'appendix_body' => $appendixBody, 'classification' => $data['classification'],
+                'subject' => $data['subject'], 'attachment_pages' => $data['attachment_pages'] ?? $locked->attachment_pages, 'appendix_mode' => $appendixMode, 'appendix_body' => $appendixBody, 'classification' => $data['classification'],
                 'letter_number' => $locked->type === Correspondence::TYPE_INCOMING ? $data['letter_number'] : $locked->letter_number,
                 'body' => $body !== '' ? $body : null, 'sender_name' => $data['sender_name'] ?? null, 'recipient_name' => $data['recipient_name'] ?? null,
                 'received_at' => $data['received_at'] ?? null, 'sent_at' => $data['sent_at'] ?? null,
