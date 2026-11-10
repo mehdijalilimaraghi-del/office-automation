@@ -404,3 +404,12 @@ Organization Settings now has three tabs. A separate organization letterhead ima
 
 - Added `{{recipient_personal_title_prefix}}` to the addressing/heading element token catalog. It resolves from the external contact's immutable `recipient_addressing_snapshot.personal_salutation` value in print, independently of `{{recipient_title}}` (which continues to combine personal salutation and professional title for backward compatibility).
 - No database migration is needed; the personal salutation is already captured in the recipient addressing snapshot. Build and correspondence regression tests are pending. Development only; master/release/server unchanged.
+
+## 2026-11-10 — Correspondence editor and appendix validation notes
+
+- New migration: `2026_11_10_000001_add_appendix_content_to_correspondences_table.php`.
+- New editor component: `resources/js/Components/CorrespondenceRichTextEditor.vue`.
+- Main form now posts `appendix_mode`, `appendix_body`, and `appendix_files[]`. `appendix_files[]` accepts the same document types and 20 MB per-file limit as the existing supporting document uploads, with a maximum of 10 appendix files.
+- The main letter body and appendix body accept up to 500 KB of sanitized rich-text HTML. Inline images are limited in the editor to 180 KB each and PNG/JPEG/WEBP only.
+- Run migration and tests after pulling. Then run the frontend build and manually verify Home/Insert/contextual tabs, save/reopen, table editing, image insertion/resize/alignment, shapes, and links. Finally print a multi-page main letter with stamp/signature plus a multi-page text appendix and attached files; confirm issuer assets remain at the end of the main letter, appendix starts on a new A4 sheet, repeated template elements remain, and preview pages match printed PDF pages.
+- No build, PHP test suite, or browser/PDF acceptance has been run for this change yet.
