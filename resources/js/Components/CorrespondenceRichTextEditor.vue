@@ -171,10 +171,10 @@ function toggleList(ordered: boolean): void {
     if (existingList && editor.value.contains(existingList)) {
         const item = block.closest('li');
         if (!item) return;
+        if (existingList.querySelectorAll('li').length > 1) return;
         const replacement = document.createElement('p');
         replacement.innerHTML = item.innerHTML;
-        item.replaceWith(replacement);
-        if (!existingList.querySelector('li')) existingList.remove();
+        existingList.replaceWith(replacement);
     } else {
         const list = document.createElement(ordered ? 'ol' : 'ul');
         const item = document.createElement('li');
