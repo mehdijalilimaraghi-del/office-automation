@@ -607,6 +607,7 @@ function registerCorrespondence(): void {
 </template>
 
 <style scoped>
+.correspondence-body :deep(img) { max-width: 100%; height: auto; }
 .correspondence-body :deep(p) { margin: 0 0 0.75rem; }
 .correspondence-body :deep(ul) { list-style: disc; padding-right: 1.5rem; margin: 0.75rem 0; }
 .correspondence-body :deep(ol) { list-style: decimal; padding-right: 1.5rem; margin: 0.75rem 0; }
