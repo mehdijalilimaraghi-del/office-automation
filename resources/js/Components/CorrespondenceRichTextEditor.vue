@@ -87,9 +87,9 @@ function restoreSelection(range: Range): void {
 function wrapSelection(tag: string, style?: Record<string, string>): void {
     const target = editor.value;
     const selection = window.getSelection();
-    if (!target || !selection || selection.rangeCount === 0) return;
+    if (!target) return;
     target.focus();
-    const activeRange = selection.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer) ? selection.getRangeAt(0) : savedRange;
+    const activeRange = selection && selection.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer) ? selection.getRangeAt(0) : savedRange;
     if (!activeRange || !insideEditor(activeRange.commonAncestorContainer)) return;
     const range = activeRange.cloneRange();
     const wrapper = document.createElement(tag);
