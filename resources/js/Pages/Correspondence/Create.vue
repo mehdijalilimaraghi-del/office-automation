@@ -787,12 +787,12 @@ async function scanOriginalLetter(): Promise<void> {
                         </label>
                     </div>
                     <InputError :message="form.errors.appendix_mode" />
-                    <div v-if="form.appendix_mode !== 'file'" class="space-y-2">
+                    <div v-if="form.appendix_mode === 'editor' || form.appendix_mode === 'both'" class="space-y-2">
                         <label for="appendix_body" class="block text-sm font-semibold text-slate-700">متن پیوست</label>
                         <textarea id="appendix_body" v-model="form.appendix_body" rows="8" maxlength="500000" class="w-full rounded-xl border-slate-300 text-sm leading-8 focus:border-indigo-500 focus:ring-indigo-500" placeholder="متن پیوست را وارد کنید..."></textarea>
                         <InputError :message="form.errors.appendix_body" />
                     </div>
-                    <div v-if="form.appendix_mode !== 'editor'" class="space-y-2">
+                    <div v-if="form.appendix_mode === 'file' || form.appendix_mode === 'both'" class="space-y-2">
                         <div>
                             <h4 class="text-sm font-semibold text-slate-700">فایل‌های پیوست</h4>
                             <p class="mt-1 text-xs text-slate-500">PDF، Word، Excel، PowerPoint، تصویر و فایل متنی؛ حداکثر ۲۰ مگابایت برای هر فایل و ۱۰ فایل.</p>
