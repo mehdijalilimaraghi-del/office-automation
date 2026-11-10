@@ -369,8 +369,20 @@ function setCellDimension(dimension: 'width' | 'height', value: string, unit: 'm
 function setCellVerticalAlignment(value: string): void { cellsForFormatting().forEach(cell=>cell.style.verticalAlign=value); commit(); }
 function setCellPadding(value: string, unit: 'mm'|'px'): void { if(value)cellsForFormatting().forEach(cell=>cell.style.padding=`${value}${unit}`);commit(); }
 function applyCellBorders(callback:(cell:HTMLTableCellElement,side:string)=>void):void {
-    const sides=borderTarget.value==='top'||borderTarget.value==='bottom'||borderTarget.value==='left'||borderTarget.value==='right'?[borderTarget.value]:['top','right','bottom','left'];
-    cellsForFormatting().forEach(cell=>sides.forEach(side=>callback(cell,side)));
+    cellsForFormatting().forEach(cell=>{
+        let sides:string[];
+        if(['top','bottom','left','right'].includes(borderTarget.value)) sides=[borderTarget.value];
+        else if(borderTarget.value==='outer') {
+            const row=cell.parentElement as HTMLTableRowElement, table=cell.closest('table') as HTMLTableElement;
+            const rows=Array.from(table.rows), rowIndex=rows.indexOf(row);
+            sides=[];
+            if(rowIndex===0)sides.push('top');
+            if(rowIndex===rows.length-1)sides.push('bottom');
+            if(cell.cellIndex===0)sides.push('left');
+            if(cell.cellIndex===row.cells.length-1)sides.push('right');
+        } else sides=['top','right','bottom','left'];
+        sides.forEach(side=>callback(cell,side));
+    });
 }
 function setCellBorderColor(value:string):void {applyCellBorders((cell,side)=>cell.style.setProperty(`border-${side}-color`,value));commit();}
 function setCellBorderWidth(value:string,unit:'mm'|'px'):void {applyCellBorders((cell,side)=>cell.style.setProperty(`border-${side}-width`,`${value}${unit}`));commit();}
@@ -528,8 +540,9 @@ function redo(): void {
 }
 let resizeState: { cell: HTMLTableCellElement; axis: 'width'|'height'; start: number; initial: number } | null = null;
 function onEditorPointerDown(event: PointerEvent): void {
-    const target=event.target;
-    if(!(target instanceof HTMLTableCellElement))return;
+    const rawTarget=event.target;
+    const target=rawTarget instanceof Element ? rawTarget.closest('td,th') as HTMLTableCellElement | null : null;
+    if(!target)return;
     const rect=target.getBoundingClientRect(), edge=6;
     const nearRight=Math.abs(event.clientX-rect.right)<=edge;
     const nearBottom=Math.abs(event.clientY-rect.bottom)<=edge;
@@ -555,7 +568,7 @@ function onEditorClick(event: MouseEvent): void {
     currentImage.value = target.closest('img') as HTMLImageElement | null;
     currentShape.value = target.closest('[data-editor-shape]') as HTMLElement | null;
     const clickedCell = target.closest('td,th') as HTMLTableCellElement | null;
-    if (clickedCell && event.shiftKey && cellSelectionAnchor.value) selectCellRange(cellSelectionAnchor.value, clickedCell);
+    if (clickedCell && event.shiftKey && cellSelectionAnchor.value) { currentCell.value=clickedCell; selectCellRange(cellSelectionAnchor.value, clickedCell); }
     else if (clickedCell) { currentCell.value=clickedCell;cellSelectionAnchor.value=clickedCell;selectedCells.value=[clickedCell];paintCellSelection(); }
     else selectedCells.value=[];
     context.value = { table: !!target.closest('table'), picture: !!currentImage.value, shape: !!currentShape.value };
@@ -582,7 +595,7 @@ onMounted(() => {
     history.value = [editor.value?.innerHTML ?? ''];
     window.addEventListener('selectionchange', onSelectionChange);
 });
-onBeforeUnmount(() => window.removeEventListener('selectionchange', onSelectionChange));
+onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectionChange); document.removeEventListener('pointermove', onEditorPointerMove); document.removeEventListener('pointerup', onEditorPointerUp); });
 </script>
 
 <template>
@@ -602,8 +615,14 @@ onBeforeUnmount(() => window.removeEventListener('selectionchange', onSelectionC
             <button type="button" class="rte-tool" title="مورب" aria-label="مورب" @click="applyFormat('em')"><Italic :size="16" /></button>
             <button type="button" class="rte-tool" title="زیرخط" aria-label="زیرخط" @click="applyFormat('u')"><Underline :size="16" /></button>
             <button type="button" class="rte-tool" title="خط‌خورده" aria-label="خط‌خورده" @click="applyFormat('s')"><Strikethrough :size="16" /></button>
-            <label class="rte-tool" title="رنگ متن">A<input type="color" class="absolute h-px w-px opacity-0" @input="applyTextColor(($event.target as HTMLInputElement).value)" /></label>
-            <label class="rte-tool" title="رنگ زمینه متن">▰<input type="color" value="#fff59d" class="absolute h-px w-px opacity-0" @input="applyHighlight(($event.target as HTMLInputElement).value)" /></label>
+            <div class="rte-tool" title="رنگ متن">A
+                <button v-for="color in colorPalette" :key="'font-'+color" type="button" class="h-4 w-4 rounded-sm border border-slate-300" :style="{backgroundColor:color}" :title="color" @click="applyTextColor(color)"></button>
+                <input type="color" title="رنگ دلخواه متن" @input="applyTextColor(($event.target as HTMLInputElement).value)" />
+            </div>
+            <div class="rte-tool" title="رنگ پس‌زمینه متن">هایلایت
+                <button v-for="color in colorPalette" :key="'highlight-'+color" type="button" class="h-4 w-4 rounded-sm border border-slate-300" :style="{backgroundColor:color}" :title="color" @click="applyHighlight(color)"></button>
+                <input type="color" title="رنگ دلخواه زمینه متن" @input="applyHighlight(($event.target as HTMLInputElement).value)" />
+            </div>
             <span class="mx-1 h-6 w-px bg-slate-200"></span>
             <button type="button" class="rte-tool" title="راست‌چین" aria-label="راست‌چین" @click="align('right')"><AlignRight :size="16" /></button>
             <button type="button" class="rte-tool" title="وسط‌چین" aria-label="وسط‌چین" @click="align('center')"><AlignCenter :size="16" /></button>
