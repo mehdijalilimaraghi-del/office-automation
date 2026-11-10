@@ -1519,7 +1519,7 @@ class CorrespondenceController extends Controller
             'text-align' => '/^(left|right|center|justify)$/i',
             'font-family' => '/^(Vazirmatn|Arial|Tahoma|B Nazanin|B Mitra|IRANSans|Times New Roman)$/i',
             'font-size' => '/^(8|9|1[0-9]|2[0-9]|3[0-6])(pt|px)$/i',
-            'font-weight' => '/^(normal|bold|[1-9]00$/i',
+            'font-weight' => '/^(normal|bold|[1-9]00)$/i',
             'font-style' => '/^(normal|italic)$/i',
             'text-decoration' => '/^(none|underline|line-through|underline line-through)$/i',
             'color' => '/^#[0-9a-f]{3,8}$/i',
