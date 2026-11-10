@@ -182,7 +182,7 @@ function printLetter():void{window.print();}
       <div class="text-center text-sm leading-7"><p v-if="creatorUnitTitle" class="font-semibold">{{creatorUnitTitle}}</p><p v-if="creatorName" class="font-bold">{{creatorName}}</p></div>
      </footer>
     </div>
-    <div v-else class="document-content appendix-content" :style="pageContentStyle(pageIndex-mainPageCount)>
+    <div v-else class="document-content appendix-content" :style="pageContentStyle(pageIndex-mainPageCount)">
      <div v-if="pageIndex===mainPageCount+1" class="appendix-heading">پیوست</div>
      <section class="letter-body appendix-body" :style="appendixBodyStyle()" v-html="letter.appendix_body||''"></section>
     </div>
