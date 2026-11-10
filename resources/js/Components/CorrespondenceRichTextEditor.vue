@@ -134,6 +134,15 @@ function setBlockStyle(property: string, value: string): void {
     commit();
 }
 function applyFormat(tag: 'strong' | 'em' | 'u' | 's' | 'sup' | 'sub'): void {
+    const existing = selectedElement()?.closest(tag);
+    if (existing && editor.value?.contains(existing)) {
+        const parent = existing.parentNode;
+        if (!parent) return;
+        while (existing.firstChild) parent.insertBefore(existing.firstChild, existing);
+        existing.remove();
+        commit();
+        return;
+    }
     wrapSelection(tag);
 }
 function applyFontFamily(value: string): void { setInlineStyle('font-family', value); }
