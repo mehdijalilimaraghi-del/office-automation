@@ -51,6 +51,11 @@ function findBlock(element: Element | null): HTMLElement | null {
     return block instanceof HTMLElement && editor.value?.contains(block) ? block : null;
 }
 function refreshContext(): void {
+    if (document.activeElement?.closest('.rte-toolbar')) {
+        if (currentImage.value?.isConnected) { context.value = { table: false, picture: true, shape: false }; return; }
+        if (currentShape.value?.isConnected) { context.value = { table: false, picture: false, shape: true }; return; }
+        if (currentCell.value?.isConnected) { context.value = { table: true, picture: false, shape: false }; return; }
+    }
     const element = selectedElement();
     if (!insideEditor(window.getSelection()?.anchorNode ?? null)) {
         if (document.activeElement?.closest('.rte-toolbar')) return;
