@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { AlignCenter, AlignJustify, AlignLeft, AlignRight, ArrowRight, Bold, Circle, Columns3, Image, IndentDecrease, IndentIncrease, Italic, Link, List, ListOrdered, Minus, PaintBucket, Redo2, RectangleHorizontal, Rows3, Strikethrough, Table2, Trash2, Underline, Undo2, Palette, RotateCw, FlipHorizontal, FlipVertical, Scissors, Copy, Clipboard, Eraser, Paintbrush, MoreHorizontal, Grid3X3, TableProperties, WrapText, Maximize2 } from '@lucide/vue';
+import { AlignCenter, AlignJustify, AlignLeft, AlignRight, ArrowRight, Bold, Circle, Columns3, Image, IndentDecrease, IndentIncrease, Italic, Link, List, ListOrdered, Minus, PaintBucket, Redo2, RectangleHorizontal, Rows3, Strikethrough, Table2, Trash2, Underline, Undo2, Palette, RotateCw, FlipHorizontal, FlipVertical, Scissors, Copy, Clipboard, Eraser, Grid3X3, TableProperties, Maximize2 } from '@lucide/vue';
 
 type Tab = 'home' | 'insert' | 'table' | 'picture' | 'shape';
 const props = withDefaults(defineProps<{ modelValue: string; label: string; fontFamily?: string; disabled?: boolean }>(), {
