@@ -572,14 +572,14 @@ function onEditorPointerDown(event: PointerEvent): void {
     const rect=target.getBoundingClientRect(), edge=6;
     const nearRight=Math.abs(event.clientX-rect.right)<=edge;
     const nearBottom=Math.abs(event.clientY-rect.bottom)<=edge;
-    if(!nearRight&&!nearBottom){const table=target.closest('table') as HTMLTableElement|null;if(table){dragSelection={table,start:target};didDragSelect=false;event.preventDefault();document.addEventListener('pointermove',onCellDragMove);document.addEventListener('pointerup',onCellDragEnd,{once:true});}return;}
+    if(!nearRight&&!nearBottom){const table=target.closest('table') as HTMLTableElement|null;if(table){dragSelection.value={table,start:target};didDragSelect=false;event.preventDefault();document.addEventListener('pointermove',onCellDragMove);document.addEventListener('pointerup',onCellDragEnd,{once:true});}return;}
     const table=target.closest('table') as HTMLTableElement|null;if(!table)return;resizeState={cell:target,axis:nearRight?'width':'height',start:nearRight?event.clientX:event.clientY,initial:nearRight?rect.width:rect.height,table,index:nearRight?target.cellIndex:Array.from(table.rows).indexOf(target.parentElement as HTMLTableRowElement)};
     event.preventDefault();
     document.addEventListener('pointermove',onEditorPointerMove);
     document.addEventListener('pointerup',onEditorPointerUp,{once:true});
 }
-function onCellDragMove(event:PointerEvent):void {if(!dragSelection)return;const node=document.elementFromPoint(event.clientX,event.clientY);const cell=node instanceof Element?node.closest('td,th') as HTMLTableCellElement|null:null;if(!cell||cell.closest('table')!==dragSelection.table)return;didDragSelect=true;currentCell.value=cell;selectCellRange(dragSelection.start,cell);}
-function onCellDragEnd():void {document.removeEventListener('pointermove',onCellDragMove);if(dragSelection){if(didDragSelect){currentCell.value=selectedCells.value[selectedCells.value.length-1]??dragSelection.start;paintCellSelection();}dragSelection=null;}}
+function onCellDragMove(event:PointerEvent):void {if(!dragSelection.value)return;const node=document.elementFromPoint(event.clientX,event.clientY);const cell=node instanceof Element?node.closest('td,th') as HTMLTableCellElement|null:null;if(!cell||cell.closest('table')!==dragSelection.value.table)return;didDragSelect=true;currentCell.value=cell;selectCellRange(dragSelection.value.start,cell);}
+function onCellDragEnd():void {document.removeEventListener('pointermove',onCellDragMove);if(dragSelection.value){if(didDragSelect){currentCell.value=selectedCells.value[selectedCells.value.length-1]??dragSelection.value.start;paintCellSelection();}dragSelection.value=null;}}
 function onEditorPointerMove(event:PointerEvent):void {
     if(!resizeState)return;
     const delta=(resizeState.axis==='width'?event.clientX:event.clientY)-resizeState.start;
