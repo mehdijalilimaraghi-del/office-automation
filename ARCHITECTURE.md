@@ -633,3 +633,6 @@ These are code-level implementations only. The feature remains **in progress / u
 - Image/shape interaction adds visible selected-state outlines, rotation/flip metadata expressed as inline transforms, and contextual right-click menus. Image sizing uses intrinsic aspect-ratio metadata; shape outline width is adjustable.
 - Inline image client cap increased to 350 KB. Base64/data-URL expansion means request validation and server-side sanitizer constraints must be checked before treating this as a supported storage limit.
 - These changes do not alter the editor's scope or print architecture. Verify sanitizer allowlisting for transform/aspect-ratio properties, event cleanup, selection across rowspan/colspan, and preview/print rendering before acceptance. Build and browser tests have not been run.
+
+## 2026-11-11 — TypeScript correction
+Fixed Vue `ref` access in table pointer-drag selection: assignments and reads now consistently use `dragSelection.value`. This addresses the reported TS2588/TS2339 errors at the drag-selection handlers. The correction is committed to `development`; build has not yet been rerun and no build success is claimed.
