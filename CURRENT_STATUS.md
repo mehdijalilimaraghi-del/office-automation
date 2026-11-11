@@ -2479,3 +2479,9 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - Added a bottom-action preview button only for outgoing correspondence. The button opens the existing A4 print renderer in a new tab using current unsaved form values and live template/organization assets through an authenticated CSRF-protected endpoint. The preview uses an unsaved in-memory model; it does not persist the draft.
 - Uploaded main/appendix file contents are not rendered; the preview displays an explanatory notice. Incoming correspondence is unchanged.
 - **Status: implemented in source, not verified.** Run PHP feature tests, npm run build (Vue type-check + Vite), then browser checks for sticky positioning, preview accuracy, popup/CSRF behavior, and no database persistence. No claim of build or browser success. Development only.
+
+## 2026-11-11 — Fix for resized tables exceeding A4 letter width
+
+- Root cause: resizing persisted inline `max-width:none!important` on table/cells, which defeated the A4 preview's max-width rule. Unresized tables did not have this override.
+- Updated editor resizing to retain a 100% maximum width and allow cell wrapping. Updated Print.vue to normalize both new and legacy stored table HTML after render, before page-height measurement, and constrain tables/cells to the letter body width.
+- **Status: source implemented, not verified in browser/build.** Retest a previously resized three-column table, shrink and enlarge its width, compare to an unmodified table, and confirm no horizontal overflow in screen preview or print.
