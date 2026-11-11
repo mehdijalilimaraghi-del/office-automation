@@ -121,7 +121,7 @@ function switchTab(tab: Tab, event: MouseEvent): void {
     activeTab.value = tab;
 }
 
-function refreshContext(): void {
+function refreshContext(forceClear = false): void {
     const activeElement = document.activeElement;
     // Any focus movement inside the editor shell (tab strip, toolbar controls,
     // color popovers or contextual actions) is still part of this editor.
@@ -140,6 +140,15 @@ function refreshContext(): void {
         } else if (contextTarget.value?.isConnected && editor.value?.contains(contextTarget.value)) {
             applyContextTarget(contextTarget.value);
         }
+        return;
+    }
+    // contenteditable can emit selectionchange in the brief interval between
+    // blur of the editor and focus of the toolbar control. That is not a real
+    // exit from this editor: retain the pinned object until an outside pointer
+    // interaction or the deferred shell focusout confirms the exit.
+    const pinned = pinnedContextTarget.value;
+    if (!forceClear && pinned?.isConnected && editor.value?.contains(pinned)) {
+        applyContextTarget(pinned);
         return;
     }
     contextTarget.value = null;
@@ -351,6 +360,12 @@ function closeContextMenuOutside(event: PointerEvent): void {
     const target = event.target;
     if (target instanceof Element && target.closest('.rte-context-menu')) return;
     contextMenu.value = null;
+}
+function clearContextOnOutsidePointerDown(event: PointerEvent): void {
+    const target = event.target;
+    if (target instanceof Node && editorShell.value?.contains(target)) return;
+    // An actual pointer interaction outside the shell is an authoritative exit.
+    refreshContext(true);
 }
 function preserveEditorSelection(event: PointerEvent): void {
     const target = event.target;
@@ -957,11 +972,13 @@ watch(() => props.modelValue, async (value) => {
 async function syncExternalContentOnBlur(): Promise<void> {
     await nextTick();
     if (!editor.value || editorShell.value?.contains(document.activeElement)) return;
-    if (editor.value.innerHTML === (props.modelValue || '')) return;
-    editor.value.innerHTML = props.modelValue || '';
-    history.value = [editor.value.innerHTML];
-    historyIndex.value = 0;
-    refreshContext();
+    if (editor.value.innerHTML !== (props.modelValue || '')) {
+        editor.value.innerHTML = props.modelValue || '';
+        history.value = [editor.value.innerHTML];
+        historyIndex.value = 0;
+    }
+    // Unlike selectionchange, this deferred check runs after focus has settled.
+    refreshContext(true);
 }
 onMounted(() => {
     if (editor.value) editor.value.innerHTML = props.modelValue || '';
@@ -970,8 +987,9 @@ onMounted(() => {
     document.addEventListener('pointerdown', closeColorMenus);
     document.addEventListener('pointerdown', closeContextMenuOutside);
     document.addEventListener('pointerdown', preserveEditorSelection, true);
+    document.addEventListener('pointerdown', clearContextOnOutsidePointerDown, true);
 });
-onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectionChange); document.removeEventListener('pointerdown', closeColorMenus); document.removeEventListener('pointerdown', closeContextMenuOutside); document.removeEventListener('pointerdown', preserveEditorSelection, true); document.removeEventListener('pointermove', onEditorPointerMove); document.removeEventListener('pointerup', onEditorPointerUp); document.removeEventListener('pointermove',onCellDragMove);document.removeEventListener('pointerup',onCellDragEnd); });
+onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectionChange); document.removeEventListener('pointerdown', closeColorMenus); document.removeEventListener('pointerdown', closeContextMenuOutside); document.removeEventListener('pointerdown', preserveEditorSelection, true); document.removeEventListener('pointerdown', clearContextOnOutsidePointerDown, true); document.removeEventListener('pointermove', onEditorPointerMove); document.removeEventListener('pointerup', onEditorPointerUp); document.removeEventListener('pointermove',onCellDragMove);document.removeEventListener('pointerup',onCellDragEnd); });
 </script>
 
 <template>
