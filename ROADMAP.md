@@ -1217,3 +1217,8 @@ Fixed Vue `ref` access in table pointer-drag selection: assignments and reads no
 - [x] Read dimension values from the selected element; add separate table height control; make image aspect-ratio lock visible and opt-in by default.
 - [ ] Verify no-color and palette dismissal in browser; verify numeric spacing, all selected-element dimensions, image ratio lock/unlock, save/reopen, and A4 preview/print.
 - [ ] Run frontend production build. No build or browser acceptance is claimed. Development only; master/release/server unchanged.
+
+
+## 2026-11-11 — Editor dimension and border reset refinement
+
+Dimension readback now uses the selected element's untransformed layout box (`offsetWidth`/`offsetHeight`) so rotation does not distort the width/height values shown in the property controls. Clearing a table border disables that side; choosing a color afterward restores a visible solid border. Image intrinsic-ratio handling now registers the load callback before assigning the data URL. These are source-level refinements only; build and browser verification remain pending.
