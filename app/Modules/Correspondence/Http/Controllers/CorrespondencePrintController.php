@@ -5,12 +5,18 @@ declare(strict_types=1);
 namespace App\Modules\Correspondence\Http\Controllers;
 
 use App\Core\Settings\Services\SystemSettingsService;
+use App\Core\Departments\Models\Department;
+use App\Core\ExternalParties\Models\ExternalOrganization;
+use App\Core\ExternalParties\Models\ExternalDepartment;
+use App\Core\ExternalParties\Models\ExternalContact;
 use App\Http\Controllers\Controller;
 use App\Core\Departments\Models\PositionAssignment;
 use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Services\CorrespondenceAccessService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -26,6 +32,108 @@ class CorrespondencePrintController extends Controller
         abort_unless($correspondence->status === Correspondence::STATUS_REGISTERED, 404);
 
         $correspondence->loadMissing([
+            'documents.document.latestVersion',
+            'creator:id,name',
+            'createdDepartment:id,name,manager_id,manager_signature_path,manager_signature_active',
+            'createdDepartment.manager:id,name',
+            'externalOrganization:id,name',
+            'externalDepartment:id,name',
+        ]);
+
+        return $this->render($correspondence, $settings, false);
+    }
+
+    public function preview(Request $request, SystemSettingsService $settings): Response
+    {
+        abort_unless($request->user()->hasPermission('correspondence.create'), 403);
+
+        $payload = json_decode((string) $request->input('preview', ''), true);
+        abort_unless(is_array($payload), 422, 'اطلاعات پیش‌نمایش معتبر نیست.');
+
+        $allowedDepartmentIds = $request->user()->departments()
+            ->where('departments.is_active', true)
+            ->pluck('departments.id')
+            ->merge($request->user()->managedDepartments()->where('is_active', true)->pluck('departments.id'))
+            ->map(static fn ($id): int => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        $data = Validator::make($payload, [
+            'created_department_id' => ['nullable', 'integer', Rule::in($allowedDepartmentIds)],
+            'subject' => ['nullable', 'string', 'max:255'],
+            'composition_mode' => ['required', Rule::in(['editor', 'file', 'both'])],
+            'body' => ['nullable', 'string', 'max:500000'],
+            'sent_at' => ['nullable', 'date'],
+            'recipient_name' => ['nullable', 'string', 'max:255'],
+            'external_organization_id' => ['nullable', 'integer', Rule::exists('external_organizations', 'id')->where('status', 'active')],
+            'external_department_id' => ['nullable', 'integer', Rule::exists('external_departments', 'id')->where(fn ($query) => $query->where('status', 'active')->where('external_organization_id', $payload['external_organization_id'] ?? null))],
+            'external_contact_id' => ['nullable', 'integer', Rule::exists('external_contacts', 'id')->where(fn ($query) => $query->where('status', 'active')->where('external_organization_id', $payload['external_organization_id'] ?? null)->where(function ($scope) use ($payload): void {
+                $departmentId = $payload['external_department_id'] ?? null;
+                $departmentId ? $scope->where('external_department_id', $departmentId) : $scope->whereNull('external_department_id');
+            }))],
+            'appendix_mode' => ['nullable', Rule::in(['none', 'editor', 'file', 'both'])],
+            'appendix_body' => ['nullable', 'string', 'max:500000'],
+            'appendix_file_count' => ['nullable', 'integer', 'min:0', 'max:10'],
+        ])->validate();
+
+        $department = ! empty($data['created_department_id'])
+            ? Department::query()->with('manager:id,name')->findOrFail($data['created_department_id'])
+            : null;
+        $externalOrganization = ! empty($data['external_organization_id'])
+            ? ExternalOrganization::query()->findOrFail($data['external_organization_id'])
+            : null;
+        $externalDepartment = ! empty($data['external_department_id'])
+            ? ExternalDepartment::query()->findOrFail($data['external_department_id'])
+            : null;
+        $externalContact = ! empty($data['external_contact_id'])
+            ? ExternalContact::query()->findOrFail($data['external_contact_id'])
+            : null;
+
+        $recipientAddressing = $externalContact === null ? null : [
+            'organizational_title_prefix' => $externalContact->organizational_title_prefix,
+            'position' => $externalContact->position,
+            'personal_salutation' => $externalContact->personal_salutation,
+            'professional_title' => $externalContact->professional_title,
+            'name' => $externalContact->name,
+            'organization_name' => $externalOrganization?->name,
+            'department_name' => $externalDepartment?->name,
+        ];
+
+        $correspondence = new Correspondence([
+            'type' => Correspondence::TYPE_OUTGOING,
+            'subject' => $data['subject'] ?? '',
+            'body' => ($data['composition_mode'] ?? 'editor') === 'file' ? '' : ($data['body'] ?? ''),
+            'appendix_mode' => $data['appendix_mode'] ?? 'none',
+            'appendix_body' => $data['appendix_body'] ?? null,
+            'sent_at' => $data['sent_at'] ?? null,
+            'recipient_name' => $data['recipient_name'] ?? $externalContact?->name,
+            'created_by' => $request->user()->id,
+            'created_department_id' => $department?->id,
+            'external_organization_id' => $externalOrganization?->id,
+            'external_department_id' => $externalDepartment?->id,
+            'external_contact_id' => $externalContact?->id,
+            'recipient_addressing_snapshot' => $recipientAddressing,
+        ]);
+        $correspondence->setRelation('creator', $request->user());
+        $correspondence->setRelation('createdDepartment', $department);
+        $correspondence->setRelation('externalOrganization', $externalOrganization);
+        $correspondence->setRelation('externalDepartment', $externalDepartment);
+        $correspondence->setRelation('documents', collect());
+        $correspondence->setAttribute('preview_appendix_file_count', (int) ($data['appendix_file_count'] ?? 0));
+        $correspondence->setAttribute(
+            'preview_notice',
+            ($data['composition_mode'] ?? 'editor') === 'file'
+                ? 'این پیش‌نمایش، قالب نامه را نشان می‌دهد؛ محتوای فایل اصلی بارگذاری‌شده در این نما قابل ادغام نیست.'
+                : null,
+        );
+
+        return $this->render($correspondence, $settings, true);
+    }
+
+    private function render(Correspondence $correspondence, SystemSettingsService $settings, bool $isPreview): Response
+    {
+        $snapshot = $correspondence->document_identity_snapshot ?? [];
             'documents.document.latestVersion',
             'creator:id,name',
             'createdDepartment:id,name,manager_id,manager_signature_path,manager_signature_active',
@@ -119,15 +227,17 @@ class CorrespondencePrintController extends Controller
         }
 
         return Inertia::render('Correspondence/Print', [
+            'isPreview' => $isPreview,
+            'previewNotice' => $isPreview ? $correspondence->getAttribute('preview_notice') : null,
             'letter' => [
-                'id' => $correspondence->id,
+                'id' => $isPreview ? 0 : $correspondence->id,
                 'type' => $correspondence->type,
                 'subject' => $correspondence->subject,
                 'attachment_pages' => $correspondence->attachment_pages,
                 'body' => $correspondence->body,
                 'appendix_mode' => $correspondence->appendix_mode ?? 'none',
                 'appendix_body' => $correspondence->appendix_body,
-                'appendix_file_count' => $correspondence->documents->where('purpose', 'correspondence_appendix')->filter(fn ($link) => $link->document?->latestVersion !== null)->count(),
+                'appendix_file_count' => $isPreview ? (int) $correspondence->getAttribute('preview_appendix_file_count') : $correspondence->documents->where('purpose', 'correspondence_appendix')->filter(fn ($link) => $link->document?->latestVersion !== null)->count(),
                 'letter_number' => $correspondence->letter_number,
                 'registration_number' => $correspondence->registration_number,
                 'registered_at' => $correspondence->registered_at?->toIso8601String(),
