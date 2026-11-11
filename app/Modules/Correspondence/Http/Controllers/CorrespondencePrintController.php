@@ -74,7 +74,7 @@ class CorrespondencePrintController extends Controller
             }))],
             'appendix_mode' => ['nullable', Rule::in(['none', 'editor', 'file', 'both'])],
             'appendix_body' => ['nullable', 'string', 'max:500000'],
-            'appendix_file_count' => ['nullable', 'integer', 'min:0', 'max:10'],
+            'appendix_file_count' => ['nullable', 'integer', 'min:0', 'max:20'],
         ])->validate();
 
         $department = ! empty($data['created_department_id'])
