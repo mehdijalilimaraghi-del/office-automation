@@ -295,8 +295,26 @@ function dimensionMm(element: HTMLElement | null, axis: 'width' | 'height'): str
     const px = axis === 'width' ? element.offsetWidth : element.offsetHeight;
     return px > 0 ? (px * 25.4 / 96).toFixed(1) : '';
 }
-function selectedTable(): HTMLTableElement | null { return currentCell.value?.closest('table') as HTMLTableElement | null; }
-function selectedCell(): HTMLTableCellElement | null { return currentCell.value; }
+function selectedTable(): HTMLTableElement | null {
+    const selected = currentCell.value?.isConnected ? currentCell.value : selectedElement()?.closest('td,th');
+    const table = selected?.closest('table');
+    return table instanceof HTMLTableElement ? table : null;
+}
+function selectedCell(): HTMLTableCellElement | null {
+    if (currentCell.value?.isConnected) return currentCell.value;
+    const cell = selectedElement()?.closest('td,th');
+    return cell instanceof HTMLTableCellElement ? cell : null;
+}
+function selectedImage(): HTMLImageElement | null {
+    if (currentImage.value?.isConnected) return currentImage.value;
+    const image = selectedElement()?.closest('img');
+    return image instanceof HTMLImageElement ? image : null;
+}
+function selectedShape(): HTMLElement | null {
+    if (currentShape.value?.isConnected) return currentShape.value;
+    const shape = selectedElement()?.closest('[data-editor-shape]');
+    return shape instanceof HTMLElement ? shape : null;
+}
 function closeColorMenus(event: PointerEvent): void {
     const target = event.target;
     if (!(target instanceof Element) || target.closest('.rte-color-menu')) return;
@@ -530,10 +548,20 @@ function setTableDimension(dimension: 'width' | 'height', value: string, unit: '
     table.style.setProperty(dimension, cssValue, 'important');
     table.style.setProperty('box-sizing', 'border-box');
     if (dimension === 'width') {
-        // In auto table layout, a cell's width is only a hint and the browser may
-        // silently redistribute it. Fixed layout makes the requested dimensions effective.
+        // Fixed table layout is required: in auto layout the browser treats cell
+        // widths as hints and redistributes them, making the requested size appear ignored.
         table.style.setProperty('max-width', 'none', 'important');
-        table.style.setProperty('table-layout', 'fixed');
+        table.style.setProperty('table-layout', 'fixed', 'important');
+        table.querySelectorAll('td,th').forEach(cell => {
+            (cell as HTMLElement).style.setProperty('max-width', 'none', 'important');
+            (cell as HTMLElement).style.setProperty('box-sizing', 'border-box');
+        });
+    } else {
+        // A table's height is a minimum in the CSS table model. Set row heights
+        // as well so the requested height is reflected by the rendered grid.
+        const rows = Array.from(table.rows);
+        const rowHeight = numeric / Math.max(rows.length, 1);
+        rows.forEach(row => row.style.setProperty('height', `${rowHeight}${unit}`, 'important'));
     }
     commit();
 }
@@ -585,7 +613,7 @@ function setImageWidth(value: string): void {
     commit();
 }
 function setImageDimension(dimension: 'width' | 'height', value: string, unit: 'mm' | 'px'): void {
-    const image = currentImage.value;
+    const image = selectedImage();
     const numeric = Number(value);
     if (!image?.isConnected || !Number.isFinite(numeric) || numeric <= 0) return;
     const ratio = (image.naturalWidth || image.width) / (image.naturalHeight || image.height || 1);
@@ -698,7 +726,7 @@ function setShapeBorderColor(value: string): void {
     commit();
 }
 function setShapeDimension(dimension: 'width' | 'height', value: string, unit: 'mm' | 'px'): void {
-    const shape = currentShape.value;
+    const shape = selectedShape();
     const numeric = Number(value);
     if (!shape?.isConnected || !Number.isFinite(numeric) || numeric <= 0) return;
     shape.style.setProperty('display', 'inline-block');
