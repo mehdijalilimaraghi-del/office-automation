@@ -46,6 +46,10 @@ const tabs: { id: Tab; label: string }[] = [
 const contextTarget = ref<HTMLElement | null>(null);
 // Keep the object selected in the document stable while toolbar controls take focus.
 const pinnedContextTarget = ref<HTMLElement | null>(null);
+// True while the pointer interaction started in the toolbar. Some browsers
+// never focus toolbar buttons, so selectionchange/focusout must not treat
+// that click as leaving the contextual tab.
+let toolbarEngaged = false;
 function isTabAvailable(tab: Tab): boolean {
     if (tab === 'table') return context.value.table;
     if (tab === 'picture') return context.value.picture;
@@ -61,7 +65,10 @@ function applyContextTarget(target: Element | null, activateTab = false): void {
     currentShape.value = shape instanceof HTMLElement ? shape : null;
     currentCell.value = cell instanceof HTMLTableCellElement ? cell : null;
     contextTarget.value = (currentImage.value ?? currentShape.value ?? currentCell.value ?? (table instanceof HTMLTableElement ? table : null)) as HTMLElement | null;
-    context.value = { table: !!table, picture: !!currentImage.value, shape: !!currentShape.value };
+    const nextContext = { table: !!table, picture: !!currentImage.value, shape: !!currentShape.value };
+    if (context.value.table !== nextContext.table || context.value.picture !== nextContext.picture || context.value.shape !== nextContext.shape) {
+        context.value = nextContext;
+    }
     if (activateTab) {
         if (currentImage.value) activeTab.value = 'picture';
         else if (currentShape.value) activeTab.value = 'shape';
@@ -100,11 +107,12 @@ function findBlock(element: Element | null): HTMLElement | null {
     const block = element?.closest('p,div,li,h2,h3,blockquote,td,th');
     return block instanceof HTMLElement && block !== editor.value && editor.value?.contains(block) ? block : null;
 }
-function pinContextualSelection(event?: PointerEvent): void {
+function pinContextualSelection(event?: Event): void {
     // Only toolbar interactions should pin the current object. A pointerdown
     // in the editable document must be allowed to replace the previous target.
     const eventTarget = event?.target;
     if (event && (!(eventTarget instanceof Element) || !eventTarget.closest('.rte-toolbar'))) return;
+    toolbarEngaged = true;
     const selection = window.getSelection();
     if (selection?.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer)) {
         savedRange = selection.getRangeAt(0).cloneRange();
@@ -116,6 +124,19 @@ function pinContextualSelection(event?: PointerEvent): void {
         pinnedContextTarget.value = candidate;
         applyContextTarget(candidate);
     }
+}
+function onShellMouseDown(event: MouseEvent): void {
+    const target = event.target;
+    if (!(target instanceof Element) || !target.closest('.rte-toolbar')) return;
+    // Capture phase: cancel the default focus move before it blurs the
+    // document and collapses the contextual tab back to خانه.
+    // Fields and the color/details disclosure must still be able to take focus.
+    if (target.closest('input, textarea, select, option, label, summary')) return;
+    event.preventDefault();
+}
+function isToolbarFieldFocused(): boolean {
+    const el = document.activeElement;
+    return !!el && !!editorShell.value?.contains(el) && (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement);
 }
 function switchTab(tab: Tab, event: MouseEvent): void {
     if (!isTabAvailable(tab)) return;
@@ -130,7 +151,7 @@ function refreshContext(forceClear = false): void {
     // Any focus movement inside the editor shell (tab strip, toolbar controls,
     // color popovers or contextual actions) is still part of this editor.
     // Do not interpret it as deselecting the object or reset the active tab.
-    if (editorShell.value?.contains(activeElement)) {
+    if (editorShell.value?.contains(activeElement) || (!forceClear && toolbarEngaged)) {
         if (editor.value?.contains(activeElement)) {
             const selection = window.getSelection();
             if (selection?.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer)) {
@@ -177,6 +198,9 @@ function updateSelectedFontSize(range: Range): void {
     currentFontSize.value = Math.abs(startPt - endPt) < 0.01 ? `${startPt}pt` : '';
 }
 function onSelectionChange(): void {
+    // Editing a size/select field also emits selectionchange. Re-rendering
+    // here would write the previous :value back into the input.
+    if (isToolbarFieldFocused()) return;
     refreshContext();
 }
 function onEditorFocus(): void {
@@ -378,6 +402,7 @@ function closeContextMenuOutside(event: PointerEvent): void {
 function clearContextOnOutsidePointerDown(event: PointerEvent): void {
     const target = event.target;
     if (target instanceof Node && editorShell.value?.contains(target)) return;
+    toolbarEngaged = false;
     // An actual pointer interaction outside the shell is an authoritative exit.
     refreshContext(true);
 }
@@ -628,6 +653,7 @@ function setCellDimension(dimension: 'width' | 'height', value: string, unit: 'm
     const cssValue = `${numeric}${unit}`;
     cells.forEach(cell => {
         cell.style.setProperty(dimension, cssValue, 'important');
+        cell.style.setProperty(dimension === 'width' ? 'min-width' : 'min-height', '0', 'important');
         if (dimension === 'width') {
             const table = cell.closest('table');
             if (table) {
@@ -873,6 +899,7 @@ function onEditorPointerDown(event: PointerEvent): void {
     const rawTarget = event.target;
     if (rawTarget instanceof Element && editor.value?.contains(rawTarget)) {
         // A new document interaction explicitly replaces the previous toolbar pin.
+        toolbarEngaged = false;
         pinnedContextTarget.value = null;
         applyContextTarget(rawTarget, true);
         dimensionRevision.value++;
@@ -983,9 +1010,11 @@ watch(() => props.modelValue, async (value) => {
     await nextTick();
     refreshContext();
 });
-async function syncExternalContentOnBlur(): Promise<void> {
+async function syncExternalContentOnBlur(event: FocusEvent): Promise<void> {
+    const next = event.relatedTarget;
+    if (next instanceof Node && editorShell.value?.contains(next)) return;
     await nextTick();
-    if (!editor.value || editorShell.value?.contains(document.activeElement)) return;
+    if (!editor.value || editorShell.value?.contains(document.activeElement) || toolbarEngaged) return;
     if (editor.value.innerHTML !== (props.modelValue || '')) {
         editor.value.innerHTML = props.modelValue || '';
         history.value = [editor.value.innerHTML];
@@ -1007,7 +1036,7 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
 </script>
 
 <template>
-    <div ref="editorShell" @pointerdown.capture="pinContextualSelection" @focusout="syncExternalContentOnBlur" class="overflow-hidden rounded-xl border border-slate-300 bg-white focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
+    <div ref="editorShell" @pointerdown.capture="pinContextualSelection" @mousedown.capture="onShellMouseDown" @focusout="syncExternalContentOnBlur" class="overflow-hidden rounded-xl border border-slate-300 bg-white focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
         <div class="rte-toolbar flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 px-2 py-2" role="tablist" aria-label="ابزارهای ویرایش متن" >
             <button v-for="tab in tabs" :key="tab.id" type="button" role="tab" :disabled="!isTabAvailable(tab.id)" :aria-selected="activeTab === tab.id" class="rounded-lg px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-35" :class="activeTab === tab.id ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-200'" @click="switchTab(tab.id, $event)">{{ tab.label }}</button>
         </div>
@@ -1142,10 +1171,10 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
 .rte-content :deep(.rte-cell-selected){outline:2px solid #2563eb;outline-offset:-2px;background-image:linear-gradient(#dbeafe66,#dbeafe66)}
 .rte-content{min-height:18rem;line-height:1.9;direction:rtl;text-align:right;overflow-wrap:anywhere}
 .rte-content:empty:before{content:attr(data-placeholder);color:#94a3b8;pointer-events:none}
-.rte-content :deep(table){width:100%;border-collapse:collapse;margin:8px 0}
+.rte-content :deep(table){border-collapse:collapse;margin:8px 0}
 .rte-content :deep(td),.rte-content :deep(th){border:1px solid #94a3b8;padding:6px;min-width:35px;position:relative;cursor:cell}
 .rte-content :deep(td:hover),.rte-content :deep(th:hover){outline:1px dashed #94a3b8;outline-offset:-1px}
 .rte-content :deep(td),.rte-content :deep(th){user-select:text}
-.rte-content :deep(img){max-width:100%;height:auto;vertical-align:middle}
+.rte-content :deep(img){vertical-align:middle}
 .rte-content :deep([data-editor-shape]){margin:3px;min-width:12px;min-height:2px;cursor:move;outline:1px dashed transparent}.rte-content :deep(img){cursor:pointer}.rte-content :deep(img:focus),.rte-content :deep(img.rte-selected),.rte-content :deep([data-editor-shape].rte-selected){outline:2px solid #2563eb;outline-offset:3px;box-shadow:0 0 0 4px #2563eb22}.rte-color-menu{position:relative;display:inline-flex}.rte-color-menu>summary{list-style:none;display:flex;align-items:center;gap:5px;min-height:34px;padding:5px 8px;border:1px solid #cbd5e1;border-radius:7px;cursor:pointer}.rte-color-menu>summary::-webkit-details-marker{display:none}.rte-color-preview{display:inline-block;width:17px;height:5px;border:1px solid #64748b;border-radius:2px}.rte-color-popover{position:absolute;z-index:50;top:calc(100% + 5px);right:0;width:245px;padding:10px;background:white;border:1px solid #cbd5e1;border-radius:9px;box-shadow:0 8px 24px #0f172a22;display:grid;gap:8px}.rte-theme-colors,.rte-swatches{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px}.rte-theme-colors button,.rte-swatches button{width:18px;height:18px;border:1px solid #94a3b8;border-radius:3px;cursor:pointer}.rte-custom-color{display:flex;align-items:center;justify-content:space-between;font-size:12px}.rte-menu-action{border:1px solid #cbd5e1;border-radius:5px;padding:5px;text-align:right;font-size:12px}.rte-context-menu{position:fixed;z-index:1000;min-width:190px;padding:5px;background:white;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 8px 28px #0f172a30;display:grid;gap:2px}.rte-context-menu button{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:5px;text-align:right;font-size:12px}.rte-context-menu button:hover{background:#eff6ff}
 </style>
