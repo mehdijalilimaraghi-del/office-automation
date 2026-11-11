@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { AlignCenter, AlignJustify, AlignLeft, AlignRight, ArrowRight, Bold, Circle, Columns3, Image, IndentDecrease, IndentIncrease, Italic, Link, List, ListOrdered, Minus, PaintBucket, Redo2, RectangleHorizontal, Rows3, Strikethrough, Table2, Trash2, Underline, Undo2 } from '@lucide/vue';
+import { AlignCenter, AlignJustify, AlignLeft, AlignRight, ArrowRight, Bold, Circle, Columns3, Image, IndentDecrease, IndentIncrease, Italic, Link, List, ListOrdered, Minus, PaintBucket, Redo2, RectangleHorizontal, Rows3, Strikethrough, Table2, Trash2, Underline, Undo2, Palette, RotateCw, FlipHorizontal, FlipVertical, Move, Scissors, Copy, Clipboard, Eraser, Paintbrush, MoreHorizontal, BorderAll, TableProperties, WrapText, Maximize2 } from '@lucide/vue';
 
 type Tab = 'home' | 'insert' | 'table' | 'picture' | 'shape';
 const props = withDefaults(defineProps<{ modelValue: string; label: string; fontFamily?: string; disabled?: boolean }>(), {
@@ -20,7 +20,17 @@ const currentCell = ref<HTMLTableCellElement | null>(null);
 const selectedCells = ref<HTMLTableCellElement[]>([]);
 const cellSelectionAnchor = ref<HTMLTableCellElement | null>(null);
 const borderTarget = ref<'all' | 'outer' | 'inner' | 'top' | 'bottom' | 'left' | 'right'>('all');
-const colorPalette = ['#000000','#404040','#7f7f7f','#c0c0c0','#ffffff','#c00000','#ff0000','#ffc000','#ffff00','#92d050','#00b050','#00b0f0','#0070c0','#002060','#7030a0','#fce4d6','#f4cccc','#fff2cc','#e2f0d9','#d9eaf7','#e4dfec'];
+const colorPalette = ['#000000','#1f1f1f','#404040','#595959','#7f7f7f','#a6a6a6','#bfbfbf','#d9d9d9','#f2f2f2','#ffffff','#c00000','#ff0000','#ff6600','#ffc000','#ffff00','#92d050','#00b050','#00b0f0','#0070c0','#002060','#7030a0','#7030a0','#c55a11','#843c0c','#e6b8af','#f4cccc','#fce4d6','#fff2cc','#e2f0d9','#d9eaf7','#e4dfec'];
+const themeColors = ['#ffffff','#000000','#e7e6e6','#44546a','#5b9bd5','#ed7d31','#a5a5a5','#ffc000','#4472c4','#70ad47'];
+const colorMenu = ref<string | null>(null);
+const dragSelection = ref<{ table: HTMLTableElement; start: HTMLTableCellElement } | null>(null);
+let didDragSelect = false;
+const contextMenu = ref<{x:number;y:number;kind:'text'|'table'|'picture'|'shape'} | null>(null);
+const currentRotation = (element: HTMLElement | null): number => Number(element?.dataset.rotation || 0);
+const setRotation = (element: HTMLElement | null, delta: number): void => { if(!element)return; element.dataset.rotation=String((currentRotation(element)+delta+360)%360); applyElementTransform(element); commit(); };
+const applyElementTransform = (element: HTMLElement): void => { const flipX=element.dataset.flipX==='true'?-1:1; const flipY=element.dataset.flipY==='true'?-1:1; element.style.transform=`rotate(${currentRotation(element)}deg) scale(${flipX}, ${flipY})`; element.style.transformOrigin='center center'; };
+const toggleFlip = (element: HTMLElement | null, axis:'x'|'y'): void => {if(!element)return;const key=axis==='x'?'flipX':'flipY';element.dataset[key]=element.dataset[key]==='true'?'false':'true';applyElementTransform(element);commit();};
+const displayedColor = (kind:'text'|'highlight'|'cell'|'image'|'shape-fill'|'shape-line'): string => {const element=kind==='text'||kind==='highlight'?selectedElement():kind==='cell'?currentCell.value:kind==='image'?currentImage.value:currentShape.value;if(!element)return 'transparent';const style=getComputedStyle(element);return kind==='text'?style.color:kind==='highlight'?style.backgroundColor:kind==='cell'?style.backgroundColor:kind==='image'?style.borderTopColor:kind==='shape-fill'?style.backgroundColor:style.borderTopColor;};
 let syncing = false;
 let savedRange: Range | null = null;
 
@@ -404,9 +414,11 @@ function setImageWidth(value: string): void {
     commit();
 }
 function setImageDimension(dimension: 'width' | 'height', value: string, unit: 'mm' | 'px'): void {
-    if (!currentImage.value || !value) return;
-    currentImage.value.style[dimension] = `${value}${unit}`;
-    if (dimension === 'width') currentImage.value.style.height = 'auto';
+    const image=currentImage.value;if(!image||!value)return;
+    const ratio=(image.naturalWidth||image.width)/(image.naturalHeight||image.height||1);
+    image.style.aspectRatio=`${ratio}`;
+    image.style[dimension]=`${value}${unit}`;
+    image.style[dimension==='width'?'height':'width']='auto';
     commit();
 }
 function setImageWrap(value: 'inline' | 'block' | 'left' | 'right'): void {
@@ -439,8 +451,8 @@ function insertImageFile(event: Event): void {
     const file = input.files?.[0];
     input.value = '';
     if (!file || !['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) return;
-    if (file.size > 180 * 1024) {
-        window.alert('حجم تصویر برای درج مستقیم در متن نباید بیشتر از ۱۸۰ کیلوبایت باشد.');
+    if (file.size > 350 * 1024) {
+        window.alert('حجم تصویر بیش از حد مجاز برای محتوای نامه است. تصویر را فشرده کنید یا از بخش پیوست فایل استفاده کنید.');
         return;
     }
     const reader = new FileReader();
@@ -451,6 +463,7 @@ function insertImageFile(event: Event): void {
         image.alt = file.name;
         image.style.width = '50%';
         image.style.height = 'auto';
+        image.style.aspectRatio = `${image.naturalWidth || 1} / ${image.naturalHeight || 1}`;
         image.style.display = 'block';
         if (currentImage.value?.isConnected) {
             currentImage.value.replaceWith(image);
@@ -558,12 +571,14 @@ function onEditorPointerDown(event: PointerEvent): void {
     const rect=target.getBoundingClientRect(), edge=6;
     const nearRight=Math.abs(event.clientX-rect.right)<=edge;
     const nearBottom=Math.abs(event.clientY-rect.bottom)<=edge;
-    if(!nearRight&&!nearBottom)return;
+    if(!nearRight&&!nearBottom){const table=target.closest('table') as HTMLTableElement|null;if(table){dragSelection={table,start:target};didDragSelect=false;document.addEventListener('pointermove',onCellDragMove);document.addEventListener('pointerup',onCellDragEnd,{once:true});}return;}
     const table=target.closest('table') as HTMLTableElement|null;if(!table)return;resizeState={cell:target,axis:nearRight?'width':'height',start:nearRight?event.clientX:event.clientY,initial:nearRight?rect.width:rect.height,table,index:nearRight?target.cellIndex:Array.from(table.rows).indexOf(target.parentElement as HTMLTableRowElement)};
     event.preventDefault();
     document.addEventListener('pointermove',onEditorPointerMove);
     document.addEventListener('pointerup',onEditorPointerUp,{once:true});
 }
+function onCellDragMove(event:PointerEvent):void {if(!dragSelection)return;const node=document.elementFromPoint(event.clientX,event.clientY);const cell=node instanceof Element?node.closest('td,th') as HTMLTableCellElement|null:null;if(!cell||cell.closest('table')!==dragSelection.table)return;didDragSelect=true;currentCell.value=cell;selectCellRange(dragSelection.start,cell);}
+function onCellDragEnd():void {document.removeEventListener('pointermove',onCellDragMove);if(dragSelection){if(didDragSelect){currentCell.value=selectedCells.value[selectedCells.value.length-1]??dragSelection.start;paintCellSelection();}dragSelection=null;}}
 function onEditorPointerMove(event:PointerEvent):void {
     if(!resizeState)return;
     const delta=(resizeState.axis==='width'?event.clientX:event.clientY)-resizeState.start;
@@ -578,6 +593,7 @@ function onEditorPointerUp():void {
 function onEditorClick(event: MouseEvent): void {
     const target = event.target;
     if (!(target instanceof Element) || !editor.value?.contains(target)) return;
+    if(didDragSelect){didDragSelect=false;return;}
     currentImage.value = target.closest('img') as HTMLImageElement | null;
     currentShape.value = target.closest('[data-editor-shape]') as HTMLElement | null;
     const clickedCell = target.closest('td,th') as HTMLTableCellElement | null;
@@ -590,6 +606,8 @@ function onEditorClick(event: MouseEvent): void {
     else if (target.closest('table')) activeTab.value = 'table';
     else if (['table', 'picture', 'shape'].includes(activeTab.value)) activeTab.value = 'home';
 }
+function onEditorContextMenu(event: MouseEvent):void {const target=event.target;if(!(target instanceof Element)||!editor.value?.contains(target))return;event.preventDefault();const image=target.closest('img') as HTMLImageElement|null;const shape=target.closest('[data-editor-shape]') as HTMLElement|null;const table=target.closest('table');currentImage.value=image;currentShape.value=shape;currentCell.value=target.closest('td,th') as HTMLTableCellElement|null;contextMenu.value={x:Math.min(event.clientX,window.innerWidth-230),y:Math.min(event.clientY,window.innerHeight-300),kind:image?'picture':shape?'shape':table?'table':'text'};if(image){context.value={table:false,picture:true,shape:false};activeTab.value='picture';}else if(shape){context.value={table:false,picture:false,shape:true};activeTab.value='shape';}else if(table){context.value={table:true,picture:false,shape:false};activeTab.value='table';}}
+function onEditorContextAction(action:string):void {contextMenu.value=null;if(action==='delete-image')removeImage();else if(action==='delete-shape')removeShape();else if(action==='rotate-left')setRotation(currentImage.value??currentShape.value,-90);else if(action==='rotate-right')setRotation(currentImage.value??currentShape.value,90);else if(action==='select-table')selectTablePart('table');else if(action==='copy')document.execCommand('copy');else if(action==='cut')document.execCommand('cut');else if(action==='paste')document.execCommand('paste');else if(action==='clear')clearFormatting();}
 function onInput(): void {
     if (!syncing) commit();
 }
@@ -608,7 +626,7 @@ onMounted(() => {
     history.value = [editor.value?.innerHTML ?? ''];
     window.addEventListener('selectionchange', onSelectionChange);
 });
-onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectionChange); document.removeEventListener('pointermove', onEditorPointerMove); document.removeEventListener('pointerup', onEditorPointerUp); });
+onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectionChange); document.removeEventListener('pointermove', onEditorPointerMove); document.removeEventListener('pointerup', onEditorPointerUp); document.removeEventListener('pointermove',onCellDragMove);document.removeEventListener('pointerup',onCellDragEnd); });
 </script>
 
 <template>
@@ -628,14 +646,8 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
             <button type="button" class="rte-tool" title="مورب" aria-label="مورب" @click="applyFormat('em')"><Italic :size="16" /></button>
             <button type="button" class="rte-tool" title="زیرخط" aria-label="زیرخط" @click="applyFormat('u')"><Underline :size="16" /></button>
             <button type="button" class="rte-tool" title="خط‌خورده" aria-label="خط‌خورده" @click="applyFormat('s')"><Strikethrough :size="16" /></button>
-            <div class="rte-tool" title="رنگ متن">A
-                <button v-for="color in colorPalette" :key="'font-'+color" type="button" class="h-4 w-4 rounded-sm border border-slate-300" :style="{backgroundColor:color}" :title="color" @click="applyTextColor(color)"></button>
-                <input type="color" title="رنگ دلخواه متن" @input="applyTextColor(($event.target as HTMLInputElement).value)" />
-            </div>
-            <div class="rte-tool" title="رنگ پس‌زمینه متن">هایلایت
-                <button v-for="color in colorPalette" :key="'highlight-'+color" type="button" class="h-4 w-4 rounded-sm border border-slate-300" :style="{backgroundColor:color}" :title="color" @click="applyHighlight(color)"></button>
-                <input type="color" title="رنگ دلخواه زمینه متن" @input="applyHighlight(($event.target as HTMLInputElement).value)" />
-            </div>
+            <details class="rte-color-menu"><summary title="رنگ قلم"><span class="font-bold">A</span><span class="rte-color-preview" :style="{backgroundColor:displayedColor('text')}"/><Palette :size="14"/></summary><div class="rte-color-popover"><b>رنگ‌های قالب</b><div class="rte-theme-colors"><button v-for="color in themeColors" :key="'ft-'+color" type="button" :style="{backgroundColor:color}" @click.prevent="applyTextColor(color)"/></div><b>رنگ‌های استاندارد</b><div class="rte-swatches"><button v-for="color in colorPalette" :key="'fc-'+color" type="button" :style="{backgroundColor:color}" :title="color" @click.prevent="applyTextColor(color)"/></div><label class="rte-custom-color">رنگ دلخواه <input type="color" @input="applyTextColor(($event.target as HTMLInputElement).value)"/></label></div></details>
+            <details class="rte-color-menu"><summary title="رنگ پس‌زمینه متن"><PaintBucket :size="15"/><span class="rte-color-preview" :style="{backgroundColor:displayedColor('highlight')}"/><Palette :size="14"/></summary><div class="rte-color-popover"><b>رنگ‌های قالب</b><div class="rte-theme-colors"><button v-for="color in themeColors" :key="'ht-'+color" type="button" :style="{backgroundColor:color}" @click.prevent="applyHighlight(color)"/></div><b>رنگ‌های استاندارد</b><div class="rte-swatches"><button v-for="color in colorPalette" :key="'hc-'+color" type="button" :style="{backgroundColor:color}" @click.prevent="applyHighlight(color)"/></div><label class="rte-custom-color">رنگ دلخواه <input type="color" @input="applyHighlight(($event.target as HTMLInputElement).value)"/></label><button type="button" class="rte-menu-action" @click.prevent="applyHighlight('transparent')">بدون رنگ</button></div></details>
             <span class="mx-1 h-6 w-px bg-slate-200"></span>
             <button type="button" class="rte-tool" title="راست‌چین" aria-label="راست‌چین" @click="align('right')"><AlignRight :size="16" /></button>
             <button type="button" class="rte-tool" title="وسط‌چین" aria-label="وسط‌چین" @click="align('center')"><AlignCenter :size="16" /></button>
@@ -684,7 +696,7 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
             <label class="text-xs">اعمال حاشیه
                 <select v-model="borderTarget" class="rte-select"><option value="all">همه اضلاع</option><option value="outer">کادر بیرونی</option><option value="inner">خطوط داخلی</option><option value="top">بالا</option><option value="bottom">پایین</option><option value="left">چپ</option><option value="right">راست</option></select>
             </label>
-            <label class="text-xs">رنگ خط <input type="color" value="#94a3b8" @input="setCellBorderColor(($event.target as HTMLInputElement).value)" /></label>
+            <details class="rte-color-menu"><summary title="رنگ خطوط جدول"><BorderAll :size="15"/><span class="rte-color-preview" :style="{backgroundColor:displayedColor('cell')}"/><Palette :size="14"/></summary><div class="rte-color-popover"><b>رنگ‌های قالب و استاندارد</b><div class="rte-swatches"><button v-for="color in [...themeColors,...colorPalette]" :key="'tb-'+color" type="button" :style="{backgroundColor:color}" @click.prevent="setCellBorderColor(color)"/></div><label class="rte-custom-color">رنگ دلخواه <input type="color" @input="setCellBorderColor(($event.target as HTMLInputElement).value)"/></label></div></details>
             <label class="text-xs">ضخامت خط <input class="rte-number" type="number" min="0" max="10" step="0.25" value="0.25" @change="setCellBorderWidth(($event.target as HTMLInputElement).value,'mm')" /> mm</label>
             <label class="text-xs">نوع خط <select class="rte-select" @change="setCellBorderStyle(($event.target as HTMLSelectElement).value)"><option value="solid">پیوسته</option><option value="dashed">خط‌چین</option><option value="dotted">نقطه‌چین</option><option value="double">دوتایی</option><option value="none">بدون خط</option></select></label>
             <label class="text-xs">زمینه سلول</label>
@@ -701,16 +713,25 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
             <label class="text-xs">ارتفاع <input class="rte-number" type="number" min="1" value="30" @change="setImageDimension('height',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
             <label class="text-xs">جایگاه <select class="rte-select" @change="setImageAlignment(($event.target as HTMLSelectElement).value)"><option value="right">راست</option><option value="center">وسط</option><option value="left">چپ</option></select></label>
             <label class="text-xs">قرارگیری نسبت به متن <select class="rte-select" @change="setImageWrap(($event.target as HTMLSelectElement).value as 'inline'|'block'|'left'|'right')"><option value="inline">همراه متن</option><option value="block">بالا و پایین متن</option><option value="right">شناور راست</option><option value="left">شناور چپ</option></select></label>
-            <label class="text-xs">رنگ کادر <input type="color" @input="setImageBorder('1px solid '+($event.target as HTMLInputElement).value)" /></label>
+            <details class="rte-color-menu"><summary title="رنگ کادر تصویر"><Palette :size="15"/><span class="rte-color-preview" :style="{backgroundColor:displayedColor('image')}"/></summary><div class="rte-color-popover"><div class="rte-swatches"><button v-for="color in [...themeColors,...colorPalette]" :key="'im-'+color" type="button" :style="{backgroundColor:color}" @click.prevent="setImageBorder('1px solid '+color)"/></div><label class="rte-custom-color">رنگ دلخواه <input type="color" @input="setImageBorder('1px solid '+($event.target as HTMLInputElement).value)"/></label><button class="rte-menu-action" type="button" @click.prevent="setImageBorder('none')">بدون کادر</button></div></details>
+            <button type="button" class="rte-tool" title="چرخش پادساعتگرد" @click="setRotation(currentImage,-90)"><RotateCw :size="16"/></button><button type="button" class="rte-tool" title="قرینه افقی" @click="toggleFlip(currentImage,'x')"><FlipHorizontal :size="16"/></button><button type="button" class="rte-tool" title="قرینه عمودی" @click="toggleFlip(currentImage,'y')"><FlipVertical :size="16"/></button>
             <button type="button" class="rte-tool" @click="chooseImage"><Image :size="16" /> جایگزینی</button>
             <button type="button" class="rte-tool text-rose-700" @click="removeImage"><Trash2 :size="16" /> حذف</button>
         </div>
         <div v-else-if="activeTab === 'shape'" class="rte-toolbar flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white p-3">
-            <div class="rte-tool">رنگ زمینه <button v-for="color in colorPalette" :key="'shape-fill-'+color" type="button" class="h-4 w-4 rounded-sm border border-slate-300" :style="{backgroundColor:color}" :title="color" @click="setShapeColor(color)"></button><input type="color" title="رنگ دلخواه زمینه شکل" @input="setShapeColor(($event.target as HTMLInputElement).value)" /></div>
-            <div class="rte-tool">رنگ خط <button v-for="color in colorPalette" :key="'shape-line-'+color" type="button" class="h-4 w-4 rounded-sm border border-slate-300" :style="{backgroundColor:color}" :title="color" @click="setShapeBorderColor(color)"></button><input type="color" title="رنگ دلخواه خط شکل" @input="setShapeBorderColor(($event.target as HTMLInputElement).value)" /></div>
+            <details class="rte-color-menu"><summary title="رنگ زمینه شکل"><PaintBucket :size="15"/><span class="rte-color-preview" :style="{backgroundColor:displayedColor('shape-fill')}"/><Palette :size="14"/></summary><div class="rte-color-popover"><div class="rte-swatches"><button v-for="color in [...themeColors,...colorPalette]" :key="'sf-'+color" type="button" :style="{backgroundColor:color}" @click.prevent="setShapeColor(color)"/></div><label class="rte-custom-color">رنگ دلخواه <input type="color" @input="setShapeColor(($event.target as HTMLInputElement).value)"/></label><button class="rte-menu-action" type="button" @click.prevent="setShapeColor('transparent')">بدون رنگ</button></div></details>
+            <details class="rte-color-menu"><summary title="رنگ خط شکل"><BorderAll :size="15"/><span class="rte-color-preview" :style="{backgroundColor:displayedColor('shape-line')}"/><Palette :size="14"/></summary><div class="rte-color-popover"><div class="rte-swatches"><button v-for="color in [...themeColors,...colorPalette]" :key="'sl-'+color" type="button" :style="{backgroundColor:color}" @click.prevent="setShapeBorderColor(color)"/></div><label class="rte-custom-color">رنگ دلخواه <input type="color" @input="setShapeBorderColor(($event.target as HTMLInputElement).value)"/></label></div></details>
             <label class="text-xs">عرض <input class="rte-number" type="number" min="1" value="30" @change="setShapeDimension('width',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
             <label class="text-xs">ارتفاع <input class="rte-number" type="number" min="1" value="15" @change="setShapeDimension('height',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
+            <label class="text-xs">ضخامت خط <input class="rte-number" type="number" min="0" step="0.25" value="0.5" @change="setShapeBorderWidth(($event.target as HTMLInputElement).value+'mm')" /> mm</label>
+            <button type="button" class="rte-tool" title="چرخش پادساعتگرد" @click="setRotation(currentShape,-90)"><RotateCw :size="16"/></button><button type="button" class="rte-tool" title="قرینه افقی" @click="toggleFlip(currentShape,'x')"><FlipHorizontal :size="16"/></button><button type="button" class="rte-tool" title="قرینه عمودی" @click="toggleFlip(currentShape,'y')"><FlipVertical :size="16"/></button>
             <button type="button" class="rte-tool text-rose-700" @click="removeShape"><Trash2 :size="16" /> حذف شکل</button>
+        </div>
+        <div v-if="contextMenu" class="rte-context-menu" :style="{left:contextMenu.x+'px',top:contextMenu.y+'px'}" @pointerdown.prevent>
+            <template v-if="contextMenu.kind==='picture'"><button @click="onEditorContextAction('rotate-left')"><RotateCw :size="15"/> چرخش ۹۰ درجه</button><button @click="onEditorContextAction('delete-image')"><Trash2 :size="15"/> حذف تصویر</button></template>
+            <template v-else-if="contextMenu.kind==='shape'"><button @click="onEditorContextAction('rotate-right')"><RotateCw :size="15"/> چرخش ۹۰ درجه</button><button @click="onEditorContextAction('delete-shape')"><Trash2 :size="15"/> حذف شکل</button></template>
+            <template v-else-if="contextMenu.kind==='table'"><button @click="onEditorContextAction('select-table')"><TableProperties :size="15"/> انتخاب جدول</button><button @click="onEditorContextAction('copy')"><Copy :size="15"/> کپی</button><button @click="onEditorContextAction('cut')"><Scissors :size="15"/> برش</button></template>
+            <template v-else><button @click="onEditorContextAction('copy')"><Copy :size="15"/> کپی</button><button @click="onEditorContextAction('cut')"><Scissors :size="15"/> برش</button><button @click="onEditorContextAction('paste')"><Clipboard :size="15"/> چسباندن</button><button @click="onEditorContextAction('clear')"><Eraser :size="15"/> پاک‌کردن قالب‌بندی</button></template>
         </div>
         <div
             ref="editor"
@@ -725,6 +746,7 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
             @input="onInput"
             @pointerdown="onEditorPointerDown"
             @click="onEditorClick"
+            @contextmenu="onEditorContextMenu"
             @mouseup="refreshContext"
             @keyup="refreshContext"
             @focus="refreshContext"
@@ -746,5 +768,5 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
 .rte-content :deep(td:hover),.rte-content :deep(th:hover){outline:1px dashed #94a3b8;outline-offset:-1px}
 .rte-content :deep(td),.rte-content :deep(th){user-select:text}
 .rte-content :deep(img){max-width:100%;height:auto;vertical-align:middle}
-.rte-content :deep([data-editor-shape]){margin:3px;min-width:12px;min-height:2px}
+.rte-content :deep([data-editor-shape]){margin:3px;min-width:12px;min-height:2px;cursor:move;outline:1px dashed transparent}.rte-content :deep(img){cursor:pointer}.rte-content :deep(img:focus),.rte-content :deep(img.rte-selected),.rte-content :deep([data-editor-shape].rte-selected){outline:2px solid #2563eb;outline-offset:3px;box-shadow:0 0 0 4px #2563eb22}.rte-color-menu{position:relative;display:inline-flex}.rte-color-menu>summary{list-style:none;display:flex;align-items:center;gap:5px;min-height:34px;padding:5px 8px;border:1px solid #cbd5e1;border-radius:7px;cursor:pointer}.rte-color-menu>summary::-webkit-details-marker{display:none}.rte-color-preview{display:inline-block;width:17px;height:5px;border:1px solid #64748b;border-radius:2px}.rte-color-popover{position:absolute;z-index:50;top:calc(100% + 5px);right:0;width:245px;padding:10px;background:white;border:1px solid #cbd5e1;border-radius:9px;box-shadow:0 8px 24px #0f172a22;display:grid;gap:8px}.rte-theme-colors,.rte-swatches{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px}.rte-theme-colors button,.rte-swatches button{width:18px;height:18px;border:1px solid #94a3b8;border-radius:3px;cursor:pointer}.rte-custom-color{display:flex;align-items:center;justify-content:space-between;font-size:12px}.rte-menu-action{border:1px solid #cbd5e1;border-radius:5px;padding:5px;text-align:right;font-size:12px}.rte-context-menu{position:fixed;z-index:1000;min-width:190px;padding:5px;background:white;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 8px 28px #0f172a30;display:grid;gap:2px}.rte-context-menu button{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:5px;text-align:right;font-size:12px}.rte-context-menu button:hover{background:#eff6ff}
 </style>
