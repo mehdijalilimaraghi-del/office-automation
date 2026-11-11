@@ -1261,3 +1261,12 @@ These are code-level implementations only. The feature remains **in progress / u
 
 ## 2026-11-11 — TypeScript correction
 Fixed Vue `ref` access in table pointer-drag selection: assignments and reads now consistently use `dragSelection.value`. This addresses the reported TS2588/TS2339 errors at the drag-selection handlers. The correction is committed to `development`; build has not yet been rerun and no build success is claimed.
+
+
+## 2026-11-11 — Editor controls follow-up from owner feedback
+
+- Added document-level outside-pointer handling to close an open color palette when the user clicks outside it; clicks inside the palette do not close it prematurely.
+- Changed clear/no-color behavior to remove the corresponding inline fill/border declarations where appropriate; table border no-color also disables the selected border side style, and shape outline exposes a no-color action.
+- Replaced the vague paragraph-spacing choices with explicit numeric controls: line-height multiplier (1.00–3.00, step 0.05) and paragraph-after spacing in pixels (0–60).
+- Dimension fields now read the selected element's rendered width/height in millimetres rather than showing unrelated hard-coded defaults. Table height is now separately editable. Image ratio preservation is an explicit checkbox and defaults off; when enabled, changing one dimension calculates the other. Intrinsic image ratio is refreshed after the image loads.
+- These are implementation changes only. Production build, browser interactions, no-color behavior, dimensions, and persistence remain unverified. Development only; master/release/server unchanged.
