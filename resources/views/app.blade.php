@@ -7,6 +7,7 @@
         <title inertia>{{ config('app.name', 'Office Automation') }}</title>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg">
         <meta name="theme-color" content="#0f766e">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <!-- Scripts -->
         @routes
