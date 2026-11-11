@@ -636,3 +636,8 @@ These are code-level implementations only. The feature remains **in progress / u
 
 ## 2026-11-11 — TypeScript correction
 Fixed Vue `ref` access in table pointer-drag selection: assignments and reads now consistently use `dragSelection.value`. This addresses the reported TS2588/TS2339 errors at the drag-selection handlers. The correction is committed to `development`; build has not yet been rerun and no build success is claimed.
+
+
+## 2026-11-11 — Editor property-panel synchronization
+
+The correspondence editor's contextual property controls now derive displayed width/height from the selected DOM element's rendered bounds (converted from CSS pixels to millimetres), rather than fixed defaults. Image ratio locking is explicit opt-in state; when enabled, the paired dimension is calculated from intrinsic image ratio. Numeric paragraph controls apply a line-height multiplier and paragraph-after spacing in pixels. Color menus are dismissed by an outside-pointer listener scoped to the editor root; clear/no-color operations remove or disable the relevant inline styles. These changes are local to the Vue editor and do not change persisted schema or print architecture. Build, sanitization round-trip, browser and print validation remain pending.
