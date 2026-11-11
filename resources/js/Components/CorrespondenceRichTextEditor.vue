@@ -1036,7 +1036,8 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
 </script>
 
 <template>
-    <div ref="editorShell" @pointerdown.capture="pinContextualSelection" @mousedown.capture="onShellMouseDown" @focusout="syncExternalContentOnBlur" class="overflow-hidden rounded-xl border border-slate-300 bg-white focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
+    <div ref="editorShell" @pointerdown.capture="pinContextualSelection" @mousedown.capture="onShellMouseDown" @focusout="syncExternalContentOnBlur" class="overflow-visible rounded-xl border border-slate-300 bg-white focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
+        <div class="rte-toolbar-sticky">
         <div class="rte-toolbar flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 px-2 py-2" role="tablist" aria-label="ابزارهای ویرایش متن" >
             <button v-for="tab in tabs" :key="tab.id" type="button" role="tab" :disabled="!isTabAvailable(tab.id)" :aria-selected="activeTab === tab.id" class="rounded-lg px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-35" :class="activeTab === tab.id ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-200'" @click="switchTab(tab.id, $event)">{{ tab.label }}</button>
         </div>
@@ -1131,6 +1132,7 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
             <button type="button" class="rte-tool" title="چرخش پادساعتگرد" @click="setRotation(currentShape,-90)"><RotateCw :size="16"/></button><button type="button" class="rte-tool" title="قرینه افقی" @click="toggleFlip(currentShape,'x')"><FlipHorizontal :size="16"/></button><button type="button" class="rte-tool" title="قرینه عمودی" @click="toggleFlip(currentShape,'y')"><FlipVertical :size="16"/></button>
             <button type="button" class="rte-tool text-rose-700" @click="removeShape"><Trash2 :size="16" /> حذف شکل</button>
         </div>
+        </div>
         <div v-if="contextMenu" class="rte-context-menu" :style="{left:contextMenu.x+'px',top:contextMenu.y+'px'}" @pointerdown.prevent>
             <template v-if="contextMenu.kind==='picture'"><button @click="onEditorContextAction('rotate-left')"><RotateCw :size="15"/> چرخش ۹۰ درجه</button><button @click="onEditorContextAction('delete-image')"><Trash2 :size="15"/> حذف تصویر</button></template>
             <template v-else-if="contextMenu.kind==='shape'"><button @click="onEditorContextAction('rotate-right')"><RotateCw :size="15"/> چرخش ۹۰ درجه</button><button @click="onEditorContextAction('delete-shape')"><Trash2 :size="15"/> حذف شکل</button></template>
@@ -1159,6 +1161,7 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
 </template>
 
 <style scoped>
+.rte-toolbar-sticky{position:sticky;top:0;z-index:30;background:#fff;box-shadow:0 3px 8px #0f172a12}
 .rte-tool{position:relative;display:inline-flex;min-height:34px;align-items:center;justify-content:center;gap:5px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;padding:5px 9px;font-size:12px;color:#334155}
 .rte-tool:hover{background:#f1f5f9}
 .rte-tool:disabled{opacity:.4;cursor:not-allowed}
