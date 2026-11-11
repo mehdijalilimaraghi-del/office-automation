@@ -295,7 +295,7 @@ function dimensionMm(element: HTMLElement | null, axis: 'width' | 'height'): str
     // Prefer the authored CSS dimension. offsetWidth/offsetHeight are rendered
     // dimensions and can differ due to table layout, min-size and rounding.
     const authored = element.style.getPropertyValue(axis).trim();
-    const match = authored.match(/^([0-9]+(?:\\.[0-9]+)?)(mm|cm|in|pt|pc|px)$/i);
+    const match = authored.match(/^([0-9]+(?:[.][0-9]+)?)(mm|cm|in|pt|pc|px)$/i);
     if (match) {
         const amount = Number(match[1]);
         const unit = match[2].toLowerCase();
@@ -839,7 +839,7 @@ function onEditorPointerDown(event: PointerEvent): void {
     document.addEventListener('pointermove',onEditorPointerMove);
     document.addEventListener('pointerup',onEditorPointerUp,{once:true});
 }
-function onCellDragMove(event:PointerEvent):void {if(!dragSelection.value)return;const node=document.elementFromPoint(event.clientX,event.clientY);const cell=node instanceof Element?node.closest('td,th') as HTMLTableCellElement|null:null;if(!cell||cell.closest('table')!==dragSelection.value.table)return;didDragSelect=true;currentCell.value=cell;selectCellRange(dragSelection.value.start,cell);}
+function onCellDragMove(event:PointerEvent):void {if(!dragSelection.value)return;const node=document.elementFromPoint(event.clientX,event.clientY);const cell=node instanceof Element?node.closest('td,th') as HTMLTableCellElement|null:null;if(!cell||cell.closest('table')!==dragSelection.value.table)return;didDragSelect=true;currentCell.value=cell;contextTarget.value=cell;selectCellRange(dragSelection.value.start,cell);}
 function onCellDragEnd():void {document.removeEventListener('pointermove',onCellDragMove);if(dragSelection.value){if(didDragSelect){currentCell.value=selectedCells.value[selectedCells.value.length-1]??dragSelection.value.start;paintCellSelection();}dragSelection.value=null;}}
 function onEditorPointerMove(event:PointerEvent):void {
     if(!resizeState)return;
@@ -865,7 +865,6 @@ function onEditorClick(event: MouseEvent): void {
     if (clickedCell && event.shiftKey && cellSelectionAnchor.value) { selectCellRange(cellSelectionAnchor.value, clickedCell); }
     else if (clickedCell) { cellSelectionAnchor.value=clickedCell;selectedCells.value=[clickedCell];paintCellSelection(); }
     else { selectedCells.value=[]; cellSelectionAnchor.value=null; }
-    applyContextTarget(target, true);
 }
 function onEditorContextMenu(event: MouseEvent):void {
     const target = event.target;
