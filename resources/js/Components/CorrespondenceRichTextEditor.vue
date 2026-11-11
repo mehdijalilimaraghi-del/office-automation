@@ -205,17 +205,26 @@ function clearHighlight(): void {
     const range = document.activeElement?.closest('.rte-toolbar')
         ? savedRange?.cloneRange()
         : (selection?.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer) ? selection.getRangeAt(0).cloneRange() : savedRange?.cloneRange());
-    if (!range || range.collapsed || !editor.value) return;
-    let node: Node | null = range.commonAncestorContainer;
-    if (node.nodeType !== Node.ELEMENT_NODE) node = node.parentElement;
-    while (node instanceof HTMLElement && node !== editor.value) {
-        const contents = document.createRange();
-        contents.selectNodeContents(node);
-        const fullySelected = range.compareBoundaryPoints(Range.START_TO_START, contents) <= 0
-            && range.compareBoundaryPoints(Range.END_TO_END, contents) >= 0;
-        if (fullySelected && node.style.backgroundColor) node.style.removeProperty('background-color');
-        node = node.parentElement;
-    }
+    if (!range || range.collapsed || !editor.value || !insideEditor(range.commonAncestorContainer)) return;
+
+    // Extracting the selected fragment splits partially selected styled spans.
+    // Removing background only inside that fragment preserves formatting outside the selection.
+    const fragment = range.extractContents();
+    const clearBackground = (node: Node): void => {
+        if (node instanceof HTMLElement) node.style.removeProperty('background-color');
+        node.childNodes.forEach(clearBackground);
+    };
+    fragment.childNodes.forEach(clearBackground);
+    const first = fragment.firstChild;
+    const last = fragment.lastChild;
+    if (!first || !last) return;
+    range.insertNode(fragment);
+
+    const restored = document.createRange();
+    restored.setStartBefore(first);
+    restored.setEndAfter(last);
+    restoreSelection(restored);
+    savedRange = restored.cloneRange();
     commit();
 }
 function align(value: string): void { setBlockStyle('text-align', value); }
@@ -716,14 +725,24 @@ function onInput(): void {
 }
 watch(() => props.modelValue, async (value) => {
     if (!editor.value || editor.value.innerHTML === value) return;
-    const focused = editor.value.contains(document.activeElement);
-    if (focused) return;
+    // Toolbar controls are part of the editor interaction. Replacing innerHTML
+    // while one is focused invalidates selected image/table/shape DOM references.
+    if (editorShell.value?.contains(document.activeElement)) return;
     editor.value.innerHTML = value || '';
     history.value = [editor.value.innerHTML];
     historyIndex.value = 0;
     await nextTick();
     refreshContext();
 });
+async function syncExternalContentOnBlur(): Promise<void> {
+    await nextTick();
+    if (!editor.value || editorShell.value?.contains(document.activeElement)) return;
+    if (editor.value.innerHTML === (props.modelValue || '')) return;
+    editor.value.innerHTML = props.modelValue || '';
+    history.value = [editor.value.innerHTML];
+    historyIndex.value = 0;
+    refreshContext();
+}
 onMounted(() => {
     if (editor.value) editor.value.innerHTML = props.modelValue || '';
     history.value = [editor.value?.innerHTML ?? ''];
@@ -736,7 +755,7 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
 </script>
 
 <template>
-    <div ref="editorShell" class="overflow-hidden rounded-xl border border-slate-300 bg-white focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
+    <div ref="editorShell" @focusout="syncExternalContentOnBlur" class="overflow-hidden rounded-xl border border-slate-300 bg-white focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
         <div class="flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 px-2 py-2" role="tablist" aria-label="ابزارهای ویرایش متن">
             <button v-for="tab in tabs" :key="tab.id" type="button" role="tab" :aria-selected="activeTab === tab.id" @pointerdown.prevent class="rounded-lg px-3 py-2 text-xs font-semibold" :class="activeTab === tab.id ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-200'" @click="activeTab = tab.id">{{ tab.label }}</button>
         </div>
