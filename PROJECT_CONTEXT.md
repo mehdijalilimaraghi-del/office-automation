@@ -1992,3 +1992,10 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - Fixed the next `vue-tsc` event-handler mismatch: the editor content area's `@mouseup` now calls a zero-argument `onEditorMouseUp()` wrapper rather than passing Vue's `MouseEvent` to `refreshContext(forceClear?: boolean)`.
 - The wrapper preserves the intended context refresh behavior while preventing a DOM event from being interpreted as the optional force-clear Boolean.
 - This is a compile-time correction only. It does not establish that contextual tabs or numeric dimension editing work; those still require the production build and browser interaction verification. Changes are restricted to the `development` branch.
+
+## 2026-11-11 — Outgoing draft preview and editor scrolling
+
+- The correspondence form now has an outgoing-only pre-registration preview entry point. It must preview the current unsaved form state, not redirect to a persisted correspondence or create a temporary database record. The implementation uses the existing A4 Correspondence/Print page and configured template/organization assets through a permission-checked, CSRF-protected POST endpoint.
+- The preview opens in a separate tab and uses an in-memory Correspondence instance. Incoming correspondence must not show this action. File attachments are not rendered in this preview and must be identified as such to the user.
+- The rich-text editor's tabs and active contextual toolbar controls share a sticky container positioned below the 64px application topbar. The editor shell must not clip the sticky container.
+- Current validation state: source changes only; build, feature tests and browser acceptance are pending.
