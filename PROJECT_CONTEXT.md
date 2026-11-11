@@ -1999,3 +1999,9 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - The preview opens in a separate tab and uses an in-memory Correspondence instance. Incoming correspondence must not show this action. File attachments are not rendered in this preview and must be identified as such to the user.
 - The rich-text editor's tabs and active contextual toolbar controls share a sticky container positioned below the 64px application topbar. The editor shell must not clip the sticky container.
 - Current validation state: source changes only; build, feature tests and browser acceptance are pending.
+
+## 2026-11-11 — Table sizing and print constraints
+
+- Resized table HTML is persisted inside the correspondence body. Do not write inline `max-width:none!important` to tables/cells: the markup is later rendered with `v-html` and inline important declarations override print CSS, allowing overflow beyond the A4 body column.
+- Editor resize logic now uses `max-width:100%` for table/cells, fixed layout, zero minimum cell width and wrapping. The print page normalizes legacy table markup as well, because previously saved letters may still contain the old inline important values.
+- Build/browser validation is pending.
