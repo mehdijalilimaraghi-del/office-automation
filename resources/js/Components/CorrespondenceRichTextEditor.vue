@@ -481,7 +481,7 @@ function insertImageFile(event: Event): void {
         image.alt = file.name;
         image.style.width = '50%';
         image.style.height = 'auto';
-        image.style.aspectRatio = `${image.naturalWidth || 1} / ${image.naturalHeight || 1}`;
+        image.onload = () => { image.style.aspectRatio = `${image.naturalWidth} / ${image.naturalHeight}`; commit(); };
         image.style.display = 'block';
         if (currentImage.value?.isConnected) {
             currentImage.value.replaceWith(image);
@@ -712,7 +712,8 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
             <button type="button" class="rte-tool" title="ادغام سلول‌ها" @click="mergeSelectedCells"><Maximize2 :size="16"/></button>
             <button type="button" class="rte-tool" title="تقسیم سلول" @click="splitSelectedCell"><TableProperties :size="16"/></button>
             <button type="button" class="rte-tool text-rose-700" @click="deleteTable"><Trash2 :size="16" /> حذف جدول</button>
-            <label class="text-xs">عرض جدول <input class="rte-number" type="number" min="10" max="210"  :value="dimensionMm(selectedTable(),'width')" @change="setTableDimension('width',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
+            <label class="text-xs">عرض جدول <input class="rte-number" type="number" min="10" max="210"  :value="dimensionMm(selectedTable(),'width')" @change="setTableDimension('width',($event.target as HTMLInputElement).value,'mm')" />
+            <label class="text-xs">ارتفاع جدول <input class="rte-number" type="number" min="1" :value="dimensionMm(selectedTable(),'height')" @change="setTableDimension('height',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
             <button type="button" class="rte-tool" title="تراز جدول به راست" @click="setTableAlignment('right')"><AlignRight :size="16"/></button><button type="button" class="rte-tool" title="وسط‌چین کردن جدول" @click="setTableAlignment('center')"><AlignCenter :size="16"/></button><button type="button" class="rte-tool" title="تراز جدول به چپ" @click="setTableAlignment('left')"><AlignLeft :size="16"/></button>
             <label class="text-xs">عرض ستون/ارتفاع ردیف <input class="rte-number" type="number" min="1"  :value="dimensionMm(selectedCell(),'width')" @change="setCellDimension('width',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
             <label class="text-xs">ارتفاع ردیف <input class="rte-number" type="number" min="1"  :value="dimensionMm(selectedCell(),'height')" @change="setCellDimension('height',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
