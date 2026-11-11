@@ -1839,3 +1839,8 @@ The editor remains scoped to correspondence body/appendix content; letterhead, s
 
 ## 2026-11-11 — TypeScript correction
 Fixed Vue `ref` access in table pointer-drag selection: assignments and reads now consistently use `dragSelection.value`. This addresses the reported TS2588/TS2339 errors at the drag-selection handlers. The correction is committed to `development`; build has not yet been rerun and no build success is claimed.
+
+
+## 2026-11-11 — Correspondence editor follow-up corrections
+
+Owner feedback identified four usability defects in the first editor refinement: no-color actions did not reliably clear styling, palette menus stayed open after outside clicks, paragraph spacing used ambiguous qualitative presets, and dimension fields showed fixed/default values rather than the selected element's actual dimensions. Follow-up implementation on `development` adds outside-pointer dismissal, explicit clearing/removal of fill and border declarations, numeric line-height and paragraph-after controls with units, live dimension readback from selected DOM elements, separate table height, and an opt-in image aspect-ratio checkbox (default off) that recalculates the paired dimension when enabled. Image intrinsic ratio is refreshed on load. This remains unverified until build and browser acceptance, including save/reopen and print checks.
