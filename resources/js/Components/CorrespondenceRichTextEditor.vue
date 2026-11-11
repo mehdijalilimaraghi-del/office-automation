@@ -100,7 +100,11 @@ function findBlock(element: Element | null): HTMLElement | null {
     const block = element?.closest('p,div,li,h2,h3,blockquote,td,th');
     return block instanceof HTMLElement && block !== editor.value && editor.value?.contains(block) ? block : null;
 }
-function pinContextualSelection(): void {
+function pinContextualSelection(event?: PointerEvent): void {
+    // Only toolbar interactions should pin the current object. A pointerdown
+    // in the editable document must be allowed to replace the previous target.
+    const eventTarget = event?.target;
+    if (event && (!(eventTarget instanceof Element) || !eventTarget.closest('.rte-toolbar'))) return;
     const selection = window.getSelection();
     if (selection?.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer)) {
         savedRange = selection.getRangeAt(0).cloneRange();
@@ -176,6 +180,11 @@ function onSelectionChange(): void {
     refreshContext();
 }
 function onEditorFocus(): void {
+    refreshContext();
+}
+function onEditorKeyUp(): void {
+    // Vue passes a KeyboardEvent to keyup; refreshContext's optional boolean
+    // argument is reserved for explicit forced-clear calls.
     refreshContext();
 }
 function commit(): void {
@@ -994,7 +1003,7 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
 
 <template>
     <div ref="editorShell" @pointerdown.capture="pinContextualSelection" @focusout="syncExternalContentOnBlur" class="overflow-hidden rounded-xl border border-slate-300 bg-white focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
-        <div class="rte-toolbar flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 px-2 py-2" role="tablist" aria-label="ابزارهای ویرایش متن" @pointerdown.capture="pinContextualSelection">
+        <div class="rte-toolbar flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 px-2 py-2" role="tablist" aria-label="ابزارهای ویرایش متن" >
             <button v-for="tab in tabs" :key="tab.id" type="button" role="tab" :disabled="!isTabAvailable(tab.id)" :aria-selected="activeTab === tab.id" class="rounded-lg px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-35" :class="activeTab === tab.id ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-200'" @click="switchTab(tab.id, $event)">{{ tab.label }}</button>
         </div>
 
@@ -1109,7 +1118,7 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
             @click="onEditorClick"
             @contextmenu="onEditorContextMenu"
             @mouseup="refreshContext"
-            @keyup="refreshContext"
+            @keyup="onEditorKeyUp"
             @focus="onEditorFocus"
         ></div>
     </div>
