@@ -2316,3 +2316,11 @@ These are code-level implementations only. The feature remains **in progress / u
 
 ## 2026-11-11 — TypeScript correction
 Fixed Vue `ref` access in table pointer-drag selection: assignments and reads now consistently use `dragSelection.value`. This addresses the reported TS2588/TS2339 errors at the drag-selection handlers. The correction is committed to `development`; build has not yet been rerun and no build success is claimed.
+
+
+## 2026-11-11 — Editor control feedback corrections (in progress / unverified)
+
+- Fixed outside-click dismissal for color dropdowns and strengthened no-color handling for fills and borders.
+- Replaced ambiguous low/normal/high paragraph spacing options with editable numeric line-height and paragraph-after spacing inputs with explicit units/ranges.
+- Width/height controls now display dimensions measured from the selected table/cell/image/shape, and table height is independently editable. Image aspect-ratio lock is now a visible checkbox, default off; locked resizing updates the paired dimension and intrinsic ratio is recalculated after image load.
+- The code is committed to `development`; no build or browser acceptance has been run. Next validation: `git pull origin development`, then `npm run build`. Manual checks must cover color no-color and outside click, numeric spacing, dimension readback after each resize, and ratio checkbox both off/on. Master/release/server unchanged.
