@@ -1194,3 +1194,13 @@ Next validation must start with `git pull origin development`, then `npm run bui
 The latest development commits further implement rectangular multi-cell selection (Shift-click), table/row/column selection, rectangular cell merge, colspan/rowspan split, per-side border formatting with outer/inner targeting, theme swatches plus custom colors for text/highlight/table cells/shapes, numeric mm sizing for table/image/shape and cells, image text-flow modes, and pointer-based shared table column/row boundary resizing.
 
 These are code-level implementations only. The feature remains **in progress / unverified**. In particular verify: selection behavior across cells; merge/split with tables containing existing spans; border application to rectangular selections; boundary dragging in fixed and auto table layouts; numeric dimension persistence; color palettes in the actual browser; image float/wrapping effects on A4 preview and printed PDF; and HTML sanitization/save-reopen. The current implementation is not equivalent to the full Microsoft Word table engine and must not be described as such. No build, automated tests, or browser acceptance has been run.
+
+## 2026-11-11 — Editor usability refinement (in progress)
+
+- [x] Replace permanently visible color swatches with compact dropdown palette controls for text, highlight, table borders, image borders, shape fill and shape outline; show the current color on the trigger.
+- [x] Add theme/standard swatches, custom color input and no-color actions where applicable.
+- [x] Add drag-to-select table cell ranges without Shift and table alignment controls.
+- [x] Add selected-state visuals, image aspect-ratio-aware sizing, image/shape rotation and flip controls, shape border thickness, and context-specific right-click menus.
+- [ ] Verify style transform preservation through backend sanitization and save/reopen.
+- [ ] Verify 350 KB inline image limit against request validation, sanitizer and database persistence.
+- [ ] Run frontend build and manually test all palette, table, image, shape and context-menu workflows, then verify A4 preview/print parity.
