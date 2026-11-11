@@ -1161,7 +1161,7 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
 </template>
 
 <style scoped>
-.rte-toolbar-sticky{position:sticky;top:0;z-index:30;background:#fff;box-shadow:0 3px 8px #0f172a12}
+.rte-toolbar-sticky{position:sticky;top:4rem;z-index:30;background:#fff;box-shadow:0 3px 8px #0f172a12}
 .rte-tool{position:relative;display:inline-flex;min-height:34px;align-items:center;justify-content:center;gap:5px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;padding:5px 9px;font-size:12px;color:#334155}
 .rte-tool:hover{background:#f1f5f9}
 .rte-tool:disabled{opacity:.4;cursor:not-allowed}
