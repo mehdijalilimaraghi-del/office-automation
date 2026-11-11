@@ -449,3 +449,18 @@ Next validation must start with `git pull origin development`, then `npm run bui
 The latest development commits further implement rectangular multi-cell selection (Shift-click), table/row/column selection, rectangular cell merge, colspan/rowspan split, per-side border formatting with outer/inner targeting, theme swatches plus custom colors for text/highlight/table cells/shapes, numeric mm sizing for table/image/shape and cells, image text-flow modes, and pointer-based shared table column/row boundary resizing.
 
 These are code-level implementations only. The feature remains **in progress / unverified**. In particular verify: selection behavior across cells; merge/split with tables containing existing spans; border application to rectangular selections; boundary dragging in fixed and auto table layouts; numeric dimension persistence; color palettes in the actual browser; image float/wrapping effects on A4 preview and printed PDF; and HTML sanitization/save-reopen. The current implementation is not equivalent to the full Microsoft Word table engine and must not be described as such. No build, automated tests, or browser acceptance has been run.
+
+## 2026-11-11 — Editor refinement verification notes
+
+The current development branch includes compact color dropdowns, current-color indicators, drag selection for table ranges, table alignment, image/shape selection outlines, image aspect-ratio sizing, rotation/flips, shape outline thickness, contextual right-click menus, and a 350 KB client-side inline image cap.
+
+Before acceptance:
+1. Run `git pull origin development` and `npm run build`.
+2. Verify no TypeScript/Vue template or icon-import errors.
+3. Test palette open/close, theme/standard/custom colors, clear/no-color and current-color preview for every target.
+4. Drag across table cells without Shift; test RTL, multi-row, rowspan/colspan and selection persistence.
+5. Test image ratio lock by editing width then height; rotate and flip images/shapes; save, reopen and confirm styles survive sanitization.
+6. Verify 350 KB inline images against request validation and persistence; do not increase the limit without validating base64-expanded payload size.
+7. Test custom right-click menus and every action; compare long content, tables, images and rotated objects in A4 preview and printed PDF.
+
+No build or browser acceptance is claimed by this entry. Work remains on development only.
