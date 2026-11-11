@@ -1836,3 +1836,6 @@ These are code-level implementations only. The feature remains **in progress / u
 ## 2026-11-11 — Correspondence editor usability refinement
 
 The editor remains scoped to correspondence body/appendix content; letterhead, stamps, signatures, repeating elements and A4 pagination remain outside it. The latest development iteration adds compact Word-style color dropdowns (theme/standard/custom/no-color), current-color indicators, drag-based multi-cell selection, table alignment, clearer image/shape selection, image aspect-ratio-aware sizing, rotation/flipping, shape outline thickness and context-specific right-click menus. The inline image client cap is now 350 KB, subject to the existing request and sanitizer limits. All of these changes are code-level and unverified pending build, backend sanitization round-trip, browser interaction, save/reopen and print-preview checks.
+
+## 2026-11-11 — TypeScript correction
+Fixed Vue `ref` access in table pointer-drag selection: assignments and reads now consistently use `dragSelection.value`. This addresses the reported TS2588/TS2339 errors at the drag-selection handlers. The correction is committed to `development`; build has not yet been rerun and no build success is claimed.
