@@ -212,6 +212,18 @@ function clearHighlight(): void {
     // Work on a clone: extractContents splits partially selected inline wrappers,
     // so only the selected text loses its highlight and adjacent text keeps formatting.
     const range = activeRange.cloneRange();
+    // The selected text may inherit its highlight from a wrapper outside the
+    // extracted fragment (for example <span style="background-color: ...">text</span>).
+    // Capture that ancestor chain before extraction; otherwise clearing only the
+    // fragment leaves the actual source of the background untouched.
+    const highlightAncestors: HTMLElement[] = [];
+    let ancestor: Node | null = range.commonAncestorContainer;
+    if (!(ancestor instanceof Element)) ancestor = ancestor.parentNode;
+    while (ancestor instanceof HTMLElement && ancestor !== editor.value) {
+        highlightAncestors.push(ancestor);
+        ancestor = ancestor.parentNode;
+    }
+
     const fragment = range.extractContents();
     const clearBackground = (node: Node): void => {
         if (!(node instanceof HTMLElement)) return;
@@ -228,6 +240,9 @@ function clearHighlight(): void {
         Array.from(node.childNodes).forEach(clearBackground);
     };
     Array.from(fragment.childNodes).forEach(clearBackground);
+    // Clear inherited highlight on the source wrappers as well as cloned nodes.
+    // This is essential when the range is wholly inside a single highlighted span.
+    highlightAncestors.forEach(clearBackground);
 
     if (!fragment.hasChildNodes()) return;
     const first = fragment.firstChild;
