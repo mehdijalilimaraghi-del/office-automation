@@ -202,19 +202,34 @@ function applyTextColor(value: string): void { setInlineStyle('color', value); }
 function applyHighlight(value: string): void { setInlineStyle('background-color', value); }
 function clearHighlight(): void {
     const selection = window.getSelection();
-    const range = document.activeElement?.closest('.rte-toolbar')
-        ? savedRange?.cloneRange()
-        : (selection?.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer) ? selection.getRangeAt(0).cloneRange() : savedRange?.cloneRange());
-    if (!range || range.collapsed || !editor.value || !insideEditor(range.commonAncestorContainer)) return;
+    const activeRange = document.activeElement?.closest('.rte-toolbar')
+        ? savedRange
+        : (selection?.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer)
+            ? selection.getRangeAt(0)
+            : savedRange);
+    if (!activeRange || activeRange.collapsed || !editor.value || !insideEditor(activeRange.commonAncestorContainer)) return;
 
-    // Extracting the selected fragment splits partially selected styled spans.
-    // Removing background only inside that fragment preserves formatting outside the selection.
+    // Work on a clone: extractContents splits partially selected inline wrappers,
+    // so only the selected text loses its highlight and adjacent text keeps formatting.
+    const range = activeRange.cloneRange();
     const fragment = range.extractContents();
     const clearBackground = (node: Node): void => {
-        if (node instanceof HTMLElement) node.style.removeProperty('background-color');
-        node.childNodes.forEach(clearBackground);
+        if (!(node instanceof HTMLElement)) return;
+        node.style.removeProperty('background-color');
+        node.style.removeProperty('background');
+        if (node.tagName === 'MARK') {
+            const parent = node.parentNode;
+            if (parent) {
+                while (node.firstChild) parent.insertBefore(node.firstChild, node);
+                node.remove();
+            }
+            return;
+        }
+        Array.from(node.childNodes).forEach(clearBackground);
     };
-    fragment.childNodes.forEach(clearBackground);
+    Array.from(fragment.childNodes).forEach(clearBackground);
+
+    if (!fragment.hasChildNodes()) return;
     const first = fragment.firstChild;
     const last = fragment.lastChild;
     if (!first || !last) return;
@@ -469,17 +484,41 @@ function setTableWidth(value: string): void {
 }
 function setTableAlignment(value:'left'|'center'|'right'):void {const table=currentCell.value?.closest('table') as HTMLTableElement|null;if(!table)return;table.style.marginLeft=value==='right'?'auto':value==='center'?'auto':'0';table.style.marginRight=value==='left'?'auto':value==='center'?'auto':'0';table.style.float='none';table.style.width=table.style.width||'100%';if(value==='left'){table.style.marginLeft='0';table.style.marginRight='auto';}commit();}
 function setTableDimension(dimension: 'width' | 'height', value: string, unit: 'mm' | 'px'): void {
-    const table = currentCell.value?.closest('table');
-    const numeric=Number(value);
-    if (table instanceof HTMLTableElement && Number.isFinite(numeric) && numeric>0) {
-        table.style[dimension] = `${numeric}${unit}`;
-        if(dimension==='width') table.style.maxWidth='none';
-        table.style.boxSizing='border-box';
+    const table = selectedTable();
+    const numeric = Number(value);
+    if (!(table instanceof HTMLTableElement) || !Number.isFinite(numeric) || numeric <= 0) return;
+    const cssValue = `${numeric}${unit}`;
+    table.style.setProperty(dimension, cssValue, 'important');
+    table.style.setProperty('box-sizing', 'border-box');
+    if (dimension === 'width') {
+        // In auto table layout, a cell's width is only a hint and the browser may
+        // silently redistribute it. Fixed layout makes the requested dimensions effective.
+        table.style.setProperty('max-width', 'none', 'important');
+        table.style.setProperty('table-layout', 'fixed');
     }
     commit();
 }
 function setCellDimension(dimension: 'width' | 'height', value: string, unit: 'mm' | 'px'): void {
-    if (value) cellsForFormatting().forEach((cell) => { cell.style[dimension] = `${value}${unit}`; });
+    const numeric = Number(value);
+    const cells = cellsForFormatting().filter(cell => cell.isConnected);
+    if (!Number.isFinite(numeric) || numeric <= 0 || !cells.length) return;
+    const cssValue = `${numeric}${unit}`;
+    cells.forEach(cell => {
+        cell.style.setProperty(dimension, cssValue, 'important');
+        if (dimension === 'width') {
+            const table = cell.closest('table');
+            if (table) {
+                table.style.setProperty('table-layout', 'fixed');
+                Array.from(table.rows).forEach(row => {
+                    const columnCell = row.cells[cell.cellIndex];
+                    if (columnCell) columnCell.style.setProperty('width', cssValue, 'important');
+                });
+            }
+        } else {
+            const row = cell.parentElement as HTMLTableRowElement | null;
+            row?.style.setProperty('height', cssValue, 'important');
+        }
+    });
     commit();
 }
 
@@ -507,13 +546,18 @@ function setImageWidth(value: string): void {
     commit();
 }
 function setImageDimension(dimension: 'width' | 'height', value: string, unit: 'mm' | 'px'): void {
-    const image=currentImage.value;if(!image||value==='')return;
-    const numeric=Number(value);if(!Number.isFinite(numeric)||numeric<=0)return;
-    const ratio=(image.naturalWidth||image.width)/(image.naturalHeight||image.height||1);
-    image.style.maxWidth='none';
-    image.style.boxSizing='border-box';
-    image.style[dimension]=`${numeric}${unit}`;
-    if (keepImageRatio.value) image.style[dimension==='width'?'height':'width']=`${dimension==='width'?numeric/ratio:numeric*ratio}${unit}`;
+    const image = currentImage.value;
+    const numeric = Number(value);
+    if (!image?.isConnected || !Number.isFinite(numeric) || numeric <= 0) return;
+    const ratio = (image.naturalWidth || image.width) / (image.naturalHeight || image.height || 1);
+    image.style.setProperty('max-width', 'none', 'important');
+    image.style.setProperty('box-sizing', 'border-box');
+    image.style.setProperty(dimension, `${numeric}${unit}`, 'important');
+    if (keepImageRatio.value) {
+        const pairedDimension = dimension === 'width' ? 'height' : 'width';
+        const pairedValue = dimension === 'width' ? numeric / ratio : numeric * ratio;
+        image.style.setProperty(pairedDimension, `${pairedValue}${unit}`, 'important');
+    }
     commit();
 }
 function setImageWrap(value: 'inline' | 'block' | 'left' | 'right'): void {
@@ -615,12 +659,12 @@ function setShapeBorderColor(value: string): void {
     commit();
 }
 function setShapeDimension(dimension: 'width' | 'height', value: string, unit: 'mm' | 'px'): void {
-    const shape=currentShape.value;
-    const numeric=Number(value);
-    if(!shape||!Number.isFinite(numeric)||numeric<=0)return;
-    shape.style.display='inline-block';
-    shape.style.boxSizing='border-box';
-    shape.style[dimension]=`${numeric}${unit}`;
+    const shape = currentShape.value;
+    const numeric = Number(value);
+    if (!shape?.isConnected || !Number.isFinite(numeric) || numeric <= 0) return;
+    shape.style.setProperty('display', 'inline-block');
+    shape.style.setProperty('box-sizing', 'border-box');
+    shape.style.setProperty(dimension, `${numeric}${unit}`, 'important');
     commit();
 }
 function setShapeWidth(value: string): void {
