@@ -560,3 +560,12 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - Added an explicit tab-switch operation that moves focus to the persistent tab-strip button before changing the active panel and snapshots the editor range. `refreshContext()` now treats focus on the tab strip as an intentional editor interaction and does not clear the selected table/image/shape or reset the active tab.
 - This also preserves the selected element references required by the width/height controls while moving from the editor or one toolbar panel to the contextual settings panel. The previously updated dimension setters remain in place: fixed table layout for width changes, explicit table/cell dimensions, row height, and explicit image/shape dimensions.
 - Build and interactive browser acceptance are still pending. Verify tab persistence and actual element geometry changes before accepting this fix. Development only; master/release/server unchanged.
+
+
+## 2026-11-11 — Image/shape dimension setters and shape-tab selection correction
+
+- Root cause in contextual selection refresh: the editor-focus path returned early when an older connected image/shape/cell ref existed. That stale ref could mask the newly selected object before the click handler refreshed it. Context refresh now preserves refs only while focus is in a toolbar; with editor focus it resolves the current Selection/Range instead.
+- Before toolbar focus changes, contextual pinning now resolves the current object from the saved editor range and updates the image/shape/cell refs and context together. This protects the shape tab from being removed by an intervening selectionchange and avoids pinning a stale object.
+- Image and shape dimension fields now read through their selected-object resolvers, not only the transient refs. Their setters validate that the target belongs to this editor and synchronize the active object/context before applying dimensions.
+- Shape dimensions now override the editor's minimum-size constraints and maximum-width constraint, in addition to applying explicit important width/height and border-box sizing. Image sizing continues to remove max-width clipping before applying dimensions.
+- Code updated on development only. Build and browser acceptance have not yet been run; verify image width/height, shape tab persistence across repeated tab switches, shape width/height, and saved HTML after edits before marking complete.
