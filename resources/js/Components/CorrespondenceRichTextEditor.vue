@@ -119,26 +119,28 @@ function switchTab(tab: Tab, event: MouseEvent): void {
 
 function refreshContext(): void {
     const activeElement = document.activeElement;
-    // Toolbar focus is not an editor selection change. Keep the last explicitly
-    // targeted DOM object while controls receive focus or Vue changes panels.
-    if (activeElement?.closest('.rte-toolbar')) {
-        if (contextTarget.value?.isConnected && editor.value?.contains(contextTarget.value)) applyContextTarget(contextTarget.value);
-        return;
-    }
-    if (editor.value?.contains(activeElement)) {
-        const selection = window.getSelection();
-        if (selection?.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer)) {
-            savedRange = selection.getRangeAt(0).cloneRange();
-            updateSelectedFontSize(savedRange);
+    // Any focus movement inside the editor shell (tab strip, toolbar controls,
+    // color popovers or contextual actions) is still part of this editor.
+    // Do not interpret it as deselecting the object or reset the active tab.
+    if (editorShell.value?.contains(activeElement)) {
+        if (editor.value?.contains(activeElement)) {
+            const selection = window.getSelection();
+            if (selection?.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer)) {
+                savedRange = selection.getRangeAt(0).cloneRange();
+                updateSelectedFontSize(savedRange);
+            }
         }
-        const target = contextTarget.value?.isConnected && editor.value.contains(contextTarget.value) ? contextTarget.value : selectedElement();
-        applyContextTarget(target);
+        if (contextTarget.value?.isConnected && editor.value?.contains(contextTarget.value)) {
+            applyContextTarget(contextTarget.value);
+        }
         return;
     }
     contextTarget.value = null;
     currentImage.value = null;
     currentShape.value = null;
     currentCell.value = null;
+    selectedCells.value = [];
+    cellSelectionAnchor.value = null;
     context.value = { table: false, picture: false, shape: false };
     if (['table', 'picture', 'shape'].includes(activeTab.value)) activeTab.value = 'home';
 }
@@ -840,9 +842,19 @@ function onEditorPointerDown(event: PointerEvent): void {
     const nearRight=Math.abs(event.clientX-rect.right)<=edge;
     const nearBottom=Math.abs(event.clientY-rect.bottom)<=edge;
     if(!nearRight&&!nearBottom){
-        // Normal pointer interaction must place a caret so the cell remains editable.
-        // Shift+drag is reserved for rectangular multi-cell selection.
-        if(event.shiftKey){const table=target.closest('table') as HTMLTableElement|null;if(table){dragSelection.value={table,start:currentCell.value??target};didDragSelect=false;event.preventDefault();document.addEventListener('pointermove',onCellDragMove);document.addEventListener('pointerup',onCellDragEnd,{once:true});}}
+        // Start a pending range selection on every primary-button cell press.
+        // A simple click still keeps the browser caret/text selection behavior;
+        // the rectangular selection takes over only after the pointer enters a
+        // different cell. Shift+click range selection remains supported below.
+        if(event.button===0){
+            const table=target.closest('table') as HTMLTableElement|null;
+            if(table){
+                dragSelection.value={table,start:target};
+                didDragSelect=false;
+                document.addEventListener('pointermove',onCellDragMove);
+                document.addEventListener('pointerup',onCellDragEnd,{once:true});
+            }
+        }
         return;
     }
     const table=target.closest('table') as HTMLTableElement|null;if(!table)return;resizeState={cell:target,axis:nearRight?'width':'height',start:nearRight?event.clientX:event.clientY,initial:nearRight?rect.width:rect.height,table,index:nearRight?target.cellIndex:Array.from(table.rows).indexOf(target.parentElement as HTMLTableRowElement)};
@@ -850,8 +862,31 @@ function onEditorPointerDown(event: PointerEvent): void {
     document.addEventListener('pointermove',onEditorPointerMove);
     document.addEventListener('pointerup',onEditorPointerUp,{once:true});
 }
-function onCellDragMove(event:PointerEvent):void {if(!dragSelection.value)return;const node=document.elementFromPoint(event.clientX,event.clientY);const cell=node instanceof Element?node.closest('td,th') as HTMLTableCellElement|null:null;if(!cell||cell.closest('table')!==dragSelection.value.table)return;didDragSelect=true;currentCell.value=cell;contextTarget.value=cell;selectCellRange(dragSelection.value.start,cell);}
-function onCellDragEnd():void {document.removeEventListener('pointermove',onCellDragMove);if(dragSelection.value){if(didDragSelect){currentCell.value=selectedCells.value[selectedCells.value.length-1]??dragSelection.value.start;paintCellSelection();}dragSelection.value=null;}}
+function onCellDragMove(event:PointerEvent):void {
+    if(!dragSelection.value)return;
+    const node=document.elementFromPoint(event.clientX,event.clientY);
+    const cell=node instanceof Element?node.closest('td,th') as HTMLTableCellElement|null:null;
+    if(!cell||cell.closest('table')!==dragSelection.value.table||cell===dragSelection.value.start)return;
+    // Crossing into another cell converts the pending pointer gesture into a
+    // rectangular cell selection and suppresses native text dragging.
+    event.preventDefault();
+    if(!didDragSelect)window.getSelection()?.removeAllRanges();
+    didDragSelect=true;
+    currentCell.value=cell;
+    contextTarget.value=cell;
+    selectCellRange(dragSelection.value.start,cell);
+}
+function onCellDragEnd():void {
+    document.removeEventListener('pointermove',onCellDragMove);
+    if(dragSelection.value){
+        if(didDragSelect){
+            currentCell.value=selectedCells.value[selectedCells.value.length-1]??dragSelection.value.start;
+            contextTarget.value=currentCell.value;
+            paintCellSelection();
+        }
+        dragSelection.value=null;
+    }
+}
 function onEditorPointerMove(event:PointerEvent):void {
     if(!resizeState)return;
     const delta=(resizeState.axis==='width'?event.clientX:event.clientY)-resizeState.start;
