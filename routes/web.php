@@ -49,6 +49,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('correspondence')->name('correspondence.')->group(function (): void {
         Route::get('/', [CorrespondenceController::class, 'index'])->middleware('permission:correspondence.view')->name('index');
         Route::get('/create', [CorrespondenceController::class, 'create'])->middleware('permission:correspondence.create')->name('create');
+        Route::post('/preview', [CorrespondencePrintController::class, 'preview'])->middleware('permission:correspondence.create')->name('preview');
         Route::get('/{correspondence}/edit', [CorrespondenceController::class, 'edit'])->name('edit');
         Route::get('/related-search', [CorrespondenceController::class, 'searchRelated'])->middleware('permission:correspondence.create')->name('related-search');
         Route::get('/{correspondence}/print', CorrespondencePrintController::class)->middleware('permission:correspondence.view')->name('print');
