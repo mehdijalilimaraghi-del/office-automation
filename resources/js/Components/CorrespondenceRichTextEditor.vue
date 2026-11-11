@@ -119,7 +119,6 @@ function switchTab(tab: Tab, event: MouseEvent): void {
 
 function refreshContext(): void {
     const activeElement = document.activeElement;
-    if (!editorShell.value?.contains(activeElement)) contextualTabPinned = false;
     // Toolbar focus is not an editor selection change. Keep the last explicitly
     // targeted DOM object while controls receive focus or Vue changes panels.
     if (activeElement?.closest('.rte-toolbar')) {
