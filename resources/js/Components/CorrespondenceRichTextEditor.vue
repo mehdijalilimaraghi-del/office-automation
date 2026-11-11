@@ -178,7 +178,7 @@ function setLineHeight(value: string): void { if (value) setBlockStyle('line-hei
 function setParagraphSpacing(value: string): void { if (value !== '') setBlockStyle('margin-bottom', `${value}px`); }
 function dimensionMm(element: HTMLElement | null, axis: 'width' | 'height'): string {
     if (!element) return '';
-    const px = axis === 'width' ? element.getBoundingClientRect().width : element.getBoundingClientRect().height;
+    const px = axis === 'width' ? element.offsetWidth : element.offsetHeight;
     return px > 0 ? (px * 25.4 / 96).toFixed(1) : '';
 }
 function selectedTable(): HTMLTableElement | null { return currentCell.value?.closest('table') as HTMLTableElement | null; }
@@ -421,7 +421,7 @@ function applyCellBorders(callback:(cell:HTMLTableCellElement,side:string)=>void
         sides.forEach(side=>callback(cell,side));
     });
 }
-function setCellBorderColor(value:string):void {applyCellBorders((cell,side)=>{if(value==='transparent'){cell.style.setProperty(`border-${side}-style`,'none');cell.style.removeProperty(`border-${side}-color`);}else cell.style.setProperty(`border-${side}-color`,value);});commit();}
+function setCellBorderColor(value:string):void {applyCellBorders((cell,side)=>{if(value==='transparent'){cell.style.setProperty(`border-${side}-style`,'none');cell.style.removeProperty(`border-${side}-color`);}else{cell.style.setProperty(`border-${side}-color`,value);if(cell.style.getPropertyValue(`border-${side}-style`)==='none')cell.style.setProperty(`border-${side}-style`,'solid');}});commit();}
 function setCellBorderWidth(value:string,unit:'mm'|'px'):void {applyCellBorders((cell,side)=>cell.style.setProperty(`border-${side}-width`,`${value}${unit}`));commit();}
 function setCellBorderStyle(value:string):void {applyCellBorders((cell,side)=>cell.style.setProperty(`border-${side}-style`,value));commit();}
 function setImageWidth(value: string): void {
@@ -477,11 +477,11 @@ function insertImageFile(event: Event): void {
     reader.onload = () => {
         if (typeof reader.result !== 'string') return;
         const image = document.createElement('img');
-        image.src = reader.result;
         image.alt = file.name;
         image.style.width = '50%';
         image.style.height = 'auto';
         image.onload = () => { image.style.aspectRatio = `${image.naturalWidth} / ${image.naturalHeight}`; commit(); };
+        image.src = reader.result;
         image.style.display = 'block';
         if (currentImage.value?.isConnected) {
             currentImage.value.replaceWith(image);
