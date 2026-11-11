@@ -667,9 +667,10 @@ function onEditorClick(event: MouseEvent): void {
     currentShape.value = target.closest('[data-editor-shape]') as HTMLElement | null;
     currentImage.value?.classList.add('rte-selected');currentShape.value?.classList.add('rte-selected');
     const clickedCell = target.closest('td,th') as HTMLTableCellElement | null;
-    if (clickedCell && event.shiftKey && cellSelectionAnchor.value) { currentCell.value=clickedCell; selectCellRange(cellSelectionAnchor.value, clickedCell); }
-    else if (clickedCell) { currentCell.value=clickedCell;cellSelectionAnchor.value=clickedCell;selectedCells.value=[clickedCell];paintCellSelection(); }
-    else selectedCells.value=[];
+    currentCell.value = clickedCell;
+    if (clickedCell && event.shiftKey && cellSelectionAnchor.value) { selectCellRange(cellSelectionAnchor.value, clickedCell); }
+    else if (clickedCell) { cellSelectionAnchor.value=clickedCell;selectedCells.value=[clickedCell];paintCellSelection(); }
+    else { selectedCells.value=[]; cellSelectionAnchor.value=null; }
     context.value = { table: !!target.closest('table'), picture: !!currentImage.value, shape: !!currentShape.value };
     if (currentImage.value) activeTab.value = 'picture';
     else if (currentShape.value) activeTab.value = 'shape';
