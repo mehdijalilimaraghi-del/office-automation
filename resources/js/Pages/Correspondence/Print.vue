@@ -96,6 +96,19 @@ function pageNumberScreenStyle(item:TemplateElement):Record<string,string> {
 }
 function bodyStyle():Record<string,string>{const item=bodyElement.value;return {width:item.width+'%',marginTop:(item.spacing+measuredBodyOffsetMm.value)+'mm',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
 function appendixBodyStyle():Record<string,string>{const item=bodyElement.value;return {width:item.width+'%',marginTop:'0',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
+function constrainLetterTables():void {
+ document.querySelectorAll<HTMLElement>('.letter-body table').forEach(table=>{
+  table.style.setProperty('max-width','100%','important');
+  table.style.setProperty('box-sizing','border-box');
+  table.style.setProperty('table-layout','fixed');
+  table.querySelectorAll<HTMLElement>('td,th').forEach(cell=>{
+   cell.style.setProperty('max-width','100%','important');
+   cell.style.setProperty('min-width','0','important');
+   cell.style.setProperty('box-sizing','border-box');
+   cell.style.setProperty('overflow-wrap','anywhere');
+  });
+ });
+}
 function updateBodyStartOffset():void {
  const plane=firstPagePlane.value;
  const contentWindow=firstPageContentWindow.value;
@@ -121,6 +134,7 @@ function updateEstimatedPageCount():void {
 }
 onMounted(async()=>{
  await nextTick();
+ constrainLetterTables();
  updateBodyStartOffset();
  updateEstimatedPageCount();
  if(typeof ResizeObserver!=='undefined'){
@@ -211,7 +225,7 @@ function closePreview():void{if(window.opener){window.close();return;}window.his
 .appendix-heading{font-weight:700;text-align:center;margin:0 0 8mm;padding-bottom:3mm;border-bottom:1px solid #cbd5e1;}
 .appendix-measure-root{position:absolute;left:-100000px;top:0;visibility:hidden;pointer-events:none;overflow:visible;display:flow-root;}
 .appendix-content .letter-body{margin-top:0;}
-.letter-body table{max-width:100%;border-collapse:collapse;}
+ .letter-body table{max-width:100%!important;border-collapse:collapse;table-layout:fixed;}\n.letter-body td,.letter-body th{max-width:100%!important;min-width:0!important;overflow-wrap:anywhere;}
 .letter-body td,.letter-body th{border:1px solid #cbd5e1;padding:4px 7px;}
  .inline-asset{display:block;width:100%;height:auto;max-width:none;max-height:none;object-fit:contain;margin-top:2mm;}
 .issuer-item{break-inside:avoid;page-break-inside:avoid;}
