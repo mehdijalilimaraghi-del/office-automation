@@ -30,7 +30,7 @@ const currentRotation = (element: HTMLElement | null): number => Number(element?
 const setRotation = (element: HTMLElement | null, delta: number): void => { if(!element)return; element.dataset.rotation=String((currentRotation(element)+delta+360)%360); applyElementTransform(element); commit(); };
 const applyElementTransform = (element: HTMLElement): void => { const flipX=element.dataset.flipX==='true'?-1:1; const flipY=element.dataset.flipY==='true'?-1:1; element.style.transform=`rotate(${currentRotation(element)}deg) scale(${flipX}, ${flipY})`; element.style.transformOrigin='center center'; };
 const toggleFlip = (element: HTMLElement | null, axis:'x'|'y'): void => {if(!element)return;const key=axis==='x'?'flipX':'flipY';element.dataset[key]=element.dataset[key]==='true'?'false':'true';applyElementTransform(element);commit();};
-const displayedColor = (kind:'text'|'highlight'|'cell'|'image'|'shape-fill'|'shape-line'): string => {const element=kind==='text'||kind==='highlight'?selectedElement():kind==='cell'?currentCell.value:kind==='image'?currentImage.value:currentShape.value;if(!element)return 'transparent';const style=getComputedStyle(element);return kind==='text'?style.color:kind==='highlight'?style.backgroundColor:kind==='cell'?style.backgroundColor:kind==='image'?style.borderTopColor:kind==='shape-fill'?style.backgroundColor:style.borderTopColor;};
+const displayedColor = (kind:'text'|'highlight'|'cell'|'image'|'shape-fill'|'shape-line'): string => {const element=kind==='text'||kind==='highlight'?selectedElement():kind==='cell'?currentCell.value:kind==='image'?currentImage.value:currentShape.value;if(!element)return 'transparent';const style=getComputedStyle(element);return kind==='text'?style.color:kind==='highlight'?style.backgroundColor:kind==='cell'?style.borderTopColor:kind==='image'?style.borderTopColor:kind==='shape-fill'?style.backgroundColor:style.borderTopColor;};
 let syncing = false;
 let savedRange: Range | null = null;
 
@@ -380,6 +380,7 @@ function setTableWidth(value: string): void {
     if (table instanceof HTMLTableElement) table.style.width = value;
     commit();
 }
+function setTableAlignment(value:'left'|'center'|'right'):void {const table=currentCell.value?.closest('table') as HTMLTableElement|null;if(!table)return;table.style.marginLeft=value==='right'?'auto':value==='center'?'auto':'0';table.style.marginRight=value==='left'?'auto':value==='center'?'auto':'0';table.style.float='none';table.style.width=table.style.width||'100%';if(value==='left'){table.style.marginLeft='0';table.style.marginRight='auto';}commit();}
 function setTableDimension(dimension: 'width' | 'height', value: string, unit: 'mm' | 'px'): void {
     const table = currentCell.value?.closest('table');
     if (table instanceof HTMLTableElement && value) table.style[dimension] = `${value}${unit}`;
@@ -571,7 +572,7 @@ function onEditorPointerDown(event: PointerEvent): void {
     const rect=target.getBoundingClientRect(), edge=6;
     const nearRight=Math.abs(event.clientX-rect.right)<=edge;
     const nearBottom=Math.abs(event.clientY-rect.bottom)<=edge;
-    if(!nearRight&&!nearBottom){const table=target.closest('table') as HTMLTableElement|null;if(table){dragSelection={table,start:target};didDragSelect=false;document.addEventListener('pointermove',onCellDragMove);document.addEventListener('pointerup',onCellDragEnd,{once:true});}return;}
+    if(!nearRight&&!nearBottom){const table=target.closest('table') as HTMLTableElement|null;if(table){dragSelection={table,start:target};didDragSelect=false;event.preventDefault();document.addEventListener('pointermove',onCellDragMove);document.addEventListener('pointerup',onCellDragEnd,{once:true});}return;}
     const table=target.closest('table') as HTMLTableElement|null;if(!table)return;resizeState={cell:target,axis:nearRight?'width':'height',start:nearRight?event.clientX:event.clientY,initial:nearRight?rect.width:rect.height,table,index:nearRight?target.cellIndex:Array.from(table.rows).indexOf(target.parentElement as HTMLTableRowElement)};
     event.preventDefault();
     document.addEventListener('pointermove',onEditorPointerMove);
@@ -594,8 +595,10 @@ function onEditorClick(event: MouseEvent): void {
     const target = event.target;
     if (!(target instanceof Element) || !editor.value?.contains(target)) return;
     if(didDragSelect){didDragSelect=false;return;}
+    editor.value?.querySelectorAll('.rte-selected').forEach(node=>node.classList.remove('rte-selected'));
     currentImage.value = target.closest('img') as HTMLImageElement | null;
     currentShape.value = target.closest('[data-editor-shape]') as HTMLElement | null;
+    currentImage.value?.classList.add('rte-selected');currentShape.value?.classList.add('rte-selected');
     const clickedCell = target.closest('td,th') as HTMLTableCellElement | null;
     if (clickedCell && event.shiftKey && cellSelectionAnchor.value) { currentCell.value=clickedCell; selectCellRange(cellSelectionAnchor.value, clickedCell); }
     else if (clickedCell) { currentCell.value=clickedCell;cellSelectionAnchor.value=clickedCell;selectedCells.value=[clickedCell];paintCellSelection(); }
@@ -679,17 +682,18 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
         </div>
 
         <div v-else-if="activeTab === 'table'" class="rte-toolbar flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white p-3">
-            <button type="button" class="rte-tool" @click="addTableRow"><Rows3 :size="16" /> ردیف +</button>
-            <button type="button" class="rte-tool" @click="addTableColumn"><Columns3 :size="16" /> ستون +</button>
-            <button type="button" class="rte-tool" @click="deleteTableRow">ردیف −</button>
-            <button type="button" class="rte-tool" @click="deleteTableColumn">ستون −</button>
-            <button type="button" class="rte-tool" @click="selectTablePart('table')">انتخاب جدول</button>
-            <button type="button" class="rte-tool" @click="selectTablePart('row')">انتخاب ردیف</button>
-            <button type="button" class="rte-tool" @click="selectTablePart('column')">انتخاب ستون</button>
-            <button type="button" class="rte-tool" @click="mergeSelectedCells">ادغام سلول‌ها</button>
-            <button type="button" class="rte-tool" @click="splitSelectedCell">تقسیم سلول</button>
+            <button type="button" class="rte-tool" title="افزودن ردیف" @click="addTableRow"><Rows3 :size="16"/><span>+</span></button>
+            <button type="button" class="rte-tool" title="افزودن ستون" @click="addTableColumn"><Columns3 :size="16"/><span>+</span></button>
+            <button type="button" class="rte-tool" title="حذف ردیف" @click="deleteTableRow"><Rows3 :size="16"/><Minus :size="12"/></button>
+            <button type="button" class="rte-tool" title="حذف ستون" @click="deleteTableColumn"><Columns3 :size="16"/><Minus :size="12"/></button>
+            <button type="button" class="rte-tool" title="انتخاب جدول" @click="selectTablePart('table')"><Table2 :size="16"/></button>
+            <button type="button" class="rte-tool" title="انتخاب ردیف" @click="selectTablePart('row')"><Rows3 :size="16"/></button>
+            <button type="button" class="rte-tool" title="انتخاب ستون" @click="selectTablePart('column')"><Columns3 :size="16"/></button>
+            <button type="button" class="rte-tool" title="ادغام سلول‌ها" @click="mergeSelectedCells"><Maximize2 :size="16"/></button>
+            <button type="button" class="rte-tool" title="تقسیم سلول" @click="splitSelectedCell"><TableProperties :size="16"/></button>
             <button type="button" class="rte-tool text-rose-700" @click="deleteTable"><Trash2 :size="16" /> حذف جدول</button>
             <label class="text-xs">عرض جدول <input class="rte-number" type="number" min="10" max="210" value="180" @change="setTableDimension('width',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
+            <button type="button" class="rte-tool" title="تراز جدول به راست" @click="setTableAlignment('right')"><AlignRight :size="16"/></button><button type="button" class="rte-tool" title="وسط‌چین کردن جدول" @click="setTableAlignment('center')"><AlignCenter :size="16"/></button><button type="button" class="rte-tool" title="تراز جدول به چپ" @click="setTableAlignment('left')"><AlignLeft :size="16"/></button>
             <label class="text-xs">عرض ستون/ارتفاع ردیف <input class="rte-number" type="number" min="1" value="30" @change="setCellDimension('width',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
             <label class="text-xs">ارتفاع ردیف <input class="rte-number" type="number" min="1" value="10" @change="setCellDimension('height',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
             <label class="text-xs">حاشیه داخلی <input class="rte-number" type="number" min="0" value="2" @change="setCellPadding(($event.target as HTMLInputElement).value,'mm')" /> mm</label>
