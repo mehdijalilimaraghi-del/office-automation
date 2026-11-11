@@ -1,3 +1,9 @@
+## 2026-11-11 — Context-tab pointer timing and dimension readback correction
+
+- Follow-up inspection identified a timing defect in contextual tab navigation: pinning selection in the tab click handler occurs after pointer focus has already moved. A capture-phase pointerdown handler now snapshots the editor range and pins a still-connected selected image, shape, or table cell before focus/selectionchange can run. This applies uniformly to all three object types.
+- Dimension fields now prefer the element's authored CSS width/height (converted to millimetres) rather than only offsetWidth/offsetHeight. Rendered dimensions remain the fallback when no explicit CSS dimension exists; this avoids readback values masking the authored setting due to layout constraints and rounding.
+- The earlier table sizing logic still needs browser acceptance, especially table/column sizing with merged cells and content-driven row heights. Do not mark dimension editing or contextual tabs complete until image, shape and table are each tested in the browser. Build/browser verification pending. Development branch only.
+
 ## 2026-11-11 — Correspondence editor contextual-tab and dimension follow-up
 
 - The contextual toolbar now pins the selected image/table/shape while switching tabs, instead of relying only on browser focus/selectionchange timing. A real pointer interaction inside the editable document releases the pin so selecting a different object refreshes context. The tab strip no longer suppresses native pointer focus; the original selection is captured before switching.
