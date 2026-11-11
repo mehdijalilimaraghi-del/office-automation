@@ -305,22 +305,32 @@ function dimensionMm(element: HTMLElement | null, axis: 'width' | 'height'): str
     const px = axis === 'width' ? element.offsetWidth : element.offsetHeight;
     return px > 0 ? (px * 25.4 / 96).toFixed(1) : '';
 }
+function selectedTarget(): HTMLElement | null {
+    const target = contextTarget.value;
+    return target?.isConnected && editor.value?.contains(target) ? target : null;
+}
 function selectedTable(): HTMLTableElement | null {
-    const selected = currentCell.value?.isConnected ? currentCell.value : selectedElement()?.closest('td,th');
-    const table = selected?.closest('table');
+    const target = selectedTarget() ?? selectedElement() as HTMLElement | null;
+    const table = target?.closest('table');
     return table instanceof HTMLTableElement ? table : null;
 }
 function selectedCell(): HTMLTableCellElement | null {
+    const target = selectedTarget();
+    if (target?.matches('td,th')) return target as HTMLTableCellElement;
     if (currentCell.value?.isConnected) return currentCell.value;
     const cell = selectedElement()?.closest('td,th');
     return cell instanceof HTMLTableCellElement ? cell : null;
 }
 function selectedImage(): HTMLImageElement | null {
+    const target = selectedTarget();
+    if (target?.matches('img')) return target as HTMLImageElement;
     if (currentImage.value?.isConnected) return currentImage.value;
     const image = selectedElement()?.closest('img');
     return image instanceof HTMLImageElement ? image : null;
 }
 function selectedShape(): HTMLElement | null {
+    const target = selectedTarget();
+    if (target?.matches('[data-editor-shape]')) return target;
     if (currentShape.value?.isConnected) return currentShape.value;
     const shape = selectedElement()?.closest('[data-editor-shape]');
     return shape instanceof HTMLElement ? shape : null;
@@ -631,7 +641,10 @@ function setImageDimension(dimension: 'width' | 'height', value: string, unit: '
     currentCell.value = null;
     contextTarget.value = image;
     context.value = { table: false, picture: true, shape: false };
-    const ratio = (image.naturalWidth || image.width) / (image.naturalHeight || image.height || 1);
+    const rendered = image.getBoundingClientRect();
+    const naturalWidth = image.naturalWidth || rendered.width || 1;
+    const naturalHeight = image.naturalHeight || rendered.height || 1;
+    const ratio = naturalWidth / naturalHeight;
     image.style.setProperty('max-width', 'none', 'important');
     image.style.setProperty('box-sizing', 'border-box');
     image.style.setProperty(dimension, `${numeric}${unit}`, 'important');
