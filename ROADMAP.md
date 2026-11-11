@@ -1315,3 +1315,10 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - Image, shape, and table contexts are synchronized from the same target helper. Image/shape dimension setters update the authoritative target ref before applying styles. Context-menu selection and table drag-selection also update the target. Removing an image/shape clears the target and contextual state.
 - Image/shape dimension CSS remains explicit; the dimension readback decimal parser was corrected. Build and interactive browser verification are pending. Do not mark the UI issue complete until the project build and browser tests confirm tab persistence and rendered dimensions for all three object types.
 - Changes are limited to the development branch; master, release, and server branches were not changed.
+
+
+## 2026-11-11 — Final selection resolver hardening
+
+- Dimension target resolvers now consult the authoritative contextTarget first, then fall back to the connected typed reference and saved editor range. This prevents a still-connected but previously selected image/shape/cell from being reused after the user clicks another object.
+- Image aspect-ratio calculation now falls back to rendered geometry while the image is not yet decoded, avoiding zero/invalid ratios when the dimensions are changed immediately after insertion.
+- Decimal authored CSS dimensions are parsed using a literal decimal-point character class. No CI workflow is configured for the development branch; build and browser interaction remain unverified until run in the project environment.
