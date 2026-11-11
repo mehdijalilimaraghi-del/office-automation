@@ -187,6 +187,11 @@ function onEditorKeyUp(): void {
     // argument is reserved for explicit forced-clear calls.
     refreshContext();
 }
+function onEditorMouseUp(): void {
+    // Vue passes a MouseEvent to mouseup; do not forward it to the
+    // optional boolean forceClear parameter of refreshContext.
+    refreshContext();
+}
 function commit(): void {
     emitContent();
     dimensionRevision.value++;
@@ -1117,7 +1122,7 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
             @pointerdown="onEditorPointerDown"
             @click="onEditorClick"
             @contextmenu="onEditorContextMenu"
-            @mouseup="refreshContext"
+            @mouseup="onEditorMouseUp"
             @keyup="onEditorKeyUp"
             @focus="onEditorFocus"
         ></div>
