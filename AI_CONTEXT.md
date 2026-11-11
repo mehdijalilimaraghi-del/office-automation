@@ -1258,3 +1258,6 @@ These are code-level implementations only. The feature remains **in progress / u
 - Added explicit image/shape selected-state outlines, image aspect-ratio metadata and paired width/height behavior, rotation and horizontal/vertical flip controls. Added shape outline-width input and a custom right-click menu for text, table, image and shape contexts.
 - Raised the inline image client-side cap from 180 KB to 350 KB. This remains constrained by the correspondence request/body limits and sanitizer; verify the full encoded data URL round-trip before increasing further.
 - Important: these are code-level changes only. Transform preservation through server sanitization, selection behavior, context-menu clipboard actions, image dimensions after load, editor toolbar appearance, save/reopen, and A4 preview/print remain unverified. No build, automated tests or browser acceptance has been run. Development only; master/release/server unchanged.
+
+## 2026-11-11 — TypeScript correction
+Fixed Vue `ref` access in table pointer-drag selection: assignments and reads now consistently use `dragSelection.value`. This addresses the reported TS2588/TS2339 errors at the drag-selection handlers. The correction is committed to `development`; build has not yet been rerun and no build success is claimed.
