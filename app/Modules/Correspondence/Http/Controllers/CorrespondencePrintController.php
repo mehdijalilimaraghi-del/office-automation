@@ -134,14 +134,6 @@ class CorrespondencePrintController extends Controller
     private function render(Correspondence $correspondence, SystemSettingsService $settings, bool $isPreview): Response
     {
         $snapshot = $correspondence->document_identity_snapshot ?? [];
-            'documents.document.latestVersion',
-            'creator:id,name',
-            'createdDepartment:id,name,manager_id,manager_signature_path,manager_signature_active',
-            'externalOrganization:id,name',
-            'externalDepartment:id,name',
-        ]);
-
-        $snapshot = $correspondence->document_identity_snapshot ?? [];
         $organization = $snapshot['organization'] ?? (function () use ($settings): array {
             $values = $settings->get([
                 'organization.name' => null,
