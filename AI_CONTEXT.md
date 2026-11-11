@@ -1270,3 +1270,8 @@ Fixed Vue `ref` access in table pointer-drag selection: assignments and reads no
 - Replaced the vague paragraph-spacing choices with explicit numeric controls: line-height multiplier (1.00–3.00, step 0.05) and paragraph-after spacing in pixels (0–60).
 - Dimension fields now read the selected element's rendered width/height in millimetres rather than showing unrelated hard-coded defaults. Table height is now separately editable. Image ratio preservation is an explicit checkbox and defaults off; when enabled, changing one dimension calculates the other. Intrinsic image ratio is refreshed after the image loads.
 - These are implementation changes only. Production build, browser interactions, no-color behavior, dimensions, and persistence remain unverified. Development only; master/release/server unchanged.
+
+
+## 2026-11-11 — Editor dimension and border reset refinement
+
+Dimension readback now uses the selected element's untransformed layout box (`offsetWidth`/`offsetHeight`) so rotation does not distort the width/height values shown in the property controls. Clearing a table border disables that side; choosing a color afterward restores a visible solid border. Image intrinsic-ratio handling now registers the load callback before assigning the data URL. These are source-level refinements only; build and browser verification remain pending.
