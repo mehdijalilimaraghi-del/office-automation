@@ -2313,3 +2313,6 @@ These are code-level implementations only. The feature remains **in progress / u
 - Raised the inline image client cap to 350 KB; the existing request size and server sanitization constraints remain authoritative.
 - Not verified: npm build/type-check, drag selection in RTL and spanning tables, transform persistence through HTML sanitization, image load/ratio behavior, context menu actions, palette visual quality, save/reopen, and A4 preview/print. Do not treat these controls as accepted until owner testing.
 - Next owner validation starts with `git pull origin development`, then `npm run build`. Development only; master/release/server unchanged.
+
+## 2026-11-11 — TypeScript correction
+Fixed Vue `ref` access in table pointer-drag selection: assignments and reads now consistently use `dragSelection.value`. This addresses the reported TS2588/TS2339 errors at the drag-selection handlers. The correction is committed to `development`; build has not yet been rerun and no build success is claimed.
