@@ -2304,3 +2304,12 @@ Next validation must start with `git pull origin development`, then `npm run bui
 The latest development commits further implement rectangular multi-cell selection (Shift-click), table/row/column selection, rectangular cell merge, colspan/rowspan split, per-side border formatting with outer/inner targeting, theme swatches plus custom colors for text/highlight/table cells/shapes, numeric mm sizing for table/image/shape and cells, image text-flow modes, and pointer-based shared table column/row boundary resizing.
 
 These are code-level implementations only. The feature remains **in progress / unverified**. In particular verify: selection behavior across cells; merge/split with tables containing existing spans; border application to rectangular selections; boundary dragging in fixed and auto table layouts; numeric dimension persistence; color palettes in the actual browser; image float/wrapping effects on A4 preview and printed PDF; and HTML sanitization/save-reopen. The current implementation is not equivalent to the full Microsoft Word table engine and must not be described as such. No build, automated tests, or browser acceptance has been run.
+
+## 2026-11-11 — Rich-text editor refinement (in progress / unverified)
+
+- Added compact Word-style dropdown color palettes for text, highlight, table borders, image borders, shape fill and shape outline. The controls include theme/standard swatches and custom color input; text/highlight/shape palettes include clear/no-color actions. Palette triggers display the currently computed color.
+- Added drag-to-select table cell ranges without requiring Shift, table left/center/right alignment, and icon-first table selection/merge/split actions.
+- Added visible selected-state outlines for images/shapes, aspect-ratio-aware image sizing, rotation and flip controls for images/shapes, shape border thickness, and contextual right-click menus.
+- Raised the inline image client cap to 350 KB; the existing request size and server sanitization constraints remain authoritative.
+- Not verified: npm build/type-check, drag selection in RTL and spanning tables, transform persistence through HTML sanitization, image load/ratio behavior, context menu actions, palette visual quality, save/reopen, and A4 preview/print. Do not treat these controls as accepted until owner testing.
+- Next owner validation starts with `git pull origin development`, then `npm run build`. Development only; master/release/server unchanged.
