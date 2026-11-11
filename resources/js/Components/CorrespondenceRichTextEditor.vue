@@ -11,6 +11,7 @@ const emit = defineEmits<{ 'update:modelValue': [value: string] }>();
 const editor = ref<HTMLDivElement | null>(null);
 const editorShell = ref<HTMLDivElement | null>(null);
 const keepImageRatio = ref(false);
+const currentFontSize = ref('12pt');
 const imageInput = ref<HTMLInputElement | null>(null);
 const activeTab = ref<Tab>('home');
 const context = ref<{ table: boolean; picture: boolean; shape: boolean }>({ table: false, picture: false, shape: false });
@@ -75,7 +76,22 @@ function findBlock(element: Element | null): HTMLElement | null {
     return block instanceof HTMLElement && block !== editor.value && editor.value?.contains(block) ? block : null;
 }
 function refreshContext(): void {
-    if (document.activeElement?.closest('.rte-toolbar')) {
+    const toolbarFocused = !!document.activeElement?.closest('.rte-toolbar');
+    const editorFocused = !!editor.value?.contains(document.activeElement);
+    // Preserve contextual object selection while focus moves between editor and toolbar.
+    if ((toolbarFocused || editorFocused) && currentImage.value?.isConnected) {
+        context.value = { table: false, picture: true, shape: false };
+        return;
+    }
+    if ((toolbarFocused || editorFocused) && currentShape.value?.isConnected) {
+        context.value = { table: false, picture: false, shape: true };
+        return;
+    }
+    if ((toolbarFocused || editorFocused) && currentCell.value?.isConnected) {
+        context.value = { table: true, picture: false, shape: false };
+        return;
+    }
+    if (toolbarFocused) {
         if (currentImage.value?.isConnected) { context.value = { table: false, picture: true, shape: false }; return; }
         if (currentShape.value?.isConnected) { context.value = { table: false, picture: false, shape: true }; return; }
         if (currentCell.value?.isConnected) { context.value = { table: true, picture: false, shape: false }; return; }
@@ -88,7 +104,10 @@ function refreshContext(): void {
         return;
     }
     const selection = window.getSelection();
-    if (selection?.rangeCount) savedRange = selection.getRangeAt(0).cloneRange();
+    if (selection?.rangeCount) {
+        savedRange = selection.getRangeAt(0).cloneRange();
+        updateSelectedFontSize(savedRange);
+    }
     const table = element?.closest('table') ?? null;
     const image = element?.closest('img') ?? null;
     const shape = element?.closest('[data-editor-shape]') ?? null;
@@ -100,6 +119,17 @@ function refreshContext(): void {
     else if (shape) activeTab.value = 'shape';
     else if (table) activeTab.value = 'table';
     else if (['table', 'picture', 'shape'].includes(activeTab.value)) activeTab.value = 'home';
+}
+function updateSelectedFontSize(range: Range): void {
+    const startNode = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+    const endNode = range.endContainer instanceof Element ? range.endContainer : range.endContainer.parentElement;
+    if (!startNode || !endNode || !insideEditor(startNode) || !insideEditor(endNode)) return;
+    const startPx = Number.parseFloat(getComputedStyle(startNode).fontSize);
+    const endPx = Number.parseFloat(getComputedStyle(endNode).fontSize);
+    if (!Number.isFinite(startPx) || !Number.isFinite(endPx)) return;
+    const startPt = Math.round(startPx * 0.75 * 100) / 100;
+    const endPt = Math.round(endPx * 0.75 * 100) / 100;
+    currentFontSize.value = Math.abs(startPt - endPt) < 0.01 ? `${startPt}pt` : '';
 }
 function onSelectionChange(): void {
     refreshContext();
@@ -677,11 +707,11 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
         </div>
 
         <div v-if="activeTab === 'home'" class="rte-toolbar flex flex-wrap items-center gap-1.5 border-b border-slate-200 bg-white p-2.5">
-            <select class="h-9 max-w-36 rounded-lg border-slate-300 text-xs" :value="fontFamily" aria-label="نوع قلم" @change="applyFontFamily(($event.target as HTMLSelectElement).value)">
+            <select class="rte-font-family h-9 rounded-lg border-slate-300 text-xs" :value="fontFamily" aria-label="نوع قلم" @change="applyFontFamily(($event.target as HTMLSelectElement).value)">
                 <option value="Vazirmatn">وزیرمتن</option><option value="Arial">Arial</option><option value="Tahoma">Tahoma</option><option value="B Nazanin">B Nazanin</option><option value="B Mitra">B Mitra</option><option value="IRANSans">IRANSans</option><option value="Times New Roman">Times New Roman</option>
             </select>
-            <select class="h-9 w-20 rounded-lg border-slate-300 text-xs" aria-label="اندازه قلم" @change="applyFontSize(($event.target as HTMLSelectElement).value)">
-                <option value="10pt">۱۰</option><option value="11pt">۱۱</option><option value="12pt" selected>۱۲</option><option value="14pt">۱۴</option><option value="16pt">۱۶</option><option value="18pt">۱۸</option><option value="24pt">۲۴</option><option value="32pt">۳۲</option>
+            <select class="rte-font-size h-9 rounded-lg border-slate-300 text-xs" :value="currentFontSize" aria-label="اندازه قلم متن انتخاب‌شده" @change="applyFontSize(($event.target as HTMLSelectElement).value)">
+                <option value="" disabled>چند اندازه</option><option v-if="currentFontSize && !['10pt','11pt','12pt','14pt','16pt','18pt','24pt','32pt'].includes(currentFontSize)" :value="currentFontSize">{{ currentFontSize.replace('pt', '') }} (فعلی)</option><option value="10pt">۱۰ pt</option><option value="11pt">۱۱ pt</option><option value="12pt">۱۲ pt</option><option value="14pt">۱۴ pt</option><option value="16pt">۱۶ pt</option><option value="18pt">۱۸ pt</option><option value="24pt">۲۴ pt</option><option value="32pt">۳۲ pt</option>
             </select>
             <button type="button" class="rte-tool" title="پررنگ" aria-label="پررنگ" @click="applyFormat('strong')"><Bold :size="16" /></button>
             <button type="button" class="rte-tool" title="مورب" aria-label="مورب" @click="applyFormat('em')"><Italic :size="16" /></button>
@@ -798,7 +828,11 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
 .rte-tool:hover{background:#f1f5f9}
 .rte-tool:disabled{opacity:.4;cursor:not-allowed}
 .rte-number{width:76px;height:32px;margin:0 4px;padding:3px 6px;border:1px solid #cbd5e1;border-radius:6px;direction:ltr}
-.rte-select{height:32px;margin:0 4px;padding:3px 6px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px}
+.rte-select{height:32px;margin:0 4px;padding:3px 28px 3px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;min-width:104px;max-width:180px;width:auto;box-sizing:border-box;direction:rtl;text-align:right;appearance:none;-webkit-appearance:none;-moz-appearance:none;background-color:#fff;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:left 9px center;background-size:12px 12px}
+.rte-toolbar select:not([multiple]){direction:rtl;text-align:right;appearance:none;-webkit-appearance:none;-moz-appearance:none;padding-left:28px;padding-right:9px;background-color:#fff;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:left 9px center;background-size:12px 12px;box-sizing:border-box;max-width:100%}
+.rte-toolbar select option{direction:rtl;text-align:right}
+.rte-font-family{min-width:132px;width:150px;max-width:170px}
+.rte-font-size{min-width:88px;width:88px}
 .rte-content :deep(.rte-cell-selected){outline:2px solid #2563eb;outline-offset:-2px;background-image:linear-gradient(#dbeafe66,#dbeafe66)}
 .rte-content{min-height:18rem;line-height:1.9;direction:rtl;text-align:right;overflow-wrap:anywhere}
 .rte-content:empty:before{content:attr(data-placeholder);color:#94a3b8;pointer-events:none}
