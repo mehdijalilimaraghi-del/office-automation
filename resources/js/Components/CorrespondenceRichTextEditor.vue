@@ -37,6 +37,8 @@ const toggleFlip = (element: HTMLElement | null, axis:'x'|'y'): void => {if(!ele
 const displayedColor = (kind:'text'|'highlight'|'cell'|'cell-fill'|'image'|'shape-fill'|'shape-line'): string => {const element=kind==='text'||kind==='highlight'?selectedElement():kind==='cell'?currentCell.value:kind==='image'?currentImage.value:currentShape.value;if(!element)return 'transparent';const style=getComputedStyle(element);return kind==='text'?style.color:kind==='highlight'?style.backgroundColor:kind==='cell'?style.borderTopColor:kind==='cell-fill'?style.backgroundColor:kind==='image'?style.borderTopColor:kind==='shape-fill'?style.backgroundColor:style.borderTopColor;};
 let syncing = false;
 let savedRange: Range | null = null;
+// Keep the selected object context stable while the user navigates contextual tabs.
+let contextualTabPinned = false;
 
 const tabs = computed(() => [
     { id: 'home' as const, label: 'خانه' },
@@ -77,20 +79,26 @@ function findBlock(element: Element | null): HTMLElement | null {
     return block instanceof HTMLElement && block !== editor.value && editor.value?.contains(block) ? block : null;
 }
 function switchTab(tab: Tab, event: MouseEvent): void {
-    // Keep focus on the persistent tab strip before Vue unmounts the old
-    // v-if toolbar. Otherwise focus falls to <body>, selectionchange fires,
-    // and refreshContext incorrectly clears the selected object/context.
-    const tabButton = event.currentTarget;
-    if (tabButton instanceof HTMLButtonElement) tabButton.focus({ preventScroll: true });
+    // Pin the contextual target before changing v-if toolbars. Browser focus and
+    // selectionchange events can arrive in different orders across browsers;
+    // neither is allowed to discard the selected image/table/shape mid-switch.
     const selection = window.getSelection();
     if (selection?.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer)) {
         savedRange = selection.getRangeAt(0).cloneRange();
     }
+    contextualTabPinned = true;
+    const tabButton = event.currentTarget;
+    if (tabButton instanceof HTMLButtonElement) tabButton.focus({ preventScroll: true });
     activeTab.value = tab;
 }
 
 function refreshContext(): void {
     const activeElement = document.activeElement;
+    // Do not infer a lost editor selection while focus is anywhere inside this
+    // editor shell. Context is recalculated only after a real editor interaction
+    // or after focus leaves the whole editor component.
+    if (contextualTabPinned && editorShell.value?.contains(activeElement)) return;
+    if (!editorShell.value?.contains(activeElement)) contextualTabPinned = false;
     const tabStripFocused = !!activeElement?.closest('[role="tablist"].rte-toolbar');
     if (tabStripFocused) return;
     const toolbarFocused = !!activeElement?.closest('.rte-toolbar');
@@ -744,6 +752,7 @@ function redo(): void {
 }
 let resizeState: { cell: HTMLTableCellElement; axis: 'width'|'height'; start: number; initial: number; table: HTMLTableElement; index: number } | null = null;
 function onEditorPointerDown(event: PointerEvent): void {
+    contextualTabPinned = false;
     const rawTarget=event.target;
     const target=rawTarget instanceof Element ? rawTarget.closest('td,th') as HTMLTableCellElement | null : null;
     if(!target)return;
@@ -775,6 +784,7 @@ function onEditorPointerUp():void {
     if(resizeState){resizeState=null;commit();}
 }
 function onEditorClick(event: MouseEvent): void {
+    contextualTabPinned = false;
     const target = event.target;
     if (!(target instanceof Element) || !editor.value?.contains(target)) return;
     if(didDragSelect){didDragSelect=false;return;}
@@ -832,7 +842,7 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
 <template>
     <div ref="editorShell" @focusout="syncExternalContentOnBlur" class="overflow-hidden rounded-xl border border-slate-300 bg-white focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
         <div class="rte-toolbar flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 px-2 py-2" role="tablist" aria-label="ابزارهای ویرایش متن">
-            <button v-for="tab in tabs" :key="tab.id" type="button" role="tab" :aria-selected="activeTab === tab.id" @pointerdown.prevent class="rounded-lg px-3 py-2 text-xs font-semibold" :class="activeTab === tab.id ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-200'" @click="switchTab(tab.id, $event)">{{ tab.label }}</button>
+            <button v-for="tab in tabs" :key="tab.id" type="button" role="tab" :aria-selected="activeTab === tab.id" class="rounded-lg px-3 py-2 text-xs font-semibold" :class="activeTab === tab.id ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-200'" @click="switchTab(tab.id, $event)">{{ tab.label }}</button>
         </div>
 
         <div v-if="activeTab === 'home'" class="rte-toolbar flex flex-wrap items-center gap-1.5 border-b border-slate-200 bg-white p-2.5">
