@@ -132,7 +132,6 @@ function refreshContext(): void {
     const tabStripFocused = !!activeElement?.closest('[role="tablist"].rte-toolbar');
     if (tabStripFocused) return;
     const toolbarFocused = !!activeElement?.closest('.rte-toolbar');
-    const editorFocused = !!editor.value?.contains(activeElement);
     // A stale image/shape ref must never mask a new selection inside the editor.
     // Preserve refs only while focus is in a toolbar; when the editor has focus,
     // always resolve the object from its current Selection/Range.
