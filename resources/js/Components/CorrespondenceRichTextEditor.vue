@@ -44,6 +44,8 @@ const tabs: { id: Tab; label: string }[] = [
     { id: 'table', label: 'جدول' }, { id: 'picture', label: 'تصویر' }, { id: 'shape', label: 'شکل' },
 ];
 const contextTarget = ref<HTMLElement | null>(null);
+// Keep the object selected in the document stable while toolbar controls take focus.
+const pinnedContextTarget = ref<HTMLElement | null>(null);
 function isTabAvailable(tab: Tab): boolean {
     if (tab === 'table') return context.value.table;
     if (tab === 'picture') return context.value.picture;
@@ -103,10 +105,12 @@ function pinContextualSelection(): void {
     if (selection?.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer)) {
         savedRange = selection.getRangeAt(0).cloneRange();
     }
-    // Object identity comes from the editor pointer/click handlers, never from
-    // a collapsed browser caret beside a non-text object.
-    if (contextTarget.value?.isConnected && editor.value?.contains(contextTarget.value)) {
-        applyContextTarget(contextTarget.value);
+    // Snapshot the concrete object before a toolbar control receives focus.
+    // The browser may move/collapse the caret before click/change handlers run.
+    const candidate = contextTarget.value ?? currentImage.value ?? currentShape.value ?? currentCell.value;
+    if (candidate?.isConnected && editor.value?.contains(candidate)) {
+        pinnedContextTarget.value = candidate;
+        applyContextTarget(candidate);
     }
 }
 function switchTab(tab: Tab, event: MouseEvent): void {
@@ -130,12 +134,16 @@ function refreshContext(): void {
                 updateSelectedFontSize(savedRange);
             }
         }
-        if (contextTarget.value?.isConnected && editor.value?.contains(contextTarget.value)) {
+        const pinned = pinnedContextTarget.value;
+        if (pinned?.isConnected && editor.value?.contains(pinned)) {
+            applyContextTarget(pinned);
+        } else if (contextTarget.value?.isConnected && editor.value?.contains(contextTarget.value)) {
             applyContextTarget(contextTarget.value);
         }
         return;
     }
     contextTarget.value = null;
+    pinnedContextTarget.value = null;
     currentImage.value = null;
     currentShape.value = null;
     currentCell.value = null;
@@ -308,6 +316,8 @@ function dimensionMm(element: HTMLElement | null, axis: 'width' | 'height'): str
     return px > 0 ? (px * 25.4 / 96).toFixed(1) : '';
 }
 function selectedTarget(): HTMLElement | null {
+    const pinned = pinnedContextTarget.value;
+    if (pinned?.isConnected && editor.value?.contains(pinned)) return pinned;
     const target = contextTarget.value;
     return target?.isConnected && editor.value?.contains(target) ? target : null;
 }
@@ -833,6 +843,8 @@ let resizeState: { cell: HTMLTableCellElement; axis: 'width'|'height'; start: nu
 function onEditorPointerDown(event: PointerEvent): void {
     const rawTarget = event.target;
     if (rawTarget instanceof Element && editor.value?.contains(rawTarget)) {
+        // A new document interaction explicitly replaces the previous toolbar pin.
+        pinnedContextTarget.value = null;
         applyContextTarget(rawTarget, true);
         dimensionRevision.value++;
     }
@@ -901,6 +913,7 @@ function onEditorPointerUp():void {
 function onEditorClick(event: MouseEvent): void {
     const target = event.target;
     if (!(target instanceof Element) || !editor.value?.contains(target)) return;
+    pinnedContextTarget.value = null;
     if(didDragSelect){didDragSelect=false;return;}
     editor.value?.querySelectorAll('.rte-selected').forEach(node=>node.classList.remove('rte-selected'));
     // This click is the sole authority for contextual-object selection.
@@ -962,7 +975,7 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
 </script>
 
 <template>
-    <div ref="editorShell" @focusout="syncExternalContentOnBlur" class="overflow-hidden rounded-xl border border-slate-300 bg-white focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
+    <div ref="editorShell" @pointerdown.capture="pinContextualSelection" @focusout="syncExternalContentOnBlur" class="overflow-hidden rounded-xl border border-slate-300 bg-white focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
         <div class="rte-toolbar flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 px-2 py-2" role="tablist" aria-label="ابزارهای ویرایش متن" @pointerdown.capture="pinContextualSelection">
             <button v-for="tab in tabs" :key="tab.id" type="button" role="tab" :disabled="!isTabAvailable(tab.id)" :aria-selected="activeTab === tab.id" class="rounded-lg px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-35" :class="activeTab === tab.id ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-200'" @click="switchTab(tab.id, $event)">{{ tab.label }}</button>
         </div>
