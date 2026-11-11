@@ -426,7 +426,7 @@ function openOutgoingPreview(): void {
         external_contact_id: form.external_contact_id || null,
         appendix_mode: form.appendix_mode,
         appendix_body: form.appendix_body,
-        appendix_file_count: form.appendix_files.length,
+        appendix_file_count: form.appendix_files.length + (existing?.appendix_documents.length ?? 0),
     };
 
     const postForm = document.createElement('form');
