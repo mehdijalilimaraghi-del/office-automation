@@ -2472,3 +2472,10 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - Fixed the next `vue-tsc` event-handler mismatch: the editor content area's `@mouseup` now calls a zero-argument `onEditorMouseUp()` wrapper rather than passing Vue's `MouseEvent` to `refreshContext(forceClear?: boolean)`.
 - The wrapper preserves the intended context refresh behavior while preventing a DOM event from being interpreted as the optional force-clear Boolean.
 - This is a compile-time correction only. It does not establish that contextual tabs or numeric dimension editing work; those still require the production build and browser interaction verification. Changes are restricted to the `development` branch.
+
+## 2026-11-11 — Editor toolbar visibility and outgoing preview
+
+- Implemented a sticky wrapper around the editor's tabs and active tool controls. It is positioned below the 64px application top navigation and the editor shell no longer clips the sticky region.
+- Added a bottom-action preview button only for outgoing correspondence. The button opens the existing A4 print renderer in a new tab using current unsaved form values and live template/organization assets through an authenticated CSRF-protected endpoint. The preview uses an unsaved in-memory model; it does not persist the draft.
+- Uploaded main/appendix file contents are not rendered; the preview displays an explanatory notice. Incoming correspondence is unchanged.
+- **Status: implemented in source, not verified.** Run PHP feature tests, npm run build (Vue type-check + Vite), then browser checks for sticky positioning, preview accuracy, popup/CSRF behavior, and no database persistence. No claim of build or browser success. Development only.
