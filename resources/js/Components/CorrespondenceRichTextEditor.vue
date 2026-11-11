@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { AlignCenter, AlignJustify, AlignLeft, AlignRight, ArrowRight, Bold, Circle, Columns3, Image, IndentDecrease, IndentIncrease, Italic, Link, List, ListOrdered, Minus, PaintBucket, Redo2, RectangleHorizontal, Rows3, Strikethrough, Table2, Trash2, Underline, Undo2, Palette, RotateCw, FlipHorizontal, FlipVertical, Scissors, Copy, Clipboard, Eraser, Grid3X3, TableProperties, Maximize2 } from '@lucide/vue';
 
 type Tab = 'home' | 'insert' | 'table' | 'picture' | 'shape';
@@ -38,7 +38,6 @@ const displayedColor = (kind:'text'|'highlight'|'cell'|'cell-fill'|'image'|'shap
 let syncing = false;
 let savedRange: Range | null = null;
 // Keep the selected object context stable while the user navigates contextual tabs.
-let contextualTabPinned = false;
 
 const tabs: { id: Tab; label: string }[] = [
     { id: 'home', label: 'خانه' }, { id: 'insert', label: 'درج' },
@@ -108,13 +107,11 @@ function pinContextualSelection(): void {
     // a collapsed browser caret beside a non-text object.
     if (contextTarget.value?.isConnected && editor.value?.contains(contextTarget.value)) {
         applyContextTarget(contextTarget.value);
-        contextualTabPinned = true;
     }
 }
 function switchTab(tab: Tab, event: MouseEvent): void {
     if (!isTabAvailable(tab)) return;
     pinContextualSelection();
-    contextualTabPinned = true;
     const tabButton = event.currentTarget;
     if (tabButton instanceof HTMLButtonElement) tabButton.focus({ preventScroll: true });
     activeTab.value = tab;
@@ -161,7 +158,6 @@ function onSelectionChange(): void {
     refreshContext();
 }
 function onEditorFocus(): void {
-    contextualTabPinned = false;
     refreshContext();
 }
 function commit(): void {
@@ -634,6 +630,7 @@ function setImageDimension(dimension: 'width' | 'height', value: string, unit: '
     currentImage.value = image;
     currentShape.value = null;
     currentCell.value = null;
+    contextTarget.value = image;
     context.value = { table: false, picture: true, shape: false };
     const ratio = (image.naturalWidth || image.width) / (image.naturalHeight || image.height || 1);
     image.style.setProperty('max-width', 'none', 'important');
@@ -755,6 +752,7 @@ function setShapeDimension(dimension: 'width' | 'height', value: string, unit: '
     currentShape.value = shape;
     currentImage.value = null;
     currentCell.value = null;
+    contextTarget.value = shape;
     context.value = { table: false, picture: false, shape: true };
     shape.style.setProperty('display', 'inline-block', 'important');
     shape.style.setProperty('box-sizing', 'border-box', 'important');
@@ -788,8 +786,22 @@ function insertLink(): void {
     link.textContent = text;
     insertNode(link);
 }
-function removeImage(): void { currentImage.value?.remove(); currentImage.value = null; commit(); }
-function removeShape(): void { currentShape.value?.remove(); currentShape.value = null; commit(); }
+function removeImage(): void {
+    currentImage.value?.remove();
+    currentImage.value = null;
+    if (contextTarget.value && !contextTarget.value.isConnected) contextTarget.value = null;
+    context.value = { table: false, picture: false, shape: false };
+    activeTab.value = 'home';
+    commit();
+}
+function removeShape(): void {
+    currentShape.value?.remove();
+    currentShape.value = null;
+    if (contextTarget.value && !contextTarget.value.isConnected) contextTarget.value = null;
+    context.value = { table: false, picture: false, shape: false };
+    activeTab.value = 'home';
+    commit();
+}
 function undo(): void {
     if (historyIndex.value <= 0 || !editor.value) return;
     historyIndex.value -= 1;
@@ -810,7 +822,6 @@ function redo(): void {
 }
 let resizeState: { cell: HTMLTableCellElement; axis: 'width'|'height'; start: number; initial: number; table: HTMLTableElement; index: number } | null = null;
 function onEditorPointerDown(event: PointerEvent): void {
-    contextualTabPinned = false;
     const rawTarget = event.target;
     if (rawTarget instanceof Element && editor.value?.contains(rawTarget)) applyContextTarget(rawTarget, true);
     const target=rawTarget instanceof Element ? rawTarget.closest('td,th') as HTMLTableCellElement | null : null;
@@ -843,7 +854,6 @@ function onEditorPointerUp():void {
     if(resizeState){resizeState=null;commit();}
 }
 function onEditorClick(event: MouseEvent): void {
-    contextualTabPinned = false;
     const target = event.target;
     if (!(target instanceof Element) || !editor.value?.contains(target)) return;
     if(didDragSelect){didDragSelect=false;return;}
@@ -858,7 +868,17 @@ function onEditorClick(event: MouseEvent): void {
     else { selectedCells.value=[]; cellSelectionAnchor.value=null; }
     applyContextTarget(target, true);
 }
-function onEditorContextMenu(event: MouseEvent):void {const target=event.target;if(!(target instanceof Element)||!editor.value?.contains(target))return;event.preventDefault();const image=target.closest('img') as HTMLImageElement|null;const shape=target.closest('[data-editor-shape]') as HTMLElement|null;const table=target.closest('table');currentImage.value=image;currentShape.value=shape;currentCell.value=target.closest('td,th') as HTMLTableCellElement|null;contextMenu.value={x:Math.min(event.clientX,window.innerWidth-230),y:Math.min(event.clientY,window.innerHeight-300),kind:image?'picture':shape?'shape':table?'table':'text'};if(image){context.value={table:false,picture:true,shape:false};activeTab.value='picture';}else if(shape){context.value={table:false,picture:false,shape:true};activeTab.value='shape';}else if(table){context.value={table:true,picture:false,shape:false};activeTab.value='table';}}
+function onEditorContextMenu(event: MouseEvent):void {
+    const target = event.target;
+    if (!(target instanceof Element) || !editor.value?.contains(target)) return;
+    event.preventDefault();
+    applyContextTarget(target, true);
+    contextMenu.value = {
+        x: Math.min(event.clientX, window.innerWidth - 230),
+        y: Math.min(event.clientY, window.innerHeight - 300),
+        kind: currentImage.value ? 'picture' : currentShape.value ? 'shape' : target.closest('table') ? 'table' : 'text',
+    };
+}
 function onEditorContextAction(action:string):void {contextMenu.value=null;if(action==='delete-image')removeImage();else if(action==='delete-shape')removeShape();else if(action==='rotate-left')setRotation(currentImage.value??currentShape.value,-90);else if(action==='rotate-right')setRotation(currentImage.value??currentShape.value,90);else if(action==='select-table')selectTablePart('table');else if(action==='copy')document.execCommand('copy');else if(action==='cut')document.execCommand('cut');else if(action==='paste')document.execCommand('paste');else if(action==='clear')clearFormatting();}
 function onInput(): void {
     if (!syncing) commit();
