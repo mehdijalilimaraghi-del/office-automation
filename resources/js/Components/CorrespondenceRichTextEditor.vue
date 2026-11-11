@@ -168,6 +168,24 @@ function applyFontFamily(value: string): void { setInlineStyle('font-family', va
 function applyFontSize(value: string): void { setInlineStyle('font-size', value); }
 function applyTextColor(value: string): void { setInlineStyle('color', value); }
 function applyHighlight(value: string): void { setInlineStyle('background-color', value); }
+function clearHighlight(): void {
+    const selection = window.getSelection();
+    const range = document.activeElement?.closest('.rte-toolbar')
+        ? savedRange?.cloneRange()
+        : (selection?.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer) ? selection.getRangeAt(0).cloneRange() : savedRange?.cloneRange());
+    if (!range || range.collapsed || !editor.value) return;
+    let node: Node | null = range.commonAncestorContainer;
+    if (node.nodeType !== Node.ELEMENT_NODE) node = node.parentElement;
+    while (node instanceof HTMLElement && node !== editor.value) {
+        const contents = document.createRange();
+        contents.selectNodeContents(node);
+        const fullySelected = range.compareBoundaryPoints(Range.START_TO_START, contents) <= 0
+            && range.compareBoundaryPoints(Range.END_TO_END, contents) >= 0;
+        if (fullySelected && node.style.backgroundColor) node.style.removeProperty('background-color');
+        node = node.parentElement;
+    }
+    commit();
+}
 function align(value: string): void { setBlockStyle('text-align', value); }
 function setDirection(value: 'rtl' | 'ltr'): void {
     const block = findBlock(selectedElement()) ?? editor.value;
@@ -670,7 +688,7 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
             <button type="button" class="rte-tool" title="زیرخط" aria-label="زیرخط" @click="applyFormat('u')"><Underline :size="16" /></button>
             <button type="button" class="rte-tool" title="خط‌خورده" aria-label="خط‌خورده" @click="applyFormat('s')"><Strikethrough :size="16" /></button>
             <details class="rte-color-menu"><summary title="رنگ قلم"><span class="font-bold">A</span><span class="rte-color-preview" :style="{backgroundColor:displayedColor('text')}"/><Palette :size="14"/></summary><div class="rte-color-popover"><b>رنگ‌های قالب</b><div class="rte-theme-colors"><button v-for="color in themeColors" :key="'ft-'+color" type="button" :style="{backgroundColor:color}" @click.prevent="applyTextColor(color)"/></div><b>رنگ‌های استاندارد</b><div class="rte-swatches"><button v-for="color in colorPalette" :key="'fc-'+color" type="button" :style="{backgroundColor:color}" :title="color" @click.prevent="applyTextColor(color)"/></div><label class="rte-custom-color">رنگ دلخواه <input type="color" @input="applyTextColor(($event.target as HTMLInputElement).value)"/></label></div></details>
-            <details class="rte-color-menu"><summary title="رنگ پس‌زمینه متن"><PaintBucket :size="15"/><span class="rte-color-preview" :style="{backgroundColor:displayedColor('highlight')}"/><Palette :size="14"/></summary><div class="rte-color-popover"><b>رنگ‌های قالب</b><div class="rte-theme-colors"><button v-for="color in themeColors" :key="'ht-'+color" type="button" :style="{backgroundColor:color}" @click.prevent="applyHighlight(color)"/></div><b>رنگ‌های استاندارد</b><div class="rte-swatches"><button v-for="color in colorPalette" :key="'hc-'+color" type="button" :style="{backgroundColor:color}" @click.prevent="applyHighlight(color)"/></div><label class="rte-custom-color">رنگ دلخواه <input type="color" @input="applyHighlight(($event.target as HTMLInputElement).value)"/></label><button type="button" class="rte-menu-action" @click.prevent="applyHighlight('transparent')">بدون رنگ</button></div></details>
+            <details class="rte-color-menu"><summary title="رنگ پس‌زمینه متن"><PaintBucket :size="15"/><span class="rte-color-preview" :style="{backgroundColor:displayedColor('highlight')}"/><Palette :size="14"/></summary><div class="rte-color-popover"><b>رنگ‌های قالب</b><div class="rte-theme-colors"><button v-for="color in themeColors" :key="'ht-'+color" type="button" :style="{backgroundColor:color}" @click.prevent="applyHighlight(color)"/></div><b>رنگ‌های استاندارد</b><div class="rte-swatches"><button v-for="color in colorPalette" :key="'hc-'+color" type="button" :style="{backgroundColor:color}" @click.prevent="applyHighlight(color)"/></div><label class="rte-custom-color">رنگ دلخواه <input type="color" @input="applyHighlight(($event.target as HTMLInputElement).value)"/></label><button type="button" class="rte-menu-action" @click.prevent="clearHighlight()">بدون رنگ</button></div></details>
             <span class="mx-1 h-6 w-px bg-slate-200"></span>
             <button type="button" class="rte-tool" title="راست‌چین" aria-label="راست‌چین" @click="align('right')"><AlignRight :size="16" /></button>
             <button type="button" class="rte-tool" title="وسط‌چین" aria-label="وسط‌چین" @click="align('center')"><AlignCenter :size="16" /></button>
