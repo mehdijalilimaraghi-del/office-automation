@@ -491,3 +491,8 @@ Dimension readback now uses the selected element's untransformed layout box (`of
 ## 2026-11-11 — Text highlight clear action
 
 The highlight palette's no-color action now removes the inline background color from fully selected highlighted ancestor elements instead of applying another transparent wrapper. Partial-selection behavior still requires browser acceptance. This is a source-level correction only; no build or browser verification is claimed.
+
+
+## 2026-11-11 — Build feedback: unsupported Lucide icon
+
+The user's production build identified `BorderAll` as unavailable from `@lucide/vue`. Replaced the unsupported icon reference in the shape-outline color control with the already-used/exported `RectangleHorizontal` icon and removed `BorderAll` from the import. This is a targeted compile-error correction; the build has not yet been rerun, so further build errors may remain. Development branch only.
