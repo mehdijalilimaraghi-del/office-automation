@@ -629,3 +629,18 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - Fixed the next `vue-tsc` event-handler mismatch: the editor content area's `@mouseup` now calls a zero-argument `onEditorMouseUp()` wrapper rather than passing Vue's `MouseEvent` to `refreshContext(forceClear?: boolean)`.
 - The wrapper preserves the intended context refresh behavior while preventing a DOM event from being interpreted as the optional force-clear Boolean.
 - This is a compile-time correction only. It does not establish that contextual tabs or numeric dimension editing work; those still require the production build and browser interaction verification. Changes are restricted to the `development` branch.
+
+## 2026-11-11 — Outgoing preview and sticky toolbar verification
+
+Implementation notes:
+- The preview button belongs beside the bottom form actions and is visible only when form.type is outgoing.
+- Preview data is posted as a JSON form field with the page CSRF token to correspondence.preview, targeting a newly opened tab. The controller validates permission, allowed department, and external organization/department/contact relationships, then renders an unsaved model through the same print props as persisted letters.
+- Preview file content is not embedded. The print page warns when the composition mode includes uploaded files.
+- The editor's contextual tab strip and active toolbar are inside .rte-toolbar-sticky (position: sticky; top: 4rem); do not reintroduce overflow-hidden on the editor shell or an ancestor scroll container that prevents viewport sticking.
+
+Required local verification before acceptance:
+1. git pull origin development
+2. Run npm run build and the focused Correspondence PHP feature tests.
+3. In the browser, scroll a long outgoing letter and confirm both tabs and the entire active toolbar remain visible below the app header; verify contextual selection/settings still work.
+4. Open outgoing preview before saving and compare subject, body, recipient, date, appendix, letterhead, stamp/signature and page layout with the form/template. Confirm the new tab closes without saving and no correspondence record is created.
+5. Confirm the preview button is absent on incoming forms and confirm the file-content warning when file composition is selected.
