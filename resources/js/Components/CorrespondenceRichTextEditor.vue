@@ -83,8 +83,30 @@ function pinContextualSelection(): void {
     if (selection?.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer)) {
         savedRange = selection.getRangeAt(0).cloneRange();
     }
-    // Pin before the browser moves focus. Waiting for click is too late: the
-    // selectionchange event can remove the contextual tab before click dispatch.
+    // Resolve the target from the last editor range before toolbar focus changes.
+    // This prevents an older connected object ref from winning over the object
+    // that is actually selected now.
+    const selected = selectedElement();
+    const image = selected?.closest('img');
+    const shape = selected?.closest('[data-editor-shape]');
+    const cell = selected?.closest('td,th');
+    if (image instanceof HTMLImageElement) {
+        currentImage.value = image;
+        currentShape.value = null;
+        currentCell.value = null;
+        context.value = { table: false, picture: true, shape: false };
+    } else if (shape instanceof HTMLElement) {
+        currentShape.value = shape;
+        currentImage.value = null;
+        currentCell.value = null;
+        context.value = { table: false, picture: false, shape: true };
+    } else if (cell instanceof HTMLTableCellElement) {
+        currentCell.value = cell;
+        currentImage.value = null;
+        currentShape.value = null;
+        context.value = { table: true, picture: false, shape: false };
+    }
+    // Pin before the browser moves focus; selectionchange must not unmount tabs.
     if (currentImage.value?.isConnected || currentShape.value?.isConnected || currentCell.value?.isConnected) {
         contextualTabPinned = true;
     }
