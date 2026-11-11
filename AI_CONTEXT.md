@@ -1411,3 +1411,10 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - Fixed the reported `vue-tsc` failure: the contenteditable's `keyup` event no longer passes its `KeyboardEvent` into `refreshContext(forceClear?: boolean)`; it calls a dedicated zero-argument `onEditorKeyUp()` wrapper instead.
 - Narrowed contextual selection pinning to pointer interactions originating inside `.rte-toolbar`. The editor-shell capture handler now ignores pointerdowns in the editable document, so selecting a new table or shape cannot first pin a stale previously selected object. The redundant tab-strip capture handler was removed; the shell capture handler still snapshots toolbar targets before focus changes.
 - This corrects a concrete event-routing defect and the reported TypeScript error. It is not yet evidence that the contextual-tab or dimension issues are fully resolved. The local production build and browser verification remain pending; specifically verify table/shape tab persistence and numeric width/height changes. Development branch only; master, release and server unchanged.
+
+
+## 2026-11-11 — Fix mouseup event typing in correspondence editor
+
+- Fixed the next `vue-tsc` event-handler mismatch: the editor content area's `@mouseup` now calls a zero-argument `onEditorMouseUp()` wrapper rather than passing Vue's `MouseEvent` to `refreshContext(forceClear?: boolean)`.
+- The wrapper preserves the intended context refresh behavior while preventing a DOM event from being interpreted as the optional force-clear Boolean.
+- This is a compile-time correction only. It does not establish that contextual tabs or numeric dimension editing work; those still require the production build and browser interaction verification. Changes are restricted to the `development` branch.
