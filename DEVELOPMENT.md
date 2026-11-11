@@ -615,3 +615,10 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - `refreshContext(forceClear = false)` now preserves a still-connected pinned contextual object during transient focus gaps. A real exit is confirmed separately: an outside document pointerdown clears context immediately, while shell focusout waits for `nextTick()` and then calls `refreshContext(true)` after focus has settled. This avoids treating selectionchange as proof of leaving the editor.
 - The same preservation keeps table/shape targets available while dimension inputs receive focus and their change handlers execute. Existing dimension conversion and CSS application routines were not rewritten in this correction.
 - Source-level verification only; no production build or interactive browser test has been run. Acceptance must verify table and shape tabs remain active when clicking their controls, and width/height values update the selected object. Development branch only; master, release and server unchanged.
+
+
+## 2026-11-11 — Correct contextual toolbar pointer scope and keyup typing
+
+- Fixed the reported `vue-tsc` failure: the contenteditable's `keyup` event no longer passes its `KeyboardEvent` into `refreshContext(forceClear?: boolean)`; it calls a dedicated zero-argument `onEditorKeyUp()` wrapper instead.
+- Narrowed contextual selection pinning to pointer interactions originating inside `.rte-toolbar`. The editor-shell capture handler now ignores pointerdowns in the editable document, so selecting a new table or shape cannot first pin a stale previously selected object. The redundant tab-strip capture handler was removed; the shell capture handler still snapshots toolbar targets before focus changes.
+- This corrects a concrete event-routing defect and the reported TypeScript error. It is not yet evidence that the contextual-tab or dimension issues are fully resolved. The local production build and browser verification remain pending; specifically verify table/shape tab persistence and numeric width/height changes. Development branch only; master, release and server unchanged.
