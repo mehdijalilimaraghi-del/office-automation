@@ -30,7 +30,7 @@ const currentRotation = (element: HTMLElement | null): number => Number(element?
 const setRotation = (element: HTMLElement | null, delta: number): void => { if(!element)return; element.dataset.rotation=String((currentRotation(element)+delta+360)%360); applyElementTransform(element); commit(); };
 const applyElementTransform = (element: HTMLElement): void => { const flipX=element.dataset.flipX==='true'?-1:1; const flipY=element.dataset.flipY==='true'?-1:1; element.style.transform=`rotate(${currentRotation(element)}deg) scale(${flipX}, ${flipY})`; element.style.transformOrigin='center center'; };
 const toggleFlip = (element: HTMLElement | null, axis:'x'|'y'): void => {if(!element)return;const key=axis==='x'?'flipX':'flipY';element.dataset[key]=element.dataset[key]==='true'?'false':'true';applyElementTransform(element);commit();};
-const displayedColor = (kind:'text'|'highlight'|'cell'|'image'|'shape-fill'|'shape-line'): string => {const element=kind==='text'||kind==='highlight'?selectedElement():kind==='cell'?currentCell.value:kind==='image'?currentImage.value:currentShape.value;if(!element)return 'transparent';const style=getComputedStyle(element);return kind==='text'?style.color:kind==='highlight'?style.backgroundColor:kind==='cell'?style.borderTopColor:kind==='image'?style.borderTopColor:kind==='shape-fill'?style.backgroundColor:style.borderTopColor;};
+const displayedColor = (kind:'text'|'highlight'|'cell'|'cell-fill'|'image'|'shape-fill'|'shape-line'): string => {const element=kind==='text'||kind==='highlight'?selectedElement():kind==='cell'?currentCell.value:kind==='image'?currentImage.value:currentShape.value;if(!element)return 'transparent';const style=getComputedStyle(element);return kind==='text'?style.color:kind==='highlight'?style.backgroundColor:kind==='cell'?style.borderTopColor:kind==='cell-fill'?style.backgroundColor:kind==='image'?style.borderTopColor:kind==='shape-fill'?style.backgroundColor:style.borderTopColor;};
 let syncing = false;
 let savedRange: Range | null = null;
 
@@ -472,7 +472,7 @@ function insertImageFile(event: Event): void {
         } else {
             insertNode(image);
         }
-        currentImage.value = image;
+        currentImage.value = image;image.classList.add('rte-selected');
         context.value = { table: false, picture: true, shape: false };
         activeTab.value = 'picture';
     };
@@ -502,7 +502,7 @@ function insertShape(shape: 'rectangle' | 'ellipse' | 'line' | 'arrow'): void {
     range.selectNodeContents(element);
     restoreSelection(range);
     savedRange = range.cloneRange();
-    currentShape.value = element;
+    currentShape.value = element;element.classList.add('rte-selected');
     context.value = { table: false, picture: false, shape: true };
     activeTab.value = 'shape';
 }
@@ -703,12 +703,7 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
             <details class="rte-color-menu"><summary title="رنگ خطوط جدول"><Grid3X3 :size="15"/><span class="rte-color-preview" :style="{backgroundColor:displayedColor('cell')}"/><Palette :size="14"/></summary><div class="rte-color-popover"><b>رنگ‌های قالب و استاندارد</b><div class="rte-swatches"><button v-for="color in [...themeColors,...colorPalette]" :key="'tb-'+color" type="button" :style="{backgroundColor:color}" @click.prevent="setCellBorderColor(color)"/></div><label class="rte-custom-color">رنگ دلخواه <input type="color" @input="setCellBorderColor(($event.target as HTMLInputElement).value)"/></label></div></details>
             <label class="text-xs">ضخامت خط <input class="rte-number" type="number" min="0" max="10" step="0.25" value="0.25" @change="setCellBorderWidth(($event.target as HTMLInputElement).value,'mm')" /> mm</label>
             <label class="text-xs">نوع خط <select class="rte-select" @change="setCellBorderStyle(($event.target as HTMLSelectElement).value)"><option value="solid">پیوسته</option><option value="dashed">خط‌چین</option><option value="dotted">نقطه‌چین</option><option value="double">دوتایی</option><option value="none">بدون خط</option></select></label>
-            <label class="text-xs">زمینه سلول</label>
-            <div class="flex flex-wrap gap-1">
-                <button v-for="color in colorPalette" :key="color" type="button" class="h-6 w-6 rounded border border-slate-300" :style="{backgroundColor:color}" :title="color" @click="setCellBackground(color)"></button>
-                <input type="color" title="رنگ دلخواه" @input="setCellBackground(($event.target as HTMLInputElement).value)" />
-                <button type="button" class="rte-tool" @click="setCellBackground('transparent')">بدون رنگ</button>
-            </div>
+            <details class="rte-color-menu"><summary title="رنگ پس‌زمینه سلول"><PaintBucket :size="15"/><span class="rte-color-preview" :style="{backgroundColor:displayedColor('cell-fill')}"/><Palette :size="14"/></summary><div class="rte-color-popover"><b>رنگ‌های قالب</b><div class="rte-theme-colors"><button v-for="color in themeColors" :key="'cbt-'+color" type="button" :style="{backgroundColor:color}" @click.prevent="setCellBackground(color)"/></div><b>رنگ‌های استاندارد</b><div class="rte-swatches"><button v-for="color in colorPalette" :key="'cbc-'+color" type="button" :style="{backgroundColor:color}" @click.prevent="setCellBackground(color)"/></div><label class="rte-custom-color">رنگ دلخواه <input type="color" @input="setCellBackground(($event.target as HTMLInputElement).value)"/></label><button type="button" class="rte-menu-action" @click.prevent="setCellBackground('transparent')">بدون رنگ</button></div></details>
             <label class="text-xs">تراز افقی <select class="rte-select" @change="setCellAlignment(($event.target as HTMLSelectElement).value)"><option value="right">راست</option><option value="center">وسط</option><option value="left">چپ</option><option value="justify">دوطرفه</option></select></label>
             <label class="text-xs">تراز عمودی <select class="rte-select" @change="setCellVerticalAlignment(($event.target as HTMLSelectElement).value)"><option value="top">بالا</option><option value="middle">وسط</option><option value="bottom">پایین</option></select></label>
         </div>
