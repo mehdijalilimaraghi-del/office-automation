@@ -644,3 +644,18 @@ Required local verification before acceptance:
 3. In the browser, scroll a long outgoing letter and confirm both tabs and the entire active toolbar remain visible below the app header; verify contextual selection/settings still work.
 4. Open outgoing preview before saving and compare subject, body, recipient, date, appendix, letterhead, stamp/signature and page layout with the form/template. Confirm the new tab closes without saving and no correspondence record is created.
 5. Confirm the preview button is absent on incoming forms and confirm the file-content warning when file composition is selected.
+
+## 2026-11-11 — Resized table width regression test
+
+Implementation:
+- Do not reintroduce inline `max-width:none!important` when resizing tables or cells.
+- Print.vue calls `constrainLetterTables()` after the Vue DOM is mounted and before measuring page counts. It resets legacy table/cell max-width values, clamps to the body column and enables wrapping.
+- Print CSS constrains tables and cells to the letter body width.
+
+Required verification:
+1. Pull `development`.
+2. Open an outgoing draft with a three-column table whose width was previously changed; confirm it no longer exceeds the body column.
+3. Change the table width to a smaller value and then a larger value within the printable area; confirm both settings visibly apply and do not overflow.
+4. Compare with a newly inserted, unmodified table.
+5. Print/save as PDF and confirm the same width constraint holds on paper.
+6. Run `npm run build` and focused correspondence tests; report actual results.
