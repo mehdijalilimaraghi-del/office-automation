@@ -631,11 +631,16 @@ function setTableDimension(dimension: 'width' | 'height', value: string, unit: '
     if (dimension === 'width') {
         // Fixed table layout is required: in auto layout the browser treats cell
         // widths as hints and redistributes them, making the requested size appear ignored.
-        table.style.setProperty('max-width', 'none', 'important');
+        // A resized table must remain constrained by the letter's printable text column.
+        // "max-width:none!important" survives v-html rendering and overrides the print page's
+        // normal max-width rule, allowing the table to extend beyond the A4 content area.
+        table.style.setProperty('max-width', '100%', 'important');
         table.style.setProperty('table-layout', 'fixed', 'important');
         table.querySelectorAll('td,th').forEach(cell => {
-            (cell as HTMLElement).style.setProperty('max-width', 'none', 'important');
+            (cell as HTMLElement).style.setProperty('max-width', '100%', 'important');
+            (cell as HTMLElement).style.setProperty('min-width', '0', 'important');
             (cell as HTMLElement).style.setProperty('box-sizing', 'border-box');
+            (cell as HTMLElement).style.setProperty('overflow-wrap', 'anywhere');
         });
     } else {
         // A table's height is a minimum in the CSS table model. Set row heights
