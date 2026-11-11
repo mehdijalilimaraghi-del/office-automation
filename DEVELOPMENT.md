@@ -467,3 +467,17 @@ No build or browser acceptance is claimed by this entry. Work remains on develop
 
 ## 2026-11-11 — TypeScript correction
 Fixed Vue `ref` access in table pointer-drag selection: assignments and reads now consistently use `dragSelection.value`. This addresses the reported TS2588/TS2339 errors at the drag-selection handlers. The correction is committed to `development`; build has not yet been rerun and no build success is claimed.
+
+
+## 2026-11-11 — Editor property controls validation
+
+Latest development-only editor follow-up addresses no-color behavior, outside-click dismissal, ambiguous paragraph spacing, and incorrect dimension readback. Validate in this order:
+1. `git pull origin development`
+2. `npm run build`
+3. In the editor, open each color palette, click outside to dismiss it, then repeat by selecting a swatch; test no-color for text highlight, cell fill, table border, image border, shape fill and shape outline.
+4. Edit line-height multiplier and paragraph-after spacing numerically; confirm the labels/units and saved result.
+5. Select a table, cell, image and shape; compare displayed width/height with their rendered dimensions. Resize and confirm the corresponding fields refresh. Verify table height separately.
+6. Confirm image ratio checkbox is initially unchecked. Resize width and height with it off, then enable it and repeat; only locked mode should recalculate the paired dimension.
+7. Save/reopen and verify all styles, then compare A4 preview and printed output.
+
+No build, browser, persistence or print acceptance is claimed yet. Keep all work on `development`; do not touch master/release/server.
