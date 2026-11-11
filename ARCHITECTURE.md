@@ -789,3 +789,11 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - Fixed the next `vue-tsc` event-handler mismatch: the editor content area's `@mouseup` now calls a zero-argument `onEditorMouseUp()` wrapper rather than passing Vue's `MouseEvent` to `refreshContext(forceClear?: boolean)`.
 - The wrapper preserves the intended context refresh behavior while preventing a DOM event from being interpreted as the optional force-clear Boolean.
 - This is a compile-time correction only. It does not establish that contextual tabs or numeric dimension editing work; those still require the production build and browser interaction verification. Changes are restricted to the `development` branch.
+
+## 2026-11-11 — Draft print preview boundary
+
+- The persisted print route remains read-only and restricted to registered correspondence. A separate authenticated POST correspondence.preview endpoint is used for unsaved outgoing drafts; it validates the submitted snapshot, checks the selected originating department against the current user's active department memberships/management, resolves active external recipient records, and constructs an unsaved Eloquent model in memory.
+- Both persisted and draft previews share the same print-prop/template rendering path and Correspondence/Print A4 renderer. The draft path does not call save() and does not write correspondence, document, workflow, or audit records. The preview is explicitly marked so its navigation does not link to a nonexistent persisted record.
+- The form sends the snapshot using a native CSRF-protected POST to a new tab. Uploaded file bytes are intentionally excluded; the print page shows a notice when main-file composition is selected.
+- The editor toolbar uses one sticky wrapper around the tab strip and the active contextual controls. Its top offset is 4rem to clear the app's 64px sticky topbar; the editor shell uses visible overflow so sticky positioning and popovers are not clipped.
+- Verification is pending; do not infer runtime correctness from source changes alone.
