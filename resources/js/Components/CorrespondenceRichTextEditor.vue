@@ -111,19 +111,9 @@ function refreshContext(): void {
     if (tabStripFocused) return;
     const toolbarFocused = !!activeElement?.closest('.rte-toolbar');
     const editorFocused = !!editor.value?.contains(activeElement);
-    // Preserve contextual object selection while focus moves between editor and toolbar.
-    if ((toolbarFocused || editorFocused) && currentImage.value?.isConnected) {
-        context.value = { table: false, picture: true, shape: false };
-        return;
-    }
-    if ((toolbarFocused || editorFocused) && currentShape.value?.isConnected) {
-        context.value = { table: false, picture: false, shape: true };
-        return;
-    }
-    if ((toolbarFocused || editorFocused) && currentCell.value?.isConnected) {
-        context.value = { table: true, picture: false, shape: false };
-        return;
-    }
+    // A stale image/shape ref must never mask a new selection inside the editor.
+    // Preserve refs only while focus is in a toolbar; when the editor has focus,
+    // always resolve the object from its current Selection/Range.
     if (toolbarFocused) {
         if (currentImage.value?.isConnected) { context.value = { table: false, picture: true, shape: false }; return; }
         if (currentShape.value?.isConnected) { context.value = { table: false, picture: false, shape: true }; return; }
@@ -637,7 +627,11 @@ function setImageWidth(value: string): void {
 function setImageDimension(dimension: 'width' | 'height', value: string, unit: 'mm' | 'px'): void {
     const image = selectedImage();
     const numeric = Number(value);
-    if (!image?.isConnected || !Number.isFinite(numeric) || numeric <= 0) return;
+    if (!image?.isConnected || !editor.value?.contains(image) || !Number.isFinite(numeric) || numeric <= 0) return;
+    currentImage.value = image;
+    currentShape.value = null;
+    currentCell.value = null;
+    context.value = { table: false, picture: true, shape: false };
     const ratio = (image.naturalWidth || image.width) / (image.naturalHeight || image.height || 1);
     image.style.setProperty('max-width', 'none', 'important');
     image.style.setProperty('box-sizing', 'border-box');
@@ -750,9 +744,16 @@ function setShapeBorderColor(value: string): void {
 function setShapeDimension(dimension: 'width' | 'height', value: string, unit: 'mm' | 'px'): void {
     const shape = selectedShape();
     const numeric = Number(value);
-    if (!shape?.isConnected || !Number.isFinite(numeric) || numeric <= 0) return;
-    shape.style.setProperty('display', 'inline-block');
-    shape.style.setProperty('box-sizing', 'border-box');
+    if (!shape?.isConnected || !editor.value?.contains(shape) || !Number.isFinite(numeric) || numeric <= 0) return;
+    currentShape.value = shape;
+    currentImage.value = null;
+    currentCell.value = null;
+    context.value = { table: false, picture: false, shape: true };
+    shape.style.setProperty('display', 'inline-block', 'important');
+    shape.style.setProperty('box-sizing', 'border-box', 'important');
+    shape.style.setProperty('max-width', 'none', 'important');
+    shape.style.setProperty('min-width', '0', 'important');
+    shape.style.setProperty('min-height', '0', 'important');
     shape.style.setProperty(dimension, `${numeric}${unit}`, 'important');
     commit();
 }
@@ -966,8 +967,8 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
             <label class="text-xs">تراز عمودی <select class="rte-select" @change="setCellVerticalAlignment(($event.target as HTMLSelectElement).value)"><option value="top">بالا</option><option value="middle">وسط</option><option value="bottom">پایین</option></select></label>
         </div>
         <div v-else-if="activeTab === 'picture'" class="rte-toolbar flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white p-3">
-            <label class="text-xs">عرض <input class="rte-number" type="number" min="1"  :value="dimensionMm(currentImage,'width')" @change="setImageDimension('width',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
-            <label class="text-xs">ارتفاع <input class="rte-number" type="number" min="1"  :value="dimensionMm(currentImage,'height')" @change="setImageDimension('height',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
+            <label class="text-xs">عرض <input class="rte-number" type="number" min="1" :value="dimensionMm(selectedImage(),'width')" @change="setImageDimension('width',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
+            <label class="text-xs">ارتفاع <input class="rte-number" type="number" min="1" :value="dimensionMm(selectedImage(),'height')" @change="setImageDimension('height',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
             <label class="flex items-center gap-1 text-xs"><input type="checkbox" v-model="keepImageRatio" /> حفظ تناسب ابعاد</label>
             <label class="text-xs">جایگاه <select class="rte-select" @change="setImageAlignment(($event.target as HTMLSelectElement).value)"><option value="right">راست</option><option value="center">وسط</option><option value="left">چپ</option></select></label>
             <label class="text-xs">قرارگیری نسبت به متن <select class="rte-select" @change="setImageWrap(($event.target as HTMLSelectElement).value as 'inline'|'block'|'left'|'right')"><option value="inline">همراه متن</option><option value="block">بالا و پایین متن</option><option value="right">شناور راست</option><option value="left">شناور چپ</option></select></label>
@@ -979,8 +980,8 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
         <div v-else-if="activeTab === 'shape'" class="rte-toolbar flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white p-3">
             <details class="rte-color-menu"><summary title="رنگ زمینه شکل"><PaintBucket :size="15"/><span class="rte-color-preview" :style="{backgroundColor:displayedColor('shape-fill')}"/><Palette :size="14"/></summary><div class="rte-color-popover"><div class="rte-swatches"><button v-for="color in [...themeColors,...colorPalette]" :key="'sf-'+color" type="button" :style="{backgroundColor:color}" @click.prevent="setShapeColor(color)"/></div><label class="rte-custom-color">رنگ دلخواه <input type="color" @input="setShapeColor(($event.target as HTMLInputElement).value)"/></label><button class="rte-menu-action" type="button" @click.prevent="setShapeColor('transparent')">بدون رنگ</button></div></details>
             <details class="rte-color-menu"><summary title="رنگ خط شکل"><RectangleHorizontal :size="15"/><span class="rte-color-preview" :style="{backgroundColor:displayedColor('shape-line')}"/><Palette :size="14"/></summary><div class="rte-color-popover"><div class="rte-swatches"><button v-for="color in [...themeColors,...colorPalette]" :key="'sl-'+color" type="button" :style="{backgroundColor:color}" @click.prevent="setShapeBorderColor(color)"/></div><label class="rte-custom-color">رنگ دلخواه <input type="color" @input="setShapeBorderColor(($event.target as HTMLInputElement).value)"/></label><button type="button" class="rte-menu-action" @click.prevent="setShapeBorderColor('transparent')">بدون رنگ</button></div></details>
-            <label class="text-xs">عرض <input class="rte-number" type="number" min="1"  :value="dimensionMm(currentShape,'width')" @change="setShapeDimension('width',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
-            <label class="text-xs">ارتفاع <input class="rte-number" type="number" min="1"  :value="dimensionMm(currentShape,'height')" @change="setShapeDimension('height',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
+            <label class="text-xs">عرض <input class="rte-number" type="number" min="1" :value="dimensionMm(selectedShape(),'width')" @change="setShapeDimension('width',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
+            <label class="text-xs">ارتفاع <input class="rte-number" type="number" min="1" :value="dimensionMm(selectedShape(),'height')" @change="setShapeDimension('height',($event.target as HTMLInputElement).value,'mm')" /> mm</label>
             <label class="text-xs">ضخامت خط <input class="rte-number" type="number" min="0" step="0.25" value="0.5" @change="setShapeBorderWidth(($event.target as HTMLInputElement).value+'mm')" /> mm</label>
             <button type="button" class="rte-tool" title="چرخش پادساعتگرد" @click="setRotation(currentShape,-90)"><RotateCw :size="16"/></button><button type="button" class="rte-tool" title="قرینه افقی" @click="toggleFlip(currentShape,'x')"><FlipHorizontal :size="16"/></button><button type="button" class="rte-tool" title="قرینه عمودی" @click="toggleFlip(currentShape,'y')"><FlipVertical :size="16"/></button>
             <button type="button" class="rte-tool text-rose-700" @click="removeShape"><Trash2 :size="16" /> حذف شکل</button>
