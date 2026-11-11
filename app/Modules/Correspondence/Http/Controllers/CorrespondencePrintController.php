@@ -123,8 +123,8 @@ class CorrespondencePrintController extends Controller
         $correspondence->setAttribute('preview_appendix_file_count', (int) ($data['appendix_file_count'] ?? 0));
         $correspondence->setAttribute(
             'preview_notice',
-            ($data['composition_mode'] ?? 'editor') === 'file'
-                ? 'این پیش‌نمایش، قالب نامه را نشان می‌دهد؛ محتوای فایل اصلی بارگذاری‌شده در این نما قابل ادغام نیست.'
+            in_array(($data['composition_mode'] ?? 'editor'), ['file', 'both'], true)
+                ? 'فایل‌های بارگذاری‌شده در این پیش‌نمایش نمایش داده نمی‌شوند؛ این نما فقط قالب نامه و متن واردشده در ویرایشگر را نشان می‌دهد.'
                 : null,
         );
 
