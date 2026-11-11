@@ -159,6 +159,10 @@ function updateSelectedFontSize(range: Range): void {
 function onSelectionChange(): void {
     refreshContext();
 }
+function onEditorFocus(): void {
+    contextualTabPinned = false;
+    refreshContext();
+}
 function commit(): void {
     emitContent();
     dimensionRevision.value++;
@@ -985,7 +989,7 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
             @contextmenu="onEditorContextMenu"
             @mouseup="refreshContext"
             @keyup="refreshContext"
-            @focus="refreshContext"
+            @focus="onEditorFocus"
         ></div>
     </div>
 </template>
