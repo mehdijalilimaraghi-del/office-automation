@@ -464,3 +464,6 @@ Before acceptance:
 7. Test custom right-click menus and every action; compare long content, tables, images and rotated objects in A4 preview and printed PDF.
 
 No build or browser acceptance is claimed by this entry. Work remains on development only.
+
+## 2026-11-11 — TypeScript correction
+Fixed Vue `ref` access in table pointer-drag selection: assignments and reads now consistently use `dragSelection.value`. This addresses the reported TS2588/TS2339 errors at the drag-selection handlers. The correction is committed to `development`; build has not yet been rerun and no build success is claimed.
