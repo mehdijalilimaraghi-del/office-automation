@@ -1207,3 +1207,13 @@ These are code-level implementations only. The feature remains **in progress / u
 
 ## 2026-11-11 — TypeScript correction
 Fixed Vue `ref` access in table pointer-drag selection: assignments and reads now consistently use `dragSelection.value`. This addresses the reported TS2588/TS2339 errors at the drag-selection handlers. The correction is committed to `development`; build has not yet been rerun and no build success is claimed.
+
+
+## 2026-11-11 — Editor controls follow-up (implementation in progress)
+
+- [x] Close color palettes on outside click without closing when interacting inside the palette.
+- [x] Make no-color actions remove fill/border styling (and disable table border sides where requested); add no-color for table borders and shape outline.
+- [x] Replace vague paragraph spacing presets with explicit numeric line-height multiplier and paragraph-after spacing in pixels.
+- [x] Read dimension values from the selected element; add separate table height control; make image aspect-ratio lock visible and opt-in by default.
+- [ ] Verify no-color and palette dismissal in browser; verify numeric spacing, all selected-element dimensions, image ratio lock/unlock, save/reopen, and A4 preview/print.
+- [ ] Run frontend production build. No build or browser acceptance is claimed. Development only; master/release/server unchanged.
