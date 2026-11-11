@@ -1372,3 +1372,8 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - **Implemented in source / awaiting verification:** outgoing-only pre-registration preview button beside the form's bottom actions. It opens the shared A4 print renderer with current unsaved form values, template settings, letterhead and configured issuer assets; preview construction is in-memory and does not save the correspondence.
 - **Known preview boundary:** uploaded file contents are not merged into the preview; the screen explicitly warns about this. Incoming correspondence remains unchanged.
 - Acceptance remains open until production build, focused PHP tests, and browser checks confirm the toolbar stays visible and the preview matches the current form/template.
+
+## 2026-11-11 — A4 table width regression
+
+- **Implemented / awaiting verification:** prevent manually resized tables from exceeding the letter body width. Remove the persisted `max-width:none!important` behavior at editor resize time and normalize legacy table markup in the print renderer before page measurement. Preserve fixed table layout and wrap long cell content.
+- Acceptance: resized three-column table stays inside printable text column at smaller and larger widths; an unmodified table remains correctly fitted; no horizontal overflow in print output.
