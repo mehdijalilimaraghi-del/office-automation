@@ -481,3 +481,8 @@ Latest development-only editor follow-up addresses no-color behavior, outside-cl
 7. Save/reopen and verify all styles, then compare A4 preview and printed output.
 
 No build, browser, persistence or print acceptance is claimed yet. Keep all work on `development`; do not touch master/release/server.
+
+
+## 2026-11-11 — Editor dimension and border reset refinement
+
+Dimension readback now uses the selected element's untransformed layout box (`offsetWidth`/`offsetHeight`) so rotation does not distort the width/height values shown in the property controls. Clearing a table border disables that side; choosing a color afterward restores a visible solid border. Image intrinsic-ratio handling now registers the load callback before assigning the data URL. These are source-level refinements only; build and browser verification remain pending.
