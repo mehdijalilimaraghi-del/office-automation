@@ -12,6 +12,7 @@ const editor = ref<HTMLDivElement | null>(null);
 const editorShell = ref<HTMLDivElement | null>(null);
 const keepImageRatio = ref(false);
 const currentFontSize = ref('12pt');
+const dimensionRevision = ref(0);
 const imageInput = ref<HTMLInputElement | null>(null);
 const activeTab = ref<Tab>('home');
 const context = ref<{ table: boolean; picture: boolean; shape: boolean }>({ table: false, picture: false, shape: false });
@@ -136,6 +137,7 @@ function onSelectionChange(): void {
 }
 function commit(): void {
     emitContent();
+    dimensionRevision.value++;
     refreshContext();
 }
 function restoreSelection(range: Range): void {
@@ -225,6 +227,7 @@ function setDirection(value: 'rtl' | 'ltr'): void {
 function setLineHeight(value: string): void { if (value) setBlockStyle('line-height', value); }
 function setParagraphSpacing(value: string): void { if (value !== '') setBlockStyle('margin-bottom', `${value}px`); }
 function dimensionMm(element: HTMLElement | null, axis: 'width' | 'height'): string {
+    void dimensionRevision.value;
     if (!element) return '';
     const px = axis === 'width' ? element.offsetWidth : element.offsetHeight;
     return px > 0 ? (px * 25.4 / 96).toFixed(1) : '';
@@ -235,6 +238,19 @@ function closeColorMenus(event: PointerEvent): void {
     const target = event.target;
     if (!(target instanceof Element) || target.closest('.rte-color-menu')) return;
     editorShell.value?.querySelectorAll<HTMLDetailsElement>('.rte-color-menu[open]').forEach(menu => { menu.open = false; });
+}
+function closeContextMenuOutside(event: PointerEvent): void {
+    const target = event.target;
+    if (target instanceof Element && target.closest('.rte-context-menu')) return;
+    contextMenu.value = null;
+}
+function preserveEditorSelection(event: PointerEvent): void {
+    const target = event.target;
+    if (!(target instanceof Element) || !target.closest('.rte-toolbar')) return;
+    const selection = window.getSelection();
+    if (selection?.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer)) {
+        savedRange = selection.getRangeAt(0).cloneRange();
+    }
 }
 function indent(increase: boolean): void {
     const block = findBlock(selectedElement());
@@ -445,7 +461,12 @@ function setTableWidth(value: string): void {
 function setTableAlignment(value:'left'|'center'|'right'):void {const table=currentCell.value?.closest('table') as HTMLTableElement|null;if(!table)return;table.style.marginLeft=value==='right'?'auto':value==='center'?'auto':'0';table.style.marginRight=value==='left'?'auto':value==='center'?'auto':'0';table.style.float='none';table.style.width=table.style.width||'100%';if(value==='left'){table.style.marginLeft='0';table.style.marginRight='auto';}commit();}
 function setTableDimension(dimension: 'width' | 'height', value: string, unit: 'mm' | 'px'): void {
     const table = currentCell.value?.closest('table');
-    if (table instanceof HTMLTableElement && value) table.style[dimension] = `${value}${unit}`;
+    const numeric=Number(value);
+    if (table instanceof HTMLTableElement && Number.isFinite(numeric) && numeric>0) {
+        table.style[dimension] = `${numeric}${unit}`;
+        if(dimension==='width') table.style.maxWidth='none';
+        table.style.boxSizing='border-box';
+    }
     commit();
 }
 function setCellDimension(dimension: 'width' | 'height', value: string, unit: 'mm' | 'px'): void {
@@ -480,7 +501,8 @@ function setImageDimension(dimension: 'width' | 'height', value: string, unit: '
     const image=currentImage.value;if(!image||value==='')return;
     const numeric=Number(value);if(!Number.isFinite(numeric)||numeric<=0)return;
     const ratio=(image.naturalWidth||image.width)/(image.naturalHeight||image.height||1);
-    image.style.aspectRatio=String(ratio);
+    image.style.maxWidth='none';
+    image.style.boxSizing='border-box';
     image.style[dimension]=`${numeric}${unit}`;
     if (keepImageRatio.value) image.style[dimension==='width'?'height':'width']=`${dimension==='width'?numeric/ratio:numeric*ratio}${unit}`;
     commit();
@@ -584,7 +606,12 @@ function setShapeBorderColor(value: string): void {
     commit();
 }
 function setShapeDimension(dimension: 'width' | 'height', value: string, unit: 'mm' | 'px'): void {
-    if(currentShape.value&&value)currentShape.value.style[dimension]=`${value}${unit}`;
+    const shape=currentShape.value;
+    const numeric=Number(value);
+    if(!shape||!Number.isFinite(numeric)||numeric<=0)return;
+    shape.style.display='inline-block';
+    shape.style.boxSizing='border-box';
+    shape.style[dimension]=`${numeric}${unit}`;
     commit();
 }
 function setShapeWidth(value: string): void {
@@ -639,7 +666,12 @@ function onEditorPointerDown(event: PointerEvent): void {
     const rect=target.getBoundingClientRect(), edge=6;
     const nearRight=Math.abs(event.clientX-rect.right)<=edge;
     const nearBottom=Math.abs(event.clientY-rect.bottom)<=edge;
-    if(!nearRight&&!nearBottom){const table=target.closest('table') as HTMLTableElement|null;if(table){dragSelection.value={table,start:target};didDragSelect=false;event.preventDefault();document.addEventListener('pointermove',onCellDragMove);document.addEventListener('pointerup',onCellDragEnd,{once:true});}return;}
+    if(!nearRight&&!nearBottom){
+        // Normal pointer interaction must place a caret so the cell remains editable.
+        // Shift+drag is reserved for rectangular multi-cell selection.
+        if(event.shiftKey){const table=target.closest('table') as HTMLTableElement|null;if(table){dragSelection.value={table,start:currentCell.value??target};didDragSelect=false;event.preventDefault();document.addEventListener('pointermove',onCellDragMove);document.addEventListener('pointerup',onCellDragEnd,{once:true});}}
+        return;
+    }
     const table=target.closest('table') as HTMLTableElement|null;if(!table)return;resizeState={cell:target,axis:nearRight?'width':'height',start:nearRight?event.clientX:event.clientY,initial:nearRight?rect.width:rect.height,table,index:nearRight?target.cellIndex:Array.from(table.rows).indexOf(target.parentElement as HTMLTableRowElement)};
     event.preventDefault();
     document.addEventListener('pointermove',onEditorPointerMove);
@@ -697,8 +729,10 @@ onMounted(() => {
     history.value = [editor.value?.innerHTML ?? ''];
     window.addEventListener('selectionchange', onSelectionChange);
     document.addEventListener('pointerdown', closeColorMenus);
+    document.addEventListener('pointerdown', closeContextMenuOutside);
+    document.addEventListener('pointerdown', preserveEditorSelection, true);
 });
-onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectionChange); document.removeEventListener('pointerdown', closeColorMenus); document.removeEventListener('pointermove', onEditorPointerMove); document.removeEventListener('pointerup', onEditorPointerUp); document.removeEventListener('pointermove',onCellDragMove);document.removeEventListener('pointerup',onCellDragEnd); });
+onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectionChange); document.removeEventListener('pointerdown', closeColorMenus); document.removeEventListener('pointerdown', closeContextMenuOutside); document.removeEventListener('pointerdown', preserveEditorSelection, true); document.removeEventListener('pointermove', onEditorPointerMove); document.removeEventListener('pointerup', onEditorPointerUp); document.removeEventListener('pointermove',onCellDragMove);document.removeEventListener('pointerup',onCellDragEnd); });
 </script>
 
 <template>
