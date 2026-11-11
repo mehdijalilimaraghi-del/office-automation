@@ -40,13 +40,34 @@ let savedRange: Range | null = null;
 // Keep the selected object context stable while the user navigates contextual tabs.
 let contextualTabPinned = false;
 
-const tabs = computed(() => [
-    { id: 'home' as const, label: 'خانه' },
-    { id: 'insert' as const, label: 'درج' },
-    ...(context.value.table ? [{ id: 'table' as const, label: 'جدول' }] : []),
-    ...(context.value.picture ? [{ id: 'picture' as const, label: 'تصویر' }] : []),
-    ...(context.value.shape ? [{ id: 'shape' as const, label: 'شکل' }] : []),
-]);
+const tabs: { id: Tab; label: string }[] = [
+    { id: 'home', label: 'خانه' }, { id: 'insert', label: 'درج' },
+    { id: 'table', label: 'جدول' }, { id: 'picture', label: 'تصویر' }, { id: 'shape', label: 'شکل' },
+];
+const contextTarget = ref<HTMLElement | null>(null);
+function isTabAvailable(tab: Tab): boolean {
+    if (tab === 'table') return context.value.table;
+    if (tab === 'picture') return context.value.picture;
+    if (tab === 'shape') return context.value.shape;
+    return true;
+}
+function applyContextTarget(target: Element | null, activateTab = false): void {
+    const image = target?.closest('img');
+    const shape = target?.closest('[data-editor-shape]');
+    const cell = target?.closest('td,th');
+    const table = target?.closest('table');
+    currentImage.value = image instanceof HTMLImageElement ? image : null;
+    currentShape.value = shape instanceof HTMLElement ? shape : null;
+    currentCell.value = cell instanceof HTMLTableCellElement ? cell : null;
+    contextTarget.value = (currentImage.value ?? currentShape.value ?? currentCell.value ?? (table instanceof HTMLTableElement ? table : null)) as HTMLElement | null;
+    context.value = { table: !!table, picture: !!currentImage.value, shape: !!currentShape.value };
+    if (activateTab) {
+        if (currentImage.value) activeTab.value = 'picture';
+        else if (currentShape.value) activeTab.value = 'shape';
+        else if (table) activeTab.value = 'table';
+        else if (['table', 'picture', 'shape'].includes(activeTab.value)) activeTab.value = 'home';
+    }
+}
 
 function emitContent(): void {
     if (!editor.value) return;
@@ -83,38 +104,15 @@ function pinContextualSelection(): void {
     if (selection?.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer)) {
         savedRange = selection.getRangeAt(0).cloneRange();
     }
-    // Resolve the target from the last editor range before toolbar focus changes.
-    // This prevents an older connected object ref from winning over the object
-    // that is actually selected now.
-    const selected = selectedElement();
-    const image = selected?.closest('img');
-    const shape = selected?.closest('[data-editor-shape]');
-    const cell = selected?.closest('td,th');
-    if (image instanceof HTMLImageElement) {
-        currentImage.value = image;
-        currentShape.value = null;
-        currentCell.value = null;
-        context.value = { table: false, picture: true, shape: false };
-    } else if (shape instanceof HTMLElement) {
-        currentShape.value = shape;
-        currentImage.value = null;
-        currentCell.value = null;
-        context.value = { table: false, picture: false, shape: true };
-    } else if (cell instanceof HTMLTableCellElement) {
-        currentCell.value = cell;
-        currentImage.value = null;
-        currentShape.value = null;
-        context.value = { table: true, picture: false, shape: false };
-    }
-    // Pin before the browser moves focus; selectionchange must not unmount tabs.
-    if (currentImage.value?.isConnected || currentShape.value?.isConnected || currentCell.value?.isConnected) {
+    // Object identity comes from the editor pointer/click handlers, never from
+    // a collapsed browser caret beside a non-text object.
+    if (contextTarget.value?.isConnected && editor.value?.contains(contextTarget.value)) {
+        applyContextTarget(contextTarget.value);
         contextualTabPinned = true;
     }
 }
 function switchTab(tab: Tab, event: MouseEvent): void {
-    // Pin the contextual target before changing v-if toolbars. Browser focus and
-    // selectionchange events can arrive in different orders across browsers;
-    // neither is allowed to discard the selected image/table/shape mid-switch.
+    if (!isTabAvailable(tab)) return;
     pinContextualSelection();
     contextualTabPinned = true;
     const tabButton = event.currentTarget;
@@ -124,45 +122,29 @@ function switchTab(tab: Tab, event: MouseEvent): void {
 
 function refreshContext(): void {
     const activeElement = document.activeElement;
-    // Do not infer a lost editor selection while focus is anywhere inside this
-    // editor shell. Context is recalculated only after a real editor interaction
-    // or after focus leaves the whole editor component.
-    if (contextualTabPinned && editorShell.value?.contains(activeElement)) return;
     if (!editorShell.value?.contains(activeElement)) contextualTabPinned = false;
-    const tabStripFocused = !!activeElement?.closest('[role="tablist"].rte-toolbar');
-    if (tabStripFocused) return;
-    const toolbarFocused = !!activeElement?.closest('.rte-toolbar');
-    // A stale image/shape ref must never mask a new selection inside the editor.
-    // Preserve refs only while focus is in a toolbar; when the editor has focus,
-    // always resolve the object from its current Selection/Range.
-    if (toolbarFocused) {
-        if (currentImage.value?.isConnected) { context.value = { table: false, picture: true, shape: false }; return; }
-        if (currentShape.value?.isConnected) { context.value = { table: false, picture: false, shape: true }; return; }
-        if (currentCell.value?.isConnected) { context.value = { table: true, picture: false, shape: false }; return; }
-    }
-    const element = selectedElement();
-    if (!insideEditor(window.getSelection()?.anchorNode ?? null)) {
-        if (document.activeElement?.closest('.rte-toolbar')) return;
-        context.value = { table: false, picture: false, shape: false };
-        if (['table', 'picture', 'shape'].includes(activeTab.value)) activeTab.value = 'home';
+    // Toolbar focus is not an editor selection change. Keep the last explicitly
+    // targeted DOM object while controls receive focus or Vue changes panels.
+    if (activeElement?.closest('.rte-toolbar')) {
+        if (contextTarget.value?.isConnected && editor.value?.contains(contextTarget.value)) applyContextTarget(contextTarget.value);
         return;
     }
-    const selection = window.getSelection();
-    if (selection?.rangeCount) {
-        savedRange = selection.getRangeAt(0).cloneRange();
-        updateSelectedFontSize(savedRange);
+    if (editor.value?.contains(activeElement)) {
+        const selection = window.getSelection();
+        if (selection?.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer)) {
+            savedRange = selection.getRangeAt(0).cloneRange();
+            updateSelectedFontSize(savedRange);
+        }
+        const target = contextTarget.value?.isConnected && editor.value.contains(contextTarget.value) ? contextTarget.value : selectedElement();
+        applyContextTarget(target);
+        return;
     }
-    const table = element?.closest('table') ?? null;
-    const image = element?.closest('img') ?? null;
-    const shape = element?.closest('[data-editor-shape]') ?? null;
-    currentCell.value = element?.closest('td,th') as HTMLTableCellElement | null;
-    currentImage.value = image as HTMLImageElement | null;
-    currentShape.value = shape as HTMLElement | null;
-    context.value = { table: !!table, picture: !!image, shape: !!shape };
-    if (image) activeTab.value = 'picture';
-    else if (shape) activeTab.value = 'shape';
-    else if (table) activeTab.value = 'table';
-    else if (['table', 'picture', 'shape'].includes(activeTab.value)) activeTab.value = 'home';
+    contextTarget.value = null;
+    currentImage.value = null;
+    currentShape.value = null;
+    currentCell.value = null;
+    context.value = { table: false, picture: false, shape: false };
+    if (['table', 'picture', 'shape'].includes(activeTab.value)) activeTab.value = 'home';
 }
 function updateSelectedFontSize(range: Range): void {
     const startNode = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
@@ -716,7 +698,9 @@ function insertImageFile(event: Event): void {
         } else {
             insertNode(image);
         }
-        currentImage.value = image;image.classList.add('rte-selected');
+        currentImage.value = image;
+        contextTarget.value = image;
+        image.classList.add('rte-selected');
         context.value = { table: false, picture: true, shape: false };
         activeTab.value = 'picture';
     };
@@ -746,7 +730,9 @@ function insertShape(shape: 'rectangle' | 'ellipse' | 'line' | 'arrow'): void {
     range.selectNodeContents(element);
     restoreSelection(range);
     savedRange = range.cloneRange();
-    currentShape.value = element;element.classList.add('rte-selected');
+    currentShape.value = element;
+    contextTarget.value = element;
+    element.classList.add('rte-selected');
     context.value = { table: false, picture: false, shape: true };
     activeTab.value = 'shape';
 }
@@ -825,7 +811,8 @@ function redo(): void {
 let resizeState: { cell: HTMLTableCellElement; axis: 'width'|'height'; start: number; initial: number; table: HTMLTableElement; index: number } | null = null;
 function onEditorPointerDown(event: PointerEvent): void {
     contextualTabPinned = false;
-    const rawTarget=event.target;
+    const rawTarget = event.target;
+    if (rawTarget instanceof Element && editor.value?.contains(rawTarget)) applyContextTarget(rawTarget, true);
     const target=rawTarget instanceof Element ? rawTarget.closest('td,th') as HTMLTableCellElement | null : null;
     if(!target)return;
     const rect=target.getBoundingClientRect(), edge=6;
@@ -861,19 +848,15 @@ function onEditorClick(event: MouseEvent): void {
     if (!(target instanceof Element) || !editor.value?.contains(target)) return;
     if(didDragSelect){didDragSelect=false;return;}
     editor.value?.querySelectorAll('.rte-selected').forEach(node=>node.classList.remove('rte-selected'));
-    currentImage.value = target.closest('img') as HTMLImageElement | null;
-    currentShape.value = target.closest('[data-editor-shape]') as HTMLElement | null;
-    currentImage.value?.classList.add('rte-selected');currentShape.value?.classList.add('rte-selected');
+    applyContextTarget(target, true);
+    currentImage.value?.classList.add('rte-selected');
+    currentShape.value?.classList.add('rte-selected');
     const clickedCell = target.closest('td,th') as HTMLTableCellElement | null;
     currentCell.value = clickedCell;
     if (clickedCell && event.shiftKey && cellSelectionAnchor.value) { selectCellRange(cellSelectionAnchor.value, clickedCell); }
     else if (clickedCell) { cellSelectionAnchor.value=clickedCell;selectedCells.value=[clickedCell];paintCellSelection(); }
     else { selectedCells.value=[]; cellSelectionAnchor.value=null; }
-    context.value = { table: !!target.closest('table'), picture: !!currentImage.value, shape: !!currentShape.value };
-    if (currentImage.value) activeTab.value = 'picture';
-    else if (currentShape.value) activeTab.value = 'shape';
-    else if (target.closest('table')) activeTab.value = 'table';
-    else if (['table', 'picture', 'shape'].includes(activeTab.value)) activeTab.value = 'home';
+    applyContextTarget(target, true);
 }
 function onEditorContextMenu(event: MouseEvent):void {const target=event.target;if(!(target instanceof Element)||!editor.value?.contains(target))return;event.preventDefault();const image=target.closest('img') as HTMLImageElement|null;const shape=target.closest('[data-editor-shape]') as HTMLElement|null;const table=target.closest('table');currentImage.value=image;currentShape.value=shape;currentCell.value=target.closest('td,th') as HTMLTableCellElement|null;contextMenu.value={x:Math.min(event.clientX,window.innerWidth-230),y:Math.min(event.clientY,window.innerHeight-300),kind:image?'picture':shape?'shape':table?'table':'text'};if(image){context.value={table:false,picture:true,shape:false};activeTab.value='picture';}else if(shape){context.value={table:false,picture:false,shape:true};activeTab.value='shape';}else if(table){context.value={table:true,picture:false,shape:false};activeTab.value='table';}}
 function onEditorContextAction(action:string):void {contextMenu.value=null;if(action==='delete-image')removeImage();else if(action==='delete-shape')removeShape();else if(action==='rotate-left')setRotation(currentImage.value??currentShape.value,-90);else if(action==='rotate-right')setRotation(currentImage.value??currentShape.value,90);else if(action==='select-table')selectTablePart('table');else if(action==='copy')document.execCommand('copy');else if(action==='cut')document.execCommand('cut');else if(action==='paste')document.execCommand('paste');else if(action==='clear')clearFormatting();}
@@ -914,7 +897,7 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
 <template>
     <div ref="editorShell" @focusout="syncExternalContentOnBlur" class="overflow-hidden rounded-xl border border-slate-300 bg-white focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
         <div class="rte-toolbar flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 px-2 py-2" role="tablist" aria-label="ابزارهای ویرایش متن" @pointerdown.capture="pinContextualSelection">
-            <button v-for="tab in tabs" :key="tab.id" type="button" role="tab" :aria-selected="activeTab === tab.id" class="rounded-lg px-3 py-2 text-xs font-semibold" :class="activeTab === tab.id ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-200'" @click="switchTab(tab.id, $event)">{{ tab.label }}</button>
+            <button v-for="tab in tabs" :key="tab.id" type="button" role="tab" :disabled="!isTabAvailable(tab.id)" :aria-selected="activeTab === tab.id" class="rounded-lg px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-35" :class="activeTab === tab.id ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-200'" @click="switchTab(tab.id, $event)">{{ tab.label }}</button>
         </div>
 
         <div v-if="activeTab === 'home'" class="rte-toolbar flex flex-wrap items-center gap-1.5 border-b border-slate-200 bg-white p-2.5">
