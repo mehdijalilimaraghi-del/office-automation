@@ -78,14 +78,22 @@ function findBlock(element: Element | null): HTMLElement | null {
     const block = element?.closest('p,div,li,h2,h3,blockquote,td,th');
     return block instanceof HTMLElement && block !== editor.value && editor.value?.contains(block) ? block : null;
 }
-function switchTab(tab: Tab, event: MouseEvent): void {
-    // Pin the contextual target before changing v-if toolbars. Browser focus and
-    // selectionchange events can arrive in different orders across browsers;
-    // neither is allowed to discard the selected image/table/shape mid-switch.
+function pinContextualSelection(): void {
     const selection = window.getSelection();
     if (selection?.rangeCount && insideEditor(selection.getRangeAt(0).commonAncestorContainer)) {
         savedRange = selection.getRangeAt(0).cloneRange();
     }
+    // Pin before the browser moves focus. Waiting for click is too late: the
+    // selectionchange event can remove the contextual tab before click dispatch.
+    if (currentImage.value?.isConnected || currentShape.value?.isConnected || currentCell.value?.isConnected) {
+        contextualTabPinned = true;
+    }
+}
+function switchTab(tab: Tab, event: MouseEvent): void {
+    // Pin the contextual target before changing v-if toolbars. Browser focus and
+    // selectionchange events can arrive in different orders across browsers;
+    // neither is allowed to discard the selected image/table/shape mid-switch.
+    pinContextualSelection();
     contextualTabPinned = true;
     const tabButton = event.currentTarget;
     if (tabButton instanceof HTMLButtonElement) tabButton.focus({ preventScroll: true });
@@ -296,6 +304,16 @@ function setParagraphSpacing(value: string): void { if (value !== '') setBlockSt
 function dimensionMm(element: HTMLElement | null, axis: 'width' | 'height'): string {
     void dimensionRevision.value;
     if (!element) return '';
+    // Prefer the authored CSS dimension. offsetWidth/offsetHeight are rendered
+    // dimensions and can differ due to table layout, min-size and rounding.
+    const authored = element.style.getPropertyValue(axis).trim();
+    const match = authored.match(/^([0-9]+(?:\\.[0-9]+)?)(mm|cm|in|pt|pc|px)$/i);
+    if (match) {
+        const amount = Number(match[1]);
+        const unit = match[2].toLowerCase();
+        const mm = unit === 'mm' ? amount : unit === 'cm' ? amount * 10 : unit === 'in' ? amount * 25.4 : unit === 'pt' ? amount * 25.4 / 72 : unit === 'pc' ? amount * 25.4 / 6 : amount * 25.4 / 96;
+        return mm.toFixed(1);
+    }
     const px = axis === 'width' ? element.offsetWidth : element.offsetHeight;
     return px > 0 ? (px * 25.4 / 96).toFixed(1) : '';
 }
@@ -873,7 +891,7 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
 
 <template>
     <div ref="editorShell" @focusout="syncExternalContentOnBlur" class="overflow-hidden rounded-xl border border-slate-300 bg-white focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
-        <div class="rte-toolbar flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 px-2 py-2" role="tablist" aria-label="ابزارهای ویرایش متن">
+        <div class="rte-toolbar flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 px-2 py-2" role="tablist" aria-label="ابزارهای ویرایش متن" @pointerdown.capture="pinContextualSelection">
             <button v-for="tab in tabs" :key="tab.id" type="button" role="tab" :aria-selected="activeTab === tab.id" class="rounded-lg px-3 py-2 text-xs font-semibold" :class="activeTab === tab.id ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-200'" @click="switchTab(tab.id, $event)">{{ tab.label }}</button>
         </div>
 
