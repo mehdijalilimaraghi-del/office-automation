@@ -1322,3 +1322,11 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - Dimension target resolvers now consult the authoritative contextTarget first, then fall back to the connected typed reference and saved editor range. This prevents a still-connected but previously selected image/shape/cell from being reused after the user clicks another object.
 - Image aspect-ratio calculation now falls back to rendered geometry while the image is not yet decoded, avoiding zero/invalid ratios when the dimensions are changed immediately after insertion.
 - Decimal authored CSS dimensions are parsed using a literal decimal-point character class. No CI workflow is configured for the development branch; build and browser interaction remain unverified until run in the project environment.
+
+
+## 2026-11-11 — Contextual settings readback correction
+
+- Root cause found in the object-settings resolver chain: image, shape, cell, and table resolvers could fall back from the latest explicit click target to a still-connected typed reference or the saved text Selection/Range. A stale saved range could therefore make settings display or modify a previously selected object instead of the object just clicked.
+- Contextual object resolvers now use only the connected `contextTarget` established by the latest editor pointer/click event. Text Selection/Range remains available for text-editing commands, but is no longer used as a fallback for object-specific settings.
+- Editor pointer/click selection now advances the dimension readback revision so width/height controls refresh even when the same object is clicked again. Table-cell and table resolution follow the same explicit target.
+- **Validation status:** code committed to `development`; production build and interactive browser verification are still pending. Do not treat the issue as accepted until the user verifies that selecting different images/shapes/tables shows each object's own dimensions and that edits affect only that object. No changes to `master`, `release`, or `server`.
