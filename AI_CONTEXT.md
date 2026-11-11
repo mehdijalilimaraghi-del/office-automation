@@ -1425,3 +1425,9 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - Added an outgoing-only “پیش‌نمایش نامه” action beside the form's bottom actions. It posts the current form snapshot to an authenticated, CSRF-protected preview endpoint in a new tab; the endpoint builds an unsaved in-memory Correspondence and reuses the existing A4 Print page/template, organization letterhead, stamp and department-signature configuration. No correspondence record is created or modified.
 - The preview includes current subject, editor body, date, recipient/contact addressing and appendix text/count. File content is not embedded in this preview; a visible notice explains that uploaded main/appendix files are not displayed. Incoming forms do not expose the action.
 - Code-level implementation only. PHP tests, Vue/TypeScript production build, popup/CSRF validation, sticky behavior while scrolling, and visual comparison against a registered letter remain pending. Do not mark accepted until those checks pass. Development branch only; master, release and server unchanged.
+
+## 2026-11-11 — Resized table overflow in A4 preview
+
+- Root cause identified: editor table resizing wrote inline `max-width:none!important` to the table and its cells. Inline important styles survive HTML serialization and override the print renderer's ordinary `max-width:100%`, so only resized tables could exceed the letter's printable text column. Unmodified tables did not carry those declarations and therefore appeared correctly.
+- Editor resizing now keeps table and cell max-width constrained to 100%, with fixed layout, zero cell min-width and emergency wrapping. The A4 Print page also normalizes legacy stored table HTML after render (including previous inline `max-width:none!important`) before measuring pages, and applies print-side constraints.
+- Implementation recorded; production build and browser regression remain pending.
