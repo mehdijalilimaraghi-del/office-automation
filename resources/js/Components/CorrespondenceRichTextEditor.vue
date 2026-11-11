@@ -292,8 +292,8 @@ function setParagraphSpacing(value: string): void { if (value !== '') setBlockSt
 function dimensionMm(element: HTMLElement | null, axis: 'width' | 'height'): string {
     void dimensionRevision.value;
     if (!element) return '';
-    // Prefer the authored CSS dimension. offsetWidth/offsetHeight are rendered
-    // dimensions and can differ due to table layout, min-size and rounding.
+    // Read the actual inline dimension when it has an absolute unit. For
+    // auto/percentage dimensions, read the rendered border-box in CSS pixels.
     const authored = element.style.getPropertyValue(axis).trim();
     const match = authored.match(/^([0-9]+(?:[.][0-9]+)?)(mm|cm|in|pt|pc|px)$/i);
     if (match) {
@@ -310,30 +310,25 @@ function selectedTarget(): HTMLElement | null {
     return target?.isConnected && editor.value?.contains(target) ? target : null;
 }
 function selectedTable(): HTMLTableElement | null {
-    const target = selectedTarget() ?? selectedElement() as HTMLElement | null;
+    // Contextual object controls must only operate on the object explicitly
+    // targeted by the latest editor pointer/click event. Never infer a table
+    // from savedRange: that range may still belong to a previously selected object.
+    const target = selectedTarget();
     const table = target?.closest('table');
     return table instanceof HTMLTableElement ? table : null;
 }
 function selectedCell(): HTMLTableCellElement | null {
     const target = selectedTarget();
-    if (target?.matches('td,th')) return target as HTMLTableCellElement;
-    if (currentCell.value?.isConnected) return currentCell.value;
-    const cell = selectedElement()?.closest('td,th');
+    const cell = target?.closest('td,th');
     return cell instanceof HTMLTableCellElement ? cell : null;
 }
 function selectedImage(): HTMLImageElement | null {
     const target = selectedTarget();
-    if (target?.matches('img')) return target as HTMLImageElement;
-    if (currentImage.value?.isConnected) return currentImage.value;
-    const image = selectedElement()?.closest('img');
-    return image instanceof HTMLImageElement ? image : null;
+    return target instanceof HTMLImageElement ? target : null;
 }
 function selectedShape(): HTMLElement | null {
     const target = selectedTarget();
-    if (target?.matches('[data-editor-shape]')) return target;
-    if (currentShape.value?.isConnected) return currentShape.value;
-    const shape = selectedElement()?.closest('[data-editor-shape]');
-    return shape instanceof HTMLElement ? shape : null;
+    return target?.matches('[data-editor-shape]') ? target : null;
 }
 function closeColorMenus(event: PointerEvent): void {
     const target = event.target;
@@ -835,7 +830,10 @@ function redo(): void {
 let resizeState: { cell: HTMLTableCellElement; axis: 'width'|'height'; start: number; initial: number; table: HTMLTableElement; index: number } | null = null;
 function onEditorPointerDown(event: PointerEvent): void {
     const rawTarget = event.target;
-    if (rawTarget instanceof Element && editor.value?.contains(rawTarget)) applyContextTarget(rawTarget, true);
+    if (rawTarget instanceof Element && editor.value?.contains(rawTarget)) {
+        applyContextTarget(rawTarget, true);
+        dimensionRevision.value++;
+    }
     const target=rawTarget instanceof Element ? rawTarget.closest('td,th') as HTMLTableCellElement | null : null;
     if(!target)return;
     const rect=target.getBoundingClientRect(), edge=6;
@@ -870,11 +868,14 @@ function onEditorClick(event: MouseEvent): void {
     if (!(target instanceof Element) || !editor.value?.contains(target)) return;
     if(didDragSelect){didDragSelect=false;return;}
     editor.value?.querySelectorAll('.rte-selected').forEach(node=>node.classList.remove('rte-selected'));
+    // This click is the sole authority for contextual-object selection.
+    // Clear old visual selection first, then synchronize every contextual ref.
     applyContextTarget(target, true);
     currentImage.value?.classList.add('rte-selected');
     currentShape.value?.classList.add('rte-selected');
     const clickedCell = target.closest('td,th') as HTMLTableCellElement | null;
     currentCell.value = clickedCell;
+    dimensionRevision.value++;
     if (clickedCell && event.shiftKey && cellSelectionAnchor.value) { selectCellRange(cellSelectionAnchor.value, clickedCell); }
     else if (clickedCell) { cellSelectionAnchor.value=clickedCell;selectedCells.value=[clickedCell];paintCellSelection(); }
     else { selectedCells.value=[]; cellSelectionAnchor.value=null; }
