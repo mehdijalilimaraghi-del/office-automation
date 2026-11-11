@@ -1365,3 +1365,10 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - Fixed the next `vue-tsc` event-handler mismatch: the editor content area's `@mouseup` now calls a zero-argument `onEditorMouseUp()` wrapper rather than passing Vue's `MouseEvent` to `refreshContext(forceClear?: boolean)`.
 - The wrapper preserves the intended context refresh behavior while preventing a DOM event from being interpreted as the optional force-clear Boolean.
 - This is a compile-time correction only. It does not establish that contextual tabs or numeric dimension editing work; those still require the production build and browser interaction verification. Changes are restricted to the `development` branch.
+
+## 2026-11-11 — Correspondence editor usability follow-up
+
+- **Implemented in source / awaiting verification:** sticky contextual tabs and active toolbar controls while scrolling long correspondence content. The sticky region is offset below the fixed-height application navigation.
+- **Implemented in source / awaiting verification:** outgoing-only pre-registration preview button beside the form's bottom actions. It opens the shared A4 print renderer with current unsaved form values, template settings, letterhead and configured issuer assets; preview construction is in-memory and does not save the correspondence.
+- **Known preview boundary:** uploaded file contents are not merged into the preview; the screen explicitly warns about this. Incoming correspondence remains unchanged.
+- Acceptance remains open until production build, focused PHP tests, and browser checks confirm the toolbar stays visible and the preview matches the current form/template.
