@@ -1204,3 +1204,6 @@ These are code-level implementations only. The feature remains **in progress / u
 - [ ] Verify style transform preservation through backend sanitization and save/reopen.
 - [ ] Verify 350 KB inline image limit against request validation, sanitizer and database persistence.
 - [ ] Run frontend build and manually test all palette, table, image, shape and context-menu workflows, then verify A4 preview/print parity.
+
+## 2026-11-11 — TypeScript correction
+Fixed Vue `ref` access in table pointer-drag selection: assignments and reads now consistently use `dragSelection.value`. This addresses the reported TS2588/TS2339 errors at the drag-selection handlers. The correction is committed to `development`; build has not yet been rerun and no build success is claimed.
