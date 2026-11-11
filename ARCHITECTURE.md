@@ -797,3 +797,9 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - The form sends the snapshot using a native CSRF-protected POST to a new tab. Uploaded file bytes are intentionally excluded; the print page shows a notice when main-file composition is selected.
 - The editor toolbar uses one sticky wrapper around the tab strip and the active contextual controls. Its top offset is 4rem to clear the app's 64px sticky topbar; the editor shell uses visible overflow so sticky positioning and popovers are not clipped.
 - Verification is pending; do not infer runtime correctness from source changes alone.
+
+## 2026-11-11 — Constrain rich-text tables to printable body width
+
+- The rich-text body is stored as HTML and rendered in the A4 print page through `v-html`. Inline important styles in stored markup outrank normal renderer styles. The previous resize implementation persisted `max-width:none!important` on tables and cells, explaining why only resized tables overflowed.
+- The editor now persists a 100% max-width constraint; the print renderer additionally normalizes existing stored tables/cells after mount and before pagination measurement, so old letters are corrected without rewriting database content. Fixed layout and wrapping prevent long cell content from forcing overflow.
+- Regression/build verification pending.
