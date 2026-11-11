@@ -396,6 +396,58 @@ async function scanOriginalLetter(): Promise<void> {
         scannerLoading.value = false;
     }
 }
+
+function openOutgoingPreview(): void {
+    if (form.type !== 'outgoing') return;
+
+    const targetName = 'correspondence-preview-' + Date.now();
+    const previewWindow = window.open('', targetName);
+    if (!previewWindow) {
+        window.alert('مرورگر اجازه باز کردن پنجره پیش‌نمایش را نداد. پنجره‌های بازشو را برای سامانه فعال کنید.');
+        return;
+    }
+
+    const csrfToken = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content;
+    if (!csrfToken) {
+        previewWindow.close();
+        window.alert('توکن امنیتی فرم پیدا نشد. صفحه را تازه‌سازی و دوباره تلاش کنید.');
+        return;
+    }
+
+    const payload = {
+        created_department_id: form.created_department_id || null,
+        subject: form.subject,
+        composition_mode: form.composition_mode,
+        body: form.body,
+        sent_at: form.sent_at || null,
+        recipient_name: form.recipient_name || null,
+        external_organization_id: form.external_organization_id || null,
+        external_department_id: form.external_department_id || null,
+        external_contact_id: form.external_contact_id || null,
+        appendix_mode: form.appendix_mode,
+        appendix_body: form.appendix_body,
+        appendix_file_count: form.appendix_files.length,
+    };
+
+    const postForm = document.createElement('form');
+    postForm.method = 'POST';
+    postForm.action = route('correspondence.preview');
+    postForm.target = targetName;
+    postForm.hidden = true;
+
+    for (const [name, value] of Object.entries({ _token: csrfToken, preview: JSON.stringify(payload) })) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        postForm.appendChild(input);
+    }
+
+    document.body.appendChild(postForm);
+    postForm.submit();
+    postForm.remove();
+}
+
 </script>
 
 <template>
@@ -713,6 +765,7 @@ async function scanOriginalLetter(): Promise<void> {
 
 
                 <div class="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-5">
+                    <button v-if="form.type === 'outgoing'" type="button" class="rounded-xl border border-indigo-300 bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-700 hover:bg-indigo-100" @click="openOutgoingPreview">پیش‌نمایش نامه</button>
                     <Link :href="route('correspondence.index')" class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">انصراف</Link>
                     <button type="submit" :disabled="form.processing" class="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
                         {{ form.processing ? 'در حال ذخیره...' : (isEditing ? 'ذخیره تغییرات' : (isDirectRegistration ? 'ثبت نهایی مکاتبه' : 'ذخیره پیش‌نویس')) }}
