@@ -641,3 +641,8 @@ Fixed Vue `ref` access in table pointer-drag selection: assignments and reads no
 ## 2026-11-11 — Editor property-panel synchronization
 
 The correspondence editor's contextual property controls now derive displayed width/height from the selected DOM element's rendered bounds (converted from CSS pixels to millimetres), rather than fixed defaults. Image ratio locking is explicit opt-in state; when enabled, the paired dimension is calculated from intrinsic image ratio. Numeric paragraph controls apply a line-height multiplier and paragraph-after spacing in pixels. Color menus are dismissed by an outside-pointer listener scoped to the editor root; clear/no-color operations remove or disable the relevant inline styles. These changes are local to the Vue editor and do not change persisted schema or print architecture. Build, sanitization round-trip, browser and print validation remain pending.
+
+
+## 2026-11-11 — Editor dimension and border reset refinement
+
+Dimension readback now uses the selected element's untransformed layout box (`offsetWidth`/`offsetHeight`) so rotation does not distort the width/height values shown in the property controls. Clearing a table border disables that side; choosing a color afterward restores a visible solid border. Image intrinsic-ratio handling now registers the load callback before assigning the data URL. These are source-level refinements only; build and browser verification remain pending.
