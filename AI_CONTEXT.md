@@ -1418,3 +1418,10 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - Fixed the next `vue-tsc` event-handler mismatch: the editor content area's `@mouseup` now calls a zero-argument `onEditorMouseUp()` wrapper rather than passing Vue's `MouseEvent` to `refreshContext(forceClear?: boolean)`.
 - The wrapper preserves the intended context refresh behavior while preventing a DOM event from being interpreted as the optional force-clear Boolean.
 - This is a compile-time correction only. It does not establish that contextual tabs or numeric dimension editing work; those still require the production build and browser interaction verification. Changes are restricted to the `development` branch.
+
+## 2026-11-11 — Sticky correspondence editor toolbar and outgoing draft preview
+
+- Wrapped the contextual tab strip and every active formatting/settings toolbar in one sticky region. The editor shell no longer clips overflow; the toolbar sticks below the application's 64px sticky navigation bar (top: 4rem) and remains bounded by the editor shell.
+- Added an outgoing-only “پیش‌نمایش نامه” action beside the form's bottom actions. It posts the current form snapshot to an authenticated, CSRF-protected preview endpoint in a new tab; the endpoint builds an unsaved in-memory Correspondence and reuses the existing A4 Print page/template, organization letterhead, stamp and department-signature configuration. No correspondence record is created or modified.
+- The preview includes current subject, editor body, date, recipient/contact addressing and appendix text/count. File content is not embedded in this preview; a visible notice explains that uploaded main/appendix files are not displayed. Incoming forms do not expose the action.
+- Code-level implementation only. PHP tests, Vue/TypeScript production build, popup/CSRF validation, sticky behavior while scrolling, and visual comparison against a registered letter remain pending. Do not mark accepted until those checks pass. Development branch only; master, release and server unchanged.
