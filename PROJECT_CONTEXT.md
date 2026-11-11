@@ -1844,3 +1844,8 @@ Fixed Vue `ref` access in table pointer-drag selection: assignments and reads no
 ## 2026-11-11 — Correspondence editor follow-up corrections
 
 Owner feedback identified four usability defects in the first editor refinement: no-color actions did not reliably clear styling, palette menus stayed open after outside clicks, paragraph spacing used ambiguous qualitative presets, and dimension fields showed fixed/default values rather than the selected element's actual dimensions. Follow-up implementation on `development` adds outside-pointer dismissal, explicit clearing/removal of fill and border declarations, numeric line-height and paragraph-after controls with units, live dimension readback from selected DOM elements, separate table height, and an opt-in image aspect-ratio checkbox (default off) that recalculates the paired dimension when enabled. Image intrinsic ratio is refreshed on load. This remains unverified until build and browser acceptance, including save/reopen and print checks.
+
+
+## 2026-11-11 — Editor dimension and border reset refinement
+
+Dimension readback now uses the selected element's untransformed layout box (`offsetWidth`/`offsetHeight`) so rotation does not distort the width/height values shown in the property controls. Clearing a table border disables that side; choosing a color afterward restores a visible solid border. Image intrinsic-ratio handling now registers the load callback before assigning the data URL. These are source-level refinements only; build and browser verification remain pending.
