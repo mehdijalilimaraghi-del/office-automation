@@ -677,3 +677,14 @@ Required verification:
 - Added organization defaults for editor font family/color/size and table/shape border colors. New correspondence body content receives an inline typography snapshot; editor table/shape creation uses configured border colors.
 - Added A4/A5 setting values in storage/UI; **print pagination remains hard-coded to A4 and A5 is not yet wired to the print pipeline**. Do not treat A5 as supported until print/template measurements are made page-size aware.
 - Validation and browser/build/test execution are still pending. The migration must be run before enabling template numbering on an environment.
+
+
+## 2026-11-14 implementation follow-up
+
+- Added request-level validation for both templates: exactly one `Num-1..12-r|c` token, known date/unit tokens only, no duplicate placeholders, and a 200-character limit.
+- Added a reference modal with the token table and examples.
+- Added a global per-number-type allocation lock in addition to per-scope counters. This serializes allocations across template scopes before checking existing values, preventing two concurrent template configurations from passing the collision check simultaneously.
+- Added feature coverage for `r` resetting by a template-used unit variable and `c` continuing across unit changes; updated organization settings tests for the new persisted fields and existing registration-counter assertions.
+- Letter body typography (font family, size and color) is now wrapped into newly created rich-text body HTML so later organization setting changes do not restyle already-created letters. Editor defaults supply table and shape border colors for newly inserted elements.
+- Correction to the earlier note: the page-size selector is restricted to A4 because the current preview/print renderer, coordinate system and pagination are A4-specific. A5 is deliberately not offered until that pipeline is refactored; page-size persistence currently represents the supported A4 default only.
+- No local PHP/Vue build or PHPUnit run was available from the GitHub editing connection. Tests were added/updated but remain unexecuted. Run migrations and the focused tests before production use.
