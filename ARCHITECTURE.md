@@ -832,3 +832,11 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - Letter body typography (font family, size and color) is now wrapped into newly created rich-text body HTML so later organization setting changes do not restyle already-created letters. Editor defaults supply table and shape border colors for newly inserted elements.
 - Correction to the earlier note: the page-size selector is restricted to A4 because the current preview/print renderer, coordinate system and pagination are A4-specific. A5 is deliberately not offered until that pipeline is refactored; page-size persistence currently represents the supported A4 default only.
 - No local PHP/Vue build or PHPUnit run was available from the GitHub editing connection. Tests were added/updated but remain unexecuted. Run migrations and the focused tests before production use.
+
+
+## Final implementation notes — 2026-11-14
+
+- Persian date fallback now calculates Jalali year/month/day directly when PHP Intl is unavailable, including Persian month names; the Intl calendar formatter is used when available.
+- Template validation is enforced both when saving settings and again inside the allocator, including malformed/unclosed placeholder rejection.
+- The A4-only page-size control reflects the current A4-only preview/print geometry. A5 is not exposed as a selectable option.
+- Focused feature tests were updated for new settings persistence and both counter modes. They have **not been executed** in this editing session; CI status checks returned no reported statuses.
