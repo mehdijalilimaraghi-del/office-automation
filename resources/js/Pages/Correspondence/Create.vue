@@ -39,6 +39,7 @@ const props = defineProps<{
     createdDepartment: CreatedDepartment | null;
     createdDepartments: CreatedDepartment[];
     correspondenceFontFamily: string;
+    compositionDefaults?: { 'correspondence.composition.font_color'?: string; 'correspondence.composition.font_size'?: string; 'correspondence.composition.table_border_color'?: string; 'correspondence.composition.shape_border_color'?: string; 'correspondence.composition.page_size'?: string };
     approvalSettings?: Record<string, string>;
     isEditing?: boolean;
     correspondence?: ExistingCorrespondence | null;
@@ -666,7 +667,7 @@ function openOutgoingPreview(): void {
                         <h3 class="text-base font-bold text-slate-900">متن نامه</h3>
                         <p class="mt-1 text-sm text-slate-500">از نوار ابزار برای قالب‌بندی متن استفاده کنید. پیش‌نویس قبل از ثبت نهایی قابل ویرایش خواهد بود.</p>
                     </div>
-                    <CorrespondenceRichTextEditor v-model="form.body" label="متن نامه" :font-family="correspondenceFontFamily" :disabled="form.processing" />
+                    <CorrespondenceRichTextEditor v-model="form.body" label="متن نامه" :font-family="correspondenceFontFamily" :font-color="compositionDefaults?.['correspondence.composition.font_color'] ?? '#202124'" :font-size="Number(compositionDefaults?.['correspondence.composition.font_size'] ?? 12)" :table-border-color="compositionDefaults?.['correspondence.composition.table_border_color'] ?? '#94a3b8'" :shape-border-color="compositionDefaults?.['correspondence.composition.shape_border_color'] ?? '#334155'" :disabled="form.processing" />
                     <InputError :message="form.errors.body" />
                 </section>
 
