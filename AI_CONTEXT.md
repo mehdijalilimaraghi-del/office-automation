@@ -1431,3 +1431,11 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - Root cause identified: editor table resizing wrote inline `max-width:none!important` to the table and its cells. Inline important styles survive HTML serialization and override the print renderer's ordinary `max-width:100%`, so only resized tables could exceed the letter's printable text column. Unmodified tables did not carry those declarations and therefore appeared correctly.
 - Editor resizing now keeps table and cell max-width constrained to 100%, with fixed layout, zero cell min-width and emergency wrapping. The A4 Print page also normalizes legacy stored table HTML after render (including previous inline `max-width:none!important`) before measuring pages, and applies print-side constraints.
 - Implementation recorded; production build and browser regression remain pending.
+
+
+## 2026-11-14 — Correspondence editor context menus, object deletion and row-height consistency
+
+- Expanded right-click menus by target: text now exposes common formatting, paragraph alignment, list, clipboard and select-all actions; tables expose row/column insertion and deletion, row/column/table selection, merge/split and table deletion; pictures and shapes expose rotation, flipping, z-order and deletion actions. These are native editor operations, not a replacement editor.
+- Added Delete/Backspace handling for the currently selected/pinned image or shape. A table is removed with Delete/Backspace only when the full table is selected; a normal caret inside a cell retains normal text-editing behavior.
+- Corrected row-height ownership: changing a cell's height now writes the shared height on its parent row and clears conflicting per-cell height overrides. Reading the height from any cell in that row resolves the parent row's authored/rendered height, so sibling cells report the same value.
+- **Status: source changes implemented, not verified.** Run Vue/TypeScript production build and browser acceptance for each right-click menu, clipboard/formatting actions, object Delete/Backspace, full-table selection/deletion, and row-height readback from every sibling cell. Clipboard behavior and browser-specific contenteditable keyboard handling require real-browser confirmation. Development branch only; master/release/server unchanged.
