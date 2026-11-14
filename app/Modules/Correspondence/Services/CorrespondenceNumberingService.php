@@ -176,7 +176,7 @@ class CorrespondenceNumberingService
     }
 
     /** @return array<string, string> */
-    private function templateDateValues(\\Carbon\\CarbonInterface $date): array
+    private function templateDateValues(CarbonInterface $date): array
     {
         $gregorian = [
             'gdd' => $date->format('d'), 'GDD' => $date->format('j'),
@@ -184,8 +184,8 @@ class CorrespondenceNumberingService
             'gyy' => $date->format('y'), 'GYY' => $date->format('Y'),
         ];
         $persian = [];
-        if (class_exists(\\IntlDateFormatter::class)) {
-            $formatter = new \\IntlDateFormatter('fa_IR@calendar=persian', \\IntlDateFormatter::NONE, \\IntlDateFormatter::NONE, 'Asia/Tehran', \\IntlDateFormatter::TRADITIONAL, 'yyyy|MM|dd|MMMM|d');
+        if (class_exists(\IntlDateFormatter::class)) {
+            $formatter = new \IntlDateFormatter('fa_IR@calendar=persian', \IntlDateFormatter::NONE, \IntlDateFormatter::NONE, 'Asia/Tehran', \IntlDateFormatter::TRADITIONAL, 'yyyy|MM|dd|MMMM|d');
             $formatted = $formatter->format($date->getTimestamp());
             if (is_string($formatted)) {
                 [$year, $month, $day, $monthName, $dayNumber] = array_pad(explode('|', $formatted), 5, '');
