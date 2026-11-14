@@ -3,15 +3,19 @@ import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { AlignCenter, AlignJustify, AlignLeft, AlignRight, ArrowRight, Bold, Circle, Columns3, Image, IndentDecrease, IndentIncrease, Italic, Link, List, ListOrdered, Minus, PaintBucket, Redo2, RectangleHorizontal, Rows3, Strikethrough, Table2, Trash2, Underline, Undo2, Palette, RotateCw, FlipHorizontal, FlipVertical, Scissors, Copy, Clipboard, Eraser, Grid3X3, TableProperties, Maximize2 } from '@lucide/vue';
 
 type Tab = 'home' | 'insert' | 'table' | 'picture' | 'shape';
-const props = withDefaults(defineProps<{ modelValue: string; label: string; fontFamily?: string; disabled?: boolean }>(), {
+const props = withDefaults(defineProps<{ modelValue: string; label: string; fontFamily?: string; fontColor?: string; fontSize?: number; tableBorderColor?: string; shapeBorderColor?: string; disabled?: boolean }>(), {
     fontFamily: 'Vazirmatn',
+    fontColor: '#202124',
+    fontSize: 12,
+    tableBorderColor: '#94a3b8',
+    shapeBorderColor: '#334155',
     disabled: false,
 });
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>();
 const editor = ref<HTMLDivElement | null>(null);
 const editorShell = ref<HTMLDivElement | null>(null);
 const keepImageRatio = ref(false);
-const currentFontSize = ref('12pt');
+const currentFontSize = ref(`${props.fontSize}pt`);
 const dimensionRevision = ref(0);
 const imageInput = ref<HTMLInputElement | null>(null);
 const activeTab = ref<Tab>('home');
@@ -483,7 +487,7 @@ function insertTable(): void {
         const tr = document.createElement('tr');
         for (let col = 0; col < 3; col += 1) {
             const cell = document.createElement('td');
-            cell.style.border = '1px solid #94a3b8';
+            cell.style.border = `1px solid ${props.tableBorderColor}`;
             cell.style.padding = '6px';
             cell.innerHTML = '<br>';
             tr.append(cell);
@@ -957,11 +961,11 @@ function insertShape(shape: 'rectangle' | 'ellipse' | 'line' | 'arrow'): void {
     if (shape === 'line') {
         element.style.width = '140px';
         element.style.height = '2px';
-        element.style.backgroundColor = '#334155';
+        element.style.backgroundColor = props.shapeBorderColor;
     } else {
         element.style.width = '100px';
         element.style.height = '54px';
-        element.style.border = '1px solid #334155';
+        element.style.border = `1px solid ${props.shapeBorderColor}`;
         element.style.backgroundColor = '#f8fafc';
         if (shape === 'ellipse') element.style.borderRadius = '50%';
         if (shape === 'arrow') element.textContent = '➜';
@@ -1431,7 +1435,7 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
             :aria-label="label"
             :aria-disabled="disabled"
             :contenteditable="!disabled"
-            :style="{ fontFamily }"
+             :style="{ fontFamily, color: fontColor, fontSize: `${fontSize}pt` }"
             class="rte-content min-h-72 whitespace-normal p-4 text-sm leading-8 text-slate-800 outline-none"
             data-placeholder="متن را اینجا بنویسید..."
             @input="onInput"
