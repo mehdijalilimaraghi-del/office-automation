@@ -117,7 +117,7 @@ class CorrespondenceNumberingServiceTest extends TestCase
         $this->assertSame(Correspondence::STATUS_REGISTERED, $registered->status);
         $this->assertNotEmpty($registered->letter_number);
         $this->assertNotEmpty($registered->registration_number);
-        $this->assertNotSame($registered->letter_number, $registered->registration_number);
+        $this->assertSame('000001', $registered->letter_number, 'Letter numbering has its own independent simple sequence.');
         $this->assertMatchesRegularExpression('/^000001$/', $registered->registration_number);
         $this->assertSame((int) $registrar->id, (int) $registered->registered_by);
         $this->assertNotNull($registered->registered_at);
