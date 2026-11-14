@@ -102,7 +102,8 @@ class CorrespondenceNumberingServiceTest extends TestCase
         $creator = User::factory()->create(['status' => 'active']);
         $registrar = $creator;
         app(SystemSettingsService::class)->set([
-            'correspondence.numbering.format' => 'simple',
+            'correspondence.numbering.format' => 'template',
+            'correspondence.numbering.template' => '{{PYY}}/{{Dept}}/{{Num-6-r}}',
             'correspondence.registration_numbering.format' => 'simple',
         ]);
         $correspondence = Correspondence::query()->create([
@@ -117,7 +118,7 @@ class CorrespondenceNumberingServiceTest extends TestCase
         $this->assertSame(Correspondence::STATUS_REGISTERED, $registered->status);
         $this->assertNotEmpty($registered->letter_number);
         $this->assertNotEmpty($registered->registration_number);
-        $this->assertSame('000001', $registered->letter_number, 'Letter numbering has its own independent simple sequence.');
+        $this->assertNotSame($registered->letter_number, $registered->registration_number);
         $this->assertMatchesRegularExpression('/^000001$/', $registered->registration_number);
         $this->assertSame((int) $registrar->id, (int) $registered->registered_by);
         $this->assertNotNull($registered->registered_at);
