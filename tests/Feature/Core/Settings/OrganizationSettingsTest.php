@@ -116,6 +116,7 @@ class OrganizationSettingsTest extends TestCase
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.composition.font_size', 'value' => '13']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.composition.table_border_color', 'value' => '#112233']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.composition.shape_border_color', 'value' => '#445566']);
+        $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.composition.page_size', 'value' => 'A4']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.approval.outgoing', 'value' => 'approval']);
 
         $this->assertDatabaseHas('system_settings', [
