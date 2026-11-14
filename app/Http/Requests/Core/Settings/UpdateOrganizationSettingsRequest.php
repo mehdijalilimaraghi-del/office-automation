@@ -54,7 +54,7 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'correspondence_font_size' => ['required', 'integer', 'min:8', 'max:36'],
             'correspondence_table_border_color' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'correspondence_shape_border_color' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
-            'correspondence_page_size' => ['required', 'string', Rule::in(['A4', 'A5'])],
+            'correspondence_page_size' => ['required', 'string', Rule::in(['A4'])],
             'approval_incoming' => ['required', 'string', Rule::in(['direct', 'approval'])],
             'approval_outgoing' => ['required', 'string', Rule::in(['direct', 'approval'])],
             'approval_internal' => ['required', 'string', Rule::in(['direct', 'approval'])],
