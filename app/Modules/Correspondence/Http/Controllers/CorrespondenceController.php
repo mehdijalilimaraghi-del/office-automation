@@ -605,13 +605,6 @@ class CorrespondenceController extends Controller
                 'correspondence.composition.shape_border_color' => '#334155',
                 'correspondence.composition.page_size' => 'A4',
             ]),
-            'compositionDefaults' => $settings->get([
-                'correspondence.composition.font_color' => '#202124',
-                'correspondence.composition.font_size' => '12',
-                'correspondence.composition.table_border_color' => '#94a3b8',
-                'correspondence.composition.shape_border_color' => '#334155',
-                'correspondence.composition.page_size' => 'A4',
-            ]),
             'approvalSettings' => app(\App\Modules\Correspondence\Services\CorrespondenceCompositionSettings::class)->get()['approval'],
         ]);
     }
