@@ -605,6 +605,13 @@ class CorrespondenceController extends Controller
                 'correspondence.composition.shape_border_color' => '#334155',
                 'correspondence.composition.page_size' => 'A4',
             ]),
+            'compositionDefaults' => $settings->get([
+                'correspondence.composition.font_color' => '#202124',
+                'correspondence.composition.font_size' => '12',
+                'correspondence.composition.table_border_color' => '#94a3b8',
+                'correspondence.composition.shape_border_color' => '#334155',
+                'correspondence.composition.page_size' => 'A4',
+            ]),
             'approvalSettings' => app(\App\Modules\Correspondence\Services\CorrespondenceCompositionSettings::class)->get()['approval'],
         ]);
     }
@@ -754,6 +761,13 @@ class CorrespondenceController extends Controller
             ],
             'correspondence' => null,
             'correspondenceFontFamily' => $settings->get(['correspondence.composition.font_family' => 'Vazirmatn'])['correspondence.composition.font_family'],
+            'compositionDefaults' => $settings->get([
+                'correspondence.composition.font_color' => '#202124',
+                'correspondence.composition.font_size' => '12',
+                'correspondence.composition.table_border_color' => '#94a3b8',
+                'correspondence.composition.shape_border_color' => '#334155',
+                'correspondence.composition.page_size' => 'A4',
+            ]),
             'approvalSettings' => app(\App\Modules\Correspondence\Services\CorrespondenceCompositionSettings::class)->get()['approval'],
             'createdDepartment' => $createdDepartment,
             'createdDepartments' => $createdDepartments,
@@ -1083,6 +1097,13 @@ class CorrespondenceController extends Controller
         return Inertia::render('Correspondence/Create', [
             'isEditing' => true,
             'correspondenceFontFamily' => $settings->get(['correspondence.composition.font_family' => 'Vazirmatn'])['correspondence.composition.font_family'],
+            'compositionDefaults' => $settings->get([
+                'correspondence.composition.font_color' => '#202124',
+                'correspondence.composition.font_size' => '12',
+                'correspondence.composition.table_border_color' => '#94a3b8',
+                'correspondence.composition.shape_border_color' => '#334155',
+                'correspondence.composition.page_size' => 'A4',
+            ]),
             'createdDepartment' => $createdDepartment,
             'createdDepartments' => $createdDepartments,
             'externalOrganizations' => ExternalOrganization::query()->where('status', 'active')->orderBy('name')->get(['id', 'name']),
