@@ -359,7 +359,17 @@ function dimensionMm(element: HTMLElement | null, axis: 'width' | 'height'): str
         const mm = unit === 'mm' ? amount : unit === 'cm' ? amount * 10 : unit === 'in' ? amount * 25.4 : unit === 'pt' ? amount * 25.4 / 72 : unit === 'pc' ? amount * 25.4 / 6 : amount * 25.4 / 96;
         return mm.toFixed(1);
     }
-    const px = axis === 'width' ? element.offsetWidth : element.offsetHeight;
+    const measuredElement = axis === 'height' && (element instanceof HTMLTableCellElement)
+        ? element.parentElement as HTMLTableRowElement | null
+        : element;
+    const measuredAuthored = measuredElement?.style.getPropertyValue(axis).trim();
+    const rowMatch = measuredAuthored?.match(/^([0-9]+(?:[.][0-9]+)?)(mm|cm|in|pt|pc|px)$/i);
+    if (rowMatch) {
+        const amount = Number(rowMatch[1]), unit = rowMatch[2].toLowerCase();
+        const mm = unit === 'mm' ? amount : unit === 'cm' ? amount * 10 : unit === 'in' ? amount * 25.4 : unit === 'pt' ? amount * 25.4 / 72 : unit === 'pc' ? amount * 25.4 / 6 : amount * 25.4 / 96;
+        return mm.toFixed(1);
+    }
+    const px = axis === 'width' ? element.offsetWidth : measuredElement?.offsetHeight ?? element.offsetHeight;
     return px > 0 ? (px * 25.4 / 96).toFixed(1) : '';
 }
 function selectedTarget(): HTMLElement | null {
@@ -827,11 +837,15 @@ function setCellDimension(dimension: 'width' | 'height', value: string, unit: 'm
         commit();
         return;
     }
-    cells.forEach((cell) => {
-        cell.style.setProperty('height', cssValue, 'important');
-        cell.style.setProperty('min-height', '0', 'important');
-        const row = cell.parentElement as HTMLTableRowElement | null;
-        row?.style.setProperty('height', cssValue, 'important');
+    // Row height is a row-level property. Writing a different inline height
+    // onto only the clicked cell makes the other cells report stale values.
+    const rows = new Set(cells.map(cell => cell.parentElement).filter((row): row is HTMLTableRowElement => row instanceof HTMLTableRowElement));
+    rows.forEach(row => {
+        row.style.setProperty('height', cssValue, 'important');
+        Array.from(row.cells).forEach(cell => {
+            cell.style.removeProperty('height');
+            cell.style.removeProperty('min-height');
+        });
     });
     commit();
 }
@@ -1227,7 +1241,53 @@ function onEditorContextMenu(event: MouseEvent):void {
         kind: currentImage.value ? 'picture' : currentShape.value ? 'shape' : target.closest('table') ? 'table' : 'text',
     };
 }
-function onEditorContextAction(action:string):void {contextMenu.value=null;if(action==='delete-image')removeImage();else if(action==='delete-shape')removeShape();else if(action==='rotate-left')setRotation(currentImage.value??currentShape.value,-90);else if(action==='rotate-right')setRotation(currentImage.value??currentShape.value,90);else if(action==='select-table')selectTablePart('table');else if(action==='copy')document.execCommand('copy');else if(action==='cut')document.execCommand('cut');else if(action==='paste')document.execCommand('paste');else if(action==='clear')clearFormatting();}
+function onEditorContextAction(action:string):void {
+    contextMenu.value=null;
+    const object = currentImage.value ?? currentShape.value;
+    if(action==='delete-image')removeImage();
+    else if(action==='delete-shape')removeShape();
+    else if(action==='rotate-left')setRotation(object,-90);
+    else if(action==='rotate-right')setRotation(object,90);
+    else if(action==='flip-horizontal' && object)toggleFlip(object,'x');
+    else if(action==='flip-vertical' && object)toggleFlip(object,'y');
+    else if(action==='bring-forward' && object){object.style.position=object.style.position||'relative';object.style.zIndex=String((Number(object.style.zIndex)||0)+1);commit();}
+    else if(action==='send-backward' && object){object.style.position=object.style.position||'relative';object.style.zIndex=String((Number(object.style.zIndex)||0)-1);commit();}
+    else if(action==='select-table')selectTablePart('table');
+    else if(action==='select-row')selectTablePart('row');
+    else if(action==='select-column')selectTablePart('column');
+    else if(action==='insert-row')addTableRow();
+    else if(action==='insert-column')addTableColumn();
+    else if(action==='delete-row')deleteTableRow();
+    else if(action==='delete-column')deleteTableColumn();
+    else if(action==='delete-table')deleteTable();
+    else if(action==='merge-cells')mergeSelectedCells();
+    else if(action==='split-cell')splitSelectedCell();
+    else if(action==='bold')applyFormat('strong');
+    else if(action==='italic')applyFormat('em');
+    else if(action==='underline')applyFormat('u');
+    else if(action==='align-right')setBlockStyle('text-align','right');
+    else if(action==='align-center')setBlockStyle('text-align','center');
+    else if(action==='align-left')setBlockStyle('text-align','left');
+    else if(action==='list')toggleList(false);
+    else if(action==='copy')document.execCommand('copy');
+    else if(action==='cut')document.execCommand('cut');
+    else if(action==='paste')document.execCommand('paste');
+    else if(action==='select-all'){editor.value?.focus();document.execCommand('selectAll');}
+    else if(action==='clear')clearFormatting();
+}
+function onEditorKeyDown(event: KeyboardEvent): void {
+    if(event.key==='Escape' && contextMenu.value){contextMenu.value=null;event.preventDefault();return;}
+    if(event.key!=='Delete' && event.key!=='Backspace' || event.altKey || event.ctrlKey || event.metaKey) return;
+    const target=event.target instanceof Element ? event.target : null;
+    const image=target?.closest('img');
+    const shape=target?.closest('[data-editor-shape]');
+    if(image && editor.value?.contains(image)){event.preventDefault();currentImage.value=image;removeImage();return;}
+    if(shape && editor.value?.contains(shape)){event.preventDefault();currentShape.value=shape as HTMLElement;removeShape();return;}
+    const table=target?.closest('table');
+    if(table && editor.value?.contains(table) && selectedCells.value.length===table.querySelectorAll('td,th').length && selectedCells.value.length>0){
+        event.preventDefault();currentCell.value=selectedCells.value[0]??null;deleteTable();selectedCells.value=[];return;
+    }
+}
 function onInput(): void {
     if (!syncing) commit();
 }
@@ -1366,10 +1426,10 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
         </div>
         </div>
         <div v-if="contextMenu" class="rte-context-menu" :style="{left:contextMenu.x+'px',top:contextMenu.y+'px'}" @pointerdown.prevent>
-            <template v-if="contextMenu.kind==='picture'"><button @click="onEditorContextAction('rotate-left')"><RotateCw :size="15"/> چرخش ۹۰ درجه</button><button @click="onEditorContextAction('delete-image')"><Trash2 :size="15"/> حذف تصویر</button></template>
-            <template v-else-if="contextMenu.kind==='shape'"><button @click="onEditorContextAction('rotate-right')"><RotateCw :size="15"/> چرخش ۹۰ درجه</button><button @click="onEditorContextAction('delete-shape')"><Trash2 :size="15"/> حذف شکل</button></template>
-            <template v-else-if="contextMenu.kind==='table'"><button @click="onEditorContextAction('select-table')"><TableProperties :size="15"/> انتخاب جدول</button><button @click="onEditorContextAction('copy')"><Copy :size="15"/> کپی</button><button @click="onEditorContextAction('cut')"><Scissors :size="15"/> برش</button></template>
-            <template v-else><button @click="onEditorContextAction('copy')"><Copy :size="15"/> کپی</button><button @click="onEditorContextAction('cut')"><Scissors :size="15"/> برش</button><button @click="onEditorContextAction('paste')"><Clipboard :size="15"/> چسباندن</button><button @click="onEditorContextAction('clear')"><Eraser :size="15"/> پاک‌کردن قالب‌بندی</button></template>
+            <template v-if="contextMenu.kind==='picture'"><button @click="onEditorContextAction('rotate-left')"><RotateCw :size="15"/> چرخش پادساعتگرد</button><button @click="onEditorContextAction('rotate-right')"><RotateCw :size="15"/> چرخش ساعتگرد</button><button @click="onEditorContextAction('flip-horizontal')"><FlipHorizontal :size="15"/> قرینه افقی</button><button @click="onEditorContextAction('flip-vertical')"><FlipVertical :size="15"/> قرینه عمودی</button><button @click="onEditorContextAction('bring-forward')">آوردن به جلو</button><button @click="onEditorContextAction('send-backward')">فرستادن به عقب</button><button @click="onEditorContextAction('copy')"><Copy :size="15"/> کپی</button><button @click="onEditorContextAction('delete-image')"><Trash2 :size="15"/> حذف تصویر</button></template>
+            <template v-else-if="contextMenu.kind==='shape'"><button @click="onEditorContextAction('rotate-left')"><RotateCw :size="15"/> چرخش پادساعتگرد</button><button @click="onEditorContextAction('rotate-right')"><RotateCw :size="15"/> چرخش ساعتگرد</button><button @click="onEditorContextAction('flip-horizontal')"><FlipHorizontal :size="15"/> قرینه افقی</button><button @click="onEditorContextAction('flip-vertical')"><FlipVertical :size="15"/> قرینه عمودی</button><button @click="onEditorContextAction('bring-forward')">آوردن به جلو</button><button @click="onEditorContextAction('send-backward')">فرستادن به عقب</button><button @click="onEditorContextAction('copy')"><Copy :size="15"/> کپی</button><button @click="onEditorContextAction('delete-shape')"><Trash2 :size="15"/> حذف شکل</button></template>
+            <template v-else-if="contextMenu.kind==='table'"><button @click="onEditorContextAction('insert-row')">افزودن ردیف</button><button @click="onEditorContextAction('insert-column')">افزودن ستون</button><button @click="onEditorContextAction('delete-row')">حذف ردیف</button><button @click="onEditorContextAction('delete-column')">حذف ستون</button><button @click="onEditorContextAction('select-row')">انتخاب ردیف</button><button @click="onEditorContextAction('select-column')">انتخاب ستون</button><button @click="onEditorContextAction('select-table')"><TableProperties :size="15"/> انتخاب جدول</button><button @click="onEditorContextAction('merge-cells')">ادغام سلول‌ها</button><button @click="onEditorContextAction('split-cell')">تقسیم سلول</button><button @click="onEditorContextAction('delete-table')"><Trash2 :size="15"/> حذف جدول</button><button @click="onEditorContextAction('copy')"><Copy :size="15"/> کپی</button><button @click="onEditorContextAction('cut')"><Scissors :size="15"/> برش</button></template>
+            <template v-else><button @click="onEditorContextAction('bold')"><Bold :size="15"/> پررنگ</button><button @click="onEditorContextAction('italic')"><Italic :size="15"/> مورب</button><button @click="onEditorContextAction('underline')"><Underline :size="15"/> زیرخط</button><button @click="onEditorContextAction('align-right')">راست‌چین</button><button @click="onEditorContextAction('align-center')">وسط‌چین</button><button @click="onEditorContextAction('align-left')">چپ‌چین</button><button @click="onEditorContextAction('list')">فهرست نشانه‌دار</button><button @click="onEditorContextAction('copy')"><Copy :size="15"/> کپی</button><button @click="onEditorContextAction('cut')"><Scissors :size="15"/> برش</button><button @click="onEditorContextAction('paste')"><Clipboard :size="15"/> چسباندن</button><button @click="onEditorContextAction('select-all')">انتخاب همه</button><button @click="onEditorContextAction('clear')"><Eraser :size="15"/> پاک‌کردن قالب‌بندی</button></template>
         </div>
         <div
             ref="editor"
@@ -1382,6 +1442,7 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
             class="rte-content min-h-72 whitespace-normal p-4 text-sm leading-8 text-slate-800 outline-none"
             data-placeholder="متن را اینجا بنویسید..."
             @input="onInput"
+            @keydown="onEditorKeyDown"
             @pointerdown="onEditorPointerDown"
             @pointermove="onTablePointerHover"
             @click="onEditorClick"
