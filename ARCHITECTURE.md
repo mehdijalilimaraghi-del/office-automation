@@ -857,3 +857,10 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - Replaced native-only color controls for default text, table borders, and shape borders with the same theme palette, standard swatches, and custom color input used by the rich-text editor.
 - Added A5 alongside A4. The selected page size is passed to the template designer and print renderer; the designer's paper ratio, millimetre coordinate conversion, safe-area geometry, and page-number placement now use 148×210 mm for A5 or 210×297 mm for A4. Print preview/page slicing, body-height estimation, appendix measurement, and the browser `@page` size use the same selected dimensions. Template-layout validation now checks available width/height against the selected format.
 - Added feature coverage for saving A5, A5 designer props, and the unchanged A4 default. PHPUnit and frontend build have not yet been rerun after these changes; browser print acceptance for both A4 and A5 remains required. Development branch only.
+
+
+## 2026-11-14 — A5 pagination follow-up and obsolete payload removal
+
+- Completed the A5 conversion through the final print-page slicing path: first-page body offset measurement now derives pixels-per-millimetre from the selected page width; body slice translation and page-count estimation use the selected page height; appendix measurement width uses the selected page width. The print toolbar width is also constrained to the selected format, while the print document uses the dynamically generated `@page` size and leaves the outer document width automatic so it does not depend on a descendant CSS variable.
+- Removed the old preset/count/order fields from the settings form payload and feature-test payload. The request and controller now consume only the two token templates for numbering, while historical compatibility keys remain stored but are no longer editable through this form.
+- The settings feature test now saves A5 and verifies the A5 designer prop; the existing designer preview test verifies the default remains A4. Runtime test/build and browser print checks are still pending.
