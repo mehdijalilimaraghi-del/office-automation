@@ -62,7 +62,7 @@ class OrganizationSettingsTest extends TestCase
             'correspondence_font_size' => 13,
             'correspondence_table_border_color' => '#112233',
             'correspondence_shape_border_color' => '#445566',
-            'correspondence_page_size' => 'A4',
+            'correspondence_page_size' => 'A5',
             'approval_incoming' => 'approval',
             'approval_outgoing' => 'approval',
             'approval_internal' => 'direct',
@@ -101,7 +101,7 @@ class OrganizationSettingsTest extends TestCase
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.composition.font_size', 'value' => '13']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.composition.table_border_color', 'value' => '#112233']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.composition.shape_border_color', 'value' => '#445566']);
-        $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.composition.page_size', 'value' => 'A4']);
+        $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.composition.page_size', 'value' => 'A5']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.approval.outgoing', 'value' => 'approval']);
 
         $this->assertDatabaseHas('system_settings', [
@@ -310,6 +310,7 @@ class OrganizationSettingsTest extends TestCase
                 ->where('previewValues.tel', '۰۲۱۱۲۳۴۵۶۷۸')
                 ->where('previewValues.subject', 'موضوع نمونه نامه')
                 ->where('previewValues.creator_name', 'نام تنظیم‌کننده')
+                ->where('pageSize', 'A4')
                 ->where('pageLayout.top', 14)
                 ->where('pageLayout.right', 18)
                 ->where('pageLayout.bottom', 22)
