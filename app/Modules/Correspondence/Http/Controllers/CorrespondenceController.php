@@ -776,6 +776,7 @@ class CorrespondenceController extends Controller
         CorrespondenceAccessService $access,
         CorrespondenceWorkflowService $workflow,
         CorrespondenceNumberingService $numbering,
+        SystemSettingsService $settings,
     ): RedirectResponse {
         $requestedType = $request->input('type');
         if (is_string($requestedType) && in_array($requestedType, Correspondence::allowedTypes(), true)) {
@@ -894,6 +895,20 @@ class CorrespondenceController extends Controller
         $body = $data['type'] === Correspondence::TYPE_INCOMING || ($data['type'] === Correspondence::TYPE_OUTGOING && $mode === 'file')
             ? trim(strip_tags((string) ($data['body'] ?? '')))
             : ($mode === 'file' ? '' : $this->sanitizeBody((string) ($data['body'] ?? '')));
+
+        if ($data['type'] !== Correspondence::TYPE_INCOMING && in_array($mode, ['editor', 'both'], true) && $body !== '') {
+            $defaults = $settings->get([
+                'correspondence.composition.font_family' => 'Vazirmatn',
+                'correspondence.composition.font_color' => '#202124',
+                'correspondence.composition.font_size' => '12',
+            ]);
+            $fontFamily = in_array($defaults['correspondence.composition.font_family'], ['Vazirmatn', 'Tahoma', 'Arial', 'B Nazanin', 'B Mitra', 'IRANSans', 'Times New Roman'], true)
+                ? $defaults['correspondence.composition.font_family'] : 'Vazirmatn';
+            $fontColor = preg_match('/^#[0-9a-fA-F]{6}$/', (string) $defaults['correspondence.composition.font_color']) === 1
+                ? $defaults['correspondence.composition.font_color'] : '#202124';
+            $fontSize = max(8, min(36, (int) $defaults['correspondence.composition.font_size']));
+            $body = '<div style="font-family:'.$fontFamily.';font-size:'.$fontSize.'pt;color:'.$fontColor.'">'.$body.'</div>';
+        }
 
         if ($data['type'] !== Correspondence::TYPE_INCOMING && in_array($mode, ['editor', 'both'], true) && ! $this->hasRichContent($body)) {
             return back()->withErrors(['body' => 'متن نامه را وارد کنید.'])->withInput();
