@@ -133,6 +133,7 @@ class CorrespondencePrintController extends Controller
 
     private function render(Correspondence $correspondence, SystemSettingsService $settings, bool $isPreview): Response
     {
+        $pageSize = $settings->get(['correspondence.composition.page_size' => 'A4'])['correspondence.composition.page_size'] === 'A5' ? 'A5' : 'A4';
         $snapshot = $correspondence->document_identity_snapshot ?? [];
         $organization = $snapshot['organization'] ?? (function () use ($settings): array {
             $values = $settings->get([
@@ -242,6 +243,7 @@ class CorrespondencePrintController extends Controller
             'organization' => $organization,
             'templateElements' => $templateElements,
             'pageLayout' => $pageLayout,
+            'pageSize' => $pageSize,
             'creatorName' => $snapshot['creator_name'] ?? $correspondence->creator?->name,
             'creatorUnitTitle' => $snapshot['creator_unit_title'] ?? ($correspondence->createdDepartment?->name ? 'مدیریت '.$correspondence->createdDepartment->name : null),
             'managerName' => $department?->manager?->name,
