@@ -349,27 +349,19 @@ function setParagraphSpacing(value: string): void { if (value !== '') setBlockSt
 function dimensionMm(element: HTMLElement | null, axis: 'width' | 'height'): string {
     void dimensionRevision.value;
     if (!element) return '';
-    // Read the actual inline dimension when it has an absolute unit. For
-    // auto/percentage dimensions, read the rendered border-box in CSS pixels.
-    const authored = element.style.getPropertyValue(axis).trim();
-    const match = authored.match(/^([0-9]+(?:[.][0-9]+)?)(mm|cm|in|pt|pc|px)$/i);
-    if (match) {
-        const amount = Number(match[1]);
-        const unit = match[2].toLowerCase();
-        const mm = unit === 'mm' ? amount : unit === 'cm' ? amount * 10 : unit === 'in' ? amount * 25.4 : unit === 'pt' ? amount * 25.4 / 72 : unit === 'pc' ? amount * 25.4 / 6 : amount * 25.4 / 96;
-        return mm.toFixed(1);
-    }
-    const measuredElement = axis === 'height' && (element instanceof HTMLTableCellElement)
+    // A cell's height is the height of its parent row. Ignore legacy inline
+    // cell heights so every sibling reads the same shared row dimension.
+    const source = axis === 'height' && element instanceof HTMLTableCellElement
         ? element.parentElement as HTMLTableRowElement | null
         : element;
-    const measuredAuthored = measuredElement?.style.getPropertyValue(axis).trim();
-    const rowMatch = measuredAuthored?.match(/^([0-9]+(?:[.][0-9]+)?)(mm|cm|in|pt|pc|px)$/i);
-    if (rowMatch) {
-        const amount = Number(rowMatch[1]), unit = rowMatch[2].toLowerCase();
+    const authored = source?.style.getPropertyValue(axis).trim() ?? '';
+    const match = authored.match(/^([0-9]+(?:[.][0-9]+)?)(mm|cm|in|pt|pc|px)$/i);
+    if (match) {
+        const amount = Number(match[1]), unit = match[2].toLowerCase();
         const mm = unit === 'mm' ? amount : unit === 'cm' ? amount * 10 : unit === 'in' ? amount * 25.4 : unit === 'pt' ? amount * 25.4 / 72 : unit === 'pc' ? amount * 25.4 / 6 : amount * 25.4 / 96;
         return mm.toFixed(1);
     }
-    const px = axis === 'width' ? element.offsetWidth : measuredElement?.offsetHeight ?? element.offsetHeight;
+    const px = axis === 'width' ? element.offsetWidth : source?.offsetHeight ?? element.offsetHeight;
     return px > 0 ? (px * 25.4 / 96).toFixed(1) : '';
 }
 function selectedTarget(): HTMLElement | null {
@@ -1285,7 +1277,7 @@ function onEditorKeyDown(event: KeyboardEvent): void {
     if(image && editor.value?.contains(image)){event.preventDefault();currentImage.value=image;removeImage();return;}
     if(shape && editor.value?.contains(shape)){event.preventDefault();currentShape.value=shape as HTMLElement;removeShape();return;}
     const table=target?.closest('table') ?? activeObject?.closest('table');
-    if(table && editor.value?.contains(table) && selectedCells.value.length===table.querySelectorAll('td,th').length && selectedCells.value.length>0){
+    if(table && editor.value?.contains(table) && selectedCells.value.length===table.querySelectorAll('td,th').length && selectedCells.value.length>0 && selectedCells.value.every(cell=>cell.closest('table')===table)){
         event.preventDefault();currentCell.value=selectedCells.value[0]??null;deleteTable();selectedCells.value=[];return;
     }
 }
