@@ -28,6 +28,7 @@ class CorrespondenceTemplateController extends Controller
 
     public function edit(SystemSettingsService $settings): Response
     {
+        $pageSize = $settings->get(['correspondence.composition.page_size' => 'A4'])['correspondence.composition.page_size'] === 'A5' ? 'A5' : 'A4';
         $raw = $settings->get(['correspondence.print.template' => null])['correspondence.print.template'];
         $template = is_string($raw) ? json_decode($raw, true) : null;
 
@@ -103,6 +104,7 @@ class CorrespondenceTemplateController extends Controller
         return Inertia::render('Correspondence/Template', [
             'elements' => $elements,
             'pageLayout' => $pageLayout,
+            'pageSize' => $pageSize,
             'previewValues' => $previewValues,
             'previewBody' => implode("\n", [
                 'با سلام و احترام؛',
@@ -150,6 +152,9 @@ class CorrespondenceTemplateController extends Controller
 
     public function update(Request $request, SystemSettingsService $settings): RedirectResponse
     {
+        $pageSize = $settings->get(['correspondence.composition.page_size' => 'A4'])['correspondence.composition.page_size'] === 'A5' ? 'A5' : 'A4';
+        $pageWidth = $pageSize === 'A5' ? 148 : 210;
+        $pageHeight = $pageSize === 'A5' ? 210 : 297;
         $data = $request->validate([
             'elements' => ['present', 'array', 'max:30'],
             'page_layout' => ['sometimes', 'array'],
@@ -197,8 +202,8 @@ class CorrespondenceTemplateController extends Controller
         }
 
         $pageLayout = array_replace(self::DEFAULT_PAGE_LAYOUT, $data['page_layout'] ?? []);
-        abort_if(max($pageLayout['top'], $pageLayout['header_height']) + max($pageLayout['bottom'], $pageLayout['footer_height']) > 180, 422, 'مجموع محدوده سربرگ، متن و پاصفحه فضای کافی برای متن باقی نمی‌گذارد.');
-        abort_if($pageLayout['left'] + $pageLayout['right'] > 100, 422, 'مجموع حاشیه چپ و راست بیش از حد مجاز است.');
+        abort_if(max($pageLayout['top'], $pageLayout['header_height']) + max($pageLayout['bottom'], $pageLayout['footer_height']) > $pageHeight - 30, 422, 'مجموع محدوده سربرگ، متن و پاصفحه برای اندازه صفحه انتخاب‌شده فضای کافی باقی نمی‌گذارد.');
+        abort_if($pageLayout['left'] + $pageLayout['right'] > $pageWidth - 30, 422, 'مجموع حاشیه چپ و راست برای اندازه صفحه انتخاب‌شده بیش از حد مجاز است.');
 
         $settings->set([
             'correspondence.print.template' => json_encode($elements, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
