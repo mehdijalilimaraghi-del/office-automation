@@ -2013,3 +2013,13 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - Added Delete/Backspace handling for the currently selected/pinned image or shape. A table is removed with Delete/Backspace only when the full table is selected; a normal caret inside a cell retains normal text-editing behavior.
 - Corrected row-height ownership: changing a cell's height now writes the shared height on its parent row and clears conflicting per-cell height overrides. Reading the height from any cell in that row resolves the parent row's authored/rendered height, so sibling cells report the same value.
 - **Status: source changes implemented, not verified.** Run Vue/TypeScript production build and browser acceptance for each right-click menu, clipboard/formatting actions, object Delete/Backspace, full-table selection/deletion, and row-height readback from every sibling cell. Clipboard behavior and browser-specific contenteditable keyboard handling require real-browser confirmation. Development branch only; master/release/server unchanged.
+
+
+## 2026-11-14 — Organization correspondence settings and numbering templates
+
+- Reorganized the Organization settings navigation labels to `مشخصات سازمان`, `واحدهای اصلی سازمان`, and `مکاتبات`; correspondence now has internal `شماره‌گذاری نامه` and `تنظیمات نامه` views.
+- Added separate editable templates for outgoing letter numbers and Secretariat registration numbers. Supported placeholders currently include Persian/Gregorian year, month and day variants, `Dept`, and exactly one `Num-1..12-r|c` sequence token. Separators are literal template text.
+- Added a scoped counter table keyed by counter type and template-derived scope. `r` scopes the sequence to the values of non-counter placeholders actually present; `c` uses one continuous scope. Allocation is transactional, row-locked, and checks existing correspondence numbers before returning a value. Existing legacy counters and historical correspondence numbers are retained.
+- Added organization defaults for editor font family/color/size and table/shape border colors. New correspondence body content receives an inline typography snapshot; editor table/shape creation uses configured border colors.
+- Added A4/A5 setting values in storage/UI; **print pagination remains hard-coded to A4 and A5 is not yet wired to the print pipeline**. Do not treat A5 as supported until print/template measurements are made page-size aware.
+- Validation and browser/build/test execution are still pending. The migration must be run before enabling template numbering on an environment.
