@@ -40,7 +40,7 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'numbering_order_third' => ['nullable', 'required_if:numbering_custom_fields_count,3', 'string', Rule::in(['year', 'department', 'sequence'])],
             'numbering_separator' => ['required', 'string', 'max:5'],
             'numbering_padding' => ['required', 'integer', 'min:4', 'max:12'],
-            'registration_numbering_format' => ['required', 'string', Rule::in(['simple', 'year', 'year_department', 'custom'])],
+            'registration_numbering_format' => ['required', 'string', Rule::in(['simple', 'year', 'year_department', 'custom', 'template'])],
             'registration_numbering_template' => ['required', 'string', 'max:200'],
             'registration_numbering_order_first' => ['required', 'string', Rule::in(['year', 'department', 'sequence'])],
             'registration_numbering_custom_fields_count' => ['nullable', 'integer', Rule::in([2, 3])],
