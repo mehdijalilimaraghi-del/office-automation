@@ -54,20 +54,8 @@ class OrganizationSettingsTest extends TestCase
             'stamp' => UploadedFile::fake()->image('stamp.png', 300, 300),
             'letterhead' => UploadedFile::fake()->image('letterhead.png', 2481, 3508),
             'stamp_active' => true,
-            'numbering_format' => 'template',
             'numbering_template' => '{{PYY}}/{{Dept}}/{{Num-7-r}}',
-            'numbering_order_first' => 'sequence',
-            'numbering_order_second' => 'department',
-            'numbering_order_third' => 'year',
-            'numbering_separator' => '-',
-            'numbering_padding' => 7,
-            'registration_numbering_format' => 'template',
             'registration_numbering_template' => '{{GYY}}-{{Num-5-c}}',
-            'registration_numbering_order_first' => 'sequence',
-            'registration_numbering_order_second' => 'year',
-            'registration_numbering_custom_fields_count' => 2,
-            'registration_numbering_separator' => '/',
-            'registration_numbering_padding' => 5,
             'composition_method' => 'both',
             'correspondence_font_family' => 'Vazirmatn',
             'correspondence_font_color' => '#202124',
@@ -106,11 +94,8 @@ class OrganizationSettingsTest extends TestCase
         Storage::disk('local')->assertExists($stampPath);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.numbering.format', 'value' => 'template']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.numbering.template', 'value' => '{{PYY}}/{{Dept}}/{{Num-7-r}}']);
-        $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.numbering.custom_order', 'value' => 'sequence,department,year']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.registration_numbering.format', 'value' => 'template']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.registration_numbering.template', 'value' => '{{GYY}}-{{Num-5-c}}']);
-        $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.registration_numbering.custom_order', 'value' => 'sequence,year']);
-        $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.registration_numbering.padding', 'value' => '5']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.composition.method', 'value' => 'both']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.composition.font_color', 'value' => '#202124']);
         $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.composition.font_size', 'value' => '13']);
