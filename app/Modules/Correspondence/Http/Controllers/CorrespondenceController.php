@@ -598,6 +598,13 @@ class CorrespondenceController extends Controller
                         || (int) $correspondence->task?->assignee_id === (int) $request->user()->id
                         || (int) $correspondence->task?->created_by === (int) $request->user()->id)),
             'correspondenceFontFamily' => $settings->get(['correspondence.composition.font_family' => 'Vazirmatn'])['correspondence.composition.font_family'],
+            'compositionDefaults' => $settings->get([
+                'correspondence.composition.font_color' => '#202124',
+                'correspondence.composition.font_size' => '12',
+                'correspondence.composition.table_border_color' => '#94a3b8',
+                'correspondence.composition.shape_border_color' => '#334155',
+                'correspondence.composition.page_size' => 'A4',
+            ]),
             'approvalSettings' => app(\App\Modules\Correspondence\Services\CorrespondenceCompositionSettings::class)->get()['approval'],
         ]);
     }
