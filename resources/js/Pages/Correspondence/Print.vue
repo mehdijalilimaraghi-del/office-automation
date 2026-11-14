@@ -6,7 +6,9 @@ type Role='meta'|'heading'|'page_number'|'issuer'|'header'|'footer'|'repeat'|'bo
 type PageFormat='number_of'|'slash'|'short'|'page';
 interface TemplateElement { id:string; kind:'text'|'stamp'|'signature'; role:Role; label:string; content:string; x:number; y:number; width:number; spacing:number; font_size:number; font_family:string; page_format:PageFormat; bold:boolean; align:'right'|'center'|'left'; visible:boolean; }
 interface PrintLetter { id:number; attachment_pages:number|null; appendix_mode:'none'|'editor'|'file'|'both'; appendix_body:string|null; appendix_file_count:number; type:'incoming'|'outgoing'|'internal'; subject:string; body:string|null; letter_number:string|null; registration_number:string|null; registered_at:string|null; sent_at:string|null; recipient_name:string|null; recipient_addressing:AddressingSnapshot|null; external_organization:string|null; external_department:string|null; }
-const props=defineProps<{isPreview?:boolean;previewNotice?:string|null;letter:PrintLetter;templateElements:TemplateElement[];pageLayout:{top:number;right:number;bottom:number;left:number;header_height:number;footer_height:number};organization:{name?:string|null;short_name?:string|null;address?:string|null;postal_code?:string|null;phone?:string|null;email?:string|null;website?:string|null};creatorName:string|null;creatorUnitTitle:string|null;managerName:string|null;managerPosition:string|null;managerTitle:string|null;creatorDepartmentName:string|null;stampDataUri:string|null;letterheadDataUri:string|null;signatureDataUri:string|null;printOptions:{show_creator_identity:boolean;show_stamp:boolean;show_department_signature:boolean;letterhead_show_name:boolean;letterhead_show_address:boolean;letterhead_show_phone:boolean;letterhead_show_email:boolean;letterhead_show_website:boolean;font_family:string;};}>();
+const props=defineProps<{isPreview?:boolean;previewNotice?:string|null;letter:PrintLetter;templateElements:TemplateElement[];pageLayout:{top:number;right:number;bottom:number;left:number;header_height:number;footer_height:number};pageSize:'A4'|'A5';organization:{name?:string|null;short_name?:string|null;address?:string|null;postal_code?:string|null;phone?:string|null;email?:string|null;website?:string|null};creatorName:string|null;creatorUnitTitle:string|null;managerName:string|null;managerPosition:string|null;managerTitle:string|null;creatorDepartmentName:string|null;stampDataUri:string|null;letterheadDataUri:string|null;signatureDataUri:string|null;printOptions:{show_creator_identity:boolean;show_stamp:boolean;show_department_signature:boolean;letterhead_show_name:boolean;letterhead_show_address:boolean;letterhead_show_phone:boolean;letterhead_show_email:boolean;letterhead_show_website:boolean;font_family:string;};}>();
+const pageWidthMm = computed(() => props.pageSize === 'A5' ? 148 : 210);
+const pageHeightMm = computed(() => props.pageSize === 'A5' ? 210 : 297);
 const withLetterhead=ref(true);
 const mainContent=ref<HTMLElement[]>([]);
 const appendixMeasure=ref<HTMLElement|null>(null);
@@ -32,15 +34,15 @@ const pageNumberElement=computed(()=>elements.value.find(item=>item.role==='page
 const pageNumberPosition=computed(()=>{
  const item=pageNumberElement.value;
  if(!item)return '@bottom-center';
- const yMm=item.y*2.97;
+ const yMm=item.y*pageHeightMm.value/100;
  const topEdge=Math.max(props.pageLayout.top,props.pageLayout.header_height);
- const bottomEdge=297-Math.max(props.pageLayout.bottom,props.pageLayout.footer_height);
+ const bottomEdge=pageHeightMm.value-Math.max(props.pageLayout.bottom,props.pageLayout.footer_height);
  const vertical=yMm-Math.max(topEdge,props.pageLayout.header_height)<=bottomEdge-yMm?'top':'bottom';
  const anchorX=item.align==='right'?item.x:item.align==='left'?item.x+item.width:item.x+(item.width/2);
   const horizontal=anchorX<33.333?'right':anchorX>66.667?'left':'center';
  return '@'+vertical+'-'+horizontal;
 });
-const pageCss='@page{size:A4;margin:0;}';
+const pageCss=computed(()=>`@page{size:${pageWidthMm.value}mm ${pageHeightMm.value}mm;margin:0;}`);
 const pageWindowStyle=computed(()=>({
  top:Math.max(props.pageLayout.top,props.pageLayout.header_height)+'mm',
  right:props.pageLayout.right+'mm',
@@ -54,7 +56,11 @@ function pageContentStyle(pageIndex:number):Record<string,string> {
 }
 const paperStyle=computed(()=>({
  fontFamily:props.printOptions.font_family||'Vazirmatn',
- minHeight:'297mm',
+ width:pageWidthMm.value+'mm',
+ height:pageHeightMm.value+'mm',
+ minHeight:pageHeightMm.value+'mm',
+ '--print-page-width':pageWidthMm.value+'mm',
+ '--print-page-height':pageHeightMm.value+'mm',
  '--print-content-top':Math.max(props.pageLayout.top,props.pageLayout.header_height)+'mm',
  '--print-content-left':props.pageLayout.left+'mm',
  '--print-content-right':props.pageLayout.right+'mm',
@@ -72,26 +78,26 @@ function resolveTemplate(content:string):string {
  return content.replace(/\{\{([a-z_]+)\}\}/g,(token,key:string)=>Object.prototype.hasOwnProperty.call(values,key)?values[key]:token);
 }
 function fontFamily(item:TemplateElement):string{return item.font_family==='default'||!item.font_family?(props.printOptions.font_family||'Vazirmatn'):item.font_family;}
-function boxStyle(item:TemplateElement):Record<string,string>{return {width:item.width+'%',marginTop:item.spacing+'mm',marginRight:`calc(${item.x*2.1}mm - ${props.pageLayout.right}mm)`,fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
+function boxStyle(item:TemplateElement):Record<string,string>{return {width:item.width+'%',marginTop:item.spacing+'mm',marginRight:`calc(${item.x*pageWidthMm.value/100}mm - ${props.pageLayout.right}mm)`,fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
 function positionedStyle(item:TemplateElement):Record<string,string>{
  const contentTop=Math.max(props.pageLayout.top,props.pageLayout.header_height);
- return {right:item.x+'%',top:item.y+'%',bottom:'auto',width:item.width+'%',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align,'--print-repeat-top':(item.y*2.97-contentTop)+'mm','--print-repeat-right':(item.x*2.1)+'mm','--print-repeat-width':(item.width*2.1)+'mm'};
+ return {right:item.x+'%',top:item.y+'%',bottom:'auto',width:item.width+'%',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align,'--print-repeat-top':(item.y*pageHeightMm.value/100-contentTop)+'mm','--print-repeat-right':(item.x*pageWidthMm.value/100)+'mm','--print-repeat-width':(item.width*pageWidthMm.value/100)+'mm'};
 }
 function pageNumberScreenStyle(item:TemplateElement):Record<string,string> {
  const topEdge=Math.max(props.pageLayout.top,props.pageLayout.header_height);
- const requestedY=item.y*2.97;
+ const requestedY=item.y*pageHeightMm.value/100;
  const mappedY=requestedY;
  const anchorX=item.align==='right'?item.x:item.align==='left'?item.x+item.width:item.x+(item.width/2);
  const slot=anchorX<33.333?'right':anchorX>66.667?'left':'center';
  const slotRight=slot==='right'?0:slot==='center'?33.333:66.667;
  const slotLeft=slotRight+33.333;
- const style:Record<string,string>={right:slotRight+'%',top:(mappedY/297*100)+'%',width:'33.333%',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align,direction:item.page_format==='slash'?'ltr':'rtl'};
- if(item.align==='right')style.paddingRight=Math.max(0,anchorX-slotRight)*2.1+'mm';
- if(item.align==='left')style.paddingLeft=Math.max(0,slotLeft-anchorX)*2.1+'mm';
- if(item.align==='center')style.transform='translateX('+((slotRight+16.6665-anchorX)*2.1)+'mm)';
+ const style:Record<string,string>={right:slotRight+'%',top:(mappedY/pageHeightMm.value*100)+'%',width:'33.333%',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align,direction:item.page_format==='slash'?'ltr':'rtl'};
+ if(item.align==='right')style.paddingRight=Math.max(0,anchorX-slotRight)*pageWidthMm.value/100+'mm';
+ if(item.align==='left')style.paddingLeft=Math.max(0,slotLeft-anchorX)*pageWidthMm.value/100+'mm';
+ if(item.align==='center')style.transform='translateX('+((slotRight+16.6665-anchorX)*pageWidthMm.value/100)+'mm)';
  style['--print-page-number-top']=(mappedY-topEdge)+'mm';
- style['--print-page-number-right']=(item.x*2.1)+'mm';
- style['--print-page-number-width']=(item.width*2.1)+'mm';
+ style['--print-page-number-right']=(item.x*pageWidthMm.value/100)+'mm';
+ style['--print-page-number-width']=(item.width*pageWidthMm.value/100)+'mm';
  return style;
 }
 function bodyStyle():Record<string,string>{const item=bodyElement.value;return {width:item.width+'%',marginTop:(item.spacing+measuredBodyOffsetMm.value)+'mm',fontSize:item.font_size+'pt',fontFamily:fontFamily(item),fontWeight:item.bold?'700':'400',textAlign:item.align};}
@@ -116,7 +122,7 @@ function updateBodyStartOffset():void {
  if(!plane||!contentWindow||!paper)return;
  const paperRect=paper.getBoundingClientRect();
  const safeTop=contentWindow.getBoundingClientRect().top;
- const pxPerMm=paperRect.width/210;
+ const pxPerMm=paperRect.width/pageWidthMm.value;
  if(pxPerMm<=0)return;
  const preceding=Array.from(plane.querySelectorAll<HTMLElement>('.first-page-positioned'));
  const lastBottom=preceding.reduce((bottom,element)=>Math.max(bottom,element.getBoundingClientRect().bottom),safeTop);
@@ -125,8 +131,8 @@ function updateBodyStartOffset():void {
 function updateEstimatedPageCount():void {
  const main=mainContent.value[0];
  const appendix=appendixMeasure.value;
- const pageHeightMm=297-Math.max(props.pageLayout.top,props.pageLayout.header_height)-Math.max(props.pageLayout.bottom,props.pageLayout.footer_height);
- const pageHeightPx=pageHeightMm*96/25.4;
+ const availablePageHeightMm=pageHeightMm.value-Math.max(props.pageLayout.top,props.pageLayout.header_height)-Math.max(props.pageLayout.bottom,props.pageLayout.footer_height);
+ const pageHeightPx=availablePageHeightMm*96/25.4;
  const safePageHeight=Math.max(1,pageHeightPx);
  mainPageCount.value=main?Math.max(1,Math.ceil(Math.max(0,main.scrollHeight)/safePageHeight)):1;
  appendixPageCount.value=props.letter.appendix_body?.trim()&&appendix?Math.max(1,Math.ceil(Math.max(0,appendix.scrollHeight)/safePageHeight)):0;
@@ -169,9 +175,9 @@ function closePreview():void{if(window.opener){window.close();return;}window.his
 <template>
  <Head :title="'پیش‌نمایش چاپ - '+letter.subject"/>
   <component :is="'style'">{{pageCss}}</component>
- <main class="min-h-screen bg-slate-100 px-4 py-6 text-slate-900" dir="rtl">
+ <main class="min-h-screen bg-slate-100 px-4 py-6 text-slate-900" :style="{'--print-page-width':pageWidthMm+'mm','--print-page-height':pageHeightMm+'mm'}" dir="rtl">
   <div class="no-print mx-auto mb-4 flex max-w-[210mm] flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-   <div><p class="text-sm font-bold">پیش‌نمایش چاپ نامه</p><p class="mt-1 text-xs text-slate-500">قالب A4 · برآورد پیش‌نمایش: {{estimatedPageCount}} صفحه</p></div>
+   <div><p class="text-sm font-bold">پیش‌نمایش چاپ نامه</p><p class="mt-1 text-xs text-slate-500">قالب {{pageSize}} · برآورد پیش‌نمایش: {{estimatedPageCount}} صفحه</p></div>
    <div class="flex flex-wrap items-center gap-3"><label class="inline-flex items-center gap-2 text-sm"><input v-model="withLetterhead" type="checkbox" class="rounded border-slate-300 text-teal-600"/>چاپ با سربرگ</label><button type="button" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white" @click="printLetter">چاپ / ذخیره PDF</button><button v-if="isPreview" type="button" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold" @click="closePreview">بستن پیش‌نمایش</button><Link v-else :href="route('correspondence.show',letter.id)" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold">بازگشت به نامه</Link></div>
    <p v-if="previewNotice" class="mt-3 text-xs leading-6 text-amber-700">{{previewNotice}}</p>
   </div>
@@ -204,13 +210,13 @@ function closePreview():void{if(window.opener){window.close();return;}window.his
     </div>
    </div>
   </article>
-  <div ref="appendixMeasure" class="appendix-measure-root" :style="{width:(210-pageLayout.left-pageLayout.right)+'mm'}" aria-hidden="true"><div class="appendix-heading">پیوست</div><section class="letter-body" :style="appendixBodyStyle()" v-html="letter.appendix_body||''"></section></div>
+  <div ref="appendixMeasure" class="appendix-measure-root" :style="{width:(pageWidthMm-pageLayout.left-pageLayout.right)+'mm'}" aria-hidden="true"><div class="appendix-heading">پیوست</div><section class="letter-body" :style="appendixBodyStyle()" v-html="letter.appendix_body||''"></section></div>
  </main>
 </template>
 
 <style>
- .paper{position:relative;box-sizing:border-box;width:210mm;height:297mm;min-height:297mm;color:#111827;background:#fff;overflow:hidden;}
- .template-coordinate-plane{position:absolute;top:0;right:0;left:0;height:297mm;z-index:1;pointer-events:none;}
+  .paper{position:relative;box-sizing:border-box;width:var(--print-page-width,210mm);height:var(--print-page-height,297mm);min-height:var(--print-page-height,297mm);color:#111827;background:#fff;overflow:hidden;}
+  .template-coordinate-plane{position:absolute;top:0;right:0;left:0;height:var(--print-page-height,297mm);z-index:1;pointer-events:none;}
  .page-content-window{position:absolute;z-index:2;overflow:hidden;}.document-content{position:absolute;top:0;right:0;left:0;display:flow-root;box-sizing:border-box;width:100%;direction:rtl;text-align:right;unicode-bidi:plaintext;}
 .letterhead-background{position:absolute;inset:0;z-index:0;background-position:center top;background-repeat:no-repeat;background-size:100% 100%;pointer-events:none;}
 .repeat-item{position:absolute;z-index:3;white-space:pre-wrap;line-height:1.5;direction:rtl;}
@@ -235,13 +241,13 @@ function closePreview():void{if(window.opener){window.close();return;}window.his
 .page-number-slash{direction:ltr;unicode-bidi:isolate;}
 
 @media print{
- html,body{width:210mm!important;margin:0!important;padding:0!important;background:#fff!important;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
- main{display:block!important;width:210mm!important;min-height:0!important;margin:0!important;padding:0!important;background:#fff!important;}
+ html,body{width:var(--print-page-width,210mm)!important;margin:0!important;padding:0!important;background:#fff!important;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
+ main{display:block!important;width:var(--print-page-width,210mm)!important;min-height:0!important;margin:0!important;padding:0!important;background:#fff!important;}
  .no-print{display:none!important;}
- /* Print the exact A4 page slices already rendered by the preview. Do not ask Chromium to repaginate the letter body. */
- .paper,.paper.screen-page{display:block!important;position:relative!important;box-sizing:border-box!important;width:210mm!important;height:297mm!important;min-height:297mm!important;margin:0!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;break-after:page;page-break-after:always;}
+ /* Print the exact page slices already rendered by the preview. Do not ask Chromium to repaginate the letter body. */
+ .paper,.paper.screen-page{display:block!important;position:relative!important;box-sizing:border-box!important;width:var(--print-page-width,210mm)!important;height:var(--print-page-height,297mm)!important;min-height:var(--print-page-height,297mm)!important;margin:0!important;padding:0!important;overflow:hidden!important;box-shadow:none!important;break-after:page;page-break-after:always;}
  .paper:last-child{break-after:auto;page-break-after:auto;}
- .template-coordinate-plane{position:absolute!important;top:0!important;right:0!important;left:0!important;width:100%!important;height:297mm!important;}
+ .template-coordinate-plane{position:absolute!important;top:0!important;right:0!important;left:0!important;width:100%!important;height:var(--print-page-height,297mm)!important;}
  .letterhead-background{position:absolute!important;inset:0!important;width:auto!important;height:auto!important;background-position:center top!important;background-size:100% 100%!important;}
  .repeat-item,.page-number,.first-page-positioned{position:absolute!important;}
  .page-content-window{position:absolute!important;display:block!important;overflow:hidden!important;}
@@ -249,5 +255,5 @@ function closePreview():void{if(window.opener){window.close();return;}window.his
  .page-number bdi{visibility:visible!important;}
  .page-number::after{content:none!important;display:none!important;}
 }
-@media screen and (max-width:800px){.paper{width:210mm;}}
+@media screen and (max-width:800px){.paper{width:var(--print-page-width,210mm);}}
 </style>
