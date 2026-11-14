@@ -23,6 +23,9 @@ class CorrespondenceNumberingService
     public function nextNumber(Correspondence $correspondence): string
     {
         $config = $this->configuration();
+        if (($config['format'] ?? '') === 'template') {
+            return DB::transaction(fn (): string => $this->nextTemplateNumber($correspondence, $config, 'letter'));
+        }
         $this->assertFormatIsValid($config['format'], $config['custom_order']);
         $this->assertSeparator($config['separator']);
 
@@ -53,10 +56,14 @@ class CorrespondenceNumberingService
 
             if ($locked->type !== Correspondence::TYPE_INCOMING) {
                 $config = $this->configuration();
-                $this->assertFormatIsValid($config['format'], $config['custom_order']);
-                $this->assertSeparator($config['separator']);
                 if (blank($locked->letter_number)) {
-                    $locked->letter_number = $this->formatNumber($locked, $this->incrementLetterCounter(), $config);
+                    if (($config['format'] ?? '') === 'template') {
+                        $locked->letter_number = $this->nextTemplateNumber($locked, $config, 'letter');
+                    } else {
+                        $this->assertFormatIsValid($config['format'], $config['custom_order']);
+                        $this->assertSeparator($config['separator']);
+                        $locked->letter_number = $this->formatNumber($locked, $this->incrementLetterCounter(), $config);
+                    }
                 }
             }
             if ($locked->type === Correspondence::TYPE_OUTGOING && $locked->recipient_addressing_snapshot === null) {
@@ -83,10 +90,14 @@ class CorrespondenceNumberingService
             }
 
             $registrationConfig = $this->registrationConfiguration();
-            $this->assertFormatIsValid($registrationConfig['format'], $registrationConfig['custom_order']);
-            $this->assertSeparator($registrationConfig['separator']);
-            $sequence = $this->incrementCounter();
-            $registrationNumber = $this->formatNumber($locked, $sequence, $registrationConfig);
+            if (($registrationConfig['format'] ?? '') === 'template') {
+                $registrationNumber = $this->nextTemplateNumber($locked, $registrationConfig, 'registration');
+            } else {
+                $this->assertFormatIsValid($registrationConfig['format'], $registrationConfig['custom_order']);
+                $this->assertSeparator($registrationConfig['separator']);
+                $sequence = $this->incrementCounter();
+                $registrationNumber = $this->formatNumber($locked, $sequence, $registrationConfig);
+            }
 
             $locked->forceFill([
                 'status' => Correspondence::STATUS_REGISTERED,
@@ -97,6 +108,94 @@ class CorrespondenceNumberingService
 
             return $locked->refresh()->load(['creator', 'registrar', 'createdDepartment', 'recipientDepartment', 'replyTo']);
         });
+    }
+
+    /**
+     * Allocate a number from a user-defined template. The scope key is derived
+     * only from date/unit variables actually present in the template.
+     *
+     * @param array<string, mixed> $config
+     */
+    private function nextTemplateNumber(Correspondence $correspondence, array $config, string $counterType): string
+    {
+        $template = trim((string) ($config['template'] ?? ''));
+        if ($template === '' || mb_strlen($template) > 200) {
+            throw new InvalidArgumentException('قالب شماره‌گذاری باید بین ۱ تا ۲۰۰ نویسه باشد.');
+        }
+        preg_match_all('/\\{\\{([^{}]+)\\}\\}/u', $template, $matches);
+        $tokens = $matches[1] ?? [];
+        $numberTokens = array_values(array_filter($tokens, static fn (string $token): bool => preg_match('/^Num-(?:[1-9]|1[0-2])-([rc])$/', $token) === 1));
+        if (count($numberTokens) !== 1 || count($tokens) !== count(array_unique($tokens))) {
+            throw new InvalidArgumentException('قالب باید دقیقاً یک متغیر شمارنده معتبر و متغیرهای یکتای مجاز داشته باشد.');
+        }
+        $allowed = ['pdd','PDD','pmm','PMM','pyy','PYY','gdd','GDD','gmm','GMM','gyy','GYY','Dept'];
+        foreach ($tokens as $token) {
+            if (! in_array($token, $allowed, true) && ! preg_match('/^Num-(?:[1-9]|1[0-2])-[rc]$/', $token)) {
+                throw new InvalidArgumentException('یکی از متغیرهای قالب شماره‌گذاری ناشناخته است: '.$token);
+            }
+        }
+
+        $now = now();
+        $values = $this->templateDateValues($now);
+        $departmentCode = $correspondence->createdDepartment()->value('code');
+        $values['Dept'] = filled($departmentCode) ? (string) $departmentCode : 'ORG';
+        $numberToken = $numberTokens[0];
+        [$unused, $length, $mode] = explode('-', $numberToken);
+        $scopeValues = [];
+        foreach ($tokens as $token) {
+            if ($token !== $numberToken) {
+                $scopeValues[$token] = $values[$token] ?? '';
+            }
+        }
+        $scope = $mode === 'c' ? 'continuous' : hash('sha256', json_encode($scopeValues, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+        $table = DB::table('correspondence_numbering_scoped_counters');
+        $table->insertOrIgnore(['counter_type' => $counterType, 'scope_key' => $scope, 'last_number' => 0, 'created_at' => now(), 'updated_at' => now()]);
+        $counter = $table->where('counter_type', $counterType)->where('scope_key', $scope)->lockForUpdate()->first();
+        if ($counter === null) {
+            throw new RuntimeException('شمارنده شماره‌گذاری قابل قفل‌گذاری نیست.');
+        }
+
+        $sequence = (int) $counter->last_number;
+        do {
+            $sequence++;
+            $number = preg_replace_callback('/\\{\\{([^{}]+)\\}\\}/u', function (array $match) use ($values, $length, $sequence): string {
+                if (str_starts_with($match[1], 'Num-')) {
+                    return str_pad((string) $sequence, (int) $length, '0', STR_PAD_LEFT);
+                }
+                return (string) ($values[$match[1]] ?? '');
+            }, $template);
+            $column = $counterType === 'letter' ? 'letter_number' : 'registration_number';
+            $exists = Correspondence::query()->where($column, $number)->exists();
+        } while ($exists && $sequence < 999999999);
+
+        if ($exists) {
+            throw new RuntimeException('امکان تخصیص شماره یکتای جدید وجود ندارد.');
+        }
+        $table->where('counter_type', $counterType)->where('scope_key', $scope)->update(['last_number' => $sequence, 'updated_at' => now()]);
+        return (string) $number;
+    }
+
+    /** @return array<string, string> */
+    private function templateDateValues(\\Carbon\\CarbonInterface $date): array
+    {
+        $gregorian = [
+            'gdd' => $date->format('d'), 'GDD' => $date->format('j'),
+            'gmm' => $date->format('m'), 'GMM' => $date->format('F'),
+            'gyy' => $date->format('y'), 'GYY' => $date->format('Y'),
+        ];
+        $persian = [];
+        if (class_exists(\\IntlDateFormatter::class)) {
+            $formatter = new \\IntlDateFormatter('fa_IR@calendar=persian', \\IntlDateFormatter::NONE, \\IntlDateFormatter::NONE, 'Asia/Tehran', \\IntlDateFormatter::TRADITIONAL, 'yyyy|MM|dd|MMMM|d');
+            $formatted = $formatter->format($date->getTimestamp());
+            if (is_string($formatted)) {
+                [$year, $month, $day, $monthName, $dayNumber] = array_pad(explode('|', $formatted), 5, '');
+                $persian = ['pyy' => substr($year, -2), 'PYY' => $year, 'pmm' => $month, 'PMM' => $monthName, 'pdd' => $day, 'PDD' => $dayNumber];
+            }
+        }
+        if ($persian === []) {
+            $persian = ['pyy' => substr((string) $this->jalaliYear($date), -2), 'PYY' => (string) $this->jalaliYear($date), 'pmm' => $date->format('m'), 'PMM' => $date->format('m'), 'pdd' => $date->format('d'), 'PDD' => $date->format('j')];
+        }
+        return $gregorian + $persian;
     }
 
     private function snapshotDocumentIdentity(Correspondence $correspondence): void
