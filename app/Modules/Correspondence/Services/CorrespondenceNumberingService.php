@@ -197,7 +197,16 @@ class CorrespondenceNumberingService
             }
         }
         if ($persian === []) {
-            $persian = ['pyy' => substr((string) $this->jalaliYear($date), -2), 'PYY' => (string) $this->jalaliYear($date), 'pmm' => $date->format('m'), 'PMM' => $date->format('m'), 'pdd' => $date->format('d'), 'PDD' => $date->format('j')];
+            [$jalaliYear, $jalaliMonth, $jalaliDay] = $this->jalaliDateParts($date);
+            $monthNames = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
+            $persian = [
+                'pyy' => substr((string) $jalaliYear, -2),
+                'PYY' => (string) $jalaliYear,
+                'pmm' => str_pad((string) $jalaliMonth, 2, '0', STR_PAD_LEFT),
+                'PMM' => $monthNames[$jalaliMonth - 1],
+                'pdd' => str_pad((string) $jalaliDay, 2, '0', STR_PAD_LEFT),
+                'PDD' => (string) $jalaliDay,
+            ];
         }
         return $gregorian + $persian;
     }
@@ -390,6 +399,46 @@ class CorrespondenceNumberingService
     {
         $tokens = array_map('trim', explode(',', $order));
         return implode($separator, array_map(static fn (string $token): string => $parts[$token], $tokens));
+    }
+
+    /** @return array{int, int, int} */
+    private function jalaliDateParts(CarbonInterface $date): array
+    {
+        $gy = $date->year;
+        $gm = $date->month;
+        $gd = $date->day;
+        $daysInGregorianMonth = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+        if ($gy > 1600) {
+            $jy = 979;
+            $gy -= 1600;
+        } else {
+            $jy = 0;
+            $gy -= 621;
+        }
+        $gy2 = $gm > 2 ? $gy + 1 : $gy;
+        $days = 365 * $gy
+            + intdiv($gy2 + 3, 4)
+            - intdiv($gy2 + 99, 100)
+            + intdiv($gy2 + 399, 400)
+            - 80
+            + $gd
+            + $daysInGregorianMonth[$gm - 1];
+        $jy += 33 * intdiv($days, 12053);
+        $days %= 12053;
+        $jy += 4 * intdiv($days, 1461);
+        $days %= 1461;
+        if ($days > 365) {
+            $jy += intdiv($days - 1, 365);
+            $days = ($days - 1) % 365;
+        }
+        if ($days < 186) {
+            $jm = 1 + intdiv($days, 31);
+            $jd = 1 + ($days % 31);
+        } else {
+            $jm = 7 + intdiv($days - 186, 30);
+            $jd = 1 + (($days - 186) % 30);
+        }
+        return [$jy, $jm, $jd];
     }
 
     private function jalaliYear(CarbonInterface $date): int
