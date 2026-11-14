@@ -803,3 +803,11 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - The rich-text body is stored as HTML and rendered in the A4 print page through `v-html`. Inline important styles in stored markup outrank normal renderer styles. The previous resize implementation persisted `max-width:none!important` on tables and cells, explaining why only resized tables overflowed.
 - The editor now persists a 100% max-width constraint; the print renderer additionally normalizes existing stored tables/cells after mount and before pagination measurement, so old letters are corrected without rewriting database content. Fixed layout and wrapping prevent long cell content from forcing overflow.
 - Regression/build verification pending.
+
+
+## 2026-11-14 — Correspondence editor context menus, object deletion and row-height consistency
+
+- Expanded right-click menus by target: text now exposes common formatting, paragraph alignment, list, clipboard and select-all actions; tables expose row/column insertion and deletion, row/column/table selection, merge/split and table deletion; pictures and shapes expose rotation, flipping, z-order and deletion actions. These are native editor operations, not a replacement editor.
+- Added Delete/Backspace handling for the currently selected/pinned image or shape. A table is removed with Delete/Backspace only when the full table is selected; a normal caret inside a cell retains normal text-editing behavior.
+- Corrected row-height ownership: changing a cell's height now writes the shared height on its parent row and clears conflicting per-cell height overrides. Reading the height from any cell in that row resolves the parent row's authored/rendered height, so sibling cells report the same value.
+- **Status: source changes implemented, not verified.** Run Vue/TypeScript production build and browser acceptance for each right-click menu, clipboard/formatting actions, object Delete/Backspace, full-table selection/deletion, and row-height readback from every sibling cell. Clipboard behavior and browser-specific contenteditable keyboard handling require real-browser confirmation. Development branch only; master/release/server unchanged.
