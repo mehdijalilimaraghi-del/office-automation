@@ -50,7 +50,7 @@ const pageWindowStyle=computed(()=>({
  left:props.pageLayout.left+'mm',
 }));
 function pageContentStyle(pageIndex:number):Record<string,string> {
- const pageHeight=297-Math.max(props.pageLayout.top,props.pageLayout.header_height)-Math.max(props.pageLayout.bottom,props.pageLayout.footer_height);
+ const pageHeight=pageHeightMm.value-Math.max(props.pageLayout.top,props.pageLayout.header_height)-Math.max(props.pageLayout.bottom,props.pageLayout.footer_height);
  const offset=Math.max(0,(pageIndex-1)*pageHeight);
  return { transform:'translateY(-'+offset+'mm)' };
 }
@@ -176,8 +176,8 @@ function closePreview():void{if(window.opener){window.close();return;}window.his
  <Head :title="'پیش‌نمایش چاپ - '+letter.subject"/>
   <component :is="'style'">{{pageCss}}</component>
  <main class="min-h-screen bg-slate-100 px-4 py-6 text-slate-900" :style="{'--print-page-width':pageWidthMm+'mm','--print-page-height':pageHeightMm+'mm'}" dir="rtl">
-  <div class="no-print mx-auto mb-4 flex max-w-[210mm] flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-   <div><p class="text-sm font-bold">پیش‌نمایش چاپ نامه</p><p class="mt-1 text-xs text-slate-500">قالب {{pageSize}} · برآورد پیش‌نمایش: {{estimatedPageCount}} صفحه</p></div>
+  <div class="no-print mx-auto mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm" :style="{maxWidth:pageWidthMm+'mm'}">
+   <div><p class="text-sm font-bold">پیش‌نمایش چاپ نامه</p><p class="mt-1 text-xs text-slate-500">قالب {{props.pageSize}} · برآورد پیش‌نمایش: {{estimatedPageCount}} صفحه</p></div>
    <div class="flex flex-wrap items-center gap-3"><label class="inline-flex items-center gap-2 text-sm"><input v-model="withLetterhead" type="checkbox" class="rounded border-slate-300 text-teal-600"/>چاپ با سربرگ</label><button type="button" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white" @click="printLetter">چاپ / ذخیره PDF</button><button v-if="isPreview" type="button" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold" @click="closePreview">بستن پیش‌نمایش</button><Link v-else :href="route('correspondence.show',letter.id)" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold">بازگشت به نامه</Link></div>
    <p v-if="previewNotice" class="mt-3 text-xs leading-6 text-amber-700">{{previewNotice}}</p>
   </div>
@@ -241,7 +241,7 @@ function closePreview():void{if(window.opener){window.close();return;}window.his
 .page-number-slash{direction:ltr;unicode-bidi:isolate;}
 
 @media print{
- html,body{width:var(--print-page-width,210mm)!important;margin:0!important;padding:0!important;background:#fff!important;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
+ html,body{width:auto!important;margin:0!important;padding:0!important;background:#fff!important;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
  main{display:block!important;width:var(--print-page-width,210mm)!important;min-height:0!important;margin:0!important;padding:0!important;background:#fff!important;}
  .no-print{display:none!important;}
  /* Print the exact page slices already rendered by the preview. Do not ask Chromium to repaginate the letter body. */
