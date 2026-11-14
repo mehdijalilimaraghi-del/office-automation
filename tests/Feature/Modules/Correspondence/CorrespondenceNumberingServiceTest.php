@@ -277,4 +277,41 @@ class CorrespondenceNumberingServiceTest extends TestCase
         app(SystemSettingsService::class)->set([OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT) => (string) $department->id]);
         return $user;
     }
+
+    public function test_template_counter_resets_only_for_values_present_in_template(): void
+    {
+        $creator = User::factory()->create(['status' => 'active']);
+        $firstDepartment = Department::query()->create(['name' => 'واحد الف', 'code' => 'UNIT-A', 'is_active' => true]);
+        $secondDepartment = Department::query()->create(['name' => 'واحد ب', 'code' => 'UNIT-B', 'is_active' => true]);
+        $first = Correspondence::query()->create(['type' => Correspondence::TYPE_OUTGOING, 'subject' => 'الف', 'status' => Correspondence::STATUS_DRAFT, 'created_by' => $creator->id, 'created_department_id' => $firstDepartment->id]);
+        $second = Correspondence::query()->create(['type' => Correspondence::TYPE_OUTGOING, 'subject' => 'ب', 'status' => Correspondence::STATUS_DRAFT, 'created_by' => $creator->id, 'created_department_id' => $secondDepartment->id]);
+        app(SystemSettingsService::class)->set([
+            'correspondence.numbering.format' => 'template',
+            'correspondence.numbering.template' => '{{Dept}}/{{Num-3-r}}',
+        ]);
+        $service = app(CorrespondenceNumberingService::class);
+
+        $this->assertSame('UNIT-A/001', $service->nextNumber($first));
+        $this->assertSame('UNIT-A/002', $service->nextNumber($first));
+        $this->assertSame('UNIT-B/001', $service->nextNumber($second));
+    }
+
+    public function test_continuous_template_counter_does_not_reset_when_other_template_values_change(): void
+    {
+        $creator = User::factory()->create(['status' => 'active']);
+        $firstDepartment = Department::query()->create(['name' => 'واحد الف', 'code' => 'UNIT-C', 'is_active' => true]);
+        $secondDepartment = Department::query()->create(['name' => 'واحد ب', 'code' => 'UNIT-D', 'is_active' => true]);
+        $first = Correspondence::query()->create(['type' => Correspondence::TYPE_OUTGOING, 'subject' => 'الف', 'status' => Correspondence::STATUS_DRAFT, 'created_by' => $creator->id, 'created_department_id' => $firstDepartment->id]);
+        $second = Correspondence::query()->create(['type' => Correspondence::TYPE_OUTGOING, 'subject' => 'ب', 'status' => Correspondence::STATUS_DRAFT, 'created_by' => $creator->id, 'created_department_id' => $secondDepartment->id]);
+        app(SystemSettingsService::class)->set([
+            'correspondence.numbering.format' => 'template',
+            'correspondence.numbering.template' => '{{Dept}}/{{Num-3-c}}',
+        ]);
+        $service = app(CorrespondenceNumberingService::class);
+
+        $this->assertSame('UNIT-C/001', $service->nextNumber($first));
+        $this->assertSame('UNIT-D/002', $service->nextNumber($second));
+    }
+
+
 }
