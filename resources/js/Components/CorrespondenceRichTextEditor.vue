@@ -547,23 +547,186 @@ function deleteTableColumn(): void {
 }
 function selectTablePart(part: 'table' | 'row' | 'column'): void {
     const cell = currentCell.value, table = cell?.closest('table');
-    if (!cell || !table) return;
+    if (!cell || !(table instanceof HTMLTableElement)) return;
     selectedCells.value = part === 'table' ? Array.from(table.querySelectorAll('td,th')) :
         part === 'row' ? Array.from(cell.parentElement?.querySelectorAll('td,th') ?? []) :
-        Array.from(table.rows).map((row) => row.cells[cell.cellIndex]).filter((item): item is HTMLTableCellElement => !!item);
+        (() => {
+            const grid = tableGrid(table);
+            const column = cellColumnStart(cell);
+            const chosen = new Set<HTMLTableCellElement>();
+            grid.forEach((row) => { const item = row[column]; if (item) chosen.add(item); });
+            return Array.from(chosen);
+        })();
     paintCellSelection();
 }
 function paintCellSelection(): void {
     editor.value?.querySelectorAll('.rte-cell-selected').forEach((node) => node.classList.remove('rte-cell-selected'));
     selectedCells.value.forEach((cell) => cell.classList.add('rte-cell-selected'));
 }
+function tableGrid(table: HTMLTableElement): HTMLTableCellElement[][] {
+    const grid: HTMLTableCellElement[][] = [];
+    Array.from(table.rows).forEach((row, rowIndex) => {
+        grid[rowIndex] ??= [];
+        let column = 0;
+        Array.from(row.cells).forEach((cell) => {
+            while (grid[rowIndex][column]) column += 1;
+            const rowSpan = cell.rowSpan || 1;
+            const colSpan = cell.colSpan || 1;
+            for (let rr = 0; rr < rowSpan; rr += 1) {
+                grid[rowIndex + rr] ??= [];
+                for (let cc = 0; cc < colSpan; cc += 1) grid[rowIndex + rr][column + cc] = cell;
+            }
+            column += colSpan;
+        });
+    });
+    return grid;
+}
+function cellColumnStart(cell: HTMLTableCellElement): number {
+    const table = cell.closest('table');
+    const row = cell.parentElement;
+    if (!(table instanceof HTMLTableElement) || !(row instanceof HTMLTableRowElement)) return cell.cellIndex;
+    const line = tableGrid(table)[Array.from(table.rows).indexOf(row)] ?? [];
+    for (let column = 0; column < line.length; column += 1) {
+        if (line[column] === cell && (column === 0 || line[column - 1] !== cell)) return column;
+    }
+    return cell.cellIndex;
+}
+function readColumnPx(table: HTMLTableElement): number[] {
+    const grid = tableGrid(table);
+    const count = grid.reduce((max, row) => Math.max(max, row.length), 0);
+    const widths = Array.from({ length: count }, () => 0);
+    for (let column = 0; column < count; column += 1) {
+        let sample: HTMLTableCellElement | null = null;
+        for (const row of grid) {
+            const cell = row[column];
+            if (cell && (cell.colSpan || 1) === 1) { sample = cell; break; }
+        }
+        if (!sample) sample = grid.find((row) => row[column])?.[column] ?? null;
+        const measured = sample?.getBoundingClientRect().width ?? 0;
+        widths[column] = measured > 1 ? measured / (sample?.colSpan || 1) : 48;
+    }
+    return widths;
+}
+function ensureCols(table: HTMLTableElement, count: number): HTMLTableColElement {
+    let group = table.querySelector('colgroup');
+    if (!(group instanceof HTMLTableColElement)) {
+        group = document.createElement('colgroup');
+        table.insertBefore(group, table.firstChild);
+    }
+    while (group.children.length < count) group.appendChild(document.createElement('col'));
+    while (group.children.length > count) group.lastElementChild?.remove();
+    return group;
+}
+function paintColumnWidths(table: HTMLTableElement, widths: string[], tableSize: string): void {
+    const group = ensureCols(table, widths.length);
+    widths.forEach((size, index) => { (group.children[index] as HTMLElement).style.width = size; });
+    table.style.setProperty('width', tableSize, 'important');
+    table.style.setProperty('max-width', tableSize, 'important');
+    table.style.setProperty('table-layout', 'fixed', 'important');
+    table.style.setProperty('box-sizing', 'border-box', 'important');
+    const grid = tableGrid(table);
+    for (let column = 0; column < widths.length; column += 1) {
+        for (const row of grid) {
+            const cell = row[column];
+            if (!cell || cellColumnStart(cell) !== column || (cell.colSpan || 1) !== 1) continue;
+            cell.style.setProperty('width', widths[column], 'important');
+            cell.style.setProperty('min-width', '0', 'important');
+            cell.style.setProperty('max-width', 'none', 'important');
+            cell.style.setProperty('box-sizing', 'border-box', 'important');
+        }
+    }
+}
+function applyColumnWidthsMm(table: HTMLTableElement, widthsMm: number[]): void {
+    const widths = widthsMm.map((mm) => Math.max(4, mm));
+    const sum = widths.reduce((total, mm) => total + mm, 0);
+    // The inserted table is width:100%. Leaving it that way stretches the
+    // columns, so 40 + 20 + 20 + 20 does not come out as those sizes.
+    paintColumnWidths(table, widths.map((mm) => `${mm}mm`), `${sum}mm`);
+}
+function applyColumnWidthsPx(table: HTMLTableElement, widthsPx: number[], tablePx: number): void {
+    const widths = widthsPx.map((px) => Math.max(12, px));
+    paintColumnWidths(table, widths.map((px) => `${px}px`), `${Math.max(tablePx, 12)}px`);
+}
+function scaleColumnWidths(widths: number[], target: number): number[] {
+    const sum = widths.reduce((total, width) => total + width, 0) || 1;
+    const scaled = widths.map((width) => (width * target) / sum);
+    const drift = target - scaled.reduce((total, width) => total + width, 0);
+    if (scaled.length) scaled[scaled.length - 1] = Math.max(4, scaled[scaled.length - 1] + drift);
+    return scaled;
+}
+function pinTableSide(table: HTMLTableElement, fixedSide: 'left' | 'right'): void {
+    // RTL anchors the right edge, so widening a column moves the other side.
+    // Pin the edge that is not under the pointer.
+    if (fixedSide === 'left') {
+        table.style.marginLeft = '0';
+        table.style.marginRight = 'auto';
+    } else {
+        table.style.marginLeft = 'auto';
+        table.style.marginRight = '0';
+    }
+}
+const resizeEdge = 6;
+function borderHit(cell: HTMLTableCellElement, x: number, y: number): 'left' | 'right' | 'top' | 'bottom' | null {
+    const rect = cell.getBoundingClientRect();
+    const left = Math.abs(x - rect.left) <= resizeEdge;
+    const right = Math.abs(x - rect.right) <= resizeEdge;
+    const top = Math.abs(y - rect.top) <= resizeEdge;
+    const bottom = Math.abs(y - rect.bottom) <= resizeEdge;
+    const xDistance = Math.min(Math.abs(x - rect.left), Math.abs(x - rect.right));
+    const yDistance = Math.min(Math.abs(y - rect.top), Math.abs(y - rect.bottom));
+    if ((left || right) && (!(top || bottom) || xDistance <= yDistance)) {
+        return right && (!left || Math.abs(x - rect.right) <= Math.abs(x - rect.left)) ? 'right' : 'left';
+    }
+    if (top || bottom) return bottom && (!top || Math.abs(y - rect.bottom) <= Math.abs(y - rect.top)) ? 'bottom' : 'top';
+    return null;
+}
+function cellsAroundX(row: HTMLTableRowElement, x: number): { left: HTMLTableCellElement | null; right: HTMLTableCellElement | null } {
+    let left: HTMLTableCellElement | null = null;
+    let right: HTMLTableCellElement | null = null;
+    let leftDistance = 4;
+    let rightDistance = 4;
+    Array.from(row.cells).forEach((cell) => {
+        const rect = cell.getBoundingClientRect();
+        const toRightEdge = Math.abs(rect.right - x);
+        const toLeftEdge = Math.abs(rect.left - x);
+        if (toRightEdge <= leftDistance) { left = cell; leftDistance = toRightEdge; }
+        if (toLeftEdge <= rightDistance) { right = cell; rightDistance = toLeftEdge; }
+    });
+    return { left, right };
+}
+function cellAtPoint(table: HTMLTableElement, x: number, y: number, prefer: HTMLTableCellElement | null): HTMLTableCellElement | null {
+    const cells = Array.from(table.querySelectorAll('td,th')) as HTMLTableCellElement[];
+    const hits = (cell: HTMLTableCellElement, inset: number) => {
+        const rect = cell.getBoundingClientRect();
+        return x >= rect.left + inset && x < rect.right - inset && y >= rect.top + inset && y < rect.bottom - inset;
+    };
+    // The shared border is hit-tested as the next cell. Keep the current cell
+    // until the pointer is a few pixels inside the neighbour.
+    return cells.find((cell) => hits(cell, 4))
+        ?? (prefer && hits(prefer, -3) ? prefer : null)
+        ?? cells.find((cell) => hits(cell, 0))
+        ?? null;
+}
 function selectCellRange(from: HTMLTableCellElement, to: HTMLTableCellElement): void {
     const table = from.closest('table');
-    if (!table || to.closest('table') !== table) return;
-    const rows = Array.from(table.rows), r1 = rows.indexOf(from.parentElement as HTMLTableRowElement), r2 = rows.indexOf(to.parentElement as HTMLTableRowElement);
-    const c1 = Math.min(from.cellIndex,to.cellIndex), c2 = Math.max(from.cellIndex,to.cellIndex);
-    selectedCells.value = [];
-    for(let r=Math.min(r1,r2);r<=Math.max(r1,r2);r++) for(let col=c1;col<=c2;col++){const item=rows[r]?.cells[col];if(item)selectedCells.value.push(item);}
+    if (!(table instanceof HTMLTableElement) || to.closest('table') !== table) return;
+    const grid = tableGrid(table);
+    const fromRow = from.parentElement instanceof HTMLTableRowElement ? Array.from(table.rows).indexOf(from.parentElement) : 0;
+    const toRow = to.parentElement instanceof HTMLTableRowElement ? Array.from(table.rows).indexOf(to.parentElement) : fromRow;
+    const fromColumn = cellColumnStart(from);
+    const toColumn = cellColumnStart(to);
+    const rowStart = Math.min(fromRow, toRow);
+    const rowEnd = Math.max(fromRow, toRow);
+    const columnStart = Math.min(fromColumn, toColumn);
+    const columnEnd = Math.max(fromColumn + (from.colSpan || 1) - 1, toColumn + (to.colSpan || 1) - 1);
+    const chosen = new Set<HTMLTableCellElement>();
+    for (let row = rowStart; row <= rowEnd; row += 1) {
+        for (let column = columnStart; column <= columnEnd; column += 1) {
+            const cell = grid[row]?.[column];
+            if (cell) chosen.add(cell);
+        }
+    }
+    selectedCells.value = Array.from(chosen);
     paintCellSelection();
 }
 function mergeSelectedCells(): void {
@@ -629,19 +792,8 @@ function setTableDimension(dimension: 'width' | 'height', value: string, unit: '
     table.style.setProperty(dimension, cssValue, 'important');
     table.style.setProperty('box-sizing', 'border-box');
     if (dimension === 'width') {
-        // Fixed table layout is required: in auto layout the browser treats cell
-        // widths as hints and redistributes them, making the requested size appear ignored.
-        // A resized table must remain constrained by the letter's printable text column.
-        // "max-width:none!important" survives v-html rendering and overrides the print page's
-        // normal max-width rule, allowing the table to extend beyond the A4 content area.
-        table.style.setProperty('max-width', '100%', 'important');
-        table.style.setProperty('table-layout', 'fixed', 'important');
-        table.querySelectorAll('td,th').forEach(cell => {
-            (cell as HTMLElement).style.setProperty('max-width', '100%', 'important');
-            (cell as HTMLElement).style.setProperty('min-width', '0', 'important');
-            (cell as HTMLElement).style.setProperty('box-sizing', 'border-box');
-            (cell as HTMLElement).style.setProperty('overflow-wrap', 'anywhere');
-        });
+        const current = readColumnPx(table).map((px) => (px * 25.4) / 96);
+        applyColumnWidthsMm(table, scaleColumnWidths(current.length ? current : [numeric], numeric));
     } else {
         // A table's height is a minimum in the CSS table model. Set row heights
         // as well so the requested height is reflected by the rendered grid.
@@ -656,22 +808,30 @@ function setCellDimension(dimension: 'width' | 'height', value: string, unit: 'm
     const cells = cellsForFormatting().filter(cell => cell.isConnected);
     if (!Number.isFinite(numeric) || numeric <= 0 || !cells.length) return;
     const cssValue = `${numeric}${unit}`;
-    cells.forEach(cell => {
-        cell.style.setProperty(dimension, cssValue, 'important');
-        cell.style.setProperty(dimension === 'width' ? 'min-width' : 'min-height', '0', 'important');
-        if (dimension === 'width') {
-            const table = cell.closest('table');
-            if (table) {
-                table.style.setProperty('table-layout', 'fixed');
-                Array.from(table.rows).forEach(row => {
-                    const columnCell = row.cells[cell.cellIndex];
-                    if (columnCell) columnCell.style.setProperty('width', cssValue, 'important');
-                });
+    if (dimension === 'width') {
+        const table = cells[0]?.closest('table');
+        if (!(table instanceof HTMLTableElement)) return;
+        const widths = readColumnPx(table).map((px) => (px * 25.4) / 96);
+        cells.forEach((cell) => {
+            const start = cellColumnStart(cell);
+            const span = cell.colSpan || 1;
+            if (span <= 1) {
+                widths[start] = numeric;
+                return;
             }
-        } else {
-            const row = cell.parentElement as HTMLTableRowElement | null;
-            row?.style.setProperty('height', cssValue, 'important');
-        }
+            const slice = widths.slice(start, start + span);
+            const sliceSum = slice.reduce((total, width) => total + width, 0) || span;
+            for (let index = 0; index < span; index += 1) widths[start + index] = numeric * ((slice[index] || 1) / sliceSum);
+        });
+        applyColumnWidthsMm(table, widths);
+        commit();
+        return;
+    }
+    cells.forEach((cell) => {
+        cell.style.setProperty('height', cssValue, 'important');
+        cell.style.setProperty('min-height', '0', 'important');
+        const row = cell.parentElement as HTMLTableRowElement | null;
+        row?.style.setProperty('height', cssValue, 'important');
     });
     commit();
 }
@@ -899,7 +1059,20 @@ function redo(): void {
     syncing = false;
     refreshContext();
 }
-let resizeState: { cell: HTMLTableCellElement; axis: 'width'|'height'; start: number; initial: number; table: HTMLTableElement; index: number } | null = null;
+type ColumnResize = { kind: 'col'; table: HTMLTableElement; startX: number; widthsPx: number[]; leftIndex: number | null; rightIndex: number | null; tablePx: number; outer: 'left' | 'right' | null };
+type RowResize = { kind: 'row'; table: HTMLTableElement; startY: number; row: HTMLTableRowElement; startHeight: number };
+let resizeState: ColumnResize | RowResize | null = null;
+let cursorCell: HTMLTableCellElement | null = null;
+function onTablePointerHover(event: PointerEvent): void {
+    if (resizeState || dragSelection.value) return;
+    const raw = event.target;
+    const cell = raw instanceof Element ? raw.closest('td,th') as HTMLTableCellElement | null : null;
+    if (cursorCell && cursorCell !== cell) cursorCell.style.cursor = '';
+    if (!(cell instanceof HTMLTableCellElement) || !editor.value?.contains(cell)) { cursorCell = null; return; }
+    cursorCell = cell;
+    const hit = borderHit(cell, event.clientX, event.clientY);
+    cell.style.cursor = hit === 'left' || hit === 'right' ? 'col-resize' : hit === 'top' || hit === 'bottom' ? 'row-resize' : '';
+}
 function onEditorPointerDown(event: PointerEvent): void {
     const rawTarget = event.target;
     if (rawTarget instanceof Element && editor.value?.contains(rawTarget)) {
@@ -911,35 +1084,52 @@ function onEditorPointerDown(event: PointerEvent): void {
     }
     const target=rawTarget instanceof Element ? rawTarget.closest('td,th') as HTMLTableCellElement | null : null;
     if(!target)return;
-    const rect=target.getBoundingClientRect(), edge=6;
-    const nearRight=Math.abs(event.clientX-rect.right)<=edge;
-    const nearBottom=Math.abs(event.clientY-rect.bottom)<=edge;
-    if(!nearRight&&!nearBottom){
-        // Start a pending range selection on every primary-button cell press.
-        // A simple click still keeps the browser caret/text selection behavior;
-        // the rectangular selection takes over only after the pointer enters a
-        // different cell. Shift+click range selection remains supported below.
-        if(event.button===0){
-            const table=target.closest('table') as HTMLTableElement|null;
-            if(table){
-                dragSelection.value={table,start:target};
-                didDragSelect=false;
-                document.addEventListener('pointermove',onCellDragMove);
-                document.addEventListener('pointerup',onCellDragEnd,{once:true});
-            }
+    const table=target.closest('table') as HTMLTableElement|null;
+    const hit = borderHit(target, event.clientX, event.clientY);
+    if (hit && table) {
+        event.preventDefault();
+        if (hit === 'left' || hit === 'right') {
+            const rect = target.getBoundingClientRect();
+            const pair = cellsAroundX(target.parentElement as HTMLTableRowElement, hit === 'right' ? rect.right : rect.left);
+            const outer = pair.left && !pair.right ? 'right' : pair.right && !pair.left ? 'left' : null;
+            if (outer === 'right') pinTableSide(table, 'left');
+            if (outer === 'left') pinTableSide(table, 'right');
+            resizeState = {
+                kind: 'col', table, startX: event.clientX, widthsPx: readColumnPx(table), tablePx: table.getBoundingClientRect().width, outer,
+                leftIndex: pair.left ? cellColumnStart(pair.left) + (pair.left.colSpan || 1) - 1 : null,
+                rightIndex: pair.right ? cellColumnStart(pair.right) : null,
+            };
+            document.body.style.cursor = 'col-resize';
+        } else {
+            const row = target.parentElement as HTMLTableRowElement;
+            const rows = Array.from(table.rows);
+            const index = rows.indexOf(row);
+            const resized = hit === 'top' && index > 0 ? rows[index - 1] : row;
+            resizeState = { kind: 'row', table, startY: event.clientY, row: resized, startHeight: resized.getBoundingClientRect().height };
+            document.body.style.cursor = 'row-resize';
         }
+        document.addEventListener('pointermove', onEditorPointerMove);
+        document.addEventListener('pointerup', onEditorPointerUp, { once: true });
         return;
     }
-    const table=target.closest('table') as HTMLTableElement|null;if(!table)return;resizeState={cell:target,axis:nearRight?'width':'height',start:nearRight?event.clientX:event.clientY,initial:nearRight?rect.width:rect.height,table,index:nearRight?target.cellIndex:Array.from(table.rows).indexOf(target.parentElement as HTMLTableRowElement)};
-    event.preventDefault();
-    document.addEventListener('pointermove',onEditorPointerMove);
-    document.addEventListener('pointerup',onEditorPointerUp,{once:true});
+    // Start a pending range selection on every primary-button cell press.
+    // A simple click still keeps the browser caret/text selection behavior;
+    // the rectangular selection takes over only after the pointer enters a
+    // different cell. Shift+click range selection remains supported below.
+    if(event.button===0 && table){
+        dragSelection.value={table,start:target};
+        didDragSelect=false;
+        document.addEventListener('pointermove',onCellDragMove);
+        document.addEventListener('pointerup',onCellDragEnd,{once:true});
+    }
 }
 function onCellDragMove(event:PointerEvent):void {
     if(!dragSelection.value)return;
-    const node=document.elementFromPoint(event.clientX,event.clientY);
-    const cell=node instanceof Element?node.closest('td,th') as HTMLTableCellElement|null:null;
-    if(!cell||cell.closest('table')!==dragSelection.value.table||cell===dragSelection.value.start)return;
+    const prefer = didDragSelect ? (selectedCells.value[selectedCells.value.length - 1] ?? dragSelection.value.start) : dragSelection.value.start;
+    const cell = cellAtPoint(dragSelection.value.table, event.clientX, event.clientY, prefer);
+    if (!cell) return;
+    if (!didDragSelect && cell === dragSelection.value.start) return;
+    if (didDragSelect && cell === prefer) return;
     // Crossing into another cell converts the pending pointer gesture into a
     // rectangular cell selection and suppresses native text dragging.
     event.preventDefault();
@@ -962,14 +1152,51 @@ function onCellDragEnd():void {
 }
 function onEditorPointerMove(event:PointerEvent):void {
     if(!resizeState)return;
-    const delta=(resizeState.axis==='width'?event.clientX:event.clientY)-resizeState.start;
-    const px=Math.max(20,resizeState.initial+delta);
-    if(resizeState.axis==='width') Array.from(resizeState.table.rows).forEach(row=>{const cell=row.cells[resizeState!.index];if(cell)cell.style.width=`${px}px`;});
-    else Array.from(resizeState.table.rows[resizeState.index]?.cells??[]).forEach(cell=>{cell.style.height=`${px}px`;});
+    if (resizeState.kind === 'col') {
+        const dx = event.clientX - resizeState.startX;
+        const widths = resizeState.widthsPx.slice();
+        const min = 12;
+        if (resizeState.leftIndex != null && resizeState.rightIndex != null) {
+            const pair = resizeState.widthsPx[resizeState.leftIndex] + resizeState.widthsPx[resizeState.rightIndex];
+            let left = resizeState.widthsPx[resizeState.leftIndex] + dx;
+            let right = resizeState.widthsPx[resizeState.rightIndex] - dx;
+            if (left < min) { left = min; right = pair - min; }
+            if (right < min) { right = min; left = pair - min; }
+            widths[resizeState.leftIndex] = left;
+            widths[resizeState.rightIndex] = right;
+            applyColumnWidthsPx(resizeState.table, widths, resizeState.tablePx);
+        } else if (resizeState.outer === 'right' && resizeState.leftIndex != null) {
+            const next = Math.max(min, resizeState.widthsPx[resizeState.leftIndex] + dx);
+            widths[resizeState.leftIndex] = next;
+            applyColumnWidthsPx(resizeState.table, widths, resizeState.tablePx + (next - resizeState.widthsPx[resizeState.leftIndex]));
+        } else if (resizeState.outer === 'left' && resizeState.rightIndex != null) {
+            const next = Math.max(min, resizeState.widthsPx[resizeState.rightIndex] - dx);
+            widths[resizeState.rightIndex] = next;
+            applyColumnWidthsPx(resizeState.table, widths, resizeState.tablePx + (next - resizeState.widthsPx[resizeState.rightIndex]));
+        }
+        return;
+    }
+    const height = Math.max(16, resizeState.startHeight + (event.clientY - resizeState.startY));
+    resizeState.row.style.setProperty('height', `${height}px`, 'important');
+    Array.from(resizeState.row.cells).forEach((cell) => {
+        cell.style.setProperty('height', `${height}px`, 'important');
+        cell.style.setProperty('min-height', '0', 'important');
+    });
 }
 function onEditorPointerUp():void {
     document.removeEventListener('pointermove',onEditorPointerMove);
-    if(resizeState){resizeState=null;commit();}
+    document.body.style.cursor = '';
+    const finished = resizeState;
+    resizeState = null;
+    if (finished?.kind === 'col') {
+        const measured = readColumnPx(finished.table).map((px) => Math.max(4, Math.round(((px * 25.4) / 96) * 10) / 10));
+        applyColumnWidthsMm(finished.table, measured);
+    } else if (finished?.kind === 'row') {
+        const mm = Math.max(4, Math.round(((finished.row.getBoundingClientRect().height * 25.4) / 96) * 10) / 10);
+        finished.row.style.setProperty('height', `${mm}mm`, 'important');
+        Array.from(finished.row.cells).forEach((cell) => cell.style.setProperty('height', `${mm}mm`, 'important'));
+    }
+    if (finished) commit();
 }
 function onEditorClick(event: MouseEvent): void {
     const target = event.target;
@@ -1156,6 +1383,7 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
             data-placeholder="متن را اینجا بنویسید..."
             @input="onInput"
             @pointerdown="onEditorPointerDown"
+            @pointermove="onTablePointerHover"
             @click="onEditorClick"
             @contextmenu="onEditorContextMenu"
             @mouseup="onEditorMouseUp"
