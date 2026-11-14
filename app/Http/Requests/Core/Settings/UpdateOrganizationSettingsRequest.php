@@ -68,6 +68,19 @@ class UpdateOrganizationSettingsRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
+            foreach (['numbering_template' => 'الگوی شماره نامه صادره', 'registration_numbering_template' => 'الگوی شماره ثبت دبیرخانه'] as $field => $label) {
+                $template = (string) $this->input($field, '');
+                preg_match_all('/\\{\\{([^{}]+)\\}\\}/u', $template, $matches);
+                $tokens = $matches[1] ?? [];
+                $numbers = array_values(array_filter($tokens, static fn (string $token): bool => preg_match('/^Num-(?:[1-9]|1[0-2])-[rc]$/', $token) === 1));
+                $allowed = ['pdd', 'PDD', 'pmm', 'PMM', 'pyy', 'PYY', 'gdd', 'GDD', 'gmm', 'GMM', 'gyy', 'GYY', 'Dept'];
+                $unknown = array_filter($tokens, static fn (string $token): bool => ! in_array($token, $allowed, true) && preg_match('/^Num-(?:[1-9]|1[0-2])-[rc]$/', $token) !== 1);
+                $withoutTokens = preg_replace('/\\{\\{[^{}]+\\}\\}/u', '', $template);
+                if (count($numbers) !== 1 || $unknown !== [] || count($tokens) !== count(array_unique($tokens)) || str_contains((string) $withoutTokens, '{{') || str_contains((string) $withoutTokens, '}}')) {
+                    $validator->errors()->add($field, $label.' باید دقیقاً یک شمارنده معتبر و متغیرهای شناخته‌شده داشته باشد.');
+                }
+            }
+
             $fieldCount = (int) ($this->input('numbering_custom_fields_count') ?: 3);
             $order = array_slice([$this->input('numbering_order_first'), $this->input('numbering_order_second'), $this->input('numbering_order_third')], 0, $fieldCount);
             if ($this->input('numbering_format') === 'custom' && (count(array_unique($order)) !== $fieldCount || in_array(null, $order, true) || in_array('', $order, true))) {
