@@ -133,6 +133,25 @@ class OrganizationSettingsTest extends TestCase
         ]);
     }
 
+    public function test_template_designer_uses_a5_when_selected_in_organization_settings(): void
+    {
+        $admin = User::factory()->create();
+        $this->grantPermissions($admin, ['settings.manage']);
+
+        SystemSetting::query()->create([
+            'key' => 'correspondence.composition.page_size',
+            'value' => 'A5',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('correspondence.template.edit'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Correspondence/Template')
+                ->where('pageSize', 'A5')
+            );
+    }
+
     public function test_user_without_settings_permission_cannot_access_organization_settings(): void
     {
         $user = User::factory()->create();
