@@ -152,13 +152,33 @@ class CorrespondenceNumberingService
             }
         }
         $scope = $mode === 'c' ? 'continuous' : hash('sha256', json_encode($scopeValues, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
-        $table = DB::table('correspondence_numbering_scoped_counters');
         // Serialize allocations per number type, even when two active templates
-        // produce different scopes but could render the same final number.
-        $table->insertOrIgnore(['counter_type' => $counterType, 'scope_key' => '__global_lock__', 'last_number' => 0, 'created_at' => now(), 'updated_at' => now()]);
-        $table->where('counter_type', $counterType)->where('scope_key', '__global_lock__')->lockForUpdate()->first();
-        $table->insertOrIgnore(['counter_type' => $counterType, 'scope_key' => $scope, 'last_number' => 0, 'created_at' => now(), 'updated_at' => now()]);
-        $counter = $table->where('counter_type', $counterType)->where('scope_key', $scope)->lockForUpdate()->first();
+        // produce different scopes but could render the same final number. Use
+        // upsert instead of insertOrIgnore: Laravel's SQLite grammar does not
+        // implement insertOrIgnore, while upsert is supported by the test and
+        // production database grammars and preserves an existing counter value.
+        $now = now();
+        DB::table('correspondence_numbering_scoped_counters')->upsert(
+            [['counter_type' => $counterType, 'scope_key' => '__global_lock__', 'last_number' => 0, 'created_at' => $now, 'updated_at' => $now]],
+            ['counter_type', 'scope_key'],
+            ['updated_at'],
+        );
+        DB::table('correspondence_numbering_scoped_counters')
+            ->where('counter_type', $counterType)
+            ->where('scope_key', '__global_lock__')
+            ->lockForUpdate()
+            ->first();
+
+        DB::table('correspondence_numbering_scoped_counters')->upsert(
+            [['counter_type' => $counterType, 'scope_key' => $scope, 'last_number' => 0, 'created_at' => $now, 'updated_at' => $now]],
+            ['counter_type', 'scope_key'],
+            ['updated_at'],
+        );
+        $counter = DB::table('correspondence_numbering_scoped_counters')
+            ->where('counter_type', $counterType)
+            ->where('scope_key', $scope)
+            ->lockForUpdate()
+            ->first();
         if ($counter === null) {
             throw new RuntimeException('شمارنده شماره‌گذاری قابل قفل‌گذاری نیست.');
         }
@@ -179,7 +199,7 @@ class CorrespondenceNumberingService
         if ($exists) {
             throw new RuntimeException('امکان تخصیص شماره یکتای جدید وجود ندارد.');
         }
-        $table->where('counter_type', $counterType)->where('scope_key', $scope)->update(['last_number' => $sequence, 'updated_at' => now()]);
+        DB::table('correspondence_numbering_scoped_counters')->where('counter_type', $counterType)->where('scope_key', $scope)->update(['last_number' => $sequence, 'updated_at' => now()]);
         return (string) $number;
     }
 
