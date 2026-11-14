@@ -32,7 +32,7 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'remove_letterhead' => ['sometimes', 'boolean'],
             'stamp_active' => ['sometimes', 'boolean'],
             'remove_stamp' => ['sometimes', 'boolean'],
-            'numbering_format' => ['required', 'string', Rule::in(['simple', 'year', 'year_department', 'custom'])],
+            'numbering_format' => ['required', 'string', Rule::in(['simple', 'year', 'year_department', 'custom', 'template'])],
             'numbering_template' => ['required', 'string', 'max:200'],
             'numbering_order_first' => ['required', 'string', Rule::in(['year', 'department', 'sequence'])],
             'numbering_custom_fields_count' => ['nullable', 'integer', Rule::in([2, 3])],
