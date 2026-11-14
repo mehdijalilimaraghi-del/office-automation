@@ -101,6 +101,10 @@ class CorrespondenceNumberingServiceTest extends TestCase
     {
         $creator = User::factory()->create(['status' => 'active']);
         $registrar = $creator;
+        app(SystemSettingsService::class)->set([
+            'correspondence.numbering.format' => 'simple',
+            'correspondence.registration_numbering.format' => 'simple',
+        ]);
         $correspondence = Correspondence::query()->create([
             'type' => Correspondence::TYPE_INTERNAL,
             'subject' => 'ثبت نامه داخلی',
@@ -147,7 +151,7 @@ class CorrespondenceNumberingServiceTest extends TestCase
         $this->assertSame(Correspondence::STATUS_REGISTERED, $registered->status);
         $this->assertSame((int) $secretariatManager->id, (int) $registered->registered_by);
         $this->assertNotEmpty($registered->registration_number);
-        $this->assertDatabaseHas('correspondence_number_counters', ['id' => 1, 'last_number' => 1]);
+        $this->assertDatabaseHas('correspondence_numbering_scoped_counters', ['counter_type' => 'registration', 'last_number' => 1]);
         $this->assertDatabaseHas('correspondences', [
             'id' => $correspondence->id,
             'status' => Correspondence::STATUS_REGISTERED,
