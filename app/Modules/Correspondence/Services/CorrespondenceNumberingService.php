@@ -124,6 +124,10 @@ class CorrespondenceNumberingService
         }
         preg_match_all('/\\{\\{([^{}]+)\\}\\}/u', $template, $matches);
         $tokens = $matches[1] ?? [];
+        $literalRemainder = preg_replace('/\\{\\{[^{}]+\\}\\}/u', '', $template);
+        if (str_contains((string) $literalRemainder, '{{') || str_contains((string) $literalRemainder, '}}')) {
+            throw new InvalidArgumentException('قالب شماره‌گذاری دارای آکولاد یا متغیر ناقص است.');
+        }
         $numberTokens = array_values(array_filter($tokens, static fn (string $token): bool => preg_match('/^Num-(?:[1-9]|1[0-2])-([rc])$/', $token) === 1));
         if (count($numberTokens) !== 1 || count($tokens) !== count(array_unique($tokens))) {
             throw new InvalidArgumentException('قالب باید دقیقاً یک متغیر شمارنده معتبر و متغیرهای یکتای مجاز داشته باشد.');
