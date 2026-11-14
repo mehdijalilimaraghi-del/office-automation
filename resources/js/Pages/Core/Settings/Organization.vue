@@ -26,16 +26,8 @@ interface OrganizationSettings {
     project_management_department_id: string | null;
     secretariat_department_id: string | null;
     default_response_department_id: string | null;
-    numbering_format: string | null;
     numbering_template: string | null;
-    numbering_custom_order: string | null;
-    numbering_separator: string | null;
-    numbering_padding: string | null;
-    registration_numbering_format: string | null;
     registration_numbering_template: string | null;
-    registration_numbering_custom_order: string | null;
-    registration_numbering_separator: string | null;
-    registration_numbering_padding: string | null;
     composition_method: string | null;
     correspondence_font_family: string | null;
     correspondence_font_color: string | null;
