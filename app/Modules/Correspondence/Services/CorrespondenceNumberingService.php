@@ -149,6 +149,10 @@ class CorrespondenceNumberingService
         }
         $scope = $mode === 'c' ? 'continuous' : hash('sha256', json_encode($scopeValues, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
         $table = DB::table('correspondence_numbering_scoped_counters');
+        // Serialize allocations per number type, even when two active templates
+        // produce different scopes but could render the same final number.
+        $table->insertOrIgnore(['counter_type' => $counterType, 'scope_key' => '__global_lock__', 'last_number' => 0, 'created_at' => now(), 'updated_at' => now()]);
+        $table->where('counter_type', $counterType)->where('scope_key', '__global_lock__')->lockForUpdate()->first();
         $table->insertOrIgnore(['counter_type' => $counterType, 'scope_key' => $scope, 'last_number' => 0, 'created_at' => now(), 'updated_at' => now()]);
         $counter = $table->where('counter_type', $counterType)->where('scope_key', $scope)->lockForUpdate()->first();
         if ($counter === null) {
