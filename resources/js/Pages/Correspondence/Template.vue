@@ -10,7 +10,9 @@ type Kind = 'text'|'stamp'|'signature';
 type PageFormat = 'number_of'|'slash'|'short'|'page';
 interface ElementBox { id:string; kind:Kind; role:Role; label:string; content:string; x:number; y:number; width:number; spacing:number; font_size:number; font_family:string; page_format:PageFormat; bold:boolean; align:'right'|'center'|'left'; visible:boolean; }
 interface Token { key:string; label:string; }
-const props = defineProps<{ elements:ElementBox[]; pageLayout:{top:number;right:number;bottom:number;left:number;header_height:number;footer_height:number}; tokens:Token[]; letterheadDataUri:string|null; stampDataUri:string|null; defaultFontFamily:string; previewValues:Record<string,string>; previewBody:string }>();
+const props = defineProps<{ elements:ElementBox[]; pageLayout:{top:number;right:number;bottom:number;left:number;header_height:number;footer_height:number}; pageSize:'A4'|'A5'; tokens:Token[]; letterheadDataUri:string|null; stampDataUri:string|null; defaultFontFamily:string; previewValues:Record<string,string>; previewBody:string }>();
+const pageWidthMm = computed(() => props.pageSize === 'A5' ? 148 : 210);
+const pageHeightMm = computed(() => props.pageSize === 'A5' ? 210 : 297);
 const form = useForm({ elements: props.elements.map(item => ({ ...item, role: item.role ?? 'repeat', spacing: item.spacing ?? 0, font_family: item.font_family ?? 'default', page_format: item.page_format ?? 'number_of' })), page_layout: { ...props.pageLayout } });
 const selectedId = ref(form.elements[0]?.id ?? '');
 const previewMode = ref(false);
@@ -41,10 +43,10 @@ const flowBody = computed(() => form.elements.find(item => item.role === 'body' 
 const repeating = computed(() => form.elements.filter(item => item.visible && ['header','footer','repeat'].includes(item.role)));
 const pageNumberEnabled = computed(() => form.elements.some(item => item.visible && item.role === 'page_number'));
 const safeAreaStyle = computed(() => ({
- top: (Math.max(form.page_layout.top,form.page_layout.header_height??0) / 297 * 100) + '%',
- right: (form.page_layout.right / 210 * 100) + '%',
- bottom: (Math.max(form.page_layout.bottom,form.page_layout.footer_height??0) / 297 * 100) + '%',
- left: (form.page_layout.left / 210 * 100) + '%',
+ top: (Math.max(form.page_layout.top,form.page_layout.header_height??0) / pageHeightMm.value * 100) + '%',
+ right: (form.page_layout.right / pageWidthMm.value * 100) + '%',
+ bottom: (Math.max(form.page_layout.bottom,form.page_layout.footer_height??0) / pageHeightMm.value * 100) + '%',
+ left: (form.page_layout.left / pageWidthMm.value * 100) + '%',
 }));
 const headerZoneStyle = computed(() => ({ height: Math.max(form.page_layout.top,form.page_layout.header_height??0)+'mm' }));
 const footerZoneStyle = computed(() => ({ height: Math.max(form.page_layout.bottom,form.page_layout.footer_height??0)+'mm' }));
@@ -71,13 +73,13 @@ function pointerDown(event:PointerEvent,item:ElementBox):void {
 function roundCoordinate(value:number):number { return Math.round(value*100)/100; }
 function coordinateMm(field:'x'|'y'|'width'):number {
  if(!selected.value)return 0;
- return Math.round(selected.value[field]*(field==='y'?2.97:2.1)*10)/10;
+ return Math.round(selected.value[field]*(field==='y'?pageHeightMm.value:pageWidthMm.value)/100*10)/10;
 }
 function updateCoordinateMm(field:'x'|'y'|'width',event:Event):void {
  if(!selected.value)return;
  const value=Number((event.target as HTMLInputElement).value);
  if(!Number.isFinite(value))return;
- selected.value[field]=roundCoordinate(value/(field==='y'?2.97:2.1));
+ selected.value[field]=roundCoordinate(value/(field==='y'?pageHeightMm.value:pageWidthMm.value)*100);
  normalizeSelectedBounds();
 }
 function normalizeSelectedBounds():void {
@@ -114,7 +116,7 @@ function elementStyle(item:ElementBox):Record<string,string> { return { right:it
 function updateBodyPreviewOffset():void {
  if(!page.value)return;
  const rect=page.value.getBoundingClientRect();
- const pxPerMm=rect.height/297;
+ const pxPerMm=rect.height/pageHeightMm.value;
  if(pxPerMm<=0)return;
  const safeTop=rect.top+Math.max(form.page_layout.top,form.page_layout.header_height??0)*pxPerMm;
  const preceding=Array.from(page.value.querySelectorAll<HTMLElement>('.template-flow-previous'));
@@ -135,20 +137,20 @@ function bodyPreviewStyle():Record<string,string> { const item=flowBody.value; r
 onMounted(()=>{void observePreviewLayout();});
 watch(()=>form.elements.map(item=>[item.role,item.content,item.x,item.y,item.width,item.font_size,item.visible]),()=>{void observePreviewLayout();},{deep:true});
 onBeforeUnmount(()=>previewLayoutObserver?.disconnect());
-function issuerPreviewStyle(item:ElementBox):Record<string,string> { return { width:item.width+'%', marginTop:item.spacing+'mm', marginRight:`calc(${item.x*2.1}mm - ${props.pageLayout.right}mm)`, fontSize:item.font_size+'px', fontFamily:resolvedFont(item), fontWeight:item.bold?'700':'400', textAlign:item.align }; }
+function issuerPreviewStyle(item:ElementBox):Record<string,string> { return { width:item.width+'%', marginTop:item.spacing+'mm', marginRight:`calc(${item.x*pageWidthMm.value/100}mm - ${props.pageLayout.right}mm)`, fontSize:item.font_size+'px', fontFamily:resolvedFont(item), fontWeight:item.bold?'700':'400', textAlign:item.align }; }
 function pageNumberPreview(item:ElementBox):string { const format=item.page_format??'number_of'; if(format==='slash')return '۱/۵'; if(format==='short')return 'ص۱ از ۵'; if(format==='page')return 'صفحه ۱ از ۵'; return '۱ از ۵'; }
 function pageNumberElementStyle(item:ElementBox):Record<string,string> {
  const topEdge=Math.max(form.page_layout.top,form.page_layout.header_height??0);
- const requestedY=item.y*2.97;
+ const requestedY=item.y*pageHeightMm.value/100;
  const mappedY=requestedY;
  const anchorX=item.align==='right'?item.x:item.align==='left'?item.x+item.width:item.x+(item.width/2);
  const slot=anchorX<33.333?'right':anchorX>66.667?'left':'center';
  const slotRight=slot==='right'?0:slot==='center'?33.333:66.667;
  const slotLeft=slotRight+33.333;
- const style:Record<string,string>={right:slotRight+'%',top:(mappedY/297*100)+'%',width:'33.333%',fontSize:item.font_size+'pt',fontFamily:resolvedFont(item),fontWeight:item.bold?'700':'400',textAlign:item.align,direction:item.page_format==='slash'?'ltr':'rtl',padding:'0',whiteSpace:'nowrap'};
- if(item.align==='right')style.paddingRight=Math.max(0,anchorX-slotRight)*2.1+'mm';
- if(item.align==='left')style.paddingLeft=Math.max(0,slotLeft-anchorX)*2.1+'mm';
- if(item.align==='center')style.transform='translateX('+((slotRight+16.6665-anchorX)*2.1)+'mm)';
+ const style:Record<string,string>={right:slotRight+'%',top:(mappedY/pageHeightMm.value*100)+'%',width:'33.333%',fontSize:item.font_size+'pt',fontFamily:resolvedFont(item),fontWeight:item.bold?'700':'400',textAlign:item.align,direction:item.page_format==='slash'?'ltr':'rtl',padding:'0',whiteSpace:'nowrap'};
+ if(item.align==='right')style.paddingRight=Math.max(0,anchorX-slotRight)*pageWidthMm.value/100+'mm';
+ if(item.align==='left')style.paddingLeft=Math.max(0,slotLeft-anchorX)*pageWidthMm.value/100+'mm';
+ if(item.align==='center')style.transform='translateX('+((slotRight+16.6665-anchorX)*pageWidthMm.value/100)+'mm)';
  return style;
 }
 </script>
@@ -160,8 +162,8 @@ function pageNumberElementStyle(item:ElementBox):Record<string,string> {
   <div class="bg-slate-50 py-6" dir="rtl">
    <div class="mx-auto grid max-w-[1500px] gap-5 px-4" :class="previewMode ? 'grid-cols-1' : 'xl:grid-cols-[minmax(0,1fr)_340px]'">
     <section class="overflow-auto rounded-2xl border border-slate-200 bg-slate-200 p-4">
-     <div class="mx-auto mb-3 flex max-w-[210mm] flex-wrap items-center justify-between gap-2 text-xs text-slate-600"><span>{{ previewMode ? 'پیش‌نمایش نمونه با اطلاعات تنظیمات سازمان' : 'پیش‌نمایش A4 · محدوده هدر، فوتر و متن' }}</span><button v-if="!previewMode" type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-2 font-semibold" @click="showPageLayoutDialog = true">تنظیمات محدوده چاپ</button><button type="button" class="rounded-lg bg-slate-900 px-3 py-2 font-semibold text-white" @click="previewMode = !previewMode">{{ previewMode ? 'بازگشت به ویرایش' : 'پیش‌نمایش قالب' }}</button><div v-if="!previewMode" class="flex flex-wrap gap-2"><button v-for="(label,role) in addableRoles" :key="role" type="button" :disabled="role==='body' && form.elements.some(item=>item.role==='body')" class="rounded-lg bg-white px-3 py-2 font-semibold disabled:cursor-not-allowed disabled:opacity-40" @click="addRole(role)">{{label}} +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','stamp')">مهر +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','signature')">امضا +</button></div></div>
-     <div ref="page" class="relative mx-auto aspect-[210/297] w-full max-w-[210mm] overflow-hidden bg-white shadow-xl" :style="letterheadDataUri?{backgroundImage:'url('+letterheadDataUri+')',backgroundSize:'100% 100%',backgroundPosition:'center'}:{}" @pointermove="pointerMove" @pointerup="pointerUp" @pointercancel="pointerUp">
+     <div class="mx-auto mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600" :style="{maxWidth:pageWidthMm+'mm'}"><span>{{ previewMode ? 'پیش‌نمایش نمونه با اطلاعات تنظیمات سازمان' : 'پیش‌نمایش '+pageSize+' · محدوده هدر، فوتر و متن' }}</span><button v-if="!previewMode" type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-2 font-semibold" @click="showPageLayoutDialog = true">تنظیمات محدوده چاپ</button><button type="button" class="rounded-lg bg-slate-900 px-3 py-2 font-semibold text-white" @click="previewMode = !previewMode">{{ previewMode ? 'بازگشت به ویرایش' : 'پیش‌نمایش قالب' }}</button><div v-if="!previewMode" class="flex flex-wrap gap-2"><button v-for="(label,role) in addableRoles" :key="role" type="button" :disabled="role==='body' && form.elements.some(item=>item.role==='body')" class="rounded-lg bg-white px-3 py-2 font-semibold disabled:cursor-not-allowed disabled:opacity-40" @click="addRole(role)">{{label}} +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','stamp')">مهر +</button><button type="button" class="rounded-lg bg-white px-3 py-2" @click="addBox('issuer','signature')">امضا +</button></div></div>
+     <div ref="page" class="relative mx-auto w-full overflow-hidden bg-white shadow-xl" :style="[{aspectRatio:pageWidthMm+'/'+pageHeightMm,maxWidth:pageWidthMm+'mm'},letterheadDataUri?{backgroundImage:'url('+letterheadDataUri+')',backgroundSize:'100% 100%',backgroundPosition:'center'}:{}]" @pointermove="pointerMove" @pointerup="pointerUp" @pointercancel="pointerUp">
       <div class="pointer-events-none absolute left-0 right-0 top-0 z-0 flex items-end justify-center border-b border-dashed border-sky-400 bg-sky-100/35 text-[10px] font-semibold text-sky-800" :style="headerZoneStyle"><span class="mb-1 rounded bg-white/80 px-2 py-0.5">ناحیه رزروشده سربرگ</span></div>
       <div class="pointer-events-none absolute bottom-0 left-0 right-0 z-0 flex items-start justify-center border-t border-dashed border-amber-400 bg-amber-100/35 text-[10px] font-semibold text-amber-800" :style="footerZoneStyle"><span class="mt-1 rounded bg-white/80 px-2 py-0.5">ناحیه رزروشده پاصفحه</span></div>
       <div class="pointer-events-none absolute z-20 border border-dashed border-slate-400" :style="safeAreaStyle"><span class="absolute -top-5 right-0 rounded bg-white/90 px-1 text-[10px] text-slate-600">محدوده امن متن</span></div>
@@ -188,10 +190,10 @@ function pageNumberElementStyle(item:ElementBox):Record<string,string> {
       <p v-if="selected.role==='issuer'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">این بخش پس از متن نامه قرار می‌گیرد. برای المان متنی این بخش، متغیرهای نام تنظیم‌کننده، عنوان و نام واحد ایجادکننده، نام مدیر واحد و سمت/عنوان سازمانی مدیر در دسترس است. فاصله منفی باعث هم‌پوشانی با بخش قبلی می‌شود؛ برای قرار گرفتن مهر یا امضا روی نام تنظیم‌کننده از مقدار منفی استفاده کنید.</p>
       <p v-if="selected.role==='repeat'" class="rounded-lg bg-slate-50 p-2 text-xs leading-5">این بخش در مختصات تعیین‌شده در تمام صفحات تکرار می‌شود؛ برای هدر آن را نزدیک بالای صفحه و برای فوتر نزدیک پایین صفحه قرار دهید. محدوده بدنه چاپ با حاشیه‌ها و ناحیه‌های رزروشده سربرگ و پاصفحه محافظت می‌شود.</p>
       <div class="grid grid-cols-2 gap-2">
-       <label class="text-xs">عرض (mm)<input :value="coordinateMm('width')" type="number" min="10" :max="210-coordinateMm('x')" step="0.5" @change="updateCoordinateMm('width',$event)" class="mt-1 w-full rounded-lg border-slate-300"/></label>
+       <label class="text-xs">عرض (mm)<input :value="coordinateMm('width')" type="number" min="10" :max="pageWidthMm-coordinateMm('x')" step="0.5" @change="updateCoordinateMm('width',$event)" class="mt-1 w-full rounded-lg border-slate-300"/></label>
        <label v-if="selected.role==='issuer' || selected.role==='body'" class="text-xs">فاصله از بخش قبل (mm)<input v-model.number="selected.spacing" type="number" :min="selected.role==='body'?0:-80" max="80" step="0.5" class="mt-1 w-full rounded-lg border-slate-300"/></label>
-       <label v-if="['meta','heading','header','footer','repeat','page_number'].includes(selected.role)" class="text-xs">موقعیت از بالای صفحه (mm)<input :value="coordinateMm('y')" type="number" min="0" max="297" step="0.5" @change="updateCoordinateMm('y',$event)" class="mt-1 w-full rounded-lg border-slate-300"/></label>
-       <label v-if="selected.role!=='body'" class="text-xs">موقعیت از راست صفحه (mm)<input :value="coordinateMm('x')" type="number" min="0" :max="210-coordinateMm('width')" step="0.5" @change="updateCoordinateMm('x',$event)" class="mt-1 w-full rounded-lg border-slate-300"/></label>
+       <label v-if="['meta','heading','header','footer','repeat','page_number'].includes(selected.role)" class="text-xs">موقعیت از بالای صفحه (mm)<input :value="coordinateMm('y')" type="number" min="0" :max="pageHeightMm" step="0.5" @change="updateCoordinateMm('y',$event)" class="mt-1 w-full rounded-lg border-slate-300"/></label>
+       <label v-if="selected.role!=='body'" class="text-xs">موقعیت از راست صفحه (mm)<input :value="coordinateMm('x')" type="number" min="0" :max="pageWidthMm-coordinateMm('width')" step="0.5" @change="updateCoordinateMm('x',$event)" class="mt-1 w-full rounded-lg border-slate-300"/></label>
        <label v-if="selected.kind==='text' && selected.role!=='page_number'" class="text-xs">اندازه قلم<input v-model.number="selected.font_size" type="number" min="7" max="48" class="mt-1 w-full rounded-lg border-slate-300"/></label>
        <label v-if="selected.kind==='text' && selected.role!=='page_number'" class="text-xs">نوع قلم<select v-model="selected.font_family" class="mt-1 w-full rounded-lg border-slate-300"><option v-for="font in fontOptions" :key="font.value" :value="font.value">{{font.label}}</option></select></label>
        <label v-if="selected.role==='page_number'" class="col-span-2 text-xs">قالب شماره صفحه<select v-model="selected.page_format" class="mt-1 w-full rounded-lg border-slate-300"><option value="number_of">۱ از ۵</option><option value="slash">۱/۵</option><option value="short">ص۱ از ۵</option><option value="page">صفحه ۱ از ۵</option></select></label>
@@ -201,12 +203,12 @@ function pageNumberElementStyle(item:ElementBox):Record<string,string> {
       <label class="flex items-center gap-2 text-sm"><input v-model="selected.visible" type="checkbox"/> نمایش در خروجی</label>
       <div v-if="selected.kind==='text' && availableTokens.length" class="border-t pt-3"><p class="mb-2 text-xs font-bold">متغیرهای مرتبط با این بخش</p><div class="flex flex-wrap gap-1.5"><button v-for="token in availableTokens" :key="token.key" type="button" class="rounded-md bg-slate-100 px-2 py-1 text-xs hover:bg-teal-50" :title="token.key" @click="insertToken(token.key)">{{token.label}}</button></div></div>
      </section>
-     <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-6 text-amber-900">محتوای نامه به‌صورت خودکار از متن ثبت‌شده نامه درج می‌شود؛ المان «متن اصلی نامه» فقط محل شروع، عرض و ظاهر بدنه را کنترل می‌کند. فاصله منفی امکان هم‌پوشانی مهر و امضا با نام تنظیم‌کننده را فراهم می‌کند. اجزای تکرارشونده (هدر و فوتر) و شماره صفحه در همه صفحات چاپ نمایش داده می‌شوند. تنظیمات چاپ A4 از پنجره «تنظیمات محدوده چاپ» انجام می‌شود؛ فاصله بدنه از بخش قبلی فقط در ابتدای متن اعمال می‌شود و در صفحه‌های بعد تکرار نمی‌شود.</div>
+     <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-6 text-amber-900">محتوای نامه به‌صورت خودکار از متن ثبت‌شده نامه درج می‌شود؛ المان «متن اصلی نامه» فقط محل شروع، عرض و ظاهر بدنه را کنترل می‌کند. فاصله منفی امکان هم‌پوشانی مهر و امضا با نام تنظیم‌کننده را فراهم می‌کند. اجزای تکرارشونده (هدر و فوتر) و شماره صفحه در همه صفحات چاپ نمایش داده می‌شوند. تنظیمات چاپ {{pageSize}} از پنجره «تنظیمات محدوده چاپ» انجام می‌شود؛ فاصله بدنه از بخش قبلی فقط در ابتدای متن اعمال می‌شود و در صفحه‌های بعد تکرار نمی‌شود.</div>
      <PrimaryButton class="w-full justify-center" :disabled="form.processing" @click="form.put(route('correspondence.template.update'))">ذخیره قالب نامه</PrimaryButton><InputError :message="form.errors.elements"/>
     </aside>
     <div v-if="showPageLayoutDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4" @click.self="showPageLayoutDialog=false" @keydown.esc="showPageLayoutDialog=false">
      <section role="dialog" aria-modal="true" aria-labelledby="page-layout-title" class="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl">
-      <div class="mb-4 flex items-center justify-between"><div><h3 id="page-layout-title" class="text-lg font-bold">تنظیمات محدوده چاپ A4</h3><p class="mt-1 text-xs text-slate-500">حاشیه متن و فضای رزروشده سربرگ و پاصفحه مستقل هستند.</p></div><button type="button" class="rounded-lg px-3 py-2 text-slate-500 hover:bg-slate-100" aria-label="بستن" @click="showPageLayoutDialog=false">✕</button></div>
+      <div class="mb-4 flex items-center justify-between"><div><h3 id="page-layout-title" class="text-lg font-bold">تنظیمات محدوده چاپ {{pageSize}}</h3><p class="mt-1 text-xs text-slate-500">حاشیه متن و فضای رزروشده سربرگ و پاصفحه مستقل هستند.</p></div><button type="button" class="rounded-lg px-3 py-2 text-slate-500 hover:bg-slate-100" aria-label="بستن" @click="showPageLayoutDialog=false">✕</button></div>
       <div class="grid grid-cols-2 gap-3">
        <label class="text-sm">حاشیه متن از بالا (mm)<input v-model.number="form.page_layout.top" type="number" min="5" max="80" step="0.5" class="mt-1 w-full rounded-lg border-slate-300"/></label>
        <label class="text-sm">حاشیه متن از پایین (mm)<input v-model.number="form.page_layout.bottom" type="number" min="5" max="70" step="0.5" class="mt-1 w-full rounded-lg border-slate-300"/></label>
