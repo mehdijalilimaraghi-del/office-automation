@@ -1279,11 +1279,12 @@ function onEditorKeyDown(event: KeyboardEvent): void {
     if(event.key==='Escape' && contextMenu.value){contextMenu.value=null;event.preventDefault();return;}
     if(event.key!=='Delete' && event.key!=='Backspace' || event.altKey || event.ctrlKey || event.metaKey) return;
     const target=event.target instanceof Element ? event.target : null;
-    const image=target?.closest('img');
-    const shape=target?.closest('[data-editor-shape]');
+    const activeObject=selectedTarget();
+    const image=target?.closest('img') ?? (activeObject instanceof HTMLImageElement ? activeObject : null);
+    const shape=target?.closest('[data-editor-shape]') ?? (activeObject?.matches('[data-editor-shape]') ? activeObject : null);
     if(image && editor.value?.contains(image)){event.preventDefault();currentImage.value=image;removeImage();return;}
     if(shape && editor.value?.contains(shape)){event.preventDefault();currentShape.value=shape as HTMLElement;removeShape();return;}
-    const table=target?.closest('table');
+    const table=target?.closest('table') ?? activeObject?.closest('table');
     if(table && editor.value?.contains(table) && selectedCells.value.length===table.querySelectorAll('td,th').length && selectedCells.value.length>0){
         event.preventDefault();currentCell.value=selectedCells.value[0]??null;deleteTable();selectedCells.value=[];return;
     }
