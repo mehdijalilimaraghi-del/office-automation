@@ -2042,3 +2042,11 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - Template validation is enforced both when saving settings and again inside the allocator, including malformed/unclosed placeholder rejection.
 - The A4-only page-size control reflects the current A4-only preview/print geometry. A5 is not exposed as a selectable option.
 - Focused feature tests were updated for new settings persistence and both counter modes. They have **not been executed** in this editing session; CI status checks returned no reported statuses.
+
+
+## 2026-11-14 — Correspondence numbering validation and SQLite-compatible counters
+
+- Corrected the registration-numbering request rule to accept the supported `template` format; previously the form rejected every custom registration template before persistence, despite the template parser accepting the tokens.
+- Replaced scoped-counter `insertOrIgnore` calls with conflict-safe `upsert` operations that preserve `last_number` on conflict. This avoids Laravel's unsupported SQLite `insertOrIgnore` grammar while retaining unique-key protection and the lock-based allocation path used by supported production databases.
+- Kept letter-number and Secretariat-registration-number sequences independent. They are separate numbering domains and may legitimately render the same text when both are explicitly configured as `simple`; the regression test now asserts each independent sequence's expected value instead of imposing cross-domain uniqueness.
+- Focused PHPUnit and frontend build have not yet been rerun after these corrections. Development branch only; master, release and server unchanged.
