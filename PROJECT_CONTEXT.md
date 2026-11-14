@@ -2005,3 +2005,11 @@ Follow-up in the same editor refinement: clicking in ordinary text now clears a 
 - Resized table HTML is persisted inside the correspondence body. Do not write inline `max-width:none!important` to tables/cells: the markup is later rendered with `v-html` and inline important declarations override print CSS, allowing overflow beyond the A4 body column.
 - Editor resize logic now uses `max-width:100%` for table/cells, fixed layout, zero minimum cell width and wrapping. The print page normalizes legacy table markup as well, because previously saved letters may still contain the old inline important values.
 - Build/browser validation is pending.
+
+
+## 2026-11-14 — Correspondence editor context menus, object deletion and row-height consistency
+
+- Expanded right-click menus by target: text now exposes common formatting, paragraph alignment, list, clipboard and select-all actions; tables expose row/column insertion and deletion, row/column/table selection, merge/split and table deletion; pictures and shapes expose rotation, flipping, z-order and deletion actions. These are native editor operations, not a replacement editor.
+- Added Delete/Backspace handling for the currently selected/pinned image or shape. A table is removed with Delete/Backspace only when the full table is selected; a normal caret inside a cell retains normal text-editing behavior.
+- Corrected row-height ownership: changing a cell's height now writes the shared height on its parent row and clears conflicting per-cell height overrides. Reading the height from any cell in that row resolves the parent row's authored/rendered height, so sibling cells report the same value.
+- **Status: source changes implemented, not verified.** Run Vue/TypeScript production build and browser acceptance for each right-click menu, clipboard/formatting actions, object Delete/Backspace, full-table selection/deletion, and row-height readback from every sibling cell. Clipboard behavior and browser-specific contenteditable keyboard handling require real-browser confirmation. Development branch only; master/release/server unchanged.
