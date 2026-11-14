@@ -512,7 +512,7 @@ function addTableRow(): void {
     const next = document.createElement('tr');
     Array.from(row.cells).forEach(() => {
         const td = document.createElement('td');
-        td.style.border = '1px solid #94a3b8';
+        td.style.border = `1px solid ${props.tableBorderColor}`;
         td.style.padding = '6px';
         td.innerHTML = '<br>';
         next.append(td);
@@ -527,7 +527,7 @@ function addTableColumn(): void {
     const index = cell.cellIndex;
     table.querySelectorAll('tr').forEach((row) => {
         const td = document.createElement('td');
-        td.style.border = '1px solid #94a3b8';
+        td.style.border = `1px solid ${props.tableBorderColor}`;
         td.style.padding = '6px';
         td.innerHTML = '<br>';
         row.insertBefore(td, row.children[index + 1] ?? null);
