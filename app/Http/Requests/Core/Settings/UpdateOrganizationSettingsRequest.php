@@ -32,29 +32,15 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'remove_letterhead' => ['sometimes', 'boolean'],
             'stamp_active' => ['sometimes', 'boolean'],
             'remove_stamp' => ['sometimes', 'boolean'],
-            'numbering_format' => ['required', 'string', Rule::in(['simple', 'year', 'year_department', 'custom', 'template'])],
             'numbering_template' => ['required', 'string', 'max:200'],
-            'numbering_order_first' => ['required', 'string', Rule::in(['year', 'department', 'sequence'])],
-            'numbering_custom_fields_count' => ['nullable', 'integer', Rule::in([2, 3])],
-            'numbering_order_second' => ['required', 'string', Rule::in(['year', 'department', 'sequence'])],
-            'numbering_order_third' => ['nullable', 'required_if:numbering_custom_fields_count,3', 'string', Rule::in(['year', 'department', 'sequence'])],
-            'numbering_separator' => ['required', 'string', 'max:5'],
-            'numbering_padding' => ['required', 'integer', 'min:4', 'max:12'],
-            'registration_numbering_format' => ['required', 'string', Rule::in(['simple', 'year', 'year_department', 'custom', 'template'])],
             'registration_numbering_template' => ['required', 'string', 'max:200'],
-            'registration_numbering_order_first' => ['required', 'string', Rule::in(['year', 'department', 'sequence'])],
-            'registration_numbering_custom_fields_count' => ['nullable', 'integer', Rule::in([2, 3])],
-            'registration_numbering_order_second' => ['required', 'string', Rule::in(['year', 'department', 'sequence'])],
-            'registration_numbering_order_third' => ['nullable', 'required_if:registration_numbering_custom_fields_count,3', 'string', Rule::in(['year', 'department', 'sequence'])],
-            'registration_numbering_separator' => ['required', 'string', 'max:5'],
-            'registration_numbering_padding' => ['required', 'integer', 'min:4', 'max:12'],
             'composition_method' => ['required', 'string', Rule::in(['editor', 'word', 'both'])],
             'correspondence_font_family' => ['required', 'string', Rule::in(['Vazirmatn', 'Tahoma', 'Arial', 'B Nazanin', 'B Mitra', 'IRANSans', 'Times New Roman'])],
             'correspondence_font_color' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'correspondence_font_size' => ['required', 'integer', 'min:8', 'max:36'],
             'correspondence_table_border_color' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'correspondence_shape_border_color' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
-            'correspondence_page_size' => ['required', 'string', Rule::in(['A4'])],
+            'correspondence_page_size' => ['required', 'string', Rule::in(['A4', 'A5'])],
             'approval_incoming' => ['required', 'string', Rule::in(['direct', 'approval'])],
             'approval_outgoing' => ['required', 'string', Rule::in(['direct', 'approval'])],
             'approval_internal' => ['required', 'string', Rule::in(['direct', 'approval'])],
@@ -81,14 +67,6 @@ class UpdateOrganizationSettingsRequest extends FormRequest
                 }
             }
 
-            $fieldCount = (int) ($this->input('numbering_custom_fields_count') ?: 3);
-            $order = array_slice([$this->input('numbering_order_first'), $this->input('numbering_order_second'), $this->input('numbering_order_third')], 0, $fieldCount);
-            if ($this->input('numbering_format') === 'custom' && (count(array_unique($order)) !== $fieldCount || in_array(null, $order, true) || in_array('', $order, true))) {
-                $validator->errors()->add('numbering_order_second', 'هر جزء شماره نامه باید فقط یک‌بار در ترتیب سفارشی انتخاب شود.');
-            }
-            $registrationCount = (int) ($this->input('registration_numbering_custom_fields_count') ?: 3);
-            $registrationOrder = array_slice([$this->input('registration_numbering_order_first'), $this->input('registration_numbering_order_second'), $this->input('registration_numbering_order_third')], 0, $registrationCount);
-            if ($this->input('registration_numbering_format') === 'custom' && (count(array_unique($registrationOrder)) !== $registrationCount || in_array(null, $registrationOrder, true) || in_array('', $registrationOrder, true))) $validator->errors()->add('registration_numbering_order_second', 'هر جزء شماره ثبت باید فقط یک‌بار در ترتیب سفارشی انتخاب شود.');
             $managementId = $this->input('management_department_id');
             $projectManagementId = $this->input('project_management_department_id');
 
@@ -130,7 +108,6 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'website' => 'وب‌سایت',
             'address' => 'نشانی',
             'postal_code' => 'کد پستی',
-            'numbering_format' => 'قالب شماره نامه',
             'numbering_template' => 'الگوی شماره نامه صادره',
             'registration_numbering_template' => 'الگوی شماره ثبت دبیرخانه',
             'correspondence_font_color' => 'رنگ متن پیش‌فرض',
@@ -138,13 +115,6 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'correspondence_table_border_color' => 'رنگ خطوط جدول',
             'correspondence_shape_border_color' => 'رنگ خطوط شکل',
             'correspondence_page_size' => 'اندازه صفحه نامه',
-            'numbering_order_first' => 'جزء اول شماره نامه',
-            'numbering_custom_fields_count' => 'تعداد اجزای قالب سفارشی',
-            'numbering_order_second' => 'جزء دوم شماره نامه',
-            'numbering_order_third' => 'جزء سوم شماره نامه',
-            'numbering_separator' => 'جداکننده شماره نامه',
-            'numbering_padding' => 'طول شماره ترتیبی',
-            'registration_numbering_format' => 'قالب شماره ثبت دبیرخانه', 'registration_numbering_order_first' => 'جزء اول شماره ثبت', 'registration_numbering_order_second' => 'جزء دوم شماره ثبت', 'registration_numbering_order_third' => 'جزء سوم شماره ثبت', 'registration_numbering_custom_fields_count' => 'تعداد اجزای قالب شماره ثبت', 'registration_numbering_separator' => 'جداکننده شماره ثبت', 'registration_numbering_padding' => 'طول شماره ترتیبی ثبت',
             'composition_method' => 'روش نگارش نامه',
             'correspondence_font_family' => 'قلم پیش‌فرض نامه‌ها',
             'approval_incoming' => 'سیاست تأیید نامه وارده',
