@@ -1,3 +1,7 @@
+## 2026-11-15 — Reliable preview transport and external-unit manager notice
+
+- CorrespondencePrintController exposes an authenticated same-permission GET token endpoint with Cache-Control no-store, private; it does not regenerate the session or save correspondence. correspondencePreview.ts owns synchronous popup opening, live token retrieval and native POST transport. Create.vue derives the adjacent token URL from the existing preview route so stale Ziggy route metadata does not prevent preview. Existing POST CSRF and authorization remain enforced. CorrespondenceController includes manager_contact_id in external-unit form data; no model/schema/dependency change was needed.
+
 ## 2026-11-15 — Automatic editor image preparation and clipboard import
 
 - Client-side editorImages.ts owns bitmap preparation, clipboard snapshot/HTML cleanup and Word PNG/JPEG RTF extraction. CorrespondenceRichTextEditor keeps caret/history integration and emits processing state; Create.vue gates submit/preview until both body and appendix are ready. Prepared data URLs remain at most 200,000 characters and newly inserted HTML fits a 480,000-character working budget, below unchanged server limits (300,000 per data URL / 500,000 body). No remote-image proxy, package, storage service, schema or authorization change was introduced.

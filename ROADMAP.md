@@ -1,3 +1,7 @@
+## 2026-11-15 — Reliable preview transport and external-unit manager notice
+
+- Preview follow-up and missing external-unit manager notices are implemented and automatically validated. Owner acceptance: open outgoing preview twice from the current form, verify unsaved content and retry behavior; select a unit without a manager and one with an active manager, checking the notice and default recipient. Keep Word image and A4/A5 print acceptance open. This supersedes the earlier page-prop-only token correction.
+
 ## 2026-11-15 — Automatic editor image preparation and clipboard import
 
 - Editor image-size rejection replaced by automatic preparation; clipboard image support and save/reopen regression coverage implemented. Keep manual acceptance open for actual Word documents: mixed text/multiple images, large photos, transparent logos, body/appendix persistence and A4/A5 print quality. Local-file/CORS-inaccessible and unsupported vector-only clipboard images cannot be reconstructed without actual bitmap data; these now show explicit markers instead of disappearing silently.

@@ -1,3 +1,7 @@
+## 2026-11-15 — Reliable preview transport and external-unit manager notice
+
+- Outgoing preview must work when an existing/history form has no CSRF page prop and must preserve unsaved input after failure. A selected external unit without a manager displays an informative notice; it does not block organization/unit addressing or manual recipient selection. A configured but unavailable active manager also displays a notice. Unit manager metadata must be present in both create and edit form responses.
+
 ## 2026-11-15 — Automatic editor image preparation and clipboard import
 
 - Users can choose large images without pre-compressing them. Preparation preserves small PNG/JPEG/WebP sources and transparencies, and reduces dimensions/quality only as needed within existing letter storage capacity. Clipboard HTML owns image placement; alternate clipboard representations are not duplicated. If HTML has no image placeholders, separate bitmap images are appended after its text. Unsupported/inaccessible images are marked visibly. GIF/BMP can be imported as static raster images; animation is not retained.

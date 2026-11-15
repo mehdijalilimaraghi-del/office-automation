@@ -43,6 +43,14 @@ class CorrespondencePrintController extends Controller
         return $this->render($correspondence, $settings, false);
     }
 
+    public function previewToken(Request $request): \Illuminate\Http\JsonResponse
+    {
+        abort_unless($request->user()->hasPermission('correspondence.create'), 403);
+
+        return response()->json(['token' => $request->session()->token()])
+            ->header('Cache-Control', 'no-store, private');
+    }
+
     public function preview(Request $request, SystemSettingsService $settings): Response
     {
         abort_unless($request->user()->hasPermission('correspondence.create'), 403);

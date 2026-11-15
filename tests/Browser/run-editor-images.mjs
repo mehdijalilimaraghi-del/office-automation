@@ -1,6 +1,7 @@
 // Standalone browser regression runner; uses existing Vite/Vue dependencies.
 import { createServer } from 'vite';
 import vue from '@vitejs/plugin-vue';
+import { correspondenceFixtures } from './correspondence-fixtures.mjs';
 import { spawn } from 'node:child_process';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -13,13 +14,13 @@ const browserPath = process.env.EDITOR_TEST_BROWSER || (process.platform === 'wi
 const profile = await mkdtemp(resolve(tmpdir(), 'office-editor-images-'));
 let server, browser, socket;
 try {
-    server = await createServer({ configFile: false, root, plugins: [vue()],
+    server = await createServer({ configFile: false, root, plugins: [vue(), correspondenceFixtures()],
         resolve: { alias: { '@': resolve(root, 'resources/js') } },
         server: { host: '127.0.0.1', port: 5189 }, logLevel: 'error' });
     await server.listen();
     const address = server.httpServer.address();
-    const pageUrl = 'http://127.0.0.1:' + address.port + '/tests/Browser/editor-images.html';
-    browser = spawn(browserPath, ['--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
+    const pageUrl = 'http://127.0.0.1:' + address.port + (process.env.EDITOR_TEST_PAGE || '/tests/Browser/editor-images.html');
+    browser = spawn(browserPath, ['--headless=new', '--disable-popup-blocking', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
         '--remote-debugging-port=0', '--user-data-dir=' + profile, 'about:blank'], { windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'] });
     const endpoint = await new Promise((resolve, reject) => {
         let output = '';

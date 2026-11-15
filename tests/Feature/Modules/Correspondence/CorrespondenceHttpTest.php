@@ -51,14 +51,13 @@ class CorrespondenceHttpTest extends TestCase
         $csrf->shouldReceive('runningUnitTests')->andReturn(false);
         $this->app->instance(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class, $csrf);
 
-        $this->actingAs($user)->withSession(['_token' => $token])
-            ->get(route('correspondence.create'), [
-                'X-Inertia' => 'true',
-                'X-Inertia-Version' => app(\App\Http\Middleware\HandleInertiaRequests::class)->version(\Illuminate\Http\Request::create('/')),
-            ])
-            ->assertOk()
-            ->assertJsonPath('component', 'Correspondence/Create')
-            ->assertJsonPath('props.csrfToken', $token);
+        $this->actingAs($user)->withSession(['_token' => str_repeat('b', 40)])
+            ->getJson(route('correspondence.preview.token'))
+            ->assertOk()->assertJsonPath('token', str_repeat('b', 40))
+            ->assertHeader('Cache-Control', 'no-store, private');
+        $this->withSession(['_token' => $token])
+            ->getJson(route('correspondence.preview.token'))
+            ->assertOk()->assertJsonPath('token', $token);
 
         $payload = json_encode([
             'subject' => 'پیش‌نمایش بدون ذخیره',
@@ -103,6 +102,43 @@ class CorrespondenceHttpTest extends TestCase
             ->assertInertia(fn ($page) => $page->component('Correspondence/Create')
                 ->where('correspondence.body', $letter->body)
                 ->where('correspondence.appendix_body', $letter->appendix_body));
+    }
+
+    public function test_preview_token_endpoint_requires_an_active_authenticated_user(): void
+    {
+        $this->getJson(route('correspondence.preview.token'))->assertUnauthorized();
+        $inactive = User::factory()->create(['status' => 'inactive']);
+        $this->actingAs($inactive)->getJson(route('correspondence.preview.token'))->assertForbidden();
+    }
+
+    public function test_external_department_manager_is_available_in_create_and_edit_forms(): void
+    {
+        $user = $this->userWithPermission('correspondence.create');
+        $organization = ExternalOrganization::query()->create(['name' => 'سازمان مخاطب', 'status' => 'active']);
+        $unmanaged = ExternalDepartment::query()->create([
+            'external_organization_id' => $organization->id, 'name' => 'A', 'status' => 'active',
+        ]);
+        $managed = ExternalDepartment::query()->create([
+            'external_organization_id' => $organization->id, 'name' => 'B', 'status' => 'active',
+        ]);
+        $manager = \App\Core\ExternalParties\Models\ExternalContact::query()->create([
+            'external_organization_id' => $organization->id, 'external_department_id' => $managed->id,
+            'name' => 'مدیر واحد مخاطب', 'status' => 'active',
+        ]);
+        $managed->update(['manager_contact_id' => $manager->id]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_OUTGOING, 'subject' => 'نامه مخاطب', 'body' => '<p>متن</p>',
+            'created_by' => $user->id, 'status' => Correspondence::STATUS_DRAFT,
+            'external_organization_id' => $organization->id, 'external_department_id' => $managed->id,
+        ]);
+        foreach ([route('correspondence.create'), route('correspondence.edit', $letter)] as $url) {
+            $this->actingAs($user)->get($url)->assertOk()->assertInertia(fn ($page) => $page
+                ->component('Correspondence/Create')
+                ->where('externalDepartments.0.id', $unmanaged->id)
+                ->where('externalDepartments.0.manager_contact_id', null)
+                ->where('externalDepartments.1.id', $managed->id)
+                ->where('externalDepartments.1.manager_contact_id', fn ($id) => (int) $id === $manager->id));
+        }
     }
 
     public function test_direct_internal_correspondence_is_finalized_when_created(): void

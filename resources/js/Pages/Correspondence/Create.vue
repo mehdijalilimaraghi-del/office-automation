@@ -8,10 +8,11 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 import axios from 'axios';
+import { openCorrespondencePreview } from '@/lib/correspondencePreview';
 
 interface Department { id: number; name: string; parent_id: number | null; icon?: string | null; }
 interface ExternalOrganization { id: number; name: string; }
-interface ExternalDepartment { id: number; external_organization_id: number; parent_id?: number | null; manager_contact_id?: number | null; name: string; }
+interface ExternalDepartment { id: number; external_organization_id: number; parent_id?: number | null; manager_contact_id?: number | string | null; name: string; }
 interface ExternalContact { id: number; external_organization_id: number; external_department_id: number | null; name: string; }
 interface ReplyOption { id: number; letter_number: string | null; registration_number: string | null; external_registration_number: string | null; subject: string; type: string; letter_date: string | null; created_department: string | null; recipient_department: string | null; external_organization: string | null; external_organization_code: string | null; external_department: string | null; external_department_code: string | null; created_department_code: string | null; recipient_department_code: string | null; }
 interface CreatedDepartment { id: number; name: string; parent_id?: number | null; icon?: string | null; }
@@ -30,7 +31,6 @@ interface ExistingCorrespondence {
     appendix_documents: Array<{ id: number; title: string }>;
 }
 const props = defineProps<{
-    csrfToken: string;
     types: Array<{ value: string; label: string }>;
     classifications: Array<{ value: string; label: string }>;
     departments: Department[];
@@ -113,6 +113,8 @@ const compositionModes: Array<{ value: CompositionMode; label: string; descripti
 ];
 
 const existing = props.correspondence;
+const previewBusy = ref(false);
+const previewError = ref('');
 const bodyImagesProcessing = ref(false);
 const appendixImagesProcessing = ref(false);
 const preparingImages = computed(() => bodyImagesProcessing.value || appendixImagesProcessing.value);
@@ -193,6 +195,20 @@ watch(() => form.external_organization_id, (organizationId) => {
     if (!organizationId) form.external_department_id = '';
 });
 
+const externalDepartmentManagerWarning = computed(() => {
+    if (form.type !== 'outgoing' || !form.external_department_id) return '';
+    const department = externalDepartmentsForOrganization.value.find(item => Number(item.id) === Number(form.external_department_id));
+    if (!department) return '';
+    if (!department.manager_contact_id) {
+        return 'برای این واحد مخاطب بیرونی، مدیر تعیین نشده است. مدیر واحد را در اطلاعات طرف برون‌سازمانی مشخص کنید یا مخاطب را به‌صورت دستی انتخاب کنید.';
+    }
+    if (!props.externalContacts.some(contact => Number(contact.id) === Number(department.manager_contact_id)
+        && Number(contact.external_department_id) === Number(department.id))) {
+        return 'مدیر این واحد در فهرست مخاطبان فعال در دسترس نیست. اطلاعات مدیر واحد را بررسی کنید یا مخاطب را به‌صورت دستی انتخاب کنید.';
+    }
+    return '';
+});
+
 function selectDefaultExternalContact(): void {
     if (form.type !== 'outgoing' || !form.external_organization_id) {
         form.external_contact_id = '';
@@ -203,7 +219,7 @@ function selectDefaultExternalContact(): void {
         ? props.externalDepartments.find((department) => department.id === Number(departmentId))
         : null;
     const unitManager = selectedDepartment?.manager_contact_id
-        ? props.externalContacts.find((contact) => contact.id === selectedDepartment.manager_contact_id)
+        ? props.externalContacts.find((contact) => Number(contact.id) === Number(selectedDepartment.manager_contact_id))
         : null;
     form.external_contact_id = unitManager?.id ?? '';
 }
@@ -410,23 +426,10 @@ function submitCorrespondence(): void {
         form.post(route('correspondence.store'), { forceFormData: true });
     }
 }
-function openOutgoingPreview(): void {
-    if (form.type !== 'outgoing' || preparingImages.value || form.processing) return;
-
-    const targetName = 'correspondence-preview-' + Date.now();
-    const previewWindow = window.open('', targetName);
-    if (!previewWindow) {
-        window.alert('مرورگر اجازه باز کردن پنجره پیش‌نمایش را نداد. پنجره‌های بازشو را برای سامانه فعال کنید.');
-        return;
-    }
-
-    const csrfToken = props.csrfToken;
-    if (!csrfToken) {
-        previewWindow.close();
-        window.alert('توکن امنیتی فرم پیدا نشد. صفحه را تازه‌سازی و دوباره تلاش کنید.');
-        return;
-    }
-
+async function openOutgoingPreview(): Promise<void> {
+    if (form.type !== 'outgoing' || preparingImages.value || form.processing || previewBusy.value) return;
+    previewBusy.value = true;
+    previewError.value = '';
     const payload = {
         created_department_id: form.created_department_id || null,
         subject: form.subject,
@@ -441,24 +444,16 @@ function openOutgoingPreview(): void {
         appendix_body: form.appendix_body,
         appendix_file_count: form.appendix_files.length + (existing?.appendix_documents.length ?? 0),
     };
-
-    const postForm = document.createElement('form');
-    postForm.method = 'POST';
-    postForm.action = route('correspondence.preview');
-    postForm.target = targetName;
-    postForm.hidden = true;
-
-    for (const [name, value] of Object.entries({ _token: csrfToken, preview: JSON.stringify(payload) })) {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = name;
-        input.value = value;
-        postForm.appendChild(input);
+    try {
+        // Derive the adjacent token endpoint from the existing route so an old
+        // Ziggy route list in a still-open tab does not break the preview.
+        const previewUrl = route('correspondence.preview', {}, false);
+        await openCorrespondencePreview(previewUrl + '-token', previewUrl, payload);
+    } catch (error) {
+        previewError.value = error instanceof Error ? error.message : 'پیش‌نمایش باز نشد. دوباره تلاش کنید.';
+    } finally {
+        previewBusy.value = false;
     }
-
-    document.body.appendChild(postForm);
-    postForm.submit();
-    postForm.remove();
 }
 
 </script>
@@ -599,6 +594,7 @@ function openOutgoingPreview(): void {
                                     <label for="external_department_id" class="mb-1.5 block text-sm font-semibold text-slate-700">{{ form.type === 'incoming' ? 'واحد فرستنده' : 'واحد مخاطب بیرونی' }}</label>
                                     <DepartmentTreeSelect id="external_department_id" v-model="form.external_department_id" :departments="externalDepartmentsForOrganization" :disabled="!form.external_organization_id" placeholder="انتخاب واحد بیرونی (اختیاری)" />
                                     <InputError class="mt-1" :message="form.errors.external_department_id" />
+                                    <p v-if="externalDepartmentManagerWarning" role="status" class="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">{{ externalDepartmentManagerWarning }}</p>
                                 </div>
                                 <div v-if="form.type === 'incoming'">
                                     <label for="sender_name" class="mb-1.5 block text-sm font-semibold text-slate-700">نام شخص یا سمت فرستنده (اختیاری)</label>
@@ -610,7 +606,7 @@ function openOutgoingPreview(): void {
                                     <AppSelect id="external_contact_id" v-model="form.external_contact_id" :disabled="!form.external_organization_id" class="w-full rounded-xl border-slate-300 text-sm focus:border-indigo-500 focus:ring-indigo-500">
                                         <option value="">بدون انتخاب شخص؛ خطاب به سازمان یا واحد</option>
                                         <option v-for="contact in externalContacts.filter(item => item.external_organization_id === Number(form.external_organization_id) && item.external_department_id === (form.external_department_id ? Number(form.external_department_id) : null))" :key="contact.id" :value="contact.id">
-                                            {{ contact.name }}{{ contact.id === externalDepartments.find(item => item.id === Number(form.external_department_id))?.manager_contact_id ? ' (مدیر واحد)' : '' }}
+                                            {{ contact.name }}{{ Number(contact.id) === Number(externalDepartments.find(item => item.id === Number(form.external_department_id))?.manager_contact_id) ? ' (مدیر واحد)' : '' }}
                                         </option>
                                     </AppSelect>
                                     <InputError class="mt-1" :message="form.errors.external_contact_id" />
@@ -777,8 +773,9 @@ function openOutgoingPreview(): void {
                 </section>
 
 
+                <p v-if="previewError" role="alert" class="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{{ previewError }}</p>
                 <div class="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-5">
-                    <button v-if="form.type === 'outgoing'" type="button" :disabled="form.processing || preparingImages" class="rounded-xl border border-indigo-300 bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-700 hover:bg-indigo-100" @click="openOutgoingPreview">پیش‌نمایش نامه</button>
+                    <button v-if="form.type === 'outgoing'" type="button" :disabled="form.processing || preparingImages || previewBusy" class="rounded-xl border border-indigo-300 bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-700 hover:bg-indigo-100" @click="openOutgoingPreview">{{ previewBusy ? 'در حال آماده‌سازی…' : 'پیش‌نمایش نامه' }}</button>
                     <Link :href="route('correspondence.index')" class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">انصراف</Link>
                     <button type="submit" :disabled="form.processing || preparingImages" class="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
                         {{ preparingImages ? 'در حال آماده‌سازی تصاویر…' : form.processing ? 'در حال ذخیره...' : (isEditing ? 'ذخیره تغییرات' : (isDirectRegistration ? 'ثبت نهایی مکاتبه' : 'ذخیره پیش‌نویس')) }}

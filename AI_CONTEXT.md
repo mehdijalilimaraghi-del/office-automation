@@ -1,3 +1,7 @@
+## 2026-11-15 — Reliable preview transport and external-unit manager notice
+
+- Preview now obtains the current token at click time from the authenticated, non-cacheable GET /correspondence/preview-token endpoint. This supersedes earlier advice to read csrfToken from page props or the initial meta tag. Use same-origin relative preview URLs and preserve native form navigation until dispatched. External-department manager identifiers may be strings on SQL Server; normalize comparisons in the form.
+
 ## 2026-11-15 — Automatic editor image preparation and clipboard import
 
 - Editor file selection and clipboard images share resources/js/lib/editorImages.ts. Do not restore the old 350 KB rejection. Small supported images retain original bytes; larger images are resized/re-encoded automatically to fit existing inline-image/document persistence limits. Keep server validation and sanitization intact.
