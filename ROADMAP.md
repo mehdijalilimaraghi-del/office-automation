@@ -1,3 +1,10 @@
+## 2026-11-15 — CI compatibility corrections
+
+- GitHub Actions exposed two pre-existing environment mismatches: the npm lockfile did not contain all dependencies declared by `package.json`, and the locked Symfony 8.1 packages require PHP 8.4.1 or newer.
+- Regenerated and committed `package-lock.json` from the existing manifest without changing declared package versions. The CI frontend job now uses reproducible `npm ci`; the temporary lockfile-export diagnostic step has been removed.
+- Updated the CI PHP runtime to 8.5 to match the repository's current development runtime and satisfy the locked Symfony package requirements. The Laravel job uses an isolated SQL Server 2022 service.
+- The initial CI run failed as expected on these mismatches; the corrected workflow must complete successfully before this setup is considered validated. npm reported dependency advisories during installation; no automatic audit fixes or dependency upgrades were applied.
+
 ## 2026-11-15 — Codex local workflow and GitHub CI preparation
 
 - Updated `AGENTS.md` to reflect the repository's current modular office-automation scope, enforce development-branch-only work, and define validation, diff-review, documentation, and automatic-push gates for Codex.
