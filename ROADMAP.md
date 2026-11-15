@@ -1,3 +1,12 @@
+## 2026-11-15 — Codex local workflow and GitHub CI preparation
+
+- Updated `AGENTS.md` to reflect the repository's current modular office-automation scope, enforce development-branch-only work, and define validation, diff-review, documentation, and automatic-push gates for Codex.
+- Added the repository-local Codex skill at `.agents/skills/validated-development/SKILL.md`.
+- Added `.github/workflows/ci.yml`: Laravel PHPUnit tests run against an isolated SQL Server service; the frontend job installs the lockfile dependencies and runs the Vue type-check/production build. The workflow is limited to pushes and pull requests targeting `development`, plus manual dispatch.
+- Exposed SQL Server encryption and certificate-trust options through environment variables in `config/database.php`; defaults preserve encrypted connections and certificate validation.
+- The authorized automatic push is performed by local Codex only after local validation and diff review. GitHub Actions runs after the push as a second verification layer; it cannot gate a direct push retroactively. The `development` branch was observed unprotected, and no branch-protection settings were changed.
+- Workflow execution has not yet been observed. Do not treat CI, PHPUnit, or frontend build as passed until GitHub Actions reports successful runs. Browser and physical printer acceptance remain separate.
+
 ## 2026-11-11 — Context-tab pointer timing and dimension readback correction
 
 - Follow-up inspection identified a timing defect in contextual tab navigation: pinning selection in the tab click handler occurs after pointer focus has already moved. A capture-phase pointerdown handler now snapshots the editor range and pins a still-connected selected image, shape, or table cell before focus/selectionchange can run. This applies uniformly to all three object types.
