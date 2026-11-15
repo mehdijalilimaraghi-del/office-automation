@@ -1,3 +1,7 @@
+## 2026-11-15 — Frontend CI dependency completion
+
+- The frontend CI job now installs Composer dependencies with scripts disabled before running `vue-tsc` and Vite, because the TypeScript resolver imports Ziggy declarations from `vendor/tightenco/ziggy`. This keeps the generated/vendor type dependency available without executing Composer project scripts in the frontend job.
+
 ## 2026-11-15 — CI compatibility corrections
 
 - GitHub Actions exposed two pre-existing environment mismatches: the npm lockfile did not contain all dependencies declared by `package.json`, and the locked Symfony 8.1 packages require PHP 8.4.1 or newer.
