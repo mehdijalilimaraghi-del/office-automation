@@ -107,6 +107,13 @@ jobs:
       - name: Pin npm version without npm 11 install-script policy changes
         run: npm install --global npm@10.9.4
 
+      - name: Regenerate and export the synchronized npm lockfile
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          printf '%s\\n' 'LOCKFILE_B64_BEGIN'
+          base64 --wrap=0 package-lock.json
+          printf '\\n%s\\n' 'LOCKFILE_B64_END'
+
       - name: Install frontend dependencies
         run: npm ci
 
