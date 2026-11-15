@@ -1,3 +1,9 @@
+## 2026-11-15 — Verified local development checkpoint
+
+- Actual checkout: `D:\KPMM\Office-automation`; the chat's `D:\KPMM\Projects\office-automation` path does not exist. Inspect the real root before commands.
+- Development was fast-forwarded to `0258a382` with owner-authorized backup/reapplication of local package changes. Keep those changes outside this test correction commit.
+- Current automated validation and remaining browser acceptance are recorded in CURRENT_STATUS.md; local SQL Server test invocation requirements are in DEVELOPMENT.md.
+
 ## 2026-11-15 — SQL Server CI driver prerequisite
 
 - The first SQL Server CI connection attempt confirmed that enabling PHP's `pdo_sqlsrv` extension alone does not install Microsoft's ODBC runtime. The Laravel test job now installs Microsoft ODBC Driver 18 from Microsoft's Ubuntu 24.04 package feed before configuring PHP SQL Server extensions.

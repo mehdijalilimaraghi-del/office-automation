@@ -1,3 +1,8 @@
+## 2026-11-15 — Correspondence automated acceptance checkpoint
+
+- The pending local backend/build gate now passes; see CURRENT_STATUS.md for exact results and environment limitations. Two stale HTTP regression expectations were corrected without changing runtime behavior.
+- Keep correspondence editor and A4/A5 print acceptance open until the owner verifies browser interactions, long text/tables/images, independent appendix numbering and preview/PDF parity. Do not advance to unrelated product scope on the strength of the build alone.
+
 ## 2026-11-15 — SQL Server CI driver prerequisite
 
 - The first SQL Server CI connection attempt confirmed that enabling PHP's `pdo_sqlsrv` extension alone does not install Microsoft's ODBC runtime. The Laravel test job now installs Microsoft ODBC Driver 18 from Microsoft's Ubuntu 24.04 package feed before configuring PHP SQL Server extensions.

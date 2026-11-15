@@ -1,3 +1,11 @@
+## 2026-11-15 — Local SQL Server regression validation completed
+
+- Fixed two stale body assertions in CorrespondenceHttpTest: newly created letter HTML includes the existing typography snapshot wrapper. Exact assertions still verify safe markup and justified alignment. Added verification that later organization typography changes do not rewrite the stored body.
+- After synchronization with development `0258a382`, the two focused tests passed (7 assertions), the complete PHPUnit suite passed against SQL Server `office_automation_test` (493 tests, 2446 assertions), and `npm run build` passed (vue-tsc + Vite). `git diff --check` passed. This verifies local execution, not GitHub Actions status.
+- Initial full Artisan run exhausted the local 128 MB PHP limit; the successful direct PHPUnit run used a process-only 512 MB limit. Upstream TLS defaults initially rejected the local certificate; the successful test process used encryption plus explicit trust for the localhost test certificate, without changing application files or production configuration.
+- Existing package.json/package-lock.json edits and untracked scanner/OCR files remain local. Backups and the preservation stash remain available. The local Jalali lock entries remain at the owner's 0.4.2 versions; upstream 0.4.3 entries are not silently substituted.
+- Remaining acceptance: browser editor/context menus/dimensions, save/reopen, sticky toolbar, and multi-page A4/A5 preview/PDF including tables and appendices. No master/release/server operation or production migration was performed.
+
 ## 2026-11-15 — SQL Server CI driver prerequisite
 
 - The first SQL Server CI connection attempt confirmed that enabling PHP's `pdo_sqlsrv` extension alone does not install Microsoft's ODBC runtime. The Laravel test job now installs Microsoft ODBC Driver 18 from Microsoft's Ubuntu 24.04 package feed before configuring PHP SQL Server extensions.

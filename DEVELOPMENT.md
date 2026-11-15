@@ -1,3 +1,26 @@
+## 2026-11-15 — Verified Windows SQL Server test invocation
+
+Use the actual checkout `D:\KPMM\Office-automation`. Before any RefreshDatabase tests, verify the effective environment is `testing`, the driver is `sqlsrv`, and the connected database returned by `SELECT DB_NAME()` is `office_automation_test`. Never point this invocation at production.
+
+This workstation's full suite exceeds the default 128 MB PHP memory limit. Use a process-only override; no php.ini edit is required:
+
+```powershell
+# Use only with the verified, isolated localhost test connection.
+$env:APP_ENV = 'testing'
+$env:DB_CONNECTION = 'sqlsrv'
+$env:DB_HOST = 'localhost'
+$env:DB_PORT = '1433'
+$env:DB_DATABASE = 'office_automation_test'
+$env:DB_URL = ''
+$env:DB_USERNAME = ''
+$env:DB_PASSWORD = ''
+$env:DB_ENCRYPT = 'yes'
+$env:DB_TRUST_SERVER_CERTIFICATE = 'true'
+php -d memory_limit=512M vendor/phpunit/phpunit/phpunit --no-progress --stop-on-error
+```
+
+Empty credentials here use this workstation's Windows authentication. Certificate trust is scoped to the local test process with its self-signed SQL Server certificate; do not propagate it to production settings. The direct PHPUnit entry point runs the complete suite in phpunit.xml without Artisan spawning another PHP process with the original memory limit. The verified result was 493 tests / 2446 assertions. Browser/physical printing remains a separate acceptance gate.
+
 ## 2026-11-15 — SQL Server CI driver prerequisite
 
 - The first SQL Server CI connection attempt confirmed that enabling PHP's `pdo_sqlsrv` extension alone does not install Microsoft's ODBC runtime. The Laravel test job now installs Microsoft ODBC Driver 18 from Microsoft's Ubuntu 24.04 package feed before configuring PHP SQL Server extensions.

@@ -67,7 +67,7 @@ class CorrespondenceHttpTest extends TestCase
             'status' => Correspondence::STATUS_REGISTERED,
             'registered_by' => $creator->id,
             'workflow_state' => 'in_progress',
-            'body' => '<p style="text-align: justify">متن نامه</p>',
+            'body' => '<div style="font-family:Vazirmatn;font-size:12pt;color:#202124"><p style="text-align: justify">متن نامه</p></div>',
         ]);
     }
 
@@ -949,13 +949,22 @@ class CorrespondenceHttpTest extends TestCase
             'type' => 'internal',
             'subject' => 'نامه داخلی',
             'attachment_pages' => 2,
-            'body' => '<p>متن <strong>مهم</strong></p>',
+            'body' => '<div style="font-family:Vazirmatn;font-size:12pt;color:#202124"><p>متن <strong>مهم</strong></p></div>',
             'status' => 'draft',
             'registration_number' => null,
             'created_by' => $user->id,
             'recipient_department_id' => $recipientDepartmentId,
             'sender_name' => $user->name,
         ]);
+
+        $letter = Correspondence::query()->where('created_by', $user->id)->sole();
+        $originalBody = $letter->body;
+        app(SystemSettingsService::class)->set([
+            'correspondence.composition.font_family' => 'Tahoma',
+            'correspondence.composition.font_size' => '18',
+            'correspondence.composition.font_color' => '#445566',
+        ]);
+        $this->assertSame($originalBody, $letter->refresh()->body);
     }
 
     public function test_direct_registration_setting_is_sent_to_form_and_registers_internal_letter_on_create(): void

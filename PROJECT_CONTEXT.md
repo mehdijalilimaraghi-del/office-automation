@@ -1,3 +1,8 @@
+## 2026-11-15 — Letter typography snapshot regression contract
+
+- Creation stores sanitized body HTML inside the organization typography snapshot wrapper. Tests must assert both the wrapper and safe inner content, preserving paragraph alignment and removal of unsafe images/handlers.
+- Changing organization font family, size or color affects defaults for future letters and must not rewrite the already stored letter body. This persistence contract is now covered in the editor-draft HTTP regression.
+
 ## 2026-11-15 — SQL Server CI driver prerequisite
 
 - The first SQL Server CI connection attempt confirmed that enabling PHP's `pdo_sqlsrv` extension alone does not install Microsoft's ODBC runtime. The Laravel test job now installs Microsoft ODBC Driver 18 from Microsoft's Ubuntu 24.04 package feed before configuring PHP SQL Server extensions.
