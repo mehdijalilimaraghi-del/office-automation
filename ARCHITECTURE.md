@@ -1,3 +1,7 @@
+## 2026-11-15 — Outgoing preview session-token correction
+
+- CorrespondenceController supplies a csrfToken page prop for both create/edit renders. Create.vue uses that prop for the existing native preview POST. The endpoint, authorization, CSRF middleware and in-memory preview architecture are preserved.
+
 ## 2026-11-15 — Validation-only correspondence correction
 
 - No runtime architecture, API, database schema, authorization or dependency change was needed: the defect was outdated HTTP test expectations for the existing controller-owned typography snapshot.

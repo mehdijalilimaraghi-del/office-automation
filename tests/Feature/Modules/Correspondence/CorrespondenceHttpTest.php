@@ -41,6 +41,43 @@ class CorrespondenceHttpTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_outgoing_preview_uses_current_session_token_and_does_not_save_a_letter(): void
+    {
+        $user = $this->userWithPermission('correspondence.create');
+        $token = str_repeat('a', 40);
+        $csrf = Mockery::mock(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class, [
+            $this->app, $this->app['encrypter'],
+        ])->makePartial()->shouldAllowMockingProtectedMethods();
+        $csrf->shouldReceive('runningUnitTests')->andReturn(false);
+        $this->app->instance(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class, $csrf);
+
+        $this->actingAs($user)->withSession(['_token' => $token])
+            ->get(route('correspondence.create'), [
+                'X-Inertia' => 'true',
+                'X-Inertia-Version' => app(\App\Http\Middleware\HandleInertiaRequests::class)->version(\Illuminate\Http\Request::create('/')),
+            ])
+            ->assertOk()
+            ->assertJsonPath('component', 'Correspondence/Create')
+            ->assertJsonPath('props.csrfToken', $token);
+
+        $payload = json_encode([
+            'subject' => 'پیش‌نمایش بدون ذخیره',
+            'composition_mode' => 'editor',
+            'body' => '<p>متن پیش‌نمایش</p>',
+        ], JSON_THROW_ON_ERROR);
+
+        $this->post(route('correspondence.preview'), [
+            '_token' => str_repeat('b', 40), 'preview' => $payload,
+        ])->assertStatus(419);
+        $this->post(route('correspondence.preview'), [
+            '_token' => $token, 'preview' => $payload,
+        ])->assertOk()->assertInertia(fn ($page) => $page
+            ->component('Correspondence/Print')
+            ->where('isPreview', true)
+            ->where('letter.subject', 'پیش‌نمایش بدون ذخیره'));
+        $this->assertDatabaseCount('correspondences', 0);
+    }
+
     public function test_direct_internal_correspondence_is_finalized_when_created(): void
     {
         $creator = $this->userWithPermission('correspondence.create');

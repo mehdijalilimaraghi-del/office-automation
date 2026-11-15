@@ -1,3 +1,7 @@
+## 2026-11-15 — Outgoing preview session-token correction
+
+- Outgoing preview CSRF correction is implemented and automated validation passes. Owner acceptance: log in, navigate to create outgoing correspondence without a hard reload, enter unsaved text and open preview; verify no 419 and no saved correspondence. Existing editor and A4/A5 visual acceptance remain open.
+
 ## 2026-11-15 — Correspondence automated acceptance checkpoint
 
 - The pending local backend/build gate now passes; see CURRENT_STATUS.md for exact results and environment limitations. Two stale HTTP regression expectations were corrected without changing runtime behavior.

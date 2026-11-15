@@ -732,6 +732,7 @@ class CorrespondenceController extends Controller
         }
 
         return Inertia::render('Correspondence/Create', [
+            'csrfToken' => $request->session()->token(),
             'isEditing' => false,
             'taskId' => $taskId,
             'sourceCorrespondenceId' => $sourceCorrespondenceId,
@@ -1088,6 +1089,7 @@ class CorrespondenceController extends Controller
             ?? ($createdDepartments->count() === 1 ? $createdDepartments->first() : null);
         $correspondence->load(['relatedLetters.createdDepartment', 'relatedLetters.recipientDepartment', 'relatedLetters.externalOrganization', 'relatedLetters.externalDepartment', 'copies', 'documents.document']);
         return Inertia::render('Correspondence/Create', [
+            'csrfToken' => $request->session()->token(),
             'isEditing' => true,
             'correspondenceFontFamily' => $settings->get(['correspondence.composition.font_family' => 'Vazirmatn'])['correspondence.composition.font_family'],
             'compositionDefaults' => $settings->get([

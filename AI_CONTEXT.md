@@ -1,3 +1,7 @@
+## 2026-11-15 — Outgoing preview session-token correction
+
+- Outgoing preview must use the current correspondence form csrfToken prop, not the initial Blade meta token, which becomes stale after session regeneration during Inertia navigation.
+
 ## 2026-11-15 — Verified local development checkpoint
 
 - Actual checkout: `D:\KPMM\Office-automation`; the chat's `D:\KPMM\Projects\office-automation` path does not exist. Inspect the real root before commands.

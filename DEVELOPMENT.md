@@ -1,3 +1,7 @@
+## 2026-11-15 — Outgoing preview session-token correction
+
+- The outgoing preview regression explicitly enables CSRF validation by overriding only the middleware testing bypass. It verifies the current token in an Inertia navigation response, stale-token rejection (419), valid-token preview rendering and zero persisted correspondences. Focused test: --filter=test_outgoing_preview_uses_current_session_token_and_does_not_save_a_letter. Full validation uses the isolated SQL Server invocation documented below; browser verification must include navigation after login.
+
 ## 2026-11-15 — Verified Windows SQL Server test invocation
 
 Use the actual checkout `D:\KPMM\Office-automation`. Before any RefreshDatabase tests, verify the effective environment is `testing`, the driver is `sqlsrv`, and the connected database returned by `SELECT DB_NAME()` is `office_automation_test`. Never point this invocation at production.

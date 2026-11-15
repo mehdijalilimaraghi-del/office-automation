@@ -30,6 +30,7 @@ interface ExistingCorrespondence {
     appendix_documents: Array<{ id: number; title: string }>;
 }
 const props = defineProps<{
+    csrfToken: string;
     types: Array<{ value: string; label: string }>;
     classifications: Array<{ value: string; label: string }>;
     departments: Department[];
@@ -408,7 +409,7 @@ function openOutgoingPreview(): void {
         return;
     }
 
-    const csrfToken = document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content;
+    const csrfToken = props.csrfToken;
     if (!csrfToken) {
         previewWindow.close();
         window.alert('توکن امنیتی فرم پیدا نشد. صفحه را تازه‌سازی و دوباره تلاش کنید.');

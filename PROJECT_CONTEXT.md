@@ -1,3 +1,7 @@
+## 2026-11-15 — Outgoing preview session-token correction
+
+- The outgoing preview submits unsaved form content without persisting a correspondence. Its native POST must carry the current session token supplied with the form; an HTML meta token from before login is not authoritative after session regeneration.
+
 ## 2026-11-15 — Letter typography snapshot regression contract
 
 - Creation stores sanitized body HTML inside the organization typography snapshot wrapper. Tests must assert both the wrapper and safe inner content, preserving paragraph alignment and removal of unsafe images/handlers.

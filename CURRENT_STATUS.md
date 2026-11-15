@@ -1,3 +1,7 @@
+## 2026-11-15 — Outgoing preview session-token correction
+
+- Fixed outgoing preview HTTP 419 by passing the current session CSRF token to both create/edit forms and using it for the native preview POST. Focused real-CSRF test passed (1 test, 19 assertions); full SQL Server test suite passed (494 tests, 2465 assertions), npm run build (vue-tsc + Vite) and diff checks passed. Browser acceptance after login/navigation remains for the owner; no migration or deployment.
+
 ## 2026-11-15 — Local SQL Server regression validation completed
 
 - Fixed two stale body assertions in CorrespondenceHttpTest: newly created letter HTML includes the existing typography snapshot wrapper. Exact assertions still verify safe markup and justified alignment. Added verification that later organization typography changes do not rewrite the stored body.
