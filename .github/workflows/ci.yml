@@ -98,6 +98,19 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
+      - name: Set up PHP for generated Ziggy types
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          extensions: bcmath, curl, fileinfo, gd, intl, mbstring, zip
+          coverage: none
+
+      - name: Prepare Laravel environment
+        run: cp .env.example .env
+
+      - name: Install Composer dependencies for frontend type-check
+        run: composer install --no-scripts --prefer-dist --no-interaction --no-progress
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
