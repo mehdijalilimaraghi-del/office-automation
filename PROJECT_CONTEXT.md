@@ -1,3 +1,8 @@
+## 2026-11-15 — SQL Server CI driver prerequisite
+
+- The first SQL Server CI connection attempt confirmed that enabling PHP's `pdo_sqlsrv` extension alone does not install Microsoft's ODBC runtime. The Laravel test job now installs Microsoft ODBC Driver 18 from Microsoft's Ubuntu 24.04 package feed before configuring PHP SQL Server extensions.
+- Re-run the workflow and verify the isolated database connection and full PHPUnit suite before marking backend CI operational.
+
 ## 2026-11-15 — Frontend CI dependency completion
 
 - The frontend CI job now installs Composer dependencies with scripts disabled before running `vue-tsc` and Vite, because the TypeScript resolver imports Ziggy declarations from `vendor/tightenco/ziggy`. This keeps the generated/vendor type dependency available without executing Composer project scripts in the frontend job.
