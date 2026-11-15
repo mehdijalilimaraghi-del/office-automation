@@ -45,6 +45,7 @@ try {
     const send = (method, params = {}) => new Promise((resolve, reject) => {
         const id = ++sequence; pending.set(id, { resolve, reject }); socket.send(JSON.stringify({ id, method, params }));
     });
+    if (process.env.EDITOR_TEST_MEDIA) await send('Emulation.setEmulatedMedia', { media: process.env.EDITOR_TEST_MEDIA });
     const deadline = Date.now() + 60000;
     for (;;) {
         const ready = await send('Runtime.evaluate', { expression: 'typeof window.editorImageTests !== "undefined"', returnByValue: true });
@@ -53,7 +54,7 @@ try {
         await new Promise(resolve => setTimeout(resolve, 100));
     }
     const result = await Promise.race([
-        send('Runtime.evaluate', { expression: 'window.editorImageTests', awaitPromise: true, returnByValue: true }),
+        send('Runtime.evaluate', { expression: 'window.startPaginationTests ? window.startPaginationTests() : window.editorImageTests', awaitPromise: true, returnByValue: true }),
         new Promise((_, reject) => setTimeout(() => reject(new Error('Browser tests timed out')), 90000).unref()),
     ]);
     if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text);

@@ -243,6 +243,105 @@ class OrganizationSettingsTest extends TestCase
         );
     }
 
+    private function paginationElements(): array
+    {
+        $letter = [
+            'id' => 'letter_pages', 'kind' => 'text', 'role' => 'page_number', 'spacing' => 0,
+            'label' => 'شماره صفحه نامه', 'content' => '', 'x' => 8, 'y' => 94, 'width' => 30,
+            'font_size' => 9, 'font_family' => 'default', 'page_format' => 'slash',
+            'bold' => false, 'align' => 'right', 'visible' => true,
+        ];
+
+        return [$letter, [
+            ...$letter, 'id' => 'appendix_pages', 'role' => 'appendix_page_number',
+            'label' => 'شماره صفحه پیوست', 'x' => 60, 'y' => 84, 'font_size' => 11,
+            'font_family' => 'Tahoma', 'page_format' => 'page', 'align' => 'left',
+        ]];
+    }
+
+    private function paginationLetter(\App\Models\User $user): \App\Modules\Correspondence\Models\Correspondence
+    {
+        return \App\Modules\Correspondence\Models\Correspondence::query()->create([
+            'type' => 'internal', 'subject' => 'نامه با پیوست', 'body' => '<p>نامه</p>',
+            'appendix_mode' => 'editor', 'appendix_body' => '<p>پیوست</p>',
+            'created_by' => $user->id, 'status' => 'registered',
+        ]);
+    }
+
+    public function test_independent_appendix_page_number_settings_survive_save_and_reach_print(): void
+    {
+        $admin = User::factory()->create();
+        $this->grantPermissions($admin, ['settings.manage', 'correspondence.view']);
+        $elements = $this->paginationElements();
+        $this->actingAs($admin)->put(route('correspondence.template.update'), ['elements' => $elements])
+            ->assertRedirect()->assertSessionHas('success');
+        $this->assertDatabaseHas('system_settings', [
+            'key' => 'correspondence.print.appendix_numbering_configured', 'value' => '1',
+        ]);
+        foreach ([route('correspondence.template.edit') => 'elements',
+            route('correspondence.print', $this->paginationLetter($admin)) => 'templateElements'] as $url => $prop) {
+            $this->get($url)->assertOk()->assertInertia(fn ($page) => $page
+                ->where($prop.'.0.page_format', 'slash')
+                ->where($prop.'.0.y', 94)
+                ->where($prop.'.1.role', 'appendix_page_number')
+                ->where($prop.'.1.page_format', 'page')
+                ->where($prop.'.1.x', 60)
+                ->where($prop.'.1.y', 84)
+                ->where($prop.'.1.font_family', 'Tahoma'));
+        }
+        $elements[1]['page_format'] = 'invalid';
+        $this->put(route('correspondence.template.update'), ['elements' => $elements])
+            ->assertSessionHasErrors('elements.1.page_format');
+    }
+
+    public function test_legacy_appendix_numbering_inherits_letter_position_without_writing_settings(): void
+    {
+        $admin = User::factory()->create();
+        $this->grantPermissions($admin, ['settings.manage', 'correspondence.view']);
+        $letterNumber = $this->paginationElements()[0];
+        app(\App\Core\Settings\Services\SystemSettingsService::class)->set([
+            'correspondence.print.template' => json_encode([$letterNumber], JSON_THROW_ON_ERROR),
+        ]);
+        foreach ([route('correspondence.template.edit') => 'elements',
+            route('correspondence.print', $this->paginationLetter($admin)) => 'templateElements'] as $url => $prop) {
+            $this->actingAs($admin)->get($url)->assertOk()->assertInertia(fn ($page) => $page
+                ->where($prop.'.2.role', 'appendix_page_number')
+                ->where($prop.'.2.x', 8)
+                ->where($prop.'.2.y', 94)
+                ->where($prop.'.2.page_format', 'page'));
+        }
+        $this->assertDatabaseMissing('system_settings', ['key' => 'correspondence.print.appendix_numbering_configured']);
+        $stored = SystemSetting::query()->where('key', 'correspondence.print.template')->value('value');
+        $this->assertCount(1, json_decode($stored, true, 512, JSON_THROW_ON_ERROR));
+    }
+
+    public function test_removed_appendix_page_counter_is_not_recreated_after_saving_template(): void
+    {
+        $admin = User::factory()->create();
+        $this->grantPermissions($admin, ['settings.manage', 'correspondence.view']);
+        $this->actingAs($admin)->put(route('correspondence.template.update'), [
+            'elements' => [$this->paginationElements()[0]],
+            'appendix_numbering_configured' => true,
+        ])->assertRedirect()->assertSessionHas('success');
+        foreach ([route('correspondence.template.edit') => 'elements',
+            route('correspondence.print', $this->paginationLetter($admin)) => 'templateElements'] as $url => $prop) {
+            $this->get($url)->assertOk()->assertInertia(fn ($page) => $page
+                ->where($prop, fn ($items) => !collect($items)->contains('role', 'appendix_page_number')));
+        }
+    }
+
+    public function test_old_template_save_payload_preserves_legacy_appendix_numbering(): void
+    {
+        $admin = User::factory()->create();
+        $this->grantPermissions($admin, ['settings.manage']);
+        $this->actingAs($admin)->put(route('correspondence.template.update'), [
+            'elements' => [$this->paginationElements()[0]],
+        ])->assertRedirect()->assertSessionHas('success');
+        $this->get(route('correspondence.template.edit'))->assertOk()->assertInertia(fn ($page) => $page
+            ->where('elements.2.role', 'appendix_page_number')
+            ->where('elements.2.page_format', 'page'));
+    }
+
     public function test_template_coordinates_are_rounded_before_page_bounds_validation(): void
     {
         $admin = User::factory()->create();

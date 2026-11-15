@@ -1,3 +1,7 @@
+## 2026-11-15 — Independent appendix numbering and designer preview switch
+
+- Independent appendix page-number formatting and Letter/Appendix designer preview switching are implemented and automatically validated. Owner acceptance: choose each counter, set different positions/formats, switch previews, save/reopen, and compare a multi-page letter plus appendix in A4/A5 PDF or physical print. Existing Word-image acceptance remains open; do not interpret browser print-media tests as physical printer acceptance.
+
 ## 2026-11-15 — Reliable preview transport and external-unit manager notice
 
 - Preview follow-up and missing external-unit manager notices are implemented and automatically validated. Owner acceptance: open outgoing preview twice from the current form, verify unsaved content and retry behavior; select a unit without a manager and one with an active manager, checking the notice and default recipient. Keep Word image and A4/A5 print acceptance open. This supersedes the earlier page-prop-only token correction.

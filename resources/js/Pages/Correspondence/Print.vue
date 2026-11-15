@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, nextTick } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
+import { formatPageNumber } from '@/lib/pageNumbers';
 interface AddressingSnapshot { organizational_title_prefix?:string|null; position?:string|null; personal_salutation?:string|null; professional_title?:string|null; name?:string|null; organization_name?:string|null; department_name?:string|null; }
-type Role='meta'|'heading'|'page_number'|'issuer'|'header'|'footer'|'repeat'|'body';
+type Role='meta'|'heading'|'page_number'|'appendix_page_number'|'issuer'|'header'|'footer'|'repeat'|'body';
 type PageFormat='number_of'|'slash'|'short'|'page';
 interface TemplateElement { id:string; kind:'text'|'stamp'|'signature'; role:Role; label:string; content:string; x:number; y:number; width:number; spacing:number; font_size:number; font_family:string; page_format:PageFormat; bold:boolean; align:'right'|'center'|'left'; visible:boolean; }
 interface PrintLetter { id:number; attachment_pages:number|null; appendix_mode:'none'|'editor'|'file'|'both'; appendix_body:string|null; appendix_file_count:number; type:'incoming'|'outgoing'|'internal'; subject:string; body:string|null; letter_number:string|null; registration_number:string|null; registered_at:string|null; sent_at:string|null; recipient_name:string|null; recipient_addressing:AddressingSnapshot|null; external_organization:string|null; external_department:string|null; }
@@ -161,13 +162,12 @@ onMounted(async()=>{
 });
 onBeforeUnmount(()=>{contentObserver?.disconnect();layoutObserver?.disconnect();});
 function pageNumberSample(item:TemplateElement,pageIndex:number):string {
- const current=new Intl.NumberFormat('fa-IR').format(pageIndex), total=new Intl.NumberFormat('fa-IR').format(mainPageCount.value);
- if(item.page_format==='slash')return current+'/'+total;
- if(item.page_format==='short')return 'ص'+current+' از '+total;
- if(item.page_format==='page')return 'صفحه '+current+' از '+total;
- return current+' از '+total;
+ const appendix=item.role==='appendix_page_number';
+ return formatPageNumber(item.page_format,appendix?pageIndex-mainPageCount.value:pageIndex,appendix?appendixPageCount.value:mainPageCount.value,appendix);
 }
-function appendixPageNumberSample(pageIndex:number):string{return 'پیوست ـ صفحه '+new Intl.NumberFormat('fa-IR').format(pageIndex)+' از '+new Intl.NumberFormat('fa-IR').format(appendixPageCount.value);}
+function pageNumberElements(pageIndex:number):TemplateElement[] {
+ return elements.value.filter(item=>item.role===(pageIndex>mainPageCount.value?'appendix_page_number':'page_number'));
+}
 function printLetter():void{window.print();}
 function closePreview():void{if(window.opener){window.close();return;}window.history.back();}
 </script>
@@ -185,7 +185,7 @@ function closePreview():void{if(window.opener){window.close();return;}window.his
    <div class="template-coordinate-plane" :ref="pageIndex===1 ? setFirstPagePlane : undefined">
     <div v-if="withLetterhead && letterheadDataUri" class="letterhead-background" :style="{backgroundImage:'url('+letterheadDataUri+')'}" aria-hidden="true"></div>
     <div v-for="item in repeating" :key="item.id" class="repeat-item" :style="positionedStyle(item)">{{resolveTemplate(item.content)}}</div>
-    <div v-for="item in elements.filter(entry=>entry.role==='page_number')" :key="item.id" class="page-number" :class="'page-number-format-'+item.page_format" :style="pageNumberScreenStyle(item)"><bdi :dir="item.page_format==='slash'?'ltr':'rtl'">{{pageIndex>mainPageCount?appendixPageNumberSample(pageIndex-mainPageCount):pageNumberSample(item,pageIndex)}}</bdi></div>
+    <div v-for="item in pageNumberElements(pageIndex)" :key="item.id" class="page-number" :data-page-number-role="item.role" :class="'page-number-format-'+item.page_format" :style="pageNumberScreenStyle(item)"><bdi :dir="item.page_format==='slash'?'ltr':'rtl'">{{pageNumberSample(item,pageIndex)}}</bdi></div>
     <template v-if="pageIndex===1"><div v-for="item in flowMeta" :key="item.id" class="flow-item first-page-positioned" :style="positionedStyle(item)">{{item.kind==='text'?resolveTemplate(item.content):''}}<img v-if="item.kind==='stamp'&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="inline-asset"/><img v-else-if="item.kind==='signature'&&signatureDataUri" :src="signatureDataUri" alt="امضای مدیر واحد" class="inline-asset"/></div>
     <div v-for="item in flowHeading" :key="item.id" class="flow-item first-page-positioned" :style="positionedStyle(item)">
      <template v-if="item.content">{{resolveTemplate(item.content)}}</template>

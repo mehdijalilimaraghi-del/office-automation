@@ -10,6 +10,7 @@ use App\Core\ExternalParties\Models\ExternalOrganization;
 use App\Core\ExternalParties\Models\ExternalDepartment;
 use App\Core\ExternalParties\Models\ExternalContact;
 use App\Http\Controllers\Controller;
+use App\Modules\Correspondence\Services\CorrespondenceTemplatePagination;
 use App\Core\Departments\Models\PositionAssignment;
 use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Services\CorrespondenceAccessService;
@@ -171,6 +172,11 @@ class CorrespondencePrintController extends Controller
         if (! collect($templateElements)->contains(static fn (array $item): bool => ($item['role'] ?? null) === 'body')) {
             $templateElements[] = ['id' => 'letter_body', 'kind' => 'text', 'role' => 'body', 'spacing' => 12, 'label' => 'متن اصلی نامه', 'content' => '', 'x' => 8, 'y' => 0, 'width' => 84, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true];
         }
+
+        $templateElements = CorrespondenceTemplatePagination::withLegacyAppendixDefaults(
+            $templateElements,
+            $settings->get(['correspondence.print.appendix_numbering_configured' => '0'])['correspondence.print.appendix_numbering_configured'] === '1',
+        );
 
         $hasVisibleStampElement = collect($templateElements)->contains(static fn (array $item): bool => ($item['visible'] ?? true) && ($item['role'] ?? null) === 'issuer' && ($item['kind'] ?? null) === 'stamp');
         $hasVisibleSignatureElement = collect($templateElements)->contains(static fn (array $item): bool => ($item['visible'] ?? true) && ($item['role'] ?? null) === 'issuer' && ($item['kind'] ?? null) === 'signature');

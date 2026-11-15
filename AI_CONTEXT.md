@@ -1,3 +1,7 @@
+## 2026-11-15 — Independent appendix numbering and designer preview switch
+
+- Letter page_number and appendix_page_number are separate template roles. Use the shared pageNumbers formatter in designer/output. CorrespondenceTemplatePagination supplies read-only legacy appendix defaults only until independent numbering is explicitly configured; do not re-add a removed counter after that flag is set. New designer saves send appendix_numbering_configured=true; old save payloads preserve legacy behavior.
+
 ## 2026-11-15 — Reliable preview transport and external-unit manager notice
 
 - Preview now obtains the current token at click time from the authenticated, non-cacheable GET /correspondence/preview-token endpoint. This supersedes earlier advice to read csrfToken from page props or the initial meta tag. Use same-origin relative preview URLs and preserve native form navigation until dispatched. External-department manager identifiers may be strings on SQL Server; normalize comparisons in the form.

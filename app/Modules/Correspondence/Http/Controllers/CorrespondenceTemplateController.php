@@ -6,9 +6,11 @@ namespace App\Modules\Correspondence\Http\Controllers;
 
 use App\Core\Settings\Services\SystemSettingsService;
 use App\Http\Controllers\Controller;
+use App\Modules\Correspondence\Services\CorrespondenceTemplatePagination;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -50,6 +52,11 @@ class CorrespondenceTemplateController extends Controller
         if (! collect($elements)->contains(static fn (array $item): bool => ($item['role'] ?? null) === 'body')) {
             $elements[] = self::BODY_TEMPLATE;
         }
+        $elements = CorrespondenceTemplatePagination::withLegacyAppendixDefaults(
+            $elements,
+            $settings->get(['correspondence.print.appendix_numbering_configured' => '0'])['correspondence.print.appendix_numbering_configured'] === '1',
+        );
+
         foreach ($elements as &$element) {
             if (($element['role'] ?? null) === 'meta' && ! str_contains((string) ($element['content'] ?? ''), '{{attachment_pages}}')) {
                 $element['content'] = rtrim((string) ($element['content'] ?? ''))."\n{{attachment_pages}}";
@@ -157,6 +164,7 @@ class CorrespondenceTemplateController extends Controller
         $pageHeight = $pageSize === 'A5' ? 210 : 297;
         $data = $request->validate([
             'elements' => ['present', 'array', 'max:30'],
+            'appendix_numbering_configured' => ['sometimes', 'boolean'],
             'page_layout' => ['sometimes', 'array'],
             'page_layout.top' => ['required_with:page_layout', 'numeric', 'min:5', 'max:80'],
             'page_layout.right' => ['required_with:page_layout', 'numeric', 'min:5', 'max:50'],
@@ -165,7 +173,7 @@ class CorrespondenceTemplateController extends Controller
             'page_layout.header_height' => ['sometimes', 'numeric', 'min:0', 'max:100'],
             'page_layout.footer_height' => ['sometimes', 'numeric', 'min:0', 'max:70'],
             'elements.*.kind' => ['required', 'in:text,stamp,signature,letterhead'],
-            'elements.*.role' => ['nullable', 'in:meta,heading,page_number,issuer,header,footer,repeat,body'],
+            'elements.*.role' => ['nullable', 'in:meta,heading,page_number,appendix_page_number,issuer,header,footer,repeat,body'],
             'elements.*.spacing' => ['nullable', 'numeric', 'min:-80', 'max:80'],
             'elements.*.font_family' => ['nullable', 'in:default,Vazirmatn,Tahoma,Arial,B Nazanin,B Mitra,IRANSans,Times New Roman'],
             'elements.*.page_format' => ['nullable', 'in:number_of,slash,short,page'],
@@ -205,10 +213,15 @@ class CorrespondenceTemplateController extends Controller
         abort_if(max($pageLayout['top'], $pageLayout['header_height']) + max($pageLayout['bottom'], $pageLayout['footer_height']) > $pageHeight - 30, 422, 'مجموع محدوده سربرگ، متن و پاصفحه برای اندازه صفحه انتخاب‌شده فضای کافی باقی نمی‌گذارد.');
         abort_if($pageLayout['left'] + $pageLayout['right'] > $pageWidth - 30, 422, 'مجموع حاشیه چپ و راست برای اندازه صفحه انتخاب‌شده بیش از حد مجاز است.');
 
-        $settings->set([
+        $appendixNumberingConfigured = (bool) ($data['appendix_numbering_configured'] ?? false)
+            || collect($elements)->contains('role', 'appendix_page_number')
+            || $settings->get(['correspondence.print.appendix_numbering_configured' => '0'])['correspondence.print.appendix_numbering_configured'] === '1';
+
+        DB::transaction(fn () => $settings->set([
+            'correspondence.print.appendix_numbering_configured' => $appendixNumberingConfigured ? '1' : '0',
             'correspondence.print.template' => json_encode($elements, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
             'correspondence.print.page_layout' => json_encode(array_map(static fn ($value): float => round((float) $value, 2), $pageLayout), JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
-        ]);
+        ]));
 
         return back()->with('success', 'قالب نامه ذخیره شد.');
     }

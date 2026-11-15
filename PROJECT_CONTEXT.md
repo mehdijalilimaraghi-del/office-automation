@@ -1,3 +1,7 @@
+## 2026-11-15 — Independent appendix numbering and designer preview switch
+
+- Letter and appendix page numbers count independently. Appendix numbering supports number-of, slash, short and page formats with an appendix caption; each section owns its position and appearance. Preview switching changes only the view/selected counter, preserving draft settings. Repeating header/footer elements remain on both sections; addressee/metadata and issuer are letter-only. Existing templates retain prior appendix appearance until the owner explicitly saves independent configuration; removing/hiding the appendix counter does not affect letter numbering.
+
 ## 2026-11-15 — Reliable preview transport and external-unit manager notice
 
 - Outgoing preview must work when an existing/history form has no CSRF page prop and must preserve unsaved input after failure. A selected external unit without a manager displays an informative notice; it does not block organization/unit addressing or manual recipient selection. A configured but unavailable active manager also displays a notice. Unit manager metadata must be present in both create and edit form responses.

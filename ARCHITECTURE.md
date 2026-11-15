@@ -1,3 +1,7 @@
+## 2026-11-15 — Independent appendix numbering and designer preview switch
+
+- The existing template JSON accepts appendix_page_number alongside page_number; no schema migration is required. Both template and print controllers use CorrespondenceTemplatePagination for consistent legacy fallback. correspondence.print.appendix_numbering_configured distinguishes inherited defaults from intentional deletion; saves from the new designer opt in explicitly, while older payloads preserve compatibility. The flag, template and page layout persist in one database transaction. pageNumbers.ts shares formatting between Template.vue and Print.vue; each renderer selects only the counter for its document section and retains the existing normalized coordinates/mm conversion and A4/A5 geometry.
+
 ## 2026-11-15 — Reliable preview transport and external-unit manager notice
 
 - CorrespondencePrintController exposes an authenticated same-permission GET token endpoint with Cache-Control no-store, private; it does not regenerate the session or save correspondence. correspondencePreview.ts owns synchronous popup opening, live token retrieval and native POST transport. Create.vue derives the adjacent token URL from the existing preview route so stale Ziggy route metadata does not prevent preview. Existing POST CSRF and authorization remain enforced. CorrespondenceController includes manager_contact_id in external-unit form data; no model/schema/dependency change was needed.
