@@ -1,3 +1,7 @@
+## 2026-11-15 — Automatic editor image preparation and clipboard import
+
+- Client-side editorImages.ts owns bitmap preparation, clipboard snapshot/HTML cleanup and Word PNG/JPEG RTF extraction. CorrespondenceRichTextEditor keeps caret/history integration and emits processing state; Create.vue gates submit/preview until both body and appendix are ready. Prepared data URLs remain at most 200,000 characters and newly inserted HTML fits a 480,000-character working budget, below unchanged server limits (300,000 per data URL / 500,000 body). No remote-image proxy, package, storage service, schema or authorization change was introduced.
+
 ## 2026-11-15 — Outgoing preview session-token correction
 
 - CorrespondenceController supplies a csrfToken page prop for both create/edit renders. Create.vue uses that prop for the existing native preview POST. The endpoint, authorization, CSRF middleware and in-memory preview architecture are preserved.

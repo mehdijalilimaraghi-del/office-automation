@@ -1,3 +1,7 @@
+## 2026-11-15 — Automatic editor image preparation and clipboard import
+
+- Run node tests/Browser/run-editor-images.mjs for 11 headless browser scenarios using existing Vite/Vue packages and a dedicated temporary browser profile. It defaults to installed Windows Edge; set EDITOR_TEST_BROWSER to another Chromium executable if needed. Coverage includes large-image preparation/transparency, HTML/RTF/VML and bitmap clipboard paths, missing-image messages, aggregate size, active-markup removal, actual editor file/Paste integration, processing notifications, caret/focus and undo/redo. PHPUnit regression test_editor_images_survive_save_and_reopen_in_body_and_appendix verifies both fields survive persistence and unsafe image attributes are stripped. Synthetic browser clipboard tests do not replace manual copying from the actual Word installation.
+
 ## 2026-11-15 — Outgoing preview session-token correction
 
 - The outgoing preview regression explicitly enables CSRF validation by overriding only the middleware testing bypass. It verifies the current token in an Inertia navigation response, stale-token rejection (419), valid-token preview rendering and zero persisted correspondences. Focused test: --filter=test_outgoing_preview_uses_current_session_token_and_does_not_save_a_letter. Full validation uses the isolated SQL Server invocation documented below; browser verification must include navigation after login.

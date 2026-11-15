@@ -1,3 +1,7 @@
+## 2026-11-15 — Automatic editor image preparation and clipboard import
+
+- Editor image-size rejection replaced by automatic preparation; clipboard image support and save/reopen regression coverage implemented. Keep manual acceptance open for actual Word documents: mixed text/multiple images, large photos, transparent logos, body/appendix persistence and A4/A5 print quality. Local-file/CORS-inaccessible and unsupported vector-only clipboard images cannot be reconstructed without actual bitmap data; these now show explicit markers instead of disappearing silently.
+
 ## 2026-11-15 — Outgoing preview session-token correction
 
 - Outgoing preview CSRF correction is implemented and automated validation passes. Owner acceptance: log in, navigate to create outgoing correspondence without a hard reload, enter unsaved text and open preview; verify no 419 and no saved correspondence. Existing editor and A4/A5 visual acceptance remain open.

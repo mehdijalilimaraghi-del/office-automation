@@ -113,6 +113,9 @@ const compositionModes: Array<{ value: CompositionMode; label: string; descripti
 ];
 
 const existing = props.correspondence;
+const bodyImagesProcessing = ref(false);
+const appendixImagesProcessing = ref(false);
+const preparingImages = computed(() => bodyImagesProcessing.value || appendixImagesProcessing.value);
 const form = useForm({
     source_correspondence_id: props.sourceCorrespondenceId ?? null,
     type: existing?.type ?? props.types[0]?.value ?? 'internal',
@@ -399,8 +402,16 @@ async function scanOriginalLetter(): Promise<void> {
     }
 }
 
+function submitCorrespondence(): void {
+    if (form.processing || preparingImages.value) return;
+    if (props.isEditing) {
+        form.transform((data) => ({ ...data, _method: 'put' })).post(route('correspondence.update', props.correspondence!.id), { forceFormData: true });
+    } else {
+        form.post(route('correspondence.store'), { forceFormData: true });
+    }
+}
 function openOutgoingPreview(): void {
-    if (form.type !== 'outgoing') return;
+    if (form.type !== 'outgoing' || preparingImages.value || form.processing) return;
 
     const targetName = 'correspondence-preview-' + Date.now();
     const previewWindow = window.open('', targetName);
@@ -468,7 +479,7 @@ function openOutgoingPreview(): void {
             <form
                 class="mx-auto max-w-5xl space-y-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"
                 enctype="multipart/form-data"
-                @submit.prevent="isEditing ? form.transform((data) => ({ ...data, _method: 'put' })).post(route('correspondence.update', correspondence!.id), { forceFormData: true }) : form.post(route('correspondence.store'), { forceFormData: true })"
+                @submit.prevent="submitCorrespondence"
             >
                 <section class="space-y-4">
                     <h3 class="text-base font-bold text-slate-900">مشخصات مکاتبه</h3>
@@ -668,7 +679,7 @@ function openOutgoingPreview(): void {
                         <h3 class="text-base font-bold text-slate-900">متن نامه</h3>
                         <p class="mt-1 text-sm text-slate-500">از نوار ابزار برای قالب‌بندی متن استفاده کنید. پیش‌نویس قبل از ثبت نهایی قابل ویرایش خواهد بود.</p>
                     </div>
-                    <CorrespondenceRichTextEditor v-model="form.body" label="متن نامه" :font-family="correspondenceFontFamily" :font-color="compositionDefaults?.['correspondence.composition.font_color'] ?? '#202124'" :font-size="Number(compositionDefaults?.['correspondence.composition.font_size'] ?? 12)" :table-border-color="compositionDefaults?.['correspondence.composition.table_border_color'] ?? '#94a3b8'" :shape-border-color="compositionDefaults?.['correspondence.composition.shape_border_color'] ?? '#334155'" :disabled="form.processing" />
+                    <CorrespondenceRichTextEditor v-model="form.body" @processing="bodyImagesProcessing = $event" label="متن نامه" :font-family="correspondenceFontFamily" :font-color="compositionDefaults?.['correspondence.composition.font_color'] ?? '#202124'" :font-size="Number(compositionDefaults?.['correspondence.composition.font_size'] ?? 12)" :table-border-color="compositionDefaults?.['correspondence.composition.table_border_color'] ?? '#94a3b8'" :shape-border-color="compositionDefaults?.['correspondence.composition.shape_border_color'] ?? '#334155'" :disabled="form.processing" />
                     <InputError :message="form.errors.body" />
                 </section>
 
@@ -726,7 +737,7 @@ function openOutgoingPreview(): void {
                     <InputError :message="form.errors.appendix_mode" />
                     <div v-if="form.appendix_mode === 'editor' || form.appendix_mode === 'both'" class="space-y-2">
                         <label for="appendix_body" class="block text-sm font-semibold text-slate-700">متن پیوست</label>
-                        <CorrespondenceRichTextEditor v-model="form.appendix_body" label="متن پیوست" :font-family="correspondenceFontFamily" :disabled="form.processing" />
+                        <CorrespondenceRichTextEditor v-model="form.appendix_body" @processing="appendixImagesProcessing = $event" label="متن پیوست" :font-family="correspondenceFontFamily" :disabled="form.processing" />
                         <InputError :message="form.errors.appendix_body" />
                     </div>
                         <ul v-if="isEditing && correspondence?.appendix_documents.length" class="space-y-1 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
@@ -767,10 +778,10 @@ function openOutgoingPreview(): void {
 
 
                 <div class="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-5">
-                    <button v-if="form.type === 'outgoing'" type="button" class="rounded-xl border border-indigo-300 bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-700 hover:bg-indigo-100" @click="openOutgoingPreview">پیش‌نمایش نامه</button>
+                    <button v-if="form.type === 'outgoing'" type="button" :disabled="form.processing || preparingImages" class="rounded-xl border border-indigo-300 bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-700 hover:bg-indigo-100" @click="openOutgoingPreview">پیش‌نمایش نامه</button>
                     <Link :href="route('correspondence.index')" class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">انصراف</Link>
-                    <button type="submit" :disabled="form.processing" class="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
-                        {{ form.processing ? 'در حال ذخیره...' : (isEditing ? 'ذخیره تغییرات' : (isDirectRegistration ? 'ثبت نهایی مکاتبه' : 'ذخیره پیش‌نویس')) }}
+                    <button type="submit" :disabled="form.processing || preparingImages" class="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
+                        {{ preparingImages ? 'در حال آماده‌سازی تصاویر…' : form.processing ? 'در حال ذخیره...' : (isEditing ? 'ذخیره تغییرات' : (isDirectRegistration ? 'ثبت نهایی مکاتبه' : 'ذخیره پیش‌نویس')) }}
                     </button>
                 </div>
             </form>

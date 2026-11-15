@@ -78,6 +78,33 @@ class CorrespondenceHttpTest extends TestCase
         $this->assertDatabaseCount('correspondences', 0);
     }
 
+    public function test_editor_images_survive_save_and_reopen_in_body_and_appendix(): void
+    {
+        $user = $this->userWithPermission('correspondence.create');
+        $image = UploadedFile::fake()->image('inline.png', 80, 60);
+        $source = 'data:image/png;base64,'.base64_encode(file_get_contents($image->getRealPath()));
+        $body = '<p>قبل تصویر</p><img src="'.$source.'" style="max-width:100%;height:auto" onerror="alert(1)"><p>پس از تصویر</p>';
+        $this->actingAs($user)->post(route('correspondence.store'), [
+            'type' => Correspondence::TYPE_INTERNAL,
+            'recipient_department_id' => $this->recipientDepartmentId(),
+            'subject' => 'نامه با تصاویر درون متن و پیوست',
+            'composition_mode' => 'editor',
+            'body' => $body,
+            'appendix_mode' => 'editor',
+            'appendix_body' => '<p>تصویر پیوست</p><img src="'.$source.'">',
+        ])->assertRedirect(route('correspondence.index'));
+
+        $letter = Correspondence::query()->where('created_by', $user->id)->sole();
+        $this->assertStringContainsString('src="'.$source.'"', $letter->body);
+        $this->assertStringContainsString('max-width: 100%', $letter->body);
+        $this->assertStringNotContainsString('onerror', $letter->body);
+        $this->assertStringContainsString('src="'.$source.'"', $letter->appendix_body);
+        $this->get(route('correspondence.edit', $letter))->assertOk()
+            ->assertInertia(fn ($page) => $page->component('Correspondence/Create')
+                ->where('correspondence.body', $letter->body)
+                ->where('correspondence.appendix_body', $letter->appendix_body));
+    }
+
     public function test_direct_internal_correspondence_is_finalized_when_created(): void
     {
         $creator = $this->userWithPermission('correspondence.create');

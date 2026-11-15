@@ -1,3 +1,7 @@
+## 2026-11-15 — Automatic editor image preparation and clipboard import
+
+- Removed the 350 KB input rejection; file insertion, native Paste and the custom Paste menu now prepare images automatically. Supports embedded HTML images, clipboard bitmaps and PNG/JPEG Word RTF/VML fallbacks, with position-preserving insertion when HTML provides placeholders. Missing/inaccessible images receive an explicit text marker and message. Form save/preview waits for body/appendix processing. Validation: 11 headless Edge browser scenarios passed; focused save/reopen test passed (20 assertions); full isolated SQL Server suite passed (495 tests, 2485 assertions); Vue/TypeScript production build passed. Real Word clipboard variants, visual quality and printed output still need owner acceptance. No backend behavior, schema, dependencies or release changes.
+
 ## 2026-11-15 — Outgoing preview session-token correction
 
 - Fixed outgoing preview HTTP 419 by passing the current session CSRF token to both create/edit forms and using it for the native preview POST. Focused real-CSRF test passed (1 test, 19 assertions); full SQL Server test suite passed (494 tests, 2465 assertions), npm run build (vue-tsc + Vite) and diff checks passed. Browser acceptance after login/navigation remains for the owner; no migration or deployment.

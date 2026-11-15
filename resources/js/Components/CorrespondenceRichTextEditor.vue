@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { EDITOR_BODY_LENGTH, EDITOR_IMAGE_LENGTH, optimizeEditorImage, prepareClipboardContent, snapshotClipboard, type ClipboardSnapshot } from '@/lib/editorImages';
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { AlignCenter, AlignJustify, AlignLeft, AlignRight, ArrowRight, Bold, Circle, Columns3, Image, IndentDecrease, IndentIncrease, Italic, Link, List, ListOrdered, Minus, PaintBucket, Redo2, RectangleHorizontal, Rows3, Strikethrough, Table2, Trash2, Underline, Undo2, Palette, RotateCw, FlipHorizontal, FlipVertical, Scissors, Copy, Clipboard, Eraser, Grid3X3, TableProperties, Maximize2 } from '@lucide/vue';
 
@@ -11,13 +12,17 @@ const props = withDefaults(defineProps<{ modelValue: string; label: string; font
     shapeBorderColor: '#334155',
     disabled: false,
 });
-const emit = defineEmits<{ 'update:modelValue': [value: string] }>();
+const emit = defineEmits<{ 'update:modelValue': [value: string]; processing: [value: boolean] }>();
 const editor = ref<HTMLDivElement | null>(null);
 const editorShell = ref<HTMLDivElement | null>(null);
 const keepImageRatio = ref(false);
 const currentFontSize = ref(`${props.fontSize}pt`);
 const dimensionRevision = ref(0);
 const imageInput = ref<HTMLInputElement | null>(null);
+const processingImages = ref(false);
+const imageStatus = ref('');
+watch(processingImages, value => emit('processing', value), { flush: 'sync' });
+onBeforeUnmount(() => emit('processing', false));
 const activeTab = ref<Tab>('home');
 const context = ref<{ table: boolean; picture: boolean; shape: boolean }>({ table: false, picture: false, shape: false });
 const history = ref<string[]>(['']);
@@ -919,29 +924,58 @@ function setImageBorder(value: string): void {
     commit();
 }
 function chooseImage(): void { imageInput.value?.click(); }
-function insertImageFile(event: Event): void {
+async function finishImageProcessing(): Promise<void> {
+    processingImages.value = false;
+    await nextTick();
+    if (!editor.value || props.disabled) return;
+    if (document.activeElement === document.body || editorShell.value?.contains(document.activeElement)) {
+        editor.value.focus();
+        if (savedRange && insideEditor(savedRange.commonAncestorContainer)) restoreSelection(savedRange);
+    }
+}
+function captureInsertionRange(): Range {
+    const selection = window.getSelection();
+    const active = selection?.rangeCount ? selection.getRangeAt(0) : null;
+    if (active && insideEditor(active.commonAncestorContainer)) return active.cloneRange();
+    if (savedRange && insideEditor(savedRange.commonAncestorContainer)) return savedRange.cloneRange();
+    const range = document.createRange();
+    range.selectNodeContents(editor.value!);
+    range.collapse(false);
+    return range;
+}
+function remainingContentLength(range: Range, replacement?: HTMLImageElement | null): number {
+    const selected = document.createElement('div');
+    selected.append(range.cloneContents());
+    return EDITOR_BODY_LENGTH - (editor.value?.innerHTML.length || 0)
+        + (replacement?.outerHTML.length || selected.innerHTML.length);
+}
+async function insertImageFile(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     input.value = '';
-    if (!file || !['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) return;
-    if (file.size > 350 * 1024) {
-        window.alert('حجم تصویر بیش از حد مجاز برای محتوای نامه است. تصویر را فشرده کنید یا از بخش پیوست فایل استفاده کنید.');
-        return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-        if (typeof reader.result !== 'string') return;
+    if (!file || props.disabled || processingImages.value || !editor.value) return;
+    const range = captureInsertionRange();
+    const replacement = currentImage.value?.isConnected ? currentImage.value : null;
+    processingImages.value = true;
+    imageStatus.value = 'در حال آماده‌سازی و کاهش حجم تصویر…';
+    try {
+        const budget = Math.min(EDITOR_IMAGE_LENGTH, remainingContentLength(range, replacement) - 250);
+        if (budget < 200) throw new Error('فضای متن نامه برای افزودن تصویر کافی نیست؛ بخشی از محتوا را به پیوست منتقل کنید.');
+        const source = await optimizeEditorImage(file, budget);
+        if (!editor.value) return;
         const image = document.createElement('img');
         image.alt = file.name;
         image.style.width = '50%';
+        image.style.maxWidth = '100%';
         image.style.height = 'auto';
-        image.onload = () => { image.style.aspectRatio = `${image.naturalWidth} / ${image.naturalHeight}`; commit(); };
-        image.src = reader.result;
         image.style.display = 'block';
-        if (currentImage.value?.isConnected) {
-            currentImage.value.replaceWith(image);
-            emitContent();
+        image.src = source;
+        if (replacement?.isConnected && editor.value.contains(replacement)) {
+            replacement.replaceWith(image);
+            commit();
         } else {
+            savedRange = range;
+            restoreSelection(range);
             insertNode(image);
         }
         currentImage.value = image;
@@ -949,8 +983,63 @@ function insertImageFile(event: Event): void {
         image.classList.add('rte-selected');
         context.value = { table: false, picture: true, shape: false };
         activeTab.value = 'picture';
-    };
-    reader.readAsDataURL(file);
+        imageStatus.value = '';
+    } catch (error) {
+        imageStatus.value = error instanceof Error ? error.message : 'آماده‌سازی تصویر انجام نشد. دوباره تلاش کنید.';
+    } finally {
+        await finishImageProcessing();
+    }
+}
+async function insertClipboardContent(data: ClipboardSnapshot): Promise<void> {
+    if (props.disabled || processingImages.value || !editor.value) return;
+    const range = captureInsertionRange();
+    processingImages.value = true;
+    imageStatus.value = 'در حال انتقال متن و آماده‌سازی تصاویر…';
+    try {
+        const result = await prepareClipboardContent(data, remainingContentLength(range));
+        if (!editor.value || !insideEditor(range.commonAncestorContainer)) return;
+        const fragment = range.createContextualFragment(result.html);
+        const last = fragment.lastChild;
+        range.deleteContents();
+        range.insertNode(fragment);
+        if (last) range.setStartAfter(last);
+        range.collapse(true);
+        savedRange = range.cloneRange();
+        restoreSelection(range);
+        commit();
+        imageStatus.value = result.missingImages
+            ? 'برخی تصاویر در داده‌های کپی‌شده قابل دسترسی نبودند و جای آن‌ها مشخص شد. آن‌ها را مستقیماً کپی یا از «درج تصویر» اضافه کنید.' : '';
+    } catch (error) {
+        imageStatus.value = error instanceof Error ? error.message : 'انتقال محتوا انجام نشد. دوباره تلاش کنید.';
+    } finally {
+        await finishImageProcessing();
+    }
+}
+function onPaste(event: ClipboardEvent): void {
+    if (props.disabled || processingImages.value) { event.preventDefault(); return; }
+    if (!event.clipboardData) return;
+    const data = snapshotClipboard(event.clipboardData);
+    if (!data.files.length && !/<(?:img|v:imagedata)\b/i.test(data.html) && !/\\pict\b/.test(data.rtf)) return;
+    event.preventDefault();
+    void insertClipboardContent(data);
+}
+async function pasteFromClipboard(): Promise<void> {
+    if (!navigator.clipboard?.read) { imageStatus.value = 'برای چسباندن محتوا از کلیدهای Ctrl+V استفاده کنید.'; return; }
+    try {
+        const data: ClipboardSnapshot = { html: '', text: '', rtf: '', files: [] };
+        for (const item of await navigator.clipboard.read()) {
+            for (const type of item.types) {
+                const blob = await item.getType(type);
+                if (type === 'text/html') data.html = await blob.text();
+                else if (type === 'text/plain') data.text = await blob.text();
+                else if (type === 'text/rtf') data.rtf = await blob.text();
+                else if (type.startsWith('image/')) data.files.push(new File([blob], 'clipboard-image', { type }));
+            }
+        }
+        await insertClipboardContent(data);
+    } catch {
+        imageStatus.value = 'دسترسی به کلیپ‌بورد مجاز نشد. برای چسباندن محتوا از کلیدهای Ctrl+V استفاده کنید.';
+    }
 }
 function insertShape(shape: 'rectangle' | 'ellipse' | 'line' | 'arrow'): void {
     const element = document.createElement('div');
@@ -1267,7 +1356,7 @@ function onEditorContextAction(action:string):void {
     else if(action==='list')toggleList(false);
     else if(action==='copy')document.execCommand('copy');
     else if(action==='cut')document.execCommand('cut');
-    else if(action==='paste')document.execCommand('paste');
+    else if(action==='paste')void pasteFromClipboard();
     else if(action==='select-all'){editor.value?.focus();document.execCommand('selectAll');}
     else if(action==='clear')clearFormatting();
 }
@@ -1326,7 +1415,7 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
 
 <template>
     <div ref="editorShell" @pointerdown.capture="pinContextualSelection" @mousedown.capture="onShellMouseDown" @focusout="syncExternalContentOnBlur" class="overflow-visible rounded-xl border border-slate-300 bg-white focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500">
-        <div class="rte-toolbar-sticky">
+        <div class="rte-toolbar-sticky" :inert="processingImages || disabled">
         <div class="rte-toolbar flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 px-2 py-2" role="tablist" aria-label="ابزارهای ویرایش متن" >
             <button v-for="tab in tabs" :key="tab.id" type="button" role="tab" :disabled="!isTabAvailable(tab.id)" :aria-selected="activeTab === tab.id" class="rounded-lg px-3 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-35" :class="activeTab === tab.id ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-200'" @click="switchTab(tab.id, $event)">{{ tab.label }}</button>
         </div>
@@ -1370,8 +1459,8 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
             <button type="button" class="rte-tool" title="درج خط" @click="insertShape('line')"><Minus :size="16" /> خط</button>
             <button type="button" class="rte-tool" title="درج پیکان" @click="insertShape('arrow')"><ArrowRight :size="16" /> پیکان</button>
             <button type="button" class="rte-tool" title="درج پیوند" @click="insertLink"><Link :size="16" /> پیوند</button>
-            <input ref="imageInput" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="insertImageFile" />
-            <p class="w-full text-xs text-slate-500">تصویر به‌صورت امن داخل محتوای نامه ذخیره می‌شود؛ فرمت PNG، JPG یا WEBP و حداکثر ۳۵۰ کیلوبایت.</p>
+            <input ref="imageInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp" class="hidden" @change="insertImageFile" />
+            <p class="w-full text-xs text-slate-500">تصاویر بزرگ هنگام درج یا چسباندن به‌صورت خودکار سبک می‌شوند؛ نیازی به کاهش حجم دستی نیست.</p>
         </div>
 
         <div v-else-if="activeTab === 'table'" class="rte-toolbar flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white p-3">
@@ -1428,16 +1517,19 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
             <template v-else-if="contextMenu.kind==='table'"><button @click="onEditorContextAction('insert-row')">افزودن ردیف</button><button @click="onEditorContextAction('insert-column')">افزودن ستون</button><button @click="onEditorContextAction('delete-row')">حذف ردیف</button><button @click="onEditorContextAction('delete-column')">حذف ستون</button><button @click="onEditorContextAction('select-row')">انتخاب ردیف</button><button @click="onEditorContextAction('select-column')">انتخاب ستون</button><button @click="onEditorContextAction('select-table')"><TableProperties :size="15"/> انتخاب جدول</button><button @click="onEditorContextAction('merge-cells')">ادغام سلول‌ها</button><button @click="onEditorContextAction('split-cell')">تقسیم سلول</button><button @click="onEditorContextAction('delete-table')"><Trash2 :size="15"/> حذف جدول</button><button @click="onEditorContextAction('copy')"><Copy :size="15"/> کپی</button><button @click="onEditorContextAction('cut')"><Scissors :size="15"/> برش</button></template>
             <template v-else><button @click="onEditorContextAction('bold')"><Bold :size="15"/> پررنگ</button><button @click="onEditorContextAction('italic')"><Italic :size="15"/> مورب</button><button @click="onEditorContextAction('underline')"><Underline :size="15"/> زیرخط</button><button @click="onEditorContextAction('align-right')">راست‌چین</button><button @click="onEditorContextAction('align-center')">وسط‌چین</button><button @click="onEditorContextAction('align-left')">چپ‌چین</button><button @click="onEditorContextAction('list')">فهرست نشانه‌دار</button><button @click="onEditorContextAction('copy')"><Copy :size="15"/> کپی</button><button @click="onEditorContextAction('cut')"><Scissors :size="15"/> برش</button><button @click="onEditorContextAction('paste')"><Clipboard :size="15"/> چسباندن</button><button @click="onEditorContextAction('select-all')">انتخاب همه</button><button @click="onEditorContextAction('clear')"><Eraser :size="15"/> پاک‌کردن قالب‌بندی</button></template>
         </div>
+        <p v-if="imageStatus" role="status" aria-live="polite" class="px-4 py-2 text-sm text-slate-600">{{ imageStatus }}</p>
         <div
             ref="editor"
             role="textbox"
             aria-multiline="true"
             :aria-label="label"
             :aria-disabled="disabled"
-            :contenteditable="!disabled"
+            :contenteditable="!disabled && !processingImages"
+            :aria-busy="processingImages"
              :style="{ fontFamily, color: fontColor, fontSize: `${fontSize}pt` }"
             class="rte-content min-h-72 whitespace-normal p-4 text-sm leading-8 text-slate-800 outline-none"
             data-placeholder="متن را اینجا بنویسید..."
+            @paste="onPaste"
             @input="onInput"
             @keydown="onEditorKeyDown"
             @pointerdown="onEditorPointerDown"

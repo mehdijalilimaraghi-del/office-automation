@@ -1,3 +1,7 @@
+## 2026-11-15 — Automatic editor image preparation and clipboard import
+
+- Editor file selection and clipboard images share resources/js/lib/editorImages.ts. Do not restore the old 350 KB rejection. Small supported images retain original bytes; larger images are resized/re-encoded automatically to fit existing inline-image/document persistence limits. Keep server validation and sanitization intact.
+
 ## 2026-11-15 — Outgoing preview session-token correction
 
 - Outgoing preview must use the current correspondence form csrfToken prop, not the initial Blade meta token, which becomes stale after session regeneration during Inertia navigation.
