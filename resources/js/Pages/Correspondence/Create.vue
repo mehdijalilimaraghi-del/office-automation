@@ -654,7 +654,7 @@ async function openOutgoingPreview(): Promise<void> {
                         v-model="form.body"
                         rows="5"
                         maxlength="100000"
-                        class="w-full rounded-xl border-slate-300 text-sm leading-7 focus:border-indigo-500 focus:ring-indigo-500"
+                        class="max-h-[clamp(18rem,60vh,36rem)] overflow-auto w-full rounded-xl border-slate-300 text-sm leading-7 focus:border-indigo-500 focus:ring-indigo-500"
                         placeholder="توضیحات یا خلاصه نامه را بنویسید..."
                         :disabled="form.processing"
                     ></textarea>
@@ -666,7 +666,7 @@ async function openOutgoingPreview(): Promise<void> {
                         <h3 class="text-base font-bold text-slate-900">توضیحات فایل نامه <span class="text-rose-600">*</span></h3>
                         <p class="mt-1 text-sm leading-6 text-slate-500">موضوع یا توضیح مختصری درباره فایل نهایی نامه را وارد کنید؛ متن اصلی در فایل بارگذاری‌شده قرار دارد.</p>
                     </div>
-                    <textarea id="outgoing_file_description" v-model="form.body" rows="4" maxlength="100000" required class="w-full rounded-xl border-slate-300 text-sm leading-7 focus:border-indigo-500 focus:ring-indigo-500" placeholder="توضیحی درباره محتوای فایل نامه بنویسید..."></textarea>
+                    <textarea id="outgoing_file_description" v-model="form.body" rows="4" maxlength="100000" required class="max-h-[clamp(18rem,60vh,36rem)] overflow-auto w-full rounded-xl border-slate-300 text-sm leading-7 focus:border-indigo-500 focus:ring-indigo-500" placeholder="توضیحی درباره محتوای فایل نامه بنویسید..."></textarea>
                     <InputError :message="form.errors.body" />
                 </section>
 

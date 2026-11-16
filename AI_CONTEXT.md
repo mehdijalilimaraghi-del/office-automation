@@ -1,3 +1,7 @@
+## 2026-11-16 — Draft preview and scrollable correspondence text
+
+- Both saved drafts and unsaved outgoing previews exclude stamp and signature elements and image data on the server. Saved previews use the same read access as correspondence details.
+
 ## 2026-11-16 — Editable appendix labels
 
 - Editable appendix heading and counter prefix default to «پیوست» only when absent. Explicit empty/null inputs suppress the respective text.

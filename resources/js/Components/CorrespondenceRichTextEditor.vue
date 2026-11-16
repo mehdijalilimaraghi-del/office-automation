@@ -1555,7 +1555,7 @@ onBeforeUnmount(() => { window.removeEventListener('selectionchange', onSelectio
 .rte-font-family{min-width:132px;width:150px;max-width:170px}
 .rte-font-size{min-width:88px;width:88px}
 .rte-content :deep(.rte-cell-selected){outline:2px solid #2563eb;outline-offset:-2px;background-image:linear-gradient(#dbeafe66,#dbeafe66)}
-.rte-content{min-height:18rem;line-height:1.9;direction:rtl;text-align:right;overflow-wrap:anywhere}
+.rte-content{min-height:18rem;max-height:clamp(18rem,60vh,36rem);overflow:auto;line-height:1.9;direction:rtl;text-align:right;overflow-wrap:anywhere}
 .rte-content:empty:before{content:attr(data-placeholder);color:#94a3b8;pointer-events:none}
 .rte-content :deep(table){border-collapse:collapse;margin:8px 0}
 .rte-content :deep(td),.rte-content :deep(th){border:1px solid #94a3b8;padding:6px;min-width:35px;position:relative;cursor:cell}

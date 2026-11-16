@@ -130,6 +130,15 @@ window.editorImageTests = (async () => {
         document.querySelector('button[title="ازنو"]').click(); await nextTick();
         assert(editor.querySelector('img') && model.value.includes('<strong>متن</strong>'), 'Redo lost pasted image');
     });
+    await test('long editor content scrolls while the toolbar stays outside the scroll area', async () => {
+        const { editor } = await mount('<p>شروع</p>' + '<p>متن بلند نامه</p>'.repeat(100));
+        assert(editor.scrollHeight > editor.clientHeight, 'Editor expanded to the full content height');
+        const toolbar = document.querySelector('.rte-toolbar-sticky');
+        const toolbarTop = toolbar.getBoundingClientRect().top;
+        editor.scrollTop = editor.scrollHeight;
+        assert(editor.scrollTop > 0, 'The editor content cannot scroll');
+        assert(toolbar.getBoundingClientRect().top === toolbarTop, 'Toolbar moved with the editor content');
+    });
     app?.unmount();
     return { passed: results.length, results };
 })();

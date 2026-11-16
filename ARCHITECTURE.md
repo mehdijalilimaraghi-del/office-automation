@@ -1,3 +1,7 @@
+## 2026-11-16 — Draft preview and scrollable correspondence text
+
+- The existing correspondence.print route handles saved drafts through CorrespondenceAccessService::canView. The renderer distinguishes persisted records from registered records and drops stamp/signature template elements from unregistered responses.
+
 ## 2026-11-16 — Editable appendix labels
 
 - Heading is an optional system setting and page_prefix is an optional template element field. The visible heading and appendix height measurement share the same condition.

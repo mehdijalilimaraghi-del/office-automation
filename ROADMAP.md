@@ -1,3 +1,7 @@
+## 2026-11-16 — Draft preview and scrollable correspondence text
+
+- For acceptance, review a long draft and appendix, open preview before registration, and return to the letter for the existing approval or correction action.
+
 ## 2026-11-16 — Editable appendix labels
 
 - During PDF acceptance, include a custom appendix title and a number-only appendix counter.

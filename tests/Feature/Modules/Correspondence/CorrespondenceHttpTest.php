@@ -343,6 +343,45 @@ class CorrespondenceHttpTest extends TestCase
                 ->where('stampDataUri', fn ($value) => is_string($value) && str_starts_with($value, 'data:image/png;base64,'))
                 ->where('signatureDataUri', fn ($value) => is_string($value) && str_starts_with($value, 'data:image/png;base64,')));
 
+        $draft = $letter->replicate();
+        $draft->forceFill([
+            'status' => Correspondence::STATUS_DRAFT,
+            'registration_number' => null,
+            'workflow_state' => 'awaiting_manager_approval',
+            'current_user_id' => $viewer->id,
+            'current_department_id' => $department->id,
+            'appendix_body' => '<p>متن پیوست</p>',
+        ])->save();
+
+        $this->actingAs($viewer)->get(route('correspondence.print', $draft))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Correspondence/Print')
+                ->where('isPreview', true)
+                ->where('letter.id', $draft->id)
+                ->where('letter.appendix_body', '<p>متن پیوست</p>')
+                ->where('stampDataUri', null)
+                ->where('signatureDataUri', null)
+                ->where('printOptions.show_stamp', false)
+                ->where('printOptions.show_department_signature', false)
+                ->where('templateElements', fn ($items) => ! collect($items)->contains(
+                    fn ($item) => in_array($item['kind'] ?? null, ['stamp', 'signature'], true),
+                )));
+
+        $otherViewer = $this->userWithPermission('correspondence.view');
+        $this->actingAs($otherViewer)->get(route('correspondence.print', $draft))->assertForbidden();
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $draft->id, 'status' => Correspondence::STATUS_DRAFT, 'registration_number' => null,
+        ]);
+
+        $this->actingAs($creator)->post(route('correspondence.preview'), [
+            'preview' => json_encode(['composition_mode' => 'editor', 'body' => '<p>متن ذخیره‌نشده</p>']),
+        ])->assertOk()->assertInertia(fn ($page) => $page
+            ->where('isPreview', true)
+            ->where('letter.id', 0)
+            ->where('stampDataUri', null)
+            ->where('signatureDataUri', null));
+
         $savedTemplate = json_decode(
             app(SystemSettingsService::class)->get(['correspondence.print.template' => null])['correspondence.print.template'],
             true,

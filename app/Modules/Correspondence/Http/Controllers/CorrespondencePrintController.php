@@ -30,7 +30,8 @@ class CorrespondencePrintController extends Controller
         SystemSettingsService $settings,
     ): Response {
         abort_unless($access->canView($correspondence, $request->user()), 403);
-        abort_unless($correspondence->status === Correspondence::STATUS_REGISTERED, 404);
+        $isDraft = $correspondence->status === Correspondence::STATUS_DRAFT;
+        abort_unless($isDraft || $correspondence->status === Correspondence::STATUS_REGISTERED, 404);
 
         $correspondence->loadMissing([
             'documents.document.latestVersion',
@@ -41,7 +42,11 @@ class CorrespondencePrintController extends Controller
             'externalDepartment:id,name',
         ]);
 
-        return $this->render($correspondence, $settings, false);
+        if ($isDraft) {
+            $correspondence->setAttribute('preview_notice', 'پیش‌نمایش قبل از ثبت نهایی · فایل‌های همراه از صفحه مکاتبه قابل مشاهده‌اند.');
+        }
+
+        return $this->render($correspondence, $settings, $isDraft);
     }
 
     public function previewToken(Request $request): \Illuminate\Http\JsonResponse
@@ -143,6 +148,8 @@ class CorrespondencePrintController extends Controller
     private function render(Correspondence $correspondence, SystemSettingsService $settings, bool $isPreview): Response
     {
         $pageSize = $settings->get(['correspondence.composition.page_size' => 'A4'])['correspondence.composition.page_size'] === 'A5' ? 'A5' : 'A4';
+        $isSaved = $correspondence->exists;
+        $isRegistered = $isSaved && $correspondence->status === Correspondence::STATUS_REGISTERED;
         $snapshot = $correspondence->document_identity_snapshot ?? [];
         $organization = $snapshot['organization'] ?? (function () use ($settings): array {
             $values = $settings->get([
@@ -178,6 +185,11 @@ class CorrespondencePrintController extends Controller
             $settings->get(['correspondence.print.appendix_numbering_configured' => '0'])['correspondence.print.appendix_numbering_configured'] === '1',
         );
 
+        if (! $isRegistered) {
+            $templateElements = array_values(array_filter($templateElements, static fn (array $item): bool =>
+                ! in_array($item['kind'] ?? null, ['stamp', 'signature'], true)));
+        }
+
         $hasVisibleStampElement = collect($templateElements)->contains(static fn (array $item): bool => ($item['visible'] ?? true) && ($item['role'] ?? null) === 'issuer' && ($item['kind'] ?? null) === 'stamp');
         $hasVisibleSignatureElement = collect($templateElements)->contains(static fn (array $item): bool => ($item['visible'] ?? true) && ($item['role'] ?? null) === 'issuer' && ($item['kind'] ?? null) === 'signature');
 
@@ -207,7 +219,7 @@ class CorrespondencePrintController extends Controller
         ]);
         $organization['postal_code'] = filled($organization['postal_code'] ?? null) ? $organization['postal_code'] : $live['organization.postal_code'];
 
-        if (! filled($stampPath) || ! Storage::disk('local')->exists($stampPath)) {
+        if ($hasVisibleStampElement && (! filled($stampPath) || ! Storage::disk('local')->exists($stampPath))) {
             $stampPath = $live['organization.stamp.active'] === '1'
                 ? $live['organization.stamp.path']
                 : null;
@@ -227,24 +239,29 @@ class CorrespondencePrintController extends Controller
                 ->orderByDesc('is_primary')
                 ->first()?->position?->name
             : null;
-        if (! filled($signaturePath) || ! Storage::disk('local')->exists($signaturePath)) {
+        if ($hasVisibleSignatureElement && (! filled($signaturePath) || ! Storage::disk('local')->exists($signaturePath))) {
             $signaturePath = $department?->manager_signature_active
                 ? $department->manager_signature_path
                 : null;
+        }
+
+        $body = $correspondence->body;
+        if ($isSaved && $correspondence->type === Correspondence::TYPE_INCOMING && $body !== null) {
+            $body = nl2br(e($body), false);
         }
 
         return Inertia::render('Correspondence/Print', [
             'isPreview' => $isPreview,
             'previewNotice' => $isPreview ? $correspondence->getAttribute('preview_notice') : null,
             'letter' => [
-                'id' => $isPreview ? 0 : $correspondence->id,
+                'id' => $isSaved ? $correspondence->id : 0,
                 'type' => $correspondence->type,
                 'subject' => $correspondence->subject,
                 'attachment_pages' => $correspondence->attachment_pages,
-                'body' => $correspondence->body,
+                'body' => $body,
                 'appendix_mode' => $correspondence->appendix_mode ?? 'none',
                 'appendix_body' => $correspondence->appendix_body,
-                'appendix_file_count' => $isPreview ? (int) $correspondence->getAttribute('preview_appendix_file_count') : $correspondence->documents->where('purpose', 'correspondence_appendix')->filter(fn ($link) => $link->document?->latestVersion !== null)->count(),
+                'appendix_file_count' => ! $isSaved ? (int) $correspondence->getAttribute('preview_appendix_file_count') : $correspondence->documents->where('purpose', 'correspondence_appendix')->filter(fn ($link) => $link->document?->latestVersion !== null)->count(),
                 'letter_number' => $correspondence->letter_number,
                 'registration_number' => $correspondence->registration_number,
                 'registered_at' => $correspondence->registered_at?->toIso8601String(),
@@ -270,8 +287,8 @@ class CorrespondencePrintController extends Controller
             'signatureDataUri' => $hasVisibleSignatureElement ? $this->imageDataUri($signaturePath) : null,
             'printOptions' => [
                 'show_creator_identity' => $settings->get(['correspondence.print.show_creator_identity' => '1'])['correspondence.print.show_creator_identity'] === '1',
-                'show_stamp' => $settings->get(['correspondence.print.show_stamp' => '1'])['correspondence.print.show_stamp'] === '1',
-                'show_department_signature' => $settings->get(['correspondence.print.show_department_signature' => '1'])['correspondence.print.show_department_signature'] === '1',
+                'show_stamp' => $isRegistered && $settings->get(['correspondence.print.show_stamp' => '1'])['correspondence.print.show_stamp'] === '1',
+                'show_department_signature' => $isRegistered && $settings->get(['correspondence.print.show_department_signature' => '1'])['correspondence.print.show_department_signature'] === '1',
                 'letterhead_show_name' => $settings->get(['correspondence.print.letterhead.show_name' => '1'])['correspondence.print.letterhead.show_name'] === '1',
                 'letterhead_show_address' => $settings->get(['correspondence.print.letterhead.show_address' => '1'])['correspondence.print.letterhead.show_address'] === '1',
                 'letterhead_show_phone' => $settings->get(['correspondence.print.letterhead.show_phone' => '1'])['correspondence.print.letterhead.show_phone'] === '1',

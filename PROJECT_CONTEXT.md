@@ -1,3 +1,7 @@
+## 2026-11-16 — Draft preview and scrollable correspondence text
+
+- Reviewers can inspect the layout before final registration. Stamps and signatures appear only after final registration. The saved draft preview does not change the letter state.
+
 ## 2026-11-16 — Editable appendix labels
 
 - The first printed appendix sheet can have a custom heading. Appendix page numbering has an independent optional prefix; clearing it leaves the numbering format intact.

@@ -1,3 +1,7 @@
+## 2026-11-16 — Draft preview and scrollable correspondence text
+
+- The protected print preview regression exercises assigned-manager access, denial for unrelated viewers and asset suppression for saved drafts and unsaved previews.
+
 ## 2026-11-16 — Editable appendix labels
 
 - Appendix text is covered by OrganizationSettingsTest and the template pagination browser suite, including customised and intentionally empty values.

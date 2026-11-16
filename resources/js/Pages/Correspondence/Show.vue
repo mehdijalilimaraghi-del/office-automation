@@ -238,7 +238,7 @@ function registerCorrespondence(): void {
                     </div>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
-                    <Link v-if="correspondence.status === 'registered'" :href="route('correspondence.print', correspondence.id)" class="rounded-xl border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-100">پیش‌نمایش چاپ / PDF</Link>
+                    <Link :href="route('correspondence.print', correspondence.id)" class="rounded-xl border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-800 hover:bg-teal-100">{{ correspondence.status === 'registered' ? 'پیش‌نمایش چاپ / PDF' : 'پیش‌نمایش نامه' }}</Link>
                     <Link :href="route('correspondence.index')" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">بازگشت به فهرست</Link>
                     <button v-if="canRegister && correspondence.status === 'draft'" type="button" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700" @click="registerCorrespondence">ثبت نهایی</button>
                 </div>
@@ -346,13 +346,13 @@ function registerCorrespondence(): void {
                 <div dir="rtl" class="min-w-0 space-y-5">
                                 <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">{{ correspondence.type === 'incoming' ? 'توضیحات نامه' : (correspondence.type === 'outgoing' && correspondence.body && !correspondence.body.includes('<') ? 'توضیحات فایل نامه' : 'متن نامه') }}</h2></div>
-                <div v-if="(correspondence.type === 'incoming' || (correspondence.type === 'outgoing' && correspondence.body && !correspondence.body.includes('<'))) && correspondence.body" class="whitespace-pre-wrap p-5 text-sm leading-8 text-slate-800" dir="rtl">{{ correspondence.body }}</div>
-                <div v-else-if="correspondence.type !== 'incoming' && correspondence.body" class="correspondence-body p-5 text-sm leading-8 text-slate-800" dir="rtl" :style="{ fontFamily: correspondenceFontFamily }" v-html="correspondence.body"></div>
+                <div v-if="(correspondence.type === 'incoming' || (correspondence.type === 'outgoing' && correspondence.body && !correspondence.body.includes('<'))) && correspondence.body" class="correspondence-scroll whitespace-pre-wrap break-words p-5 text-sm leading-8 text-slate-800" dir="rtl" tabindex="0" role="region" aria-label="توضیحات نامه">{{ correspondence.body }}</div>
+                <div v-else-if="correspondence.type !== 'incoming' && correspondence.body" class="correspondence-scroll correspondence-body p-5 text-sm leading-8 text-slate-800" dir="rtl" tabindex="0" role="region" aria-label="متن نامه" :style="{ fontFamily: correspondenceFontFamily }" v-html="correspondence.body"></div>
                 <div v-else class="p-5 text-sm text-slate-500">{{ correspondence.type === 'incoming' ? 'توضیحی برای این نامه ثبت نشده است.' : 'متن داخلی ثبت نشده است؛ محتوای نامه در فایل پیوست قرار دارد.' }}</div>
             </section>
                     <section v-if="correspondence.appendix_body" class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-100 px-5 py-4"><h2 class="font-bold text-slate-900">متن پیوست</h2></div>
-                <div class="correspondence-body p-5 text-sm leading-8 text-slate-800" dir="rtl" :style="{ fontFamily: correspondenceFontFamily }" v-html="correspondence.appendix_body"></div>
+                <div class="correspondence-scroll correspondence-body p-5 text-sm leading-8 text-slate-800" dir="rtl" tabindex="0" role="region" aria-label="متن پیوست" :style="{ fontFamily: correspondenceFontFamily }" v-html="correspondence.appendix_body"></div>
             </section>
                     <section v-if="correspondence.type === 'incoming' || originalLetters.length" class="rounded-2xl border border-indigo-100 bg-white shadow-sm">
                 <div class="flex items-center justify-between border-b border-indigo-100 px-5 py-4"><h2 class="font-bold text-slate-900">فایل نامه</h2><span class="text-xs text-slate-500">{{ originalLetters.length }} فایل</span></div>
@@ -607,6 +607,8 @@ function registerCorrespondence(): void {
 </template>
 
 <style scoped>
+.correspondence-scroll { max-height: clamp(18rem, 60vh, 36rem); overflow: auto; }
+.correspondence-scroll:focus-visible { outline: 2px solid #4f46e5; outline-offset: -2px; }
 .correspondence-body :deep(img) { max-width: 100%; height: auto; }
 .correspondence-body :deep(p) { margin: 0 0 0.75rem; }
 .correspondence-body :deep(ul) { list-style: disc; padding-right: 1.5rem; margin: 0.75rem 0; }

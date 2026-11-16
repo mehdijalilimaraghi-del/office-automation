@@ -1,3 +1,7 @@
+## 2026-11-16 — Draft preview and scrollable correspondence text
+
+- The creation and details screens constrain long letter and appendix text to independently scrollable areas. The details screen offers draft preview for authorized reviewers, with a return link to the letter.
+
 ## 2026-11-16 — Editable appendix labels
 
 - Appendix title and counter prefix are independently editable or removable in the designer; both reach preview and print. No migration.
