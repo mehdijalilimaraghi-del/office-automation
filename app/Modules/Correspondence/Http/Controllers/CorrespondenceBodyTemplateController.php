@@ -37,7 +37,7 @@ class CorrespondenceBodyTemplateController
 
         $body = $sanitizer->sanitizeBody($data['body']);
         if (! $sanitizer->hasRichContent($body)) {
-            throw ValidationException::withMessages(['body' => 'متن نامه برای ذخیره قالب خالی است.']);
+            throw ValidationException::withMessages(['body' => 'متن نامه برای ذخیره نمونه خالی است.']);
         }
 
         $template = CorrespondenceBodyTemplate::query()->create([

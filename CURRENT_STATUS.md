@@ -1,6 +1,6 @@
 ## V1 and V2 acceptance fixes
 
-- V1/V2 changes cover Jalali dashboard periods, reusable personal letter bodies, external organization directories and internal department dialog scrolling.
+- V1/V2 changes cover Jalali dashboard periods, personal reusable letter bodies (نمونه‌های متن نامه), external organization directories and internal department dialog scrolling.
 
 ## 2026-11-16 — Draft preview and scrollable correspondence text
 

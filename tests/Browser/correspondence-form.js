@@ -93,22 +93,22 @@ window.editorImageTests = (async () => {
         });
         await test('letter editor saves and reapplies a named rich-text template', async () => {
             const button = label => [...document.querySelectorAll('button')].find(item => item.textContent.trim() === label);
-            button('قالب‌های متن نامه').click();
+            button('نمونه‌های متن نامه').click();
             const panel = await (async () => { await nextTick(); return document.querySelector('#letter-body-templates'); })();
             await waitFor(() => panel.getAttribute('aria-busy') === 'false');
             const title = panel.querySelector('input');
-            title.value = 'قالب پیگیری';
+            title.value = 'معرفی حساب';
             title.dispatchEvent(new Event('input', { bubbles: true }));
             await nextTick();
-            button('ذخیره متن فعلی به‌عنوان قالب').click();
-            await waitFor(() => panel.textContent.includes('قالب متن ذخیره شد.'));
+            button('ذخیره متن فعلی به‌عنوان نمونه').click();
+            await waitFor(() => panel.textContent.includes('نمونه متن ذخیره شد.'));
             const editor = document.querySelector('.rte-content');
             editor.innerHTML = '<p>متن جایگزین آزمایشی</p>';
             editor.dispatchEvent(new Event('input', { bubbles: true }));
             const confirm = window.confirm;
             window.confirm = () => true;
             try {
-                button('استفاده از قالب').click();
+                button('استفاده از نمونه').click();
                 await waitFor(() => editor.textContent.includes('متن فعلی نامه'));
             } finally {
                 window.confirm = confirm;
