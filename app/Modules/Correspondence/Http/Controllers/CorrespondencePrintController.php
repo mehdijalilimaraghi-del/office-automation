@@ -256,6 +256,7 @@ class CorrespondencePrintController extends Controller
             ],
             'organization' => $organization,
             'templateElements' => $templateElements,
+            'appendixHeading' => $settings->get(['correspondence.print.appendix_heading' => 'پیوست'])['correspondence.print.appendix_heading'],
             'pageLayout' => $pageLayout,
             'pageSize' => $pageSize,
             'creatorName' => $snapshot['creator_name'] ?? $correspondence->creator?->name,

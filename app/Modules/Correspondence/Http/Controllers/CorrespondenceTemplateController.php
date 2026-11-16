@@ -111,6 +111,7 @@ class CorrespondenceTemplateController extends Controller
         return Inertia::render('Correspondence/Template', [
             'elements' => $elements,
             'pageLayout' => $pageLayout,
+            'appendixHeading' => $settings->get(['correspondence.print.appendix_heading' => 'پیوست'])['correspondence.print.appendix_heading'],
             'pageSize' => $pageSize,
             'previewValues' => $previewValues,
             'previewBody' => implode("\n", [
@@ -165,6 +166,7 @@ class CorrespondenceTemplateController extends Controller
         $data = $request->validate([
             'elements' => ['present', 'array', 'max:30'],
             'appendix_numbering_configured' => ['sometimes', 'boolean'],
+            'appendix_heading' => ['sometimes', 'nullable', 'string', 'max:80'],
             'page_layout' => ['sometimes', 'array'],
             'page_layout.top' => ['required_with:page_layout', 'numeric', 'min:5', 'max:80'],
             'page_layout.right' => ['required_with:page_layout', 'numeric', 'min:5', 'max:50'],
@@ -176,6 +178,7 @@ class CorrespondenceTemplateController extends Controller
             'elements.*.role' => ['nullable', 'in:meta,heading,page_number,appendix_page_number,issuer,header,footer,repeat,body'],
             'elements.*.spacing' => ['nullable', 'numeric', 'min:-80', 'max:80'],
             'elements.*.font_family' => ['nullable', 'in:default,Vazirmatn,Tahoma,Arial,B Nazanin,B Mitra,IRANSans,Times New Roman'],
+            'elements.*.page_prefix' => ['sometimes', 'nullable', 'string', 'max:80'],
             'elements.*.page_format' => ['nullable', 'in:number_of,slash,short,page'],
             'elements.*.id' => ['required', 'string', 'max:40', 'distinct'],
             'elements.*.label' => ['required', 'string', 'max:80'],
@@ -218,6 +221,7 @@ class CorrespondenceTemplateController extends Controller
             || $settings->get(['correspondence.print.appendix_numbering_configured' => '0'])['correspondence.print.appendix_numbering_configured'] === '1';
 
         DB::transaction(fn () => $settings->set([
+            ...(array_key_exists('appendix_heading', $data) ? ['correspondence.print.appendix_heading' => $data['appendix_heading'] ?? ''] : []),
             'correspondence.print.appendix_numbering_configured' => $appendixNumberingConfigured ? '1' : '0',
             'correspondence.print.template' => json_encode($elements, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
             'correspondence.print.page_layout' => json_encode(array_map(static fn ($value): float => round((float) $value, 2), $pageLayout), JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),

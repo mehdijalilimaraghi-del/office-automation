@@ -51,6 +51,8 @@ window.startPaginationTests = async () => {
     });
     let expectedTop;
     await test('appendix format, position and font edits persist when switching sections', async () => {
+        const title = inputFor('عنوان بالای پیوست'); title.value = 'مدارک همراه'; title.dispatchEvent(new Event('input', { bubbles: true }));
+        const prefix = inputFor('عبارت قبل از شماره صفحه'); prefix.value = 'ضمیمه'; prefix.dispatchEvent(new Event('input', { bubbles: true }));
         const format = inputFor('قالب شماره صفحه', 'select'); format.value = 'page'; format.dispatchEvent(new Event('change', { bubbles: true }));
         const y = inputFor('موقعیت از بالای صفحه'); y.value = String(newY); y.dispatchEvent(new Event('change', { bubbles: true }));
         const font = inputFor('اندازه قلم'); font.value = '13'; font.dispatchEvent(new Event('input', { bubbles: true }));
@@ -60,7 +62,7 @@ window.startPaginationTests = async () => {
         await switchTo('نامه');
         assert(counter('page_number').textContent === '۱/۵' && counter('page_number').style.top === '92%', 'Letter settings changed with appendix');
         await switchTo('پیوست');
-        assert(counter('appendix_page_number').textContent === 'پیوست ـ صفحه ۱ از ۳' && Number(inputFor('اندازه قلم').value) === 13, 'Appendix settings reset on toggle');
+        assert(counter('appendix_page_number').textContent === 'ضمیمه ـ صفحه ۱ از ۳' && document.querySelector('[data-preview-section] h2')?.textContent === 'مدارک همراه' && Number(inputFor('اندازه قلم').value) === 13, 'Appendix settings reset on toggle');
     });
     await test('presentation preview retains appendix section and unsaved edits', async () => {
         Array.from(document.querySelectorAll('button')).find(button => button.textContent.trim() === 'پیش‌نمایش قالب').click(); await nextTick();
@@ -71,9 +73,9 @@ window.startPaginationTests = async () => {
     });
     const designerPage = document.querySelector('[data-preview-section]').getBoundingClientRect();
     const designerTop = (counter('appendix_page_number').getBoundingClientRect().top - designerPage.top) / designerPage.height;
-    const configuredAppendix = { ...appendix, page_format: 'page', y: expectedTop, font_size: 13 };
+    const configuredAppendix = { ...appendix, page_format: 'page', page_prefix: 'ضمیمه', y: expectedTop, font_size: 13 };
     const printProps = {
-        isPreview: true, previewNotice: null, templateElements: [letter, configuredAppendix, body], pageLayout, pageSize: size,
+        isPreview: true, previewNotice: null, appendixHeading: 'مدارک همراه', templateElements: [letter, configuredAppendix, body], pageLayout, pageSize: size,
         letter: { id: 0, subject: 'نامه', type: 'outgoing', body: '<p>متن نامه</p>', appendix_body: '<div style="height:1200px">متن پیوست بلند</div>', appendix_mode: 'editor', appendix_file_count: 0, attachment_pages: null, letter_number: null, registration_number: null, registered_at: null, sent_at: null, recipient_name: null, recipient_addressing: null, external_organization: null, external_department: null },
         organization: {}, creatorName: null, creatorUnitTitle: null, managerName: null, managerPosition: null, managerTitle: null, creatorDepartmentName: null,
         stampDataUri: null, signatureDataUri: null, letterheadDataUri: null, printOptions: { font_family: 'Vazirmatn', show_creator_identity: false },
@@ -92,7 +94,7 @@ window.startPaginationTests = async () => {
         assert(!papers[0].querySelector('[data-page-number-role="appendix_page_number"]'), 'Appendix counter on letter');
         for (let i = 1; i < papers.length; i++) {
             const number = papers[i].querySelector('[data-page-number-role="appendix_page_number"]');
-            assert(number.textContent === formatPageNumber('page', i, appendixPages, true), 'Appendix numbering did not restart independently');
+            assert(number.textContent === formatPageNumber('page', i, appendixPages, true, 'ضمیمه'), 'Appendix numbering did not restart independently');
             assert(!papers[i].querySelector('[data-page-number-role="page_number"]'), 'Letter counter on appendix');
             const rect = papers[i].getBoundingClientRect();
             const top = (number.getBoundingClientRect().top - rect.top) / rect.height;
@@ -104,6 +106,13 @@ window.startPaginationTests = async () => {
         viewProps.value = { ...printProps, templateElements: [letter, { ...configuredAppendix, visible: false }, body] };
         await nextTick();
         assert(!counter('appendix_page_number') && counter('page_number'), 'Counter visibility is coupled');
+    });
+    await test('custom heading and removable appendix label reach the output', async () => {
+        assert(document.querySelector('.paper .appendix-heading')?.textContent === 'مدارک همراه', 'Custom heading absent');
+        viewProps.value = { ...printProps, appendixHeading: '', templateElements: [letter, { ...configuredAppendix, page_prefix: null }, body] };
+        await nextTick();
+        assert(!document.querySelector('.appendix-heading'), 'Blank heading still rendered');
+        assert(counter('appendix_page_number')?.textContent === formatPageNumber('page', 1, appendixPages), 'Blank prefix still rendered');
     });
     await test('all four numbering formats support independent appendix captions', async () => {
         assert(formatPageNumber('number_of', 1, 3, true) === 'پیوست ـ ۱ از ۳', 'number_of format');

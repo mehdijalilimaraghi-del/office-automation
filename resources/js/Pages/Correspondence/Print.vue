@@ -5,11 +5,12 @@ import { formatPageNumber } from '@/lib/pageNumbers';
 interface AddressingSnapshot { organizational_title_prefix?:string|null; position?:string|null; personal_salutation?:string|null; professional_title?:string|null; name?:string|null; organization_name?:string|null; department_name?:string|null; }
 type Role='meta'|'heading'|'page_number'|'appendix_page_number'|'issuer'|'header'|'footer'|'repeat'|'body';
 type PageFormat='number_of'|'slash'|'short'|'page';
-interface TemplateElement { id:string; kind:'text'|'stamp'|'signature'; role:Role; label:string; content:string; x:number; y:number; width:number; spacing:number; font_size:number; font_family:string; page_format:PageFormat; bold:boolean; align:'right'|'center'|'left'; visible:boolean; }
+interface TemplateElement { id:string; kind:'text'|'stamp'|'signature'; role:Role; label:string; content:string; x:number; y:number; width:number; spacing:number; font_size:number; font_family:string; page_format:PageFormat;page_prefix?:string|null; bold:boolean; align:'right'|'center'|'left'; visible:boolean; }
 interface PrintLetter { id:number; attachment_pages:number|null; appendix_mode:'none'|'editor'|'file'|'both'; appendix_body:string|null; appendix_file_count:number; type:'incoming'|'outgoing'|'internal'; subject:string; body:string|null; letter_number:string|null; registration_number:string|null; registered_at:string|null; sent_at:string|null; recipient_name:string|null; recipient_addressing:AddressingSnapshot|null; external_organization:string|null; external_department:string|null; }
-const props=defineProps<{isPreview?:boolean;previewNotice?:string|null;letter:PrintLetter;templateElements:TemplateElement[];pageLayout:{top:number;right:number;bottom:number;left:number;header_height:number;footer_height:number};pageSize:'A4'|'A5';organization:{name?:string|null;short_name?:string|null;address?:string|null;postal_code?:string|null;phone?:string|null;email?:string|null;website?:string|null};creatorName:string|null;creatorUnitTitle:string|null;managerName:string|null;managerPosition:string|null;managerTitle:string|null;creatorDepartmentName:string|null;stampDataUri:string|null;letterheadDataUri:string|null;signatureDataUri:string|null;printOptions:{show_creator_identity:boolean;show_stamp:boolean;show_department_signature:boolean;letterhead_show_name:boolean;letterhead_show_address:boolean;letterhead_show_phone:boolean;letterhead_show_email:boolean;letterhead_show_website:boolean;font_family:string;};}>();
+const props=defineProps<{isPreview?:boolean;previewNotice?:string|null;appendixHeading?:string|null;letter:PrintLetter;templateElements:TemplateElement[];pageLayout:{top:number;right:number;bottom:number;left:number;header_height:number;footer_height:number};pageSize:'A4'|'A5';organization:{name?:string|null;short_name?:string|null;address?:string|null;postal_code?:string|null;phone?:string|null;email?:string|null;website?:string|null};creatorName:string|null;creatorUnitTitle:string|null;managerName:string|null;managerPosition:string|null;managerTitle:string|null;creatorDepartmentName:string|null;stampDataUri:string|null;letterheadDataUri:string|null;signatureDataUri:string|null;printOptions:{show_creator_identity:boolean;show_stamp:boolean;show_department_signature:boolean;letterhead_show_name:boolean;letterhead_show_address:boolean;letterhead_show_phone:boolean;letterhead_show_email:boolean;letterhead_show_website:boolean;font_family:string;};}>();
 const pageWidthMm = computed(() => props.pageSize === 'A5' ? 148 : 210);
 const pageHeightMm = computed(() => props.pageSize === 'A5' ? 210 : 297);
+const appendixHeadingText=computed(()=>props.appendixHeading===undefined?'پیوست':props.appendixHeading?.trim()||'');
 const withLetterhead=ref(true);
 const mainContent=ref<HTMLElement[]>([]);
 const appendixMeasure=ref<HTMLElement|null>(null);
@@ -163,7 +164,7 @@ onMounted(async()=>{
 onBeforeUnmount(()=>{contentObserver?.disconnect();layoutObserver?.disconnect();});
 function pageNumberSample(item:TemplateElement,pageIndex:number):string {
  const appendix=item.role==='appendix_page_number';
- return formatPageNumber(item.page_format,appendix?pageIndex-mainPageCount.value:pageIndex,appendix?appendixPageCount.value:mainPageCount.value,appendix);
+ return formatPageNumber(item.page_format,appendix?pageIndex-mainPageCount.value:pageIndex,appendix?appendixPageCount.value:mainPageCount.value,appendix,item.page_prefix===undefined?undefined:item.page_prefix??'');
 }
 function pageNumberElements(pageIndex:number):TemplateElement[] {
  return elements.value.filter(item=>item.role===(pageIndex>mainPageCount.value?'appendix_page_number':'page_number'));
@@ -205,12 +206,12 @@ function closePreview():void{if(window.opener){window.close();return;}window.his
      </footer>
     </div>
     <div v-else class="document-content appendix-content" :style="pageContentStyle(pageIndex-mainPageCount)">
-     <div v-if="pageIndex===mainPageCount+1" class="appendix-heading">پیوست</div>
+     <div v-if="pageIndex===mainPageCount+1 && appendixHeadingText" class="appendix-heading">{{ appendixHeadingText }}</div>
      <section class="letter-body appendix-body" :style="appendixBodyStyle()" v-html="letter.appendix_body||''"></section>
     </div>
    </div>
   </article>
-  <div ref="appendixMeasure" class="appendix-measure-root" :style="{width:(pageWidthMm-pageLayout.left-pageLayout.right)+'mm'}" aria-hidden="true"><div class="appendix-heading">پیوست</div><section class="letter-body" :style="appendixBodyStyle()" v-html="letter.appendix_body||''"></section></div>
+  <div ref="appendixMeasure" class="appendix-measure-root" :style="{width:(pageWidthMm-pageLayout.left-pageLayout.right)+'mm'}" aria-hidden="true"><div v-if="appendixHeadingText" class="appendix-heading">{{ appendixHeadingText }}</div><section class="letter-body" :style="appendixBodyStyle()" v-html="letter.appendix_body||''"></section></div>
  </main>
 </template>
 

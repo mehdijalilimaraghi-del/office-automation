@@ -1,3 +1,7 @@
+## 2026-11-16 — Editable appendix labels
+
+- During PDF acceptance, include a custom appendix title and a number-only appendix counter.
+
 ## 2026-11-15 — Independent appendix numbering and designer preview switch
 
 - Independent appendix page-number formatting and Letter/Appendix designer preview switching are implemented and automatically validated. Owner acceptance: choose each counter, set different positions/formats, switch previews, save/reopen, and compare a multi-page letter plus appendix in A4/A5 PDF or physical print. Existing Word-image acceptance remains open; do not interpret browser print-media tests as physical printer acceptance.

@@ -1,3 +1,7 @@
+## 2026-11-16 — Editable appendix labels
+
+- Editable appendix heading and counter prefix default to «پیوست» only when absent. Explicit empty/null inputs suppress the respective text.
+
 ## 2026-11-15 — Independent appendix numbering and designer preview switch
 
 - Letter page_number and appendix_page_number are separate template roles. Use the shared pageNumbers formatter in designer/output. CorrespondenceTemplatePagination supplies read-only legacy appendix defaults only until independent numbering is explicitly configured; do not re-add a removed counter after that flag is set. New designer saves send appendix_numbering_configured=true; old save payloads preserve legacy behavior.

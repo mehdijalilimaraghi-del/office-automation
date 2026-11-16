@@ -1,3 +1,7 @@
+## 2026-11-16 — Editable appendix labels
+
+- Appendix text is covered by OrganizationSettingsTest and the template pagination browser suite, including customised and intentionally empty values.
+
 ## 2026-11-15 — Independent appendix numbering and designer preview switch
 
 - Set EDITOR_TEST_PAGE to /tests/Browser/template-pagination.html (append ?size=A5 for A5) and run node tests/Browser/run-editor-images.mjs. Set EDITOR_TEST_MEDIA=print for actual Chromium print-media CSS; unset it for screen checks. The test entry starts after media emulation is enabled, uses real application CSS and Vue pages, and verifies independent formats/positions/fonts/totals, toggle persistence, letter-only content isolation, output/designer coordinate parity and visibility. All seven scenarios passed in the four size/media combinations. PHPUnit covers saving/rendering, invalid format rejection, read-only legacy defaults, explicit removal and old save payloads. Physical print/PDF comparison is still a separate owner acceptance step.

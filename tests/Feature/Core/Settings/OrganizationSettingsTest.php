@@ -254,7 +254,7 @@ class OrganizationSettingsTest extends TestCase
 
         return [$letter, [
             ...$letter, 'id' => 'appendix_pages', 'role' => 'appendix_page_number',
-            'label' => 'شماره صفحه پیوست', 'x' => 60, 'y' => 84, 'font_size' => 11,
+            'label' => 'شماره صفحه پیوست', 'page_prefix' => 'ضمیمه', 'x' => 60, 'y' => 84, 'font_size' => 11,
             'font_family' => 'Tahoma', 'page_format' => 'page', 'align' => 'left',
         ]];
     }
@@ -273,7 +273,7 @@ class OrganizationSettingsTest extends TestCase
         $admin = User::factory()->create();
         $this->grantPermissions($admin, ['settings.manage', 'correspondence.view']);
         $elements = $this->paginationElements();
-        $this->actingAs($admin)->put(route('correspondence.template.update'), ['elements' => $elements])
+        $this->actingAs($admin)->put(route('correspondence.template.update'), ['elements' => $elements, 'appendix_heading' => 'مدارک همراه'])
             ->assertRedirect()->assertSessionHas('success');
         $this->assertDatabaseHas('system_settings', [
             'key' => 'correspondence.print.appendix_numbering_configured', 'value' => '1',
@@ -287,10 +287,17 @@ class OrganizationSettingsTest extends TestCase
                 ->where($prop.'.1.page_format', 'page')
                 ->where($prop.'.1.x', 60)
                 ->where($prop.'.1.y', 84)
-                ->where($prop.'.1.font_family', 'Tahoma'));
+                ->where($prop.'.1.font_family', 'Tahoma')
+                ->where($prop.'.1.page_prefix', 'ضمیمه')
+                ->where('appendixHeading', 'مدارک همراه'));
         }
+        $elements[1]['page_prefix'] = '';
+        $this->put(route('correspondence.template.update'), ['elements' => $elements, 'appendix_heading' => ''])->assertRedirect();
+        $this->get(route('correspondence.print', $this->paginationLetter($admin)))->assertOk()->assertInertia(fn ($page) => $page
+            ->where('templateElements.1.page_prefix', null)->where('appendixHeading', ''));
+
         $elements[1]['page_format'] = 'invalid';
-        $this->put(route('correspondence.template.update'), ['elements' => $elements])
+        $this->put(route('correspondence.template.update'), ['elements' => $elements, 'appendix_heading' => 'مدارک همراه'])
             ->assertSessionHasErrors('elements.1.page_format');
     }
 

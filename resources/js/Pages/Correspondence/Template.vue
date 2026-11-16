@@ -9,12 +9,12 @@ import { computed, onBeforeUnmount, onMounted, ref, watch, nextTick } from 'vue'
 type Role = 'meta'|'heading'|'page_number'|'appendix_page_number'|'issuer'|'header'|'footer'|'repeat'|'body';
 type Kind = 'text'|'stamp'|'signature';
 type PageFormat = 'number_of'|'slash'|'short'|'page';
-interface ElementBox { id:string; kind:Kind; role:Role; label:string; content:string; x:number; y:number; width:number; spacing:number; font_size:number; font_family:string; page_format:PageFormat; bold:boolean; align:'right'|'center'|'left'; visible:boolean; }
+interface ElementBox { id:string; kind:Kind; role:Role; label:string; content:string; x:number; y:number; width:number; spacing:number; font_size:number; font_family:string; page_format:PageFormat; page_prefix?:string|null; bold:boolean; align:'right'|'center'|'left'; visible:boolean; }
 interface Token { key:string; label:string; }
-const props = defineProps<{ elements:ElementBox[]; pageLayout:{top:number;right:number;bottom:number;left:number;header_height:number;footer_height:number}; pageSize:'A4'|'A5'; tokens:Token[]; letterheadDataUri:string|null; stampDataUri:string|null; defaultFontFamily:string; previewValues:Record<string,string>; previewBody:string }>();
+const props = defineProps<{ elements:ElementBox[]; appendixHeading?:string|null; pageLayout:{top:number;right:number;bottom:number;left:number;header_height:number;footer_height:number}; pageSize:'A4'|'A5'; tokens:Token[]; letterheadDataUri:string|null; stampDataUri:string|null; defaultFontFamily:string; previewValues:Record<string,string>; previewBody:string }>();
 const pageWidthMm = computed(() => props.pageSize === 'A5' ? 148 : 210);
 const pageHeightMm = computed(() => props.pageSize === 'A5' ? 210 : 297);
-const form = useForm({ elements: props.elements.map(item => ({ ...item, role: item.role ?? 'repeat', spacing: item.spacing ?? 0, font_family: item.font_family ?? 'default', page_format: item.page_format ?? 'number_of' })), page_layout: { ...props.pageLayout }, appendix_numbering_configured: true });
+const form = useForm({ elements: props.elements.map(item => ({ ...item, role: item.role ?? 'repeat', spacing: item.spacing ?? 0, font_family: item.font_family ?? 'default', page_format: item.page_format ?? 'number_of' })), page_layout: { ...props.pageLayout }, appendix_numbering_configured: true, appendix_heading: props.appendixHeading === undefined ? 'پیوست' : props.appendixHeading ?? '' });
 const selectedId = ref(form.elements[0]?.id ?? '');
 const previewMode = ref(false);
 const previewSection = ref<'letter'|'appendix'>('letter');
@@ -157,7 +157,7 @@ onMounted(()=>{void observePreviewLayout();});
 watch(()=>form.elements.map(item=>[item.role,item.content,item.x,item.y,item.width,item.font_size,item.visible]),()=>{void observePreviewLayout();},{deep:true});
 onBeforeUnmount(()=>previewLayoutObserver?.disconnect());
 function issuerPreviewStyle(item:ElementBox):Record<string,string> { return { width:item.width+'%', marginTop:item.spacing+'mm', marginRight:`calc(${item.x*pageWidthMm.value/100}mm - ${props.pageLayout.right}mm)`, fontSize:item.font_size+'px', fontFamily:resolvedFont(item), fontWeight:item.bold?'700':'400', textAlign:item.align }; }
-function pageNumberPreview(item:ElementBox):string { return formatPageNumber(item.page_format,1,item.role==='appendix_page_number'?3:5,item.role==='appendix_page_number'); }
+function pageNumberPreview(item:ElementBox):string { return formatPageNumber(item.page_format,1,item.role==='appendix_page_number'?3:5,item.role==='appendix_page_number', item.page_prefix === undefined ? undefined : item.page_prefix ?? ''); }
 function pageNumberElementStyle(item:ElementBox):Record<string,string> {
  const topEdge=Math.max(form.page_layout.top,form.page_layout.header_height??0);
  const requestedY=item.y*pageHeightMm.value/100;
@@ -193,7 +193,7 @@ function pageNumberElementStyle(item:ElementBox):Record<string,string> {
       <div class="pointer-events-none absolute z-20 border border-dashed border-slate-400" :style="safeAreaStyle"><span class="absolute -top-5 right-0 rounded bg-white/90 px-1 text-[10px] text-slate-600">محدوده امن متن</span></div>
       <div class="absolute z-10 whitespace-pre-wrap text-right" :style="contentPreviewStyle">
        <div v-if="flowBody" class="whitespace-pre-wrap p-3 text-sm leading-8" :class="previewMode?'text-slate-900':'border border-dashed border-slate-300 bg-white/70 text-slate-500'" :style="bodyPreviewStyle()">
-        <p v-if="!previewMode" class="mb-2 font-semibold">{{ previewSection==='appendix' ? 'متن پیوست — درج خودکار' : 'متن اصلی نامه — درج خودکار' }}</p><h2 v-if="previewSection==='appendix'" class="font-bold">پیوست</h2>
+        <p v-if="!previewMode" class="mb-2 font-semibold">{{ previewSection==='appendix' ? 'متن پیوست — درج خودکار' : 'متن اصلی نامه — درج خودکار' }}</p><h2 v-if="previewSection==='appendix' && form.appendix_heading.trim()" class="font-bold">{{ form.appendix_heading }}</h2>
         <p>{{ previewSection==='appendix' ? 'این متن نمونه پیوست نامه است. شماره صفحات پیوست به‌صورت مستقل از متن اصلی نامه محاسبه می‌شود.' : previewMode ? previewBody : 'متن نامه از این قسمت آغاز می‌شود و در صورت نیاز به صفحات بعد ادامه می‌یابد.' }}</p>
        </div>
        <div v-for="item in flowIssuer" :key="item.id" class="whitespace-pre-wrap p-2 text-slate-900" :class="previewMode?'':(selectedId===item.id?'border border-dashed border-teal-600 bg-teal-50/80 ring-1 ring-teal-500':'border border-dashed border-slate-300 bg-white/70')" :style="issuerPreviewStyle(item)" @click="selectedId=item.id"><img v-if="item.kind==='stamp'&&stampDataUri" :src="stampDataUri" alt="مهر سازمان" class="pointer-events-none block h-auto w-full max-w-none object-contain"/><span v-else class="pointer-events-none">{{displayText(item)}}</span></div>
@@ -202,6 +202,7 @@ function pageNumberElementStyle(item:ElementBox):Record<string,string> {
      </div>
     </section>
     <aside v-if="!previewMode" class="space-y-4">
+     <label v-if="previewSection==='appendix'" class="block rounded-xl border border-slate-200 bg-white p-4 text-sm font-semibold">عنوان بالای پیوست<input v-model="form.appendix_heading" maxlength="80" class="mt-1 w-full rounded-lg border-slate-300"/><span class="mt-1 block text-xs font-normal text-slate-600">برای حذف عنوان، این کادر را خالی بگذارید.</span><InputError :message="form.errors.appendix_heading"/></label>
      
      <section class="rounded-2xl border border-slate-200 bg-white p-4"><div class="mb-3 flex items-center justify-between"><h3 class="font-bold">بخش‌های قالب</h3><button type="button" class="text-xs text-rose-600" @click="removeBox">حذف انتخابی</button></div><div class="space-y-1"><button v-for="item in form.elements" :key="item.id" type="button" class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm" :class="selectedId===item.id?'bg-teal-50 text-teal-800':'hover:bg-slate-50'" @click="selectedId=item.id"><span>{{item.label}}</span><span class="text-xs text-slate-400">{{roleLabels[item.role]}}</span></button></div></section>
      <section v-if="selected" class="space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
@@ -221,6 +222,7 @@ function pageNumberElementStyle(item:ElementBox):Record<string,string> {
        <label v-if="selected.kind==='text'" class="text-xs">اندازه قلم<input v-model.number="selected.font_size" type="number" min="7" max="48" class="mt-1 w-full rounded-lg border-slate-300"/></label>
        <label v-if="selected.kind==='text'" class="text-xs">نوع قلم<select v-model="selected.font_family" class="mt-1 w-full rounded-lg border-slate-300"><option v-for="font in fontOptions" :key="font.value" :value="font.value">{{font.label}}</option></select></label>
        <label v-if="isPageNumber(selected.role)" class="col-span-2 text-xs">قالب شماره صفحه<select v-model="selected.page_format" class="mt-1 w-full rounded-lg border-slate-300"><option value="number_of">۱ از ۵</option><option value="slash">۱/۵</option><option value="short">ص۱ از ۵</option><option value="page">صفحه ۱ از ۵</option></select></label>
+       <label v-if="selected.role==='appendix_page_number'" class="col-span-2 text-xs">عبارت قبل از شماره صفحه<input :value="selected.page_prefix === undefined ? 'پیوست' : selected.page_prefix ?? ''" maxlength="80" @input="selected.page_prefix = ($event.target as HTMLInputElement).value" class="mt-1 w-full rounded-lg border-slate-300"/><span class="mt-1 block text-slate-600">کادر خالی یعنی فقط شماره صفحه نمایش داده شود.</span></label>
        <label class="text-xs">تراز<select v-model="selected.align" class="mt-1 w-full rounded-lg border-slate-300"><option value="right">راست</option><option value="center">وسط</option><option value="left">چپ</option></select></label>
       </div>
       <label v-if="selected.kind==='text'" class="flex items-center gap-2 text-sm"><input v-model="selected.bold" type="checkbox"/> قلم ضخیم</label>

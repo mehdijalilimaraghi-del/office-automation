@@ -1,3 +1,7 @@
+## 2026-11-16 — Editable appendix labels
+
+- Appendix title and counter prefix are independently editable or removable in the designer; both reach preview and print. No migration.
+
 ## 2026-11-15 — Independent appendix numbering and designer preview switch
 
 - Added independent appendix page numbering with the existing four format choices, separate coordinates, width, alignment, font, weight and visibility. The designer has Letter/Appendix preview buttons in both editing and presentation modes; it preserves unsaved configuration and hides letter-only metadata/issuer in appendix preview. Print uses separate counters/totals/positions and keeps the appendix caption. Legacy templates inherit the former letter-counter position without writes; explicit deletion stays deleted, and old save payloads remain compatible. Template/layout/configuration settings save atomically. Validation passed: 11 focused settings tests (210 assertions), complete isolated SQL Server suite (501 tests, 2652 assertions), 7 pagination browser scenarios for A4/A5 in screen/print media (28 checks), 11 image and 7 preview-form browser regressions, TypeScript/build and diff checks. Physical printer/generated-PDF visual acceptance remains pending. No migration, dependency or release change.
