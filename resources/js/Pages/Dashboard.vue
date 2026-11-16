@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue';
+import { dashboardTrend, persianNumber, type ActivityDay, type TrendPeriod } from '@/lib/dashboardTrend';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
@@ -36,7 +38,6 @@ interface DashboardTask {
     assignee: string | null;
 }
 
-interface TrendPoint { date: string; label: string; created: number; completed: number; }
 interface PersonalFollowUp { id: number; title: string; description: string | null; date: string | null; task_id: number; task_title: string | null; project?: string | null; kind?: string; }
 interface RecentComment { id: number; body: string; author: string; created_at: string | null; task_id: number; task_title: string | null; }
 interface ProjectOverview { id: number; name: string; code: string; status: string; sections_count: number; tasks_count: number; progress: number; }
@@ -45,7 +46,7 @@ interface SectionOverview { id: number; name: string; project_id: number; projec
 const props = defineProps<{
     canViewTeam: boolean;
     stats: DashboardStats;
-    trend: TrendPoint[];
+    trend: ActivityDay[];
     personalTasks: DashboardTask[];
     teamTasks: DashboardTask[];
     nextActivities: PersonalFollowUp[];
@@ -68,7 +69,9 @@ const priorityClasses: Record<string, string> = { low: 'text-slate-500', normal:
 const projectStatusLabels: Record<string, string> = { planning: 'برنامه‌ریزی', active: 'فعال', completed: 'تکمیل‌شده', archived: 'بایگانی‌شده' };
 const formatDate = (value: string | null) => value ? value.replaceAll('-', '/') : 'بدون مهلت';
 const formatDateTime = (value: string | null) => value ? new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : 'تاریخ نامشخص';
-const maxTrend = Math.max(1, ...props.trend.flatMap((item) => [item.created, item.completed]));
+const trendPeriod = ref<TrendPeriod>('week');
+const trendPoints = computed(() => dashboardTrend(props.trend, trendPeriod.value));
+const maxTrend = computed(() => Math.max(1, ...trendPoints.value.flatMap(point => [point.created, point.completed])));
 
 const statusTone = (status: string) => ({
     todo: 'bg-slate-100 text-slate-700',
@@ -100,18 +103,28 @@ const statusTone = (status: string) => ({
                 <div class="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(300px,.85fr)]">
                     <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                         <div class="flex flex-wrap items-start justify-between gap-3">
-                            <div><h2 class="font-bold text-slate-950">روند هفت‌روزه فعالیت</h2><p class="mt-1 text-xs text-slate-500">دستورکارهای ایجادشده و تکمیل‌شده در هر روز</p></div>
+                            <div><h2 class="font-bold text-slate-950">روند فعالیت</h2><p class="mt-1 text-xs text-slate-500">دستورکارهای ایجادشده و تکمیل‌شده</p></div>
+                            <label class="flex items-center gap-2 text-sm">بازه
+                                <select v-model="trendPeriod" class="rounded-lg border-slate-300 py-1 text-sm">
+                                    <option value="week">هفت روز اخیر</option>
+                                    <option value="month">ماه جاری</option>
+                                    <option value="season">فصل جاری</option>
+                                    <option value="year">سال جاری</option>
+                                </select>
+                            </label>
                             <div class="flex gap-3 text-xs"><span class="inline-flex items-center gap-1.5 text-slate-600"><i class="h-2.5 w-2.5 rounded-sm bg-sky-500"></i>ایجادشده</span><span class="inline-flex items-center gap-1.5 text-slate-600"><i class="h-2.5 w-2.5 rounded-sm bg-teal-500"></i>تکمیل‌شده</span></div>
                         </div>
-                        <div class="mt-6 grid grid-cols-7 gap-2 sm:gap-4">
-                            <div v-for="point in trend" :key="point.date" class="flex min-w-0 flex-col items-center">
+                        <div class="mt-6 overflow-x-auto">
+                        <div class="grid gap-2 sm:gap-4" :style="{ gridTemplateColumns: 'repeat(' + Math.max(1, trendPoints.length) + ', minmax(3rem, 1fr))' }">
+                            <div v-for="point in trendPoints" :key="point.date" class="flex min-w-0 flex-col items-center">
                                 <div class="flex h-36 w-full items-end justify-center gap-1.5 border-b border-slate-100 pb-2">
                                     <div class="w-2.5 rounded-t-md bg-sky-500 sm:w-4" :style="{ height: Math.max(point.created ? 5 : 0, point.created / maxTrend * 100) + '%' }" :title="'ایجادشده: ' + point.created"></div>
                                     <div class="w-2.5 rounded-t-md bg-teal-500 sm:w-4" :style="{ height: Math.max(point.completed ? 5 : 0, point.completed / maxTrend * 100) + '%' }" :title="'تکمیل‌شده: ' + point.completed"></div>
                                 </div>
                                 <span class="mt-2 text-[10px] text-slate-500 sm:text-xs">{{ point.label }}</span>
-                                <span class="mt-1 text-[10px] font-semibold tabular-nums text-slate-700">{{ point.created }}/{{ point.completed }}</span>
+                                <span class="mt-1 text-[10px] font-semibold tabular-nums text-slate-700">{{ persianNumber.format(point.created) }}/{{ persianNumber.format(point.completed) }}</span>
                             </div>
+                        </div>
                         </div>
                         <p class="mt-3 text-[11px] text-slate-400">در هر ستون: تعداد ایجادشده / تعداد تکمیل‌شده</p>
                     </section>

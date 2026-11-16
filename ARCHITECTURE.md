@@ -1,3 +1,7 @@
+## V1 and V2 acceptance fixes
+
+- Letter templates use an owner-indexed table. Dashboard counts group existing task access scopes by stored local date.
+
 ## 2026-11-16 — Draft preview and scrollable correspondence text
 
 - The existing correspondence.print route handles saved drafts through CorrespondenceAccessService::canView. The renderer distinguishes persisted records from registered records and drops stamp/signature template elements from unregistered responses.

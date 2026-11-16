@@ -941,11 +941,11 @@ watch(
             class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
             @click.self="showDepartmentForm = false"
         >
-            <div class="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div role="dialog" aria-modal="true" aria-labelledby="department-form-title" class="flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
                 <div class="flex items-start justify-between border-b border-slate-100 px-5 py-5 sm:px-6">
                     <div>
                         <p class="text-xs font-semibold text-teal-700">Internal Organization</p>
-                        <h3 class="mt-1 text-lg font-bold text-slate-950">
+                        <h3 id="department-form-title" class="mt-1 text-lg font-bold text-slate-950">
                             {{ editingDepartment ? 'ویرایش واحد سازمانی' : 'ایجاد واحد سازمانی' }}
                         </h3>
                         <p class="mt-1 text-xs text-slate-500">اطلاعات ساختاری واحد را تعریف کنید.</p>
@@ -961,7 +961,7 @@ watch(
                     </button>
                 </div>
 
-                <form class="space-y-5 p-5 sm:p-6" @submit.prevent="submitDepartment">
+                <form class="min-h-0 space-y-5 overflow-y-auto overscroll-contain p-5 sm:p-6" @submit.prevent="submitDepartment">
                     <div class="grid gap-5 md:grid-cols-2">
                         <div>
                             <label class="mb-2 block text-sm font-semibold text-slate-700">نام واحد</label>

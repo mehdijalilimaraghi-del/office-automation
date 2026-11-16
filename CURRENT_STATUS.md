@@ -1,3 +1,7 @@
+## V1 and V2 acceptance fixes
+
+- V1/V2 changes cover Jalali dashboard periods, reusable personal letter bodies, external organization directories and internal department dialog scrolling.
+
 ## 2026-11-16 — Draft preview and scrollable correspondence text
 
 - The creation and details screens constrain long letter and appendix text to independently scrollable areas. The details screen offers draft preview for authorized reviewers, with a return link to the letter.

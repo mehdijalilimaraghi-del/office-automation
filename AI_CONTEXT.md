@@ -1,3 +1,7 @@
+## V1 and V2 acceptance fixes
+
+- Dashboard uses scoped daily counts and Jalali date grouping. Letter body templates are private to each user and reuse the correspondence sanitizer.
+
 ## 2026-11-16 — Draft preview and scrollable correspondence text
 
 - Both saved drafts and unsaved outgoing previews exclude stamp and signature elements and image data on the server. Saved previews use the same read access as correspondence details.

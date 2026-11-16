@@ -1,3 +1,7 @@
+## V1 and V2 acceptance fixes
+
+- The dashboard defaults to seven days with current Jalali month, season and year options. Applying a personal body template asks before replacing existing letter text.
+
 ## 2026-11-16 — Draft preview and scrollable correspondence text
 
 - Reviewers can inspect the layout before final registration. Stamps and signatures appear only after final registration. The saved draft preview does not change the letter state.

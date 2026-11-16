@@ -23,6 +23,18 @@ class DashboardService
     ) {
     }
 
+    private function countsByDay(Builder $tasks, string $column, Carbon $start, Carbon $end): array
+    {
+        $column = 'tasks.'.$column;
+        $day = $tasks->getModel()->getConnection()->getDriverName() === 'sqlsrv'
+            ? 'CAST('.$column.' AS date)'
+            : 'DATE('.$column.')';
+
+        return (clone $tasks)->where($column, '>=', $start)->where($column, '<', $end)
+            ->selectRaw($day.' AS trend_day, COUNT(*) AS total')
+            ->groupByRaw($day)->pluck('total', 'trend_day')->all();
+    }
+
     public function for(User $user): array
     {
         $today = Carbon::today();
@@ -80,18 +92,15 @@ class DashboardService
             ->selectRaw('section_id, COUNT(*) as total, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as completed', ['completed'])
             ->groupBy('section_id')->get()->keyBy('section_id');
 
-        $trend = collect(range(6, 0))->map(function (int $daysAgo) use ($taskQuery): array {
-            $day = Carbon::today()->subDays($daysAgo);
-            $created = (clone $taskQuery)->whereDate('tasks.created_at', $day)->count();
-            $completed = (clone $taskQuery)->whereNotNull('tasks.completed_at')->whereDate('tasks.completed_at', $day)->count();
-
-            return [
-                'date' => $day->format('Y-m-d'),
-                'label' => $day->format('m/d'),
-                'created' => $created,
-                'completed' => $completed,
-            ];
-        })->values()->all();
+        $firstTrendDay = $today->copy()->subDays(365);
+        $afterToday = $today->copy()->addDay();
+        $created = $this->countsByDay($taskQuery, 'created_at', $firstTrendDay, $afterToday);
+        $completed = $this->countsByDay($taskQuery, 'completed_at', $firstTrendDay, $afterToday);
+        $trend = [];
+        for ($day = $firstTrendDay->copy(); $day->lt($afterToday); $day->addDay()) {
+            $date = $day->toDateString();
+            $trend[] = ['date' => $date, 'created' => (int) ($created[$date] ?? 0), 'completed' => (int) ($completed[$date] ?? 0)];
+        }
 
         $mapTask = fn (Task $task): array => [
             'id' => $task->id,

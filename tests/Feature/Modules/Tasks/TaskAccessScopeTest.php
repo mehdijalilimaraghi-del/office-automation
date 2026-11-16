@@ -55,6 +55,11 @@ class TaskAccessScopeTest extends TestCase
             'tasks.view',
         );
 
+        $visible->forceFill(['completed_at' => now()])->save();
+        $hidden->forceFill(['completed_at' => now()])->save();
+        $trend = app(\App\Modules\Dashboard\Services\DashboardService::class)->for($user)['trend'];
+        $this->assertSame(['date' => now()->toDateString(), 'created' => 1, 'completed' => 1], $trend[365]);
+
         $this->assertTrue($query->whereKey($visible->id)->exists());
         $this->assertFalse($query->whereKey($hidden->id)->exists());
     }

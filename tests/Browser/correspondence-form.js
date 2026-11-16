@@ -35,7 +35,9 @@ window.editorImageTests = (async () => {
             try { await openCorrespondencePreview('/__preview-test/token', '/__preview-test/preview', {}); } catch { failed = true; } finally { window.open = open; }
             assert(failed, 'Blocked popup was not reported');
         });
-        window.route = (name) => {
+        window.route = (name, params) => {
+            if (name === 'correspondence.body-templates.show') return '/__preview-test/body-templates/' + params.template;
+            if (name?.startsWith('correspondence.body-templates.')) return '/__preview-test/body-templates';
             if (!name) return { current: () => false };
             return ({ 'correspondence.preview': '/__preview-test/preview', 'notifications.summary': '/__preview-test/notifications' })[name] || '/__unused/' + name;
         };
@@ -88,6 +90,29 @@ window.editorImageTests = (async () => {
             button.click();
             await waitFor(async () => (await state()).posts.length === 4);
             assert(!document.querySelector('[role=alert]'), 'Retry did not clear the prior error');
+        });
+        await test('letter editor saves and reapplies a named rich-text template', async () => {
+            const button = label => [...document.querySelectorAll('button')].find(item => item.textContent.trim() === label);
+            button('قالب‌های متن نامه').click();
+            const panel = await (async () => { await nextTick(); return document.querySelector('#letter-body-templates'); })();
+            await waitFor(() => panel.getAttribute('aria-busy') === 'false');
+            const title = panel.querySelector('input');
+            title.value = 'قالب پیگیری';
+            title.dispatchEvent(new Event('input', { bubbles: true }));
+            await nextTick();
+            button('ذخیره متن فعلی به‌عنوان قالب').click();
+            await waitFor(() => panel.textContent.includes('قالب متن ذخیره شد.'));
+            const editor = document.querySelector('.rte-content');
+            editor.innerHTML = '<p>متن جایگزین آزمایشی</p>';
+            editor.dispatchEvent(new Event('input', { bubbles: true }));
+            const confirm = window.confirm;
+            window.confirm = () => true;
+            try {
+                button('استفاده از قالب').click();
+                await waitFor(() => editor.textContent.includes('متن فعلی نامه'));
+            } finally {
+                window.confirm = confirm;
+            }
         });
         return { passed: results.length, results };
     } finally {

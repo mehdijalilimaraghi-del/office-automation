@@ -41,6 +41,29 @@ class CorrespondenceHttpTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_letter_body_templates_keep_formatting_and_are_private_to_the_creator(): void
+    {
+        $owner = $this->userWithPermission('correspondence.create');
+        $other = $this->userWithPermission('correspondence.create');
+        $response = $this->actingAs($owner)->postJson(route('correspondence.body-templates.store'), [
+            'title' => 'نامه نمونه',
+            'body' => '<p style="text-align: center" onclick="alert(1)"><strong>متن نمونه</strong></p>',
+            'user_id' => $other->id,
+        ])->assertCreated()->assertJsonPath('title', 'نامه نمونه');
+        $id = $response->json('id');
+
+        $this->getJson(route('correspondence.body-templates.index'))
+            ->assertOk()->assertJsonCount(1)->assertJsonMissingPath('0.body');
+        $this->getJson(route('correspondence.body-templates.show', $id))
+            ->assertOk()->assertJsonPath('body', '<p style="text-align: center"><strong>متن نمونه</strong></p>');
+        $this->postJson(route('correspondence.body-templates.store'), ['title' => 'قالب خالی', 'body' => '<p><br></p>'])
+            ->assertUnprocessable()->assertJsonValidationErrors('body');
+        $this->actingAs($other)->getJson(route('correspondence.body-templates.index'))->assertExactJson([]);
+        $this->getJson(route('correspondence.body-templates.show', $id))->assertNotFound();
+        $inactive = User::factory()->create(['status' => 'inactive']);
+        $this->actingAs($inactive)->getJson(route('correspondence.body-templates.index'))->assertForbidden();
+    }
+
     public function test_outgoing_preview_uses_current_session_token_and_does_not_save_a_letter(): void
     {
         $user = $this->userWithPermission('correspondence.create');

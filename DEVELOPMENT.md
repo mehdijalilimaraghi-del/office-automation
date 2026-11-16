@@ -1,3 +1,7 @@
+## V1 and V2 acceptance fixes
+
+- The additive correspondence body template migration must be applied for template storage. Use the release-readiness.html and correspondence-form.html browser fixtures for the new flows.
+
 ## 2026-11-16 — Draft preview and scrollable correspondence text
 
 - The protected print preview regression exercises assigned-manager access, denial for unrelated viewers and asset suppression for saved drafts and unsaved previews.

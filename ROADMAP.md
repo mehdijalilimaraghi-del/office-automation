@@ -1,3 +1,7 @@
+## V1 and V2 acceptance fixes
+
+- Owner acceptance covers all four V1/V2 changes before approval for master and deployment.
+
 ## 2026-11-16 — Draft preview and scrollable correspondence text
 
 - For acceptance, review a long draft and appendix, open preview before registration, and return to the letter for the existing approval or correction action.

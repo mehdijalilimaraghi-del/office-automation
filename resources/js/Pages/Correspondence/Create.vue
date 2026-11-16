@@ -426,6 +426,63 @@ function submitCorrespondence(): void {
         form.post(route('correspondence.store'), { forceFormData: true });
     }
 }
+const bodyTemplatePanel = ref(false);
+const bodyTemplates = ref<{ id: number; title: string }[]>([]);
+const bodyTemplateTitle = ref('');
+const selectedBodyTemplate = ref<number | ''>('');
+const bodyTemplatesBusy = ref(false);
+const bodyTemplateError = ref('');
+const bodyTemplateStatus = ref('');
+
+async function withBodyTemplates(action: () => Promise<void>): Promise<void> {
+    if (bodyTemplatesBusy.value) return;
+    bodyTemplatesBusy.value = true;
+    bodyTemplateError.value = '';
+    bodyTemplateStatus.value = '';
+    try {
+        await action();
+    } catch (error) {
+        const errors = axios.isAxiosError(error) ? error.response?.data?.errors : null;
+        bodyTemplateError.value = errors?.title?.[0] ?? errors?.body?.[0] ?? 'دسترسی به قالب متن ممکن نشد. دوباره تلاش کنید.';
+    } finally {
+        bodyTemplatesBusy.value = false;
+    }
+}
+
+async function toggleBodyTemplates(): Promise<void> {
+    bodyTemplatePanel.value = !bodyTemplatePanel.value;
+    if (!bodyTemplatePanel.value) return;
+    await withBodyTemplates(async () => {
+        const response = await axios.get<typeof bodyTemplates.value>(route('correspondence.body-templates.index', {}, false));
+        bodyTemplates.value = response.data;
+    });
+}
+
+async function saveBodyTemplate(): Promise<void> {
+    if (!bodyTemplateTitle.value.trim() || !form.body.trim() || preparingImages.value) return;
+    await withBodyTemplates(async () => {
+        const response = await axios.post<{ id: number; title: string }>(route('correspondence.body-templates.store', {}, false), {
+            title: bodyTemplateTitle.value.trim(),
+            body: form.body,
+        }, { headers: { Accept: 'application/json' } });
+        bodyTemplates.value = [...bodyTemplates.value, response.data].sort((a, b) => a.title.localeCompare(b.title, 'fa'));
+        selectedBodyTemplate.value = response.data.id;
+        bodyTemplateTitle.value = '';
+        bodyTemplateStatus.value = 'قالب متن ذخیره شد.';
+    });
+}
+
+async function applyBodyTemplate(): Promise<void> {
+    const id = selectedBodyTemplate.value;
+    if (!id || preparingImages.value) return;
+    await withBodyTemplates(async () => {
+        const response = await axios.get<{ body: string }>(route('correspondence.body-templates.show', { template: id }, false));
+        if (form.body.trim() && !window.confirm('متن فعلی نامه با متن قالب جایگزین شود؟')) return;
+        form.body = response.data.body;
+        bodyTemplateStatus.value = 'متن قالب در نامه درج شد.';
+    });
+}
+
 async function openOutgoingPreview(): Promise<void> {
     if (form.type !== 'outgoing' || preparingImages.value || form.processing || previewBusy.value) return;
     previewBusy.value = true;
@@ -674,6 +731,27 @@ async function openOutgoingPreview(): Promise<void> {
                     <div>
                         <h3 class="text-base font-bold text-slate-900">متن نامه</h3>
                         <p class="mt-1 text-sm text-slate-500">از نوار ابزار برای قالب‌بندی متن استفاده کنید. پیش‌نویس قبل از ثبت نهایی قابل ویرایش خواهد بود.</p>
+                    </div>
+                    <button type="button" :aria-expanded="bodyTemplatePanel" aria-controls="letter-body-templates" class="rounded-lg border border-indigo-200 px-3 py-2 text-sm font-semibold text-indigo-700" @click="toggleBodyTemplates">قالب‌های متن نامه</button>
+                    <div v-if="bodyTemplatePanel" id="letter-body-templates" class="space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4" :aria-busy="bodyTemplatesBusy">
+                        <div class="flex flex-wrap items-end gap-2">
+                            <label class="min-w-48 flex-1 text-sm font-semibold">نام قالب جدید
+                                <input v-model="bodyTemplateTitle" maxlength="120" class="mt-1 block w-full rounded-lg border-slate-300 text-sm" @keydown.enter.prevent="saveBodyTemplate"/>
+                            </label>
+                            <button type="button" :disabled="bodyTemplatesBusy || preparingImages || !bodyTemplateTitle.trim() || !form.body.trim()" class="rounded-lg border border-indigo-200 px-3 py-2 text-sm text-indigo-700 disabled:opacity-40" @click="saveBodyTemplate">ذخیره متن فعلی به‌عنوان قالب</button>
+                        </div>
+                        <div v-if="bodyTemplates.length" class="flex flex-wrap items-end gap-2">
+                            <label class="min-w-48 flex-1 text-sm font-semibold">قالب ذخیره‌شده
+                                <select v-model="selectedBodyTemplate" class="mt-1 block w-full rounded-lg border-slate-300 text-sm">
+                                    <option value="">انتخاب قالب</option>
+                                    <option v-for="template in bodyTemplates" :key="template.id" :value="template.id">{{ template.title }}</option>
+                                </select>
+                            </label>
+                            <button type="button" :disabled="bodyTemplatesBusy || preparingImages || !selectedBodyTemplate" class="rounded-lg bg-indigo-700 px-3 py-2 text-sm text-white disabled:opacity-40" @click="applyBodyTemplate">استفاده از قالب</button>
+                        </div>
+                        <p v-else-if="!bodyTemplatesBusy" class="text-sm text-slate-500">هنوز قالبی ذخیره نکرده‌اید.</p>
+                        <p v-if="bodyTemplateError" role="alert" class="text-sm text-rose-700">{{ bodyTemplateError }}</p>
+                        <p v-if="bodyTemplateStatus" role="status" class="text-sm text-teal-700">{{ bodyTemplateStatus }}</p>
                     </div>
                     <CorrespondenceRichTextEditor v-model="form.body" @processing="bodyImagesProcessing = $event" label="متن نامه" :font-family="correspondenceFontFamily" :font-color="compositionDefaults?.['correspondence.composition.font_color'] ?? '#202124'" :font-size="Number(compositionDefaults?.['correspondence.composition.font_size'] ?? 12)" :table-border-color="compositionDefaults?.['correspondence.composition.table_border_color'] ?? '#94a3b8'" :shape-border-color="compositionDefaults?.['correspondence.composition.shape_border_color'] ?? '#334155'" :disabled="form.processing" />
                     <InputError :message="form.errors.body" />
