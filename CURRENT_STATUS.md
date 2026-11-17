@@ -1,3 +1,7 @@
+## V3 — Archive registration
+
+Archive registration and search support digital files and copies of physical originals, with initial storage location and retention date. Search results are restricted to the document creator and explicit grantees with document-view permission. Direct NAPS2 scanning, structured locations, custody events, approval, archive version management and record linking remain open.
+
 ## V3 kickoff — shared document scanning
 
 - V3 started by owner direction after the V1/V2 correspondence release. The remaining V2 Forms & Requests scope stays tracked.

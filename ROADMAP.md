@@ -1,3 +1,7 @@
+## V3 — Archive registration
+
+Archive registration, file upload and scoped search are implemented. Continue with direct NAPS2 scan, structured locations, custody and approvals, document version UI and linking to business records.
+
 ## 2026-11-17 — Save feedback and local text sample migration
 
 - Verify that successful saves visibly confirm completion, and that failed validation does not show a success message.

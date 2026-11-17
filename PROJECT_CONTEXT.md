@@ -1,3 +1,7 @@
+## V3 — Archive registration
+
+Initial archive registration requires a category and a digital file or image/PDF of the physical original. Physical registration also requires an initial storage location. Custody and release approval remain pending.
+
 ## V3 — Archive scanning
 
 A V3 archive record may represent a digital-only document or a physical original with an attached digital copy. Custody changes and approvals are tracked independently, with actual handover marking the time the original leaves storage.

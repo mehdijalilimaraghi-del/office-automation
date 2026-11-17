@@ -1,3 +1,7 @@
+## V3 — Archive registration
+
+To verify archive registration, run DocumentFoundationTest and the full isolated SQL Server suite. In the browser, open the archive from the Work menu and verify physical and digital upload, filters, pagination and download as the owner and a second user.
+
 ## V3 — Archive scanning
 
 For scanner changes, run the correspondence scanner HTTP regression and document tests. Verify the actual Windows NAPS2 scan, preview and draft save with a physical scanner before accepting the workflow.

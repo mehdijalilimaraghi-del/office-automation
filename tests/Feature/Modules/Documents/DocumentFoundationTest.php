@@ -175,6 +175,55 @@ class DocumentFoundationTest extends TestCase
         $this->assertTrue($viewer->can('view', $document));
     }
 
+    public function test_archive_registers_a_physical_original_and_limits_search_and_download_to_authorized_users(): void
+    {
+        $creator = $this->userWithPermissions(['documents.view', 'documents.create']);
+        $other = $this->userWithPermissions(['documents.view']);
+        $attachment = app(DocumentService::class)->create(
+            ['title' => 'Archive match outside the archive'],
+            UploadedFile::fake()->create('attachment.pdf', 5, 'application/pdf'),
+            $creator,
+        );
+        $attributes = [
+            'title' => 'Archive match 123',
+            'document_type' => 'Contract',
+            'archive_kind' => 'physical',
+            'retain_until' => '2029-03-20',
+        ];
+
+        $this->actingAs($creator)->post(route('archive.store'), [
+            ...$attributes,
+            'file' => UploadedFile::fake()->create('original.pdf', 5, 'application/pdf'),
+        ])->assertSessionHasErrors('archive_location');
+
+        $this->actingAs($creator)->post(route('archive.store'), [
+            ...$attributes,
+            'archive_location' => 'Building A / Shelf 2',
+            'file' => UploadedFile::fake()->create('original.pdf', 5, 'application/pdf'),
+        ])->assertRedirect(route('archive.index'))->assertSessionHas('success');
+
+        $record = Document::query()->where('title', $attributes['title'])->firstOrFail();
+        $this->assertSame('physical', $record->archive_kind);
+        $this->assertSame('Building A / Shelf 2', $record->archive_location);
+        $this->assertSame(1, $record->versions()->count());
+        $this->assertNull($attachment->refresh()->archive_kind);
+
+        $this->get(route('archive.index', ['search' => 'Archive match', 'kind' => 'physical']))
+            ->assertInertia(fn ($page) => $page->component('Archive/Index')
+                ->has('records.data', 1)->where('records.data.0.id', $record->id));
+        $this->get(route('documents.download', $record))->assertOk();
+
+        $this->actingAs($other)->get(route('archive.index', ['search' => 'Archive match']))
+            ->assertInertia(fn ($page) => $page->has('records.data', 0)->where('canCreate', false));
+        $this->get(route('documents.download', $record))->assertForbidden();
+        $this->post(route('archive.store'), $attributes)->assertForbidden();
+
+        app(DocumentService::class)->grantAccess($record, $other, $creator);
+        $this->get(route('archive.index'))->assertInertia(fn ($page) => $page->has('records.data', 1));
+        $this->get(route('documents.download', $record))->assertOk();
+        $this->actingAs($this->userWithPermissions([]))->get(route('archive.index'))->assertForbidden();
+    }
+
     private function createTask(User $user, string $title): Task
     {
         return Task::query()->create([

@@ -22,6 +22,9 @@ class Document extends Model
         'description',
         'created_by',
         'is_active',
+        'archive_kind',
+        'archive_location',
+        'retain_until',
     ];
 
     protected function casts(): array

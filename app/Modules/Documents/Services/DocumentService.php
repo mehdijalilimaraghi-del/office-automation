@@ -31,6 +31,7 @@ class DocumentService
                     'description' => $data['description'] ?? null,
                     'created_by' => $creator->id,
                     'is_active' => true,
+                    ...array_intersect_key($data, array_flip(['archive_kind', 'archive_location', 'retain_until'])),
                 ]);
 
                 $stored = $this->storage->store($file, 'documents/'.$document->id);

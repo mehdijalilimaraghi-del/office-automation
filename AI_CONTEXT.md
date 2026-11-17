@@ -1,3 +1,7 @@
+## V3 — Archive registration
+
+Archive registration and search currently start at the archive routes. Check the V3 code map before tracing Documents, scanner, Cartable or Workflow callers.
+
 ## V3 — Archive scanning
 
 V3 is active by owner direction. Reuse Documents scan staging and the existing NAPS2 helper when connecting archive registration. Keep scan tokens scoped to their issuing module and user.

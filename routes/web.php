@@ -15,6 +15,7 @@ use App\Modules\Projects\Http\Controllers\ProjectSectionController;
 use App\Modules\Projects\Http\Controllers\ProjectMemberController;
 use App\Modules\Projects\Http\Controllers\ProjectRoleController;
 use App\Modules\Tasks\Http\Controllers\TaskController;
+use App\Modules\Documents\Http\Controllers\ArchiveController;
 use App\Modules\Documents\Http\Controllers\DocumentController;
 use App\Http\Controllers\ProfileController;
 use App\Modules\Dashboard\Http\Controllers\DashboardController;
@@ -41,6 +42,9 @@ Route::get('/dashboard', DashboardController::class)
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/archive', [ArchiveController::class, 'index'])->name('archive.index');
+    Route::post('/archive', [ArchiveController::class, 'store'])->name('archive.store');
+
     Route::get('/cartable', [CartableController::class, 'index'])->middleware('permission:cartable.view')->name('cartable.index');
 
     Route::get('/settings/correspondence-template', [CorrespondenceTemplateController::class, 'edit'])->middleware('permission:settings.manage')->name('correspondence.template.edit');

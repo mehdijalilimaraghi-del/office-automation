@@ -17,6 +17,8 @@ Use this skill for implementation, debugging, refactoring, and maintenance tasks
 
 ## Find the affected files
 
+- Before implementing each new roadmap version, create a compact code map for its entry points, existing dependencies, authorization and tests. Verify the paths against the checkout and update the map as planned features land.
+
 - For V3 archive, documents, scanner, Cartable or workflow work, start with [the V3 code map](references/v3-code-map.md). Verify entry points against the current checkout.
 - Start from a route name, error text, permission or symbol. Use `rg -l` or `rg --files` within the affected module, then read the relevant line ranges and follow callers, authorization and tests. Expand to other modules when the route or dependency crosses a module boundary.
 - Use the current status and relevant headings to locate project context. Read the full applicable sections for architectural, security or release decisions. Follow the project owner’s onboarding document order when a full review is requested.

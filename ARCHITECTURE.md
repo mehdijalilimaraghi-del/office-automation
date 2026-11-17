@@ -1,3 +1,7 @@
+## V3 — Archive registration
+
+Archive metadata currently extends Documents with nullable type, location and retention columns. Archive uploads use the same document version storage, and downloads continue through DocumentPolicy.
+
 ## V3 — Archive scanning
 
 Documents owns temporary PDF staging for Windows scanner uploads. The calling module owns authorization and final attachment. Incoming correspondence retains its existing callback. The Windows helper currently allowlists the correspondence upload path, so a future archive callback needs an explicitly allowlisted path.
