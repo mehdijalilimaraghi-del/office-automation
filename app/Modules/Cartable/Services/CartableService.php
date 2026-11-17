@@ -62,7 +62,7 @@ class CartableService
                         ->where('user_id', $user->id)->where('access_level', 'edit'));
             })
             ->whereHas('latestCustodyEvent', fn (Builder $event) => $event
-                ->where('action', 'request')->where('actor_id', '!=', $user->id))
+                ->where('action', 'request')->where('approval_required', true)->where('actor_id', '!=', $user->id))
             ->latest('id')
             ->limit(10)
             ->get(['id', 'title', 'created_by', 'is_active'])

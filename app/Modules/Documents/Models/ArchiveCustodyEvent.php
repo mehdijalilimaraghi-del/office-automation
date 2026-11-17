@@ -12,7 +12,12 @@ class ArchiveCustodyEvent extends Model
 {
     public const UPDATED_AT = null;
 
-    protected $fillable = ['actor_id', 'action', 'location', 'recipient', 'due_on', 'note'];
+    protected $fillable = ['actor_id', 'action', 'location', 'recipient', 'due_on', 'note', 'approval_required'];
+
+    protected function casts(): array
+    {
+        return ['approval_required' => 'boolean'];
+    }
 
     public function actor(): BelongsTo
     {

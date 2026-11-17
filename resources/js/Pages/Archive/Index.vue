@@ -18,8 +18,10 @@ const props = defineProps<{
     records: { data: ArchiveRecord[]; prev_page_url: string | null; next_page_url: string | null };
     filters: { search?: string; kind?: Kind };
     canCreate: boolean;
+    approvalExceptions: string[] | null;
 }>();
 
+const approvalForm = useForm({ categories: props.approvalExceptions?.join('\n') ?? '' });
 const filters = useForm({ search: props.filters.search ?? '', kind: props.filters.kind ?? '' });
 const form = useForm({
     title: '', document_type: '', description: '', archive_kind: 'digital',
@@ -146,6 +148,21 @@ function register(event: Event): void {
                 </div>
             </form>
 
+            <details v-if="approvalExceptions !== null" class="rounded-xl border bg-white p-4">
+                <summary class="cursor-pointer font-semibold">سیاست تأیید خروج اصل مدرک</summary>
+                <form class="mt-3 grid gap-3" @submit.prevent="approvalForm.put(route('archive.approval-policy.update'), { preserveScroll: true })">
+                    <label class="grid gap-1">
+                        دسته‌های معاف از تأیید
+                        <textarea v-model="approvalForm.categories" rows="4" maxlength="5000" class="rounded-md border p-2"
+                            aria-describedby="archive-approval-help" />
+                    </label>
+                    <p id="archive-approval-help" class="text-sm text-slate-600">نام هر دسته را در یک خط وارد کنید. سایر دسته‌ها نیاز به تأیید دارند. این تنظیم برای درخواست‌های جدید اعمال می‌شود.</p>
+                    <ul v-if="approvalForm.hasErrors" role="alert" class="text-sm text-red-700">
+                        <li v-for="(error, field) in approvalForm.errors" :key="field">{{ error }}</li>
+                    </ul>
+                    <button type="submit" :disabled="approvalForm.processing" class="justify-self-start rounded-md bg-indigo-700 px-4 py-2 text-white disabled:opacity-60">ذخیره سیاست تأیید</button>
+                </form>
+            </details>
             <section class="grid gap-4 rounded-xl border bg-white p-4">
                 <form class="grid gap-3 sm:grid-cols-[1fr_auto_auto]" @submit.prevent="filters.get(route('archive.index'), { preserveState: true, preserveScroll: true })">
                     <label class="grid gap-1">جست‌وجوی مدارک<input v-model="filters.search" maxlength="100" class="rounded-md border p-2" /></label>

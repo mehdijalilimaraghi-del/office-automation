@@ -1,3 +1,7 @@
+## V3 — Category-based checkout approval
+
+The category exception list uses SystemSettings. The custody event stores approval_required, defaulting existing events to true, and Cartable filters out exempt requests.
+
 ## V3 — Scan, versions and custody
 
 Archive custody events are append-only and serialized on the document row. Cartable exposes pending approval only to eligible editors other than the requester. Archive scanning reuses the installed Windows helper callback while status, preview and registration remain purpose- and user-scoped.

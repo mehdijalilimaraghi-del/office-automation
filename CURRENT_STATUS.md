@@ -1,3 +1,7 @@
+## V3 — Category-based checkout approval
+
+Settings managers can exempt named archive categories from physical checkout approval. The policy is snapshotted on each request. Structured locations and business-record links remain open.
+
 ## V3 — Scan, versions and custody
 
 Archive direct NAPS2 upload, preview, version history and downloads, and physical custody events with Cartable approval are implemented. Physical checkout currently always requires a second authorized user’s approval. Structured location catalogs, configurable approval by category and linking existing archive documents to business records remain open. Physical scanner and browser acceptance remain pending.

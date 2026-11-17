@@ -7,7 +7,7 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 type Action = 'move' | 'request' | 'approve' | 'reject' | 'checkout' | 'return';
 interface CustodyEvent {
     id: number; action: Action; location: string | null; recipient: string | null;
-    due_on: string | null; note: string | null; created_at: string; actor: { name: string } | null;
+    approval_required: boolean; due_on: string | null; note: string | null; created_at: string; actor: { name: string } | null;
 }
 const actions: Record<Action, string> = {
     move: 'جابه‌جایی داخلی', request: 'درخواست خروج', approve: 'تأیید خروج',
@@ -18,12 +18,12 @@ const props = defineProps<{
     versions: { version_number: number; original_name: string; created_at: string }[];
     canUpdate: boolean;
     custody: { data: CustodyEvent[]; prev_page_url: string | null; next_page_url: string | null } | null;
-    custodyCurrent: Pick<CustodyEvent, 'action' | 'recipient' | 'due_on'> | null;
+    custodyCurrent: Pick<CustodyEvent, 'action' | 'recipient' | 'due_on' | 'approval_required'> | null;
 }>();
 
 const availableActions = computed<Action[]>(() => {
     switch (props.custodyCurrent?.action) {
-        case 'request': return ['approve', 'reject'];
+        case 'request': return props.custodyCurrent.approval_required ? ['approve', 'reject'] : ['checkout', 'reject'];
         case 'approve': return ['checkout', 'reject'];
         case 'checkout': return ['return'];
         default: return ['move', 'request'];

@@ -1,3 +1,7 @@
+## V3 — Category-based checkout approval
+
+Verify both mandatory and exempt categories. Check that settings permissions protect edits, and a policy change leaves already-registered requests unchanged.
+
 ## V3 — Scan, versions and custody
 
 Exercise Archive/Index direct scan and Archive/Show version history and physical custody. Use a second authorized user to verify the Cartable approval and confirm the physical return location. The archive callback uses the installed NAPS2 helper path.

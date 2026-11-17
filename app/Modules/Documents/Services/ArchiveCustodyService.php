@@ -11,6 +11,8 @@ use Illuminate\Validation\ValidationException;
 
 class ArchiveCustodyService
 {
+    public function __construct(private readonly ArchiveApprovalPolicy $approval) {}
+
     public function record(Document $document, User $actor, array $data): void
     {
         DB::transaction(function () use ($document, $actor, $data): void {
@@ -20,7 +22,7 @@ class ArchiveCustodyService
             $last = $locked->custodyEvents()->latest('id')->first();
             $action = $data['action'];
             $allowed = match ($last?->action) {
-                'request' => ['approve', 'reject'],
+                'request' => $last->approval_required ? ['approve', 'reject'] : ['checkout', 'reject'],
                 'approve' => ['checkout', 'reject'],
                 'checkout' => ['return'],
                 default => ['move', 'request'],
@@ -38,7 +40,10 @@ class ArchiveCustodyService
                 'actor_id' => $actor->id,
                 'location' => $data['location'] ?? $locked->archive_location,
             ];
-            if (in_array($action, ['approve', 'reject', 'checkout', 'return'], true)) {
+            if ($action === 'request') {
+                $event['approval_required'] = $this->approval->requiresApproval($locked->document_type);
+            } elseif (in_array($action, ['approve', 'reject', 'checkout', 'return'], true)) {
+                $event['approval_required'] = $last->approval_required;
                 $event['recipient'] = $last->recipient;
                 $event['due_on'] = $last->due_on;
             }

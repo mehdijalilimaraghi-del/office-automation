@@ -1,3 +1,7 @@
+## V3 — Category-based checkout approval
+
+Category-based physical checkout approval is implemented. Structured physical locations and links to business records are the remaining archive implementation work.
+
 ## V3 — Scan, versions and custody
 
 Archive now supports direct NAPS2 scan, version history, and a custody workflow with approval in Cartable. The current custody policy requires approval for every physical checkout. Remaining scope includes category-based policy, a structured location catalog and archive links to business records.

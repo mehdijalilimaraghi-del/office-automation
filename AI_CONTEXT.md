@@ -1,3 +1,7 @@
+## V3 — Category-based checkout approval
+
+Archive checkout approval is captured when the request is registered. Trace the category exceptions to ArchiveApprovalPolicy.
+
 ## V3 — Scan, versions and custody
 
 Archive PDF scans from installed Windows helpers use the existing callback with archive-scoped tokens. Trace archive custody through ArchiveCustodyService and Cartable approvals.

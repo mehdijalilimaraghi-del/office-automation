@@ -1,3 +1,7 @@
+## V3 — Category-based checkout approval
+
+Physical checkout requires an independent approval by default. Authorized settings managers can exempt specific categories for future requests, which still require recorded request and handover events.
+
 ## V3 — Scan, versions and custody
 
 A physical archive request records the intended recipient, reason and due date. For now an authorized second user approves all physical checkouts. Actual checkout and return are recorded separately, and return records the new storage location.

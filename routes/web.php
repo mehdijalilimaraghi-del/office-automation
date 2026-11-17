@@ -44,6 +44,8 @@ Route::get('/dashboard', DashboardController::class)
 Route::middleware('auth')->group(function () {
     Route::get('/archive', [ArchiveController::class, 'index'])->name('archive.index');
     Route::post('/archive', [ArchiveController::class, 'store'])->name('archive.store');
+    Route::put('/archive/approval-policy', [ArchiveController::class, 'updateApprovalPolicy'])
+        ->middleware('permission:settings.manage')->name('archive.approval-policy.update');
     Route::get('/archive/{document}', [ArchiveController::class, 'show'])->whereNumber('document')->name('archive.show');
     Route::post('/archive/{document}/custody', [ArchiveController::class, 'recordCustody'])->whereNumber('document')->name('archive.custody.store');
     Route::post('/archive/{document}/versions', [ArchiveController::class, 'addVersion'])->whereNumber('document')->name('archive.versions.store');

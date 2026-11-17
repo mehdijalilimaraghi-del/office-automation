@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Documents\Http\Controllers;
 
 use App\Modules\Documents\Models\Document;
+use App\Modules\Documents\Services\ArchiveApprovalPolicy;
 use App\Modules\Documents\Services\ArchiveCustodyService;
 use App\Modules\Documents\Services\DocumentService;
 use App\Modules\Documents\Services\ScannerStagingService;
@@ -24,7 +25,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ArchiveController
 {
-    public function index(Request $request): Response
+    public function index(Request $request, ArchiveApprovalPolicy $approval): Response
     {
         Gate::authorize('viewAny', Document::class);
 
@@ -59,7 +60,21 @@ class ArchiveController
             'records' => $records,
             'filters' => $filters,
             'canCreate' => Gate::allows('create', Document::class),
+            'approvalExceptions' => $request->user()->hasPermission('settings.manage') ? $approval->exceptions() : null,
         ]);
+    }
+
+    public function updateApprovalPolicy(Request $request, ArchiveApprovalPolicy $approval): RedirectResponse
+    {
+        Gate::authorize('viewAny', Document::class);
+        $validated = $request->validate(['categories' => ['nullable', 'string', 'max:5000']]);
+        $categories = preg_split('/\R/u', $validated['categories'] ?? '') ?: [];
+        validator(['categories' => $categories], ['categories' => ['array', 'max:50'], 'categories.*' => ['max:100']])
+            ->validate();
+
+        $approval->save($categories);
+
+        return back()->with('success', 'سیاست تأیید خروج ذخیره شد.');
     }
 
     public function show(Request $request, Document $document): Response
@@ -74,7 +89,7 @@ class ArchiveController
                 ? $document->custodyEvents()->with('actor:id,name')->latest('id')->paginate(25)->withQueryString()
                 : null,
             'custodyCurrent' => $document->archive_kind === 'physical'
-                ? $document->custodyEvents()->latest('id')->first(['action', 'recipient', 'due_on'])
+                ? $document->custodyEvents()->latest('id')->first(['action', 'recipient', 'due_on', 'approval_required'])
                 : null,
             'canUpdate' => $this->canUpdate($request, $document),
         ]);

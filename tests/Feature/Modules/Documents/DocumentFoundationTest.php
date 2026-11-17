@@ -304,6 +304,37 @@ class DocumentFoundationTest extends TestCase
         $this->assertSame(['request', 'approve', 'checkout', 'return'], $record->custodyEvents()->orderBy('id')->pluck('action')->all());
     }
 
+    public function test_archive_category_policy_requires_settings_permission_and_is_snapshotted_on_request(): void
+    {
+        $owner = $this->userWithPermissions(['documents.view', 'documents.create', 'documents.update']);
+        $administrator = $this->userWithPermissions(['documents.view', 'settings.manage']);
+        $policy = route('archive.approval-policy.update');
+
+        $this->actingAs($owner)->put($policy, ['categories' => 'Routine'])->assertForbidden();
+        $this->actingAs($administrator)->put($policy, ['categories' => " ROUTINE \nRoutine"])
+            ->assertSessionHas('success');
+        $this->get(route('archive.index'))->assertInertia(fn ($page) => $page
+            ->where('approvalExceptions', ['routine']));
+
+        $this->actingAs($owner)->post(route('archive.store'), [
+            'title' => 'Exempt archive record',
+            'document_type' => 'Routine',
+            'archive_kind' => 'physical',
+            'archive_location' => 'Shelf A',
+            'file' => UploadedFile::fake()->create('document.pdf', 5, 'application/pdf'),
+        ])->assertSessionHas('success');
+        $record = Document::query()->where('title', 'Exempt archive record')->firstOrFail();
+        $url = route('archive.custody.store', $record);
+        $this->post($url, [
+            'action' => 'request', 'recipient' => 'Records', 'note' => 'Inspection',
+            'due_on' => now()->addDays(3)->toDateString(),
+        ])->assertSessionHas('success');
+        $this->assertFalse($record->latestCustodyEvent()->firstOrFail()->approval_required);
+        $this->actingAs($administrator)->put($policy, ['categories' => ''])->assertSessionHas('success');
+        $this->actingAs($owner)->post($url, ['action' => 'checkout'])->assertSessionHas('success');
+        $this->assertSame('checkout', $record->latestCustodyEvent()->firstOrFail()->action);
+    }
+
     private function createTask(User $user, string $title): Task
     {
         return Task::query()->create([
