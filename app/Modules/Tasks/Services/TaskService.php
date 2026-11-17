@@ -41,6 +41,64 @@ class TaskService implements TaskServiceContract
 
         $this->taskAccessService->applyScope(query: $query, user: $user, permission: 'tasks.view');
 
+        if (($filters['scope'] ?? null) === 'personal') {
+            $query->where('tasks.assignee_id', $user->id);
+        } elseif (($filters['scope'] ?? null) === 'unit') {
+            $departmentIds = $user->managedDepartments()->pluck('departments.id')
+                ->map(fn ($id): int => (int) $id)->unique()->values()->all();
+            $projectIds = $user->managedProjects()->pluck('projects.id')
+                ->map(fn ($id): int => (int) $id)->all();
+            $hasOrganizationScope = in_array('organization', $user->permissionScopes('tasks.view'), true);
+
+            if (! $hasOrganizationScope) {
+                $query->where(function ($unitQuery) use ($departmentIds, $projectIds): void {
+                    if ($departmentIds !== []) {
+                        $unitQuery->whereIn('tasks.department_id', $departmentIds)
+                            ->orWhereHas('section', fn ($sectionQuery) => $sectionQuery->whereIn('department_id', $departmentIds));
+                    }
+                    if ($projectIds !== []) {
+                        $unitQuery->orWhereIn('tasks.project_id', $projectIds);
+                    }
+                    if ($departmentIds === [] && $projectIds === []) {
+                        $unitQuery->whereRaw('1 = 0');
+                    }
+                });
+            }
+
+            $query->where(fn ($ownWork) => $ownWork->whereNull('tasks.assignee_id')->orWhere('tasks.assignee_id', '!=', $user->id));
+        }
+
+        if (($filters['due'] ?? null) === 'today') {
+            $query->whereDate('tasks.due_date', now()->toDateString())
+                ->whereNotIn('tasks.status', ['completed', 'cancelled', 'cannot_continue']);
+        } elseif (($filters['due'] ?? null) === 'overdue') {
+            $query->whereNotNull('tasks.due_date')
+                ->whereDate('tasks.due_date', '<', now()->toDateString())
+                ->whereNotIn('tasks.status', ['completed', 'cancelled', 'cannot_continue']);
+        }
+
+        if (($filters['review'] ?? null) === '1') {
+            $query->where('tasks.sub_status', 'manager_review');
+        }
+
+        if (($filters['completed_period'] ?? null) === 'month') {
+            $query->where('tasks.status', 'completed')
+                ->whereNotNull('tasks.completed_at')
+                ->whereBetween('tasks.completed_at', [now()->startOfMonth(), now()->endOfMonth()]);
+        }
+
+        if (! empty($filters['assignee_id'])) {
+            $query->where('tasks.assignee_id', (int) $filters['assignee_id']);
+        }
+
+        if (! empty($filters['due_from'])) {
+            $query->whereDate('tasks.due_date', '>=', $filters['due_from']);
+        }
+
+        if (! empty($filters['due_to'])) {
+            $query->whereDate('tasks.due_date', '<=', $filters['due_to']);
+        }
+
         if (! empty($filters['search'])) {
             $search = trim((string) $filters['search']);
             $query->where(function ($searchQuery) use ($search): void {
@@ -53,6 +111,9 @@ class TaskService implements TaskServiceContract
             });
         }
 
+        if (($filters['status_group'] ?? null) === 'pending') {
+            $query->whereIn('tasks.status', ['todo', 'observed']);
+        }
         if (! empty($filters['status'])) $query->where('tasks.status', $filters['status']);
         if (! empty($filters['priority'])) $query->where('tasks.priority', $filters['priority']);
         if (! empty($filters['project_id'])) $query->where('tasks.project_id', (int) $filters['project_id']);
@@ -89,9 +150,9 @@ class TaskService implements TaskServiceContract
         return $this->changeTaskStatusAction->execute(task: $task, status: $status, actor: $actor);
     }
 
-    public function addComment(Task $task, User $author, string $body): \App\Modules\Tasks\Models\TaskComment
+    public function addComment(Task $task, User $author, string $body, ?int $parentCommentId = null): \App\Modules\Tasks\Models\TaskComment
     {
-        return $this->createTaskCommentAction->execute($task, $author, $body);
+        return $this->createTaskCommentAction->execute($task, $author, $body, $parentCommentId);
     }
 
     public function addReminder(Task $task, User $recipient, User $creator, string $title, $remindAt, ?string $description = null): TaskReminder

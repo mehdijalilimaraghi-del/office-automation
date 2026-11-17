@@ -10,6 +10,7 @@ use App\Core\Roles\Models\Role;
 use App\Models\User;
 use App\Modules\Tasks\Actions\AssignTaskAction;
 use App\Modules\Tasks\Actions\ReviewTaskAction;
+use App\Modules\Tasks\Actions\CreateTaskCommentAction;
 use App\Modules\Tasks\Actions\SubmitTaskAction;
 use App\Modules\Tasks\Models\Task;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -24,6 +25,18 @@ class NotificationTest extends TestCase
     {
         parent::setUp();
         $this->seed(\Database\Seeders\CorePermissionSeeder::class);
+    }
+
+    public function test_any_authenticated_user_can_open_their_own_notification_center(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+
+        $this->actingAs($user)
+            ->get(route('notifications.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Notifications/Index')
+                ->where('unreadCount', 0));
     }
 
     public function test_task_assignment_creates_database_notification_for_assignee(): void
@@ -101,7 +114,8 @@ class NotificationTest extends TestCase
         $task = Task::query()->create([
             'department_id' => $department->id,
             'title' => 'Lifecycle task',
-            'status' => 'submitted',
+            'status' => 'in_progress',
+            'sub_status' => 'manager_review',
             'priority' => 'normal',
             'review_required' => true,
             'review_status' => 'pending',
@@ -119,7 +133,8 @@ class NotificationTest extends TestCase
         );
 
         $task->update([
-            'status' => 'submitted',
+            'status' => 'in_progress',
+            'sub_status' => 'manager_review',
             'review_status' => 'pending',
             'review_requested_at' => now(),
         ]);
@@ -131,6 +146,93 @@ class NotificationTest extends TestCase
             'دستورکار تأیید و تکمیل شد',
             $creator->fresh()->unreadNotifications()->firstOrFail()->data['title'],
         );
+    }
+
+    public function test_new_task_comment_notifies_current_manager_and_assignee_except_author(): void
+    {
+        $creator = User::factory()->create(['status' => 'active']);
+        $assignee = User::factory()->create(['status' => 'active']);
+        $author = User::factory()->create(['status' => 'active']);
+
+        $department = Department::query()->create([
+            'name' => 'Task Comment Notification Unit',
+            'code' => 'TCN-'.Str::upper(Str::random(6)),
+            'manager_id' => $creator->id,
+            'is_active' => true,
+        ]);
+
+        $task = Task::query()->create([
+            'department_id' => $department->id,
+            'title' => 'Task with new comment',
+            'status' => 'in_progress',
+            'priority' => 'normal',
+            'assignee_id' => $assignee->id,
+            'created_by' => $creator->id,
+        ]);
+
+        app(CreateTaskCommentAction::class)->execute($task, $author, 'لطفاً این مورد را بررسی کنید.');
+
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_type' => User::class,
+            'notifiable_id' => $creator->id,
+        ]);
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_type' => User::class,
+            'notifiable_id' => $assignee->id,
+        ]);
+        $this->assertSame(0, $author->fresh()->unreadNotifications()->count());
+        $this->assertSame(
+            'task_commented',
+            $creator->fresh()->unreadNotifications()->firstOrFail()->data['type'],
+        );
+    }
+
+    public function test_new_comment_notifies_only_current_manager_and_assignee_not_previous_assignees(): void
+    {
+        $manager = User::factory()->create(['status' => 'active']);
+        $currentAssignee = User::factory()->create(['status' => 'active']);
+        $previousAssignee = User::factory()->create(['status' => 'active']);
+        $author = User::factory()->create(['status' => 'active']);
+        $department = Department::query()->create([
+            'name' => 'Comment Recipients Unit',
+            'code' => 'CRU-'.Str::upper(Str::random(6)),
+            'manager_id' => $manager->id,
+            'is_active' => true,
+        ]);
+        $task = Task::query()->create([
+            'department_id' => $department->id,
+            'title' => 'Current assignee comment task',
+            'status' => 'in_progress',
+            'priority' => 'normal',
+            'assignee_id' => $currentAssignee->id,
+            'created_by' => $previousAssignee->id,
+        ]);
+
+        app(CreateTaskCommentAction::class)->execute($task, $author, 'دیدگاه جدید');
+
+        $this->assertSame(1, $manager->fresh()->unreadNotifications()->count());
+        $this->assertSame(1, $currentAssignee->fresh()->unreadNotifications()->count());
+        $this->assertSame(0, $previousAssignee->fresh()->unreadNotifications()->count());
+        $this->assertSame(0, $author->fresh()->unreadNotifications()->count());
+    }
+
+    public function test_direct_comment_reply_is_saved_with_parent_comment(): void
+    {
+        $author = User::factory()->create(['status' => 'active']);
+        $replyAuthor = User::factory()->create(['status' => 'active']);
+        $task = Task::query()->create([
+            'title' => 'Reply task',
+            'status' => 'in_progress',
+            'priority' => 'normal',
+            'assignee_id' => $author->id,
+            'created_by' => $author->id,
+        ]);
+
+        $parent = app(CreateTaskCommentAction::class)->execute($task, $author, 'دیدگاه اصلی');
+        $reply = app(CreateTaskCommentAction::class)->execute($task, $replyAuthor, 'پاسخ', $parent->id);
+
+        $this->assertSame($parent->id, $reply->parent_comment_id);
+        $this->assertSame('دیدگاه اصلی', $reply->parent->body);
     }
 
     public function test_user_can_mark_notification_as_read(): void

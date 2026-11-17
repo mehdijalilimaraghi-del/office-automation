@@ -26,29 +26,47 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:150'],
             'website' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:1000'],
-            'numbering_format' => ['required', 'string', Rule::in(['simple', 'year', 'year_department', 'custom'])],
-            'numbering_order_first' => ['required', 'string', Rule::in(['year', 'department', 'sequence'])],
-            'numbering_order_second' => ['required', 'string', Rule::in(['year', 'department', 'sequence'])],
-            'numbering_order_third' => ['required', 'string', Rule::in(['year', 'department', 'sequence'])],
-            'numbering_separator' => ['required', 'string', 'max:5'],
-            'numbering_padding' => ['required', 'integer', 'min:4', 'max:12'],
+            'postal_code' => ['nullable', 'string', 'max:20'],
+            'stamp' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:max_width=2000,max_height=2000'],
+            'letterhead' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120', 'dimensions:min_width=150,max_width=2500,min_height=600,max_height=5000'],
+            'remove_letterhead' => ['sometimes', 'boolean'],
+            'stamp_active' => ['sometimes', 'boolean'],
+            'remove_stamp' => ['sometimes', 'boolean'],
+            'numbering_template' => ['required', 'string', 'max:200'],
+            'registration_numbering_template' => ['required', 'string', 'max:200'],
             'composition_method' => ['required', 'string', Rule::in(['editor', 'word', 'both'])],
+            'correspondence_font_family' => ['required', 'string', Rule::in(['Vazirmatn', 'Tahoma', 'Arial', 'B Nazanin', 'B Mitra', 'IRANSans', 'Times New Roman'])],
+            'correspondence_font_color' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'correspondence_font_size' => ['required', 'integer', 'min:8', 'max:36'],
+            'correspondence_table_border_color' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'correspondence_shape_border_color' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'correspondence_page_size' => ['required', 'string', Rule::in(['A4', 'A5'])],
             'approval_incoming' => ['required', 'string', Rule::in(['direct', 'approval'])],
             'approval_outgoing' => ['required', 'string', Rule::in(['direct', 'approval'])],
             'approval_internal' => ['required', 'string', Rule::in(['direct', 'approval'])],
             'management_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')],
             'project_management_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')],
             'secretariat_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')],
+            'default_response_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')->where(fn ($query) => $query->where('is_active', true)->whereNotNull('manager_id'))],
         ];
     }
 
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
-            $order = [$this->input('numbering_order_first'), $this->input('numbering_order_second'), $this->input('numbering_order_third')];
-            if (count(array_unique($order)) !== 3) {
-                $validator->errors()->add('numbering_order_third', 'هر جزء شماره نامه باید فقط یک‌بار در ترتیب سفارشی انتخاب شود.');
+            foreach (['numbering_template' => 'الگوی شماره نامه صادره', 'registration_numbering_template' => 'الگوی شماره ثبت دبیرخانه'] as $field => $label) {
+                $template = (string) $this->input($field, '');
+                preg_match_all('/\\{\\{([^{}]+)\\}\\}/u', $template, $matches);
+                $tokens = $matches[1] ?? [];
+                $numbers = array_values(array_filter($tokens, static fn (string $token): bool => preg_match('/^Num-(?:[1-9]|1[0-2])-[rc]$/', $token) === 1));
+                $allowed = ['pdd', 'PDD', 'pmm', 'PMM', 'pyy', 'PYY', 'gdd', 'GDD', 'gmm', 'GMM', 'gyy', 'GYY', 'Dept'];
+                $unknown = array_filter($tokens, static fn (string $token): bool => ! in_array($token, $allowed, true) && preg_match('/^Num-(?:[1-9]|1[0-2])-[rc]$/', $token) !== 1);
+                $withoutTokens = preg_replace('/\\{\\{[^{}]+\\}\\}/u', '', $template);
+                if (count($numbers) !== 1 || $unknown !== [] || count($tokens) !== count(array_unique($tokens)) || str_contains((string) $withoutTokens, '{{') || str_contains((string) $withoutTokens, '}}')) {
+                    $validator->errors()->add($field, $label.' باید دقیقاً یک شمارنده معتبر و متغیرهای شناخته‌شده داشته باشد.');
+                }
             }
+
             $managementId = $this->input('management_department_id');
             $projectManagementId = $this->input('project_management_department_id');
 
@@ -89,13 +107,16 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'email' => 'ایمیل سازمان',
             'website' => 'وب‌سایت',
             'address' => 'نشانی',
-            'numbering_format' => 'قالب شماره نامه',
-            'numbering_order_first' => 'جزء اول شماره نامه',
-            'numbering_order_second' => 'جزء دوم شماره نامه',
-            'numbering_order_third' => 'جزء سوم شماره نامه',
-            'numbering_separator' => 'جداکننده شماره نامه',
-            'numbering_padding' => 'طول شماره ترتیبی',
+            'postal_code' => 'کد پستی',
+            'numbering_template' => 'الگوی شماره نامه صادره',
+            'registration_numbering_template' => 'الگوی شماره ثبت دبیرخانه',
+            'correspondence_font_color' => 'رنگ متن پیش‌فرض',
+            'correspondence_font_size' => 'اندازه قلم پیش‌فرض',
+            'correspondence_table_border_color' => 'رنگ خطوط جدول',
+            'correspondence_shape_border_color' => 'رنگ خطوط شکل',
+            'correspondence_page_size' => 'اندازه صفحه نامه',
             'composition_method' => 'روش نگارش نامه',
+            'correspondence_font_family' => 'قلم پیش‌فرض نامه‌ها',
             'approval_incoming' => 'سیاست تأیید نامه وارده',
             'approval_outgoing' => 'سیاست تأیید نامه صادره',
             'approval_internal' => 'سیاست تأیید نامه داخلی',

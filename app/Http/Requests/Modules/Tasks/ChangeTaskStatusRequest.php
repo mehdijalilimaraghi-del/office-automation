@@ -18,7 +18,7 @@ class ChangeTaskStatusRequest extends FormRequest
         return [
             'status' => [
                 'required',
-                'in:todo,in_progress,completed,cancelled',
+                'in:cancelled,cannot_continue',
             ],
         ];
     }

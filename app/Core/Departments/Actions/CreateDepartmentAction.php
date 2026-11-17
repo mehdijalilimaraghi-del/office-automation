@@ -26,9 +26,12 @@ class CreateDepartmentAction
                 'parent_id' => $data['parent_id'] ?? null,
                 'manager_id' => null,
                 'name' => $data['name'],
+                'code' => filled($data['code'] ?? null) ? strtoupper(trim((string) $data['code'])) : null,
                 'icon' => $data['icon'] ?? 'building-2',
                 'description' => $data['description'] ?? null,
                 'is_active' => $data['is_active'] ?? true,
+                'manager_signature_path' => $data['manager_signature_path'] ?? null,
+                'manager_signature_active' => $data['manager_signature_active'] ?? false,
             ]);
 
             if ($managerId !== null) {

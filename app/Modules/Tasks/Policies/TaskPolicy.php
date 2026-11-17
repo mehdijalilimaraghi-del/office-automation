@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Tasks\Policies;
 
 use App\Models\User;
+use App\Core\Permissions\Enums\PermissionScope;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskReminder;
@@ -35,10 +36,35 @@ class TaskPolicy
 
         $scopes = $user->permissionScopes('tasks.create');
 
+        $managedDepartmentIds = $user->managedDepartments()
+            ->where('departments.is_active', true)
+            ->pluck('departments.id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
+
+        $canCreateInSharedDepartmentSection = $managedDepartmentIds !== []
+            && Project::query()
+                ->where('is_active', true)
+                ->where('is_system_default', true)
+                ->whereNull('department_id')
+                ->whereHas('sections', fn ($sectionQuery) => $sectionQuery
+                    ->whereIn('department_id', $managedDepartmentIds)
+                    ->where('manager_can_create_tasks', true))
+                ->when($projectId !== null, fn ($query) => $query->whereKey($projectId))
+                ->exists();
+
         if ($projectId === null) {
-            // Unlinked work orders are organization-level records. A project or
-            // department manager must choose a resource within their scope.
-            return in_array(\App\Core\Permissions\Enums\PermissionScope::Organization->value, $scopes, true);
+            // Department managers may open the form only if an enabled section
+            // exists for one of their managed departments in the shared project.
+            return in_array(PermissionScope::Organization->value, $scopes, true)
+                || (
+                    in_array(PermissionScope::Project->value, $scopes, true)
+                    && $canCreateInSharedDepartmentSection
+                );
+        }
+
+        if ($canCreateInSharedDepartmentSection) {
+            return true;
         }
 
         if (in_array(\App\Core\Permissions\Enums\PermissionScope::Organization->value, $scopes, true)) {
@@ -103,54 +129,80 @@ class TaskPolicy
 
     public function update(User $user, Task $task): bool
     {
-        return $this->taskAccessService->canAccess($user, $task, 'tasks.update');
+        return ! $task->isFinalized() && $task->review_status !== 'pending' && $this->taskAccessService->canAccess($user, $task, 'tasks.update');
     }
 
     public function assign(User $user, Task $task): bool
     {
-        return $this->taskAccessService->canAccess($user, $task, 'tasks.assign');
+        return ! $task->isFinalized() && $task->review_status !== 'pending' && $this->taskAccessService->canAccess($user, $task, 'tasks.assign');
+    }
+
+    public function acceptResponsibility(User $user, Task $task): bool
+    {
+        if (! $user->isActive()
+            || $task->isFinalized()
+            || $task->review_status === 'pending'
+            || (int) $task->assignee_id === (int) $user->id
+            || ! $this->taskAccessService->canAccess($user, $task, 'tasks.assign')) {
+            return false;
+        }
+
+        $departmentId = $task->department_id ?? $task->section?->department_id;
+
+        return $departmentId !== null
+            && (int) \App\Core\Departments\Models\Department::query()
+                ->whereKey($departmentId)
+                ->value('manager_id') === (int) $user->id;
     }
 
     public function refer(User $user, Task $task): bool
     {
-        return (int) $task->assignee_id === (int) $user->id
+        return ! $task->isFinalized()
+            && $task->review_status !== 'pending'
+            && (int) $task->assignee_id === (int) $user->id
             && $this->taskAccessService->canAccess($user, $task, 'tasks.refer');
     }
 
     public function comment(User $user, Task $task): bool
     {
-        return $this->taskAccessService->canAccess($user, $task, 'tasks.comment');
+        return ! $task->isFinalized() && $task->review_status !== 'pending' && $this->taskAccessService->canAccess($user, $task, 'tasks.view');
     }
 
     public function logWork(User $user, Task $task): bool
     {
-        return $this->taskAccessService->canAccess($user, $task, 'tasks.log_work');
+        return ! $task->isFinalized() && $task->review_status !== 'pending' && $this->taskAccessService->canAccess($user, $task, 'tasks.log_work');
     }
 
     public function createReminder(User $user, Task $task): bool
     {
-        return $this->taskAccessService->canAccess($user, $task, 'tasks.create_reminder');
+        return ! $task->isFinalized() && $task->review_status !== 'pending' && $this->taskAccessService->canAccess($user, $task, 'tasks.create_reminder');
     }
 
     public function completeReminder(User $user, Task $task, TaskReminder $reminder): bool
     {
-        return (int) $reminder->task_id === (int) $task->id
+        return ! $task->isFinalized()
+            && $task->review_status !== 'pending'
+            && (int) $reminder->task_id === (int) $task->id
             && (int) $reminder->user_id === (int) $user->id
             && $this->taskAccessService->canAccess($user, $task, 'tasks.view');
     }
 
     public function cancelReminder(User $user, Task $task, TaskReminder $reminder): bool
     {
-        return (int) $reminder->task_id === (int) $task->id
+        return ! $task->isFinalized()
+            && $task->review_status !== 'pending'
+            && (int) $reminder->task_id === (int) $task->id
             && in_array((int) $user->id, [(int) $reminder->user_id, (int) $reminder->created_by], true)
             && $this->taskAccessService->canAccess($user, $task, 'tasks.view');
     }
 
     public function submit(User $user, Task $task): bool
     {
-        return (int) $task->assignee_id === (int) $user->id
-            && $task->review_required
-            && $this->taskAccessService->canAccess($user, $task, 'tasks.submit');
+        return ! $task->isFinalized()
+            && $user->isActive()
+            && (int) $task->assignee_id === (int) $user->id
+            && $task->review_status !== 'pending'
+            && in_array($task->status, ['todo', 'observed', 'in_progress'], true);
     }
 
     public function review(User $user, Task $task): bool
@@ -159,17 +211,23 @@ class TaskPolicy
             return false;
         }
 
-        return $task->review_status === 'pending'
+        return ! $task->isFinalized()
+            && $task->review_status === 'pending'
             && ($task->department?->manager_id === $user->id || $task->project?->manager_id === $user->id);
     }
 
     public function changeStatus(User $user, Task $task): bool
     {
-        return $this->taskAccessService->canAccess($user, $task, 'tasks.change_status');
+        if ($task->isFinalized() || $task->review_status === 'pending' || ! $this->taskAccessService->canAccess($user, $task, 'tasks.change_status')) {
+            return false;
+        }
+
+        return (int) $task->department?->manager_id === (int) $user->id
+            || (int) $task->project?->manager_id === (int) $user->id;
     }
 
     public function delete(User $user, Task $task): bool
     {
-        return $this->taskAccessService->canAccess($user, $task, 'tasks.delete');
+        return ! $task->isFinalized() && $task->review_status !== 'pending' && $this->taskAccessService->canAccess($user, $task, 'tasks.delete');
     }
 }

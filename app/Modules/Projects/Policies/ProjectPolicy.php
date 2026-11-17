@@ -33,12 +33,16 @@ class ProjectPolicy
 
     public function update(User $user, Project $project): bool
     {
-        if ($project->is_system_default || ! $this->canManageProjects($user)) {
+        if (! $this->canManageProjects($user)) {
             return false;
         }
 
         if ($user->isSystemAdmin()) {
             return true;
+        }
+
+        if ($project->is_system_default) {
+            return false;
         }
 
         // Project administration belongs to the Project Management unit, not

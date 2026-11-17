@@ -288,6 +288,13 @@ class User extends Authenticatable
      */
     private function responsibilityDerivedScopes(string $permissionCode): array
     {
+        // Every active staff account may view registered ordinary letters and enter
+        // the draft form. CorrespondenceAccessService restricts incoming-letter
+        // creation to the configured secretariat and enforces registration rules.
+        if (in_array($permissionCode, ['correspondence.view', 'correspondence.create'], true)) {
+            return [PermissionScope::Organization->value];
+        }
+
         $operationalPermissions = [
             'projects.view',
             'projects.create',

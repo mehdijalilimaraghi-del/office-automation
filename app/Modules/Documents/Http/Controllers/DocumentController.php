@@ -13,6 +13,7 @@ use App\Modules\Projects\Models\ProjectSection;
 use App\Modules\Projects\Models\Project;
 use App\Core\Permissions\Enums\PermissionScope;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -26,8 +27,11 @@ class DocumentController extends Controller
 
     public function storeForTask(StoreTaskDocumentRequest $request, Task $task): RedirectResponse
     {
-        // Task-scoped update access also authorizes attaching files to this task.
+        // Only the current assignee can add files, and never while manager review is pending.
         Gate::authorize('update', $task);
+        abort_if($task->isFinalized(), 403, 'پیوست دستورکار نهایی‌شده قابل تغییر نیست.');
+        abort_if($task->review_status === 'pending', 403, 'پیوست دستورکار در زمان بررسی قابل تغییر نیست.');
+        abort_unless((int) $task->assignee_id === (int) $request->user()->id, 403, 'فقط مسئول فعلی دستورکار می‌تواند پیوست اضافه کند.');
 
         $data = $request->validated();
 
@@ -40,6 +44,25 @@ class DocumentController extends Controller
         );
 
         return redirect()->route('tasks.show', $task)->with('success', 'فایل با موفقیت به تسک پیوست شد.');
+    }
+
+    public function destroyForTask(Request $request, Task $task, Document $document): RedirectResponse
+    {
+        Gate::authorize('update', $task);
+        abort_if($task->isFinalized(), 403, 'پیوست دستورکار نهایی‌شده قابل تغییر نیست.');
+        abort_if($task->review_status === 'pending', 403, 'پیوست دستورکار در زمان بررسی قابل حذف نیست.');
+        abort_unless((int) $task->assignee_id === (int) $request->user()->id, 403, 'فقط مسئول فعلی دستورکار می‌تواند پیوست را حذف کند.');
+
+        $isLinkedToTask = $document->links()
+            ->where('linkable_type', Task::class)
+            ->where('linkable_id', $task->id)
+            ->exists();
+
+        abort_unless($isLinkedToTask, 404);
+
+        $this->documents->delete($document);
+
+        return redirect()->route('tasks.show', $task)->with('success', 'پیوست با موفقیت حذف شد.');
     }
 
     public function storeForProject(StoreTaskDocumentRequest $request, \App\Modules\Projects\Models\Project $project): RedirectResponse
@@ -129,21 +152,28 @@ class DocumentController extends Controller
             ->with('success', 'مدرک با موفقیت حذف شد.');
     }
 
-    public function download(Document $document): StreamedResponse
+    public function download(Request $request, Document $document): StreamedResponse
     {
         Gate::authorize('view', $document);
-
         $version = $document->latestVersion()->firstOrFail();
         $disk = Storage::disk($version->disk);
-
         abort_unless($disk->exists($version->path), 404);
 
-        return $disk->download(
-            $version->path,
-            $version->original_name,
-            $version->mime_type !== null
-                ? ['Content-Type' => $version->mime_type]
-                : [],
-        );
+        if ($request->boolean('inline') && in_array(strtolower((string) $version->mime_type), ['application/pdf', 'image/jpeg', 'image/png'], true)) {
+            $stream = $disk->readStream($version->path);
+            abort_unless(is_resource($stream), 404);
+
+            return response()->stream(function () use ($stream): void {
+                fpassthru($stream);
+                fclose($stream);
+            }, 200, [
+                'Content-Type' => $version->mime_type,
+                'Content-Disposition' => 'inline; filename="' . addslashes(basename($version->original_name)) . '"',
+                'X-Content-Type-Options' => 'nosniff',
+                'Cache-Control' => 'private, no-store',
+            ]);
+        }
+
+        return $disk->download($version->path, $version->original_name, $version->mime_type !== null ? ['Content-Type' => $version->mime_type] : []);
     }
 }

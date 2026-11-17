@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import AppSelect from '@/Components/AppSelect.vue';
 import { computed, reactive, ref } from 'vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
+import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 
 type CustomField = {
     id: number;
@@ -19,8 +21,8 @@ type CustomFieldValue = {
 };
 
 type Organization={id:number;name:string;code:string|null;phone:string|null;email:string|null;address:string|null;status:string;departments_count:number;contacts_count:number;customFieldValues?:CustomFieldValue[]};
-type Department={id:number;external_organization_id:number;parent_id:number|null;name:string;code:string|null;phone:string|null;extension:string|null;email:string|null;status:string;organization?:{id:number;name:string};customFieldValues?:CustomFieldValue[]};
-type Contact={id:number;external_organization_id:number;external_department_id:number|null;code:string|null;name:string;position:string|null;mobile:string|null;phone:string|null;extension:string|null;email:string|null;notes:string|null;status:string;organization?:{id:number;name:string};department?:{id:number;name:string};customFieldValues?:CustomFieldValue[]};
+type Department={id:number;external_organization_id:number;parent_id:number|null;manager_contact_id:number|null;name:string;code:string|null;phone:string|null;extension:string|null;email:string|null;organizational_title_prefix:string|null;position:string|null;personal_salutation:string|null;professional_title:string|null;managerContact?:{id:number;name:string};status:string;organization?:{id:number;name:string};customFieldValues?:CustomFieldValue[]};
+type Contact={id:number;external_organization_id:number;external_department_id:number|null;code:string|null;name:string;mobile:string|null;phone:string|null;extension:string|null;email:string|null;notes:string|null;status:string;organization?:{id:number;name:string};department?:{id:number;name:string};customFieldValues?:CustomFieldValue[]};
 
 const props=defineProps<{
     organizations: Organization[];
@@ -35,12 +37,17 @@ const props=defineProps<{
 const page=usePage();
 const tab=ref<'organizations'|'departments'|'contacts'>('organizations');
 const saving=ref(false);
+const organizationSelection = ref<string | number>('');
+const selectedOrganization = computed(() => props.organizations.find(item => String(item.id) === String(organizationSelection.value)) ?? props.organizations[0]);
+const organizationDepartments = computed(() => props.departments.filter(item => String(item.external_organization_id) === String(selectedOrganization.value?.id)));
+const organizationContacts = computed(() => props.contacts.filter(item => String(item.external_organization_id) === String(selectedOrganization.value?.id)));
 const orgForm=reactive<any>({id:null,name:'',phone:'',email:'',address:'',status:'active',custom_fields:{}});
-const depForm=reactive<any>({id:null,external_organization_id:'',parent_id:'',name:'',phone:'',extension:'',email:'',status:'active',custom_fields:{}});
-const contactForm=reactive<any>({id:null,external_organization_id:'',external_department_id:'',name:'',position:'',mobile:'',phone:'',extension:'',email:'',notes:'',status:'active',custom_fields:{}});
+const depForm=reactive<any>({id:null,external_organization_id:'',parent_id:'',manager_contact_id:'',name:'',phone:'',extension:'',email:'',organizational_title_prefix:'',position:'',personal_salutation:'',professional_title:'',status:'active',custom_fields:{}});
+const contactForm=reactive<any>({id:null,external_organization_id:'',external_department_id:'',name:'',mobile:'',phone:'',extension:'',email:'',notes:'',status:'active',custom_fields:{}});
 
 const departmentsForContact=computed(()=>props.departments.filter(d=>String(d.external_organization_id)===String(contactForm.external_organization_id)));
 const departmentsForEdit=computed(()=>props.departments.filter(d=>String(d.external_organization_id)===String(depForm.external_organization_id) && d.id!==depForm.id));
+const contactsForDepartment=computed(()=>props.contacts.filter(c=>String(c.external_organization_id)===String(depForm.external_organization_id) && String(c.external_department_id)===String(depForm.id) && c.status==='active'));
 
 type DepartmentTreeRow = Department & { depth: number };
 
@@ -56,11 +63,11 @@ function buildDepartmentTree(items: Department[], parentId: number | null = null
         .sort((a, b) => a.name.localeCompare(b.name, 'fa'))
         .flatMap((department) => [
             { ...department, depth },
-            ...buildDepartmentTree(items, department.id, depth + 1),
+            ...buildDepartmentTree(items, Number(department.id), depth + 1),
         ]);
 }
 
-const departmentTreeRows = computed<DepartmentTreeRow[]>(() => buildDepartmentTree(props.departments));
+const departmentTreeRows = computed<DepartmentTreeRow[]>(() => buildDepartmentTree(organizationDepartments.value));
 
 const departmentParentOptions = computed<DepartmentTreeRow[]>(() =>
     buildDepartmentTree(
@@ -72,7 +79,28 @@ const departmentParentOptions = computed<DepartmentTreeRow[]>(() =>
     ),
 );
 const activeOrgCount=computed(()=>props.organizations.filter(x=>x.status==='active').length);
-const activeContactCount=computed(()=>props.contacts.filter(x=>x.status==='active').length);
+const contactGroups = computed(() => [
+    { id: null, name: 'مخاطبان مستقیم سازمان', depth: 0 },
+    ...departmentTreeRows.value,
+].map(unit => ({
+    ...unit,
+    contacts: organizationContacts.value.filter(contact => unit.id === null
+        ? contact.external_department_id == null
+        : String(contact.external_department_id) === String(unit.id)),
+})).filter(unit => unit.contacts.length));
+
+function viewOrganization(organization: Organization, section: 'departments' | 'contacts') {
+    organizationSelection.value = organization.id;
+    tab.value = section;
+    if (section === 'departments' && !depForm.id && String(depForm.external_organization_id) !== String(organization.id)) {
+        depForm.external_organization_id = organization.id;
+        depForm.parent_id = '';
+    }
+    if (section === 'contacts' && !contactForm.id && String(contactForm.external_organization_id) !== String(organization.id)) {
+        contactForm.external_organization_id = organization.id;
+        contactForm.external_department_id = '';
+    }
+}
 const errors=computed(()=>page.props.errors as Record<string,string>);
 
 function reset(f:any){
@@ -99,8 +127,16 @@ function edit(f:any,item:any){
     f.custom_fields = customFieldValueMap(item.customFieldValues);
     delete f.customFieldValues;
     delete f.code;
-    if(f===depForm) f.parent_id=item.parent_id??'';
-    if(f===contactForm) f.external_department_id=item.external_department_id??'';
+    delete f.managerContact;
+    if(f===depForm) { f.parent_id=item.parent_id??''; f.manager_contact_id=item.manager_contact_id??''; }
+    if(f===contactForm) {
+        f.external_department_id=item.external_department_id??'';
+        delete f.position;
+        delete f.organizational_title_prefix;
+        delete f.personal_salutation;
+        delete f.professional_title;
+        delete f.is_default;
+    }
     window.scrollTo({top:0,behavior:'smooth'});
 }
 function submit(f:any,base:string){
@@ -135,25 +171,18 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
 
 <div class="min-h-screen bg-slate-50/70 p-4 sm:p-6 lg:p-8" dir="rtl">
   <div class="mx-auto max-w-7xl space-y-6">
-    <section class="overflow-hidden rounded-3xl bg-gradient-to-l from-slate-950 via-slate-900 to-teal-950 p-6 text-white shadow-xl sm:p-8">
-      <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p class="text-xs font-bold text-teal-200">ارتباطات سازمانی</p>
-          <h1 class="mt-2 text-2xl font-black sm:text-3xl">برون‌سازمانی</h1>
-          <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-300">سازمان‌ها، واحدها و افراد طرف تعامل را یکپارچه مدیریت کنید.</p>
-        </div>
-        <div class="grid grid-cols-3 gap-2 sm:gap-3">
-          <div class="rounded-2xl bg-white/10 px-4 py-3 text-center ring-1 ring-white/10"><div class="text-xl font-black">{{ organizations.length }}</div><div class="text-[11px] text-slate-300">سازمان</div></div>
-          <div class="rounded-2xl bg-white/10 px-4 py-3 text-center ring-1 ring-white/10"><div class="text-xl font-black">{{ departments.length }}</div><div class="text-[11px] text-slate-300">واحد</div></div>
-          <div class="rounded-2xl bg-white/10 px-4 py-3 text-center ring-1 ring-white/10"><div class="text-xl font-black">{{ activeContactCount }}</div><div class="text-[11px] text-slate-300">فرد فعال</div></div>
-        </div>
-      </div>
+    <section v-if="tab !== 'organizations'" class="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+      <label for="external-directory-organization" class="text-sm font-semibold">سازمان</label>
+      <AppSelect id="external-directory-organization" :model-value="selectedOrganization?.id" @update:model-value="value => { const organization = organizations.find(item => String(item.id) === String(value)); if (organization && tab !== 'organizations') viewOrganization(organization, tab); }">
+        <option v-for="organization in organizations" :key="organization.id" :value="organization.id">{{ organization.name }}</option>
+      </AppSelect>
+      <p v-if="!selectedOrganization" class="text-sm text-slate-500">ابتدا یک سازمان ثبت کنید.</p>
     </section>
 
     <div class="grid gap-3 sm:grid-cols-3">
-      <button v-for="x in tabs" :key="x[0]" @click="tab=x[0]" class="rounded-2xl border px-4 py-4 text-right transition" :class="tab===x[0]?'border-teal-200 bg-teal-50 text-teal-800 shadow-sm':'border-slate-200 bg-white text-slate-600 hover:border-slate-300'">
+      <button v-for="x in tabs" :key="x[0]" type="button" :aria-pressed="tab===x[0]" @click="x[0] === 'organizations' || !selectedOrganization ? tab=x[0] : viewOrganization(selectedOrganization, x[0])" class="rounded-2xl border px-4 py-4 text-right transition" :class="tab===x[0]?'border-teal-200 bg-teal-50 text-teal-800 shadow-sm':'border-slate-200 bg-white text-slate-600 hover:border-slate-300'">
         <span class="text-sm font-bold">{{ x[1] }}</span>
-        <span class="mt-1 block text-xs text-slate-400">{{ x[0]==='organizations'?organizations.length:x[0]==='departments'?departments.length:contacts.length }} مورد</span>
+        <span class="mt-1 block text-xs text-slate-400">{{ x[0]==='organizations'?organizations.length:x[0]==='departments'?organizationDepartments.length:organizationContacts.length }} مورد</span>
       </button>
     </div>
 
@@ -185,7 +214,7 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
         <div v-else class="divide-y divide-slate-100">
           <div v-for="o in organizations" :key="o.id" class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div class="min-w-0"><div class="flex items-center gap-2"><h3 class="truncate font-bold text-slate-900">{{o.name}}</h3><span class="rounded-full px-2 py-0.5 text-[10px] font-bold" :class="o.status==='active'?'bg-emerald-50 text-emerald-700':'bg-slate-100 text-slate-500'">{{o.status==='active'?'فعال':'غیرفعال'}}</span></div><p class="mt-1 text-xs text-slate-500">{{o.phone||'بدون تلفن'}} · {{o.departments_count}} واحد · {{o.contacts_count}} فرد</p><p class="mt-1 font-mono text-[10px] text-slate-400" dir="ltr">کد سیستمی: {{o.code||'—'}}</p></div>
-            <div class="flex gap-2"><button @click="edit(orgForm,o)" class="rounded-lg px-3 py-2 text-xs font-bold text-teal-700 hover:bg-teal-50">ویرایش</button><button @click="destroy('external-parties.organizations.destroy',o.id)" class="rounded-lg px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">حذف</button></div>
+            <div class="flex flex-wrap gap-2"><button type="button" @click="viewOrganization(o, 'departments')" class="rounded-lg border px-3 py-2 text-xs">ساختار واحدها</button><button type="button" @click="viewOrganization(o, 'contacts')" class="rounded-lg border px-3 py-2 text-xs">مخاطبان</button><button @click="edit(orgForm,o)" class="rounded-lg px-3 py-2 text-xs font-bold text-teal-700 hover:bg-teal-50">ویرایش</button><button @click="destroy('external-parties.organizations.destroy',o.id)" class="rounded-lg px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">حذف</button></div>
           </div>
         </div>
       </div>
@@ -196,19 +225,22 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
         <div class="mb-5"><h2 class="font-black text-slate-900">{{depForm.id?'ویرایش واحد':'واحد جدید'}}</h2></div>
         <div class="space-y-3">
           <label class="block text-sm font-semibold text-slate-700">سازمان</label>
-          <select v-model="depForm.external_organization_id" required class="w-full rounded-xl border border-slate-200 px-3 py-2.5"><option value="">سازمان *</option><option v-for="o in organizations" :key="o.id" :value="o.id">{{o.name}}</option></select>
+          <AppSelect v-model="depForm.external_organization_id" required class="w-full rounded-xl border border-slate-200 px-3 py-2.5"><option value="">سازمان *</option><option v-for="o in organizations" :key="o.id" :value="o.id">{{o.name}}</option></AppSelect>
           <label class="block text-sm font-semibold text-slate-700">واحد بالادست</label>
-          <select v-model="depForm.parent_id" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
-            <option value="">بدون واحد بالادست (واحد اصلی)</option>
-            <option v-for="d in departmentParentOptions" :key="d.id" :value="d.id">
-              {{ '　'.repeat(d.depth) }}{{ d.depth ? '└─ ' : '' }}{{ d.name }}
-            </option>
-          </select>
+          <DepartmentTreeSelect v-model="depForm.parent_id" :departments="departmentParentOptions" placeholder="بدون واحد بالادست (واحد اصلی)" />
           <label class="block text-sm font-semibold text-slate-700">نام واحد</label>
           <input v-model="depForm.name" required placeholder="نام واحد" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
           
           <div class="grid grid-cols-2 gap-3"><input v-model="depForm.phone" placeholder="تلفن" class="rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr"><input v-model="depForm.extension" placeholder="داخلی" class="rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr"></div>
           <input v-model="depForm.email" type="email" placeholder="ایمیل" class="w-full rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr">
+          <div class="mt-5 border-t border-slate-100 pt-5"><h3 class="font-bold text-slate-800">مدیر و اطلاعات خطاب واحد</h3><p class="mt-1 text-xs leading-5 text-slate-500">این مشخصات یک‌بار برای واحد ثبت می‌شود و در مکاتبات خطاب به این واحد استفاده خواهد شد.</p></div>
+          <label class="block text-sm font-semibold text-slate-700">مدیر / مخاطب اصلی واحد</label>
+          <AppSelect v-model="depForm.manager_contact_id" class="w-full rounded-xl border border-slate-200 px-3 py-2.5"><option value="">انتخاب مدیر واحد</option><option v-for="c in contactsForDepartment" :key="c.id" :value="c.id">{{c.name}}</option></AppSelect>
+          <p v-if="!depForm.id" class="text-xs text-amber-700">برای تعیین مدیر، ابتدا واحد را ثبت کنید؛ سپس یک فرد را به این واحد اختصاص دهید و در ویرایش واحد به‌عنوان مدیر انتخاب کنید.</p>
+          <input v-model="depForm.organizational_title_prefix" placeholder="پیشوند عنوان سازمانی؛ مدیریت، مدیرعامل، معاونت، ریاست" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
+          <input v-model="depForm.position" placeholder="سمت سازمانی؛ مدیر واحد مالی، معاون اداری" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
+          <input v-model="depForm.personal_salutation" placeholder="پیشوند شخصی؛ جناب آقای، سرکار خانم" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
+          <input v-model="depForm.professional_title" placeholder="عنوان حرفه‌ای؛ مهندس، دکتر" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
         </div>
                 <CustomFieldsForm
           v-if="props.customFields.department.length"
@@ -221,8 +253,8 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
         <div class="mt-5 flex gap-2"><button :disabled="saving" class="flex-1 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">{{saving?'در حال ذخیره…':depForm.id?'ذخیره تغییرات':'ثبت واحد'}}</button><button v-if="depForm.id" type="button" @click="reset(depForm)" class="rounded-xl border px-4 py-2.5 text-sm">انصراف</button></div>
       </form>
       <div class="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
-        <div class="border-b p-5"><h2 class="font-black">واحدهای ثبت‌شده</h2></div>
-        <div v-if="!departments.length" class="p-12 text-center text-sm text-slate-400">هنوز واحدی ثبت نشده است.</div>
+        <div class="border-b p-5"><h2 class="font-black">ساختار واحدهای {{ selectedOrganization?.name }}</h2></div>
+        <div v-if="!departmentTreeRows.length" class="p-12 text-center text-sm text-slate-400">واحدی برای این سازمان ثبت نشده است.</div>
         <div v-else class="divide-y divide-slate-100">
           <div v-for="d in departmentTreeRows" :key="d.id" class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between" :class="d.depth ? 'bg-slate-50/60' : 'bg-white'">
             <div class="min-w-0" :style="{ paddingRight: `${d.depth * 24}px` }">
@@ -231,6 +263,7 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
                 <h3 class="font-bold text-slate-900">{{d.name}}</h3>
               </div>
               <p class="mt-1 text-xs text-slate-500">{{d.organization?.name||'—'}}<span v-if="d.parent_id"> · زیرمجموعه واحد بالادست</span> · {{d.phone||'بدون تلفن'}}<span v-if="d.extension"> · داخلی {{d.extension}}</span></p>
+              <p v-if="d.managerContact || d.position || d.organizational_title_prefix" class="mt-1 text-xs text-teal-700">مدیر: {{d.managerContact?.name||'تعیین نشده'}} · {{[d.organizational_title_prefix,d.position,d.personal_salutation,d.professional_title].filter(Boolean).join(' ')}}</p>
               <p class="mt-1 font-mono text-[10px] text-slate-400" dir="ltr">کد سیستمی: {{d.code||'—'}}</p>
             </div>
             <div class="flex gap-2"><button @click="edit(depForm,d)" class="rounded-lg px-3 py-2 text-xs font-bold text-teal-700 hover:bg-teal-50">ویرایش</button><button @click="destroy('external-parties.departments.destroy',d.id)" class="rounded-lg px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">حذف</button></div>
@@ -244,11 +277,10 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
         <div class="mb-5"><h2 class="font-black text-slate-900">{{contactForm.id?'ویرایش فرد':'فرد جدید'}}</h2></div>
         <div class="space-y-3">
           <label class="block text-sm font-semibold text-slate-700">سازمان</label>
-          <select v-model="contactForm.external_organization_id" required class="w-full rounded-xl border border-slate-200 px-3 py-2.5"><option value="">سازمان *</option><option v-for="o in organizations" :key="o.id" :value="o.id">{{o.name}}</option></select>
-          <select v-model="contactForm.external_department_id" class="w-full rounded-xl border border-slate-200 px-3 py-2.5"><option value="">واحد اختیاری</option><option v-for="d in departmentsForContact" :key="d.id" :value="d.id">{{d.name}}</option></select>
+          <AppSelect v-model="contactForm.external_organization_id" required class="w-full rounded-xl border border-slate-200 px-3 py-2.5"><option value="">سازمان *</option><option v-for="o in organizations" :key="o.id" :value="o.id">{{o.name}}</option></AppSelect>
+          <DepartmentTreeSelect v-model="contactForm.external_department_id" :departments="departmentsForContact" placeholder="واحد اختیاری" />
           <label class="block text-sm font-semibold text-slate-700">نام و نام خانوادگی</label>
           <input v-model="contactForm.name" required placeholder="نام و نام خانوادگی" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
-          <input v-model="contactForm.position" placeholder="سمت" class="w-full rounded-xl border border-slate-200 px-3 py-2.5">
           <div class="grid grid-cols-2 gap-3"><input v-model="contactForm.mobile" placeholder="موبایل" class="rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr"><input v-model="contactForm.phone" placeholder="تلفن ثابت" class="rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr"></div>
           <input v-model="contactForm.email" type="email" placeholder="ایمیل" class="w-full rounded-xl border border-slate-200 px-3 py-2.5" dir="ltr">
           <textarea v-model="contactForm.notes" rows="3" placeholder="یادداشت" class="w-full rounded-xl border border-slate-200 px-3 py-2.5"></textarea>
@@ -264,10 +296,13 @@ const tabs=[['organizations','سازمان‌ها'],['departments','واحدها
         <div class="mt-5 flex gap-2"><button :disabled="saving" class="flex-1 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">{{saving?'در حال ذخیره…':contactForm.id?'ذخیره تغییرات':'ثبت فرد'}}</button><button v-if="contactForm.id" type="button" @click="reset(contactForm)" class="rounded-xl border px-4 py-2.5 text-sm">انصراف</button></div>
       </form>
       <div class="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
-        <div class="border-b p-5"><h2 class="font-black">افراد طرف تعامل</h2></div>
-        <div v-if="!contacts.length" class="p-12 text-center text-sm text-slate-400">هنوز فردی ثبت نشده است.</div>
+        <div class="border-b p-5"><h2 class="font-black">مخاطبان {{ selectedOrganization?.name }}</h2></div>
+        <div v-if="!organizationContacts.length" class="p-12 text-center text-sm text-slate-400">مخاطبی برای این سازمان ثبت نشده است.</div>
         <div v-else class="divide-y divide-slate-100">
-          <div v-for="c in contacts" :key="c.id" class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"><div class="min-w-0"><h3 class="font-bold text-slate-900">{{c.name}}</h3><p class="mt-1 text-xs text-slate-500">{{c.position||'بدون سمت'}} · {{c.organization?.name||'—'}}{{c.department?.name?' · '+c.department.name:''}}</p><p class="mt-1 text-xs text-slate-400" dir="ltr">{{c.mobile||c.phone||'بدون شماره'}}{{c.email?' · '+c.email:''}}</p><p class="mt-1 font-mono text-[10px] text-slate-400" dir="ltr">کد سیستمی: {{c.code||'—'}}</p></div><div class="flex gap-2"><button @click="edit(contactForm,c)" class="rounded-lg px-3 py-2 text-xs font-bold text-teal-700 hover:bg-teal-50">ویرایش</button><button @click="destroy('external-parties.contacts.destroy',c.id)" class="rounded-lg px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">حذف</button></div></div>
+          <div v-for="group in contactGroups" :key="group.id ?? 'direct'" class="p-3">
+            <h3 class="rounded-lg bg-slate-50 px-3 py-2 text-sm font-semibold" :style="{ paddingInlineStart: (12 + Math.min(group.depth, 5) * 16) + 'px' }">{{ group.name }}</h3>
+            <div v-for="c in group.contacts" :key="c.id" class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"><div class="min-w-0"><h3 class="font-bold text-slate-900">{{c.name}}</h3><p class="mt-1 text-xs text-slate-500">{{c.organization?.name||'—'}}{{c.department?.name?' · '+c.department.name:''}}</p><p class="mt-1 text-xs text-slate-400" dir="ltr">{{c.mobile||c.phone||'بدون شماره'}}{{c.email?' · '+c.email:''}}</p><p class="mt-1 font-mono text-[10px] text-slate-400" dir="ltr">کد سیستمی: {{c.code||'—'}}</p></div><div class="flex gap-2"><button @click="edit(contactForm,c)" class="rounded-lg px-3 py-2 text-xs font-bold text-teal-700 hover:bg-teal-50">ویرایش</button><button @click="destroy('external-parties.contacts.destroy',c.id)" class="rounded-lg px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">حذف</button></div></div>
+          </div>
         </div>
       </div>
     </section>

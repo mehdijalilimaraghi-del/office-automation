@@ -84,6 +84,7 @@ class StoreTaskRequest extends FormRequest
     {
         return [
             'project_id' => ['nullable', 'integer', 'exists:projects,id'],
+            'correspondence_id' => ['nullable', 'integer', 'exists:correspondences,id'],
             'section_id' => [Rule::requiredIf(fn (): bool => $this->filled('project_id')), 'nullable', 'integer', 'exists:project_sections,id'],
             'department_id' => ['nullable', 'integer', 'exists:departments,id'],
             'external_organization_id' => ['nullable', 'integer', 'exists:external_organizations,id'],
@@ -91,7 +92,7 @@ class StoreTaskRequest extends FormRequest
             'external_contact_id' => ['nullable', 'integer', 'exists:external_contacts,id'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'status' => ['sometimes', Rule::in(['todo', 'in_progress', 'completed', 'cancelled'])],
+            'status' => ['sometimes', Rule::in(['todo'])],
             'priority' => ['sometimes', Rule::in(['low', 'normal', 'high', 'urgent'])],
             'review_required' => ['sometimes', 'boolean'],
             'assignee_id' => ['nullable', 'integer', Rule::exists('users', 'id')->where(fn ($query) => $query->where('status', 'active'))],

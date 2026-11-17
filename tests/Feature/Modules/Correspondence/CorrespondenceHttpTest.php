@@ -8,6 +8,8 @@ use App\Core\Permissions\Models\Permission;
 use App\Core\Permissions\Enums\PermissionScope;
 use App\Core\Roles\Models\Role;
 use App\Core\Departments\Models\Department;
+use App\Core\Departments\Models\Position;
+use App\Core\Departments\Models\PositionAssignment;
 use App\Core\ExternalParties\Models\ExternalOrganization;
 use App\Core\ExternalParties\Models\ExternalDepartment;
 use App\Core\Settings\Services\OrganizationDepartmentRoleService;
@@ -39,6 +41,129 @@ class CorrespondenceHttpTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_letter_body_templates_keep_formatting_and_are_private_to_the_creator(): void
+    {
+        $owner = $this->userWithPermission('correspondence.create');
+        $other = $this->userWithPermission('correspondence.create');
+        $response = $this->actingAs($owner)->postJson(route('correspondence.body-templates.store'), [
+            'title' => 'نامه نمونه',
+            'body' => '<p style="text-align: center" onclick="alert(1)"><strong>متن نمونه</strong></p>',
+            'user_id' => $other->id,
+        ])->assertCreated()->assertJsonPath('title', 'نامه نمونه');
+        $id = $response->json('id');
+
+        $this->getJson(route('correspondence.body-templates.index'))
+            ->assertOk()->assertJsonCount(1)->assertJsonMissingPath('0.body');
+        $this->getJson(route('correspondence.body-templates.show', $id))
+            ->assertOk()->assertJsonPath('body', '<p style="text-align: center"><strong>متن نمونه</strong></p>');
+        $this->postJson(route('correspondence.body-templates.store'), ['title' => 'قالب خالی', 'body' => '<p><br></p>'])
+            ->assertUnprocessable()->assertJsonValidationErrors('body');
+        $this->actingAs($other)->getJson(route('correspondence.body-templates.index'))->assertExactJson([]);
+        $this->getJson(route('correspondence.body-templates.show', $id))->assertNotFound();
+        $inactive = User::factory()->create(['status' => 'inactive']);
+        $this->actingAs($inactive)->getJson(route('correspondence.body-templates.index'))->assertForbidden();
+    }
+
+    public function test_outgoing_preview_uses_current_session_token_and_does_not_save_a_letter(): void
+    {
+        $user = $this->userWithPermission('correspondence.create');
+        $token = str_repeat('a', 40);
+        $csrf = Mockery::mock(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class, [
+            $this->app, $this->app['encrypter'],
+        ])->makePartial()->shouldAllowMockingProtectedMethods();
+        $csrf->shouldReceive('runningUnitTests')->andReturn(false);
+        $this->app->instance(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class, $csrf);
+
+        $this->actingAs($user)->withSession(['_token' => str_repeat('b', 40)])
+            ->getJson(route('correspondence.preview.token'))
+            ->assertOk()->assertJsonPath('token', str_repeat('b', 40))
+            ->assertHeader('Cache-Control', 'no-store, private');
+        $this->withSession(['_token' => $token])
+            ->getJson(route('correspondence.preview.token'))
+            ->assertOk()->assertJsonPath('token', $token);
+
+        $payload = json_encode([
+            'subject' => 'پیش‌نمایش بدون ذخیره',
+            'composition_mode' => 'editor',
+            'body' => '<p>متن پیش‌نمایش</p>',
+        ], JSON_THROW_ON_ERROR);
+
+        $this->post(route('correspondence.preview'), [
+            '_token' => str_repeat('b', 40), 'preview' => $payload,
+        ])->assertStatus(419);
+        $this->post(route('correspondence.preview'), [
+            '_token' => $token, 'preview' => $payload,
+        ])->assertOk()->assertInertia(fn ($page) => $page
+            ->component('Correspondence/Print')
+            ->where('isPreview', true)
+            ->where('letter.subject', 'پیش‌نمایش بدون ذخیره'));
+        $this->assertDatabaseCount('correspondences', 0);
+    }
+
+    public function test_editor_images_survive_save_and_reopen_in_body_and_appendix(): void
+    {
+        $user = $this->userWithPermission('correspondence.create');
+        $image = UploadedFile::fake()->image('inline.png', 80, 60);
+        $source = 'data:image/png;base64,'.base64_encode(file_get_contents($image->getRealPath()));
+        $body = '<p>قبل تصویر</p><img src="'.$source.'" style="max-width:100%;height:auto" onerror="alert(1)"><p>پس از تصویر</p>';
+        $this->actingAs($user)->post(route('correspondence.store'), [
+            'type' => Correspondence::TYPE_INTERNAL,
+            'recipient_department_id' => $this->recipientDepartmentId(),
+            'subject' => 'نامه با تصاویر درون متن و پیوست',
+            'composition_mode' => 'editor',
+            'body' => $body,
+            'appendix_mode' => 'editor',
+            'appendix_body' => '<p>تصویر پیوست</p><img src="'.$source.'">',
+        ])->assertRedirect(route('correspondence.index'));
+
+        $letter = Correspondence::query()->where('created_by', $user->id)->sole();
+        $this->assertStringContainsString('src="'.$source.'"', $letter->body);
+        $this->assertStringContainsString('max-width: 100%', $letter->body);
+        $this->assertStringNotContainsString('onerror', $letter->body);
+        $this->assertStringContainsString('src="'.$source.'"', $letter->appendix_body);
+        $this->get(route('correspondence.edit', $letter))->assertOk()
+            ->assertInertia(fn ($page) => $page->component('Correspondence/Create')
+                ->where('correspondence.body', $letter->body)
+                ->where('correspondence.appendix_body', $letter->appendix_body));
+    }
+
+    public function test_preview_token_endpoint_requires_an_active_authenticated_user(): void
+    {
+        $this->getJson(route('correspondence.preview.token'))->assertUnauthorized();
+        $inactive = User::factory()->create(['status' => 'inactive']);
+        $this->actingAs($inactive)->getJson(route('correspondence.preview.token'))->assertForbidden();
+    }
+
+    public function test_external_department_manager_is_available_in_create_and_edit_forms(): void
+    {
+        $user = $this->userWithPermission('correspondence.create');
+        $organization = ExternalOrganization::query()->create(['name' => 'سازمان مخاطب', 'status' => 'active']);
+        $unmanaged = ExternalDepartment::query()->create([
+            'external_organization_id' => $organization->id, 'name' => 'A', 'status' => 'active',
+        ]);
+        $managed = ExternalDepartment::query()->create([
+            'external_organization_id' => $organization->id, 'name' => 'B', 'status' => 'active',
+        ]);
+        $manager = \App\Core\ExternalParties\Models\ExternalContact::query()->create([
+            'external_organization_id' => $organization->id, 'external_department_id' => $managed->id,
+            'name' => 'مدیر واحد مخاطب', 'status' => 'active',
+        ]);
+        $managed->update(['manager_contact_id' => $manager->id]);
+        $letter = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_OUTGOING, 'subject' => 'نامه مخاطب', 'body' => '<p>متن</p>',
+            'created_by' => $user->id, 'status' => Correspondence::STATUS_DRAFT,
+            'external_organization_id' => $organization->id, 'external_department_id' => $managed->id,
+        ]);
+        foreach ([route('correspondence.create'), route('correspondence.edit', $letter)] as $url) {
+            $this->actingAs($user)->get($url)->assertOk()->assertInertia(fn ($page) => $page
+                ->component('Correspondence/Create')
+                ->where('externalDepartments.0.id', $unmanaged->id)
+                ->where('externalDepartments.0.manager_contact_id', null)
+                ->where('externalDepartments.1.id', $managed->id)
+                ->where('externalDepartments.1.manager_contact_id', fn ($id) => (int) $id === $manager->id));
+        }
+    }
+
     public function test_direct_internal_correspondence_is_finalized_when_created(): void
     {
         $creator = $this->userWithPermission('correspondence.create');
@@ -55,7 +180,7 @@ class CorrespondenceHttpTest extends TestCase
             'classification' => Correspondence::CLASSIFICATION_ORDINARY,
             'subject' => 'نامه داخلی با ثبت مستقیم',
             'composition_mode' => 'editor',
-            'body' => '<p>متن نامه</p>',
+            'body' => '<p style="text-align: justify">متن نامه</p>',
             'recipient_department_id' => $department->id,
         ])->assertRedirect(route('correspondence.index'));
 
@@ -65,6 +190,7 @@ class CorrespondenceHttpTest extends TestCase
             'status' => Correspondence::STATUS_REGISTERED,
             'registered_by' => $creator->id,
             'workflow_state' => 'in_progress',
+            'body' => '<div style="font-family:Vazirmatn;font-size:12pt;color:#202124"><p style="text-align: justify">متن نامه</p></div>',
         ]);
     }
 
@@ -93,6 +219,43 @@ class CorrespondenceHttpTest extends TestCase
         ]))->assertOk()->assertInertia(fn ($page) => $page
             ->where('correspondences.total', 1)
             ->where('correspondences.data.0.id', $letter->id));
+
+        $secretariatManager = $this->userWithPermission('correspondence.view');
+        $secretariat = Department::query()->create([
+            'name' => 'دبیرخانه آزمون تأیید صادره',
+            'code' => 'SEC-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $secretariatManager->id,
+        ]);
+        app(SystemSettingsService::class)->set([
+            'organization.department_roles.secretariat' => (string) $secretariat->id,
+        ]);
+
+        $this->actingAs($manager)->get(route('correspondence.show', $letter))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('canManageWorkflow', true)
+                ->where('workflowUsers.0.id', $creator->id));
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::MANAGER_APPROVE,
+            'note' => 'تأیید مدیر واحد',
+        ])->assertRedirect(route('correspondence.index'));
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $letter->id,
+            'status' => Correspondence::STATUS_DRAFT,
+            'workflow_state' => 'approved_for_registration',
+            'current_department_id' => $secretariat->id,
+            'current_user_id' => $secretariatManager->id,
+        ]);
+
+        $this->actingAs($secretariatManager)->get(route('correspondence.index', [
+            'scope' => 'mine',
+            'action_filter' => 'needs_action',
+        ]))->assertOk()->assertInertia(fn ($page) => $page
+            ->where('correspondences.total', 1)
+            ->where('correspondences.data.0.id', $letter->id));
     }
 
     public function test_user_with_view_permission_can_open_correspondence_index(): void
@@ -115,8 +278,38 @@ class CorrespondenceHttpTest extends TestCase
 
     public function test_registered_correspondence_has_a_protected_a4_print_preview(): void
     {
+        Storage::fake('local');
+        $stampPath = UploadedFile::fake()->image('stamp.png', 10, 10)->store('organization/stamp', 'local');
+        $signaturePath = UploadedFile::fake()->image('signature.png', 10, 10)->store('organization/department-signatures', 'local');
+
         $viewer = $this->userWithPermission('correspondence.view');
         $creator = $this->userWithPermission('correspondence.create');
+        $department = Department::query()->create([
+            'name' => 'واحد دارای امضای مدیر',
+            'code' => 'SIG-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $viewer->id,
+            'manager_signature_path' => $signaturePath,
+            'manager_signature_active' => true,
+        ]);
+        $managerPosition = Position::query()->create([
+            'department_id' => $department->id,
+            'name' => 'مدیر فناوری اطلاعات',
+            'code' => 'POS-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+        ]);
+        PositionAssignment::query()->create([
+            'position_id' => $managerPosition->id,
+            'user_id' => $viewer->id,
+            'is_primary' => true,
+            'is_active' => true,
+        ]);
+
+        app(SystemSettingsService::class)->set([
+            'organization.stamp.path' => $stampPath,
+            'organization.stamp.active' => '1',
+            'organization.postal_code' => '1234567890',
+        ]);
         $letter = Correspondence::query()->create([
             'type' => Correspondence::TYPE_OUTGOING,
             'subject' => 'نامه برای پیش‌نمایش چاپ',
@@ -126,6 +319,7 @@ class CorrespondenceHttpTest extends TestCase
             'classification' => Correspondence::CLASSIFICATION_ORDINARY,
             'registration_number' => '1405/PRINT01',
             'created_by' => $creator->id,
+            'created_department_id' => $department->id,
             'document_identity_snapshot' => [
                 'creator_name' => $creator->name,
                 'creator_unit_title' => 'مدیریت فناوری اطلاعات',
@@ -134,11 +328,13 @@ class CorrespondenceHttpTest extends TestCase
         ]);
 
         app(\App\Core\Settings\Services\SystemSettingsService::class)->set([
+            'correspondence.print.page_layout' => json_encode(['top' => 16, 'right' => 20, 'bottom' => 24, 'left' => 19, 'header_height' => 72, 'footer_height' => 28]),
             'correspondence.print.template' => json_encode([
                 ['id' => 'page-number', 'kind' => 'text', 'role' => 'page_number', 'label' => 'شماره صفحه', 'content' => '', 'x' => 8, 'y' => 95, 'width' => 20, 'spacing' => 0, 'font_size' => 9, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'center', 'visible' => true],
                 ['id' => 'stamp', 'kind' => 'stamp', 'role' => 'issuer', 'label' => 'مهر سازمان', 'content' => '', 'x' => 8, 'y' => 80, 'width' => 20, 'spacing' => 0, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true],
                 ['id' => 'signature', 'kind' => 'signature', 'role' => 'issuer', 'label' => 'امضای مدیر واحد', 'content' => '', 'x' => 30, 'y' => 80, 'width' => 20, 'spacing' => 0, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true],
-                ['id' => 'issuer-identity', 'kind' => 'text', 'role' => 'issuer', 'label' => 'هویت صادرکننده', 'content' => '{{creator_unit_title}}\n{{creator_name}}', 'x' => 8, 'y' => 80, 'width' => 40, 'spacing' => 14, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true],
+                ['id' => 'issuer-identity', 'kind' => 'text', 'role' => 'issuer', 'label' => 'هویت صادرکننده', 'content' => '{{creator_unit_title}}\\n{{creator_department_name}}\\n{{creator_name}}\\n{{manager_name}}\\n{{manager_title}}', 'x' => 8, 'y' => 80, 'width' => 40, 'spacing' => 14, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true],
+                ['id' => 'letter-body', 'kind' => 'text', 'role' => 'body', 'label' => 'متن اصلی نامه', 'content' => '', 'x' => 8, 'y' => 0, 'width' => 84, 'spacing' => 18, 'font_size' => 12, 'font_family' => 'default', 'page_format' => 'number_of', 'bold' => false, 'align' => 'right', 'visible' => true],
             ], JSON_UNESCAPED_UNICODE),
         ]);
 
@@ -149,12 +345,83 @@ class CorrespondenceHttpTest extends TestCase
                 ->component('Correspondence/Print')
                 ->where('letter.subject', 'نامه برای پیش‌نمایش چاپ')
                 ->where('letter.attachment_pages', 2)
+                ->where('organization.postal_code', '1234567890')
+                ->where('pageLayout.top', 16)
+                ->where('pageLayout.right', 20)
+                ->where('pageLayout.bottom', 24)
+                ->where('pageLayout.left', 19)
+                ->where('pageLayout.header_height', 72)
+                ->where('pageLayout.footer_height', 28)
                 ->where('creatorUnitTitle', 'مدیریت فناوری اطلاعات')
+                ->where('managerName', $viewer->name)
+                ->where('managerPosition', 'مدیر فناوری اطلاعات')
+                ->where('managerTitle', 'مدیر فناوری اطلاعات')
+                ->where('creatorDepartmentName', 'واحد دارای امضای مدیر')
                 ->where('templateElements.0.role', 'page_number')
                 ->where('templateElements.1.kind', 'stamp')
                 ->where('templateElements.2.kind', 'signature')
                 ->where('templateElements.3.spacing', 14)
-                ->where('templateElements.3.content', '{{creator_unit_title}}\n{{creator_name}}'));
+                ->where('templateElements.4.spacing', 18)
+                ->where('templateElements.3.content', '{{creator_unit_title}}\\n{{creator_department_name}}\\n{{creator_name}}\\n{{manager_name}}\\n{{manager_title}}')
+                ->where('stampDataUri', fn ($value) => is_string($value) && str_starts_with($value, 'data:image/png;base64,'))
+                ->where('signatureDataUri', fn ($value) => is_string($value) && str_starts_with($value, 'data:image/png;base64,')));
+
+        $draft = $letter->replicate();
+        $draft->forceFill([
+            'status' => Correspondence::STATUS_DRAFT,
+            'registration_number' => null,
+            'workflow_state' => 'awaiting_manager_approval',
+            'current_user_id' => $viewer->id,
+            'current_department_id' => $department->id,
+            'appendix_body' => '<p>متن پیوست</p>',
+        ])->save();
+
+        $this->actingAs($viewer)->get(route('correspondence.print', $draft))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Correspondence/Print')
+                ->where('isPreview', true)
+                ->where('letter.id', $draft->id)
+                ->where('letter.appendix_body', '<p>متن پیوست</p>')
+                ->where('stampDataUri', null)
+                ->where('signatureDataUri', null)
+                ->where('printOptions.show_stamp', false)
+                ->where('printOptions.show_department_signature', false)
+                ->where('templateElements', fn ($items) => ! collect($items)->contains(
+                    fn ($item) => in_array($item['kind'] ?? null, ['stamp', 'signature'], true),
+                )));
+
+        $otherViewer = $this->userWithPermission('correspondence.view');
+        $this->actingAs($otherViewer)->get(route('correspondence.print', $draft))->assertForbidden();
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $draft->id, 'status' => Correspondence::STATUS_DRAFT, 'registration_number' => null,
+        ]);
+
+        $this->actingAs($creator)->post(route('correspondence.preview'), [
+            'preview' => json_encode(['composition_mode' => 'editor', 'body' => '<p>متن ذخیره‌نشده</p>']),
+        ])->assertOk()->assertInertia(fn ($page) => $page
+            ->where('isPreview', true)
+            ->where('letter.id', 0)
+            ->where('stampDataUri', null)
+            ->where('signatureDataUri', null));
+
+        $savedTemplate = json_decode(
+            app(SystemSettingsService::class)->get(['correspondence.print.template' => null])['correspondence.print.template'],
+            true,
+        );
+        $savedTemplate = array_values(array_filter(
+            $savedTemplate,
+            static fn (array $item): bool => ! in_array($item['kind'] ?? null, ['stamp', 'signature'], true),
+        ));
+        app(SystemSettingsService::class)->set([
+            'correspondence.print.template' => json_encode($savedTemplate, JSON_UNESCAPED_UNICODE),
+        ]);
+
+        $this->actingAs($viewer)->get(route('correspondence.print', $letter))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('stampDataUri', null)
+                ->where('signatureDataUri', null));
     }
 
     public function test_correspondence_index_supports_mine_department_and_all_scopes(): void
@@ -844,13 +1111,22 @@ class CorrespondenceHttpTest extends TestCase
             'type' => 'internal',
             'subject' => 'نامه داخلی',
             'attachment_pages' => 2,
-            'body' => '<p>متن <strong>مهم</strong></p>',
+            'body' => '<div style="font-family:Vazirmatn;font-size:12pt;color:#202124"><p>متن <strong>مهم</strong></p></div>',
             'status' => 'draft',
             'registration_number' => null,
             'created_by' => $user->id,
             'recipient_department_id' => $recipientDepartmentId,
             'sender_name' => $user->name,
         ]);
+
+        $letter = Correspondence::query()->where('created_by', $user->id)->sole();
+        $originalBody = $letter->body;
+        app(SystemSettingsService::class)->set([
+            'correspondence.composition.font_family' => 'Tahoma',
+            'correspondence.composition.font_size' => '18',
+            'correspondence.composition.font_color' => '#445566',
+        ]);
+        $this->assertSame($originalBody, $letter->refresh()->body);
     }
 
     public function test_direct_registration_setting_is_sent_to_form_and_registers_internal_letter_on_create(): void
@@ -1199,6 +1475,17 @@ class CorrespondenceHttpTest extends TestCase
         $this->actingAs($secretariatUser)->post(route('correspondence.register', $letter))->assertRedirect();
         $this->assertDatabaseHas('correspondences', ['id' => $letter->id, 'status' => Correspondence::STATUS_REGISTERED, 'registered_by' => $secretariatUser->id, 'workflow_state' => 'awaiting_dispatch']);
 
+        $this->actingAs($secretariatUser)->get(route('correspondence.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('filters.action_filter', 'needs_action')
+                ->where('correspondences.data.0.id', $letter->id));
+
+        $this->actingAs($outgoingCreator)->put(route('correspondence.external-tracking.update', $letter), [
+            'external_registration_number' => 'OUT-1405-01',
+        ])->assertForbidden();
+
+
         $snapshot = $letter->fresh()->recipient_addressing_snapshot;
         $this->assertSame('مدیریت', $snapshot['organizational_title_prefix']);
         $this->assertSame('مدیر واحد مالی', $snapshot['position']);
@@ -1207,6 +1494,10 @@ class CorrespondenceHttpTest extends TestCase
         $outgoingContact->update(['name' => 'نام تغییر یافته پس از ثبت', 'position' => 'سمت جدید']);
         $this->assertSame('مخاطب زمان ثبت', $letter->fresh()->recipient_addressing_snapshot['name']);
         $this->assertSame('مدیر واحد مالی', $letter->fresh()->recipient_addressing_snapshot['position']);
+
+        $this->actingAs($secretariatUser)->put(route('correspondence.external-tracking.update', $letter), [
+            'sent_at' => '2026-10-27 10:30:00',
+        ])->assertSessionHasErrors('dispatch_method');
 
         $this->actingAs($secretariatUser)->put(route('correspondence.external-tracking.update', $letter), [
             'sent_at' => '2026-10-27 10:30:00',
@@ -1713,13 +2004,47 @@ class CorrespondenceHttpTest extends TestCase
         ]);
     }
 
-    public function test_secretariat_can_return_outgoing_letter_for_correction_and_creator_can_resubmit(): void
+    public function test_manager_can_return_outgoing_draft_for_correction_before_approval(): void
+    {
+        $creator = $this->userWithPermission('correspondence.create');
+        $manager = $this->userWithPermission('correspondence.view');
+        $department = Department::query()->create([
+            'name' => 'واحد برگشت مدیر '.Str::upper(Str::random(5)),
+            'code' => 'MRET-'.Str::upper(Str::random(6)),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+        $creator->departments()->attach($department->id, ['is_primary' => true, 'joined_at' => now()]);
+        app(SystemSettingsService::class)->set(['correspondence.approval.outgoing' => 'approval']);
+        $letter = app(\App\Modules\Correspondence\Services\CorrespondenceService::class)->createDraft([
+            'type' => Correspondence::TYPE_OUTGOING,
+            'subject' => 'پیش‌نویس نیازمند اصلاح',
+            'created_department_id' => $department->id,
+        ], $creator);
+
+        $this->actingAs($manager)->post(route('correspondence.actions.store', $letter), [
+            'action_type' => CorrespondenceAction::MANAGER_RETURN_FOR_CORRECTION,
+            'note' => 'اصلاح متن و مشخصات مخاطب',
+        ])->assertRedirect(route('correspondence.index'));
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $letter->id,
+            'status' => Correspondence::STATUS_DRAFT,
+            'workflow_state' => 'returned_for_correction',
+            'current_user_id' => $creator->id,
+            'current_department_id' => $department->id,
+        ]);
+
+        $this->actingAs($creator)->get(route('correspondence.edit', $letter))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->component('Correspondence/Create'));
+    }
+
+    public function test_secretariat_can_return_outgoing_draft_before_registration_but_not_after_registration(): void
     {
         $secretariat = $this->userWithPermission('correspondence.view');
         $creator = $this->userWithPermission('correspondence.create');
-        $viewRoleUser = $this->userWithPermission('correspondence.view');
-        $creator->roles()->attach($viewRoleUser->roles()->firstOrFail()->id);
-        $creator = $creator->fresh();
+        $manager = $this->userWithPermission('correspondence.view');
         $secretariatDepartment = Department::query()->create([
             'name' => 'دبیرخانه برگشت '.Str::upper(Str::random(5)),
             'code' => 'RET-'.Str::upper(Str::random(6)),
@@ -1730,14 +2055,39 @@ class CorrespondenceHttpTest extends TestCase
             'name' => 'واحد ایجادکننده '.Str::upper(Str::random(5)),
             'code' => 'ORG-'.Str::upper(Str::random(6)),
             'is_active' => true,
+            'manager_id' => $manager->id,
         ]);
         $creator->departments()->attach($originDepartment->id, ['is_primary' => true, 'joined_at' => now()]);
         app(SystemSettingsService::class)->set([
             OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT) => (string) $secretariatDepartment->id,
         ]);
-        $letter = Correspondence::query()->create([
+        $draft = Correspondence::query()->create([
             'type' => Correspondence::TYPE_OUTGOING,
-            'subject' => 'نامه صادره دارای ایراد',
+            'subject' => 'پیش‌نویس صادره برای بررسی دبیرخانه',
+            'status' => Correspondence::STATUS_DRAFT,
+            'workflow_state' => 'approved_for_registration',
+            'current_department_id' => $secretariatDepartment->id,
+            'current_user_id' => $secretariat->id,
+            'created_department_id' => $originDepartment->id,
+            'created_by' => $creator->id,
+        ]);
+
+        $this->actingAs($secretariat)->post(route('correspondence.actions.store', $draft), [
+            'action_type' => CorrespondenceAction::SECRETARIAT_RETURN,
+            'note' => 'مشخصات مخاطب باید اصلاح شود.',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $draft->id,
+            'status' => Correspondence::STATUS_DRAFT,
+            'workflow_state' => 'returned_for_correction',
+            'current_user_id' => $creator->id,
+            'current_department_id' => $originDepartment->id,
+        ]);
+
+        $registered = Correspondence::query()->create([
+            'type' => Correspondence::TYPE_OUTGOING,
+            'subject' => 'نامه صادره ثبت نهایی شده',
             'status' => Correspondence::STATUS_REGISTERED,
             'workflow_state' => 'awaiting_dispatch',
             'current_department_id' => $secretariatDepartment->id,
@@ -1746,39 +2096,15 @@ class CorrespondenceHttpTest extends TestCase
             'registered_by' => $secretariat->id,
         ]);
 
-        $this->actingAs($secretariat)->post(route('correspondence.actions.store', $letter), [
-            'action_type' => 'secretariat_return',
-            'note' => 'نام سازمان مخاطب با متن نامه مطابقت ندارد.',
-        ])->assertRedirect();
+        $this->actingAs($secretariat)->post(route('correspondence.actions.store', $registered), [
+            'action_type' => CorrespondenceAction::SECRETARIAT_RETURN,
+            'note' => 'این اقدام پس از ثبت نهایی نباید مجاز باشد.',
+        ])->assertForbidden();
 
         $this->assertDatabaseHas('correspondences', [
-            'id' => $letter->id,
-            'workflow_state' => 'returned_for_correction',
-            'current_department_id' => $originDepartment->id,
-            'current_user_id' => $creator->id,
-        ]);
-        $this->actingAs($creator)->get(route('correspondence.edit', $letter))
-            ->assertOk()
-            ->assertInertia(fn ($page) => $page->component('Correspondence/Create'));
-
-        $this->actingAs($creator)->post(route('correspondence.actions.store', $letter), [
-            'action_type' => 'resubmit_to_secretariat',
-            'note' => 'اصلاحات انجام شد.',
-        ])->assertRedirect();
-
-        $this->assertDatabaseHas('correspondences', [
-            'id' => $letter->id,
+            'id' => $registered->id,
+            'status' => Correspondence::STATUS_REGISTERED,
             'workflow_state' => 'awaiting_dispatch',
-            'current_department_id' => $secretariatDepartment->id,
-        ]);
-        $this->assertDatabaseHas('correspondence_actions', [
-            'correspondence_id' => $letter->id,
-            'action_type' => 'secretariat_return',
-            'note' => 'نام سازمان مخاطب با متن نامه مطابقت ندارد.',
-        ]);
-        $this->assertDatabaseHas('correspondence_actions', [
-            'correspondence_id' => $letter->id,
-            'action_type' => 'resubmit_to_secretariat',
         ]);
     }
 
@@ -2982,6 +3308,64 @@ class CorrespondenceHttpTest extends TestCase
             'action_filter' => 'needs_action',
         ]))->assertOk()->assertInertia(fn ($page) => $page
             ->where('correspondences.total', 0));
+    }
+
+    public function test_user_can_create_letter_with_text_appendix_without_manual_page_count(): void
+    {
+        $user = $this->userWithPermission('correspondence.create');
+        $recipientDepartmentId = $this->recipientDepartmentId();
+
+        $this->actingAs($user)->post(route('correspondence.store'), [
+            'type' => Correspondence::TYPE_INTERNAL,
+            'recipient_department_id' => $recipientDepartmentId,
+            'subject' => 'نامه دارای پیوست متنی',
+            'composition_mode' => 'editor',
+            'body' => '<p>متن اصلی</p>',
+            'appendix_mode' => 'editor',
+            'appendix_body' => '<p style="color:#ff0000;text-align:center">متن <strong>پیوست</strong></p>',
+        ])->assertRedirect(route('correspondence.index'));
+
+        $this->assertDatabaseHas('correspondences', [
+            'subject' => 'نامه دارای پیوست متنی',
+            'attachment_pages' => null,
+            'appendix_mode' => 'editor',
+            'appendix_body' => '<p style="color: #ff0000; text-align: center">متن <strong>پیوست</strong></p>',
+        ]);
+    }
+
+    public function test_user_can_create_letter_with_combined_text_and_file_appendix(): void
+    {
+        $user = $this->userWithPermission('correspondence.create');
+        $recipientDepartmentId = $this->recipientDepartmentId();
+        $documents = Mockery::mock(DocumentService::class);
+        $documents->shouldReceive('create')
+            ->once()
+            ->withArgs(function (array $data, UploadedFile $file, User $creator, Correspondence $linkable, string $purpose): bool {
+                return $data['document_type'] === 'correspondence_appendix'
+                    && $file->getClientOriginalName() === 'appendix.pdf'
+                    && $creator->is(auth()->user())
+                    && $linkable->exists
+                    && $purpose === 'correspondence_appendix';
+            })
+            ->andReturn(new Document());
+        $this->instance(DocumentService::class, $documents);
+
+        $this->actingAs($user)->post(route('correspondence.store'), [
+            'type' => Correspondence::TYPE_INTERNAL,
+            'recipient_department_id' => $recipientDepartmentId,
+            'subject' => 'نامه دارای پیوست ترکیبی',
+            'composition_mode' => 'editor',
+            'body' => '<p>متن اصلی</p>',
+            'appendix_mode' => 'both',
+            'appendix_body' => '<p>متن پیوست</p>',
+            'appendix_files' => [UploadedFile::fake()->create('appendix.pdf', 10, 'application/pdf')],
+        ])->assertRedirect(route('correspondence.index'));
+
+        $this->assertDatabaseHas('correspondences', [
+            'subject' => 'نامه دارای پیوست ترکیبی',
+            'appendix_mode' => 'both',
+            'appendix_body' => '<p>متن پیوست</p>',
+        ]);
     }
 
 }

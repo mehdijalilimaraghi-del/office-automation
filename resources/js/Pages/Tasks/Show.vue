@@ -1,15 +1,17 @@
 <script setup lang="ts">
+import AppSelect from '@/Components/AppSelect.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
 import JalaliDateTimePicker from '@/Components/JalaliDateTimePicker.vue';
+import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 import { formatPersianDate, formatPersianDateTime } from '@/Utils/date';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 
 interface User { id: number; name: string; email?: string | null; mobile?: string | null; phone?: string | null; extension?: string | null; }
 interface ExternalOrganizationOption { id: number; name: string; }
-interface ExternalDepartmentOption { id: number; external_organization_id: number; name: string; }
+interface ExternalDepartmentOption { id: number; external_organization_id: number; parent_id?: number | null; name: string; }
 interface ExternalContactOption { id: number; external_organization_id: number; external_department_id: number | null; name: string; position: string | null; mobile: string | null; phone: string | null; extension: string | null; email: string | null; organization?: { id: number; name: string } | null; department?: { id: number; name: string } | null; pivot?: { external_organization_id: number | null; external_department_id: number | null }; }
 interface ExternalPartyOptions { external_organizations: ExternalOrganizationOption[]; external_departments: ExternalDepartmentOption[]; external_contacts: ExternalContactOption[]; }
 
@@ -20,6 +22,7 @@ interface TaskActivity {
     status: 'pending' | 'completed';
     activity_type: 'planned' | 'logged';
     sequence: number;
+    assignee_id: number | null;
     assignee: User | null;
     creator: User | null;
     assignments: TaskAssignment[];
@@ -53,10 +56,18 @@ interface Task {
     title: string;
     description: string | null;
     status: string;
+    sub_status: string | null;
     priority: string;
+    review_required: boolean;
+    review_status: string;
+    review_note: string | null;
+    review_requested_at: string | null;
+    reviewed_at: string | null;
+    reviewed_by: User | null;
     is_active: boolean;
     start_date: string | null;
     due_date: string | null;
+    assignee_id: number | null;
     assignee: User | null;
     creator: User | null;
     department: { id: number; name: string; manager: User | null } | null;
@@ -68,7 +79,7 @@ interface Task {
     documents: TaskDocument[];
     activities: TaskActivity[];
     assignments: TaskAssignment[];
-    comments: Array<{ id: number; body: string; user: User | null }>;
+    comments: Array<{ id: number; body: string; user_id: number; parent_comment_id: number | null; parent?: { id: number; body: string; user: User | null } | null; user: User | null }>;
 }
 interface TimelineItem {
     id?: number;
@@ -81,6 +92,7 @@ interface TimelineItem {
 }
 interface Abilities {
     refer: boolean;
+    accept_responsibility: boolean;
     comment: boolean;
     log_work: boolean;
     create_reminder: boolean;
@@ -107,10 +119,14 @@ interface TaskDocument {
     } | null;
 }
 
+interface LinkedCorrespondence { id: number; subject: string; letter_number: string | null; type: string; }
+
 const props = defineProps<{
     task: Task;
+    linkedCorrespondences: LinkedCorrespondence[];
     timeline: TimelineItem[];
     currentUserId: number;
+    canCreateCorrespondence: boolean;
     abilities: Abilities;
     assigneeOptions: User[];
     externalPartyOptions: ExternalPartyOptions;
@@ -125,7 +141,9 @@ const props = defineProps<{
     customFieldValues: Record<string, string | number | boolean | null>;
 }>();
 
-const commentForm = useForm({ body: '' });
+const commentForm = useForm({ body: '', parent_comment_id: null as number | null });
+const replyForm = useForm({ body: '', parent_comment_id: null as number | null });
+const replyingToCommentId = ref<number | null>(null);
 const editCommentForm = useForm({ body: '' });
 const editingCommentId = ref<number | null>(null);
 const workLogForm = useForm({ title: '', description: '', started_at: '', completed_at: '' });
@@ -137,7 +155,8 @@ const reminderForm = useForm({
     remind_at: '',
 });
 const referralForm = useForm({ assignee_id: '', note: '' });
-const statusForm = useForm({ status: props.task.status });
+const reviewForm = useForm({ note: '' });
+const statusForm = useForm({ status: 'cancelled' });
 const reminderStatusForm = useForm({ status: '' as 'completed' | 'cancelled' | '' });
 const editReminderForm = useForm({ title: '', description: '', remind_at: '' });
 const editingReminderId = ref<number | null>(null);
@@ -146,6 +165,7 @@ const editingActivityId = ref<number | null>(null);
 const showActivityModal = ref(false);
 const showEditModal = ref(false);
 const showReferralModal = ref(false);
+const showReturnReviewModal = ref(false);
 const showActivityHelp = ref(false);
 const showCommentModal = ref(false);
 const showWorkLogModal = ref(false);
@@ -217,11 +237,20 @@ const removeExternalContact = (contactId: number): void => {
     submitExternal();
 };
 
+const subStatusLabels: Record<string, string> = {
+    referred: 'ارجاع شده',
+    referral_seen: 'ارجاع مشاهده شده',
+    manager_review: 'در حال بررسی مدیر',
+    returned_for_completion: 'برگشت برای تکمیل',
+};
 const statusLabels: Record<string, string> = {
     todo: 'انجام نشده',
+    observed: 'مشاهده شده',
     in_progress: 'در حال انجام',
     completed: 'تکمیل شده',
+    submitted: 'در حال انجام',
     cancelled: 'لغو شده',
+    cannot_continue: 'امکان ادامه وجود ندارد',
 };
 const priorityLabels: Record<string, string> = {
     low: 'کم',
@@ -241,6 +270,9 @@ const statusClasses: Record<string, string> = {
     todo: 'bg-slate-100 text-slate-700 ring-slate-200',
     in_progress: 'bg-blue-50 text-blue-700 ring-blue-200',
     completed: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+    submitted: 'bg-amber-50 text-amber-800 ring-amber-200',
+    observed: 'bg-sky-50 text-sky-700 ring-sky-200',
+    cannot_continue: 'bg-red-50 text-red-700 ring-red-200',
     cancelled: 'bg-red-50 text-red-700 ring-red-200',
 };
 const priorityClasses: Record<string, string> = {
@@ -261,6 +293,22 @@ const submitComment = (): void => {
     commentForm.post(route('tasks.comments.store', props.task.id), {
         preserveScroll: true,
         onSuccess: () => { commentForm.reset(); showCommentModal.value = false; },
+    });
+};
+
+const startReply = (comment: { id: number }): void => {
+    replyingToCommentId.value = comment.id;
+    replyForm.reset();
+    replyForm.parent_comment_id = comment.id;
+};
+
+const submitReply = (): void => {
+    replyForm.post(route('tasks.comments.store', props.task.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            replyForm.reset();
+            replyingToCommentId.value = null;
+        },
     });
 };
 const editComment = (comment: { id: number; body: string }): void => {
@@ -373,6 +421,11 @@ const handleDocumentFileChange = (event: Event): void => {
     }
 };
 
+const deleteTaskDocument = (documentId: number): void => {
+    if (!window.confirm('آیا از حذف این پیوست مطمئن هستید؟')) return;
+    router.delete(route('tasks.documents.destroy', [props.task.id, documentId]), { preserveScroll: true });
+};
+
 const submitDocument = (): void => {
     documentForm.post(route('tasks.documents.store', props.task.id), {
         preserveScroll: true,
@@ -425,10 +478,39 @@ const deleteTask = (): void => {
     });
 };
 
+const acceptResponsibility = (): void => {
+    if (!window.confirm('مسئولیت این دستورکار را شخصاً می‌پذیرید؟')) return;
+    router.post(route('tasks.accept-responsibility', props.task.id), {}, { preserveScroll: true });
+};
+
 const submitReferral = (): void => {
     referralForm.patch(route('tasks.refer', props.task.id), {
         preserveScroll: true,
         onSuccess: () => { referralForm.reset(); showReferralModal.value = false; },
+    });
+};
+const submitForReview = (): void => {
+    if (reviewForm.processing) return;
+
+    reviewForm.patch(route('tasks.submit', props.task.id), {
+        preserveScroll: true,
+        onSuccess: () => reviewForm.reset(),
+    });
+};
+const approveReview = (): void => {
+    if (reviewForm.processing) return;
+
+    reviewForm.patch(route('tasks.approve', props.task.id), {
+        preserveScroll: true,
+        onSuccess: () => reviewForm.reset(),
+    });
+};
+const returnFromReview = (): void => {
+    if (reviewForm.processing) return;
+
+    reviewForm.patch(route('tasks.return', props.task.id), {
+        preserveScroll: true,
+        onSuccess: () => { reviewForm.reset(); showReturnReviewModal.value = false; },
     });
 };
 const changeStatus = (): void => {
@@ -451,6 +533,10 @@ const updateReminderStatus = (reminderId: number, status: 'completed' | 'cancell
     );
 };
 const formatDateTime = formatPersianDateTime;
+const isFinalized = computed(() => ['completed', 'cancelled', 'cannot_continue'].includes(props.task.status));
+const isReviewLocked = computed(() => props.task.review_status === 'pending');
+const isCurrentAssignee = computed(() => Number(props.task.assignee?.id ?? props.task.assignee_id) === Number(props.currentUserId));
+const canEditTaskContent = computed(() => !isFinalized.value && !isReviewLocked.value && isCurrentAssignee.value);
 const nextActivity = computed(() => props.task.activities?.find(activity => activity.status === 'pending' && activity.activity_type === 'planned') ?? null);
 const openActivityForm = (activity?: TaskActivity): void => {
     editingActivityId.value = activity?.id ?? null;
@@ -501,20 +587,33 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                     <Link :href="route('tasks.index')" class="text-sm text-muted-foreground hover:text-gray-900">← بازگشت به دستورکارها</Link>
                     <div class="mt-2 flex flex-wrap items-center gap-2">
                         <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">دستورکار #{{ task.id }}</span>
-                        <span class="rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset" :class="statusClasses[task.status] ?? 'bg-gray-100 text-gray-700 ring-gray-200'">{{ statusLabels[task.status] ?? task.status }}</span>
+                        <span class="rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset" :class="statusClasses[task.status] ?? 'bg-gray-100 text-gray-700 ring-gray-200'">{{ statusLabels[task.status] ? (task.status === 'submitted' ? `${statusLabels[task.status]} (${subStatusLabels[task.sub_status ?? 'manager_review']})` : task.sub_status && !['completed', 'cancelled', 'cannot_continue'].includes(task.status) ? `${statusLabels[task.status]} (${subStatusLabels[task.sub_status] ?? task.sub_status})` : statusLabels[task.status]) : task.status }}</span>
                         <span class="rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset" :class="priorityClasses[task.priority] ?? 'bg-gray-100 text-gray-700 ring-gray-200'">اولویت {{ priorityLabels[task.priority] ?? task.priority }}</span>
                     </div>
                     <h2 class="mt-2 text-xl font-semibold text-gray-900">{{ task.title }}</h2>
                     <p class="mt-1 text-sm text-muted-foreground">مدیریت، پیگیری و ثبت سوابق دستورکار</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <button v-if="abilities.update" type="button" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-800" @click="showEditModal = true">ویرایش</button>
-                    <button v-if="abilities.refer" type="button" class="rounded-lg border bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50" @click="showReferralModal = true">ارجاع دستورکار</button>
+                    <Link v-if="canCreateCorrespondence && canEditTaskContent" :href="route('correspondence.create', { task_id: task.id })" class="rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100">ایجاد نامه جدید</Link>
+                    <button v-if="abilities.submit && !isFinalized && !isReviewLocked && ['todo', 'observed', 'in_progress'].includes(task.status)" type="button" :disabled="reviewForm.processing" class="rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-800 disabled:opacity-50" @click="submitForReview">{{ reviewForm.processing ? 'در حال ارسال...' : 'ارسال برای بررسی مدیر' }}</button>
+                    <button v-if="abilities.review && task.review_status === 'pending' && task.sub_status === 'manager_review'" type="button" :disabled="reviewForm.processing" class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-800 disabled:opacity-50" @click="approveReview">{{ reviewForm.processing ? 'در حال ثبت...' : 'تأیید و تکمیل دستورکار' }}</button>
+                    <button v-if="abilities.review && task.review_status === 'pending' && task.sub_status === 'manager_review'" type="button" :disabled="reviewForm.processing" class="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-50" @click="showReturnReviewModal = true">برگشت برای اصلاح</button>
+                    <button v-if="abilities.update && canEditTaskContent" type="button" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-800" @click="showEditModal = true">ویرایش</button>
+                    <button v-if="abilities.accept_responsibility && !isFinalized && !isReviewLocked" type="button" class="rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-800 shadow-sm hover:bg-indigo-100" @click="acceptResponsibility">پذیرش مسئولیت</button>
+                    <button v-if="abilities.refer && !isFinalized && !isReviewLocked" type="button" class="rounded-lg border bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50" @click="showReferralModal = true">ارجاع دستورکار</button>
                 </div>
             </div>
         </template>
 
         <div class="task-show mx-auto max-w-7xl space-y-6 px-4 py-5 sm:px-6 lg:px-8">
+            <section class="rounded-xl border p-4 shadow-sm" :class="task.review_status === 'pending' ? 'border-amber-200 bg-amber-50/70' : task.review_status === 'approved' ? 'border-emerald-200 bg-emerald-50/60' : task.review_status === 'rejected' ? 'border-red-200 bg-red-50/60' : 'border-gray-200 bg-white'">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div><h3 class="font-semibold">گردش بررسی دستورکار</h3><p class="mt-1 text-sm text-gray-700">{{ task.review_status === 'pending' ? 'این دستورکار در انتظار بررسی مدیر است.' : task.review_status === 'approved' ? 'مدیر دستورکار را تأیید کرده است.' : task.review_status === 'rejected' ? 'دستورکار برای اصلاح برگشت داده شده است؛ پس از اصلاح می‌توانید دوباره ارسال کنید.' : 'پس از انجام کار، دستورکار را برای بررسی مدیر ارسال کنید.' }}</p></div>
+                    <span class="rounded-full px-3 py-1 text-xs font-medium" :class="task.review_status === 'pending' ? 'bg-amber-100 text-amber-800' : task.review_status === 'approved' ? 'bg-emerald-100 text-emerald-800' : task.review_status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-700'">{{ task.review_status === 'pending' ? 'در انتظار بررسی' : task.review_status === 'approved' ? 'تأیید شده' : task.review_status === 'rejected' ? 'نیازمند اصلاح' : 'آماده ارسال' }}</span>
+                </div>
+                <p v-if="task.review_note" class="mt-3 whitespace-pre-line rounded-lg border border-red-200 bg-white/70 p-3 text-sm text-red-800"><span class="font-semibold">توضیح مدیر برای برگشت:</span> {{ task.review_note }}</p>
+                <p v-if="task.reviewed_by?.name && task.reviewed_at" class="mt-2 text-xs text-muted-foreground">بررسی توسط {{ task.reviewed_by.name }} در {{ formatDateTime(task.reviewed_at) }}</p>
+            </section>
             <div class="grid gap-6 pt-2 lg:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.75fr)]">
                 <main class="min-w-0 space-y-6">
                     <section class="relative rounded-xl border bg-card shadow-sm">
@@ -532,25 +631,25 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                                 </div>
                                 
                             </div>
-                            <button v-if="abilities.update" type="button" title="برای کاری که هنوز باید انجام شود؛ پس از انجام، دکمه «انجام شد» را بزنید." class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="openActivityForm()">+ ثبت فعالیت بعدی</button>
+                            <button v-if="abilities.update && canEditTaskContent" type="button" title="برای کاری که هنوز باید انجام شود؛ پس از انجام، دکمه «انجام شد» را بزنید." class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="openActivityForm()">+ ثبت فعالیت بعدی</button>
                         </div>
                         <div v-if="pendingActivities.length === 0" class="p-6 text-center text-sm text-muted-foreground">هنوز فعالیتی ثبت نشده است.</div>
                         <div v-if="pendingActivities.length" class="divide-y">
                             <article v-for="activity in pendingActivities" :key="activity.id" class="flex flex-wrap items-start justify-between gap-4 p-5">
                                 <div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><span class="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">در انتظار انجام</span><h4 class="font-medium text-gray-900">{{ activity.title }}</h4></div><p v-if="activity.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ activity.description }}</p></div>
-                                <div v-if="abilities.update" class="flex shrink-0 flex-wrap gap-2"><button type="button" title="فعالیت را تکمیل می‌کند و همان رکورد را در گزارش فعالیت انجام‌شده نمایش می‌دهد." class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700" @click="completeActivity(activity.id)">انجام شد</button><button type="button" class="rounded-lg border px-3 py-2 text-sm" @click="openActivityForm(activity)">ویرایش</button><button type="button" class="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600" @click="deleteActivity(activity.id)">حذف</button></div>
+                                <div v-if="abilities.update && canEditTaskContent" class="flex shrink-0 flex-wrap gap-2"><button type="button" title="فعالیت را تکمیل می‌کند و همان رکورد را در گزارش فعالیت انجام‌شده نمایش می‌دهد." class="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700" @click="completeActivity(activity.id)">انجام شد</button><button type="button" class="rounded-lg border px-3 py-2 text-sm" @click="openActivityForm(activity)">ویرایش</button><button type="button" class="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600" @click="deleteActivity(activity.id)">حذف</button></div>
                             </article>
                         </div>
                     </section>
 
                     <section class="overflow-hidden rounded-xl border bg-card shadow-sm">
                         <div class="border-b bg-blue-50/60 px-5 py-4 sm:px-6">
-                            <div class="flex items-center justify-between gap-3"><div><h3 class="font-semibold">گزارش فعالیت</h3><p class="mt-1 text-sm text-muted-foreground">کارهایی که انجام شده‌اند؛ فعالیت‌های تکمیل‌شده و ثبت‌های قبلی در این فهرست نگهداری می‌شوند.</p></div><div class="flex shrink-0 items-center gap-3"><span class="text-xs text-muted-foreground">{{ loggedActivities.length }} فعالیت</span><button v-if="abilities.log_work" type="button" title="برای ثبت کاری که قبلاً انجام شده است" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showWorkLogModal = true">+ ثبت فعالیت انجام‌شده</button></div></div>
+                            <div class="flex items-center justify-between gap-3"><div><h3 class="font-semibold">گزارش فعالیت</h3><p class="mt-1 text-sm text-muted-foreground">کارهایی که انجام شده‌اند؛ فعالیت‌های تکمیل‌شده و ثبت‌های قبلی در این فهرست نگهداری می‌شوند.</p></div><div class="flex shrink-0 items-center gap-3"><span class="text-xs text-muted-foreground">{{ loggedActivities.length }} فعالیت</span><button v-if="abilities.log_work && canEditTaskContent" type="button" title="برای ثبت کاری که قبلاً انجام شده است" class="rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showWorkLogModal = true">+ ثبت فعالیت انجام‌شده</button></div></div>
                         </div>
                         <div v-if="loggedActivities.length === 0" class="p-8 text-center text-sm text-muted-foreground">هنوز فعالیت انجام‌شده‌ای ثبت نشده است.</div>
                         <div v-if="loggedActivities.length" class="divide-y">
                             <article v-for="(item, index) in loggedActivities" :key="'work-'+item.id" class="p-5 sm:p-6">
-                                <div class="flex flex-wrap items-start justify-between gap-4"><div class="flex min-w-0 flex-1 gap-3"><div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-xs font-semibold text-emerald-700">{{ index + 1 }}</div><div class="min-w-0 flex-1"><div class="flex justify-between gap-3"><h4 class="font-medium">{{ item.title }}</h4><time class="text-xs text-muted-foreground">{{ formatDateTime(item.completed_at ?? item.created_at) }}</time></div><p v-if="item.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ item.description }}</p><p v-if="item.completed_by?.name" class="mt-2 text-xs text-muted-foreground">ثبت توسط {{ item.completed_by.name }}</p></div></div><div v-if="abilities.update" class="flex shrink-0 gap-2"><button type="button" class="rounded-lg border px-3 py-2 text-sm" @click="editWorkLog(item)">ویرایش</button><button type="button" class="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600" @click="deleteWorkLog(item.id)">حذف</button></div></div>
+                                <div class="flex flex-wrap items-start justify-between gap-4"><div class="flex min-w-0 flex-1 gap-3"><div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-xs font-semibold text-emerald-700">{{ index + 1 }}</div><div class="min-w-0 flex-1"><div class="flex justify-between gap-3"><h4 class="font-medium">{{ item.title }}</h4><time class="text-xs text-muted-foreground">{{ formatDateTime(item.completed_at ?? item.created_at) }}</time></div><p v-if="item.description" class="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">{{ item.description }}</p><p v-if="item.completed_by?.name" class="mt-2 text-xs text-muted-foreground">ثبت توسط {{ item.completed_by.name }}</p></div></div><div v-if="abilities.update && canEditTaskContent" class="flex shrink-0 gap-2"><button type="button" class="rounded-lg border px-3 py-2 text-sm" @click="editWorkLog(item)">ویرایش</button><button type="button" class="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600" @click="deleteWorkLog(item.id)">حذف</button></div></div>
                             </article>
                         </div>
                     </section>
@@ -558,7 +657,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                     <section class="overflow-hidden rounded-xl border bg-card shadow-sm">
                         <div class="flex items-start justify-between gap-3 border-b bg-blue-50/60 px-5 py-4 sm:px-6">
                             <div><h3 class="font-semibold">سوابق ارجاع دستورکار</h3><p class="mt-1 text-sm text-muted-foreground">مشخص می‌کند دستورکار از چه کسی به چه کسی ارجاع شده و چه کسی ارجاع را ثبت کرده است.</p></div>
-                            <button v-if="abilities.refer" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showReferralModal = true">ارجاع دستورکار</button>
+                            <button v-if="abilities.refer && !isReviewLocked" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white" @click="showReferralModal = true">ارجاع دستورکار</button>
                         </div>
                         <div v-if="task.assignments.length === 0" class="p-6 text-center text-sm text-muted-foreground">هنوز سابقه ارجاعی برای این دستورکار ثبت نشده است.</div>
                         <div v-else class="divide-y px-5 py-4 sm:px-6">
@@ -585,18 +684,31 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                                     <h3 class="font-semibold">نظرات</h3>
                                     <p class="mt-1 text-xs text-muted-foreground">{{ task.comments?.length ?? 0 }} نظر ثبت شده</p>
                                 </div>
-                                <button v-if="abilities.comment" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="showCommentModal = true">ثبت نظر</button>
+                                <button v-if="abilities.comment && !isFinalized" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="showCommentModal = true">ثبت نظر</button>
                             </div>
                             <div v-if="task.comments?.length" class="space-y-3 p-4">
                                 <article v-for="comment in task.comments" :key="comment.id" class="rounded-lg bg-gray-50 p-3">
-                                    <p class="text-sm leading-6">{{ comment.body }}</p>
+                                    <div v-if="comment.parent" class="mb-2 rounded-md border-r-2 border-indigo-300 bg-white px-3 py-2">
+                                        <p class="text-[11px] font-semibold text-indigo-700">پاسخ به {{ comment.parent.user?.name ?? 'دیدگاه قبلی' }}</p>
+                                        <p class="mt-1 line-clamp-2 text-xs text-gray-500">{{ comment.parent.body }}</p>
+                                    </div>
+                                    <p class="whitespace-pre-line text-sm leading-6">{{ comment.body }}</p>
                                     <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-2">
                                         <p class="text-xs text-muted-foreground">{{ comment.user?.name ?? '—' }}</p>
-                                        <div v-if="abilities.update" class="flex gap-2">
-                                            <button type="button" class="text-xs font-medium text-gray-700 hover:underline" @click="editComment(comment)">ویرایش</button>
-                                            <button type="button" class="text-xs font-medium text-red-600 hover:underline" @click="deleteComment(comment.id)">حذف</button>
+                                        <div class="flex flex-wrap gap-3">
+                                            <button v-if="abilities.comment && !isFinalized" type="button" class="text-xs font-medium text-indigo-700 hover:underline" @click="startReply(comment)">پاسخ</button>
+                                            <button v-if="!isFinalized && Number(comment.user_id) === Number(currentUserId)" type="button" class="text-xs font-medium text-gray-700 hover:underline" @click="editComment(comment)">ویرایش</button>
+                                            <button v-if="!isFinalized && Number(comment.user_id) === Number(currentUserId)" type="button" class="text-xs font-medium text-red-600 hover:underline" @click="deleteComment(comment.id)">حذف</button>
                                         </div>
                                     </div>
+                                    <form v-if="replyingToCommentId === comment.id" class="mt-3 space-y-2 border-t pt-3" @submit.prevent="submitReply">
+                                        <p class="text-xs text-indigo-700">پاسخ به {{ comment.user?.name ?? 'این دیدگاه' }}</p>
+                                        <textarea v-model="replyForm.body" rows="3" required maxlength="10000" class="w-full rounded-lg border border-slate-200 bg-white p-2 text-sm" placeholder="پاسخ خود را بنویسید..."></textarea>
+                                        <div class="flex justify-end gap-2">
+                                            <button type="button" class="rounded-lg px-3 py-2 text-xs text-slate-600 hover:bg-slate-100" @click="replyingToCommentId = null; replyForm.reset()">انصراف</button>
+                                            <button type="submit" :disabled="replyForm.processing" class="rounded-lg bg-indigo-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">ثبت پاسخ</button>
+                                        </div>
+                                    </form>
                                 </article>
                             </div>
                             <p v-else class="p-4 text-sm text-muted-foreground">نظری ثبت نشده است.</p>
@@ -607,7 +719,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                                     <h3 class="font-semibold">یادآوری‌ها</h3>
                                     <p class="mt-1 text-xs text-muted-foreground">{{ task.reminders?.length ?? 0 }} یادآوری ثبت شده</p>
                                 </div>
-                                <button v-if="abilities.create_reminder" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="showReminderModal = true">ثبت یادآوری</button>
+                                <button v-if="abilities.create_reminder && canEditTaskContent" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="showReminderModal = true">ثبت یادآوری</button>
                             </div>
                             <div v-if="task.reminders.length" class="space-y-3 p-4">
                                 <article v-for="reminder in task.reminders" :key="reminder.id" class="rounded-lg border p-4">
@@ -616,7 +728,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                                             <p class="text-sm font-semibold">{{ reminder.title }}</p>
                                             <p class="mt-1 text-xs text-muted-foreground">{{ formatDateTime(reminder.remind_at) }}</p>
                                         </div>
-                                        <div v-if="abilities.update" class="flex shrink-0 gap-3">
+                                        <div v-if="abilities.update && canEditTaskContent" class="flex shrink-0 gap-3">
                                             <button type="button" class="text-xs font-medium text-gray-700 hover:underline" @click="editReminder(reminder)">ویرایش</button>
                                             <button type="button" class="text-xs font-medium text-red-600 hover:underline" @click="deleteReminder(reminder.id)">حذف</button>
                                         </div>
@@ -647,13 +759,24 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                         </div>
                     </section>
 
+                    <section v-if="linkedCorrespondences.length" class="rounded-xl border border-sky-200 bg-sky-50/50 p-5 shadow-sm">
+                        <h3 class="font-semibold text-slate-900">مکاتبات مرتبط</h3>
+                        <div class="mt-3 space-y-3">
+                            <div v-for="letter in linkedCorrespondences" :key="letter.id" class="border-t border-sky-100 pt-3 first:border-0 first:pt-0">
+                                <p class="text-sm font-medium">{{ letter.subject }}</p>
+                                <p class="mt-1 text-xs text-muted-foreground">{{ letter.letter_number ? `شماره ${letter.letter_number}` : 'مکاتبه ثبت‌شده' }}</p>
+                                <Link :href="route('correspondence.show', letter.id)" class="mt-2 inline-flex text-xs font-semibold text-sky-700 hover:underline">مشاهده مکاتبه</Link>
+                            </div>
+                        </div>
+                    </section>
+
                     <section class="rounded-xl border bg-card shadow-sm">
                         <div class="border-b px-5 py-4"><h3 class="font-semibold">پیوست‌ها</h3><p class="mt-1 text-xs text-muted-foreground">{{ task.documents.length }} فایل</p></div>
                         <div v-if="task.documents.length" class="divide-y">
-                            <div v-for="link in task.documents" :key="link.id" class="p-4"><p class="truncate text-sm font-medium">{{ link.document?.title ?? 'سند' }}</p><p v-if="link.document?.latest_version" class="mt-1 text-xs text-muted-foreground">{{ link.document.latest_version.original_name }} · {{ formatFileSize(link.document.latest_version.size) }}</p><a v-if="link.document" :href="route('documents.download', link.document.id)" class="mt-2 inline-block text-xs font-medium text-gray-700 hover:underline">دریافت فایل</a></div>
+                            <div v-for="link in task.documents" :key="link.id" class="p-4"><p class="truncate text-sm font-medium">{{ link.document?.title ?? 'سند' }}</p><p v-if="link.document?.latest_version" class="mt-1 text-xs text-muted-foreground">{{ link.document.latest_version.original_name }} · {{ formatFileSize(link.document.latest_version.size) }}</p><div class="mt-2 flex flex-wrap items-center gap-3"><a v-if="link.document" :href="route('documents.download', link.document.id)" class="inline-block text-xs font-medium text-gray-700 hover:underline">دریافت فایل</a><button v-if="canEditTaskContent && abilities.documents_create && link.document" type="button" class="text-xs font-medium text-red-600 hover:underline" @click="deleteTaskDocument(link.document.id)">حذف پیوست</button></div></div>
                         </div>
                         <div v-else class="p-5 text-center text-sm text-muted-foreground">پیوستی وجود ندارد.</div>
-                        <form v-if="abilities.documents_create" class="border-t p-4 space-y-3" @submit.prevent="submitDocument">
+                        <form v-if="abilities.documents_create && canEditTaskContent" class="border-t p-4 space-y-3" @submit.prevent="submitDocument">
                             <input v-model="documentForm.title" required maxlength="255" class="h-10 w-full rounded-lg border bg-background px-3 text-sm" placeholder="عنوان فایل" />
                             <input ref="documentFileInput" type="file" required accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.txt,.csv,.zip" class="block w-full rounded-lg border bg-background px-3 py-2 text-sm" @change="handleDocumentFileChange" />
                             <button type="submit" :disabled="documentForm.processing" class="w-full rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50">{{ documentForm.processing ? 'در حال بارگذاری...' : 'پیوست فایل' }}</button>
@@ -666,7 +789,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                                 <h3 class="font-semibold">ارتباط و پیگیری بیرونی</h3>
                                 <p class="mt-1 text-xs text-muted-foreground">سازمان، واحد یا شخص خارج از شرکت مرتبط با این دستورکار.</p>
                             </div>
-                            <button v-if="abilities.update" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="openExternalModal">
+                            <button v-if="abilities.update && canEditTaskContent" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="openExternalModal">
                                 افزودن ارتباط
                             </button>
                         </div>
@@ -688,7 +811,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                                             <p v-if="contact.email"><span class="font-medium text-gray-700">ایمیل:</span> {{ contact.email }}</p>
                                         </div>
                                     </div>
-                                    <div v-if="abilities.update" class="mt-4 flex gap-2 border-t pt-3">
+                                    <div v-if="abilities.update && canEditTaskContent" class="mt-4 flex gap-2 border-t pt-3">
                                         <button type="button" class="rounded-md border px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-white" @click="editExternalContact(contact.id)">ویرایش ارتباط</button>
                                         <button type="button" class="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50" @click="removeExternalContact(contact.id)">حذف ارتباط</button>
                                     </div>
@@ -705,10 +828,10 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                         </div>
 </section>
 
-                    <section v-if="abilities.change_status" class="rounded-xl border bg-card p-5 shadow-sm">
+                    <section v-if="abilities.change_status && !isFinalized && task.review_status !== 'pending'" class="rounded-xl border bg-card p-5 shadow-sm">
                         <h3 class="font-semibold">وضعیت</h3>
                         <form class="mt-3 flex gap-2" @submit.prevent="changeStatus">
-                            <select v-model="statusForm.status" class="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm"><option value="todo">انجام نشده</option><option value="in_progress">در حال انجام</option><option value="completed">تکمیل شده</option><option value="cancelled">لغو شده</option></select>
+                            <AppSelect v-model="statusForm.status" class="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm"><option value="cancelled">لغو شده</option><option value="cannot_continue">امکان ادامه وجود ندارد</option></AppSelect>
                             <button type="submit" :disabled="statusForm.processing" class="rounded-lg border bg-white px-3 text-sm font-medium">ذخیره</button>
                         </form>
                     </section>
@@ -717,11 +840,22 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
 
         </div>
 
+        <div v-if="showReturnReviewModal" class="task-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showReturnReviewModal = false">
+            <div class="task-modal-panel w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+                <div class="flex items-center justify-between border-b p-5"><div><h3 class="font-semibold">برگشت دستورکار برای اصلاح</h3><p class="mt-1 text-sm text-muted-foreground">دلیل برگشت برای مسئول دستورکار نمایش داده می‌شود.</p></div><button type="button" class="text-xl" aria-label="بستن" @click="showReturnReviewModal = false">×</button></div>
+                <form class="space-y-4 p-5" @submit.prevent="returnFromReview">
+                    <textarea v-model="reviewForm.note" rows="4" required maxlength="5000" class="w-full rounded-lg border p-3 text-sm" placeholder="دلیل برگشت و اصلاحات موردنیاز را بنویسید"></textarea>
+                    <p v-if="reviewForm.errors.note" class="text-sm text-red-600">{{ reviewForm.errors.note }}</p>
+                    <div class="flex justify-end gap-2"><button type="button" class="rounded-lg border px-4 py-2 text-sm" @click="showReturnReviewModal = false">انصراف</button><button type="submit" :disabled="reviewForm.processing || !reviewForm.note.trim()" class="rounded-lg bg-amber-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{{ reviewForm.processing ? 'در حال برگشت...' : 'برگشت برای اصلاح' }}</button></div>
+                </form>
+            </div>
+        </div>
+
         <div v-if="showReferralModal" class="task-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" @click.self="showReferralModal = false">
             <div class="task-modal-panel w-full max-w-lg rounded-2xl bg-white shadow-2xl">
                 <div class="flex items-center justify-between border-b p-5"><div><h3 class="font-semibold">ارجاع دستورکار</h3><p class="mt-1 text-sm text-muted-foreground">مسئول فعلی دستورکار را به شخص دیگری واگذار کنید.</p></div><button type="button" class="text-xl" @click="showReferralModal = false">×</button></div>
                 <form class="space-y-4 p-5" @submit.prevent="submitReferral">
-                    <select v-model="referralForm.assignee_id" required class="h-10 w-full rounded-lg border bg-background px-3 text-sm"><option value="" disabled>انتخاب مسئول جدید</option><option v-for="user in assigneeOptions" :key="user.id" :value="String(user.id)">{{ user.name }}</option></select>
+                    <AppSelect v-model="referralForm.assignee_id" required class="h-10 w-full rounded-lg border bg-background px-3 text-sm"><option value="" disabled>انتخاب مسئول جدید</option><option v-for="user in assigneeOptions" :key="user.id" :value="String(user.id)">{{ user.name }}</option></AppSelect>
                     <input v-model="referralForm.note" class="h-10 w-full rounded-lg border bg-background px-3 text-sm" placeholder="توضیح ارجاع (اختیاری)" />
                     <p v-if="referralForm.errors.assignee_id" class="text-sm text-red-600">{{ referralForm.errors.assignee_id }}</p><p v-if="referralForm.errors.note" class="text-sm text-red-600">{{ referralForm.errors.note }}</p>
                     <div class="flex justify-end gap-2"><button type="button" class="rounded-lg border px-4 py-2 text-sm" @click="showReferralModal = false">انصراف</button><button type="submit" :disabled="referralForm.processing" class="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white">{{ referralForm.processing ? 'در حال ارجاع...' : 'ارجاع دستورکار' }}</button></div>
@@ -767,7 +901,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                 <div class="flex items-center justify-between border-b p-5"><div><h3 class="font-semibold">ویرایش دستورکار</h3><p class="mt-1 text-sm text-muted-foreground">اطلاعات اصلی دستورکار را ویرایش کنید.</p></div><button type="button" class="text-xl" @click="showEditModal = false">×</button></div>
                 <form class="grid gap-5 p-5 sm:grid-cols-2" @submit.prevent="submitEdit">
                     <div class="sm:col-span-2"><label class="mb-2 block text-sm font-medium">عنوان دستورکار</label><input v-model="editForm.title" required maxlength="255" class="h-10 w-full rounded-lg border px-3 text-sm" /></div>
-                    <div><label class="mb-2 block text-sm font-medium">اولویت</label><select v-model="editForm.priority" class="h-10 w-full rounded-lg border px-3 text-sm"><option value="low">کم</option><option value="normal">عادی</option><option value="high">زیاد</option><option value="urgent">فوری</option></select></div>
+                    <div><label class="mb-2 block text-sm font-medium">اولویت</label><AppSelect v-model="editForm.priority" class="h-10 w-full rounded-lg border px-3 text-sm"><option value="low">کم</option><option value="normal">عادی</option><option value="high">زیاد</option><option value="urgent">فوری</option></AppSelect></div>
                     <div><label class="mb-2 block text-sm font-medium">تاریخ شروع</label><JalaliDatePicker v-model="editForm.start_date" /></div>
                     <div><label class="mb-2 block text-sm font-medium">مهلت انجام</label><JalaliDatePicker v-model="editForm.due_date" /></div>
                     <div class="flex items-center gap-2 pt-7"><input id="task-active" v-model="editForm.is_active" type="checkbox" /><label for="task-active" class="text-sm font-medium">دستورکار فعال باشد</label></div>
@@ -782,8 +916,8 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                 <section class="task-modal-panel w-full max-w-lg rounded-2xl bg-white p-5 shadow-2xl sm:p-6">
                     <div class="flex items-center justify-between"><div><h3 class="font-semibold text-gray-900">{{ editingExternalContactId ? 'ویرایش ارتباط و پیگیری بیرونی' : 'افزودن ارتباط و پیگیری بیرونی' }}</h3><p class="mt-1 text-sm text-muted-foreground">{{ editingExternalContactId ? 'اطلاعات این ارتباط را ویرایش کنید.' : 'یک یا چند شخص را به‌عنوان ارتباط و پیگیری بیرونی اضافه کنید.' }}</p></div><button type="button" class="text-gray-500 hover:text-gray-900" @click="showExternalModal = false; editingExternalContactId = null">×</button></div>
                     <form class="mt-5 space-y-4" @submit.prevent="submitExternal">
-                        <select v-model="externalForm.external_organization_id" @change="handleExternalOrganizationChange" class="h-10 w-full rounded-lg border px-3 text-sm"><option :value="null">بدون سازمان خارجی</option><option v-for="item in externalPartyOptions.external_organizations" :key="item.id" :value="item.id">{{ item.name }}</option></select>
-                        <select v-model="externalForm.external_department_id" :disabled="externalForm.external_organization_id === null" @change="handleExternalDepartmentChange" class="h-10 w-full rounded-lg border px-3 text-sm"><option :value="null">بدون واحد خارجی</option><option v-for="item in externalDepartments" :key="item.id" :value="item.id">{{ item.name }}</option></select>
+                        <AppSelect v-model="externalForm.external_organization_id" @change="handleExternalOrganizationChange" class="h-10 w-full rounded-lg border px-3 text-sm"><option :value="null">بدون سازمان خارجی</option><option v-for="item in externalPartyOptions.external_organizations" :key="item.id" :value="item.id">{{ item.name }}</option></AppSelect>
+                        <DepartmentTreeSelect v-model="externalForm.external_department_id" :departments="externalDepartments" :disabled="externalForm.external_organization_id === null" placeholder="بدون واحد خارجی" @update:model-value="handleExternalDepartmentChange" />
                         <div>
                             <div class="mb-2 flex items-center justify-between">
                                 <label class="text-sm font-medium text-gray-700">اشخاص خارجی</label>

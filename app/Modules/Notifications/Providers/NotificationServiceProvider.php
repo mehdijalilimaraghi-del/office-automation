@@ -6,6 +6,7 @@ namespace App\Modules\Notifications\Providers;
 
 use App\Modules\Notifications\Listeners\TaskNotificationListener;
 use App\Modules\Tasks\Events\TaskApproved;
+use App\Modules\Tasks\Events\TaskCommented;
 use App\Modules\Tasks\Events\TaskAssigned;
 use App\Modules\Tasks\Events\TaskReturned;
 use App\Modules\Tasks\Events\TaskSubmitted;
@@ -22,5 +23,6 @@ final class NotificationServiceProvider extends ServiceProvider
         Event::listen(TaskSubmitted::class, [$listener, 'submitted']);
         Event::listen(TaskReturned::class, [$listener, 'returned']);
         Event::listen(TaskApproved::class, [$listener, 'approved']);
+        Event::listen(TaskCommented::class, [$listener, 'commented']);
     }
 }

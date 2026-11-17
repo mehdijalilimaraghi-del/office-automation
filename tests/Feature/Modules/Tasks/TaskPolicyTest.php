@@ -162,7 +162,7 @@ class TaskPolicyTest extends TestCase
         );
     }
 
-    public function test_assignee_can_change_task_status(): void
+    public function test_assignee_without_manager_responsibility_cannot_change_task_status(): void
     {
         $manager = User::factory()->create([
             'status' => 'active',
@@ -173,7 +173,7 @@ class TaskPolicyTest extends TestCase
         $project = $this->createProject($manager, $assignee);
         $task = $this->createTask($project, $manager, $assignee);
 
-        $this->assertTrue(
+        $this->assertFalse(
             $assignee->can('changeStatus', $task)
         );
     }

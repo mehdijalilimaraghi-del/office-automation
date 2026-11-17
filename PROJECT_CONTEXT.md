@@ -1,3 +1,389 @@
+## 2026-11-17 — Save feedback and local text sample migration
+
+- After a successful save, one confirmation is displayed. When a controller supplies a specific message it takes precedence over the general save confirmation.
+
+## V1 and V2 acceptance fixes
+
+- The dashboard defaults to seven days with current Jalali month, season and year options. Applying a personal body template asks before replacing existing letter text.
+
+## 2026-11-16 — Draft preview and scrollable correspondence text
+
+- Reviewers can inspect the layout before final registration. Stamps and signatures appear only after final registration. The saved draft preview does not change the letter state.
+
+## 2026-11-16 — Editable appendix labels
+
+- The first printed appendix sheet can have a custom heading. Appendix page numbering has an independent optional prefix; clearing it leaves the numbering format intact.
+
+## 2026-11-15 — Independent appendix numbering and designer preview switch
+
+- Letter and appendix page numbers count independently. Appendix numbering supports number-of, slash, short and page formats with an appendix caption; each section owns its position and appearance. Preview switching changes only the view/selected counter, preserving draft settings. Repeating header/footer elements remain on both sections; addressee/metadata and issuer are letter-only. Existing templates retain prior appendix appearance until the owner explicitly saves independent configuration; removing/hiding the appendix counter does not affect letter numbering.
+
+## 2026-11-15 — Reliable preview transport and external-unit manager notice
+
+- Outgoing preview must work when an existing/history form has no CSRF page prop and must preserve unsaved input after failure. A selected external unit without a manager displays an informative notice; it does not block organization/unit addressing or manual recipient selection. A configured but unavailable active manager also displays a notice. Unit manager metadata must be present in both create and edit form responses.
+
+## 2026-11-15 — Automatic editor image preparation and clipboard import
+
+- Users can choose large images without pre-compressing them. Preparation preserves small PNG/JPEG/WebP sources and transparencies, and reduces dimensions/quality only as needed within existing letter storage capacity. Clipboard HTML owns image placement; alternate clipboard representations are not duplicated. If HTML has no image placeholders, separate bitmap images are appended after its text. Unsupported/inaccessible images are marked visibly. GIF/BMP can be imported as static raster images; animation is not retained.
+
+## 2026-11-15 — Outgoing preview session-token correction
+
+- The outgoing preview submits unsaved form content without persisting a correspondence. Its native POST must carry the current session token supplied with the form; an HTML meta token from before login is not authoritative after session regeneration.
+
+## 2026-11-15 — Letter typography snapshot regression contract
+
+- Creation stores sanitized body HTML inside the organization typography snapshot wrapper. Tests must assert both the wrapper and safe inner content, preserving paragraph alignment and removal of unsafe images/handlers.
+- Changing organization font family, size or color affects defaults for future letters and must not rewrite the already stored letter body. This persistence contract is now covered in the editor-draft HTTP regression.
+
+## 2026-11-15 — SQL Server CI driver prerequisite
+
+- The first SQL Server CI connection attempt confirmed that enabling PHP's `pdo_sqlsrv` extension alone does not install Microsoft's ODBC runtime. The Laravel test job now installs Microsoft ODBC Driver 18 from Microsoft's Ubuntu 24.04 package feed before configuring PHP SQL Server extensions.
+- Re-run the workflow and verify the isolated database connection and full PHPUnit suite before marking backend CI operational.
+
+## 2026-11-15 — Frontend CI dependency completion
+
+- The frontend CI job now installs Composer dependencies with scripts disabled before running `vue-tsc` and Vite, because the TypeScript resolver imports Ziggy declarations from `vendor/tightenco/ziggy`. This keeps the generated/vendor type dependency available without executing Composer project scripts in the frontend job.
+
+## 2026-11-15 — CI compatibility corrections
+
+- GitHub Actions exposed two pre-existing environment mismatches: the npm lockfile did not contain all dependencies declared by `package.json`, and the locked Symfony 8.1 packages require PHP 8.4.1 or newer.
+- Regenerated and committed `package-lock.json` from the existing manifest without changing declared package versions. The CI frontend job now uses reproducible `npm ci`; the temporary lockfile-export diagnostic step has been removed.
+- Updated the CI PHP runtime to 8.5 to match the repository's current development runtime and satisfy the locked Symfony package requirements. The Laravel job uses an isolated SQL Server 2022 service.
+- The initial CI run failed as expected on these mismatches; the corrected workflow must complete successfully before this setup is considered validated. npm reported dependency advisories during installation; no automatic audit fixes or dependency upgrades were applied.
+
+## 2026-11-15 — Codex local workflow and GitHub CI preparation
+
+- Updated `AGENTS.md` to reflect the repository's current modular office-automation scope, enforce development-branch-only work, and define validation, diff-review, documentation, and automatic-push gates for Codex.
+- Added the repository-local Codex skill at `.agents/skills/validated-development/SKILL.md`.
+- Added `.github/workflows/ci.yml`: Laravel PHPUnit tests run against an isolated SQL Server service; the frontend job installs the lockfile dependencies and runs the Vue type-check/production build. The workflow is limited to pushes and pull requests targeting `development`, plus manual dispatch.
+- Exposed SQL Server encryption and certificate-trust options through environment variables in `config/database.php`; defaults preserve encrypted connections and certificate validation.
+- The authorized automatic push is performed by local Codex only after local validation and diff review. GitHub Actions runs after the push as a second verification layer; it cannot gate a direct push retroactively. The `development` branch was observed unprotected, and no branch-protection settings were changed.
+- Workflow execution has not yet been observed. Do not treat CI, PHPUnit, or frontend build as passed until GitHub Actions reports successful runs. Browser and physical printer acceptance remain separate.
+
+## 2026-11-11 — Context-tab pointer timing and dimension readback correction
+
+- Follow-up inspection identified a timing defect in contextual tab navigation: pinning selection in the tab click handler occurs after pointer focus has already moved. A capture-phase pointerdown handler now snapshots the editor range and pins a still-connected selected image, shape, or table cell before focus/selectionchange can run. This applies uniformly to all three object types.
+- Dimension fields now prefer the element's authored CSS width/height (converted to millimetres) rather than only offsetWidth/offsetHeight. Rendered dimensions remain the fallback when no explicit CSS dimension exists; this avoids readback values masking the authored setting due to layout constraints and rounding.
+- The earlier table sizing logic still needs browser acceptance, especially table/column sizing with merged cells and content-driven row heights. Do not mark dimension editing or contextual tabs complete until image, shape and table are each tested in the browser. Build/browser verification pending. Development branch only.
+
+## 2026-11-11 — Correspondence editor contextual-tab and dimension follow-up
+
+- The contextual toolbar now pins the selected image/table/shape while switching tabs, instead of relying only on browser focus/selectionchange timing. A real pointer interaction inside the editable document releases the pin so selecting a different object refreshes context. The tab strip no longer suppresses native pointer focus; the original selection is captured before switching.
+- Dimension controls now resolve the selected table/cell/image/shape from connected element references with a selection-range fallback, so a stale transient ref does not silently make the setter a no-op. Table width uses fixed layout and removes cell max-width constraints; table height also applies a distributed row-height target because CSS table height alone is only a minimum.
+- This is a code-level correction, not a verified acceptance. Frontend build and browser checks for tab persistence, image/shape/table width and height, and content persistence are still pending. Development branch only; master, release and server unchanged.
+
+## 2026-11-09 — Print uses the preview's pre-paginated A4 sheets
+
+- Root cause confirmed in `Print.vue`: screen preview renders fixed A4 sheets, each with its own physical coordinate plane and a clipped body slice translated by available content height. The previous print CSS hid every sheet after the first and let Chromium reflow the full body. That was a different layout algorithm, so letterhead, repeating artwork, first-page elements, issuer/signature flow and page counters could not reliably match preview.
+- Replaced that divergent print path: `@page` is A4 with zero page margins; every existing `.paper` sheet prints at 210 × 297 mm with an explicit page break. Coordinate plane, letterhead background, repeating elements, page number, content window and translated body slice retain the same absolute positioning and clipping model as screen preview. Chromium no longer repaginates the letter body.
+- Page count and slicing still depend on the existing measured-height estimate. Long content, font loading, images and print scaling require actual PDF validation; any mismatch must be addressed in the estimator, not by returning to browser reflow.
+- The earlier letterhead-only fixed-position correction is superseded by this unified page-sheet approach. Build, focused PHP tests and PDF acceptance are pending. Development only; master/release/server unchanged.
+
+## 2026-11-09 — Correct letterhead physical-page geometry in Chromium print
+
+- Image comparison exposed a concrete geometry defect: the letterhead background used `position: fixed` but retained the screen rule's `inset: 0`. In Chromium print, the fixed containing area is the `@page` content box after the configured top/bottom margins, so the full-page letterhead image was being anchored and scaled to the reduced content rectangle. This shifted the logo downward and displaced/scaled the artwork at the bottom.
+- Updated only the print rule for `.letterhead-background`: explicitly anchor it at physical page top by subtracting the effective top reserved zone from the fixed content-box origin, and set its physical dimensions to 210 × 297 mm. Override all inherited inset edges so the image is no longer sized to the reduced content box.
+- This is a targeted correction to the confirmed letterhead defect, not a claim that all print/preview differences are solved. Repeating elements, first-page metadata/heading, flowing body, issuer/signature flow, and page numbering still require comparison in a real Chromium-generated PDF.
+- Frontend build, focused PHP tests, and manual PDF acceptance have not yet been run. Development branch only; master/release/server unchanged.
+
+## 2026-11-09 — Print coordinate follow-up: repeating elements and page counter
+
+- The print page now emits one explicit A4 `@page` rule with only the configured effective top/bottom reserved zones and zero CSS side margins; horizontal text margins remain applied once to the flowing document box. This is intended to prevent a second browser-side horizontal margin from being compounded with template margins. The browser/printer's non-printable hardware area remains outside CSS control.
+- Repeating header/footer/legacy-repeat elements now receive physical A4 millimetre coordinates for print: their Y coordinate is translated from physical page top by the effective top reserved zone, and X/width are expressed in millimetres against the full 210mm page width.
+- Page numbering no longer uses CSS page-margin boxes, which could only snap to a top/bottom margin segment. The print counter is a fixed repeated element positioned from the saved page_number element's physical A4 X/Y/width; its displayed value uses paged-media page/pages counters and the configured format/typography.
+- First-page meta/heading elements and the body-flow safe area retain their existing distinct roles. This is an implementation iteration, not yet accepted: frontend build, focused PHP tests, and Chromium PDF comparison remain pending. Specifically verify default vs minimum print-dialog margins, header/footer clearance, page-number X/Y, and multi-page repeat behavior.
+- Development only; master/release/server unchanged.
+
+## 2026-11-09 — Full-page print coordinate alignment
+
+- The print page's containing block is reduced to the printable area by `@page` margins; using it as the percentage-coordinate plane compressed x/width values. Print mode now expands the absolute template plane back to physical A4 (210 × 297 mm), aligning its right and top edges to the physical page using the configured right and effective top margin offsets. Flowing body content remains bounded by the page margins.
+- Browser print margin controls and PDF parity still require manual Chromium verification. Development only; master/release/server unchanged.
+
+## 2026-11-09 — Print coordinate-origin mismatch correction
+
+- Print mode now compensates for the fact that `.paper` begins at the `@page` printable content edge rather than the physical A4 top edge. The absolute first-page template plane is moved upward by the effective top margin; the flowing body remains in the page content area. This addresses first-page meta/heading displacement and resulting overlap with the body.
+- Browser print/PDF parity and local tests remain pending owner verification. Development only; master, release and server unchanged.
+
+## 2026-11-09 — Page-number coordinate reconciliation and organization postal code
+
+- The page-number mismatch was caused by different coordinate systems: screen previews used raw A4 percentages, while Chromium's print counters are rendered in page-margin boxes. A counter placed inside the body region was moved to the nearest top/bottom print margin only in actual print. Both screen previews now emulate the same margin-box segment, vertical boundary, horizontal anchor/padding and alignment. The printed counter also honors the configured font family, size, weight and format-specific bidi direction instead of hard-coded 9pt Tahoma/LTR preview behavior.
+- Page counters are constrained to the reserved top/bottom print margins. If configured in the body area, they snap to the nearest margin boundary. The designer now explains this behavior.
+- Added optional organization postal code across settings form, validation, settings persistence, template sample data, repeatable header/footer/legacy-repeat token lists, and print token resolution as `{{postal_code}}`. Older document identity snapshots fall back to the current organization postal code when the snapshot has no non-empty value.
+- Regression assertions cover postal-code persistence and print props. PHP tests, frontend build, and Chromium print acceptance are pending owner execution.
+- Development only; master, release branch, and server remain unchanged.
+
+## 2026-11-09 — Print preview TypeScript ref typing fix
+
+- Replaced element-ref object bindings in the correspondence print preview with typed-safe callback ref setters. This resolves vue-tsc errors where nullable HTMLElement refs were not assignable to Vue's VNodeRef type.
+- No runtime layout behavior was intentionally changed. Frontend build remains pending owner verification.
+- Development only; master, release and server remain unchanged.
+
+## 2026-11-09 — Correct body flow, template-controlled print assets and RTL page counter
+
+- The printable letter body now measures the rendered bottom edge of first-page metadata/heading elements and adds the body element's configured spacing after that edge. The same measured offset is applied in the template designer preview and print preview; the A4 safe-area boundary remains a minimum start boundary, not a substitute for spacing from the preceding element.
+- Stamp and department-signature data URIs are now passed to the print page only when a corresponding visible stamp/signature element exists in the saved template. The print page no longer automatically appends stamp/signature images merely because legacy organization print flags are enabled. Explicit template elements remain supported.
+- CSS page-margin counters now use an RTL base direction for Persian «N از M» formats and LTR only for the slash format. This targets the real browser print margin box, not just the screen sample.
+- Added regression coverage that removes stamp/signature elements from the saved template and asserts the print props no longer include either image. Existing coverage still verifies configured assets and the persisted body spacing value.
+- Local PHPUnit, frontend production build, and Chromium one-/multi-page print acceptance are pending owner execution. Development only; master, release and server remain unchanged.
+
+## 2026-11-09 — Explicit header/footer zones and protected letter text area
+
+- The correspondence template designer now distinguishes repeating header elements and repeating footer elements as separate roles. Legacy `repeat` elements remain supported for saved templates.
+- Print layout settings now include four letter-text edge distances (top/right/bottom/left) plus independently reserved header and footer heights. Effective content boundaries are the greater of the text edge distance and the corresponding reserved zone, so flowing body text cannot enter the header/footer regions.
+- Defaults for reserved zones are 70 mm from the top edge and 25 mm from the bottom edge. The existing physical text margins remain 14/18/22/18 mm by default; effective text boundaries therefore respect the reserved regions.
+- The body starts at the configured safe-area boundary rather than adding the old 42 mm body offset a second time. Both the designer preview and print renderer use the same effective content area.
+- Page counter margin-box positioning and page-count calculations now use the effective reserved boundaries. Feature tests cover saving custom reserved zones, default values and passing the settings into print.
+- This is a layout implementation awaiting local PHPUnit, frontend build and browser-print acceptance. Development branch only; master, release and server remain unchanged.
+
+## 2026-11-09 — Multi-page A4 preview and page-counter placement
+
+- This entry supersedes the earlier same-day note below that described the preview as a continuous canvas. The on-screen print preview now renders separate A4 page cards. Each card clips the same measured flowing letter content at the configured printable-area height; first-page metadata/heading remain on page one, while configured repeating header/footer items and the page-number sample appear on every preview card.
+- A ResizeObserver recalculates the preview page count when the letter body, issuer elements, images or available dimensions change. This is a layout-based preview estimate; exact browser pagination can still differ at widow/orphan handling, unbreakable tables/images, and other fragmentation decisions.
+- Print output remains a single natural-flow document in the print media tree (only the first screen card is used for printing), so Chromium's paged-media engine controls real page breaks and the actual page/pages counters.
+- The page counter now uses the selected template format, x/y region and alignment, with explicit LTR bidi isolation. A4 margins are configurable in the designer and persisted independently (defaults 14/18/22/18 mm).
+- Regression coverage checks margin persistence, defaults and transfer to the protected print page. Browser-specific multi-page print comparison and physical print acceptance remain mandatory before calling pagination fully verified.
+- Development branch only; master, release branch and server remain unchanged.
+
+## 2026-11-09 — Configurable print margins and template-positioned page counters
+
+- Added editable A4 print margins (top/right/bottom/left) to the correspondence template designer, persisted separately from the template element array for backward compatibility. Defaults remain 14/18/22/18 mm; server validation prevents invalid or excessively narrow printable areas.
+- The print controller passes the saved margin configuration to the print page. Screen preview uses the same margins; print output converts them into the actual `@page` content area.
+- Replaced the hard-coded bottom-center page number with a CSS paged-media margin-box counter selected from the page-number element's configured x/y region and alignment. The counter format is generated from the selected template format and uses LTR bidi isolation so «1 از 1» retains its intended order instead of rendering as «از 1 1». The screen sample displays Persian digits and an estimated total.
+- Added a ResizeObserver-based screen estimate of page count from rendered content height. This is explicitly an estimate, not a true page-fragmentation renderer: the screen letter remains a continuous canvas and does not yet show separate A4 page cards. Actual print counters use the browser's page/pages counters.
+- Added feature assertions for saving custom margins, default margin values, and passing saved margins into the print page. Browser print compatibility, exact pagination and physical print acceptance still require owner verification.
+- Development branch only. No changes to master, release branch or server.
+
+## 2026-11-09 — Outgoing correction lifecycle and printable-area pagination
+
+### Outgoing correspondence workflow
+- Added `manager_return_for_correction`: the assigned origin-department manager can return an outgoing draft in `awaiting_manager_approval` to its creator, with a mandatory correction note. The creator can reopen the returned draft for editing.
+- After the creator saves a returned outgoing draft, the controller reassigns it to the active manager of its originating department and restores `awaiting_manager_approval`; it is not sent directly to Secretariat.
+- Secretariat correction is now permitted only while the outgoing draft is still `draft / approved_for_registration`, before final registration. `SECRETARIAT_RETURN` is rejected once the letter is registered. The previous post-registration correction behavior is intentionally removed for new workflow actions.
+- The action controller now redirects an actor to the correspondence index when a successful action transfers a private draft out of that actor's visibility. This addresses the observed false 403 after the manager approval transaction had already moved the draft to Secretariat.
+- Feature coverage added/updated for manager correction return, Secretariat pre-registration return, rejection of Secretariat return after registration, and the manager-approval redirect. Legacy registered correction records remain readable through the compatibility path.
+
+### Print pagination and template layout
+- Print output now uses an A4 printable area with 14mm top, 18mm side and 22mm bottom page margins. The body begins after the configured first-page spacing (the existing body element's spacing, default 42mm); CSS fragmentation applies that initial offset only at the start of the flowing body, while later page fragments start at the page's printable top margin.
+- Existing repeat elements are explicitly described in the template editor as repeatable header/footer items and remain positioned per page in print. The page number is rendered through CSS page-margin counters, not fixed-position content.
+- Important remaining limitation: the app's on-screen letter preview is still a continuous scrollable canvas and does not yet render dynamically segmented page cards or a reliable live total-page count. The actual browser print pagination, header/footer clearance, and page counters still require verification in the user's Chromium/browser version and printer settings. Do not mark the full preview-pagination requirement complete until this is verified and the screen preview is implemented or explicitly accepted.
+- Changes are committed on `development` only. Tests/build and physical print acceptance are pending user execution. No changes to `master`, release branch, or server.
+
+## 2026-11-09 — Outgoing approval UI, rich-text alignment and print pagination follow-up
+
+- Outgoing drafts awaiting department-manager approval now default the manager action selector to the existing `manager_approve` operation and expose an explicit «تأیید نامه و ارسال به دبیرخانه» option. The backend approval operation remains authoritative: it verifies the assigned department manager and approval policy, then hands the draft to the configured Secretariat manager for final registration.
+- The outgoing approval regression now checks the manager's actionable queue, manager visibility of eligible department employees, successful approval/handoff, and the Secretariat manager's subsequent `needs_action` queue.
+- Correspondence HTML sanitization now retains only a safe `text-align` value (left/right/center/justify) on allowed content tags, while continuing to strip unrelated style attributes. The direct-registration feature test asserts that justified paragraph alignment survives persistence.
+- Print pagination no longer relies on `counter(page)` inside a fixed page-content element, which Chromium rendered as 0/0. It now uses CSS page-margin counters with named page formats for number-of, slash, short and «صفحه» styles. The print content area reserves a 12mm bottom page margin; the page number is currently rendered at bottom-center rather than the designer's arbitrary x/y coordinate. Browser-version compatibility and physical print layout still require owner acceptance.
+- Changes are committed on `development` only. PHP tests, frontend type-check/build and browser print acceptance are pending owner execution. No changes to `master`, release branch, or server.
+
+## 2026-11-08 — Complete issuer identity variables in correspondence templates
+
+- Expanded the issuer text-element variable set with explicit identity fields: creator full name, issuing-unit title, issuing department name, department manager full name, manager organizational position, and the clearer `{{manager_title}}` alias.
+- The template designer preview supplies readable sample values for every new variable. The print resolver maps them to the actual correspondence creator, its created department, the department's configured manager, and the manager's active primary position assignment in that same department.
+- Added Inertia print props for manager title and creator department name, retained `{{manager_position}}` for compatibility, and made explicit issuer identity detection recognize the added variables so the legacy automatic footer is not duplicated.
+- Extended the protected print-page regression fixture to include the new variables and assert manager title and creator department values.
+- Implementation and test changes are committed on development. Owner-run focused correspondence HTTP test and frontend production build remain pending; master, release branch and server are unchanged.
+
+## 2026-11-08 — Fix multiple user creation with blank profile identifiers
+
+- Root cause: SQL Server unique indexes treat NULL as an indexed value for uniqueness, so the original unique indexes on nullable user_profiles.employee_code and national_id allowed only one row with NULL. Creating a second user without these optional identifiers failed with SQLSTATE 23000.
+- Added a forward-only migration replacing both indexes with filtered unique indexes (WHERE column IS NOT NULL) on SQL Server and SQLite. Other supported drivers retain ordinary unique indexes, which already allow multiple NULL values. Non-null employee codes and national IDs remain unique.
+- Added a user-controller regression test creating two users without employee_code or national_id and asserting both profile rows persist with NULL identifiers.
+- Migration and focused regression test are committed on development. Local migration/test execution against the project's SQL Server database is pending; master, release branch and server are unchanged.
+
+## 2026-11-07 — Fix Vue template preview build syntax
+
+- Fixed the missing closing quote in the preview-mode grid class binding in Correspondence/Template.vue. The malformed attribute caused Vue's template compiler to report an unterminated JavaScript expression at line 93.
+- No runtime behavior or data contract changed; this is a template syntax correction. Owner-run production build is pending.
+
+## 2026-11-07 — Organization-backed template designer preview
+
+- Corrected the designer's preview mode so the A4 page expands to a single-column layout rather than leaving the editor's sidebar column reserved.
+- Preview resolves organization identity/contact tokens from saved Organization Settings, displays the active organization stamp when available, and uses clearly recognizable sample correspondence values/body text for fields that require a concrete letter (recipient, subject, numbering, creator and body).
+- Sample preview content is presentation-only and is not written into the saved template. Missing organization settings use readable sample fallbacks. Letterhead remains sourced from the saved organization letterhead.
+- Added feature coverage for the preview props and their organization-settings/sample-data sources. Owner-run PHP test and frontend build are pending; development only, master/server unchanged.
+
+## 2026-11-07 — Template controller parse-error fix
+
+- The first focused owner-run test exposed a PHP ParseError in `CorrespondenceTemplateController::edit` caused by an unbalanced closing parenthesis in the nested saved-template normalization expression introduced with the designer updates.
+- Replaced the nested expression with explicit backward-compatible steps: initialize defaults, filter the legacy letterhead entry, normalize saved elements, and then append the body element when missing.
+- This was a syntax-level root cause; both the authorized and unauthorized route tests were blocked before controller authorization/render logic could execute. Re-run `OrganizationSettingsTest` to validate both paths.
+- No schema, migration, master branch or server changes.
+
+## 2026-11-07 — Letter template designer usability and output corrections
+
+- Fixed horizontal drag direction in the RTL A4 canvas: pointer movement now updates the right-offset coordinate in the opposite numeric direction, matching the visual movement.
+- The coordinate plane now spans the full A4 page in both editor and print output. Print uses a zero-margin A4 page box and keeps the document body inset separately; top coordinate 0 is the actual physical page top. Dashed safe-area guides are visual only.
+- Clarified positioning semantics: metadata, heading, repeating text and page number use absolute page coordinates; the body and issuer/signature use document flow and their own spacing-before setting. Irrelevant spacing/top controls are hidden for roles where they do not apply.
+- Added a configurable automatic body element with spacing-before, width, alignment, size, weight and font selection. The letter's actual rich-text body remains sourced from the correspondence record and continues across pages.
+- Added four page-number formats: «1 از 5»، «1/5»، «ص1 از 5» and «صفحه 1 از 5» using print page counters.
+- Added per-element font selection, including «فونت پیش‌فرض تنظیمات» which resolves to the organization correspondence font. Existing saved templates are normalized with backward-compatible defaults and receive a body configuration when absent.
+- Expanded settings feature coverage for body/font/page-number template persistence and restricted the template to one body element. No migration, new dependency, architecture change, master update or deployment.
+- Local PHP test, TypeScript, production build and Chromium multi-page print acceptance are pending owner execution.
+
+## 2026-11-04 — Role-based Persian letter template and automatic body flow
+
+- Reworked the A4 template editor around semantic roles: letter number/date, addressee/subject, page number, issuer/signature, and repeating text. Variable choices are filtered by the selected role.
+- The organization letterhead is no longer a configurable element; it is loaded automatically as a page background in the editor and print preview.
+- The letter body remains automatic, is not a template element, and is rendered from the stored HTML in normal multi-page document flow. RTL direction/alignment and whitespace/rich HTML formatting are preserved in the print body.
+- Metadata and addressee/subject render once before the body; issuer/signature elements follow the body; repeating elements use fixed page coordinates; page numbering is controlled by the page-number role. Flow elements expose width and spacing, not arbitrary page Y coordinates.
+- Existing stored template elements are normalized for compatibility; legacy letterhead image elements are removed from the element list because the image is now automatic. No migration or PDF dependency was added.
+- Validation and physical multi-page print acceptance remain pending owner execution. Development only; master/server unchanged.
+
+## 2026-11-04 — Template designer image elements follow-up
+
+- Added selectable template element kinds: text, organization stamp, and issuing-unit manager signature. Stamp/signature elements use the existing protected, snapshotted image assets; their position and dimensions are configured in the A4 editor. Text elements support creator identity tokens as well.
+- Image-only elements may have empty text content; the server normalizes empty values safely. Print preview suppresses legacy footer duplicates when a corresponding stamp/signature is placed through the template.
+- Remaining limitation: body and recipient remain normal document-flow regions; repeating page headers/footers and pagination-aware drag zones are still future work. Validation remains pending.
+
+## 2026-11-04 — Visual letter template designer (first implementation slice)
+
+- Added a dedicated settings-managed page at `correspondence.template.edit` / `correspondence.template.update`, separate from Organization Settings. Access requires `settings.manage`.
+- The A4 editor supports adding/removing text boxes, selecting boxes, pointer drag to move, resize handle, content editing, visibility, font size/weight, alignment, and insertion of approved variable tokens. Template JSON is stored in `correspondence.print.template` through SystemSettingsService; input is bounded and validated server-side, including page bounds and element count.
+- Print preview loads the saved template and renders visible text boxes on the first A4 page. Supported text tokens include organization name/short name/address/telephone/email/website, letter number/registration number/date and recipient name. Unknown tokens remain literal. Existing print output remains the fallback when no template has been saved.
+- Removed legacy print-visibility fields from Organization Settings UI, request validation and update persistence. The stamp upload/activation remains in Organization Settings as an organization asset; its location/size is to be controlled by the template designer in a later slice.
+- Current editor slice deliberately keeps the letter body in normal multi-page flow; stamp/signature image elements, recipient/body/footer zones, snapping/guides, zoom, and richer pagination-aware layout are not yet implemented. Do not describe the template designer as complete.
+- Regression tests added for template persistence and settings permission. Migration/tests/type-check/build/manual print verification remain pending owner execution. Development only; master/server untouched.
+
+## 2026-11-04 — Correspondence template boundary
+
+External recipient addressing data belongs to the external unit and its selected manager, not individual contacts. Correspondence recipient selectors must show only contact names; unit addressing components are resolved separately. Organization Settings owns organization profile and stamp asset upload/activation only. A dedicated visual letter-template designer owns print layout and visibility. The planned designer uses movable/resizable A4 text boxes and typed tokens such as `{{address}}`, `{{tel}}`, `{{email}}`, `{{website}}`, `{{letter_number}}` and `{{date}}`, with a shared preview/print/PDF renderer. Implementation is pending.
+
+## 2026-11-04 — External unit owns manager and addressee data (implementation follow-up)
+
+- The four addressee components are owned by `ExternalDepartment` only: organizational title prefix, organizational position, personal salutation, and professional title. This applies only to external organizational units; internal Core Department manager selection and behavior are unchanged.
+- External contact create/edit UI and request validation now collect only the person's identity/contact details. Legacy contact-level addressing/default columns are retained for historical compatibility and migration fallback, but are no longer exposed as current input or list metadata.
+- An external unit selects one active manager from contacts belonging to that same unit. Service-level guards prevent deactivating or moving an assigned manager until the unit manager is changed; unit update validates manager ownership.
+- Outgoing finalization snapshots the unit's addressing fields and selected manager's name/ID, without requiring an individual contact selection. Legacy contact values remain a fallback for older data.
+- Regression coverage added for manager assignment integrity and outgoing recipient snapshot. Local migration, focused tests, TypeScript/build and manual acceptance are still pending; do not claim validation until owner reports results. Development only; master and server untouched.
+
+## 2026-11-03 — Dropdown and correspondence registration corrections
+
+- Both shared selectors now measure their rendered popup height before choosing above/below placement, preventing incorrect offsets near the bottom of the viewport.
+- Drafts requiring approval are assigned to the active manager of the creating department and enter awaiting_manager_approval, so they appear in that manager's needs-action list.
+- After approval, outgoing drafts move to the configured Secretariat manager for final registration. The needs-action filter includes this approved-for-registration state.
+- With the direct setting, normal correspondence is finalized in the create request, including numbering and the normal post-registration workflow. The create form displays a final-registration action instead of a draft-save action. Special reply drafts retain their dedicated workflow.
+- Registration authorization is aligned with the configured policy and workflow state. Regression tests cover manager assignment/visibility, direct internal finalization, and outgoing approval handoff. Local validation is pending. Development only; master and server are unchanged; no migrations or dependencies were added.
+
+## 2026-11-03 — AppSelect change-event typing correction
+
+- Updated `CustomFieldsForm.vue` so its select change handler accepts the documented AppSelect payload shape (`{ target: { value: string } }`) instead of a native DOM `Event`. This resolves the TypeScript incompatibility introduced when the native select was replaced.
+- Runtime behavior remains unchanged: the selected string is stored, and an empty value is normalized to `null`.
+- Validation pending: rerun `npm run build`. Development only; master and server remain untouched.
+
+## 2026-11-03 — Shared application select rollout
+
+- Added `resources/js/Components/AppSelect.vue` as the common application-rendered select control. It renders a consistent RTL option panel with a rounded surface, subtle border/shadow, selected-state indicator, viewport-aware positioning, outside-click and Escape dismissal, keyboard navigation, and automatic search for longer option lists.
+- Replaced native `<select>` controls in the identified form/filter surfaces across Correspondence, Tasks, Projects, Core users/departments/settings/roles/custom fields/external parties, the reusable custom-fields form, and the Jalali date-time picker. The role permission-scope selector's controlled `:value` pattern and selects without `v-model` remain supported.
+- Preserved `v-model`, controlled `:value`, `@change` target-value handling, disabled states, option conditions/loops, and required-field markers. Department selection continues to use `DepartmentTreeSelect.vue`; this component is for ordinary single-choice lists.
+- Validation pending: run `npm run build`, then manually verify short and long lists, search, selection updates, disabled options, required markers, change handlers, keyboard navigation, outside click, Escape, and the Jalali hour/minute controls. `development` only; `master` remains at its prior revision. No backend, database, migration, or dependency changes.
+
+## 2026-11-03 — Shared dropdown and popover UX correction
+
+- Updated the shared `Dropdown.vue` used by the authenticated user menu: consistent rounded surface, border and shadow; document-level outside-pointer dismissal; Escape dismissal; and no longer closes merely because an inner content area receives a click.
+- Updated `DepartmentTreeSelect.vue`: outside-pointer dismissal works with its teleported panel, Escape closes and restores focus to the trigger, and the popup uses a minimum usable width while remaining within the viewport. Multi-select remains open while options are selected and closes on outside click or explicit confirmation.
+- Updated `AuthenticatedLayout.vue`: desktop navigation menus and notification panels close when the pointer goes outside their own popover; opening a navigation menu closes notifications and vice versa.
+- Scope is shared controls/layout behavior, so all screens using these shared components inherit the correction without per-form overrides. Native browser select controls remain browser-rendered; this change targets application-rendered dropdowns and unit selectors.
+- Validation pending: run `npm run build`, then manually verify the user profile menu, notifications, desktop menus, and single/multiple department selectors in forms. `development` only; `master` unchanged. No backend, database, migration, or dependency changes.
+
+## 2026-11-03 — Fix needs-action index closure scope
+
+- Root cause of the reported HTTP 500: the nested `needs_action` query closure referenced `$isSecretariatManager` and `$secretariatDepartmentId` without capturing them in its enclosing closures. PHP raised `Undefined variable $isSecretariatManager` at `CorrespondenceController.php` during correspondence index requests.
+- Captured both values in the `when(needs_action)` callback and its `$pending` callback. No workflow states, visibility rules, secretariat authorization, assignment rules, or query semantics were changed.
+- Existing `CorrespondenceHttpTest` cases exercise the affected index/filter path, including manager and department routing scenarios. Validation is pending on the project owner's local environment; run the focused command provided in the handoff. `development` only; `master` unchanged. No migration or dependency changes.
+## 2026-10-31 — Regression fix: needs-action after direct referral
+
+- Restored the direct-assignment rule that excludes a correspondence from `needs_action` when the assigned user has already recorded an action after the latest referral to them. Current assignments with no referral-history row remain actionable for legacy-data compatibility.
+- Department-manager pending logic remains based on the current department manager and actionable workflow states, and excludes `assigned_to_employee`; this keeps manager routing independent from potentially incomplete historical referral rows.
+- Regression source: `correspondence action filter distinguishes pending and previously acted referrals` had exposed a direct assignment with a later `REQUEST_TASK` being counted as pending. Validation pending: rerun `php artisan test --filter=CorrespondenceHttpTest`; `master` unchanged.
+## 2026-10-31 — Correspondence action and department filters
+
+- Reworked «نیاز به اقدام» to use the current assignment as the source of truth: direct current_user_id assignment, or an actionable current department whose manager_id is the user. The manager branch includes in_progress, result_pending_manager, and awaiting_manager_approval; assigned_to_employee is intentionally excluded. This avoids depending on complete historical referral/action rows and does not grant action rights to ordinary department members.
+- Added a department filter to the correspondence index. In «مکاتبات من» / «مکاتبات واحد من», the default «من» leaves the existing scope unchanged and selectable departments are limited to the user's memberships plus managed units. In «همه مکاتبات مجاز», the default is «همه واحدها» and the options (including inactive units for historical correspondence filtering) come from the Core Departments module's DepartmentServiceInterface::list().
+- A selected unit narrows only correspondence-to-department associations (created, recipient, current, copy, or workflow action). It is always applied after CorrespondenceAccessService::visibleToQuery; confidential visibility and all existing scopes remain enforced. Invalid or out-of-scope unit IDs are normalized to the scope default.
+- Reused the shared DepartmentTreeSelect.vue and added support for non-department sentinel options («من» / «همه واحدها») without changing existing selector behavior.
+- Added regression tests for manager-owned current assignments without referral history, employee assignment exclusion, result return to manager, department option scoping, and confidential-letter visibility under unit filtering. Validation pending: run the focused correspondence tests and npm run build; master unchanged.
+## 2026-10-27 — Correspondence form grid rows
+
+- Expanded the external organization section (sender for incoming / recipient for outgoing correspondence) to span the full row in the four-column form grid. Validation pending: run the frontend build after pulling `development`.
+- Kept the first correspondence metadata row at five large-screen columns for fields from correspondence type through the applicable date/recipient fields.
+- Started a separate four-column grid for subject and all subsequent form fields, preventing the first-row column count from distorting the remaining sections. Recipient department retains its two-column span where shown, keeping the selector usable without pushing the date field to another row.
+- Validation pending: owner to run the focused correspondence test and frontend build after pulling `development`.
+
+## 2026-10-27 — Correspondence recipient field layout and validation
+
+- Confirmed server-side validation already requires `recipient_department_id` for both incoming and internal correspondence; the form label explicitly displays a red required marker.
+- Expanded the correspondence metadata grid to six large-screen columns and kept the recipient selector at two columns with `min-w-0`, so the wider tree selector does not force the adjacent Jalali date field onto a new row.
+- Extended the correspondence HTTP regression test to verify that incoming and internal submissions without a recipient department are rejected and no draft is persisted.
+- Validation pending: pull `development` and run `php artisan test --filter=CorrespondenceHttpTest`; report the result before further changes. `master` remains unchanged.
+
+- Follow-up fix: `DepartmentTreeSelect.vue` now teleports its dropdown to `body`, positions it against the trigger, and recalculates on viewport scroll/resize. This prevents parent containers (including project section dialogs using `overflow-hidden`) from clipping the unit tree; the list retains a bounded height and internal scrolling. Validation is pending until the owner runs `npm run build` and `php artisan test`.
+
+## 2026-10-27 — Department tree selector rollout checkpoint (validation pending)
+
+- The shared `DepartmentTreeSelect.vue` now renders department-specific icons where supplied, hierarchical indentation/connector lines, expandable branches, search, and single/multiple selection. Internal and external unit pickers use the shared UI instead of page-specific native selects.
+- Migrated selectors across Tasks, Projects, Correspondence, organization settings, department parent selection, user memberships, and external-party unit management. Backend selector payloads include `parent_id` and icon data where applicable.
+- Replaced native Gregorian date inputs found in correspondence tracking with `JalaliDatePicker.vue`; date-time inputs must use `JalaliDateTimePicker.vue`. Do not create page-specific calendars.
+- All related changes are committed on `development`; `master` remains untouched. **Validation pending**: the project owner must pull, run PHP tests and `npm run build`, and report the result. The assistant has not run the local test suite or frontend build.
+
+## استاندارد دائمی رابط کاربری: انتخاب واحد و تقویم شمسی
+
+- تمام انتخاب‌گرهای واحد در صفحات Vue باید از کامپوننت مشترک `resources/js/Components/DepartmentTreeSelect.vue` استفاده کنند؛ ساختن فهرست یا درخت واحد اختصاصی در یک صفحه مجاز نیست.
+- درخت واحد باید نام و آیکون واحد، تورفتگی سلسله‌مراتبی، باز/بسته‌کردن زیرواحدها، جستجو و نمایش واضح والد/فرزند را داشته باشد. در حالت چندانتخابی، مقدارها باید از طریق `v-model:model-values` همگام شوند؛ در انتخاب تکی از `v-model` استفاده شود.
+- داده‌های ارسالی به این کامپوننت باید تا حد امکان شامل `id`، `name` و `parent_id` باشند. اگر گزینه‌های فیلتر محدود به واحدهای مرتبط هستند، مراقب باشید حذف والدها باعث تخت‌شدن درخت نشود.
+- برای تاریخ شمسی فقط از `JalaliDatePicker.vue` و برای تاریخ‌وساعت از `JalaliDateTimePicker.vue` استفاده شود. از ساخت تقویم محلی/اختصاصی در صفحه‌ها یا استفاده مستقیم از input تاریخ با ظاهر متفاوت خودداری شود. هر بهبود ظاهری تقویم باید در کامپوننت مشترک اعمال شود.
+- بعد از افزودن صفحه یا فرم جدید، کل کد را برای انتخاب واحد و تاریخ بررسی کنید و کامپوننت‌های مشترک را به‌کار ببرید. در بازبینی UI نیز همه استفاده‌های قدیمی باید شناسایی و مهاجرت داده شوند.
+- این تغییر در `development` است؛ تست‌ها و بیلد باید در محیط توسعه محلی اجرا و نتیجه توسط مالک پروژه تأیید شود. `master` نباید تغییر کند.
+
+## 2026-10-27 — Correspondence create-form refinement (validation pending)
+
+- Incoming «تاریخ دریافت» and outgoing «تاریخ ارسال» are required in server validation (`required_if`) and in the date-picker (`required`); explicit red asterisks were added because the custom picker labels did not visibly inherit the CSS required marker.
+- The related-letter search input now stays above results and selected letters. Results and selected items share a fixed-height scroll area to avoid increasing the whole form row as items/search results grow.
+- «رونوشت به» no longer displays «اختیاری»; the explanatory paragraph below it was removed and its meaning moved to a question-mark tooltip. Related-letter guidance is also a question-mark tooltip, with duplicate help removed.
+- Changes are on `development`; no local build or tests have been run by the assistant. Validate with `php artisan test --filter=CorrespondenceHttpTest` and `npm run build`.
+
+## 2026-10-27 — Correspondence create-form UX and multi-link support (validation pending)
+
+- The correspondence create form now gives Subject the full row; related correspondence and copy recipients sit side by side beneath it.
+- Removed the redundant related-letter search helper sentence and renamed the field to «ارتباط با مکاتبات قبلی». The picker supports selecting multiple registered, visible letters and removing any selection.
+- Added the `correspondence_related_letters` pivot table with backfill from legacy `reply_to_id`; the legacy field continues to point to the first related letter for compatibility. Server-side visibility checks protect confidential related letters.
+- Replaced the copy-recipient checkbox grid with a single-select combo box that displays departments in hierarchy order and a removable selected-unit list. Label is now «رونوشت به».
+- Migration and frontend/backend changes are on `development`; validation is pending. Run the migration, targeted correspondence tests, full `php artisan test`, and `npm run build`. Do not claim validation until the owner reports results. `master` unchanged.
+
+## 2026-10-27 — Correspondence list scopes (validation pending)
+
+- Added a server-side scope filter to the correspondence index: `mine` (default), `department`, and `all`.
+- `mine` includes correspondence created/registered by the user, assigned to them, explicitly authorized for them, or on which they acted. `department` limits results to the user's member/managed departments, including created/recipient/current departments, copies, and department workflow actions.
+- All scopes are layered on top of `CorrespondenceAccessService::visibleToQuery`; the `all` option means all correspondence the user is authorized to view, not an access-control bypass. Confidential-letter checks remain enforced server-side.
+- Added feature coverage for all three scopes and adjusted the ordinary-letter visibility test to request `all` explicitly. Pull `development`, run the targeted Correspondence HTTP tests, then the full test suite and frontend build. Validation is pending; no tests/build were run by the assistant. `master` unchanged.
+
+## 2026-10-27 — Correspondence dispatch, notifications, and Cartable integration (validation pending)
+
+- Added privacy-safe database notifications for correspondence actions. Notification payloads contain a generic message, correspondence ID, and authorized detail URL; they intentionally omit letter subject/body and workflow notes.
+- Final outgoing dispatch is now a distinct `dispatched` workflow state and `dispatched` business action/Core Audit event. Only the configured Secretariat (or system administrator) may set `sent_at`; the first transition to sent records dispatch once and notifies the creator. External tracking changes continue to audit changed field names only.
+- The shared Cartable now includes actionable correspondence assigned to the current user or their current department, and the Vue page displays these items. The query applies `CorrespondenceAccessService::visibleToQuery`; copy-only recipients are excluded from actionable Cartable items.
+- Added regression coverage for dispatch authorization/audit/notification privacy and for Cartable exclusion of copy-only access. **Validation pending:** pull `development`, run `php artisan test`, then `npm run build`. Do not start Forms & Requests until these pass and the V2 journeys receive manual acceptance. `master` unchanged.
+
+## 2026-10-27 — Full validation confirmed for correspondence audit slice
+
+- Project owner confirmed the full `php artisan test` suite passes and the frontend production build succeeds after the syntax correction in the external-tracking audit regression test.
+- Treat the latest registration, copy-recipient, and outgoing external-tracking audit changes as user-validated. No tests or build were independently executed by the assistant.
+- Next grouped review before Forms & Requests: inspect end-to-end incoming/outgoing/internal journeys, especially final dispatch audit, correspondence-specific notifications, and whether correspondence actions are correctly surfaced in the shared Cartable. Check the V2 acceptance gate in `ROADMAP.md`; do not assume these areas are complete from the audit tests alone.
+- Branch: `development`; `master` unchanged.
+
+## 2026-10-26 — Correspondence registration and tracking audit
+
+- Owner confirmed `php artisan test --filter=CorrespondenceHttpTest` passes for final-registration audit. Registration writes the module business-history action and matching Core Audit event; the note contains only the registration number.
+- Outgoing external tracking updates now use a transaction and row lock, audit only changed field names, and avoid persisting tracking note contents in audit old/new values or metadata. Unchanged updates do not create an audit event.
+- Added a regression test for tracking persistence and audit privacy. The new grouped change has not yet been validated by the project owner. After pulling `development`, run the full Laravel suite and frontend build once. `master` remains unchanged.
+
+## 2026-10-26 — Correspondence audit follow-up
+
+- New copy recipients are recorded in both the module-specific `correspondence_actions` history and Core Audit. The writes are transactional, and attaching the same department again does not create duplicate audit/history entries.
+- Added focused regression test: `tests/Feature/Modules/Correspondence/CorrespondenceCopyAuditTest.php`.
+- This slice does not yet claim end-to-end completion of correspondence notifications, Cartable integration, registration audit, or dispatch audit; those remain to be checked against the V2 acceptance gate.
+- Validation is pending on the project owner's environment; do not claim tests pass until their result is reported.
+
 # Project Context
 
 This document is the persistent working context for the Office Automation project. It records architectural decisions, current implementation status, conventions, and the recommended next path so future development can continue without re-discovering the project.
@@ -418,22 +804,17 @@ When checking whether a user belongs to a project, prefer the project's users() 
 
 ## 17. Dashboard
 
-Dashboard is implemented.
+The dashboard is implemented at `/dashboard` and uses the shared `TaskAccessService` scope for all task data.
 
-Current statistics:
-- My Tasks
-- Today's Tasks
-- Overdue Tasks
-- Active Projects
-- Completed Tasks
+Current dashboard behavior:
+- Personal KPIs and the personal-task list are limited to open tasks assigned to the signed-in user.
+- Managerial team metrics and team task list are a separate section, shown only when the user has an organization-wide task-view scope or manages departments/projects.
+- Department managers see work belonging to their managed departments (including project sections); project managers see work in their managed projects. Organization-wide task scope sees the wider task set, excluding tasks assigned to the manager from the team panel so personal work stays separate.
+- The seven-day activity chart counts visible tasks created and completed per day using persisted timestamps.
+- Project and section progress is based on tasks visible under the same backend task scope.
+- The root URL redirects guests to login and authenticated users to the dashboard, rather than showing an extra standalone welcome page.
 
-Recent tasks:
-- latest visible tasks
-- project and assignee information
-
-Dashboard respects TaskAccessService.
-
-Dashboard tests have passed.
+Dashboard feature tests cover root routing and the personal/team payload contract. Local focused test, production build and manual role-based UI validation remain pending after the latest redesign.
 
 ## 18. Frontend/UI
 
@@ -948,3 +1329,802 @@ Authorization has two additive sources:
 The effective access is the union of the two sources, not an intersection. For example, a user who is not a project manager may still receive `projects.create` through their application role; a task/project operational permission may also be granted explicitly where its scope is intentionally configured. Backend authorization remains authoritative.
 
 The active `SYSTEM_ADMIN` account is a special system capability and receives every permission with organization scope independent of business responsibilities and the completeness of seeded permission assignments. Inactive users still have no permissions. Permission seeding must preserve operational grants assigned to ordinary roles.
+
+## 2026-10-26 — Current V2 checkpoint update
+
+- Current active version is V2 — Office Automation; V1 is closed. Older statements earlier in this file identifying V1 as current are historical and superseded by ROADMAP.md and CURRENT_STATUS.md.
+- Correspondence workflow now records both module-specific action history and Core Audit events for workflow actions. Audit metadata includes action ID and routing actor/target identifiers without duplicating letter body or confidential content.
+- The manager-approval HTTP regression test checks that the Core Audit event is persisted.
+- Next priority after validation: audit remaining correspondence lifecycle transitions (draft creation/final registration/copy recipients/external dispatch tracking) and verify actionable Cartable + notification integration before starting Forms & Requests.
+- Keep work on development; do not change master. Follow the one-step-at-a-time local validation instruction in CURRENT_STATUS.md.
+
+
+## 2026-10-27 — Cartable TypeScript build fix
+
+- Resolved the frontend build error in `resources/js/Pages/Cartable/Index.vue` by changing the template reference from `currentDepartment` to the declared `current_department` field.
+- This is a naming-only fix on `development`; `master` remains unchanged. Production build validation is pending.
+
+
+## 2026-10-27 — Correspondence numbering requirements (pending)
+
+- The letter's own `شماره نامه` and the secretariat's `شماره ثبت` must be separate concepts and fields.
+- The custom letter-number template in correspondence settings must support two or three fields.
+- Each department/unit must have a required configurable short code, such as `IT`; the template should use this code rather than the database department ID.
+- The correspondence list must show `registered_at` as a localized Persian/Jalali date and Tehran time with the label `ثبت نهایی`, not a raw ISO UTC string.
+- All items above are pending. Inspect existing schema and behavior before implementing; retain historical data and add regression tests. `development` only; `master` unchanged.
+
+## 2026-10-27 — Correspondence number separation and department codes (validation pending)
+
+- Added a dedicated letter_number field. New drafts receive a letter number immediately using the organization-configured template; the Secretariat assigns a separate registration_number at final registration (REG + configured separator + sequence). Existing registration numbers are preserved; legacy drafts without a letter number receive one at final registration.
+- Added a separate counter table for letter numbers while retaining the existing counter for Secretariat registration numbers.
+- Custom letter-number templates now accept two or three distinct components. The settings form exposes a two/three-part selector and persists only the selected components.
+- Department creation/editing now requires a unique short alphanumeric code (hyphens/underscores allowed), persists it, and uses it in letter-number templates instead of the database ID. Existing department codes are preserved.
+- Correspondence list/detail surfaces display letter number and registration number separately. The list formats registered_at as a Jalali date and Tehran local time and labels it «ثبت نهایی»; search includes both numbers.
+- Added/adjusted regression coverage for two-part templates, distinct registration numbers, draft letter-number assignment, and department code persistence.
+- Validation pending: pull development, run focused correspondence numbering/service and department tests, then full php artisan test and npm run build. No tests or build have been run by the assistant. master unchanged.
+
+## 2026-10-27 — Correspondence copy recipient UX and workflow additions
+
+- Optional copy recipients are now at the bottom of the creation form and are selected through checkboxes supporting multiple departments.
+- The correspondence creation date fields use the shared JalaliDatePicker component to align date input typography with the rest of the Persian RTL UI.
+- A department manager can add additional copy recipients while the correspondence is in their department's active workflow, provided the workflow has not completed. Backend authorization is authoritative; the existing workflow service records each newly attached copy in correspondence action history and Core Audit, while duplicate recipients are ignored.
+- Added HTTP regression tests for multiple-copy success and non-manager denial. Validation is pending in the user's local environment; no migration is required for this UI/controller change. Development only, master unchanged.
+
+## 2026-10-27 — Related correspondence search and date validation
+
+- The optional correspondence relation field now uses the broader label «در ارتباط با مکاتبات قبلی» and supports server-side search instead of loading a fixed list of the latest 100 letters.
+- Search covers letter number, registration number, subject, external tracking registration number, internal department names/codes, and external organization/department names/codes. Result rows show subject, letter number, registration number, letter date, and related party names/codes; results are visibility-filtered and capped at 20.
+- Incoming receipt date and outgoing sent date are required in both UI and backend validation.
+- HTTP regression tests were added. Local validation pending; no migration required. Changes are on development only; master unchanged.
+
+## 2026-10-27 — Related correspondence selector UI alignment (validation pending)
+
+- Related correspondence and copy-recipient controls both span two columns at the `sm` breakpoint, aligning their widths.
+- Minimum search length is communicated inside the related-search input placeholder rather than a separate helper panel. Results appear only after two characters are entered.
+- Selected related letters are shown in one removable list, visually aligned with the copy-recipient selection list; redundant nested bordered containers were removed. Backend behavior is unchanged.
+- Local validation pending; run `php artisan test --filter=CorrespondenceHttpTest` and `npm run build` after pulling `development`. `master` unchanged.
+
+## 2026-10-27 — Related correspondence dropdown overlay correction (validation pending)
+
+- Restored the outer border and padding of «ارتباط با مکاتبات قبلی» to visually match «رونوشت به».
+- Search results use an anchored absolute dropdown with a white background and shadow, so opening results overlays the form rather than pushing selected items and subsequent fields down. Selected letters stay in a separate list below the search field.
+- Local validation pending; run `php artisan test --filter=CorrespondenceHttpTest` and `npm run build` after pulling `development`. `master` unchanged.
+
+
+## 2026-10-27 — Correspondence number policy and secretariat pre-action management
+
+Incoming letter numbers are captured from the original document, never auto-generated. Secretariat registration numbers have a separate configurable template and counter. The secretariat can edit/delete draft correspondence only before any action exists; server-side transactional checks enforce this. Regression tests and local build/test validation are pending.
+
+
+### اصلاح بر اساس گزارش تست 2026-10-27
+
+- خطای نحوی آرایه اعتبارسنجی در `CorrespondenceController::update` شناسایی و اصلاح شد؛ این خطا علت بیشتر خطاهای 500 در گزارش قبلی بود.
+- قالب پیش‌فرض شماره ثبت به «شماره ترتیبی» تغییر کرد تا با قالب پیش‌فرض شماره نامه تداخل نداشته باشد. تست انتظار شماره ثبت نیز به‌روزرسانی شد.
+- تست‌های محلی هنوز پس از این اصلاحات دوباره اجرا نشده‌اند؛ نتیجه قبلی دیگر معیار وضعیت فعلی نیست.
+
+### پیگیری تست‌های 2026-10-27
+
+- اجرای مجدد سه فایل تست: 41 تست موفق و یک تست ناموفق بود. علت تنها شکست، قدیمی‌بودن داده ورودی تست «الزام فایل اصل نامه» بود؛ تست شماره نامه وارده را ارسال نمی‌کرد و پیش از رسیدن به اعتبارسنجی `original_letters` با خطای `letter_number` متوقف می‌شد.
+- داده تست با افزودن `letter_number` اصلاح شد تا تست صرفاً الزام فایل اصل نامه را بررسی کند. اجرای دوباره تست پس از این commit هنوز در محیط محلی تأیید نشده است.
+
+## 2026-10-28 — Draft correspondence privacy and edit/delete audit
+
+- Audit confirmed that edit/delete endpoints exist, but are authorized only for Secretariat users while a correspondence is still a draft and has no workflow action. Final-registered correspondence cannot currently be edited or deleted; direct endpoint requests are denied by the same server-side guard.
+- Tightened draft visibility: drafts are now visible only to their creator and the Secretariat, regardless of department membership, current workflow relationships, or the all-scope filter. Direct detail access follows the same rule. Registered ordinary and registered confidential correspondence retain their existing visibility rules.
+- Added HTTP regression coverage for creator-only draft visibility. UI edit/delete controls remain conditional on the backend-provided can_manage_before_action flag; if absent for a Secretariat user, verify that the user's configured Secretariat department is active and correctly assigned.
+- Validation pending: pull development, run php artisan test --filter=CorrespondenceHttpTest, then npm run build. No test/build result is claimed. master unchanged.
+
+## 2026-10-28 — Correspondence edit/delete business rule clarified
+
+- Final registration alone does not block editing/deletion. It only communicates the letter to the target department.
+- Incoming correspondence can be edited/deleted by Secretariat; outgoing and internal correspondence can be edited/deleted by their creator, provided no workflow/action record, reply, or linked task/request exists.
+- Edit/delete authorization remains enforced server-side and the UI uses the same capability flag. Draft visibility remains restricted to creator and Secretariat.
+- Added/updated HTTP coverage for editing and deleting registered incoming correspondence by Secretariat, registered outgoing correspondence by creator, denial to another creator, and denial after a workflow action. Validation pending in local environment.
+- master unchanged.
+
+## 2026-10-28 — Fix correspondence edit/delete capability after registration bookkeeping
+
+- Root cause found: `canManageBeforeAction()` treated any `correspondence_actions` row as a workflow action. The registration lifecycle itself writes `registered` and, for incoming mail, `secretariat_initial_referral`; adding a copy recipient writes `copy_added`. Therefore these non-user-workflow records could suppress edit/delete controls immediately, even though the business rule allows editing after registration until a real workflow action.
+- Updated the guard to ignore only `registered`, `secretariat_initial_referral`, and `copy_added` when deciding whether a workflow action has occurred. Actual workflow actions, replies, and linked tasks still block edit/delete. Both UI capability flags and update/delete endpoints use this shared guard.
+- Extended `CorrespondenceHttpTest` so the registered incoming Secretariat edit/delete test includes all three bookkeeping action types and still verifies that a real `manager_approve` action blocks deletion.
+- Commits on `development`: `ca19d62e664af9c504c02ae4892f8d74794e0ea7` (service fix), `eb014380ff67df01792c466c65a4066bc91087b1` (regression test).
+- Validation is pending in the local Windows/SQL Server environment. No tests or frontend build have been run by the assistant. `master` unchanged.
+
+## 2026-10-28 — Fix SQL Server delete failure for correspondence bookkeeping actions
+
+- After the editability guard was corrected to ignore registration bookkeeping actions, the regression test exposed a second issue: deleting an eligible correspondence attempted to delete its parent row while `correspondence_actions` still referenced it, causing SQL Server FK error `correspondence_actions_correspondence_id_foreign`.
+- Updated `CorrespondenceController::destroy()` to delete the correspondence's action-history rows inside the same transaction before deleting the correspondence. This endpoint is already guarded by `canManageBeforeAction()`, so real workflow actions, replies, and linked tasks continue to block deletion; only letters eligible for pre-action deletion reach this cleanup.
+- Commit on `development`: `1cc1d7da270da6c5d7c8820ce1b3fb6a9ed6691b`.
+- Validation is pending; the targeted feature test has not yet been rerun after this fix. `master` unchanged.
+
+## 2026-10-28 — Unified correspondence create/edit form (validation pending)
+
+- The incoming letter-number label is now «شماره نامه وارده» with a question-mark tooltip explaining: «شماره نامه درج‌شده روی اصل نامه وارده را وارد کنید.» The field shows one required marker.
+- Edit now renders the same Vue form used for creation, with existing correspondence values, linked letters, copy departments and original-letter filenames preloaded. Correspondence type remains fixed during editing; existing original files are preserved and additional files can be attached.
+- Expanded the update endpoint to validate and persist editable metadata/body, linked correspondence, copy departments, and newly uploaded original/attachment files. Existing files are retained. Authorization still uses the shared pre-action guard and is rechecked inside the transaction.
+- Local validation pending: php artisan test --filter=CorrespondenceHttpTest, then npm run build. No test/build result is claimed. master unchanged.
+
+## 2026-10-28 — Required-field asterisk convention
+
+- Fixed the incoming letter-number label by removing its manually rendered `<span>*</span>`; `resources/css/app.css` already adds the red asterisk with `label:has(+ :is(input, select, textarea):required)::after` when the label is followed by a native required control. Keeping both creates two stars.
+- Permanent UI rule: for controls covered by the global `::after` selectors, mark the control `required` and do not add a literal/manual asterisk to the label. The global CSS is the single source of the visual marker. For custom controls not covered by the selectors, either add exactly one explicit marker or extend the CSS selector—never both. Required validation must still be enforced independently.
+- The rule is documented beside the CSS selectors and in project context documents to prevent recurrence. Validation pending: after `git pull origin development`, run `php artisan test --filter=CorrespondenceHttpTest` and `npm run build`; no test/build result is claimed.
+
+
+## 2026-10-28 — Favicon aligned with application logo
+
+- Replaced the unrelated teal document/checkmark favicon with the same purple gradient mark used by `resources/js/Components/ApplicationLogo.vue`, keeping the browser tab icon consistent with the in-app logo.
+- Validation pending: pull `development`, run `npm run build`, then hard-refresh the browser or clear its favicon cache if the old icon remains.
+
+
+## 2026-10-28 — Incoming correspondence edit test fixture
+
+- Fixed the registered incoming-correspondence edit/delete regression test fixture: it now includes a valid linked `correspondence_original` document, matching the business rule that an incoming letter must always retain its original scan/PDF. The production validation remains unchanged; the earlier failure was caused by an invalid fixture without an original attachment.
+- Validation pending: run `php artisan test --filter=CorrespondenceHttpTest` and `npm run build` after pulling `development`.
+
+
+## 2026-10-28 — Restore incoming letter number required marker
+
+- The required asterisk disappeared because the incoming letter number label sits inside a flex wrapper with a help tooltip, so the generic adjacent-label CSS selector did not match it.
+- Added the reusable `required-field-label` class selector and applied it to the incoming letter number label. The input remains natively `required`; this restores the red visual marker without adding a duplicate manual asterisk.
+- Validation pending: run `npm run build` and confirm the red asterisk appears once beside «شماره نامه وارده».
+
+## 2026-10-28 — System administrator correspondence deletion
+
+- System administrators can now delete any correspondence from the list, including registered letters and letters that already have workflow actions. This is separate from ordinary edit/delete eligibility; normal users retain the existing restrictions.
+- The delete endpoint rechecks authorization inside the transaction, records who deleted the letter in Core Audit metadata, removes related action/link rows, and clears replies' pointer to the deleted correspondence so they remain intact.
+- Added a feature test for a system administrator deleting a correspondence after a workflow action. Validation pending: pull `development`, run `php artisan test --filter=CorrespondenceHttpTest`, then `npm run build`. No tests/build have been run by the assistant; `master` remains unchanged.
+
+## 2026-10-28 — Incoming correspondence description
+
+- Added a dedicated “توضیحات نامه” text area for incoming correspondence. It stores a concise description/summary independently of the required scanned original letter.
+- Existing `body` storage is reused for this field; incoming descriptions are preserved on edit and displayed as plain text on the correspondence details page. Other correspondence types retain the rich-text body behavior.
+- Added a feature test proving that the description is saved alongside the original-letter upload. Validation pending: `php artisan test --filter=CorrespondenceHttpTest` and `npm run build` after pulling `development`.
+
+## 2026-10-28 — Correspondence form grid alignment
+
+- Adjusted the create/edit form grid in `resources/js/Pages/Correspondence/Create.vue`: for outgoing and internal correspondence, “واحد ایجادکننده” spans two columns; outgoing “موضوع” spans three columns so it shares its row with the send date; internal “موضوع” spans two columns so it can share its row with the related-correspondence section. No backend behavior changed.
+- Validation pending: pull `development` and run `npm run build`. `master` remains unchanged.
+
+## 2026-10-28 — Internal correspondence subject placement correction
+
+- Moved the internal-correspondence “موضوع” field into the first details grid beside “واحد دریافت‌کننده”, with both fields spanning two columns. The internal subject is no longer rendered in the following grid; outgoing and incoming subject placement is unchanged.
+- Validation pending: pull `development` and run `npm run build`. `master` remains unchanged.
+
+## 2026-10-28 — Correspondence details page layout
+
+- Reorganized `resources/js/Pages/Correspondence/Show.vue` into a two-column desktop layout: correspondence metadata and letter attachments in the left column; letter body/description and workflow actions in the wider right column.
+- Consolidated duplicated metadata into one “اطلاعات مکاتبه” section, including type, status, letter/registration numbers, creation/registration dates, departments, creator/registrar, sender/recipient, and relevant external organization fields.
+- Added a separate two-column section below for “لیست ارجاعات” and “لیست رونوشت‌ها”. The referral list is derived from workflow actions with a destination or referral/request action type. Copy management remains available in the copies column when permitted.
+- The outgoing external-tracking section and related-replies section remain available. Validation pending: pull `development`, run `npm run build`, and inspect incoming, outgoing, and internal correspondence details. No tests/build have been run by the assistant; `master` remains unchanged.
+
+## 2026-10-28 — Correspondence detail refinements and outgoing file mode
+
+- Removed the type/letter-number/registration-number subtitle below the correspondence subject; those details now appear in the consolidated metadata section only.
+- Widened the correspondence detail page and explicitly set the desktop grid direction so metadata and attachments occupy the left column while the letter content/actions occupy the wider right column. Each column retains RTL text direction.
+- Renamed incoming original-letter files to “فایل نامه” and placed that section directly below the letter description. Separate accompanying attachments remain in their own section.
+- Simplified composition choices in the create/edit UI to “ویرایشگر داخلی” or “پیوست فایل”. For outgoing file mode, a required “توضیحات فایل نامه” is collected and stored as plain text in the existing body field; the uploaded letter file is labeled “فایل نامه” on the detail page. Editing detects plain-text file descriptions and preserves file mode.
+- Made “سازمان مخاطب” required for outgoing correspondence in both client-side and server-side validation, including updates.
+- Validation pending: pull `development`, run `php artisan test --filter=CorrespondenceHttpTest` and `npm run build`, then inspect incoming/outgoing/internal details and create/edit outgoing correspondence in both modes. No tests/build have been run by the assistant; `master` remains unchanged.
+
+## 2026-10-28 — Outgoing organization requirement test fixtures
+
+- Updated the correspondence HTTP test fixtures to supply a valid active external organization wherever an outgoing correspondence is expected to pass validation. This preserves the production rule that «سازمان مخاطب» is required, while allowing the file-mode missing-attachment test and registered-outgoing edit test to reach the specific behavior they assert.
+- Validation pending in the local environment: run `php artisan test --filter=CorrespondenceHttpTest`. No test result is claimed; `master` remains unchanged.
+
+## 2026-10-28 — Follow-up correspondence test payloads
+
+- Updated the file-mode attachment validation test to include the required plain-text file description, so the request reaches the missing-attachment assertion instead of failing earlier on the description rule.
+- Updated the registered outgoing correspondence edit fixture/request to use editor mode with a body, so the test exercises edit permissions and metadata updates rather than triggering the file-mode description validation.
+- Validation pending: run `php artisan test --filter=CorrespondenceHttpTest` locally. No test result is claimed; `master` remains unchanged.
+
+
+## 2026-10-28 — Correspondence details layout and incoming registrar permissions
+
+- Reduced the correspondence metadata column width by changing the desktop grid ratio from 1:1.65 to 0.7:1.65. Metadata is now a single vertical list with one label/value pair per row.
+- For incoming correspondence, the creator department is set to the configured active Secretariat department rather than inferred from the registering user's other department memberships.
+- Historical rule superseded on 2026-10-31: the blanket view-only restriction for a Secretariat registrar who also manages the current department was removed. Workflow permissions are now evaluated by the current department/action context so overlapping roles can be used without switching roles.
+- Validation pending in the local environment: run `php artisan test --filter=CorrespondenceHttpTest` and `npm run build`, then verify a Secretariat registrar who also manages the recipient department can view but cannot act or add copies. No test/build result is claimed; `master` remains unchanged.
+
+
+## 2026-10-31 — Correspondence workflow actions and role fusion (validation pending)
+
+- Manager referral now distinguishes the target type: another active department or an active employee who belongs to the current department. User-level referrals preserve the department and assign the correspondence to the selected user.
+- Removed the blanket rule that blocked a Secretariat member from acting on an incoming letter they registered. Authorization is evaluated in the current department/workflow context, so multiple roles can coexist instead of forcing a manual role switch.
+- Added a dedicated outgoing-letter return path: Secretariat can return a registered outgoing letter while it is awaiting dispatch, with a required correction note; the letter returns to its originating department/creator. The creator or origin-department manager can resubmit it to the configured Secretariat, restoring the awaiting-dispatch state. Final-dispatched letters cannot use this return action.
+- Removed the task/project/new-letter request options from the workflow action selector because the existing handlers only changed routing/state and did not create the corresponding business object. These options must return only when their real task/project/letter creation flows are integrated.
+- Added focused regression tests for employee referral and the Secretariat return/resubmission lifecycle. Validation remains pending: pull development, run php artisan test --filter=CorrespondenceHttpTest, then npm run build and manually inspect all three correspondence types. master unchanged.
+
+
+## 2026-10-31 — Same-department employee referral state regression
+
+- Confirmed the manager-to-employee referral implementation correctly sets `workflow_state=assigned_to_employee` while retaining the current department and assigning `current_user_id` to the selected active department member.
+- This state is required by the employee-result guard: only the specifically assigned employee may submit the documented result; another member of the same department must be denied. After submission, the state advances to `result_pending_manager`.
+- The failing HTTP test had a stale expectation of `in_progress` after employee referral. Corrected the regression assertion to `assigned_to_employee`; no production workflow behavior or schema changed.
+- Validation pending: owner to pull `development` and run the focused `CorrespondenceHttpTest` once. `master` remains unchanged.
+
+## 2026-10-31 — Correspondence department routing audience
+
+- When correspondence is referred to a department, only that department's manager receives the actionable Cartable item. Ordinary-letter organization-wide read visibility is a separate policy and must not imply workflow-action rights.
+- After the manager explicitly refers the letter to an employee, only the assigned employee may submit the result; enforce this in both the backend workflow service and frontend action availability. The manager retains their manager workflow capability.
+- Cartable must not include all current-department members as actionable recipients. Include manager-owned correspondence and explicitly assigned employee states.
+- Manager's action label is «ارجاع به»; destination options are «واحد دیگر» and «کارمند همین واحد».
+- Shared DepartmentTreeSelect positioning was hardened for viewport edges and nested scrolling. Validation is pending; branch `development`, `master` unchanged.
+
+
+## 2026-10-31 — Correspondence personal ownership and action filters
+
+- Added a second independent filter to the correspondence list: «همه مکاتبات»، «نیاز به اقدام»، and «اقدام قبلی ثبت‌شده توسط من». It composes with the existing «مکاتبات من / مکاتبات واحد من / همه مکاتبات مجاز» scope and preserves other search filters and pagination query parameters.
+- «نیاز به اقدام» is based on the current assignment (current_user_id equals the signed-in user). «اقدام قبلی ثبت‌شده توسط من» requires both a historical referral addressed to that user (correspondence_actions.to_user_id) and an action authored by that user (actor_id), and excludes letters currently assigned back to that user so pending work takes precedence.
+- Corrected the «مکاتبات من» ownership scope: an action authored by the user is no longer sufficient by itself. Historical referrals addressed to the user remain included; merely referring a letter to another user/department does not make it the referrer's personal correspondence.
+- Added feature regression coverage for pending referrals, previously acted-on referrals, and letters merely referred onward by the current user. No database migration or workflow authorization changes.
+- Validation pending: pull development, run php artisan test --filter=CorrespondenceHttpTest, then npm run build. master remains unchanged.
+
+
+## 2026-10-31 — Correspondence list action-filter semantics
+
+- The correspondence list now has an independent second filter, defaulting to «نیاز به اقدام», alongside the existing personal/department/all-visible scope selector.
+- «نیاز به اقدام» means the latest referral addressed to the current user remains the current assignment and no action by that user exists after that referral. «اقدام قبلی ثبت‌شده توسط من» means an action by the user exists after their latest referral; a newer referral resets the item to pending.
+- «ثبت‌شده توسط من» includes correspondence created by the user or finally registered by the user. «همه مکاتبات» preserves the current personal-relevance set rather than broadening access beyond the existing visibility policy.
+- Validation pending: pull development, run php artisan test --filter=CorrespondenceHttpTest, then npm run build. master unchanged.
+
+
+## 2026-10-31 — Draft visibility test and independent correspondence filters
+
+- The draft visibility regression test now explicitly selects `action_filter=all` in addition to `scope=all`, because the default second filter is `needs_action`. This preserves the intended test of creator/secretariat draft visibility without conflating it with the action filter.
+- No production authorization or visibility logic changed. Focused correspondence test rerun pending; `master` unchanged.
+
+
+## 2026-10-31 — Multi-department manager pending correspondence correction
+
+- The default «نیاز به اقدام» filter now recognizes department-level referrals for every department managed by the signed-in user, not only referrals whose to_user_id is set to that user.
+- The department path relies on current department manager ownership and the latest routing action to that department. It includes active manager states, excludes explicit employee assignment, and excludes a manager's own later action after the latest department routing.
+- The personal scope also includes active correspondence in managed departments. Ordinary membership alone does not qualify.
+- Added a focused regression test for a user managing multiple departments. Validation pending on the project owner's environment; no frontend change; master unchanged.
+
+
+## 2026-10-31 — Correspondence index closure fix (validation pending)
+
+- The `scope=mine` closure in `CorrespondenceController::index()` now captures `$managedDepartmentIds` because its query references that collection to include active correspondence in departments managed by the user.
+- The missing capture caused `Undefined variable $managedDepartmentIds` and HTTP 500 responses across correspondence index tests. No workflow authorization or filter behavior was otherwise changed.
+- Validation pending: `php artisan test --filter=CorrespondenceHttpTest`. PHP-only change; no frontend build required. `master` unchanged.
+
+## 2026-10-31 — Nested correspondence scope closure correction
+
+- Corrected the inner `where(function ($mine) ...)` closure in `CorrespondenceController::index()` to capture `$managedDepartmentIds` as well. The earlier fix captured the variable only in the surrounding `when(scope=mine)` closure; PHP closures do not implicitly inherit variables from an enclosing closure, so the nested query still raised `Undefined variable $managedDepartmentIds` at the `orWhereIn` condition.
+- No query semantics or authorization rules changed. Validation pending: pull `development` and run `php artisan test --filter=CorrespondenceHttpTest`. PHP/documentation-only change; no frontend build required. `master` unchanged.
+
+
+## 2026-10-31 — Correspondence list filter interaction
+
+- The action filter is shown only for the `mine` scope. For `department` and `all`, it is normalized to `all` server-side and does not narrow the result set.
+- Renamed the action option to «اقدام قبلی ثبت‌شده» (removed redundant «توسط من» wording).
+- All select filters now apply automatically; text search applies after a 350 ms debounce. Removed the manual «اعمال فیلتر» button.
+- Added a regression assertion that `scope=department` ignores `action_filter=needs_action` and returns the full department-scope set. Validation pending: `php artisan test --filter=CorrespondenceHttpTest` and `npm run build`. `master` unchanged.
+
+## 2026-10-31 — Project-requested correspondence in manager action list
+
+- Included `project_requested` in the actionable workflow states for the manager of the current department. A letter routed to a project department must appear in that department manager's `needs_action` list until it is assigned to an employee or transitions to another state.
+- Added a Correspondence HTTP regression test for a registered incoming letter in `project_requested`, with `current_user_id = NULL`, confirming it appears in the current manager's default list. Existing access filtering and the `assigned_to_employee` exclusion are unchanged.
+- Validation pending: run `php artisan test --filter=CorrespondenceHttpTest`; `master` unchanged.
+
+
+## 2026-11-01 — Task-to-correspondence entry point and project workflow correction
+
+- Added an «ایجاد نامه جدید» entry point on the task details page for the current task assignee when the user also has correspondence-create permission. The correspondence composition form receives the task context, validates the task reference, authorizes the current assignee, and stores the new correspondence `task_id` link.
+- Removed the legacy `project_requested` workflow state from the manager `needs_action` filter. A state label alone must not represent a completed project-request process; the project request flow must be implemented with explicit actions and project creation/linkage. Updated the regression test to assert that the legacy state is not actionable.
+- This is an incremental first slice only. The project-specific approval flow, project creation with a selected response department/section/task, and source-letter linkage are not yet implemented.
+- Validation has not been run in this editing environment. Pull `development`, run `php artisan test --filter=CorrespondenceHttpTest`, then run `npm run build` before accepting this slice. `master` unchanged.
+
+
+## 2026-11-01 — Project request, response ownership and task-correspondence links
+
+- The authoritative functional specification and implementation-stage matrix are in `CORRESPONDENCE_PROJECT_WORKFLOW.md`.
+- Project Management employee actions are requests only; all four require feedback. The PM manager makes a separate final decision. Manager rejection of an employee's requested action returns it to the same PM employee; approval of reject/return routes the letter to the origin; approval of referral routes to the selected department; approval of project request enables project creation.
+- Each created project selects its response department at creation time. Organization settings may provide an editable default only. Create the response section and response task only for the selected department inside the new project; do not auto-create an origin-department section/task.
+- The response task links to the new project and source incoming correspondence. A response letter created from the task must link to the task, project and source correspondence. Task/correspondence navigation must work in both directions.
+- Actual implementation checkpoint (2026-11-01): task detail already offers «ایجاد نامه جدید» to the current assignee with correspondence-create permission, and backend stores the task relation. The project-specific request/approval flow, per-project response department, response section/task creation, source-letter/project propagation and bidirectional detail links remain incomplete. Do not describe them as implemented.
+- Stage-by-stage status and acceptance criteria are maintained in the reference document. `master` remains unchanged.
+
+
+## 2026-11-01 — Project Management request workflow implementation checkpoint
+
+- Initial stage-1 implementation exists on `development`: four employee request actions, mandatory feedback, separate manager approval/rejection, manager cartable visibility, and UI controls.
+- Employee requests do not route or create a project by themselves. Manager rejection returns to the same employee; manager approval performs the requested referral/return or moves to `project_request_approved`.
+- Two focused HTTP regression tests have been added; local test and frontend build validation are pending. Stage 2 project creation and response Section/Task provisioning are not implemented yet.
+
+
+## 2026-11-01 — Owner validation confirmation
+
+- The project owner confirmed the Project Management request/review focused tests passed and frontend build succeeded. Stage 1 is accepted.
+- Stage 2 remains unimplemented: create a project from an approved source incoming letter, choose the response department in the creation form (organization default is only a prefill and can be changed), and link the new project to the source letter. Stage 3 response Section/task and Stage 4 bidirectional links remain pending.
+
+
+## 2026-11-01 — Initial approved-project creation slice
+
+- Stage 1 is accepted per owner confirmation (focused tests passed; frontend build succeeded).
+- New approved-project correspondence action creates a project with one response-department Section and one response task, links the source correspondence to both, and records a project_created action. The UI exposes explicit response-department selection.
+- This slice is not validated locally. Organization-level default response department is now configurable in Organization Settings and pre-fills the correspondence project form; user can change it per project. Bidirectional project/task/correspondence detail links remain pending; response letters created from a linked task now inherit the project and source-letter reply link (when visible to the creator).
+
+
+## 2026-11-01 — تأیید build و تست مکاتبات برای مرحله ۴
+
+- مالک پروژه اعلام کرد پس از دریافت آخرین تغییرات مرحله ۴، دستور `php artisan test --filter=CorrespondenceHttpTest` پاس شده و `npm run build` نیز موفق بوده است.
+- این تأیید، صحت تست‌های موجود مکاتبات و build فرانت‌اند را پوشش می‌دهد؛ اما به معنی اجرای تست اختصاصی کنترل محرمانگی در صفحات جزئیات پروژه/تسک، تست مسیر ایجاد پروژه یا اعتبارسنجی migration روی SQL Server نیست.
+- مرحله ۴ از نظر پیاده‌سازی نمایش ارتباط نامه مبدأ در جزئیات پروژه و مکاتبات مرتبط در جزئیات تسک، و انتقال ارتباط پروژه/نامه مبدأ به نامه پاسخ، پیاده‌سازی شده است؛ **اعتبارسنجی اختصاصی روابط و محرمانگی هنوز در انتظار است**.
+- مراحل ۲ و ۳ نیز همچنان به تست مسیر ایجاد پروژه، انتخاب واحد پاسخ‌گو، ساخت Section/Task و اعتبارسنجی SQL Server نیاز دارند. مرحله ۵ (سناریوی انتها‌به‌انتها و پذیرش دستی) باز است.
+- شاخه `development`؛ `master` بدون تغییر.
+
+
+## 2026-11-01 — General incoming correspondence workflow implementation
+
+- Authoritative behavior is documented in `CORRESPONDENCE_GENERAL_WORKFLOW.md`; keep it separate from `CORRESPONDENCE_PROJECT_WORKFLOW.md`.
+- General employee requests (none/letter/workflow/project), mandatory feedback, manager review, manager rejection to the same employee, and manager referral of project requests to the configured active Project Management department have an initial implementation on `development`.
+- Manager task instructions reuse the existing Tasks form in the organization's general project and the matching department Section. Correspondence context is passed through the form; the backend validates it and stores the task-to-letter relation.
+- Manager-side execution of letter requests and real workflow-request execution remain incomplete. New focused tests were added but not run; task-link tests, full feature tests, frontend build and SQL Server validation remain pending.
+- `master` unchanged.
+
+
+## 2026-11-01 — General correspondence workflow expanded
+
+- Letter request supports manager-led letter creation or assignment of draft preparation to the same employee; draft is linked to the source correspondence and returned to manager review.
+- Workflow request uses the existing `WorkflowDefinition` and `WorkflowService` to create a real instance and its task steps, linked by `correspondences.workflow_instance_id`.
+- Manager task instruction reuses the current Tasks create form in the organization's general project and the current department Section; it persists `task_id` on the source letter.
+- Focused Feature tests were added for request/rejection, letter draft delegation and real workflow start, but not executed. Build, task-link integration tests, full regression and SQL Server validation remain pending.
+
+
+- Workflow instance task links are bidirectional: correspondence detail lists authorized workflow tasks, and task detail resolves the source correspondence through the workflow instance with correspondence visibility filtering.
+
+
+- Workflow completion propagates `workflow_completed` to linked correspondence. Confidential letter visibility recognizes users assigned to or creating its direct task or workflow-instance tasks; Feature coverage was added but not run.
+
+
+- Final registration of a requested reply closes the source request as `letter_registered`; completed workflow/reply states are blocked from further workflow actions.
+
+
+- Feature tests now cover correspondence-linked general task creation, general employee requests/rejection, delegated letter draft/final registration, workflow start/completion, and confidential workflow-task access. Tests have not been run; build and SQL Server validation remain pending.
+
+
+- Department managers can see the shared general project and their department Section in the existing task form, including with Project-scoped `tasks.create`. Integration test added, not run.
+
+
+- The source-letter manager can view the delegated employee draft only through the reply relationship while the source is awaiting manager review; unrelated draft privacy remains enforced. Test added, not run.
+
+
+## 2026-11-01 — Final general correspondence implementation checkpoint
+
+- Documented actual state mapping and final behavior in `CORRESPONDENCE_GENERAL_WORKFLOW.md`.
+- Reply drafts remain in the source department, source manager can view them via reply relation, and the source request closes only after the exact linked reply is finally registered.
+- Workflow choices exclude definitions with no active steps or project-only/unsupported actors; correspondence workflow runs without a project.
+- General project/department Section options are available to department managers in the existing task form with Project-scoped create permission. Task/workflow links are bidirectional and access-filtered.
+- Code/docs are on `development`; tests/build not run; `master` unchanged.
+
+## 2026-11-01 — Fix incoming correspondence service test fixture
+
+- `CorrespondenceService::createDraft()` intentionally requires an incoming letter's original `letter_number`; the failing test created an incoming draft without that required field. Updated the test fixture to provide `IN-1405-001` and assert that exact source number is persisted. Production validation is unchanged.
+- User-reported suite result before this fix: 1 failed, 454 passed (1,921 assertions). The fix has been committed to `development`; rerun the targeted test and full suite to verify. No claim that tests were run by the assistant. `master` unchanged.
+
+## 2026-11-01 — Fix manager access to shared task project form
+
+- Root cause: `TaskController@index` only supplies `formOptions` when `TaskPolicy::create($user, null)` succeeds. Project-scoped department managers were denied at the null-project check even though `TaskFormOptionsService` deliberately exposes the shared default project and their enabled department sections.
+- Updated `TaskPolicy::create`: project-scoped managers can open the task form only when they manage an active department with `manager_can_create_tasks=true` in the active shared system-default project. For a specified project ID, creation is permitted only for that shared default project under the same department-section condition; all other project scope checks remain unchanged. Correspondence store still validates the exact selected section against the correspondence's current department.
+- Added regression coverage via the existing `manager creates general task from correspondence and links it` feature test. User-reported pre-fix result: 1 failed, 459 passed (2,002 assertions). Assistant has not executed tests/build; verification remains pending. `master` unchanged.
+
+
+## به‌روزرسانی قرارداد گردش مکاتبات — 2026-11-01
+
+- درخواست کارمند برای «دستورکار» یک نوع مستقل از درخواست «گردش کار» است. درخواست دستورکار به‌تنهایی Task نمی‌سازد؛ مدیر آن را بررسی می‌کند و با اقدام manager_create_task، مسیر فرم فعلی Tasks در پروژه عمومی سازمان و Section همان واحد فعال می‌شود.
+- general_review_pending_manager باید در فیلتر نیازمند اقدام مدیر واحد محاسبه شود.
+- ارجاع مدیر به کارمند تا پیش از اقدام کارمند قابل پس گرفتن است. پس گرفتن باید دلیل، actor، مقصد قبلی و ارجاع مبنا را در تاریخچه ثبت کند و مالکیت را به مدیر برگرداند. ارجاع مجدد مستقیم در وضعیت assigned_to_employee مجاز نیست.
+- درخواست پروژه در واحد مدیریت پروژه‌ها: مدیر می‌تواند کارمند را در همان واحد مسئول بررسی کند؛ انتقال به واحد دیگر فقط پس از ثبت درخواست ارجاع توسط کارمند پروژه‌ها و تأیید مدیر انجام می‌شود، نه با ارجاع عمومی مدیر.
+- تست‌های این قرارداد اضافه شده‌اند؛ اجرای تست، build و اعتبارسنجی SQL Server هنوز تأیید نشده است.
+- «مکاتبات من» برای مدیر واحد شامل نامه‌هایی است که خود مدیر یا اعضای واحد تحت مدیریت او ثبت کرده‌اند؛ این قاعده برای پیگیری سابقه ثبت است و نباید با مالکیت اقدام فعلی اشتباه شود. «نیاز به اقدام» همچنان بر اساس مسئول فعلی نامه تعیین می‌شود.
+- اقدام پذیرش درخواست دستورکار باید پیش از تغییر state، وجود پروژه عمومی سازمان و Section مجاز واحد و مجوزهای مشاهده/ایجاد Task مدیر را کنترل کند؛ اگر مقصد آماده نباشد، درخواست در انتظار تصمیم می‌ماند و به state غیرقابل‌اقدام منتقل نمی‌شود.
+- مدیر مدیریت پروژه‌ها در ارجاع عمومی فقط می‌تواند به کارمند همان واحد ارجاع دهد؛ مقصد بین‌واحدی تابع درخواست کارمند پروژه‌ها و تأیید مدیر است.
+
+## 2026-11-02 — Incoming approval and project creation action ownership
+
+- The incoming approval setting is now honored at draft creation. When set to approval-required, the draft goes to the configured Secretariat department manager in `awaiting_manager_approval`; direct registration is not allowed until that manager approves. After approval, the draft is assigned back to its creator for final Secretariat registration.
+- Manager visibility for assigned approval drafts and the default UI action (`manager_approve`) were corrected. The numbering service checks approval for all correspondence types, including incoming.
+- The `needs_action` filter now treats `project_request_approved` as an actionable state for the current department manager, fixing the missing post-approval project-creation item.
+- Added/updated Feature tests. Test suite, build and SQL Server validation have **not** been run here and remain pending. Branch `development`; `master` unchanged.
+
+
+## 2026-11-03 — Shared organization project administration
+
+- System administrators can update the shared system-default organization project; deleting the system-default project remains forbidden. Non-admin users cannot update it.
+- Project edit/update and section routes now rely on controller Policy authorization rather than the projects.update route middleware; Gate::authorize remains enforced in each controller action.
+- Shared-project sections are derived from organization departments. Manual section creation/deletion and changing a section's department association are blocked. Section names follow the linked department.
+- System administrators can edit an existing shared section's description and manager_can_create_tasks. Department/manager inactivity forces task creation off. The sync action preserves manually configured descriptions and does not re-enable a previously disabled section automatically.
+- Run php artisan projects:sync-organization-sections to reconcile existing departments and shared-project sections. Missing sections are created; duplicate section associations are reported but not deleted automatically, to protect task/document history.
+- Tests, frontend build, and execution of the reconciliation command against the deployment database remain pending. Branch: development; master unchanged.
+
+
+## 2026-11-03 — Approved task-instruction stage in correspondence
+
+- Once a manager approves an employee's task-instruction request, ordinary manager actions (including referral) are hidden and server-side blocked until the approved task is created and linked to the correspondence.
+- After the task is linked, ordinary manager actions become available again. The manager can refer the letter or use the dedicated “Complete correspondence workflow” action.
+- Completion requires a note, verifies that the linked task matches the manager's approved task-instruction action metadata, and sets workflow state to `workflow_completed`.
+- A feature test covers the employee request, manager approval, referral rejection before task creation, action availability after linking, and manager completion. Tests/build have not yet been executed in the target environment.
+
+## 2026-11-03 — Launch task creation form from correspondence
+
+- Fixed the approved correspondence «ایجاد دستورکار» destination: the Tasks index now resolves and validates the correspondence, latest employee task request, manager approval action, current department manager, active organization project section, and section task-creation setting on the server.
+- The validated creation context is sent as an Inertia prop; the Vue page opens the create modal and preselects correspondence, shared project, section, and department from that prop instead of relying on client-side URL parsing.
+- If the manager's normal task-form options omit the authorized shared project/section, the server adds only the validated target project/section to the form options. Unauthorized or stale query parameters do not open the modal. Existing task-store authorization and correspondence-linking checks remain in place.
+- Extended the correspondence feature test to request the Tasks page with the three launch query parameters and assert the validated launch context and target section are present. Validation pending: run `php artisan test --filter=test_manager_creates_general_task_from_correspondence_and_links_it` and `npm run build`; `master` unchanged.
+
+
+## 2026-11-03 — اصلاح مجوز ایجاد دستورکار از مسیر نامه
+
+- علت ریشه‌ای باز نشدن مودال مشخص شد: صفحه Tasks مجوز `tasks.create` را فقط بدون شناسه پروژه بررسی می‌کرد. در `TaskPolicy` این بررسی عمومی برای برخی مدیران واحد با scope سطح واحد false است، در حالی که همان مدیر برای بخش مجاز پروژه عمومی مجوز ایجاد دارد.
+- در `TaskController::index` اکنون علاوه بر مجوز عمومی، مجوز ایجاد با شناسه پروژه مقصد نیز ارزیابی می‌شود. بنابراین مدیر مجاز می‌تواند فرم را دریافت کند و prop مربوط به نامه به Vue برسد؛ اعتبارسنجی نامه، تأیید مدیر و بخش مقصد همچنان برقرار است.
+- تست و build در محیط کاربر پیش‌تر پاس شده‌اند؛ این اصلاح جدید هنوز باید پس از pull با همان تست Feature و build مجدداً اعتبارسنجی شود. شاخه development؛ master بدون تغییر.
+
+## Incoming correspondence validation
+- Source organization is mandatory for incoming letters in create/update validation and UI.
+- Incoming letter number uniqueness is scoped to incoming correspondence plus source organization: duplicates within one organization are rejected; same number across different organizations is allowed.
+- Tests/build for this change are pending.
+
+- اصلاح تست‌های Feature برای الزام سازمان مبدأ در نامه‌های وارده: داده تست‌های قدیمی تکمیل شد؛ تست مستقل نیز اجباری بودن سازمان، رد شماره تکراری در همان سازمان و پذیرش همان شماره در سازمان دیگر را پوشش می‌دهد. اجرای تست‌ها پس از دریافت این commit لازم است.
+
+## 2026-11-03 — اصلاحات فهرست و اعتبارسنجی مکاتبات
+
+- پیام یکتایی شماره نامه وارده در هر دو مسیر ایجاد و ویرایش باید فارسی باشد و محدوده یکتایی همچنان «نوع وارده + سازمان مبدأ» است.
+- ستاره الزامی فقط از قرارداد مشترک CSS نمایش داده شود؛ افزودن ستاره دستی در کنار کنترل required باعث نمایش دو ستاره می‌شود.
+- گزینه sentinel فیلتر واحد در «مکاتبات من» با عنوان «همه واحدهای من» نمایش داده می‌شود.
+- بعد از حذف مکاتبه باید فیلترهای فعال فهرست دوباره اعمال شوند.
+- مدیر واحد دبیرخانه باید پیش‌نویس‌های وارده ثبت‌شده توسط دبیرخانه را که در انتظار ثبت/تأیید هستند در «نیاز به اقدام» ببیند؛ این استثنا فقط برای مدیر جاری دبیرخانه است و نباید دسترسی عمومی به پیش‌نویس‌ها ایجاد کند.
+- اصلاحات کد در development ثبت شده‌اند؛ اجرای تست‌های Correspondence و build پس از pull هنوز لازم است. master بدون تغییر.
+
+
+
+## 2026-11-04 — Phase 3 technical audit checkpoint
+
+The phase-3 repository audit on `development` verified:
+- Organization settings already hold organization name, short name, national/registration/economic identifiers, address, phone, email and website through the Core settings service. Reuse these values as independent letterhead elements; do not create duplicate organization-detail fields.
+- Departments already hold `manager_id`, but there is no manager-signature asset/path or upload lifecycle in the department model/forms/actions.
+- There is no organization stamp asset/path or upload lifecycle in Core organization settings.
+- Correspondence detail has no print/PDF route or dedicated print template. The current show page is a workflow/detail UI, not a page-layout surface.
+- No PDF renderer is listed in `composer.json`. The Documents module already abstracts storage using a contract and stores disk/path/version metadata; its download endpoint checks authorization. Public profile-avatar storage is not an adequate default security model for official stamp/signature assets.
+
+No code or database changes were made during this audit. The implementation choice between browser-native Print/Save as PDF from a shared HTML/CSS A4 template and server-side PDF generation remains a product/architecture decision requiring confirmation before the output pipeline is implemented.
+
+
+## 2026-11-04 — Phase 3 implementation slice 1
+
+The selected output pipeline is one shared HTML/CSS A4 print view with browser-native Print / Save as PDF; no server-side PDF dependency was introduced.
+
+Implementation added on `development`:
+- Department-level manager signature asset and activation flag. This is a property of the unit, not each user. If the manager changes, the previous signature is deactivated until a new one is uploaded.
+- Organization-level stamp asset and activation setting under Core → Organization Settings. Stamp and manager signature remain separate private files.
+- Protected authenticated image access, image upload validation (PNG/JPG/WEBP, max 2 MB, dimension limits), and hidden storage paths.
+- At outgoing-letter finalization, snapshot creator name, issuing unit title, organization contact details, stamp and manager signature. The manager signature is included only when the workflow reached `approved_for_registration`; direct registration is not treated as manager approval.
+- A registered-letter A4 preview/print page with per-operation letterhead on/off, independently configured creator/stamp/signature visibility, and browser Print / Save as PDF.
+- Focused tests added for unit signature upload, organization stamp upload and immutable finalization snapshot.
+
+Validation has not yet been run locally. Phase 3 remains partial pending PHP tests, migration execution, frontend type-check/build, manual multi-page pagination/print checks, plus remaining detailed layout coordinate, logo/background and page-number placement configuration. Development only; master, release and server unchanged.
+
+
+## 2026-11-07 — اصلاح جابه‌جایی و محدوده مختصات طراح قالب نامه
+
+- در طراح قالب، هنگام Drag مختصات افقی و عمودی به دو رقم اعشار گرد می‌شوند و محاسبه با ابعاد واقعی صفحه A4 و کنترل محدوده صفحه انجام می‌شود.
+- مقدار مجاز عرض اکنون با فاصله افقی المان هماهنگ است؛ با تغییر دستی عرض یا موقعیت نیز مختصات به محدوده معتبر بازگردانده می‌شوند.
+- در زمان ذخیره، مختصات و عرض سمت سرور تا دو رقم اعشار نرمال می‌شوند و تلورانس بسیار کوچک ممیز شناور مانع رد شدن مقدار مرزی ۱۰۰٪ می‌شود؛ خروج واقعی از محدوده همچنان رد می‌شود.
+- تست PHP و build پس از pull توسط کاربر اجرا و تأیید می‌شوند. شاخه development؛ master و سرور بدون تغییر.
+
+- تست Feature رگرسیون برای مختصات نزدیک لبه A4 اضافه شد تا گردکردن ممیز شناور و پذیرش مختصات مرزی بررسی شود.
+
+- اصلاح تست مختصات مرزی: JSON ممکن است اعداد صحیحِ گرد‌شده را به‌صورت integer بازگرداند؛ assertionها اکنون برابری عددی را بررسی می‌کنند و به تفاوت نوع integer/float وابسته نیستند.
+
+
+## 2026-11-07 — Manual attachment page count and draggable stamp/signature
+
+- Added nullable `correspondences.attachment_pages` with a reversible migration. Correspondence create/edit captures a manually entered page count (1–9999); the value is validated, persisted, returned to the print view, and covered by a correspondence HTTP regression assertion. Blank means no attachment pages are declared.
+- Added the `{{attachment_pages}}` metadata variable and included it on the default metadata line immediately below the date. Printed text is «پیوست: دارد (N صفحه)» or «پیوست: ندارد» when the field is empty.
+- Fixed the designer interaction path for issuer assets: stamp/signature elements now receive pointer selection and dragging, use their actual canvas coordinates, and their image pixels no longer intercept pointer input. Print output applies the stored x/y position to these elements.
+- Owner validation remains pending: migration, focused correspondence HTTP test, frontend production build, and manual A4/drag acceptance. Development only; master/server untouched.
+
+## 2026-11-09 — Print page-layout TypeScript contract correction
+
+- Fixed the frontend prop contract in `Correspondence/Print.vue`: `pageLayout` now explicitly types `header_height` and `footer_height`, matching the defaults and values supplied by `CorrespondencePrintController`.
+- This resolves the reported `vue-tsc` property-not-found errors without changing print calculations, persisted settings, or runtime behavior.
+- The owner must rerun the frontend production build. Browser print acceptance remains pending; development branch only, with master/release/server unchanged.
+
+## 2026-11-09 — Print designer controls, millimeter coordinates and body spacing
+
+- Moved the six A4 print-boundary settings out of the permanent sidebar into a dedicated «تنظیمات محدوده چاپ» dialog. The dialog keeps four text-edge margins separate from the reserved header/footer heights.
+- The template preview now visibly shades the reserved header and footer zones and outlines the protected text area, including while viewing the designer's sample preview.
+- Element width and absolute x/y position are edited in millimeters against the A4 page dimensions. To preserve existing saved templates and print rendering compatibility, the UI converts these millimeter inputs to/from the existing normalized page-relative coordinates; no bulk data migration is required.
+- Restored body-element spacing as a separate «فاصله از بخش قبل» setting. New body elements default to 12 mm; existing saved body spacing is preserved by both template and print controllers and is applied only at the beginning of the flowing body, not as a replacement for the page's top margin.
+- Corrected the number_of page-counter content with an RTL isolate around the Persian «از» separator; other counter formats retain their existing output.
+- Added a print-controller regression assertion that a saved body spacing value reaches the print page unchanged. Local feature test, npm run build, and browser print/manual layout acceptance are pending. Development branch only; master, release and server remain unchanged.
+
+## 2026-11-09 — Correspondence print coordinate model update
+
+The print renderer now separates the physical A4 coordinate plane from the flowing text area without layering duplicate horizontal margins:
+- Physical template elements use a 210 mm wide A4 plane, with its top aligned to physical page top.
+- CSS paged media reserves only effective top and bottom zones, each calculated as the greater of the configured text margin and header/footer height.
+- The flowing text container spans 210 mm and applies configured left/right text margins as padding exactly once. Body content therefore wraps within the same physical horizontal boundaries as the screen preview.
+- Body content remains normal flow for Chromium pagination; header/footer/repeat elements remain on the physical-page coordinate plane.
+
+This is committed implementation, not verified acceptance. Build, PHP feature test and Chromium PDF comparison are pending. Do not claim parity until first-page and later-page placement are checked. Development only; master/release/server unchanged.
+
+## 2026-11-09 — Outgoing dispatch stage and recipient title prefix
+
+- The existing external tracking columns are reused; no duplicate schema was introduced. Outgoing letters in `awaiting_dispatch` are now included in the `needs_action` state filter for all active Secretariat members, fixing the hand-off that previously made the newly registered outgoing letter disappear from the actionable list.
+- Final dispatch now requires both a dispatch method and a sent date while the letter is in `awaiting_dispatch`. The workflow service independently enforces the same invariant before recording `dispatched`; external registration number/date remain optional tracking metadata. While awaiting dispatch, only Secretariat members/system administrators may edit this stage; creator/task-owner tracking permissions resume outside that state.
+- Added `{{recipient_organizational_title_prefix}}` to the addressing element token allow-list, designer token catalog/sample values, and print resolver. It reads the immutable `organizational_title_prefix` captured from the selected external contact at registration.
+- Frontend build, focused correspondence tests, and manual Secretariat workflow verification are pending. Development only; master/release/server unchanged.
+
+## 2026-11-10 — Recipient personal title prefix token
+
+- Added `{{recipient_personal_title_prefix}}` to the addressing/heading element token catalog. It resolves from the external contact's immutable `recipient_addressing_snapshot.personal_salutation` value in print, independently of `{{recipient_title}}` (which continues to combine personal salutation and professional title for backward compatibility).
+- No database migration is needed; the personal salutation is already captured in the recipient addressing snapshot. Build and correspondence regression tests are pending. Development only; master/release/server unchanged.
+
+## 2026-11-10 — Correspondence composition and appendix decisions
+
+- Correspondence composition and supporting appendices are separate concerns. `composition_mode` continues to describe how the main letter is prepared; `appendix_mode` describes supporting appendices and accepts `none`, `editor`, `file`, or `both`.
+- Appendix rich text is persisted in `correspondences.appendix_body`; uploaded appendix documents use document-link purpose `correspondence_appendix`. The legacy `attachment_pages` field is retained for compatibility only and must not drive new summaries.
+- The template token `{{attachment_pages}}` remains stable for existing templates but now displays an automatic summary: rendered text appendix pages as “برگ” plus the number of attached appendix files as “فایل”.
+- Main-letter pages and text-appendix pages are measured and numbered separately. The main letter's issuer, stamp, and department signature remain after the main body and before the appendix starts on a new physical A4 sheet.
+- Appendix sheets continue to use the same letterhead and repeating template elements. Printing must continue to print the exact A4 sheets generated by preview; browser-native repagination is prohibited because it previously caused preview/print divergence.
+- The first rich-text editor implementation is dependency-free and uses DOM Selection/Range APIs rather than `document.execCommand`. Its toolbar includes Home/Insert and contextual Table/Picture/Shape tools. Validate editing, save/reload, sanitization, and print fidelity before treating the editor as complete.
+
+
+## 2026-11-10 — Focused correspondence editor usability improvements
+
+- Kept the existing lightweight correspondence-body editor; no editor-engine migration or new npm dependency was introduced. The editor remains limited to the letter body/appendix body and does not own letterhead, headers, footers, stamps, signatures, or A4 pagination.
+- Replaced text-character toolbar symbols with consistent Lucide icons from the already-installed `@lucide/vue` package, using Word-familiar visual metaphors for formatting, alignment, lists, undo/redo, tables, images and shapes.
+- Expanded contextual table controls: table width, cell background, border color/thickness, cell padding, and horizontal/vertical cell alignment, alongside existing row/column insertion/deletion.
+- Expanded image controls with height and border presets, retaining width, alignment, replacement and removal.
+- Expanded shape controls with width, height and border thickness, retaining fill/border colors and removal.
+- This is a targeted UI/control improvement, not a replacement for a full Word editor. Advanced freeform resizing/positioning, multi-cell merge/split, and complex image text-wrapping are not included. Existing DOM Selection/Range behavior and HTML sanitization still require interactive verification.
+- Verification pending: run `git pull origin development`, `npm run build`, then manually verify toolbar rendering, table/image/shape controls, save/reopen, and preview/print preservation. No build, PHP tests, or browser/PDF acceptance has been run for this change.
+- Development branch only; master, release and server unchanged.
+
+
+## 2026-11-10 — Correction: correspondence editor controls are still in progress
+
+The prior 2026-11-10 entry overstated completion. The initial toolbar/control patch did NOT provide full Word-like table, image, and shape behavior. Do not treat that entry as acceptance or completed functionality.
+
+Current incremental work on `development` adds: numeric millimetre inputs for table/image/shape dimensions; numeric cell width/height and padding; table/row/column selection and Shift-click rectangular cell selection; same-row cell merge and colspan split; border side targeting, border style/color/width; a fixed theme color swatch palette plus custom color input; image text-flow modes (inline, block, float left/right); and pointer-based cell edge resizing. These are implementation attempts only and have not been built or browser-tested.
+
+Known gaps / acceptance blockers:
+- Border targeting for inner grid lines and complex selections needs browser verification and may need refinement; the current “split cell” handles colspan, not rowspan or arbitrary multi-cell splitting.
+- Table resizing currently acts on a cell edge and may not behave like Word's shared column-boundary drag in every table layout; verify and refine.
+- Shape color palette and full Word-style contextual ribbon remain incomplete; native color input behavior is browser-dependent.
+- Image wrapping and mm sizing need preview/print verification; float behavior may interact with letter pagination.
+- Dragging table row/column boundaries, merge/split edge cases, selection persistence, and sanitized HTML round-trip are not accepted until manually tested.
+- There is no claim of Word-equivalent behavior. Build, type-check, browser tests, save/reopen, and A4 preview/print comparison are all pending.
+
+Next validation must start with `git pull origin development`, then `npm run build`. Do not move to master/release/server. Report actual build/test results before claiming completion.
+
+
+## 2026-11-10 — Further editor implementation (not yet accepted)
+
+The latest development commits further implement rectangular multi-cell selection (Shift-click), table/row/column selection, rectangular cell merge, colspan/rowspan split, per-side border formatting with outer/inner targeting, theme swatches plus custom colors for text/highlight/table cells/shapes, numeric mm sizing for table/image/shape and cells, image text-flow modes, and pointer-based shared table column/row boundary resizing.
+
+These are code-level implementations only. The feature remains **in progress / unverified**. In particular verify: selection behavior across cells; merge/split with tables containing existing spans; border application to rectangular selections; boundary dragging in fixed and auto table layouts; numeric dimension persistence; color palettes in the actual browser; image float/wrapping effects on A4 preview and printed PDF; and HTML sanitization/save-reopen. The current implementation is not equivalent to the full Microsoft Word table engine and must not be described as such. No build, automated tests, or browser acceptance has been run.
+
+## 2026-11-11 — Correspondence editor usability refinement
+
+The editor remains scoped to correspondence body/appendix content; letterhead, stamps, signatures, repeating elements and A4 pagination remain outside it. The latest development iteration adds compact Word-style color dropdowns (theme/standard/custom/no-color), current-color indicators, drag-based multi-cell selection, table alignment, clearer image/shape selection, image aspect-ratio-aware sizing, rotation/flipping, shape outline thickness and context-specific right-click menus. The inline image client cap is now 350 KB, subject to the existing request and sanitizer limits. All of these changes are code-level and unverified pending build, backend sanitization round-trip, browser interaction, save/reopen and print-preview checks.
+
+## 2026-11-11 — TypeScript correction
+Fixed Vue `ref` access in table pointer-drag selection: assignments and reads now consistently use `dragSelection.value`. This addresses the reported TS2588/TS2339 errors at the drag-selection handlers. The correction is committed to `development`; build has not yet been rerun and no build success is claimed.
+
+
+## 2026-11-11 — Correspondence editor follow-up corrections
+
+Owner feedback identified four usability defects in the first editor refinement: no-color actions did not reliably clear styling, palette menus stayed open after outside clicks, paragraph spacing used ambiguous qualitative presets, and dimension fields showed fixed/default values rather than the selected element's actual dimensions. Follow-up implementation on `development` adds outside-pointer dismissal, explicit clearing/removal of fill and border declarations, numeric line-height and paragraph-after controls with units, live dimension readback from selected DOM elements, separate table height, and an opt-in image aspect-ratio checkbox (default off) that recalculates the paired dimension when enabled. Image intrinsic ratio is refreshed on load. This remains unverified until build and browser acceptance, including save/reopen and print checks.
+
+
+## 2026-11-11 — Editor dimension and border reset refinement
+
+Dimension readback now uses the selected element's untransformed layout box (`offsetWidth`/`offsetHeight`) so rotation does not distort the width/height values shown in the property controls. Clearing a table border disables that side; choosing a color afterward restores a visible solid border. Image intrinsic-ratio handling now registers the load callback before assigning the data URL. These are source-level refinements only; build and browser verification remain pending.
+
+
+## 2026-11-11 — Text highlight clear action
+
+The highlight palette's no-color action now removes the inline background color from fully selected highlighted ancestor elements instead of applying another transparent wrapper. Partial-selection behavior still requires browser acceptance. This is a source-level correction only; no build or browser verification is claimed.
+
+
+## 2026-11-11 — Build feedback: unsupported Lucide icon
+
+The user's production build identified `BorderAll` as unavailable from `@lucide/vue`. Replaced the unsupported icon reference in the shape-outline color control with the already-used/exported `RectangleHorizontal` icon and removed `BorderAll` from the import. This is a targeted compile-error correction; the build has not yet been rerun, so further build errors may remain. Development branch only.
+
+
+## 2026-11-11 — Contextual selection, font-size readout and RTL dropdown refinement
+
+- Preserved the selected image/shape/table-cell context while focus moves between the contenteditable surface and contextual toolbar, preventing selectionchange/focus events from hiding the relevant contextual tab.
+- The font-size dropdown now reads the computed size at the current selection range endpoints, displays the actual point size (including custom sizes), and indicates a mixed-size selection rather than silently showing a fixed default.
+- Styled editor dropdowns with a consistent left-side chevron, RTL option alignment, reserved arrow space, and control-specific minimum/maximum widths to prevent the arrow overlapping option text and improve fit for long labels.
+- Source-level implementation only. Build and browser acceptance are pending; verify image selection/tab persistence, shape/table contextual tabs, font-size readout for preset/custom/mixed selections, and dropdown layout at desktop and narrow widths. Development branch only; master/release/server unchanged.
+
+
+Follow-up in the same editor refinement: clicking in ordinary text now clears a previously selected table cell and its range anchor, so stale table context cannot keep the table tab visible after the user has moved outside the table. Browser verification remains pending.
+
+
+## 2026-11-11 — Editor interaction and dimension correction
+
+- Added outside-pointer dismissal for the editor's right-click context menu; interactions inside the menu do not dismiss it prematurely.
+- Kept the browser text selection active when switching editor tabs by preventing tab-button pointer focus, while also snapshotting the selected range before toolbar interaction.
+- Restored normal caret placement and typing inside table cells. Cell pointer-down no longer unconditionally prevents the browser's default caret action; rectangular drag selection is reserved for Shift+drag, while edge dragging remains available for resizing.
+- Added a reactive dimension revision so width/height fields are recalculated after DOM style mutations and commits instead of retaining stale displayed values.
+- Improved image dimension application by removing the CSS max-width clamp and applying explicit box sizing; shape dimensions now apply inline-block and border-box sizing; table dimensions validate positive numeric values and remove max-width clamping for explicit widths.
+- Implementation is source-level only. Build and browser acceptance are still required. Verify right-click menu outside dismissal, retained text selection while switching tabs, typing/caret placement in table cells, and independently changing/readback of table/image/shape width and height. Development branch only; master/release/server unchanged.
+
+## 2026-11-11 — Rich-text editor dimension persistence and partial highlight clearing
+
+- Prevented the `modelValue` watcher from replacing the editor DOM while focus is anywhere inside the editor shell, including toolbar inputs. This avoids invalidating the selected image/table/shape DOM references during dimension edits. Deferred external synchronization until focus leaves the editor shell.
+- Reworked highlight removal to extract the selected range, remove background-color declarations only from the extracted fragment, and restore the selection. Partial selections now clear without erasing the background of unselected text or removing unrelated inline formatting.
+- The changes are committed on `development` only. Frontend build and browser acceptance remain pending; verify image, table, cell and shape width/height edits, then test clearing the background of both a whole highlighted phrase and a partial selection.
+
+## 2026-11-11 — Preserve contextual tabs and selected ranges across tab clicks
+
+- Root cause of the contextual tab disappearing: the tab strip itself was outside `.rte-toolbar`. `refreshContext()` therefore treated focus on a contextual tab as leaving the editor/toolbar, cleared table/image/shape context, and forced the active tab back to Home. Added the toolbar marker to the tab strip so contextual object state is retained when switching tabs.
+- The same omission prevented `preserveEditorSelection()` from snapshotting a text range when the user clicked the tab strip. The tab strip now participates in the same selection-preservation path as the tool controls, allowing the no-background action to receive the saved selection.
+- This is a source-level correction. Build and browser acceptance are still pending; verify contextual tabs remain visible after clicking them and that the no-background action clears both complete and partial text selections.
+
+## 2026-11-11 — Rich-text dimension controls and text highlight clearing follow-up
+
+- Re-inspected the actual editor handlers and template bindings. The previous dimension setters wrote ordinary inline widths while the table remained in automatic table layout; in that mode cell widths are advisory and the browser can redistribute them. The setters now apply explicit important dimensions, disable the table max-width constraint, and use fixed table layout when setting table/column widths. Image and shape dimensions are also applied explicitly so generic editor image constraints cannot cap the requested size. Cell height is applied to its row as well as the cell.
+- The previous text-highlight removal only removed the `background-color` longhand from extracted HTML. It left the CSS `background` shorthand and semantic `<mark>` highlights untouched. The revised handler clears both background properties and unwraps selected `mark` fragments while operating on the extracted selection, preserving adjacent unselected formatting.
+- These are code-level corrections based on the observed implementation paths. Production build and interactive browser verification have not yet been run; do not mark either behavior accepted until the owner verifies the actual editor. Development branch only; master/release/server unchanged.
+
+## 2026-11-11 — Rich-text dimension controls and inherited highlight clearing
+
+- Re-inspected the actual editor handlers and bindings. The previous dimension setters wrote ordinary inline widths while tables remained in automatic table layout; cell widths are advisory there and the browser may redistribute them. Table/column sizing now uses fixed table layout and explicit dimensions; image and shape dimensions are applied explicitly so generic editor constraints cannot cap the requested size. Cell height is applied to the row as well as the cell.
+- The previous highlight remover only cleared the extracted fragment. When the selection was inside a highlighted wrapper, the source `span`/block remained the owner of the background, so reinserting plain selected text still inherited that color. The revised handler captures and clears the source ancestor chain as well as the extracted fragment, removes both `background-color` and `background`, and unwraps `<mark>` nodes.
+- These code changes address the implementation paths identified in review. Production build and interactive browser verification have not yet been run; neither behavior is accepted until the owner verifies the editor. Development branch only; master/release/server unchanged.
+
+## 2026-11-11 — Keep contextual tabs active while editing element dimensions
+
+- Confirmed the tab regression was caused by focus being left inside a conditional toolbar panel. Switching tabs unmounted that panel via `v-if`; browser focus then fell back to `body`, and the document `selectionchange` handler ran `refreshContext()`, which interpreted the missing editor selection as deselection and forced the active contextual tab back to Home.
+- Added an explicit tab-switch operation that moves focus to the persistent tab-strip button before changing the active panel and snapshots the editor range. `refreshContext()` now treats focus on the tab strip as an intentional editor interaction and does not clear the selected table/image/shape or reset the active tab.
+- This also preserves the selected element references required by the width/height controls while moving from the editor or one toolbar panel to the contextual settings panel. The previously updated dimension setters remain in place: fixed table layout for width changes, explicit table/cell dimensions, row height, and explicit image/shape dimensions.
+- Build and interactive browser acceptance are still pending. Verify tab persistence and actual element geometry changes before accepting this fix. Development only; master/release/server unchanged.
+
+
+## 2026-11-11 — Image/shape dimension setters and shape-tab selection correction
+
+- Root cause in contextual selection refresh: the editor-focus path returned early when an older connected image/shape/cell ref existed. That stale ref could mask the newly selected object before the click handler refreshed it. Context refresh now preserves refs only while focus is in a toolbar; with editor focus it resolves the current Selection/Range instead.
+- Before toolbar focus changes, contextual pinning now resolves the current object from the saved editor range and updates the image/shape/cell refs and context together. This protects the shape tab from being removed by an intervening selectionchange and avoids pinning a stale object.
+- Image and shape dimension fields now read through their selected-object resolvers, not only the transient refs. Their setters validate that the target belongs to this editor and synchronize the active object/context before applying dimensions.
+- Shape dimensions now override the editor's minimum-size constraints and maximum-width constraint, in addition to applying explicit important width/height and border-box sizing. Image sizing continues to remove max-width clipping before applying dimensions.
+- Code updated on development only. Build and browser acceptance have not yet been run; verify image width/height, shape tab persistence across repeated tab switches, shape width/height, and saved HTML after edits before marking complete.
+
+
+## 2026-11-11 — Root-cause correction: stable contextual tabs and DOM-target selection
+
+- Previous tab implementation generated the table/image/shape tab buttons conditionally from reactive context. When a selection/focus event briefly cleared context, Vue removed the focused tab button; browser focus fell back to body and the editor then reset the active tab. This explains why tab failures returned across image, table, and shape.
+- Contextual tab buttons are now rendered permanently in a stable tab strip. Table/image/shape buttons are disabled when no matching object is selected instead of being mounted/unmounted. Switching a tab therefore cannot destroy the focused button.
+- Object identity is now captured from the actual editor pointer/click target (img, [data-editor-shape], td/th, or table) into one persistent contextTarget ref. It is no longer reconstructed from a browser Selection/Range during toolbar focus changes; browser caret positions are unreliable for non-text objects. refreshContext() preserves that DOM target while toolbar controls have focus and resolves it when editor focus returns.
+- Image, shape, and table contexts are synchronized from the same target helper. Image/shape dimension setters update the authoritative target ref before applying styles. Context-menu selection and table drag-selection also update the target. Removing an image/shape clears the target and contextual state.
+- Image/shape dimension CSS remains explicit; the dimension readback decimal parser was corrected. Build and interactive browser verification are pending. Do not mark the UI issue complete until the project build and browser tests confirm tab persistence and rendered dimensions for all three object types.
+- Changes are limited to the development branch; master, release, and server branches were not changed.
+
+
+## 2026-11-11 — Final selection resolver hardening
+
+- Dimension target resolvers now consult the authoritative contextTarget first, then fall back to the connected typed reference and saved editor range. This prevents a still-connected but previously selected image/shape/cell from being reused after the user clicks another object.
+- Image aspect-ratio calculation now falls back to rendered geometry while the image is not yet decoded, avoiding zero/invalid ratios when the dimensions are changed immediately after insertion.
+- Decimal authored CSS dimensions are parsed using a literal decimal-point character class. No CI workflow is configured for the development branch; build and browser interaction remain unverified until run in the project environment.
+
+
+## 2026-11-11 — Contextual settings readback correction
+
+- Root cause found in the object-settings resolver chain: image, shape, cell, and table resolvers could fall back from the latest explicit click target to a still-connected typed reference or the saved text Selection/Range. A stale saved range could therefore make settings display or modify a previously selected object instead of the object just clicked.
+- Contextual object resolvers now use only the connected `contextTarget` established by the latest editor pointer/click event. Text Selection/Range remains available for text-editing commands, but is no longer used as a fallback for object-specific settings.
+- Editor pointer/click selection now advances the dimension readback revision so width/height controls refresh even when the same object is clicked again. Table-cell and table resolution follow the same explicit target.
+- **Validation status:** code committed to `development`; production build and interactive browser verification are still pending. Do not treat the issue as accepted until the user verifies that selecting different images/shapes/tables shows each object's own dimensions and that edits affect only that object. No changes to `master`, `release`, or `server`.
+
+
+## 2026-11-11 — Restore unmodified table drag selection and editor-shell focus handling
+
+- Table range selection now begins on an ordinary primary-button press and becomes a rectangular multi-cell selection only when the pointer crosses into another cell. A simple click or text drag contained within one cell is left to the browser, preserving caret placement and native text selection. Shift-click range selection remains supported.
+- The drag anchor is the cell actually pressed, not a previously focused cell. During a cross-cell drag, the native text range is cleared and the rectangle is painted; the final active cell and contextual target are synchronized at pointer-up.
+- Context refresh now treats every focused descendant of the editor shell (tab strip, toolbar controls, color popovers and contextual controls) as an internal editor interaction. It preserves the connected object target and active contextual tab rather than clearing selection because focus is no longer in the contenteditable node. Leaving the entire editor shell still clears contextual selection.
+- This is a source-level correction on development only. Production build and browser acceptance remain pending. Verify plain mouse drag across cells (including multi-row and RTL tables), ordinary text selection/caret placement within one cell, Shift-click range selection, and switching among Home/Insert/Table/Picture/Shape tabs without losing the selected object's settings. Do not mark accepted until these checks pass.
+
+## 2026-11-11 — Pin contextual object identity across toolbar focus
+
+- Follow-up inspection found that the editor relied on a single transient `contextTarget` while the browser moved focus from a selected table/shape into contextual toolbar controls. The image path happened to retain a stable target more often, but table/shape controls could resolve against a changed or collapsed document selection.
+- Added an explicit pinned object reference captured at the editor-shell pointerdown capture phase before toolbar focus changes. Context refresh and dimension target resolution now prefer that still-connected pinned object; a new pointer interaction inside the editable document clears the old pin and selects the newly targeted object. This applies consistently to images, shapes, table cells and tables.
+- This change addresses target identity/focus timing; it does not establish that all dimension changes render correctly. Table/shape/image width and height fields, persistence after editing, and contextual-tab stability still require browser acceptance. No build or browser test has been run for this change. Development branch only; master, release and server unchanged.
+
+## 2026-11-11 — Fix transient contenteditable blur resetting contextual tabs
+
+- Root cause: table cells and shapes are editable content (contenteditable), unlike images. Moving focus from these targets to a toolbar tab/control can emit `selectionchange` during the brief blur/focus handoff. `refreshContext()` previously interpreted the transient `document.activeElement` outside the editor shell as a confirmed exit, cleared the contextual target and reset the active tab to Home. The image path generally did not trigger the same caret/selection transition, explaining the difference.
+- `refreshContext(forceClear = false)` now preserves a still-connected pinned contextual object during transient focus gaps. A real exit is confirmed separately: an outside document pointerdown clears context immediately, while shell focusout waits for `nextTick()` and then calls `refreshContext(true)` after focus has settled. This avoids treating selectionchange as proof of leaving the editor.
+- The same preservation keeps table/shape targets available while dimension inputs receive focus and their change handlers execute. Existing dimension conversion and CSS application routines were not rewritten in this correction.
+- Source-level verification only; no production build or interactive browser test has been run. Acceptance must verify table and shape tabs remain active when clicking their controls, and width/height values update the selected object. Development branch only; master, release and server unchanged.
+
+
+## 2026-11-11 — Correct contextual toolbar pointer scope and keyup typing
+
+- Fixed the reported `vue-tsc` failure: the contenteditable's `keyup` event no longer passes its `KeyboardEvent` into `refreshContext(forceClear?: boolean)`; it calls a dedicated zero-argument `onEditorKeyUp()` wrapper instead.
+- Narrowed contextual selection pinning to pointer interactions originating inside `.rte-toolbar`. The editor-shell capture handler now ignores pointerdowns in the editable document, so selecting a new table or shape cannot first pin a stale previously selected object. The redundant tab-strip capture handler was removed; the shell capture handler still snapshots toolbar targets before focus changes.
+- This corrects a concrete event-routing defect and the reported TypeScript error. It is not yet evidence that the contextual-tab or dimension issues are fully resolved. The local production build and browser verification remain pending; specifically verify table/shape tab persistence and numeric width/height changes. Development branch only; master, release and server unchanged.
+
+
+## 2026-11-11 — Fix mouseup event typing in correspondence editor
+
+- Fixed the next `vue-tsc` event-handler mismatch: the editor content area's `@mouseup` now calls a zero-argument `onEditorMouseUp()` wrapper rather than passing Vue's `MouseEvent` to `refreshContext(forceClear?: boolean)`.
+- The wrapper preserves the intended context refresh behavior while preventing a DOM event from being interpreted as the optional force-clear Boolean.
+- This is a compile-time correction only. It does not establish that contextual tabs or numeric dimension editing work; those still require the production build and browser interaction verification. Changes are restricted to the `development` branch.
+
+## 2026-11-11 — Outgoing draft preview and editor scrolling
+
+- The correspondence form now has an outgoing-only pre-registration preview entry point. It must preview the current unsaved form state, not redirect to a persisted correspondence or create a temporary database record. The implementation uses the existing A4 Correspondence/Print page and configured template/organization assets through a permission-checked, CSRF-protected POST endpoint.
+- The preview opens in a separate tab and uses an in-memory Correspondence instance. Incoming correspondence must not show this action. File attachments are not rendered in this preview and must be identified as such to the user.
+- The rich-text editor's tabs and active contextual toolbar controls share a sticky container positioned below the 64px application topbar. The editor shell must not clip the sticky container.
+- Current validation state: source changes only; build, feature tests and browser acceptance are pending.
+
+## 2026-11-11 — Table sizing and print constraints
+
+- Resized table HTML is persisted inside the correspondence body. Do not write inline `max-width:none!important` to tables/cells: the markup is later rendered with `v-html` and inline important declarations override print CSS, allowing overflow beyond the A4 body column.
+- Editor resize logic now uses `max-width:100%` for table/cells, fixed layout, zero minimum cell width and wrapping. The print page normalizes legacy table markup as well, because previously saved letters may still contain the old inline important values.
+- Build/browser validation is pending.
+
+
+## 2026-11-14 — Correspondence editor context menus, object deletion and row-height consistency
+
+- Expanded right-click menus by target: text now exposes common formatting, paragraph alignment, list, clipboard and select-all actions; tables expose row/column insertion and deletion, row/column/table selection, merge/split and table deletion; pictures and shapes expose rotation, flipping, z-order and deletion actions. These are native editor operations, not a replacement editor.
+- Added Delete/Backspace handling for the currently selected/pinned image or shape. A table is removed with Delete/Backspace only when the full table is selected; a normal caret inside a cell retains normal text-editing behavior.
+- Corrected row-height ownership: changing a cell's height now writes the shared height on its parent row and clears conflicting per-cell height overrides. Reading the height from any cell in that row resolves the parent row's authored/rendered height, so sibling cells report the same value.
+- **Status: source changes implemented, not verified.** Run Vue/TypeScript production build and browser acceptance for each right-click menu, clipboard/formatting actions, object Delete/Backspace, full-table selection/deletion, and row-height readback from every sibling cell. Clipboard behavior and browser-specific contenteditable keyboard handling require real-browser confirmation. Development branch only; master/release/server unchanged.
+
+
+## 2026-11-14 — Organization correspondence settings and numbering templates
+
+- Reorganized the Organization settings navigation labels to `مشخصات سازمان`, `واحدهای اصلی سازمان`, and `مکاتبات`; correspondence now has internal `شماره‌گذاری نامه` and `تنظیمات نامه` views.
+- Added separate editable templates for outgoing letter numbers and Secretariat registration numbers. Supported placeholders currently include Persian/Gregorian year, month and day variants, `Dept`, and exactly one `Num-1..12-r|c` sequence token. Separators are literal template text.
+- Added a scoped counter table keyed by counter type and template-derived scope. `r` scopes the sequence to the values of non-counter placeholders actually present; `c` uses one continuous scope. Allocation is transactional, row-locked, and checks existing correspondence numbers before returning a value. Existing legacy counters and historical correspondence numbers are retained.
+- Added organization defaults for editor font family/color/size and table/shape border colors. New correspondence body content receives an inline typography snapshot; editor table/shape creation uses configured border colors.
+- Added A4/A5 setting values in storage/UI; **print pagination remains hard-coded to A4 and A5 is not yet wired to the print pipeline**. Do not treat A5 as supported until print/template measurements are made page-size aware.
+- Validation and browser/build/test execution are still pending. The migration must be run before enabling template numbering on an environment.
+
+
+## 2026-11-14 implementation follow-up
+
+- Added request-level validation for both templates: exactly one `Num-1..12-r|c` token, known date/unit tokens only, no duplicate placeholders, and a 200-character limit.
+- Added a reference modal with the token table and examples.
+- Added a global per-number-type allocation lock in addition to per-scope counters. This serializes allocations across template scopes before checking existing values, preventing two concurrent template configurations from passing the collision check simultaneously.
+- Added feature coverage for `r` resetting by a template-used unit variable and `c` continuing across unit changes; updated organization settings tests for the new persisted fields and existing registration-counter assertions.
+- Letter body typography (font family, size and color) is now wrapped into newly created rich-text body HTML so later organization setting changes do not restyle already-created letters. Editor defaults supply table and shape border colors for newly inserted elements.
+- Correction to the earlier note: the page-size selector is restricted to A4 because the current preview/print renderer, coordinate system and pagination are A4-specific. A5 is deliberately not offered until that pipeline is refactored; page-size persistence currently represents the supported A4 default only.
+- No local PHP/Vue build or PHPUnit run was available from the GitHub editing connection. Tests were added/updated but remain unexecuted. Run migrations and the focused tests before production use.
+
+
+## Final implementation notes — 2026-11-14
+
+- Persian date fallback now calculates Jalali year/month/day directly when PHP Intl is unavailable, including Persian month names; the Intl calendar formatter is used when available.
+- Template validation is enforced both when saving settings and again inside the allocator, including malformed/unclosed placeholder rejection.
+- The A4-only page-size control reflects the current A4-only preview/print geometry. A5 is not exposed as a selectable option.
+- Focused feature tests were updated for new settings persistence and both counter modes. They have **not been executed** in this editing session; CI status checks returned no reported statuses.
+
+
+## 2026-11-14 — Correspondence numbering validation and SQLite-compatible counters
+
+- Corrected the registration-numbering request rule to accept the supported `template` format; previously the form rejected every custom registration template before persistence, despite the template parser accepting the tokens.
+- Replaced scoped-counter `insertOrIgnore` calls with conflict-safe `upsert` operations that preserve `last_number` on conflict. This avoids Laravel's unsupported SQLite `insertOrIgnore` grammar while retaining unique-key protection and the lock-based allocation path used by supported production databases.
+- Kept letter-number and Secretariat-registration-number sequences independent. The registration regression now exercises a templated letter number alongside a simple Secretariat registration number, so it verifies the expected distinct output without incorrectly forcing two independently configured `simple` formats to differ.
+- Focused PHPUnit and frontend build have not yet been rerun after these corrections. Development branch only; master, release and server unchanged.
+
+
+## 2026-11-14 — Correspondence settings cleanup and A5 page support
+
+- Moved organization stamp upload/activation, letterhead upload/removal, and the correspondence-template designer entry point out of the organization-details tab and into Correspondence → Letter Settings. Asset storage and template placement remain separate: uploaded images are managed here, while their position and dimensions remain controlled by the template designer.
+- Removed the obsolete numbering preset/order/separator/padding and custom-part-count controls from the organization settings form, request validation, and update persistence. The two explicit token templates are now the only numbering-format inputs; old stored compatibility keys are left intact rather than destructively migrated.
+- Replaced native-only color controls for default text, table borders, and shape borders with the same theme palette, standard swatches, and custom color input used by the rich-text editor.
+- Added A5 alongside A4. The selected page size is passed to the template designer and print renderer; the designer's paper ratio, millimetre coordinate conversion, safe-area geometry, and page-number placement now use 148×210 mm for A5 or 210×297 mm for A4. Print preview/page slicing, body-height estimation, appendix measurement, and the browser `@page` size use the same selected dimensions. Template-layout validation now checks available width/height against the selected format.
+- Added feature coverage for saving A5, A5 designer props, and the unchanged A4 default. PHPUnit and frontend build have not yet been rerun after these changes; browser print acceptance for both A4 and A5 remains required. Development branch only.
+
+
+## 2026-11-14 — A5 pagination follow-up and obsolete payload removal
+
+- Completed the A5 conversion through the final print-page slicing path: first-page body offset measurement now derives pixels-per-millimetre from the selected page width; body slice translation and page-count estimation use the selected page height; appendix measurement width uses the selected page width. The print toolbar width is also constrained to the selected format, while the print document uses the dynamically generated `@page` size and leaves the outer document width automatic so it does not depend on a descendant CSS variable.
+- Removed the old preset/count/order fields from the settings form payload and feature-test payload. The request and controller now consume only the two token templates for numbering, while historical compatibility keys remain stored but are no longer editable through this form.
+- The settings feature test now saves A5 and verifies the A5 designer prop; the existing designer preview test verifies the default remains A4. Runtime test/build and browser print checks are still pending.

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Documents\Policies;
 
 use App\Models\User;
+use App\Modules\Correspondence\Models\Correspondence;
+use App\Modules\Correspondence\Services\CorrespondenceAccessService;
 use App\Modules\Documents\Models\Document;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectSection;
@@ -24,9 +26,21 @@ class DocumentPolicy
             return false;
         }
 
+        // Correspondence attachments must never bypass the letter's own access rules.
+        $correspondenceLinks = $document->links()
+            ->where('linkable_type', Correspondence::class)
+            ->with('linkable')
+            ->get();
+
+        if ($correspondenceLinks->isNotEmpty()) {
+            return $correspondenceLinks->contains(
+                fn ($link) => $link->linkable instanceof Correspondence
+                    && app(CorrespondenceAccessService::class)->canView($link->linkable, $user)
+            );
+        }
+
         // Explicit document-level access still requires the document permission.
-        // Attachments linked to business records also inherit the user's scoped
-        // access to that task, project, or project section.
+        // Attachments linked to business records inherit access to that record.
         if ($user->hasPermission('documents.view')) {
             if ((int) $document->created_by === (int) $user->id) {
                 return true;
@@ -39,6 +53,10 @@ class DocumentPolicy
 
         foreach ($document->links()->with('linkable')->get() as $link) {
             $target = $link->linkable;
+
+            if ($target instanceof Correspondence && app(CorrespondenceAccessService::class)->canView($target, $user)) {
+                return true;
+            }
 
             if ($target instanceof Task && Gate::forUser($user)->allows('view', $target)) {
                 return true;

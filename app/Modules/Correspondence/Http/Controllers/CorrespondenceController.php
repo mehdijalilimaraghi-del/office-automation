@@ -18,6 +18,7 @@ use App\Modules\Tasks\Models\Task;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Projects\Models\ProjectSection;
 use App\Modules\Workflows\Models\WorkflowDefinition;
+use App\Modules\Correspondence\Services\CorrespondenceBodySanitizer;
 use App\Modules\Correspondence\Services\CorrespondenceNumberingService;
 use App\Modules\Correspondence\Services\CorrespondenceAccessService;
 use App\Modules\Correspondence\Services\CorrespondenceService;
@@ -58,6 +59,7 @@ class CorrespondenceController extends Controller
             ->activeDepartmentId(OrganizationDepartmentRoleService::SECRETARIAT);
         $isSecretariatManager = $secretariatDepartmentId !== null
             && (int) Department::query()->whereKey($secretariatDepartmentId)->value('manager_id') === (int) $user->id;
+        $isSecretariatUser = $access->isSecretariat($user);
         $managedDepartmentIds = $user->managedDepartments()->pluck('departments.id')->unique()->values();
         $departmentIds = $user->departments()->pluck('departments.id')
             ->merge($managedDepartmentIds)
@@ -125,8 +127,8 @@ class CorrespondenceController extends Controller
                             ->orWhereIn('to_department_id', $departmentIds));
                 });
             })
-            ->when($actionFilter === 'needs_action', function ($query) use ($user, $isSecretariatManager, $secretariatDepartmentId): void {
-                $query->where(function ($pending) use ($user, $isSecretariatManager, $secretariatDepartmentId): void {
+            ->when($actionFilter === 'needs_action', function ($query) use ($user, $isSecretariatManager, $isSecretariatUser, $secretariatDepartmentId): void {
+                $query->where(function ($pending) use ($user, $isSecretariatManager, $isSecretariatUser, $secretariatDepartmentId): void {
                     // Current assignment is authoritative; historical action rows may be incomplete.
                     $pending->where(function ($direct) use ($user): void {
                         $direct->where('current_user_id', $user->id)
@@ -160,6 +162,17 @@ class CorrespondenceController extends Controller
                                 ->where('created_department_id', $secretariatDepartmentId)
                                 ->whereIn('workflow_state', ['awaiting_registration', 'awaiting_manager_approval', 'approved_for_registration']);
                         })
+                        ->orWhere(function ($secretariatDispatch) use ($isSecretariatUser, $secretariatDepartmentId): void {
+                            if (! $isSecretariatUser || $secretariatDepartmentId === null) {
+                                $secretariatDispatch->whereRaw('1 = 0');
+                                return;
+                            }
+
+                            $secretariatDispatch->where('type', Correspondence::TYPE_OUTGOING)
+                                ->where('status', Correspondence::STATUS_REGISTERED)
+                                ->where('workflow_state', 'awaiting_dispatch')
+                                ->where('current_department_id', $secretariatDepartmentId);
+                        })
                         ->orWhere(function ($department) use ($user): void {
                             $department->whereIn('workflow_state', [
                                 'in_progress',
@@ -167,6 +180,7 @@ class CorrespondenceController extends Controller
                                 'awaiting_manager_approval',
                                 'project_review_pending_manager',
                                 'project_request_approved',
+                                'awaiting_dispatch',
                                 'general_review_pending_manager',
                                 'approved_for_registration',
                             ])->whereHas('currentDepartment', fn ($currentDepartment) => $currentDepartment
@@ -409,6 +423,8 @@ class CorrespondenceController extends Controller
                 'classification' => $correspondence->classification,
                 'subject' => $correspondence->subject,
                 'body' => $correspondence->body,
+                'appendix_mode' => $correspondence->appendix_mode ?? 'none',
+                'appendix_body' => $correspondence->appendix_body,
                 'status' => $correspondence->status,
                 'letter_number' => $correspondence->letter_number,
                 'registration_number' => $correspondence->registration_number,
@@ -578,10 +594,18 @@ class CorrespondenceController extends Controller
                 ->get(['id', 'title', 'status']),
             'canUpdateExternalTracking' => $request->user()->isSystemAdmin()
                 || $access->isSecretariat($request->user())
-                || (int) $correspondence->created_by === (int) $request->user()->id
-                || (int) $correspondence->task?->assignee_id === (int) $request->user()->id
-                || (int) $correspondence->task?->created_by === (int) $request->user()->id,
+                || ($correspondence->workflow_state !== 'awaiting_dispatch'
+                    && ((int) $correspondence->created_by === (int) $request->user()->id
+                        || (int) $correspondence->task?->assignee_id === (int) $request->user()->id
+                        || (int) $correspondence->task?->created_by === (int) $request->user()->id)),
             'correspondenceFontFamily' => $settings->get(['correspondence.composition.font_family' => 'Vazirmatn'])['correspondence.composition.font_family'],
+            'compositionDefaults' => $settings->get([
+                'correspondence.composition.font_color' => '#202124',
+                'correspondence.composition.font_size' => '12',
+                'correspondence.composition.table_border_color' => '#94a3b8',
+                'correspondence.composition.shape_border_color' => '#334155',
+                'correspondence.composition.page_size' => 'A4',
+            ]),
             'approvalSettings' => app(\App\Modules\Correspondence\Services\CorrespondenceCompositionSettings::class)->get()['approval'],
         ]);
     }
@@ -731,11 +755,18 @@ class CorrespondenceController extends Controller
             ],
             'correspondence' => null,
             'correspondenceFontFamily' => $settings->get(['correspondence.composition.font_family' => 'Vazirmatn'])['correspondence.composition.font_family'],
+            'compositionDefaults' => $settings->get([
+                'correspondence.composition.font_color' => '#202124',
+                'correspondence.composition.font_size' => '12',
+                'correspondence.composition.table_border_color' => '#94a3b8',
+                'correspondence.composition.shape_border_color' => '#334155',
+                'correspondence.composition.page_size' => 'A4',
+            ]),
             'approvalSettings' => app(\App\Modules\Correspondence\Services\CorrespondenceCompositionSettings::class)->get()['approval'],
             'createdDepartment' => $createdDepartment,
             'createdDepartments' => $createdDepartments,
             'externalOrganizations' => ExternalOrganization::query()->where('status', 'active')->orderBy('name')->get(['id', 'name']),
-            'externalDepartments' => ExternalDepartment::query()->where('status', 'active')->orderBy('name')->get(['id', 'external_organization_id', 'parent_id', 'name']),
+            'externalDepartments' => ExternalDepartment::query()->where('status', 'active')->orderBy('name')->get(['id', 'external_organization_id', 'parent_id', 'manager_contact_id', 'name']),
             'externalContacts' => ExternalContact::query()->where('status', 'active')->orderBy('name')->get(['id', 'external_organization_id', 'external_department_id', 'name', 'position', 'organizational_title_prefix', 'personal_salutation', 'professional_title', 'is_default']),
             'types' => $types,
             'classifications' => [
@@ -753,6 +784,8 @@ class CorrespondenceController extends Controller
         CorrespondenceAccessService $access,
         CorrespondenceWorkflowService $workflow,
         CorrespondenceNumberingService $numbering,
+        SystemSettingsService $settings,
+        CorrespondenceBodySanitizer $sanitizer,
     ): RedirectResponse {
         $requestedType = $request->input('type');
         if (is_string($requestedType) && in_array($requestedType, Correspondence::allowedTypes(), true)) {
@@ -780,7 +813,9 @@ class CorrespondenceController extends Controller
             'attachment_pages' => ['nullable', 'integer', 'min:1', 'max:9999'],
             'letter_number' => ['nullable', 'required_if:type,'.Correspondence::TYPE_INCOMING, 'string', 'max:100', Rule::unique('correspondences', 'letter_number')->where(fn ($query) => $query->where('type', Correspondence::TYPE_INCOMING)->where('external_organization_id', $request->input('external_organization_id')))],
             'composition_mode' => [Rule::requiredIf($request->input('type') !== Correspondence::TYPE_INCOMING), 'nullable', Rule::in(['editor', 'file', 'both'])],
-            'body' => ['nullable', 'string', 'max:100000'],
+            'body' => ['nullable', 'string', 'max:500000'],
+            'appendix_mode' => ['nullable', Rule::in(['none', 'editor', 'file', 'both'])],
+            'appendix_body' => ['nullable', 'string', 'max:500000'],
             'sender_name' => ['nullable', 'string', 'max:255'],
             'recipient_name' => ['nullable', 'string', 'max:255'],
             'external_organization_id' => ['nullable', Rule::requiredIf(in_array($request->input('type'), [Correspondence::TYPE_INCOMING, Correspondence::TYPE_OUTGOING], true)), 'integer', Rule::exists('external_organizations', 'id')->where('status', 'active')],
@@ -800,6 +835,8 @@ class CorrespondenceController extends Controller
             'original_letters' => ['nullable', 'array', 'max:10'],
             'original_letters.*' => ['file', 'max:20480', 'mimes:pdf,jpg,jpeg,png'],
             'attachments' => ['nullable', 'array', 'max:10'],
+            'appendix_files' => ['nullable', 'array', 'max:10'],
+            'appendix_files.*' => ['file', 'max:20480', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,txt,csv,zip'],
             'attachments.*' => [
                 'file',
                 'max:20480',
@@ -860,11 +897,29 @@ class CorrespondenceController extends Controller
         $mode = $data['type'] === Correspondence::TYPE_INCOMING
             ? 'file'
             : ($data['composition_mode'] ?? 'editor');
+        $appendixMode = $data['type'] === Correspondence::TYPE_INCOMING ? 'none' : ($data['appendix_mode'] ?? 'none');
+        $appendixBody = in_array($appendixMode, ['editor', 'both'], true)
+            ? $sanitizer->sanitizeBody((string) ($data['appendix_body'] ?? ''))
+            : null;
         $body = $data['type'] === Correspondence::TYPE_INCOMING || ($data['type'] === Correspondence::TYPE_OUTGOING && $mode === 'file')
             ? trim(strip_tags((string) ($data['body'] ?? '')))
-            : ($mode === 'file' ? '' : $this->sanitizeBody((string) ($data['body'] ?? '')));
+            : ($mode === 'file' ? '' : $sanitizer->sanitizeBody((string) ($data['body'] ?? '')));
 
-        if ($data['type'] !== Correspondence::TYPE_INCOMING && in_array($mode, ['editor', 'both'], true) && trim(strip_tags($body)) === '') {
+        if ($data['type'] !== Correspondence::TYPE_INCOMING && in_array($mode, ['editor', 'both'], true) && $body !== '') {
+            $defaults = $settings->get([
+                'correspondence.composition.font_family' => 'Vazirmatn',
+                'correspondence.composition.font_color' => '#202124',
+                'correspondence.composition.font_size' => '12',
+            ]);
+            $fontFamily = in_array($defaults['correspondence.composition.font_family'], ['Vazirmatn', 'Tahoma', 'Arial', 'B Nazanin', 'B Mitra', 'IRANSans', 'Times New Roman'], true)
+                ? $defaults['correspondence.composition.font_family'] : 'Vazirmatn';
+            $fontColor = preg_match('/^#[0-9a-fA-F]{6}$/', (string) $defaults['correspondence.composition.font_color']) === 1
+                ? $defaults['correspondence.composition.font_color'] : '#202124';
+            $fontSize = max(8, min(36, (int) $defaults['correspondence.composition.font_size']));
+            $body = '<div style="font-family:'.$fontFamily.';font-size:'.$fontSize.'pt;color:'.$fontColor.'">'.$body.'</div>';
+        }
+
+        if ($data['type'] !== Correspondence::TYPE_INCOMING && in_array($mode, ['editor', 'both'], true) && ! $sanitizer->hasRichContent($body)) {
             return back()->withErrors(['body' => 'متن نامه را وارد کنید.'])->withInput();
         }
         if ($data['type'] === Correspondence::TYPE_OUTGOING && $mode === 'file' && $body === '') {
@@ -896,17 +951,29 @@ class CorrespondenceController extends Controller
         }
 
         $attachments = array_values(array_filter((array) $request->file('attachments', [])));
+        $appendixFiles = array_values(array_filter((array) $request->file('appendix_files', [])));
+        if (! in_array($appendixMode, ['file', 'both'], true)) {
+            $appendixFiles = [];
+        }
+        if (in_array($appendixMode, ['editor', 'both'], true) && ! $sanitizer->hasRichContent((string) $appendixBody)) {
+            return back()->withErrors(['appendix_body' => 'متن پیوست را وارد کنید.'])->withInput();
+        }
+        if (in_array($appendixMode, ['file', 'both'], true) && count($appendixFiles) === 0) {
+            return back()->withErrors(['appendix_files' => 'برای روش انتخاب‌شده حداقل یک فایل پیوست کنید.'])->withInput();
+        }
         if ($data['type'] !== Correspondence::TYPE_INCOMING && in_array($mode, ['file', 'both'], true) && count($attachments) === 0) {
             return back()->withErrors(['attachments' => 'برای روش انتخاب‌شده حداقل یک فایل پیوست کنید.'])->withInput();
         }
 
         try {
-            $correspondence = DB::transaction(function () use ($data, $mode, $body, $originalLetters, $attachments, $service, $documents, $request, $linkedTask, $sourceProjectCorrespondenceId, $requestedLetterSource, $workflow): Correspondence {
+            $correspondence = DB::transaction(function () use ($data, $mode, $body, $appendixMode, $appendixBody, $originalLetters, $attachments, $appendixFiles, $service, $documents, $request, $linkedTask, $sourceProjectCorrespondenceId, $requestedLetterSource, $workflow): Correspondence {
                 $correspondence = $service->createDraft([
                     'type' => $data['type'],
                     'classification' => $data['classification'] ?? Correspondence::CLASSIFICATION_ORDINARY,
                     'subject' => $data['subject'],
                     'attachment_pages' => $data['attachment_pages'] ?? null,
+                    'appendix_mode' => $appendixMode,
+                    'appendix_body' => $appendixBody,
                     'letter_number' => $data['letter_number'] ?? null,
                     'body' => $body !== '' ? $body : null,
                     'sender_name' => $data['sender_name'] ?? null,
@@ -957,6 +1024,10 @@ class CorrespondenceController extends Controller
                         linkable: $correspondence,
                         purpose: 'correspondence_attachment',
                     );
+                }
+
+                foreach ($appendixFiles as $file) {
+                    $documents->create(data: ['title' => Str::limit(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME), 255, ''), 'document_type' => 'correspondence_appendix'], file: $file, creator: $request->user(), linkable: $correspondence, purpose: 'correspondence_appendix');
                 }
 
                 if ($requestedLetterSource !== null) {
@@ -1021,10 +1092,17 @@ class CorrespondenceController extends Controller
         return Inertia::render('Correspondence/Create', [
             'isEditing' => true,
             'correspondenceFontFamily' => $settings->get(['correspondence.composition.font_family' => 'Vazirmatn'])['correspondence.composition.font_family'],
+            'compositionDefaults' => $settings->get([
+                'correspondence.composition.font_color' => '#202124',
+                'correspondence.composition.font_size' => '12',
+                'correspondence.composition.table_border_color' => '#94a3b8',
+                'correspondence.composition.shape_border_color' => '#334155',
+                'correspondence.composition.page_size' => 'A4',
+            ]),
             'createdDepartment' => $createdDepartment,
             'createdDepartments' => $createdDepartments,
             'externalOrganizations' => ExternalOrganization::query()->where('status', 'active')->orderBy('name')->get(['id', 'name']),
-            'externalDepartments' => ExternalDepartment::query()->where('status', 'active')->orderBy('name')->get(['id', 'external_organization_id', 'parent_id', 'name']),
+            'externalDepartments' => ExternalDepartment::query()->where('status', 'active')->orderBy('name')->get(['id', 'external_organization_id', 'parent_id', 'manager_contact_id', 'name']),
             'externalContacts' => ExternalContact::query()->where('status', 'active')->orderBy('name')->get(['id', 'external_organization_id', 'external_department_id', 'name', 'position', 'organizational_title_prefix', 'personal_salutation', 'professional_title', 'is_default']),
             'types' => [
                 ['value' => Correspondence::TYPE_INCOMING, 'label' => 'وارده'],
@@ -1039,6 +1117,7 @@ class CorrespondenceController extends Controller
             'correspondence' => [
                 'id' => $correspondence->id, 'type' => $correspondence->type, 'classification' => $correspondence->classification,
                 'subject' => $correspondence->subject, 'attachment_pages' => $correspondence->attachment_pages, 'letter_number' => $correspondence->letter_number, 'body' => $correspondence->body,
+                'appendix_mode' => $correspondence->appendix_mode ?? 'none', 'appendix_body' => $correspondence->appendix_body,
                 'sender_name' => $correspondence->sender_name, 'recipient_name' => $correspondence->recipient_name,
                 'received_at' => $correspondence->received_at?->toDateString(), 'sent_at' => $correspondence->sent_at?->toDateString(),
                 'created_department_id' => $correspondence->created_department_id, 'recipient_department_id' => $correspondence->recipient_department_id,
@@ -1056,11 +1135,13 @@ class CorrespondenceController extends Controller
                 'copy_department_ids' => $correspondence->copies->pluck('id')->map(fn ($id): int => (int) $id)->all(),
                 'original_documents' => $correspondence->documents->where('purpose', 'correspondence_original')
                     ->map(fn ($link): array => ['id' => $link->id, 'title' => $link->document?->title ?? 'فایل پیوست‌شده'])->values(),
+                'appendix_documents' => $correspondence->documents->where('purpose', 'correspondence_appendix')
+                    ->map(fn ($link): array => ['id' => $link->id, 'title' => $link->document?->title ?? 'فایل پیوست‌شده'])->values(),
             ],
         ]);
     }
 
-    public function update(Request $request, Correspondence $correspondence, CorrespondenceAccessService $access, DocumentService $documents): RedirectResponse
+    public function update(Request $request, Correspondence $correspondence, CorrespondenceAccessService $access, DocumentService $documents, CorrespondenceBodySanitizer $sanitizer): RedirectResponse
     {
         abort_unless($access->canManageBeforeAction($correspondence, $request->user()), 403);
         $allowedCreatedDepartmentIds = $request->user()->departments()->where('departments.is_active', true)->pluck('departments.id')
@@ -1071,7 +1152,8 @@ class CorrespondenceController extends Controller
             'attachment_pages' => ['nullable', 'integer', 'min:1', 'max:9999'],
             'classification' => ['required', Rule::in([Correspondence::CLASSIFICATION_ORDINARY, Correspondence::CLASSIFICATION_CONFIDENTIAL])],
             'letter_number' => [Rule::requiredIf($correspondence->type === Correspondence::TYPE_INCOMING), 'nullable', 'string', 'max:100', Rule::unique('correspondences', 'letter_number')->ignore($correspondence->id)->where(fn ($query) => $query->where('type', Correspondence::TYPE_INCOMING)->where('external_organization_id', $request->input('external_organization_id')))],
-            'body' => ['nullable', 'string', 'max:100000'], 'composition_mode' => ['nullable', Rule::in(['editor', 'file', 'both'])],
+            'body' => ['nullable', 'string', 'max:500000'], 'composition_mode' => ['nullable', Rule::in(['editor', 'file', 'both'])],
+            'appendix_mode' => ['nullable', Rule::in(['none', 'editor', 'file', 'both'])], 'appendix_body' => ['nullable', 'string', 'max:500000'],
             'sender_name' => ['nullable', 'string', 'max:255'], 'recipient_name' => ['nullable', 'string', 'max:255'],
             'received_at' => [Rule::requiredIf($correspondence->type === Correspondence::TYPE_INCOMING), 'nullable', 'date'],
             'sent_at' => [Rule::requiredIf($correspondence->type === Correspondence::TYPE_OUTGOING), 'nullable', 'date'],
@@ -1084,16 +1166,24 @@ class CorrespondenceController extends Controller
             'copy_department_ids' => ['nullable', 'array', 'max:20'], 'copy_department_ids.*' => ['integer', 'distinct', Rule::exists('departments', 'id')->where('is_active', true)],
             'original_letters' => ['nullable', 'array', 'max:10'], 'original_letters.*' => ['file', 'max:20480', 'mimes:pdf,jpg,jpeg,png'],
             'attachments' => ['nullable', 'array', 'max:10'], 'attachments.*' => ['file', 'max:20480', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,txt,csv,zip'],
+            'appendix_files' => ['nullable', 'array', 'max:10'], 'appendix_files.*' => ['file', 'max:20480', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,txt,csv,zip'],
         ], [
             'letter_number.unique' => 'شماره نامه با این سازمان مبدأ قبلاً ثبت شده است.',
         ]);
         $mode = $correspondence->type === Correspondence::TYPE_INCOMING
             ? 'file'
             : ($data['composition_mode'] ?? (filled($data['body'] ?? $correspondence->body) ? 'editor' : 'file'));
+        $appendixMode = $correspondence->type === Correspondence::TYPE_INCOMING ? 'none' : ($data['appendix_mode'] ?? $correspondence->appendix_mode ?? 'none');
+        $appendixBody = in_array($appendixMode, ['editor', 'both'], true)
+            ? $sanitizer->sanitizeBody((string) ($data['appendix_body'] ?? $correspondence->appendix_body ?? ''))
+            : null;
+        if (in_array($appendixMode, ['editor', 'both'], true) && ! $sanitizer->hasRichContent((string) $appendixBody)) {
+            return back()->withErrors(['appendix_body' => 'متن پیوست را وارد کنید.'])->withInput();
+        }
         $body = $correspondence->type === Correspondence::TYPE_INCOMING || ($correspondence->type === Correspondence::TYPE_OUTGOING && $mode === 'file')
             ? trim(strip_tags((string) ($data['body'] ?? $correspondence->body ?? '')))
-            : ($mode === 'file' ? null : $this->sanitizeBody((string) ($data['body'] ?? $correspondence->body ?? '')));
-        if ($correspondence->type !== Correspondence::TYPE_INCOMING && in_array($mode, ['editor', 'both'], true) && trim(strip_tags((string) $body)) === '') {
+            : ($mode === 'file' ? null : $sanitizer->sanitizeBody((string) ($data['body'] ?? $correspondence->body ?? '')));
+        if ($correspondence->type !== Correspondence::TYPE_INCOMING && in_array($mode, ['editor', 'both'], true) && ! $sanitizer->hasRichContent((string) $body)) {
             return back()->withErrors(['body' => 'متن نامه را وارد کنید.'])->withInput();
         }
         if ($correspondence->type === Correspondence::TYPE_OUTGOING && $mode === 'file' && $body === '') {
@@ -1109,6 +1199,13 @@ class CorrespondenceController extends Controller
         }
         $originalLetters = array_values(array_filter((array) $request->file('original_letters', [])));
         $attachments = array_values(array_filter((array) $request->file('attachments', [])));
+        $appendixFiles = array_values(array_filter((array) $request->file('appendix_files', [])));
+        if (! in_array($appendixMode, ['file', 'both'], true)) {
+            $appendixFiles = [];
+        }
+        $existingAppendixCount = $correspondence->documents()->where('purpose', 'correspondence_appendix')->count();
+        if (in_array($appendixMode, ['file', 'both'], true) && count($appendixFiles) + $existingAppendixCount === 0) return back()->withErrors(['appendix_files' => 'برای روش انتخاب‌شده حداقل یک فایل پیوست کنید.'])->withInput();
+        if (count($appendixFiles) + $existingAppendixCount > 10) return back()->withErrors(['appendix_files' => 'حداکثر ۱۰ فایل پیوست قابل نگهداری است.'])->withInput();
         $existingOriginalCount = $correspondence->documents()->where('purpose', 'correspondence_original')->count();
         if ($correspondence->type === Correspondence::TYPE_INCOMING && count($originalLetters) + $existingOriginalCount === 0) {
             return back()->withErrors(['original_letters' => 'برای نامه وارده باید تصویر یا PDF اصل نامه پیوست باشد.'])->withInput();
@@ -1116,11 +1213,11 @@ class CorrespondenceController extends Controller
         if (count($originalLetters) + $existingOriginalCount > 10) return back()->withErrors(['original_letters' => 'حداکثر ۱۰ فایل برای اصل نامه قابل نگهداری است.'])->withInput();
         if (count($attachments) + $correspondence->documents()->where('purpose', 'correspondence_attachment')->count() > 10) return back()->withErrors(['attachments' => 'حداکثر ۱۰ فایل پیوست قابل نگهداری است.'])->withInput();
 
-        DB::transaction(function () use ($correspondence, $data, $body, $relatedLetterIds, $originalLetters, $attachments, $documents, $access, $request): void {
+        DB::transaction(function () use ($correspondence, $data, $body, $appendixMode, $appendixBody, $relatedLetterIds, $originalLetters, $attachments, $appendixFiles, $documents, $access, $request): void {
             $locked = Correspondence::query()->whereKey($correspondence->id)->lockForUpdate()->firstOrFail();
             abort_unless($access->canManageBeforeAction($locked, $request->user()), 403);
             $locked->fill([
-                'subject' => $data['subject'], 'attachment_pages' => $data['attachment_pages'] ?? null, 'classification' => $data['classification'],
+                'subject' => $data['subject'], 'attachment_pages' => $data['attachment_pages'] ?? $locked->attachment_pages, 'appendix_mode' => $appendixMode, 'appendix_body' => $appendixBody, 'classification' => $data['classification'],
                 'letter_number' => $locked->type === Correspondence::TYPE_INCOMING ? $data['letter_number'] : $locked->letter_number,
                 'body' => $body !== '' ? $body : null, 'sender_name' => $data['sender_name'] ?? null, 'recipient_name' => $data['recipient_name'] ?? null,
                 'received_at' => $data['received_at'] ?? null, 'sent_at' => $data['sent_at'] ?? null,
@@ -1153,6 +1250,9 @@ class CorrespondenceController extends Controller
             }
             foreach ($attachments as $file) {
                 $documents->create(data: ['title' => Str::limit(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME), 255, ''), 'document_type' => 'correspondence_attachment'], file: $file, creator: $request->user(), linkable: $locked, purpose: 'correspondence_attachment');
+            }
+            foreach ($appendixFiles as $file) {
+                $documents->create(data: ['title' => Str::limit(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME), 255, ''), 'document_type' => 'correspondence_appendix'], file: $file, creator: $request->user(), linkable: $locked, purpose: 'correspondence_appendix');
             }
             app(AuditServiceInterface::class)->record('correspondence.updated_before_action', $locked, null, null, [
                 'changed_fields' => array_keys($locked->getChanges()), 'related_letter_ids' => $relatedLetterIds,
@@ -1210,9 +1310,10 @@ class CorrespondenceController extends Controller
         $user = $request->user();
         $canUpdate = $user->isSystemAdmin()
             || $access->isSecretariat($user)
-            || (int) $correspondence->created_by === (int) $user->id
-            || (int) $correspondence->task?->assignee_id === (int) $user->id
-            || (int) $correspondence->task?->created_by === (int) $user->id;
+            || ($correspondence->workflow_state !== 'awaiting_dispatch'
+                && ((int) $correspondence->created_by === (int) $user->id
+                    || (int) $correspondence->task?->assignee_id === (int) $user->id
+                    || (int) $correspondence->task?->created_by === (int) $user->id));
 
         abort_unless($canUpdate, 403);
 
@@ -1220,9 +1321,9 @@ class CorrespondenceController extends Controller
             'task_id' => ['nullable', 'integer', Rule::exists('tasks', 'id')],
             'external_registration_number' => ['nullable', 'string', 'max:100'],
             'external_registered_at' => ['nullable', 'date'],
-            'dispatch_method' => ['nullable', 'string', 'max:50'],
+            'dispatch_method' => [Rule::requiredIf($correspondence->workflow_state === 'awaiting_dispatch'), 'nullable', 'string', 'max:50'],
             'external_tracking_notes' => ['nullable', 'string', 'max:5000'],
-            'sent_at' => ['nullable', 'date'],
+            'sent_at' => [Rule::requiredIf($correspondence->workflow_state === 'awaiting_dispatch'), 'nullable', 'date'],
         ]);
 
         if (array_key_exists('sent_at', $data)) {
@@ -1243,9 +1344,10 @@ class CorrespondenceController extends Controller
             $wasSent = $letter->sent_at !== null;
             $canUpdateLocked = $user->isSystemAdmin()
                 || $access->isSecretariat($user)
-                || (int) $letter->created_by === (int) $user->id
-                || (int) $letter->task()->value('assignee_id') === (int) $user->id
-                || (int) $letter->task()->value('created_by') === (int) $user->id;
+                || ($letter->workflow_state !== 'awaiting_dispatch'
+                    && ((int) $letter->created_by === (int) $user->id
+                        || (int) $letter->task()->value('assignee_id') === (int) $user->id
+                        || (int) $letter->task()->value('created_by') === (int) $user->id));
 
             abort_unless($letter->type === Correspondence::TYPE_OUTGOING && $canUpdateLocked, 403);
 
@@ -1383,34 +1485,5 @@ class CorrespondenceController extends Controller
         }
 
         return back()->with('success', 'مکاتبه با موفقیت ثبت نهایی شد.');
-    }
-
-    private function sanitizeBody(string $body): string
-    {
-        $allowedTags = '<p><div><br><strong><b><em><i><u><ul><ol><li><h2><h3><blockquote><table><thead><tbody><tr><th><td>';
-        $body = strip_tags($body, $allowedTags);
-
-        return (string) preg_replace_callback(
-            '/<(\/?)(p|div|br|strong|b|em|i|u|ul|ol|li|h2|h3|blockquote|table|thead|tbody|tr|th|td)\b([^>]*)>/i',
-            static function (array $match): string {
-                $closing = $match[1];
-                $tag = strtolower($match[2]);
-                if ($closing === '/' || $tag === 'br') {
-                    return '<'.$closing.$tag.'>';
-                }
-                $direction = preg_match('/\bdir\s*=\s*["\'](rtl|ltr)["\']/i', $match[3], $dirMatch)
-                    ? strtolower($dirMatch[1])
-                    : null;
-                $alignment = preg_match('/\bstyle\s*=\s*["\'][^"\']*text-align\s*:\s*(left|right|center|justify)\s*;?[^"\']*["\']/i', $match[3], $alignMatch)
-                    ? strtolower($alignMatch[1])
-                    : null;
-
-                return '<'.$tag
-                    .($direction !== null ? ' dir="'.$direction.'"' : '')
-                    .($alignment !== null ? ' style="text-align: '.$alignment.'"' : '')
-                    .'>';
-            },
-            $body,
-        );
     }
 }

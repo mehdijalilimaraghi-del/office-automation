@@ -1,4 +1,5 @@
 import '../css/app.css';
+import SaveFeedback from '@/Components/SaveFeedback.vue';
 import './bootstrap';
 
 import { createInertiaApp } from '@inertiajs/vue3';
@@ -16,7 +17,7 @@ createInertiaApp({
             import.meta.glob<DefineComponent>('./Pages/**/*.vue'),
         ),
     setup({ el, App, props, plugin }) {
-        createApp({ render: () => h(App, props) })
+        createApp({ render: () => [h(App, props), h(SaveFeedback)] })
             .use(plugin)
             .use(ZiggyVue)
             .mount(el);

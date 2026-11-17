@@ -7,6 +7,7 @@ namespace App\Modules\Notifications\Listeners;
 use App\Models\User;
 use App\Modules\Notifications\Services\NotificationService;
 use App\Modules\Tasks\Events\TaskApproved;
+use App\Modules\Tasks\Events\TaskCommented;
 use App\Modules\Tasks\Events\TaskAssigned;
 use App\Modules\Tasks\Events\TaskReturned;
 use App\Modules\Tasks\Events\TaskSubmitted;
@@ -58,6 +59,24 @@ final class TaskNotificationListener
         if ($task->assignee !== null) {
             $this->notifications->taskReturned($task, $task->assignee);
         }
+    }
+
+    public function commented(TaskCommented $event): void
+    {
+        $task = $event->task->loadMissing(['assignee', 'department.manager', 'project.manager']);
+        // The department manager is primary; use the project manager only when no department manager is assigned.
+        $manager = $task->department?->manager ?? $task->project?->manager;
+        $recipients = collect([$manager, $task->assignee])
+            ->filter(fn (?User $user) => $user !== null && $user->status === 'active')
+            ->unique(fn (User $user) => (int) $user->id)
+            ->reject(fn (User $user) => (int) $user->id === (int) $event->author->id);
+
+        $recipients->each(fn (User $user) => $this->notifications->taskCommented(
+            $task,
+            $user,
+            $event->author,
+            $event->comment->body,
+        ));
     }
 
     public function approved(TaskApproved $event): void

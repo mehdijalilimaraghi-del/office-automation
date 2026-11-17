@@ -23,13 +23,14 @@ class ReviewTaskAction
     {
         $this->authorizeReviewer($task, $reviewer);
 
-        if ($task->review_status !== 'pending' || $task->status !== 'submitted') {
+        if ($task->review_status !== 'pending' || $task->sub_status !== 'manager_review') {
             throw new InvalidArgumentException('این تسک در انتظار بررسی نیست.');
         }
 
         return DB::transaction(function () use ($task, $reviewer): Task {
             $task->update([
                 'status' => 'completed',
+                'sub_status' => null,
                 'review_status' => 'approved',
                 'reviewed_by' => $reviewer->id,
                 'reviewed_at' => now(),
@@ -39,16 +40,17 @@ class ReviewTaskAction
 
             TaskStatusHistory::query()->create([
                 'task_id' => $task->id,
-                'from_status' => 'submitted',
+                'from_status' => 'in_progress',
                 'to_status' => 'completed',
                 'changed_by' => $reviewer->id,
+                'note' => 'تأیید مدیر',
                 'changed_at' => now(),
             ]);
 
             $task = $task->refresh()->load(['project', 'department', 'assignee', 'creator', 'reviewedBy']);
 
             TaskApproved::dispatch($task);
-            $this->audit->record('task.approved', $task, ['status' => 'submitted', 'review_status' => 'pending'], ['status' => $task->status, 'review_status' => $task->review_status, 'review_note' => $task->review_note]);
+            $this->audit->record('task.approved', $task, ['status' => 'in_progress', 'sub_status' => 'manager_review', 'review_status' => 'pending'], ['status' => $task->status, 'review_status' => $task->review_status, 'review_note' => $task->review_note]);
 
             return $task;
         });
@@ -58,13 +60,14 @@ class ReviewTaskAction
     {
         $this->authorizeReviewer($task, $reviewer);
 
-        if ($task->review_status !== 'pending' || $task->status !== 'submitted') {
+        if ($task->review_status !== 'pending' || $task->sub_status !== 'manager_review') {
             throw new InvalidArgumentException('این تسک در انتظار بررسی نیست.');
         }
 
         return DB::transaction(function () use ($task, $reviewer, $note): Task {
             $task->update([
                 'status' => 'in_progress',
+                'sub_status' => 'returned_for_completion',
                 'review_status' => 'rejected',
                 'reviewed_by' => $reviewer->id,
                 'reviewed_at' => now(),
@@ -74,16 +77,17 @@ class ReviewTaskAction
 
             TaskStatusHistory::query()->create([
                 'task_id' => $task->id,
-                'from_status' => 'submitted',
+                'from_status' => 'in_progress',
                 'to_status' => 'in_progress',
                 'changed_by' => $reviewer->id,
+                'note' => 'برگشت برای تکمیل: '.$note,
                 'changed_at' => now(),
             ]);
 
             $task = $task->refresh()->load(['project', 'department', 'assignee', 'creator', 'reviewedBy']);
 
             TaskReturned::dispatch($task);
-            $this->audit->record('task.returned', $task, ['status' => 'submitted', 'review_status' => 'pending'], ['status' => $task->status, 'review_status' => $task->review_status, 'review_note' => $task->review_note]);
+            $this->audit->record('task.returned', $task, ['status' => 'in_progress', 'sub_status' => 'manager_review', 'review_status' => 'pending'], ['status' => $task->status, 'review_status' => $task->review_status, 'review_note' => $task->review_note]);
 
             return $task;
         });

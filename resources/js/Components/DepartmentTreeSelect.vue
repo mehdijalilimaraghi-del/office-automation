@@ -1,0 +1,134 @@
+<script setup lang="ts">
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { ChevronDown, ChevronLeft, Search, X } from '@lucide/vue';
+import DepartmentIcon from '@/Components/DepartmentIcon.vue';
+interface DepartmentOption { id:number; name:string; parent_id?:number|null; tree_label?:string|null; icon?:string|null; manager?:{name:string}|null; manager_name?:string|null; is_active?:boolean; }
+interface DepartmentSpecialOption { value:string; label:string; }
+const props=withDefaults(defineProps<{departments:DepartmentOption[];specialOptions?:DepartmentSpecialOption[];allowInactiveSelection?:boolean;modelValue?:number|string|null;modelValues?:Array<number|string>;multiple?:boolean;placeholder?:string;disabled?:boolean;clearable?:boolean}>(),{modelValue:null,modelValues:()=>[],specialOptions:()=>[],allowInactiveSelection:false,multiple:false,placeholder:'انتخاب واحد',disabled:false,clearable:true});
+const emit=defineEmits<{ 'update:modelValue':[value:number|string|null]; 'update:modelValues':[value:Array<number|string>] }>();
+const isOpen=ref(false), query=ref(''), expandedIds=ref<Set<number>>(new Set());
+const triggerRef=ref<HTMLButtonElement|null>(null);
+const dropdownRef=ref<HTMLDivElement|null>(null);
+const dropdownStyle=ref<Record<string,string>>({});
+const listStyle=ref<Record<string,string>>({});
+async function updateDropdownPosition():Promise<void> {
+    const trigger=triggerRef.value;
+    if(!trigger)return;
+    const rect=trigger.getBoundingClientRect();
+    const margin=8;
+    const viewportWidth=window.innerWidth;
+    const viewportHeight=window.innerHeight;
+    const width=Math.min(Math.max(rect.width,300),Math.max(0,viewportWidth-margin*2));
+    const left=Math.min(Math.max(margin,rect.right-width),Math.max(margin,viewportWidth-width-margin));
+    const above=Math.max(0,rect.top-margin);
+    const below=Math.max(0,viewportHeight-rect.bottom-margin);
+
+    dropdownStyle.value={
+        position:'fixed',
+        left:`${left}px`,
+        width:`${width}px`,
+        top:`${margin}px`,
+        maxHeight:`${Math.max(80,Math.min(420,Math.max(above,below)))}px`,
+        zIndex:'9999',
+    };
+    listStyle.value={maxHeight:'288px'};
+    await nextTick();
+
+    const dropdown=dropdownRef.value;
+    if(!dropdown)return;
+    const desiredHeight=Math.max(80,Math.min(420,dropdown.scrollHeight));
+    const openAbove=below<desiredHeight&&above>below;
+    const available=Math.max(80,Math.min(desiredHeight,openAbove?above:below));
+    const top=openAbove
+        ? Math.max(margin,rect.top-available-4)
+        : Math.min(rect.bottom+4,Math.max(margin,viewportHeight-available-margin));
+
+    dropdownStyle.value={
+        position:'fixed',
+        left:`${left}px`,
+        width:`${width}px`,
+        top:`${top}px`,
+        maxHeight:`${available}px`,
+        zIndex:'9999',
+    };
+    listStyle.value={maxHeight:`${Math.max(48,Math.min(288,available-104))}px`};
+}
+function handleDocumentPointerDown(event:PointerEvent):void {
+    const target=event.target;
+    if(target instanceof Node&&(triggerRef.value?.contains(target)||dropdownRef.value?.contains(target)))return;
+    isOpen.value=false;
+}
+function handleDocumentKeydown(event:KeyboardEvent):void {
+    if(event.key==='Escape'&&isOpen.value){isOpen.value=false;triggerRef.value?.focus();}
+}
+function handleViewportChange(event?:Event):void {
+    if(!isOpen.value)return;
+    const target=event?.target;
+    if(target instanceof Node&&dropdownRef.value?.contains(target))return;
+    const rect=triggerRef.value?.getBoundingClientRect();
+    if(event?.type==='scroll'&&rect
+        && (rect.bottom<0||rect.top>window.innerHeight||rect.right<0||rect.left>window.innerWidth)) {
+        isOpen.value=false;
+        return;
+    }
+    void updateDropdownPosition();
+}
+watch(isOpen,async(open)=>{
+    if(open){
+        await nextTick();
+        await updateDropdownPosition();
+        window.addEventListener('resize',handleViewportChange);
+        window.addEventListener('scroll',handleViewportChange,true);
+    }else{
+        window.removeEventListener('resize',handleViewportChange);
+        window.removeEventListener('scroll',handleViewportChange,true);
+    }
+});
+onMounted(()=>{
+    document.addEventListener('pointerdown',handleDocumentPointerDown);
+    document.addEventListener('keydown',handleDocumentKeydown);
+});
+onBeforeUnmount(()=>{
+    document.removeEventListener('pointerdown',handleDocumentPointerDown);
+    document.removeEventListener('keydown',handleDocumentKeydown);
+    window.removeEventListener('resize',handleViewportChange);
+    window.removeEventListener('scroll',handleViewportChange,true);
+});
+const departments=computed(()=>{const list=[...props.departments],ids=new Set(list.map(x=>x.id));return list.map(x=>({...x,parent_id:x.parent_id!=null&&ids.has(Number(x.parent_id))?Number(x.parent_id):null}));});
+const children=computed(()=>{const map=new Map<number|null,DepartmentOption[]>();for(const d of departments.value){const p=d.parent_id??null;map.set(p,[...(map.get(p)??[]),d]);}for(const [p,items] of map)map.set(p,items.sort((a,b)=>a.name.localeCompare(b.name,'fa')));return map;});
+const parentIds=computed(()=>departments.value.filter(d=>(children.value.get(d.id)?.length??0)>0).map(d=>d.id));
+watch(()=>props.departments,()=>{expandedIds.value=new Set(departments.value.filter(d=>d.parent_id===null).map(d=>d.id));},{immediate:true});
+const matches=computed(()=>{const term=query.value.trim().toLocaleLowerCase('fa');if(!term)return null;const byId=new Map(departments.value.map(d=>[d.id,d]));const ids=new Set<number>();for(const d of departments.value){if(!d.name.toLocaleLowerCase('fa').includes(term))continue;let current:DepartmentOption|undefined=d;while(current&&!ids.has(current.id)){ids.add(current.id);current=current.parent_id==null?undefined:byId.get(current.parent_id);}}return ids;});
+const nodes=computed(()=>{const rows:Array<{department:DepartmentOption;depth:number;hasChildren:boolean}>=[];const visit=(parentId:number|null,depth:number,ancestors:Set<number>)=>{const list=(children.value.get(parentId)??[]).filter(d=>!matches.value||matches.value.has(d.id));for(const d of list){if(ancestors.has(d.id))continue;const has=(children.value.get(d.id)?.length??0)>0;rows.push({department:d,depth,hasChildren:has});if(has&&(matches.value||expandedIds.value.has(d.id))){const next=new Set(ancestors);next.add(d.id);visit(d.id,depth+1,next);}}};visit(null,0,new Set());if(!rows.length&&departments.value.length)return departments.value.filter(d=>!matches.value||matches.value.has(d.id)).sort((a,b)=>a.name.localeCompare(b.name,'fa')).map(department=>({department,depth:0,hasChildren:false}));return rows;});
+const selected=computed(()=>{const ids=props.multiple?props.modelValues.map(Number):(props.modelValue==null||props.modelValue===''?[]:[Number(props.modelValue)]);return departments.value.filter(d=>ids.includes(d.id));});
+const selectedLabel=computed(()=>props.specialOptions.find(option=>option.value===String(props.modelValue))?.label??selected.value[0]?.name??'');
+function toggle(id:number){const next=new Set(expandedIds.value);next.has(id)?next.delete(id):next.add(id);expandedIds.value=next;}
+function choose(d:DepartmentOption){if(props.multiple){const ids=props.modelValues.map(Number);emit('update:modelValues',ids.includes(d.id)?props.modelValues.filter(id=>Number(id)!==d.id):[...props.modelValues,d.id]);return;}emit('update:modelValue',typeof props.modelValue==='string'?String(d.id):d.id);isOpen.value=false;query.value='';}
+function chooseSpecial(value:string){if(props.multiple)return;emit('update:modelValue',value);isOpen.value=false;query.value='';}
+function clear(){if(props.multiple)emit('update:modelValues',[]);else emit('update:modelValue',null);}
+</script>
+<template>
+<div class="relative w-full" dir="rtl">
+<button ref="triggerRef" type="button" :disabled="disabled" class="flex min-h-11 w-full items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-right text-sm shadow-sm transition hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:bg-slate-100" :aria-expanded="isOpen" @click="isOpen=!isOpen">
+<DepartmentIcon class="shrink-0 text-slate-500" :icon="selected[0]?.icon" :size="18"/>
+<span v-if="multiple&&selected.length" class="flex min-w-0 flex-1 flex-wrap gap-1"><span v-for="d in selected" :key="d.id" class="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-2 py-1 text-xs text-indigo-800"><DepartmentIcon :icon="d.icon" :size="14"/><span class="max-w-48 truncate">{{d.name}}</span></span></span>
+<span v-else class="min-w-0 flex-1 truncate" :class="selectedLabel?'text-slate-800':'text-slate-400'">{{selectedLabel||placeholder}}</span>
+<span v-if="clearable&&(multiple?modelValues.length>0:modelValue!==null&&modelValue!==undefined&&modelValue!=='')" role="button" tabindex="0" class="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="پاک کردن انتخاب واحد" @click.stop="clear" @keydown.enter.stop.prevent="clear"><X :size="15"/></span>
+<ChevronDown :size="16" class="shrink-0 text-slate-500 transition-transform" :class="isOpen?'rotate-180':''"/>
+</button>
+<Teleport to="body">
+<div v-if="isOpen" ref="dropdownRef" :style="dropdownStyle" class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.16)] ring-1 ring-slate-900/5" dir="rtl">
+<div class="border-b border-slate-100 p-2.5"><div class="relative"><Search :size="16" class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"/><input v-model="query" type="search" class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pr-9 pl-3 text-sm outline-none focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/10" placeholder="جستجوی واحد..." @keydown.esc="isOpen=false"/></div>
+<div class="mt-2 flex items-center justify-between px-1 text-xs text-slate-500"><span>{{nodes.length}} واحد در نمایش</span><span class="flex items-center gap-3"><button type="button" class="hover:text-indigo-700" @click="expandedIds=new Set(parentIds)">بازکردن همه</button><button type="button" class="hover:text-indigo-700" @click="expandedIds=new Set()">بستن همه</button></span></div></div>
+<div :style="listStyle" class="min-h-0 overflow-y-auto overscroll-contain p-1.5">
+<button v-for="option in specialOptions" :key="option.value" type="button" class="mb-1 flex min-h-9 w-full items-center rounded-lg px-3 text-right text-sm transition hover:bg-indigo-50" :class="String(modelValue)===option.value?'bg-indigo-50 font-semibold text-indigo-900':'text-slate-700'" @click="chooseSpecial(option.value)">{{option.label}}</button>
+<div v-if="!nodes.length" class="px-3 py-8 text-center text-sm text-slate-500">واحدی با این عبارت پیدا نشد.</div>
+<div v-for="node in nodes" :key="node.department.id" class="group relative flex min-h-9 items-center gap-1 rounded-lg px-1.5 text-sm transition hover:bg-indigo-50" :class="[node.department.is_active===false?'opacity-50':'', selected.some(d=>d.id===node.department.id)?'bg-indigo-50 font-semibold text-indigo-900':'text-slate-700']" :style="{paddingRight:(6+node.depth*20)+'px'}" role="treeitem" :aria-level="node.depth+1" :aria-selected="selected.some(d=>d.id===node.department.id)">
+<span v-for="level in node.depth" :key="level" aria-hidden="true" class="pointer-events-none absolute inset-y-0 border-r border-dashed border-slate-200" :style="{ right: (15 + (level - 1) * 20) + 'px' }"></span><span v-if="node.depth" aria-hidden="true" class="pointer-events-none absolute top-1/2 border-t border-slate-200" :style="{ right: (15 + (node.depth - 1) * 20) + 'px', width: '12px' }"></span><button type="button" class="relative z-10 flex h-7 w-6 shrink-0 items-center justify-center rounded text-slate-400 hover:bg-slate-200 hover:text-slate-700" :class="node.hasChildren?'':'invisible'" :aria-label="expandedIds.has(node.department.id)?'بستن زیرواحدها':'بازکردن زیرواحدها'" @click="toggle(node.department.id)"><ChevronDown v-if="matches||expandedIds.has(node.department.id)" :size="14"/><ChevronLeft v-else :size="14"/></button>
+<button type="button" class="flex min-w-0 flex-1 items-center gap-2 py-1 text-right disabled:cursor-not-allowed" :disabled="node.department.is_active===false&&!allowInactiveSelection" @click="choose(node.department)"><DepartmentIcon :icon="node.department.icon" :size="17" class="shrink-0 text-amber-600"/><span class="min-w-0 flex-1 truncate">{{node.department.name}}</span><span v-if="node.department.manager_name||node.department.manager?.name" class="max-w-28 truncate text-[11px] font-normal text-slate-400">{{node.department.manager_name||node.department.manager?.name}}</span><span v-if="selected.some(d=>d.id===node.department.id)" class="shrink-0 text-xs text-indigo-700">✓</span></button>
+</div></div>
+<div v-if="multiple" class="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-3 py-2"><span class="text-xs text-slate-500">{{modelValues.length}} واحد انتخاب شده</span><button type="button" class="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700" @click="isOpen=false">تأیید انتخاب‌ها</button></div>
+</div>
+</Teleport>
+</div>
+</template>

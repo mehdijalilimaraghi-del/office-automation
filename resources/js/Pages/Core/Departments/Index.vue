@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppSelect from '@/Components/AppSelect.vue';
 import { computed, ref, watch } from 'vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
@@ -7,6 +8,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import UserAvatar from '@/Components/UserAvatar.vue';
 import DepartmentIcon from '@/Components/DepartmentIcon.vue';
+import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
 import { departmentIconOptions } from '@/Utils/departmentIcons';
 
@@ -49,6 +51,8 @@ interface Department {
     is_active: boolean;
     is_system_default: boolean;
     manager_id: number | null;
+    manager_signature_url?: string | null;
+    manager_signature_active?: boolean;
     manager?: { id: number; name: string } | null;
     parent?: { id: number; name: string } | null;
     members?: DepartmentMember[];
@@ -90,7 +94,11 @@ const showPositionForm = ref(false);
 const form = useForm({
     parent_id: null as number | null,
     manager_id: null as number | null,
+    manager_signature: null as File | null,
+    manager_signature_active: false,
+    remove_manager_signature: false,
     name: '',
+    code: '',
     icon: 'building-2',
     description: '',
     is_active: true,
@@ -234,7 +242,11 @@ const resetDepartmentForm = () => {
     form.reset();
     form.is_active = true;
     form.icon = 'building-2';
+    form.code = '';
     form.custom_fields = {};
+    form.manager_signature = null;
+    form.manager_signature_active = false;
+    form.remove_manager_signature = false;
     form.clearErrors();
 };
 
@@ -250,7 +262,11 @@ const openEdit = (department: Department) => {
     editingDepartment.value = department;
     form.parent_id = department.parent_id;
     form.manager_id = department.manager_id;
+    form.manager_signature = null;
+    form.manager_signature_active = department.manager_signature_active ?? false;
+    form.remove_manager_signature = false;
     form.name = department.name;
+    form.code = department.code ?? '';
     form.icon = department.icon ?? 'building-2';
     form.description = department.description ?? '';
     form.is_active = department.is_active;
@@ -262,6 +278,7 @@ const openEdit = (department: Department) => {
 const submitDepartment = () => {
     const options = {
         preserveScroll: true,
+        forceFormData: true,
         onSuccess: () => {
             showDepartmentForm.value = false;
             editingDepartment.value = null;
@@ -613,7 +630,7 @@ watch(
                                                     dir="ltr"
                                                     class="rounded-full bg-white/10 px-2.5 py-1 text-[11px] text-slate-300"
                                                 >
-                                                    <span class="sr-only">کد سیستمی: </span>{{ selectedDepartment.code }}
+                                                    <span class="sr-only">کد واحد: </span>{{ selectedDepartment.code }}
                                                 </span>
                                             </div>
 
@@ -866,7 +883,7 @@ watch(
                                             v-if="abilities.departments_manage_positions && selectedDepartment.members?.length"
                                             class="mt-4 flex flex-col gap-2 sm:flex-row"
                                         >
-                                            <select
+                                            <AppSelect
                                                 v-model="assignmentForm.user_id"
                                                 required
                                                 class="min-w-0 flex-1 rounded-lg border-slate-200 bg-white text-xs text-slate-700 focus:border-teal-500 focus:ring-teal-500"
@@ -879,7 +896,7 @@ watch(
                                                 >
                                                     {{ member.name }}
                                                 </option>
-                                            </select>
+                                            </AppSelect>
 
                                             <label class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-600">
                                                 <input
@@ -924,11 +941,11 @@ watch(
             class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
             @click.self="showDepartmentForm = false"
         >
-            <div class="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div role="dialog" aria-modal="true" aria-labelledby="department-form-title" class="flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
                 <div class="flex items-start justify-between border-b border-slate-100 px-5 py-5 sm:px-6">
                     <div>
                         <p class="text-xs font-semibold text-teal-700">Internal Organization</p>
-                        <h3 class="mt-1 text-lg font-bold text-slate-950">
+                        <h3 id="department-form-title" class="mt-1 text-lg font-bold text-slate-950">
                             {{ editingDepartment ? 'ویرایش واحد سازمانی' : 'ایجاد واحد سازمانی' }}
                         </h3>
                         <p class="mt-1 text-xs text-slate-500">اطلاعات ساختاری واحد را تعریف کنید.</p>
@@ -944,12 +961,18 @@ watch(
                     </button>
                 </div>
 
-                <form class="space-y-5 p-5 sm:p-6" @submit.prevent="submitDepartment">
+                <form class="min-h-0 space-y-5 overflow-y-auto overscroll-contain p-5 sm:p-6" @submit.prevent="submitDepartment">
                     <div class="grid gap-5 md:grid-cols-2">
                         <div>
                             <label class="mb-2 block text-sm font-semibold text-slate-700">نام واحد</label>
                             <TextInput v-model="form.name" class="block min-h-11 w-full rounded-xl text-right" required maxlength="150" />
                             <InputError class="mt-1.5" :message="form.errors.name" />
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-sm font-semibold text-slate-700">کد کوتاه واحد</label>
+                            <TextInput v-model="form.code" dir="ltr" class="block min-h-11 w-full rounded-xl text-left uppercase" required maxlength="20" placeholder="IT" />
+                            <p class="mt-1 text-xs text-slate-400">کد یکتا و انگلیسی؛ در قالب شماره نامه استفاده می‌شود.</p>
+                            <InputError class="mt-1.5" :message="form.errors.code" />
                         </div>
 
                         <div class="md:col-span-2">
@@ -986,21 +1009,13 @@ watch(
 
                         <div>
                             <label class="mb-2 block text-sm font-semibold text-slate-700">واحد والد</label>
-                            <select
-                                v-model="form.parent_id"
-                                class="block min-h-11 w-full rounded-xl border-slate-300 bg-white text-sm text-slate-700 focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
-                            >
-                                <option :value="null">ریشه سازمان</option>
-                                <option v-for="department in parentOptions" :key="department.id" :value="department.id">
-                                    {{ department.name }}
-                                </option>
-                            </select>
+                            <DepartmentTreeSelect v-model="form.parent_id" :departments="parentOptions" placeholder="ریشه سازمان (بدون واحد والد)" />
                             <InputError class="mt-1.5" :message="form.errors.parent_id" />
                         </div>
 
                         <div>
                             <label class="mb-2 block text-sm font-semibold text-slate-700">مدیر واحد</label>
-                            <select
+                            <AppSelect
                                 v-model="form.manager_id"
                                 class="block min-h-11 w-full rounded-xl border-slate-300 bg-white text-sm text-slate-700 focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
                             >
@@ -1008,9 +1023,35 @@ watch(
                                 <option v-for="user in props.users" :key="user.id" :value="user.id">
                                     {{ user.name }}
                                 </option>
-                            </select>
+                            </AppSelect>
                             <InputError class="mt-1.5" :message="form.errors.manager_id" />
                         </div>
+                    </div>
+
+                    <div class="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div>
+                            <label class="mb-2 block text-sm font-semibold text-slate-700">تصویر امضای مدیر این واحد</label>
+                            <input
+                                type="file"
+                                accept="image/png,image/jpeg,image/webp"
+                                class="block w-full text-sm text-slate-600 file:ml-3 file:rounded-lg file:border-0 file:bg-white file:px-4 file:py-2 file:font-semibold file:text-slate-700"
+                                @change="(event) => { form.manager_signature = (event.target as HTMLInputElement).files?.[0] ?? null; form.remove_manager_signature = false; }"
+                            />
+                            <p class="mt-1 text-xs text-slate-500">فقط تصویر PNG، JPG یا WEBP تا ۲ مگابایت؛ این امضا متعلق به واحد است، نه حساب کاربری مدیر.</p>
+                            <InputError class="mt-1.5" :message="form.errors.manager_signature" />
+                        </div>
+                        <div v-if="editingDepartment?.manager_signature_url" class="flex items-center gap-3">
+                            <img v-if="!form.remove_manager_signature" :src="editingDepartment.manager_signature_url" alt="امضای فعلی مدیر واحد" class="h-16 max-w-40 rounded border border-slate-200 bg-white object-contain p-2" />
+                            <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                                <input v-model="form.remove_manager_signature" type="checkbox" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500" />
+                                حذف امضای فعلی
+                            </label>
+                        </div>
+                        <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+                            <input v-model="form.manager_signature_active" type="checkbox" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
+                            استفاده از امضای مدیر در خروجی نامه
+                        </label>
+                        <InputError class="mt-1.5" :message="form.errors.manager_signature_active" />
                     </div>
 
                     <div>

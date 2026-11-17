@@ -97,6 +97,10 @@ class WorkflowService
                     'status' => 'completed',
                     'completed_at' => now(),
                 ]);
+                $instance->correspondences()->update([
+                    'workflow_state' => 'workflow_completed',
+                    'current_user_id' => null,
+                ]);
 
                 return $instance->refresh()->load(['definition', 'steps.workflowStep', 'steps.task']);
             }

@@ -28,6 +28,10 @@ class Department extends Model
             ->where('entity_type', self::class);
     }
 
+    protected $hidden = [
+        'manager_signature_path',
+    ];
+
     protected $fillable = [
         'parent_id',
         'manager_id',
@@ -37,6 +41,8 @@ class Department extends Model
         'description',
         'is_active',
         'is_system_default',
+        'manager_signature_path',
+        'manager_signature_active',
     ];
 
     protected function casts(): array
@@ -46,6 +52,7 @@ class Department extends Model
             'is_system_default' => 'boolean',
             'parent_id' => 'integer',
             'manager_id' => 'integer',
+            'manager_signature_active' => 'boolean',
         ];
     }
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppSelect from '@/Components/AppSelect.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Button } from '@/Components/ui/button';
 import { Head, Link, useForm } from '@inertiajs/vue3';
@@ -78,11 +79,11 @@ const submit = (): void => {
 
                     <div class="space-y-2">
                         <label for="status" class="text-sm font-medium">وضعیت</label>
-                        <select id="status" v-model="form.status" required class="w-full rounded-md border bg-background px-3 py-2 text-sm">
+                        <AppSelect id="status" v-model="form.status" required class="w-full rounded-md border bg-background px-3 py-2 text-sm">
                             <option v-for="option in statusOptions" :key="option.value" :value="option.value">
                                 {{ option.label }}
                             </option>
-                        </select>
+                        </AppSelect>
                         <p v-if="form.errors.status" class="text-sm text-destructive">{{ form.errors.status }}</p>
                     </div>
 

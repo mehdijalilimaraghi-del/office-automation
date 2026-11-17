@@ -10,9 +10,9 @@ The project must be developed incrementally. Before making a structural or archi
 
 ## Core Project Goals
 
-* Initial release: Projects and Tasks management.
-* Future releases: extend the system with additional office-automation modules without rewriting the core.
-* Architecture: Modular Monolith.
+* Product: a Persian-language internal office-automation platform.
+* Implemented areas include Core/organization/settings, Projects, Tasks, Dashboard, Cartable, Documents, Notifications, Workflows, and Correspondence. Confirm the current code and roadmap before assuming any feature is complete.
+* Continue extending the Modular Monolith; do not reduce the product scope to the original Projects/Tasks bootstrap.
 * Initial deployment: company LAN.
 * Future deployment may be VPS, hosting, or cloud.
 * Do not introduce microservices.
@@ -70,28 +70,24 @@ Target structure:
 
 ```text
 app/
-├── Core/
-│   ├── Authentication/
-│   ├── Users/
-│   ├── Authorization/
-│   ├── Departments/
-│   ├── Settings/
-│   └── Shared/
-│
+├── Core/                 # identity, organization, permissions, settings, shared capabilities
 ├── Modules/
 │   ├── Projects/
-│   └── Tasks/
-│
-└── Shared/
-    ├── Infrastructure/
-    └── Support/
+│   ├── Tasks/
+│   ├── Dashboard/
+│   ├── Cartable/
+│   ├── Documents/
+│   ├── Notifications/
+│   ├── Workflows/
+│   └── Correspondence/
+└── Shared/               # intentionally small cross-cutting infrastructure/support
 ```
 
 Rules:
 
 1. Core owns identity and system-wide capabilities.
 2. Projects owns project-specific business concepts.
-3. Tasks owns task-specific business concepts.
+3. Each business module owns its own business concepts. Current module directories are listed in the architecture tree; verify the repository before adding or moving modules.
 4. Modules must not directly access another module's internal implementation.
 5. Cross-module communication should use explicit contracts, application services, interfaces, or events when appropriate.
 6. Avoid circular dependencies.
@@ -315,17 +311,34 @@ Rules:
 * If a command fails, report the actual failure and fix the root cause.
 * Do not skip tests merely to continue development.
 
-## Git
+## Git and branch safety
 
-Git is part of the development workflow.
+The only permitted development branch for this project is `development`.
 
-Rules:
+* Before any Git operation, inspect `git status --short` and `git branch --show-current`.
+* Make changes, commits, and pushes only on `development`.
+* Never modify, merge into, push to, or create commits for `master`, `release`, or `server`.
+* Never force-push, reset, clean, or discard user changes. Do not rewrite history.
+* Do not switch branches to bypass this restriction. If the working tree is not on `development`, stop and report it.
+* Keep commits focused and meaningful. Never include `.env`, credentials, tokens, private keys, generated secrets, or local machine files.
+* Before committing, inspect the complete diff and confirm that only intended files changed.
+* The user authorized Codex to push completed work automatically after validation. Push to `origin development` only after all applicable local checks pass, the diff is reviewed, and no secrets or unrelated changes are present. If any required check fails or cannot run, do not push.
+* Do not force or bypass GitHub rules. The current branch protection state must be checked rather than assumed. Do not change repository/branch protection settings without explicit authorization.
+* GitHub Actions validates commits after they reach GitHub; it does not retroactively gate a direct push. The pre-push validation gate is therefore the local Codex workflow.
 
-* Keep commits meaningful and focused.
-* Do not rewrite history unless explicitly requested.
-* Do not discard user changes.
-* Before major milestones, inspect the working tree.
-* Prefer a stable checkpoint after completing a coherent phase.
+## Codex execution protocol
+
+For every implementation task:
+
+1. Read this file and the relevant sections of `AI_CONTEXT.md`, `CURRENT_STATUS.md`, `ROADMAP.md`, `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, and `DEVELOPMENT.md`.
+2. Inspect the current branch, working tree, relevant implementation, tests, and recent history before editing.
+3. Make the smallest coherent change. Do not mix unrelated refactors.
+4. Run the relevant focused tests, then the full Laravel test suite when feasible, plus `npm run build` (which includes `vue-tsc`). Run additional checks required by the change.
+5. Inspect test output and the full Git diff. Never claim a check passed unless it actually ran and passed.
+6. Update all six project context documents when implementation, architecture, behavior, test coverage, or project status changes.
+7. Commit and push to `origin development` only when the validation and review gates above are satisfied. Never push when a check is failing, skipped without justification, or blocked by missing infrastructure.
+
+For correspondence templates and printing, a successful PHP test or frontend build does not prove browser rendering or physical print correctness. Keep browser/print acceptance explicitly pending until it is actually verified.
 
 ## Project Phases
 

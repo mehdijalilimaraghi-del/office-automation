@@ -1,14 +1,18 @@
 <script setup lang="ts">
+import AppSelect from '@/Components/AppSelect.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, ref } from 'vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
+import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 import UserAvatar from '@/Components/UserAvatar.vue';
 import { Eye, EyeOff } from '@lucide/vue';
 
 interface Department {
     id: number;
     name: string;
+    parent_id?: number | null;
+    icon?: string | null;
     code: string | null;
     is_active: boolean;
     pivot?: {
@@ -613,7 +617,7 @@ function currentUserId(): number | null {
                             <div v-for="field in props.customFields" :key="field.id">
                                 <label class="mb-1.5 block text-sm font-semibold text-slate-700">{{ field.label }}<span v-if="field.is_required" class="text-red-500"> *</span></label>
                                 <textarea v-if="field.type === 'textarea'" :value="String(form.custom_fields[field.key] ?? '')" @input="form.custom_fields[field.key] = ($event.target as HTMLTextAreaElement).value" rows="3" class="w-full rounded-xl border-slate-200 bg-white"></textarea>
-                                <select v-else-if="field.type === 'select'" v-model="form.custom_fields[field.key]" class="w-full rounded-xl border-slate-200 bg-white"><option :value="null">انتخاب کنید</option><option v-for="option in field.options ?? []" :key="option" :value="option">{{ option }}</option></select>
+                                <AppSelect v-else-if="field.type === 'select'" v-model="form.custom_fields[field.key]" class="w-full rounded-xl border-slate-200 bg-white"><option :value="null">انتخاب کنید</option><option v-for="option in field.options ?? []" :key="option" :value="option">{{ option }}</option></AppSelect>
                                 <input v-else-if="field.type === 'boolean'" v-model="form.custom_fields[field.key]" type="checkbox" class="rounded border-slate-300 text-teal-600" />
                                 <input v-else v-model="form.custom_fields[field.key]" :type="field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'" class="w-full rounded-xl border-slate-200 bg-white" />
                                 <p v-if="(form.errors as Record<string, CustomFieldError>)['custom_fields.' + field.key]" class="mt-1 text-xs text-red-600">{{ (form.errors as Record<string, CustomFieldError>)['custom_fields.' + field.key] }}</p>
@@ -630,7 +634,7 @@ function currentUserId(): number | null {
                                 <p class="mt-1 text-xs leading-5 text-slate-500">نقش کاربری، مجموعه مجوزهای این کاربر در سامانه را مشخص می‌کند.</p>
                             </div>
                             <div>
-                                 <select
+                                 <AppSelect
                                      v-model="selectedRoleId"
                                      aria-label="نقش کاربری"
                                      class="w-full rounded-xl border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700 shadow-sm transition focus:border-teal-500 focus:ring-teal-500"
@@ -639,7 +643,7 @@ function currentUserId(): number | null {
                                      <option v-for="role in activeRoles" :key="role.id" :value="role.id">
                                          {{ role.name }}{{ role.code ? ` — ${role.code}` : '' }}
                                      </option>
-                                 </select>
+                                 </AppSelect>
                                  <p v-if="activeRoles.length === 0" class="mt-2 text-xs text-slate-400">
                                      نقش کاربری فعالی برای تخصیص تعریف نشده است؛ این کاربر به‌صورت عادی و بدون نقش ایجاد می‌شود.
                                  </p>
@@ -656,32 +660,24 @@ function currentUserId(): number | null {
                     </div>
                 </form>
             </div>
+        </div>
+
         <div v-if="membershipUser" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
             <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
                 <div class="flex items-center justify-between">
                     <div><p class="text-xs font-semibold text-teal-600">ساختار سازمانی</p><h3 class="mt-1 text-lg font-bold text-slate-900">مدیریت واحدهای کاربر</h3><p class="mt-1 text-xs text-slate-500">{{ membershipUser.name }}</p></div>
                     <button type="button" class="rounded-lg p-2 text-xl text-slate-400 hover:bg-slate-100" @click="closeMembership">×</button>
                 </div>
-                <div class="mt-5 max-h-72 space-y-2 overflow-y-auto">
-                    <label v-for="department in props.departments" :key="department.id" class="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 hover:bg-slate-50">
-                        <input type="checkbox" :checked="membershipForm.department_ids.includes(department.id)" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500" @change="toggleMembershipDepartment(department.id)" />
-                        <span class="text-sm text-slate-700">{{ department.name }}</span>
-                    </label>
-                </div>
+                <div class="mt-5"><DepartmentTreeSelect v-model:model-values="membershipForm.department_ids" :departments="props.departments" multiple placeholder="انتخاب واحدهای کاربر" /></div>
                 <p v-if="membershipForm.errors.department_ids" class="mt-2 text-xs text-red-600">{{ membershipForm.errors.department_ids }}</p>
                 <label class="mt-4 mb-1.5 block text-xs font-semibold text-slate-500">واحد اصلی</label>
-                <select v-model="membershipForm.primary_department_id" class="w-full rounded-xl border-slate-200 text-sm focus:border-teal-500 focus:ring-teal-500">
-                    <option :value="null">بدون واحد اصلی</option>
-                    <option v-for="department in props.departments.filter(d => membershipForm.department_ids.includes(d.id))" :key="department.id" :value="department.id">{{ department.name }}</option>
-                </select>
+                <DepartmentTreeSelect v-model="membershipForm.primary_department_id" :departments="props.departments.filter(d => membershipForm.department_ids.includes(d.id))" placeholder="بدون واحد اصلی" />
                 <p v-if="membershipForm.errors.primary_department_id" class="mt-1 text-xs text-red-600">{{ membershipForm.errors.primary_department_id }}</p>
                 <div class="mt-6 flex justify-end gap-3 border-t border-slate-200 pt-4">
                     <button type="button" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700" @click="closeMembership">انصراف</button>
                     <button type="button" :disabled="membershipForm.processing" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50" @click="submitMembership">{{ membershipForm.processing ? 'در حال ذخیره...' : 'ذخیره عضویت' }}</button>
                 </div>
             </div>
-        </div>
-
         </div>
     </AuthenticatedLayout>
 </template>

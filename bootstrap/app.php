@@ -21,6 +21,10 @@ return Application::configure(
             HandleInertiaRequests::class,
         ]);
 
+        $middleware->validateCsrfTokens(except: [
+            'correspondence/scanner/upload/*',
+        ]);
+
         $middleware->alias([
             'permission' => EnsureUserHasPermission::class,
         ]);

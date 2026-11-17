@@ -528,6 +528,7 @@ class TaskHttpTest extends TestCase
         $response->assertInertia(fn (Assert $page) => $page
             ->component('Tasks/Index')
             ->has('tasks.data', 1)
+            ->where('canFilterUnit', false)
             ->where('tasks.data.0.id', $ownTask->id));
 
         $this->assertNotSame($ownTask->id, $hiddenTask->id);
@@ -644,7 +645,7 @@ class TaskHttpTest extends TestCase
 
         $this->actingAs($user)
             ->patch(route('tasks.change-status', $task), [
-                'status' => 'completed',
+                'status' => 'cancelled',
             ])
             ->assertForbidden();
 
@@ -711,6 +712,47 @@ class TaskHttpTest extends TestCase
         );
     }
 
+    public function test_dashboard_task_filters_return_only_matching_personal_or_unit_tasks(): void
+    {
+        $manager = $this->userWithPermissionScope('tasks.view', 'organization');
+        $project = $this->createProject($manager);
+        $employee = User::factory()->create(['status' => 'active']);
+
+        $personalTask = $this->createTask($project, $manager);
+        $personalTask->update(['due_date' => now()->subDay()->toDateString()]);
+
+        $unitTask = Task::query()->create([
+            'project_id' => $project->id,
+            'section_id' => $project->sections()->value('id'),
+            'department_id' => $project->sections()->value('department_id'),
+            'title' => 'Overdue Unit Task',
+            'status' => 'in_progress',
+            'priority' => 'normal',
+            'assignee_id' => $employee->id,
+            'created_by' => $manager->id,
+            'due_date' => now()->subDay()->toDateString(),
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($manager)
+            ->get(route('tasks.index', ['scope' => 'personal', 'due' => 'overdue']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('tasks.total', 1)
+                ->where('tasks.data.0.id', $personalTask->id)
+                ->where('filters.scope', 'personal')
+                ->where('filters.due', 'overdue'));
+
+        $this->actingAs($manager)
+            ->get(route('tasks.index', ['scope' => 'unit', 'due' => 'overdue']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('tasks.total', 1)
+                ->where('tasks.data.0.id', $unitTask->id)
+                ->where('filters.scope', 'unit')
+                ->where('filters.due', 'overdue'));
+    }
+
     public function test_project_member_can_create_task_through_http_layer(): void
     {
         $creator = $this->userWithPermission('tasks.create');
@@ -766,20 +808,20 @@ class TaskHttpTest extends TestCase
         ]);
     }
 
-    public function test_creating_completed_task_sets_completed_at(): void
+    public function test_creating_task_starts_with_automatic_todo_status(): void
     {
         $creator = $this->userWithPermissionScope('tasks.create', 'organization');
 
         $this->actingAs($creator)->post(route('tasks.store'), [
-            'title' => 'Completed Task',
-            'status' => 'completed',
+            'title' => 'Automatically Started Task',
+            'status' => 'todo',
             'priority' => 'normal',
         ])->assertRedirect();
 
-        $task = Task::query()->where('title', 'Completed Task')->firstOrFail();
+        $task = Task::query()->where('title', 'Automatically Started Task')->firstOrFail();
 
-        $this->assertSame('completed', $task->status);
-        $this->assertNotNull($task->completed_at);
+        $this->assertSame('todo', $task->status);
+        $this->assertNull($task->completed_at);
     }
 
     public function test_task_creator_can_update_task(): void
@@ -806,7 +848,7 @@ class TaskHttpTest extends TestCase
         ]);
     }
 
-    public function test_assignee_can_change_task_status(): void
+    public function test_project_manager_assignee_can_cancel_task(): void
     {
         $assignee = $this->userWithPermission('tasks.change_status');
         $project = $this->createProject($assignee);
@@ -815,7 +857,7 @@ class TaskHttpTest extends TestCase
         $response = $this->actingAs($assignee)->patch(
             route('tasks.change-status', $task),
             [
-                'status' => 'completed',
+                'status' => 'cancelled',
             ]
         );
 
@@ -823,10 +865,10 @@ class TaskHttpTest extends TestCase
 
         $this->assertDatabaseHas('tasks', [
             'id' => $task->id,
-            'status' => 'completed',
+            'status' => 'cancelled',
         ]);
 
-        $this->assertNotNull(
+        $this->assertNull(
             $task->refresh()->completed_at
         );
     }

@@ -15,7 +15,7 @@ interface TaskServiceContract
     public function update(Task $task, array $data): Task;
     public function assign(Task $task, User $assignee, ?User $actor = null, string $type = 'assignment', ?string $note = null): Task;
     public function changeStatus(Task $task, string $status, ?User $actor = null): Task;
-    public function addComment(Task $task, User $author, string $body): TaskComment;
+    public function addComment(Task $task, User $author, string $body, ?int $parentCommentId = null): TaskComment;
     public function addReminder(Task $task, User $recipient, User $creator, string $title, $remindAt, ?string $description = null): TaskReminder;
     public function updateReminderStatus(TaskReminder $reminder, string $status, User $actor): TaskReminder;
     public function timeline(Task $task): array;

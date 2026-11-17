@@ -26,10 +26,10 @@ class TaskReviewLifecycleTest extends TestCase
         $this->seed(\Database\Seeders\CorePermissionSeeder::class);
     }
 
-    public function test_assignee_can_submit_review_required_task(): void
+    public function test_assignee_without_submit_permission_can_submit_task_for_review(): void
     {
         $manager = User::factory()->create(['status' => 'active']);
-        $assignee = $this->userWithPermission('tasks.submit');
+        $assignee = User::factory()->create(['status' => 'active']);
 
         $department = Department::query()->create([
             'name' => 'Review Unit',
@@ -43,21 +43,23 @@ class TaskReviewLifecycleTest extends TestCase
             'title' => 'Review task',
             'status' => 'in_progress',
             'priority' => 'normal',
-            'review_required' => true,
-            'review_status' => 'not_started',
+            'review_required' => false,
+            'review_status' => 'not_required',
             'assignee_id' => $assignee->id,
             'created_by' => $manager->id,
         ]);
 
         $result = app(SubmitTaskAction::class)->execute($task, $assignee);
 
-        $this->assertSame('submitted', $result->status);
+        $this->assertSame('in_progress', $result->status);
+        $this->assertSame('manager_review', $result->sub_status);
         $this->assertSame('pending', $result->review_status);
+        $this->assertTrue($result->review_required);
         $this->assertNotNull($result->review_requested_at);
         $this->assertDatabaseHas('task_status_histories', [
             'task_id' => $task->id,
             'from_status' => 'in_progress',
-            'to_status' => 'submitted',
+            'to_status' => 'in_progress',
             'changed_by' => $assignee->id,
         ]);
     }
@@ -77,7 +79,8 @@ class TaskReviewLifecycleTest extends TestCase
         $task = Task::query()->create([
             'department_id' => $department->id,
             'title' => 'Approval task',
-            'status' => 'submitted',
+            'status' => 'in_progress',
+            'sub_status' => 'manager_review',
             'priority' => 'normal',
             'review_required' => true,
             'review_status' => 'pending',
@@ -94,7 +97,7 @@ class TaskReviewLifecycleTest extends TestCase
         $this->assertNotNull($result->completed_at);
         $this->assertDatabaseHas('task_status_histories', [
             'task_id' => $task->id,
-            'from_status' => 'submitted',
+            'from_status' => 'in_progress',
             'to_status' => 'completed',
             'changed_by' => $manager->id,
         ]);
@@ -115,7 +118,8 @@ class TaskReviewLifecycleTest extends TestCase
         $task = Task::query()->create([
             'department_id' => $department->id,
             'title' => 'Return task',
-            'status' => 'submitted',
+            'status' => 'in_progress',
+            'sub_status' => 'manager_review',
             'priority' => 'normal',
             'review_required' => true,
             'review_status' => 'pending',
@@ -131,6 +135,7 @@ class TaskReviewLifecycleTest extends TestCase
         );
 
         $this->assertSame('in_progress', $result->status);
+        $this->assertSame('returned_for_completion', $result->sub_status);
         $this->assertSame('rejected', $result->review_status);
         $this->assertSame('مدرک نهایی باید اصلاح شود.', $result->review_note);
         $this->assertSame($manager->id, $result->reviewed_by);
@@ -152,7 +157,8 @@ class TaskReviewLifecycleTest extends TestCase
         $task = Task::query()->create([
             'department_id' => $department->id,
             'title' => 'Protected review task',
-            'status' => 'submitted',
+            'status' => 'in_progress',
+            'sub_status' => 'manager_review',
             'priority' => 'normal',
             'review_required' => true,
             'review_status' => 'pending',
@@ -185,6 +191,28 @@ class TaskReviewLifecycleTest extends TestCase
             ->execute($task, 'submitted', $actor);
     }
 
+    public function test_pending_review_task_cannot_be_changed_manually(): void
+    {
+        $actor = User::factory()->create(['status' => 'active']);
+
+        $task = Task::query()->create([
+            'title' => 'Pending review task',
+            'status' => 'in_progress',
+            'sub_status' => 'manager_review',
+            'priority' => 'normal',
+            'review_required' => true,
+            'review_status' => 'pending',
+            'review_requested_at' => now(),
+            'assignee_id' => $actor->id,
+            'created_by' => $actor->id,
+        ]);
+
+        $this->expectException(\InvalidArgumentException::class);
+
+        app(\App\Modules\Tasks\Actions\ChangeTaskStatusAction::class)
+            ->execute($task, 'in_progress', $actor);
+    }
+
     public function test_completed_task_cannot_be_reopened_through_status_change(): void
     {
         $actor = User::factory()->create(['status' => 'active']);
@@ -204,6 +232,31 @@ class TaskReviewLifecycleTest extends TestCase
 
         app(\App\Modules\Tasks\Actions\ChangeTaskStatusAction::class)
             ->execute($task, 'in_progress', $actor);
+    }
+
+    public function test_finalized_tasks_reject_direct_status_changes(): void
+    {
+        $actor = User::factory()->create(['status' => 'active']);
+
+        foreach (['cancelled', 'cannot_continue', 'completed'] as $finalStatus) {
+            $task = Task::query()->create([
+                'title' => 'Final task '.$finalStatus,
+                'status' => $finalStatus,
+                'priority' => 'normal',
+                'review_required' => false,
+                'review_status' => $finalStatus === 'completed' ? 'approved' : 'not_required',
+                'assignee_id' => $actor->id,
+                'created_by' => $actor->id,
+                'completed_at' => $finalStatus === 'completed' ? now() : null,
+            ]);
+
+            try {
+                app(\App\Modules\Tasks\Actions\ChangeTaskStatusAction::class)->execute($task, 'in_progress', $actor);
+                $this->fail('Finalized task accepted a status change.');
+            } catch (\InvalidArgumentException $exception) {
+                $this->assertStringContainsString('نهایی‌شده', $exception->getMessage());
+            }
+        }
     }
 
     private function userWithPermission(string $permissionCode): User

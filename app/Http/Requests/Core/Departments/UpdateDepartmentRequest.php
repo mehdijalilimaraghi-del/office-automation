@@ -31,12 +31,16 @@ class UpdateDepartmentRequest extends FormRequest
                 'integer',
                 'exists:users,id',
             ],
+            'manager_signature' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:max_width=2000,max_height=1000'],
+            'manager_signature_active' => ['sometimes', 'boolean'],
+            'remove_manager_signature' => ['sometimes', 'boolean'],
 
             'name' => [
                 'required',
                 'string',
                 'max:150',
             ],
+            'code' => ['required', 'string', 'max:20', 'regex:/^[A-Za-z0-9_-]+$/', Rule::unique('departments', 'code')->ignore($department->id)],
 
             
             'icon' => [
@@ -64,7 +68,9 @@ class UpdateDepartmentRequest extends FormRequest
         return [
             'parent_id' => 'دپارتمان والد',
             'manager_id' => 'مدیر دپارتمان',
+            'manager_signature' => 'تصویر امضای مدیر واحد',
             'name' => 'نام دپارتمان',
+            'code' => 'کد واحد',
                         'icon' => 'آیکون واحد',
             'description' => 'توضیحات',
             'is_active' => 'وضعیت فعال بودن',

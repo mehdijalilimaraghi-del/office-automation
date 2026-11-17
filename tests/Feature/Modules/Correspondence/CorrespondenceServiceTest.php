@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Modules\Correspondence;
 
+use App\Core\Departments\Models\Department;
+use App\Core\Settings\Services\OrganizationDepartmentRoleService;
+use App\Core\Settings\Services\SystemSettingsService;
 use App\Models\User;
 use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Services\CorrespondenceService;
@@ -17,13 +20,14 @@ class CorrespondenceServiceTest extends TestCase
 
     public function test_create_draft_persists_incoming_correspondence_with_creator_and_no_registration_number(): void
     {
-        $creator = User::factory()->create(['status' => 'active']);
+        $creator = $this->createSecretariatUser();
 
         $correspondence = app(CorrespondenceService::class)->createDraft([
             'type' => Correspondence::TYPE_INCOMING,
             'subject' => '  درخواست رسمی  ',
             'body' => 'متن نامه',
             'sender_name' => 'سازمان فرستنده',
+            'letter_number' => 'IN-1405-001',
         ], $creator);
 
         $this->assertDatabaseHas('correspondences', [
@@ -32,6 +36,7 @@ class CorrespondenceServiceTest extends TestCase
             'subject' => 'درخواست رسمی',
             'status' => Correspondence::STATUS_DRAFT,
             'registration_number' => null,
+            'letter_number' => 'IN-1405-001',
             'created_by' => $creator->id,
         ]);
         $this->assertSame((int) $creator->id, (int) $correspondence->creator->id);
@@ -40,6 +45,7 @@ class CorrespondenceServiceTest extends TestCase
 
     public function test_create_draft_supports_outgoing_and_internal_correspondence_types(): void
     {
+        app(SystemSettingsService::class)->set(['correspondence.approval.outgoing' => 'direct']);
         $creator = User::factory()->create(['status' => 'active']);
         $service = app(CorrespondenceService::class);
 
@@ -52,6 +58,69 @@ class CorrespondenceServiceTest extends TestCase
             $this->assertSame($type, $correspondence->type);
             $this->assertSame(Correspondence::STATUS_DRAFT, $correspondence->status);
         }
+    }
+
+    public function test_internal_draft_keeps_creator_and_recipient_departments_separate(): void
+    {
+        $creator = User::factory()->create(['status' => 'active']);
+        $creatorDepartment = Department::query()->create([
+            'name' => 'واحد ایجادکننده',
+            'code' => 'SRC-'.strtoupper(bin2hex(random_bytes(3))),
+            'is_active' => true,
+        ]);
+        $recipientDepartment = Department::query()->create([
+            'name' => 'واحد گیرنده',
+            'code' => 'DST-'.strtoupper(bin2hex(random_bytes(3))),
+            'is_active' => true,
+        ]);
+        $creator->departments()->attach($creatorDepartment->id, [
+            'is_primary' => true,
+            'joined_at' => now(),
+        ]);
+
+        $correspondence = app(CorrespondenceService::class)->createDraft([
+            'type' => Correspondence::TYPE_INTERNAL,
+            'subject' => 'نامه بین دو واحد',
+            'recipient_department_id' => $recipientDepartment->id,
+        ], $creator);
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $correspondence->id,
+            'created_department_id' => $creatorDepartment->id,
+            'recipient_department_id' => $recipientDepartment->id,
+            'sender_name' => $creator->name,
+        ]);
+    }
+
+    public function test_approval_required_draft_is_assigned_to_active_creator_department_manager(): void
+    {
+        $creator = User::factory()->create(['status' => 'active']);
+        $manager = User::factory()->create(['status' => 'active']);
+        $department = Department::query()->create([
+            'name' => 'واحد صادرکننده نیازمند تأیید',
+            'code' => 'APR-'.strtoupper(bin2hex(random_bytes(3))),
+            'is_active' => true,
+            'manager_id' => $manager->id,
+        ]);
+        $creator->departments()->attach($department->id, [
+            'is_primary' => true,
+            'joined_at' => now(),
+        ]);
+        app(SystemSettingsService::class)->set(['correspondence.approval.outgoing' => 'approval']);
+
+        $correspondence = app(CorrespondenceService::class)->createDraft([
+            'type' => Correspondence::TYPE_OUTGOING,
+            'subject' => 'نامه صادره نیازمند تأیید مدیر',
+            'created_department_id' => $department->id,
+        ], $creator);
+
+        $this->assertDatabaseHas('correspondences', [
+            'id' => $correspondence->id,
+            'status' => Correspondence::STATUS_DRAFT,
+            'workflow_state' => 'awaiting_manager_approval',
+            'current_department_id' => $department->id,
+            'current_user_id' => $manager->id,
+        ]);
     }
 
     public function test_create_draft_rejects_unknown_type(): void
@@ -76,5 +145,12 @@ class CorrespondenceServiceTest extends TestCase
             'type' => Correspondence::TYPE_INTERNAL,
             'subject' => '   ',
         ], $creator);
+    }
+    private function createSecretariatUser(): User
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        $department = Department::query()->create(['name' => 'دبیرخانه تست', 'code' => 'SEC-'.strtoupper(bin2hex(random_bytes(3))), 'is_active' => true, 'manager_id' => $user->id]);
+        app(SystemSettingsService::class)->set([OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT) => (string) $department->id]);
+        return $user;
     }
 }

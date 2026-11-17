@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import AppSelect from '@/Components/AppSelect.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Button } from '@/Components/ui/button';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { formatPersianDate, formatPersianDateTime } from '@/Utils/date';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
+import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 
 interface Task {
     id: number;
@@ -63,6 +65,7 @@ interface Project {
     sections: ProjectSection[];
     is_system_default: boolean;
     department: { id: number; name: string } | null;
+    source_correspondence: { id: number; subject: string; letter_number: string | null; type: string } | null;
 }
 
 const props = defineProps<{
@@ -335,14 +338,14 @@ const deleteTask = (task: Task): void => {
                             <h3 class="mt-1 text-xl font-bold">بخش‌های پروژه</h3>
                             <p class="mt-1 text-sm text-muted-foreground">مسئولیت و پیشرفت هر بخش را ببینید؛ برای جزئیات و ثبت دستورکار، بخش را باز کنید.</p>
                         </div>
-                        <div class="flex items-center gap-2"><span class="rounded-full bg-muted px-3 py-1.5 text-xs font-semibold">{{ project.sections.length }} بخش تعریف‌شده</span><Button v-if="canUpdate" type="button" size="sm" @click="openCreateSection">＋ افزودن بخش</Button></div>
+                        <div class="flex items-center gap-2"><span class="rounded-full bg-muted px-3 py-1.5 text-xs font-semibold">{{ project.sections.length }} بخش تعریف‌شده</span><Button v-if="canUpdate && !project.is_system_default" type="button" size="sm" @click="openCreateSection">＋ افزودن بخش</Button></div>
                     </div>
 
                     <div v-if="project.sections.length === 0" class="rounded-2xl border border-dashed bg-card px-6 py-12 text-center">
                         <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-muted-foreground" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/></svg></div>
                         <h4 class="mt-4 font-semibold">هنوز بخشی تعریف نشده است</h4>
                         <p class="mt-1 text-sm text-muted-foreground">برای ثبت دستورکار در این پروژه، ابتدا باید بخش و واحد مسئول مشخص شود.</p>
-                        <Button v-if="props.canUpdate" class="mt-4" @click="openCreateSection">＋ افزودن بخش</Button>
+                        <Button v-if="props.canUpdate && !project.is_system_default" class="mt-4" @click="openCreateSection">＋ افزودن بخش</Button>
                     </div>
 
                     <details v-for="(section, sectionIndex) in project.sections" :key="section.id" class="group overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm transition-all duration-200 hover:border-primary/25 open:border-primary/40 open:shadow-md">
@@ -368,7 +371,7 @@ const deleteTask = (task: Task): void => {
                                 </div>
                                 <div class="flex shrink-0 items-center gap-1">
                                     <button v-if="canUpdate" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-indigo-50 hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500" aria-label="ویرایش بخش" title="ویرایش بخش" @click.stop.prevent="openEditSection(section)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></button>
-                                    <button v-if="canUpdate" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-rose-600 transition hover:bg-rose-50 hover:text-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500" aria-label="حذف بخش" title="حذف بخش" @click.stop.prevent="deleteSection(section)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg></button>
+                                    <button v-if="canUpdate && !project.is_system_default" type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-rose-600 transition hover:bg-rose-50 hover:text-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500" aria-label="حذف بخش" title="حذف بخش" @click.stop.prevent="deleteSection(section)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg></button>
                                     <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition group-open:bg-muted" aria-hidden="true">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 transition-transform duration-200 group-open:rotate-180"><path d="m6 9 6 6 6-6"/></svg>
                                     </span>
@@ -452,6 +455,13 @@ const deleteTask = (task: Task): void => {
                 </div>
 
                 <aside class="space-y-6">
+                    <section v-if="project.source_correspondence" class="rounded-2xl border border-sky-200 bg-sky-50/50 p-5 shadow-sm">
+                        <p class="text-xs font-semibold text-sky-700">مکاتبه مبدأ</p>
+                        <h3 class="mt-1 font-bold text-slate-900">{{ project.source_correspondence.subject }}</h3>
+                        <p class="mt-2 text-xs text-muted-foreground">{{ project.source_correspondence.letter_number ? `شماره ${project.source_correspondence.letter_number}` : 'نامه ثبت‌شده مرتبط با پروژه' }}</p>
+                        <Link :href="route('correspondence.show', project.source_correspondence.id)" class="mt-3 inline-flex text-sm font-semibold text-sky-700 hover:underline">مشاهده نامه مبدأ</Link>
+                    </section>
+
                     <section class="rounded-2xl border bg-card p-5 shadow-sm">
                         <div class="flex items-center justify-between gap-3">
                             <div><p class="text-xs font-semibold text-primary">اطلاعات پایه</p><h3 class="mt-1 font-bold">شناسنامه پروژه</h3></div>
@@ -498,8 +508,8 @@ const deleteTask = (task: Task): void => {
             <div class="task-modal-panel my-4 w-full max-w-xl overflow-hidden rounded-2xl border border-border/80 bg-card shadow-2xl sm:my-8" role="dialog" aria-modal="true" aria-labelledby="section-editor-title">
                 <div class="flex items-start justify-between gap-4 border-b bg-muted/20 p-5"><div><h3 id="section-editor-title" class="text-lg font-semibold">{{ editingSectionId ? 'ویرایش بخش پروژه' : 'افزودن بخش پروژه' }}</h3><p class="mt-1 text-sm text-muted-foreground">واحد مسئول، مالک اجرایی این بخش و دستورکارهای آن است.</p></div><Button type="button" variant="outline" size="sm" @click="showSectionEditor = false">بستن</Button></div>
                 <form class="space-y-4 p-5" @submit.prevent="submitSection">
-                    <div class="space-y-1"><label for="section-name" class="text-sm font-medium">عنوان بخش</label><input id="section-name" v-model="sectionForm.name" required maxlength="150" class="w-full rounded-md border bg-background px-3 py-2 text-sm" /><p v-if="sectionForm.errors.name" class="text-xs text-destructive">{{ sectionForm.errors.name }}</p></div>
-                    <div class="space-y-1"><label for="section-department" class="text-sm font-medium">واحد مسئول</label><select id="section-department" v-model="sectionForm.department_id" required class="w-full rounded-md border bg-background px-3 py-2 text-sm"><option value="">انتخاب واحد</option><option v-for="department in sectionDepartmentOptions" :key="department.id" :value="department.id.toString()">{{ department.name }} — {{ department.manager?.name ?? 'بدون مدیر' }}</option></select><p v-if="sectionForm.errors.department_id" class="text-xs text-destructive">{{ sectionForm.errors.department_id }}</p></div>
+                    <div class="space-y-1"><label for="section-name" class="text-sm font-medium">عنوان بخش</label><input id="section-name" v-model="sectionForm.name" required maxlength="150" :readonly="project.is_system_default" class="w-full rounded-md border bg-background px-3 py-2 text-sm read-only:bg-muted read-only:text-muted-foreground" /><p v-if="project.is_system_default" class="text-xs text-muted-foreground">عنوان بخش از نام واحد سازمانی گرفته می‌شود.</p><p v-if="sectionForm.errors.name" class="text-xs text-destructive">{{ sectionForm.errors.name }}</p></div>
+                    <div class="space-y-1"><label for="section-department" class="text-sm font-medium">واحد مسئول</label><div v-if="project.is_system_default" class="rounded-md border bg-muted/30 px-3 py-2 text-sm">{{ sectionDepartmentOptions.find((department) => department.id.toString() === sectionForm.department_id)?.name ?? "واحد متصل به بخش" }}</div><DepartmentTreeSelect v-else v-model="sectionForm.department_id" :departments="sectionDepartmentOptions" placeholder="انتخاب واحد مسئول" :clearable="false" /><p v-if="sectionForm.errors.department_id" class="text-xs text-destructive">{{ sectionForm.errors.department_id }}</p></div>
                     <div class="space-y-1"><label for="section-description" class="text-sm font-medium">توضیحات</label><textarea id="section-description" v-model="sectionForm.description" rows="3" class="w-full rounded-md border bg-background px-3 py-2 text-sm" /><p v-if="sectionForm.errors.description" class="text-xs text-destructive">{{ sectionForm.errors.description }}</p></div>
                     <label class="flex items-center gap-2 text-sm"><input v-model="sectionForm.manager_can_create_tasks" type="checkbox" class="rounded border-input" /> مدیر واحد بتواند در این بخش دستورکار ایجاد کند</label>
                     <div class="flex justify-end gap-2 border-t pt-4"><Button type="button" variant="outline" @click="showSectionEditor = false">انصراف</Button><Button type="submit" :disabled="sectionForm.processing">{{ sectionForm.processing ? 'در حال ذخیره...' : 'ذخیره بخش' }}</Button></div>
@@ -533,12 +543,12 @@ const deleteTask = (task: Task): void => {
                     <div class="grid gap-3 sm:grid-cols-2">
                         <div class="space-y-1">
                             <label for="section-task-priority" class="text-sm font-medium">اولویت</label>
-                            <select id="section-task-priority" v-model="sectionTaskForm.priority" class="w-full rounded-md border bg-background px-3 py-2 text-sm">
+                            <AppSelect id="section-task-priority" v-model="sectionTaskForm.priority" class="w-full rounded-md border bg-background px-3 py-2 text-sm">
                                 <option value="low">کم</option>
                                 <option value="normal">عادی</option>
                                 <option value="high">زیاد</option>
                                 <option value="urgent">فوری</option>
-                            </select>
+                            </AppSelect>
                         </div>
                         <div class="space-y-1">
                             <label class="text-sm font-medium">مدیر اولیه</label>
@@ -565,10 +575,10 @@ const deleteTask = (task: Task): void => {
                     </label>
                     <div v-if="sectionTaskForm.delegate_to_employee" class="space-y-1">
                         <label for="section-task-employee" class="text-sm font-medium">کارمند مقصد ارجاع</label>
-                        <select id="section-task-employee" v-model="sectionTaskForm.delegate_assignee_id" required class="w-full rounded-md border bg-background px-3 py-2 text-sm">
+                        <AppSelect id="section-task-employee" v-model="sectionTaskForm.delegate_assignee_id" required class="w-full rounded-md border bg-background px-3 py-2 text-sm">
                             <option :value="null">انتخاب کارمند</option>
                             <option v-for="employee in sectionEmployees" :key="employee.id" :value="employee.id">{{ employee.name }}</option>
-                        </select>
+                        </AppSelect>
                         <p v-if="sectionTaskForm.errors.delegate_assignee_id" class="text-xs text-destructive">{{ sectionTaskForm.errors.delegate_assignee_id }}</p>
                     </div>
                     <div class="space-y-1">

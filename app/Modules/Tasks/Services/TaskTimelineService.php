@@ -49,7 +49,8 @@ class TaskTimelineService
                 'title' => 'تغییر وضعیت',
                 'description' => $this->statusLabel($item->from_status)
                     .' ← '
-                    .$this->statusLabel($item->to_status),
+                    .$this->statusLabel($item->to_status)
+                    .($item->note ? ' — '.$item->note : ''),
                 'occurred_at' => $item->changed_at,
                 'user' => $item->changedBy,
                 'meta' => [
@@ -113,9 +114,12 @@ class TaskTimelineService
     {
         return match ($status) {
             'todo' => 'انجام نشده',
+            'observed' => 'مشاهده شده',
             'in_progress' => 'در حال انجام',
             'completed' => 'تکمیل شده',
             'cancelled' => 'لغو شده',
+            'cannot_continue' => 'امکان ادامه وجود ندارد',
+            'submitted' => 'در حال بررسی مدیر',
             null => '—',
             default => $status,
         };

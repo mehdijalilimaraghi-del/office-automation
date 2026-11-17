@@ -6,22 +6,17 @@ use App\Modules\Tasks\Models\Task;
 use App\Models\User;
 use App\Core\Audit\Contracts\AuditServiceInterface;
 use App\Modules\Tasks\Models\TaskStatusHistory;
-use App\Modules\Tasks\Services\TaskDependencyService;
 use InvalidArgumentException;
 
 class ChangeTaskStatusAction
 {
     public function __construct(
-        private readonly TaskDependencyService $dependencyService,
         private readonly AuditServiceInterface $audit,
     ) {}
 
     private const ALLOWED_STATUSES = [
-        'todo',
-        'in_progress',
-        'completed',
         'cancelled',
-        'submitted',
+        'cannot_continue',
     ];
 
     public function execute(
@@ -29,41 +24,31 @@ class ChangeTaskStatusAction
         string $status,
         User $actor
     ): Task {
+        if ($task->isFinalized()) {
+            throw new InvalidArgumentException('دستورکار نهایی‌شده امکان هیچ تغییری ندارد.');
+        }
+
         if (! in_array($status, self::ALLOWED_STATUSES, true)) {
-            throw new InvalidArgumentException(
-                'وضعیت تسک نامعتبر است.'
-            );
+            throw new InvalidArgumentException('فقط مدیر می‌تواند دستورکار را لغو کند یا امکان ادامه نداشتن آن را ثبت کند.');
         }
 
-        if ($status === 'submitted') {
-            throw new InvalidArgumentException('ارسال تسک برای بررسی فقط از مسیر ارسال نتیجه کار امکان‌پذیر است.');
+        if ($task->review_status === 'pending') {
+            throw new InvalidArgumentException('تا تعیین تکلیف مدیر، وضعیت دستورکار قابل تغییر نیست.');
         }
 
-        if (in_array($task->status, ['completed', 'cancelled'], true) && $status !== $task->status) {
-            throw new InvalidArgumentException('تسک نهایی‌شده امکان تغییر وضعیت ندارد.');
-        }
-
-        if ($status === 'completed' && $task->review_required && $task->review_status !== 'approved') {
-            throw new InvalidArgumentException('این تسک باید ابتدا توسط بررسی‌کننده تأیید شود.');
-        }
-
-        if ($status === 'in_progress' && ! $this->dependencyService->canStart($task)) {
-            throw new InvalidArgumentException('تا تکمیل و تأیید تسک‌های پیش‌نیاز، امکان شروع این تسک وجود ندارد.');
+        if (in_array($status, ['cancelled', 'cannot_continue'], true)) {
+            $isDepartmentManager = (int) $task->department?->manager_id === (int) $actor->id;
+            $isProjectManager = (int) $task->project?->manager_id === (int) $actor->id;
+            if (! $isDepartmentManager && ! $isProjectManager) {
+                throw new InvalidArgumentException('فقط مدیر واحد یا مدیر پروژه می‌تواند وضعیت نهایی را تعیین کند.');
+            }
         }
 
         $fromStatus = $task->status;
 
         $task->status = $status;
-
-        if ($status === 'completed') {
-            $task->completed_at ??= now();
-        } else {
-            $task->completed_at = null;
-        }
-
-        if ($status === 'submitted' && $task->review_required) {
-            $task->review_status = 'pending';
-            $task->review_requested_at = now();
+        if (in_array($status, ['cancelled', 'cannot_continue'], true)) {
+            $task->sub_status = null;
         }
 
         $task->save();

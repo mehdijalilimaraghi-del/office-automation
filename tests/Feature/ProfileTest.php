@@ -37,7 +37,18 @@ class ProfileTest extends TestCase
 
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
+            ->assertRedirect('/profile')
+            ->assertInertiaFlash('saveSuccess', 'تغییرات ذخیره شد.');
+
+        $headers = [
+            'X-Inertia' => 'true',
+            'X-Inertia-Version' => app(\App\Http\Middleware\HandleInertiaRequests::class)->version(request()),
+        ];
+        $this->get('/profile', $headers)->assertOk()->assertJsonPath('flash.saveSuccess', 'تغییرات ذخیره شد.');
+        $this->get('/profile', $headers)->assertOk()->assertJsonMissingPath('flash.saveSuccess');
+
+        $this->from('/profile')->patch('/profile', ['name' => ''])->assertSessionHasErrors('name')
+            ->assertInertiaFlashMissing('saveSuccess');
 
         $user->refresh();
 

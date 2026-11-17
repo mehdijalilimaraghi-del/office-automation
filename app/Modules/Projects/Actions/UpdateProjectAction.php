@@ -40,9 +40,15 @@ class UpdateProjectAction
             ]);
         }
 
+        if ($project->is_system_default && array_key_exists('department_id', $data) && $data['department_id'] !== null) {
+            throw ValidationException::withMessages([
+                'department_id' => 'پروژه عمومی سازمان به واحد مشخصی متصل نمی‌شود.',
+            ]);
+        }
+
         return DB::transaction(function () use ($project, $data): Project {
             $project->update([
-                'department_id' => $data['department_id'] ?? $project->department_id,
+                'department_id' => $project->is_system_default ? null : ($data['department_id'] ?? $project->department_id),
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
                 'status' => $data['status'],

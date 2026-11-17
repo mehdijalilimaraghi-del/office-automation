@@ -37,3 +37,30 @@
 - Task assignees, delegates, and next-activity assignees must be active members of the section's responsible department or that department's active manager.
 - The project detail page no longer presents legacy project members. Existing membership rows are retained for historical compatibility, but are not used to authorize project visibility or task assignment.
 - Project deletion is blocked when task or document history is attached, to avoid cascading loss of operational records.
+
+
+## Correspondence-driven project creation and response task
+
+The authoritative workflow contract is `CORRESPONDENCE_PROJECT_WORKFLOW.md`.
+
+- The four Project Management employee actions are requests with mandatory feedback, not final workflow transitions. The PM manager's decision is a separate step and must be authorized independently.
+- The response department is selected per project during creation. An organization-level default may prefill the field but must remain overridable by an authorized creator.
+- The new project's response Section and response Task belong only to the selected response department. Do not provision an automatic Section or response Task for the origin/requesting department.
+- The response Task is linked to both the new Project and the original incoming Correspondence. A response Correspondence created from that Task must preserve all three links: Task, Project and source Correspondence.
+- Use existing Projects, Tasks and Correspondence modules and their authorization/workflow contracts; do not introduce parallel task or workflow structures.
+- Implementation status is tracked in `CORRESPONDENCE_PROJECT_WORKFLOW.md`; documentation is complete, while the project-request workflow and project/response-task integration are not yet implemented.
+
+
+## Project-request review workflow checkpoint — 2026-11-01
+
+- The first workflow slice is implemented on `development`: Project Management employees submit one of four requests with mandatory feedback; the manager separately approves or rejects the employee request.
+- Employee request actions never route the letter or create a project by themselves. Manager rejection returns the letter to the same employee. Manager approval applies the requested referral/return or sets `project_request_approved` for the separate project-creation stage.
+- The implementation and test checkpoint is tracked in `CORRESPONDENCE_PROJECT_WORKFLOW.md`. Focused HTTP tests and frontend build still require local validation. Project creation with response-department selection and response Section/Task provisioning remain pending.
+
+### 2026-11-02 — حذف پروژه‌های عمومی قدیمی واحدها
+
+- تصمیم نهایی معماری: فقط یک «پروژه عمومی سازمان» با `department_id = NULL` و بخش مجزای هر واحد در `project_sections` باقی می‌ماند.
+- چهار پروژه قدیمی عمومیِ واحدی (طراحی، تولید، دبیرخانه و مالی) در دیتابیس توسعه، شناسه‌های ۲ تا ۵، غیرفعال و بدون دستورکار و بدون بخش گزارش شدند.
+- Migration جدید `2026_11_02_120000_remove_legacy_department_default_projects` برای حذف پروژه‌های عمومی سیستمی دارای `department_id` اضافه شد. قبل از حذف، ارجاع‌های دستورکار، بخش، گردش‌کار، مکاتبه، سند و فیلد سفارشی را بررسی می‌کند؛ در صورت وجود وابستگی، عملیات را با خطای روشن متوقف می‌کند. عضویت‌ها و نقش‌های وابسته نیز پیش از حذف پروژه پاک می‌شوند.
+- این Migration هنوز در محیط کاربر اجرا نشده است؛ اجرای آن با `php artisan migrate` انجام می‌شود. تست و build پس از pull باید در محیط توسعه اجرا و نتیجه گزارش شود.
+- پروژه عمومی سازمان و بخش‌های واحدهای آن هدف این پاک‌سازی نیستند.

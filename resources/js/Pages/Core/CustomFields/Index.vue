@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppSelect from '@/Components/AppSelect.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
@@ -345,7 +346,7 @@ const remove = (field: Field): void => {
                                 <p class="mb-2 text-xs leading-5 text-slate-500">
                                     مشخص می‌کند این فیلد در فرم کدام نوع رکورد نمایش داده شود.
                                 </p>
-                                <select
+                                <AppSelect
                                     v-model="form.entity_type"
                                     required
                                     class="w-full rounded-xl border-slate-200 bg-slate-50/50 px-3 py-3 text-sm focus:border-teal-500 focus:ring-teal-500"
@@ -357,7 +358,7 @@ const remove = (field: Field): void => {
                                     >
                                         {{ entity.label }}
                                     </option>
-                                </select>
+                                </AppSelect>
                                 <p v-if="form.errors.entity_type" class="mt-1.5 text-xs text-red-600">{{ form.errors.entity_type }}</p>
                             </div>
 
@@ -384,7 +385,7 @@ const remove = (field: Field): void => {
                                 <p class="mb-2 text-xs leading-5 text-slate-500">
                                     شکل ورود اطلاعات در فرم را مشخص می‌کند.
                                 </p>
-                                <select
+                                <AppSelect
                                     v-model="form.type"
                                     required
                                     class="w-full rounded-xl border-slate-200 bg-slate-50/50 px-3 py-3 text-sm focus:border-teal-500 focus:ring-teal-500"
@@ -396,7 +397,7 @@ const remove = (field: Field): void => {
                                     >
                                         {{ typeLabels[type] ?? type }}
                                     </option>
-                                </select>
+                                </AppSelect>
                                 <p v-if="form.errors.type" class="mt-1.5 text-xs text-red-600">{{ form.errors.type }}</p>
                             </div>
 

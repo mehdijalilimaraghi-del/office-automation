@@ -20,18 +20,18 @@ use App\Http\Controllers\ProfileController;
 use App\Modules\Dashboard\Http\Controllers\DashboardController;
 use App\Modules\Cartable\Http\Controllers\CartableController;
 use App\Modules\Notifications\Http\Controllers\NotificationController;
-use Illuminate\Foundation\Application;
+use App\Modules\Correspondence\Http\Controllers\CorrespondenceController;
+use App\Modules\Correspondence\Http\Controllers\CorrespondencePrintController;
+use App\Modules\Correspondence\Http\Controllers\CorrespondenceTemplateController;
+use App\Modules\Correspondence\Http\Controllers\CreateProjectFromCorrespondenceController;
+use App\Modules\Correspondence\Http\Controllers\CorrespondenceScannerController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-});
+Route::get('/', fn () => auth()->check()
+    ? redirect()->route('dashboard')
+    : redirect()->route('login'));
+
+Route::post('/correspondence/scanner/upload/{token}', [CorrespondenceScannerController::class, 'upload'])->middleware('throttle:10,1')->name('correspondence.scanner.upload');
 
 Route::get('/users/invitations/{token}', [UserInvitationController::class, 'accept'])->middleware('guest')->name('users.invitation.accept');
 Route::post('/users/invitations', [UserInvitationController::class, 'store'])->middleware('guest')->name('users.invitation.store');
@@ -43,9 +43,38 @@ Route::get('/dashboard', DashboardController::class)
 Route::middleware('auth')->group(function () {
     Route::get('/cartable', [CartableController::class, 'index'])->middleware('permission:cartable.view')->name('cartable.index');
 
-    Route::get('/notifications', [NotificationController::class, 'index'])->middleware('permission:notifications.view')->name('notifications.index');
-    Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->middleware('permission:notifications.view')->name('notifications.read');
-    Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->middleware('permission:notifications.view')->name('notifications.read-all');
+    Route::get('/settings/correspondence-template', [CorrespondenceTemplateController::class, 'edit'])->middleware('permission:settings.manage')->name('correspondence.template.edit');
+    Route::put('/settings/correspondence-template', [CorrespondenceTemplateController::class, 'update'])->middleware('permission:settings.manage')->name('correspondence.template.update');
+
+    Route::prefix('correspondence')->name('correspondence.')->group(function (): void {
+        Route::get('/', [CorrespondenceController::class, 'index'])->middleware('permission:correspondence.view')->name('index');
+        Route::get('/create', [CorrespondenceController::class, 'create'])->middleware('permission:correspondence.create')->name('create');
+        Route::get('/body-templates', [\App\Modules\Correspondence\Http\Controllers\CorrespondenceBodyTemplateController::class, 'index'])->middleware('permission:correspondence.create')->name('body-templates.index');
+        Route::get('/body-templates/{template}', [\App\Modules\Correspondence\Http\Controllers\CorrespondenceBodyTemplateController::class, 'show'])->whereNumber('template')->middleware('permission:correspondence.create')->name('body-templates.show');
+        Route::post('/body-templates', [\App\Modules\Correspondence\Http\Controllers\CorrespondenceBodyTemplateController::class, 'store'])->middleware('permission:correspondence.create')->name('body-templates.store');
+        Route::get('/preview-token', [CorrespondencePrintController::class, 'previewToken'])->middleware('permission:correspondence.create')->name('preview.token');
+        Route::post('/preview', [CorrespondencePrintController::class, 'preview'])->middleware('permission:correspondence.create')->name('preview');
+        Route::get('/{correspondence}/edit', [CorrespondenceController::class, 'edit'])->name('edit');
+        Route::get('/related-search', [CorrespondenceController::class, 'searchRelated'])->middleware('permission:correspondence.create')->name('related-search');
+        Route::get('/{correspondence}/print', CorrespondencePrintController::class)->middleware('permission:correspondence.view')->name('print');
+        Route::get('/{correspondence}', [CorrespondenceController::class, 'show'])->middleware('permission:correspondence.view')->name('show');
+        Route::post('/', [CorrespondenceController::class, 'store'])->middleware('permission:correspondence.create')->name('store');
+        Route::put('/{correspondence}', [CorrespondenceController::class, 'update'])->name('update');
+        Route::delete('/{correspondence}', [CorrespondenceController::class, 'destroy'])->name('destroy');
+        Route::post('/scanner/start', [CorrespondenceScannerController::class, 'start'])->middleware('permission:correspondence.create')->name('scanner.start');
+        Route::get('/scanner/status/{token}', [CorrespondenceScannerController::class, 'status'])->middleware('permission:correspondence.create')->name('scanner.status');
+        Route::get('/scanner/preview/{token}', [CorrespondenceScannerController::class, 'preview'])->middleware('permission:correspondence.create')->name('scanner.preview');
+        Route::post('/{correspondence}/copies', [CorrespondenceController::class, 'addCopies'])->name('copies.store');
+        Route::post('/{correspondence}/actions', [CorrespondenceController::class, 'action'])->name('actions.store');
+        Route::post('/{correspondence}/create-project', CreateProjectFromCorrespondenceController::class)->middleware('permission:projects.create')->name('create-project');
+        Route::put('/{correspondence}/external-tracking', [CorrespondenceController::class, 'updateExternalTracking'])->name('external-tracking.update');
+        Route::post('/{correspondence}/register', [CorrespondenceController::class, 'register'])->name('register');
+    });
+
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/summary', [NotificationController::class, 'summary'])->name('notifications.summary');
+    Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -59,6 +88,12 @@ Route::middleware('auth')->group(function () {
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->middleware('permission:users.delete')->name('users.destroy');
     Route::patch('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->middleware('permission:users.toggle_status')->name('users.toggle-status');
 
+    Route::get('/settings/organization/letterhead', [OrganizationSettingsController::class, 'letterhead'])
+        ->middleware('permission:settings.manage')
+        ->name('settings.organization.letterhead');
+    Route::get('/settings/organization/stamp', [OrganizationSettingsController::class, 'stamp'])
+        ->middleware('permission:settings.manage')
+        ->name('settings.organization.stamp');
     Route::get('/settings/organization', [OrganizationSettingsController::class, 'edit'])
         ->middleware('permission:settings.manage')
         ->name('settings.organization.edit');
@@ -72,6 +107,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/custom-fields/{customField}', [CustomFieldController::class, 'destroy'])->middleware('permission:custom_fields.manage')->name('custom-fields.destroy');
 
     Route::get('/departments', [DepartmentController::class, 'index'])->middleware('permission:departments.view')->name('departments.index');
+    Route::get('/departments/{department}/signature', [DepartmentController::class, 'signature'])->middleware('permission:departments.view')->name('departments.signature');
     Route::post('/departments', [DepartmentController::class, 'store'])->middleware('permission:departments.create')->name('departments.store');
     Route::put('/departments/{department}', [DepartmentController::class, 'update'])->middleware('permission:departments.edit')->name('departments.update');
     Route::delete('/departments/{department}', [DepartmentController::class, 'destroy'])->middleware('permission:departments.delete')->name('departments.destroy');
@@ -94,13 +130,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/projects', [ProjectController::class, 'index'])->middleware('permission:projects.view')->name('projects.index');
     Route::get('/projects/create', [ProjectController::class, 'create'])->middleware('permission:projects.create')->name('projects.create');
     Route::post('/projects', [ProjectController::class, 'store'])->middleware('permission:projects.create')->name('projects.store');
-    Route::get('/projects/{project}/edit', [ProjectController::class, 'edit'])->middleware('permission:projects.update')->name('projects.edit');
+    Route::get('/projects/{project}/edit', [ProjectController::class, 'edit'])->name('projects.edit');
     Route::get('/projects/{project}', [ProjectController::class, 'show'])->middleware('permission:projects.view')->name('projects.show');
-    Route::put('/projects/{project}', [ProjectController::class, 'update'])->middleware('permission:projects.update')->name('projects.update');
+    Route::put('/projects/{project}', [ProjectController::class, 'update'])->name('projects.update');
     Route::delete('/projects/{project}', [ProjectController::class, 'destroy'])->middleware('permission:projects.delete')->name('projects.destroy');
-    Route::post('/projects/{project}/sections', [ProjectSectionController::class, 'store'])->middleware('permission:projects.update')->name('projects.sections.store');
-    Route::put('/projects/{project}/sections/{section}', [ProjectSectionController::class, 'update'])->middleware('permission:projects.update')->name('projects.sections.update');
-    Route::delete('/projects/{project}/sections/{section}', [ProjectSectionController::class, 'destroy'])->middleware('permission:projects.update')->name('projects.sections.destroy');
+    Route::post('/projects/{project}/sections', [ProjectSectionController::class, 'store'])->name('projects.sections.store');
+    Route::put('/projects/{project}/sections/{section}', [ProjectSectionController::class, 'update'])->name('projects.sections.update');
+    Route::delete('/projects/{project}/sections/{section}', [ProjectSectionController::class, 'destroy'])->name('projects.sections.destroy');
 
     Route::scopeBindings()->group(function () {
         Route::post('/projects/{project}/roles', [ProjectRoleController::class, 'store'])->middleware('permission:projects.manage_roles')->name('projects.roles.store');
@@ -116,11 +152,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/tasks', [TaskController::class, 'store'])->middleware('permission:tasks.create')->name('tasks.store');
     Route::post('/tasks/{task}/documents', [DocumentController::class, 'storeForTask'])
         ->name('tasks.documents.store');
+    Route::delete('/tasks/{task}/documents/{document}', [DocumentController::class, 'destroyForTask'])->name('tasks.documents.destroy');
     Route::get('/tasks/{task}', [TaskController::class, 'show'])->middleware('permission:tasks.view')->name('tasks.show');
     Route::put('/tasks/{task}', [TaskController::class, 'update'])->middleware('permission:tasks.update')->name('tasks.update');
     Route::put('/tasks/{task}/external-parties', [TaskController::class, 'updateExternalParties'])->middleware('permission:tasks.update')->name('tasks.external-parties.update');
     Route::patch('/tasks/{task}/assign', [TaskController::class, 'assign'])->middleware('permission:tasks.assign')->name('tasks.assign');
     Route::patch('/tasks/{task}/refer', [TaskController::class, 'refer'])->middleware('permission:tasks.refer')->name('tasks.refer');
+    Route::post('/tasks/{task}/accept-responsibility', [TaskController::class, 'acceptResponsibility'])->middleware('permission:tasks.assign')->name('tasks.accept-responsibility');
     Route::put('/tasks/{task}/participants', [TaskController::class, 'updateParticipants'])->middleware('permission:tasks.update')->name('tasks.participants.update');
     Route::post('/tasks/{task}/activities', [TaskController::class, 'storeActivity'])->middleware('permission:tasks.update')->name('tasks.activities.store');
     Route::patch('/tasks/{task}/activities/{activity}/complete', [TaskController::class, 'completeActivity'])->middleware('permission:tasks.update')->name('tasks.activities.complete');
@@ -141,12 +179,12 @@ Route::middleware('auth')->group(function () {
         ->middleware('permission:documents.delete')
         ->name('documents.destroy');
 
-    Route::patch('/tasks/{task}/submit', [TaskController::class, 'submit'])->middleware('permission:tasks.submit')->name('tasks.submit');
+    Route::patch('/tasks/{task}/submit', [TaskController::class, 'submit'])->name('tasks.submit');
     Route::patch('/tasks/{task}/approve', [TaskController::class, 'approve'])->middleware('permission:tasks.review')->name('tasks.approve');
     Route::patch('/tasks/{task}/return', [TaskController::class, 'returnFromReview'])->middleware('permission:tasks.review')->name('tasks.return');
-    Route::post('/tasks/{task}/comments', [TaskController::class, 'comment'])->middleware('permission:tasks.comment')->name('tasks.comments.store');
-    Route::put('/tasks/{task}/comments/{comment}', [TaskController::class, 'updateComment'])->middleware('permission:tasks.update')->name('tasks.comments.update');
-    Route::delete('/tasks/{task}/comments/{comment}', [TaskController::class, 'destroyComment'])->middleware('permission:tasks.update')->name('tasks.comments.destroy');
+    Route::post('/tasks/{task}/comments', [TaskController::class, 'comment'])->name('tasks.comments.store');
+    Route::put('/tasks/{task}/comments/{comment}', [TaskController::class, 'updateComment'])->name('tasks.comments.update');
+    Route::delete('/tasks/{task}/comments/{comment}', [TaskController::class, 'destroyComment'])->name('tasks.comments.destroy');
     Route::post('/tasks/{task}/work-logs', [TaskController::class, 'workLog'])->middleware('permission:tasks.log_work')->name('tasks.work-logs.store');
     Route::post('/tasks/{task}/reminders', [TaskController::class, 'reminder'])->middleware('permission:tasks.create_reminder')->name('tasks.reminders.store');
     Route::put('/tasks/{task}/reminders/{reminder}', [TaskController::class, 'updateReminder'])->middleware('permission:tasks.update')->name('tasks.reminders.update');

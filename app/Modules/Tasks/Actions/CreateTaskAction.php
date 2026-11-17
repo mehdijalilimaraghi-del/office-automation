@@ -127,6 +127,12 @@ class CreateTaskAction
             $this->validateDates($data);
             $this->externalPartyService->validateTaskContext($data);
 
+            $reviewRequired = true;
+            $initialStatus = $data['status'] ?? 'todo';
+            if ($initialStatus !== 'todo') {
+                throw new InvalidArgumentException('وضعیت اولیه دستورکار به‌صورت خودکار «انجام نشده» تعیین می‌شود.');
+            }
+
             $task = Task::query()->create([
                 'project_id' => $project?->id,
                 'section_id' => $section?->id,
@@ -135,15 +141,16 @@ class CreateTaskAction
                 'external_department_id' => $data['external_department_id'] ?? null,
                 'title' => $data['title'],
                 'description' => $data['description'] ?? null,
-                'status' => $data['status'] ?? 'todo',
+                'status' => 'todo',
+                'sub_status' => $delegateAssignee !== null ? 'referred' : null,
                 'priority' => $data['priority'] ?? 'normal',
-                'review_required' => (bool) ($data['review_required'] ?? false),
-                'review_status' => ($data['review_required'] ?? false) ? 'not_started' : 'not_required',
+                'review_required' => $reviewRequired,
+                'review_status' => $reviewRequired ? 'not_started' : 'not_required',
                 'assignee_id' => $assignee?->id,
                 'created_by' => $creator->id,
                 'start_date' => $data['start_date'] ?? null,
                 'due_date' => $data['due_date'] ?? null,
-                'completed_at' => ($data['status'] ?? 'todo') === 'completed' ? now() : null,
+                'completed_at' => null,
                 'is_active' => $data['is_active'] ?? true,
             ]);
 

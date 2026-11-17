@@ -18,10 +18,15 @@ use App\Http\Requests\Modules\Tasks\UpdateTaskReminderStatusRequest;
 use App\Http\Requests\Modules\Tasks\UpdateTaskRequest;
 use App\Http\Requests\Modules\Tasks\StoreTaskActivityRequest;
 use App\Modules\Tasks\Models\TaskActivity;
+use App\Modules\Tasks\Models\TaskStatusHistory;
 use App\Http\Requests\Modules\Tasks\UpdateTaskParticipantsRequest;
 use App\Models\User;
 use App\Modules\Tasks\Contracts\TaskServiceContract;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Correspondence\Models\Correspondence;
+use App\Modules\Correspondence\Services\CorrespondenceAccessService;
+use App\Modules\Correspondence\Services\CorrespondenceWorkflowService;
+use Illuminate\Support\Facades\DB;
 use App\Modules\Tasks\Models\TaskReminder;
 use App\Modules\Tasks\Services\TaskFormOptionsService;
 use Illuminate\Http\RedirectResponse;
@@ -41,47 +46,244 @@ class TaskController extends Controller
     ) {
     }
 
-    public function index(Request $request): Response
+    public function index(Request $request, CorrespondenceAccessService $correspondenceAccess): Response
     {
         Gate::authorize('viewAny', Task::class);
 
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
-            'status' => ['nullable', 'in:todo,in_progress,submitted,completed,cancelled'],
+            'status' => ['nullable', 'in:todo,observed,in_progress,completed,cancelled,cannot_continue'],
+            'status_group' => ['nullable', 'in:pending'],
             'priority' => ['nullable', 'in:low,normal,high,urgent'],
             'project_id' => ['nullable', 'integer'],
             'department_id' => ['nullable', 'integer'],
+            'scope' => ['nullable', 'in:personal,unit'],
+            'due' => ['nullable', 'in:today,overdue'],
+            'review' => ['nullable', 'in:1'],
+            'completed_period' => ['nullable', 'in:month'],
+            'assignee_id' => ['nullable', 'integer', 'min:1'],
+            'due_from' => ['nullable', 'date_format:Y-m-d'],
+            'due_to' => ['nullable', 'date_format:Y-m-d'],
         ]);
+
+        if (! empty($filters['due_from']) && ! empty($filters['due_to']) && $filters['due_to'] < $filters['due_from']) {
+            throw ValidationException::withMessages([
+                'due_to' => 'تاریخ پایان باید مساوی یا بعد از تاریخ شروع باشد.',
+            ]);
+        }
+
+        $canFilterUnit = in_array('organization', $request->user()->permissionScopes('tasks.view'), true)
+            || $request->user()->managedDepartments()->exists()
+            || $request->user()->managedProjects()->exists();
+
+        if (! $canFilterUnit && ($filters['scope'] ?? null) === 'unit') {
+            unset($filters['scope']);
+        }
+
+        $correspondenceId = $request->integer('create_for_correspondence');
+        $requestedProjectId = $request->integer('project_id');
+        $requestedSectionId = $request->integer('section_id');
+
+        // A department manager may be allowed to create tasks in their shared
+        // project section even when the generic (project-agnostic) ability is false.
+        // Evaluate the ability against the requested project as well, so the
+        // correspondence launch route can build its form options for that manager.
+        $canCreate = Gate::allows('create', Task::class)
+            || ($requestedProjectId > 0 && Gate::allows('create', [Task::class, $requestedProjectId]));
+        $formOptions = $canCreate ? $this->taskFormOptionsService->forCreate($request->user()) : null;
+        $createForCorrespondence = null;
+
+        if ($canCreate && $correspondenceId > 0 && $requestedProjectId > 0 && $requestedSectionId > 0) {
+            $letter = Correspondence::query()->find($correspondenceId);
+
+            if ($letter !== null
+                && $correspondenceAccess->canView($letter, $request->user())
+                && $letter->status === Correspondence::STATUS_REGISTERED
+                && in_array($letter->type, [Correspondence::TYPE_INCOMING, Correspondence::TYPE_INTERNAL], true)
+                && $letter->workflow_state === 'in_progress'
+                && $letter->task_id === null
+                && $letter->current_department_id !== null
+                && ($letter->current_user_id === null || (int) $letter->current_user_id === (int) $request->user()->id)
+                && (int) \App\Core\Departments\Models\Department::query()->whereKey($letter->current_department_id)->value('manager_id') === (int) $request->user()->id) {
+                $latestRequest = $letter->actions()
+                    ->whereIn('action_type', [
+                        \App\Modules\Correspondence\Models\CorrespondenceAction::EMPLOYEE_REQUEST_NONE,
+                        \App\Modules\Correspondence\Models\CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
+                        \App\Modules\Correspondence\Models\CorrespondenceAction::EMPLOYEE_REQUEST_LETTER,
+                        \App\Modules\Correspondence\Models\CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
+                        \App\Modules\Correspondence\Models\CorrespondenceAction::EMPLOYEE_REQUEST_PROJECT,
+                    ])->latest('id')->first();
+                $latestApproval = $letter->actions()
+                    ->where('action_type', \App\Modules\Correspondence\Models\CorrespondenceAction::MANAGER_CREATE_TASK)
+                    ->latest('id')->first();
+                $approvalMetadata = $latestApproval?->metadata ?? [];
+
+                $section = \App\Modules\Projects\Models\ProjectSection::query()
+                    ->with(['project', 'department.manager', 'department.members:id'])
+                    ->whereKey($requestedSectionId)
+                    ->first();
+
+                $validRequest = $latestRequest !== null
+                    && in_array($latestRequest->action_type, [
+                        \App\Modules\Correspondence\Models\CorrespondenceAction::EMPLOYEE_REQUEST_TASK,
+                        \App\Modules\Correspondence\Models\CorrespondenceAction::EMPLOYEE_REQUEST_WORKFLOW,
+                    ], true)
+                    && $latestApproval !== null
+                    && (int) $latestApproval->actor_id === (int) $request->user()->id
+                    && (int) $latestApproval->id > (int) $latestRequest->id
+                    && ! isset($approvalMetadata['task_id']);
+
+                if ($validRequest
+                    && $section !== null
+                    && $section->project !== null
+                    && (int) $section->project_id === $requestedProjectId
+                    && $section->project->is_system_default
+                    && (int) $section->department_id === (int) $letter->current_department_id
+                    && $section->manager_can_create_tasks
+                    && $section->department?->is_active
+                    && (int) $section->department?->manager_id === (int) $request->user()->id) {
+                    $sectionOption = [
+                        'id' => (int) $section->id,
+                        'name' => $section->name,
+                        'department_id' => (int) $section->department_id,
+                        'manager_id' => (int) $request->user()->id,
+                        'manager_name' => $request->user()->name,
+                        'manager_can_create_tasks' => true,
+                        'member_ids' => $section->department->members->pluck('id')->map(fn ($id): int => (int) $id)->values()->all(),
+                    ];
+
+                    if ($formOptions !== null) {
+                        $projectIndex = collect($formOptions['projects'])->search(
+                            fn (array $project): bool => (int) $project['id'] === (int) $section->project_id
+                        );
+
+                        if ($projectIndex === false) {
+                            $formOptions['projects'][] = [
+                                'id' => (int) $section->project_id,
+                                'name' => $section->project->name,
+                                'member_ids' => $sectionOption['member_ids'],
+                                'sections' => [$sectionOption],
+                            ];
+                        } else {
+                            $formOptions['projects'][$projectIndex]['sections'] = collect($formOptions['projects'][$projectIndex]['sections'])
+                                ->reject(fn (array $item): bool => (int) $item['id'] === (int) $section->id)
+                                ->push($sectionOption)->values()->all();
+                        }
+                    }
+
+                    $createForCorrespondence = [
+                        'correspondence_id' => (int) $letter->id,
+                        'project_id' => (int) $section->project_id,
+                        'section_id' => (int) $section->id,
+                        'department_id' => (int) $section->department_id,
+                    ];
+                }
+            }
+        }
 
         return Inertia::render('Tasks/Index', [
             'tasks' => $this->taskService->list($request->user(), $filters),
             'filters' => $filters,
-            'canCreate' => Gate::allows('create', Task::class),
-            'formOptions' => Gate::allows('create', Task::class)
-                ? $this->taskFormOptionsService->forCreate($request->user())
-                : null,
+            'canCreate' => $canCreate,
+            'canFilterUnit' => $canFilterUnit,
+            'formOptions' => $formOptions,
+            'createForCorrespondence' => $createForCorrespondence,
             'customFields' => $this->customFieldService->definitions(Task::class),
+            'filterOptions' => $this->taskFormOptionsService->forFilters($request->user()),
         ]);
     }
 
-    public function store(StoreTaskRequest $request): RedirectResponse
-    {
+    public function store(
+        StoreTaskRequest $request,
+        CorrespondenceAccessService $correspondenceAccess,
+        CorrespondenceWorkflowService $correspondenceWorkflow,
+    ): RedirectResponse {
         $data = $request->validated();
+        $correspondenceId = isset($data['correspondence_id']) ? (int) $data['correspondence_id'] : null;
+        unset($data['correspondence_id']);
 
         try {
-            $this->taskService->create(data: $data, creator: $request->user());
+            $task = DB::transaction(function () use ($data, $correspondenceId, $request, $correspondenceAccess, $correspondenceWorkflow): Task {
+                $letter = null;
+
+                if ($correspondenceId !== null) {
+                    $letter = Correspondence::query()->findOrFail($correspondenceId);
+                    abort_unless($correspondenceAccess->canView($letter, $request->user()), 403);
+                    $section = isset($data['section_id'])
+                        ? \App\Modules\Projects\Models\ProjectSection::query()->with('project')->find($data['section_id'])
+                        : null;
+                    abort_unless($section !== null
+                        && $section->project?->is_system_default
+                        && $letter->current_department_id !== null
+                        && (int) $section->department_id === (int) $letter->current_department_id, 403,
+                        'دستورکار مرتبط باید در بخش واحد مسئول نامه از پروژه عمومی سازمان ایجاد شود.');
+                }
+
+                $task = $this->taskService->create(data: $data, creator: $request->user());
+
+                if ($letter !== null) {
+                    $correspondenceWorkflow->attachTaskInstruction($letter, $task, $request->user());
+                }
+
+                return $task;
+            });
         } catch (InvalidArgumentException $exception) {
             throw ValidationException::withMessages(['task' => $exception->getMessage()]);
+        }
+
+        if ($correspondenceId !== null) {
+            return redirect()->route('correspondence.show', $correspondenceId)
+                ->with('success', 'دستورکار در پروژه عمومی ایجاد و به نامه متصل شد.');
         }
 
         return back()->with('success', 'تسک با موفقیت ایجاد شد.');
     }
 
-    public function show(Request $request, Task $task): Response
+    public function show(Request $request, Task $task, CorrespondenceAccessService $correspondenceAccess): Response
     {
         Gate::authorize('view', $task);
 
+        if ((int) $task->assignee_id === (int) $request->user()->id) {
+            $fromStatus = $task->status;
+            $notes = [];
+
+            if ($task->status === 'todo') {
+                $task->status = 'observed';
+                $notes[] = 'دستورکار توسط مسئول مشاهده شد';
+            }
+            if ($task->sub_status === 'referred') {
+                $task->sub_status = 'referral_seen';
+                $notes[] = 'ارجاع مشاهده شد';
+            }
+
+            if ($notes !== []) {
+                $task->save();
+                TaskStatusHistory::query()->create([
+                    'task_id' => $task->id,
+                    'from_status' => $fromStatus,
+                    'to_status' => $task->status,
+                    'changed_by' => $request->user()->id,
+                    'note' => implode('؛ ', $notes),
+                    'changed_at' => now(),
+                ]);
+            }
+        }
+
+        $workflowCorrespondences = $task->workflowInstanceSteps()
+            ->with('instance.correspondences')
+            ->get()
+            ->flatMap(fn ($step) => $step->instance?->correspondences ?? collect());
+
+        $linkedCorrespondences = $task->correspondences()
+            ->get()
+            ->merge($workflowCorrespondences)
+            ->unique('id')
+            ->filter(fn (Correspondence $letter): bool => $correspondenceAccess->canView($letter, $request->user()))
+            ->map(fn (Correspondence $letter): array => $letter->only(['id', 'subject', 'letter_number', 'type']))
+            ->values();
+
         return Inertia::render('Tasks/Show', [
+            'linkedCorrespondences' => $linkedCorrespondences,
             'task' => $task->load([
                 'project.department',
                 'documents.document.latestVersion',
@@ -96,6 +298,7 @@ class TaskController extends Controller
                 'assignments.toUser',
                 'assignments.assignedBy',
                 'comments.user',
+                'comments.parent.user',
                 'activities.creator',
                 'activities.completedBy',
                 'reminders.user',
@@ -109,8 +312,10 @@ class TaskController extends Controller
             ]),
             'timeline' => $this->taskService->timeline($task),
             'currentUserId' => (int) $request->user()->id,
+            'canCreateCorrespondence' => $request->user()->hasPermission('correspondence.create'),
             'abilities' => [
                 'refer' => Gate::allows('refer', $task),
+                'accept_responsibility' => Gate::allows('acceptResponsibility', $task),
                 'comment' => Gate::allows('comment', $task),
                 'log_work' => Gate::allows('logWork', $task),
                 'create_reminder' => Gate::allows('createReminder', $task),
@@ -133,6 +338,7 @@ class TaskController extends Controller
     public function update(UpdateTaskRequest $request, Task $task): RedirectResponse
     {
         Gate::authorize('update', $task);
+        $this->assertTaskContentEditable($request, $task);
 
         try {
             $this->taskService->update(task: $task, data: $request->validated());
@@ -146,6 +352,7 @@ class TaskController extends Controller
     public function updateExternalParties(Request $request, Task $task): RedirectResponse
     {
         Gate::authorize('update', $task);
+        $this->assertTaskContentEditable($request, $task);
 
         $data = $request->validate([
             'external_organization_id' => ['nullable', 'integer', 'exists:external_organizations,id'],
@@ -234,9 +441,29 @@ class TaskController extends Controller
         return back()->with('success', 'مسئول تسک با موفقیت تغییر کرد.');
     }
 
+    public function acceptResponsibility(Request $request, Task $task): RedirectResponse
+    {
+        Gate::authorize('acceptResponsibility', $task);
+
+        try {
+            $this->taskService->assign(
+                task: $task,
+                assignee: $request->user(),
+                actor: $request->user(),
+                type: 'manager_accept',
+                note: 'پذیرش مسئولیت توسط مدیر واحد',
+            );
+        } catch (InvalidArgumentException $exception) {
+            throw ValidationException::withMessages(['task' => $exception->getMessage()]);
+        }
+
+        return back()->with('success', 'مسئولیت دستورکار به شما واگذار شد.');
+    }
+
     public function refer(ReferTaskRequest $request, Task $task): RedirectResponse
     {
         Gate::authorize('refer', $task);
+        $this->assertTaskContentEditable($request, $task);
 
         $assignee = User::query()->findOrFail($request->validated()['assignee_id']);
 
@@ -258,6 +485,7 @@ class TaskController extends Controller
     public function storeActivity(StoreTaskActivityRequest $request, Task $task): RedirectResponse
     {
         Gate::authorize('update', $task);
+        $this->assertTaskContentEditable($request, $task);
 
         $data = $request->validated();
         $lastSequence = (int) $task->activities()->max('sequence');
@@ -274,12 +502,19 @@ class TaskController extends Controller
             'completed_at' => ($data['activity_type'] ?? 'planned') === 'logged' ? now() : null,
         ]);
 
+        if (in_array($task->status, ['todo', 'observed'], true)) {
+            $task->update(['status' => 'in_progress', 'sub_status' => null]);
+        } elseif ($task->sub_status !== null && $task->sub_status !== 'manager_review') {
+            $task->update(['sub_status' => null]);
+        }
+
         return back()->with('success', 'فعالیت با موفقیت ثبت شد.');
     }
 
     public function completeActivity(Request $request, Task $task, TaskActivity $activity): RedirectResponse
     {
         Gate::authorize('update', $task);
+        $this->assertTaskContentEditable($request, $task);
         abort_unless((int) $activity->task_id === (int) $task->id, 404);
 
         abort_unless($activity->activity_type === 'planned' && $activity->status === 'pending', 422);
@@ -291,12 +526,19 @@ class TaskController extends Controller
             'completed_at' => now(),
         ]);
 
+        if (in_array($task->status, ['todo', 'observed'], true)) {
+            $task->update(['status' => 'in_progress', 'sub_status' => null]);
+        } elseif ($task->sub_status !== null && $task->sub_status !== 'manager_review') {
+            $task->update(['sub_status' => null]);
+        }
+
         return back()->with('success', 'فعالیت انجام شد و در گزارش فعالیت ثبت شد.');
     }
 
     public function updateActivity(Request $request, Task $task, TaskActivity $activity): RedirectResponse
     {
         Gate::authorize('update', $task);
+        $this->assertTaskContentEditable($request, $task);
         abort_unless((int) $activity->task_id === (int) $task->id, 404);
 
         $data = $request->validate([
@@ -319,6 +561,7 @@ class TaskController extends Controller
     public function destroyActivity(Request $request, Task $task, TaskActivity $activity): RedirectResponse
     {
         Gate::authorize('update', $task);
+        $this->assertTaskContentEditable($request, $task);
         abort_unless((int) $activity->task_id === (int) $task->id, 404);
 
         $activity->delete();
@@ -329,6 +572,7 @@ class TaskController extends Controller
     public function updateParticipants(UpdateTaskParticipantsRequest $request, Task $task): RedirectResponse
     {
         Gate::authorize('update', $task);
+        $this->assertTaskContentEditable($request, $task);
 
         $userIds = array_values(array_unique(array_map('intval', $request->validated()['user_ids'])));
 
@@ -345,10 +589,18 @@ class TaskController extends Controller
     {
         Gate::authorize('comment', $task);
 
+        $parentCommentId = $request->validated()['parent_comment_id'] ?? null;
+        if ($parentCommentId !== null && ! $task->comments()->whereKey($parentCommentId)->exists()) {
+            throw ValidationException::withMessages([
+                'parent_comment_id' => 'دیدگاه انتخاب‌شده متعلق به این دستورکار نیست.',
+            ]);
+        }
+
         $this->taskService->addComment(
             task: $task,
             author: $request->user(),
             body: $request->validated()['body'],
+            parentCommentId: $request->validated()['parent_comment_id'] ?? null,
         );
 
         return back()->with('success', 'نظر با موفقیت ثبت شد.');
@@ -356,13 +608,16 @@ class TaskController extends Controller
 
     public function updateComment(Request $request, Task $task, \App\Modules\Tasks\Models\TaskComment $comment): RedirectResponse
     {
-        Gate::authorize('update', $task);
+        Gate::authorize('view', $task);
         abort_unless((int) $comment->task_id === (int) $task->id, 404);
+        abort_unless((int) $comment->user_id === (int) $request->user()->id, 403);
 
         $data = $request->validate([
             'body' => ['required', 'string', 'max:10000'],
         ]);
 
+        abort_if($task->isFinalized(), 403, 'نظر دستورکار نهایی‌شده قابل تغییر نیست.');
+        abort_if($task->review_status === 'pending', 403, 'تا تعیین تکلیف مدیر، نظر قابل تغییر نیست.');
         $comment->update(['body' => $data['body']]);
 
         return back()->with('success', 'نظر با موفقیت ویرایش شد.');
@@ -370,9 +625,14 @@ class TaskController extends Controller
 
     public function destroyComment(Request $request, Task $task, \App\Modules\Tasks\Models\TaskComment $comment): RedirectResponse
     {
-        Gate::authorize('update', $task);
+        Gate::authorize('view', $task);
         abort_unless((int) $comment->task_id === (int) $task->id, 404);
+        abort_unless((int) $comment->user_id === (int) $request->user()->id, 403);
 
+        abort_if($task->isFinalized(), 403, 'نظر دستورکار نهایی‌شده قابل تغییر نیست.');
+        abort_if($task->review_status === 'pending', 403, 'تا تعیین تکلیف مدیر، نظر قابل تغییر نیست.');
+        // SQL Server rejects cascading self-references; detach replies before deleting their parent.
+        $comment->replies()->update(['parent_comment_id' => null]);
         $comment->delete();
 
         return back()->with('success', 'نظر با موفقیت حذف شد.');
@@ -381,6 +641,7 @@ class TaskController extends Controller
     public function updateReminder(Request $request, Task $task, TaskReminder $reminder): RedirectResponse
     {
         Gate::authorize('update', $task);
+        $this->assertTaskContentEditable($request, $task);
         abort_unless((int) $reminder->task_id === (int) $task->id, 404);
 
         $data = $request->validate([
@@ -401,6 +662,7 @@ class TaskController extends Controller
     public function destroyReminder(Request $request, Task $task, TaskReminder $reminder): RedirectResponse
     {
         Gate::authorize('update', $task);
+        $this->assertTaskContentEditable($request, $task);
         abort_unless((int) $reminder->task_id === (int) $task->id, 404);
 
         $reminder->delete();
@@ -411,6 +673,7 @@ class TaskController extends Controller
     public function workLog(StoreTaskWorkLogRequest $request, Task $task): RedirectResponse
     {
         Gate::authorize('logWork', $task);
+        $this->assertTaskContentEditable($request, $task);
         $data = $request->validated();
         $sequence = ((int) $task->activities()->max('sequence')) + 1;
 
@@ -427,6 +690,12 @@ class TaskController extends Controller
             'completed_at' => $data['completed_at'] ?? null,
         ]);
 
+        if (in_array($task->status, ['todo', 'observed'], true)) {
+            $task->update(['status' => 'in_progress', 'sub_status' => null]);
+        } elseif ($task->sub_status !== null && $task->sub_status !== 'manager_review') {
+            $task->update(['sub_status' => null]);
+        }
+
         return back()->with('success', 'فعالیت انجام‌شده با موفقیت ثبت شد.');
     }
 
@@ -434,6 +703,7 @@ class TaskController extends Controller
     public function reminder(StoreTaskReminderRequest $request, Task $task): RedirectResponse
     {
         Gate::authorize('createReminder', $task);
+        $this->assertTaskContentEditable($request, $task);
         $data = $request->validated();
         $recipient = User::query()->findOrFail($data['user_id']);
 
@@ -455,11 +725,14 @@ class TaskController extends Controller
         TaskReminder $reminder,
     ): RedirectResponse {
         $status = $request->validated()['status'];
+        abort_if($task->isFinalized(), 403, 'یادآوری دستورکار نهایی‌شده قابل تغییر نیست.');
 
         Gate::authorize(
             $status === 'completed' ? 'completeReminder' : 'cancelReminder',
             [$task, $reminder],
         );
+        abort_if($task->review_status === 'pending', 403, 'یادآوری این دستورکار در زمان بررسی قابل تغییر نیست.');
+        abort_unless((int) $reminder->user_id === (int) $request->user()->id, 403);
 
         try {
             $this->taskService->updateReminderStatus(
@@ -536,6 +809,13 @@ class TaskController extends Controller
         }
 
         return back()->with('success', 'وضعیت تسک با موفقیت تغییر کرد.');
+    }
+
+    private function assertTaskContentEditable(Request $request, Task $task): void
+    {
+        abort_if($task->isFinalized(), 403, 'دستورکار نهایی‌شده و قابل تغییر نیست.');
+        abort_if($task->review_status === 'pending', 403, 'این دستورکار تا زمان برگشت برای اصلاح یا تعیین تکلیف مدیر قابل تغییر نیست.');
+        abort_unless((int) $task->assignee_id === (int) $request->user()->id, 403, 'فقط مسئول فعلی دستورکار می‌تواند فعالیت‌ها و اطلاعات اجرایی آن را تغییر دهد.');
     }
 
     public function destroy(Task $task): RedirectResponse

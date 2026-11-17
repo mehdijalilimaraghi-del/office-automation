@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import AppSelect from '@/Components/AppSelect.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
+import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 import CustomFieldsForm from '@/Components/CustomFieldsForm.vue';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 const showCreateModal = ref(false);
 
@@ -34,9 +36,11 @@ interface ProjectOption {
 interface DepartmentOption {
     id: number;
     name: string;
+    parent_id?: number | null;
+    icon?: string | null;
 }
 interface ExternalOrganizationOption { id: number; name: string; }
-interface ExternalDepartmentOption { id: number; external_organization_id: number; name: string; }
+interface ExternalDepartmentOption { id: number; external_organization_id: number; parent_id?: number | null; name: string; }
 interface ExternalContactOption { id: number; external_organization_id: number; external_department_id: number | null; name: string; position: string | null; mobile: string | null; phone: string | null; extension: string | null; }
 
 interface FormOptions {
@@ -67,15 +71,24 @@ interface TaskPaginator {
 interface TaskFilters {
     search?: string;
     status?: string;
+    status_group?: 'pending';
     priority?: string;
     project_id?: number | string;
     department_id?: number | string;
+    scope?: 'personal' | 'unit';
+    due?: 'today' | 'overdue';
+    review?: '1';
+    completed_period?: 'month';
+    assignee_id?: number | string;
+    due_from?: string;
+    due_to?: string;
 }
 
 interface Task {
     id: number;
     title: string;
     status: string;
+    sub_status: string | null;
     priority: string;
     start_date: string | null;
     due_date: string | null;
@@ -88,7 +101,15 @@ const props = defineProps<{
     tasks: TaskPaginator;
     filters: TaskFilters;
     canCreate: boolean;
+    canFilterUnit: boolean;
     formOptions: FormOptions | null;
+    createForCorrespondence: {
+        correspondence_id: number;
+        project_id: number;
+        section_id: number;
+        department_id: number;
+    } | null;
+    filterOptions: { projects: Array<{ id: number; name: string }>; departments: DepartmentOption[]; users: User[] };
     customFields: Array<{
         id: number; key: string; label: string;
         type: 'text' | 'textarea' | 'number' | 'date' | 'boolean' | 'select';
@@ -97,11 +118,19 @@ const props = defineProps<{
 }>();
 
 const search = ref(props.filters.search ?? '');
-const statusFilter = ref(props.filters.status ?? '');
+const statusFilter = ref(props.filters.status_group === 'pending' ? '__pending' : (props.filters.status ?? ''));
 const priorityFilter = ref(props.filters.priority ?? '');
 const projectFilter = ref(props.filters.project_id?.toString() ?? '');
-const departmentFilter = ref(props.filters.department_id?.toString() ?? '');
+const departmentFilter = ref<string | number | null>(props.filters.department_id?.toString() ?? '');
+const scopeFilter = ref(props.filters.scope ?? '');
+const dueFilter = ref(props.filters.due ?? '');
+const reviewFilter = ref(props.filters.review ?? '');
+const completedPeriodFilter = ref(props.filters.completed_period ?? '');
+const assigneeFilter = ref(props.filters.assignee_id?.toString() ?? '');
+const dueFromFilter = ref(props.filters.due_from ?? '');
+const dueToFilter = ref(props.filters.due_to ?? '');
 const createForm = useForm({
+    correspondence_id: null as number | null,
     project_id: null as number | null,
     section_id: null as number | null,
     department_id: null as number | null,
@@ -122,11 +151,13 @@ const createForm = useForm({
     custom_fields: {} as Record<string, string | number | boolean | null>,
 });
 
+const subStatusLabels: Record<string, string> = {
+    referred: 'ارجاع شده', referral_seen: 'ارجاع مشاهده شده',
+    manager_review: 'در حال بررسی مدیر', returned_for_completion: 'برگشت برای تکمیل',
+};
 const statusLabels: Record<string, string> = {
-    todo: 'انجام نشده',
-    in_progress: 'در حال انجام',
-    completed: 'تکمیل شده',
-    cancelled: 'لغو شده',
+    todo: 'انجام نشده', observed: 'مشاهده شده', in_progress: 'در حال انجام',
+    completed: 'تکمیل شده', cancelled: 'لغو شده', cannot_continue: 'امکان ادامه وجود ندارد',
 };
 
 const priorityLabels: Record<string, string> = {
@@ -166,13 +197,22 @@ const availableAssignees = computed(() => {
 
 const applyFilters = (): void => {
     isFiltering.value = true;
+    const combinedPending = statusFilter.value === '__pending';
 
     router.get(route('tasks.index'), {
         search: search.value.trim() || undefined,
-        status: statusFilter.value || undefined,
+        status: combinedPending ? undefined : (statusFilter.value || undefined),
+        status_group: combinedPending ? 'pending' : undefined,
         priority: priorityFilter.value || undefined,
         project_id: projectFilter.value || undefined,
         department_id: departmentFilter.value || undefined,
+        scope: scopeFilter.value || undefined,
+        due: dueFilter.value || undefined,
+        review: reviewFilter.value || undefined,
+        completed_period: completedPeriodFilter.value || undefined,
+        assignee_id: assigneeFilter.value || undefined,
+        due_from: dueFromFilter.value || undefined,
+        due_to: dueToFilter.value || undefined,
     }, {
         preserveState: true,
         preserveScroll: true,
@@ -188,6 +228,13 @@ const clearFilters = (): void => {
     priorityFilter.value = '';
     projectFilter.value = '';
     departmentFilter.value = '';
+    scopeFilter.value = '';
+    dueFilter.value = '';
+    reviewFilter.value = '';
+    completedPeriodFilter.value = '';
+    assigneeFilter.value = '';
+    dueFromFilter.value = '';
+    dueToFilter.value = '';
     applyFilters();
 };
 
@@ -232,6 +279,17 @@ const handleSectionChange = (): void => {
     createForm.delegate_assignee_id = null;
     createForm.delegate_to_employee = false;
 };
+
+onMounted(() => {
+    const context = props.createForCorrespondence;
+    if (!context || !props.formOptions || !props.canCreate) return;
+
+    createForm.correspondence_id = context.correspondence_id;
+    createForm.project_id = context.project_id;
+    createForm.section_id = context.section_id;
+    createForm.department_id = context.department_id;
+    showCreateModal.value = true;
+});
 </script>
 
 <template>
@@ -288,38 +346,34 @@ const handleSectionChange = (): void => {
 
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">پروژه</label>
-                        <select v-model="createForm.project_id" @change="handleProjectChange"
+                        <AppSelect v-model="createForm.project_id" @change="handleProjectChange"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
                             <option :value="null">بدون پروژه</option>
                             <option v-for="project in formOptions.projects" :key="project.id" :value="project.id">{{ project.name }}</option>
-                        </select>
+                        </AppSelect>
                     </div>
 
                     <div v-if="selectedProject && selectedProject.sections.length">
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">بخش پروژه</label>
-                        <select v-model="createForm.section_id" required @change="handleSectionChange"
+                        <AppSelect v-model="createForm.section_id" required @change="handleSectionChange"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
                             <option :value="null">انتخاب بخش</option>
                             <option v-for="section in selectedProject.sections" :key="section.id" :value="section.id">{{ section.name }}</option>
-                        </select>
+                        </AppSelect>
                     </div>
 
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">واحد مسئول</label>
-                        <select v-model="createForm.department_id" :disabled="createForm.section_id !== null"
-                            class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
-                            <option :value="null">بدون واحد</option>
-                            <option v-for="department in formOptions.departments" :key="department.id" :value="department.id">{{ department.name }}</option>
-                        </select>
+                        <DepartmentTreeSelect v-model="createForm.department_id" :departments="formOptions.departments" :disabled="createForm.section_id !== null" placeholder="بدون واحد" />
                     </div>
 
                     <div v-if="createForm.section_id === null">
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">مسئول دستورکار</label>
-                        <select v-model="createForm.assignee_id"
+                        <AppSelect v-model="createForm.assignee_id"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
                             <option :value="null">بدون مسئول</option>
                             <option v-for="user in availableAssignees" :key="user.id" :value="user.id">{{ user.name }}</option>
-                        </select>
+                        </AppSelect>
                         <p v-if="createForm.project_id !== null" class="mt-1 text-xs text-gray-500">برای دستورکارهای عمومی، مسئول را مستقیماً انتخاب کنید؛ دستورکارهای بخش ابتدا به مدیر واحد ارجاع می‌شوند.</p>
                     </div>
 
@@ -334,20 +388,20 @@ const handleSectionChange = (): void => {
                         </label>
                         <div v-if="createForm.delegate_to_employee">
                             <label class="mb-1.5 block text-sm font-medium text-gray-700">کارمند مقصد ارجاع</label>
-                            <select v-model="createForm.delegate_assignee_id" required
+                            <AppSelect v-model="createForm.delegate_assignee_id" required
                                 class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
                                 <option :value="null">انتخاب کارمند</option>
                                 <option v-for="user in availableAssignees" :key="user.id" :value="user.id">{{ user.name }}</option>
-                            </select>
+                            </AppSelect>
                         </div>
                     </div>
 
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">اولویت</label>
-                        <select v-model="createForm.priority"
+                        <AppSelect v-model="createForm.priority"
                             class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
                             <option value="low">کم</option><option value="normal">عادی</option><option value="high">زیاد</option><option value="urgent">فوری</option>
-                        </select>
+                        </AppSelect>
                     </div>
 
                     <div>
@@ -366,9 +420,9 @@ const handleSectionChange = (): void => {
                             <p class="mt-1 text-xs text-gray-500">اگر این دستورکار نیاز به پیگیری با سازمان یا شخص خارج از شرکت دارد، اطلاعات آن را انتخاب کنید.</p>
                         </div>
                         <div class="grid gap-4 md:grid-cols-3">
-                            <select v-model="createForm.external_organization_id" @change="handleExternalOrganizationChange" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm"><option :value="null">بدون پیگیری خارجی</option><option v-for="item in formOptions.external_organizations" :key="item.id" :value="item.id">{{ item.name }}</option></select>
-                            <select v-model="createForm.external_department_id" :disabled="createForm.external_organization_id === null" @change="handleExternalDepartmentChange" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm"><option :value="null">بدون واحد خارجی</option><option v-for="item in externalDepartments" :key="item.id" :value="item.id">{{ item.name }}</option></select>
-                            <select v-model="createForm.external_contact_id" :disabled="createForm.external_organization_id === null" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm"><option :value="null">بدون شخص مشخص</option><option v-for="item in externalContacts" :key="item.id" :value="item.id">{{ item.name }}{{ item.position ? ' — ' + item.position : '' }}</option></select>
+                            <AppSelect v-model="createForm.external_organization_id" @change="handleExternalOrganizationChange" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm"><option :value="null">بدون پیگیری خارجی</option><option v-for="item in formOptions.external_organizations" :key="item.id" :value="item.id">{{ item.name }}</option></AppSelect>
+                            <DepartmentTreeSelect v-model="createForm.external_department_id" :departments="externalDepartments" :disabled="createForm.external_organization_id === null" placeholder="بدون واحد خارجی" @update:model-value="handleExternalDepartmentChange" />
+                            <AppSelect v-model="createForm.external_contact_id" :disabled="createForm.external_organization_id === null" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm"><option :value="null">بدون شخص مشخص</option><option v-for="item in externalContacts" :key="item.id" :value="item.id">{{ item.name }}{{ item.position ? ' — ' + item.position : '' }}</option></AppSelect>
                         </div>
                     </div>
 
@@ -428,47 +482,96 @@ const handleSectionChange = (): void => {
             </section>
 
             <section class="task-filter-panel rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
-                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-                    <div class="lg:col-span-2">
-                        <label for="task-search" class="mb-1.5 block text-sm font-medium text-gray-700">جست‌وجو</label>
-                        <input id="task-search" v-model="search" type="search"
-                            placeholder="عنوان، توضیحات، پروژه، واحد یا مسئول..."
-                            class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
+                <div class="mb-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div v-if="props.canFilterUnit">
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">محدوده دستورکار</label>
+                        <AppSelect v-model="scopeFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                            <option value="">همه موارد مجاز</option>
+                            <option value="personal">دستورکارهای شخصی من</option>
+                            <option value="unit">دستورکارهای واحد</option>
+                        </AppSelect>
                     </div>
                     <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">مهلت</label>
+                        <AppSelect v-model="dueFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                            <option value="">همه مهلت‌ها</option>
+                            <option value="today">سررسید امروز</option>
+                            <option value="overdue">عقب‌افتاده</option>
+                        </AppSelect>
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">بررسی</label>
+                        <AppSelect v-model="reviewFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                            <option value="">همه وضعیت‌های بررسی</option>
+                            <option value="1">در انتظار بررسی</option>
+                        </AppSelect>
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">بازه تکمیل</label>
+                        <AppSelect v-model="completedPeriodFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                            <option value="">همه زمان‌ها</option>
+                            <option value="month">تکمیل‌شده در ماه جاری</option>
+                        </AppSelect>
+                    </div>
+                </div>
+                <div class="mb-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">مسئول دستورکار</label>
+                        <AppSelect v-model="assigneeFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                            <option value="">همه مسئولان</option>
+                            <option v-for="user in filterOptions.users" :key="user.id" :value="user.id">{{ user.name }}</option>
+                        </AppSelect>
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">مهلت از</label>
+                        <JalaliDatePicker v-model="dueFromFilter" />
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700">مهلت تا</label>
+                        <JalaliDatePicker v-model="dueToFilter" />
+                    </div>
+                </div>
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">وضعیت</label>
-                        <select v-model="statusFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                        <AppSelect v-model="statusFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
                             <option value="">همه وضعیت‌ها</option>
+                            <option value="__pending">در انتظار انجام یا دیده‌شده</option>
                             <option value="todo">انجام نشده</option>
+                            <option value="observed">مشاهده شده</option>
                             <option value="in_progress">در حال انجام</option>
                             <option value="completed">تکمیل شده</option>
                             <option value="cancelled">لغو شده</option>
-                        </select>
+                            <option value="cannot_continue">امکان ادامه وجود ندارد</option>
+                        </AppSelect>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">اولویت</label>
-                        <select v-model="priorityFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                        <AppSelect v-model="priorityFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
                             <option value="">همه اولویت‌ها</option>
                             <option value="low">کم</option>
                             <option value="normal">عادی</option>
                             <option value="high">زیاد</option>
                             <option value="urgent">فوری</option>
-                        </select>
+                        </AppSelect>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">پروژه</label>
-                        <select v-model="projectFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                        <AppSelect v-model="projectFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
                             <option value="">همه پروژه‌ها</option>
-                            <option v-for="project in formOptions?.projects ?? []" :key="project.id" :value="project.id">{{ project.name }}</option>
-                        </select>
+                            <option v-for="project in filterOptions.projects" :key="project.id" :value="project.id">{{ project.name }}</option>
+                        </AppSelect>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">واحد</label>
-                        <select v-model="departmentFilter" class="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm">
-                            <option value="">همه واحدها</option>
-                            <option v-for="department in formOptions?.departments ?? []" :key="department.id" :value="department.id">{{ department.name }}</option>
-                        </select>
+                        <DepartmentTreeSelect v-model="departmentFilter" :departments="filterOptions.departments" placeholder="همه واحدها" />
                     </div>
+                </div>
+                <div class="mt-4 border-t border-gray-100 pt-4">
+                    <label for="task-search" class="mb-1.5 block text-sm font-medium text-gray-700">جست‌وجو</label>
+                    <input id="task-search" v-model="search" type="search"
+                        placeholder="عنوان، توضیحات، پروژه، واحد یا مسئول..."
+                        class="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10" />
                 </div>
                 <div class="mt-4 flex flex-wrap gap-2 border-t border-gray-100 pt-4">
                     <button type="button" :disabled="isFiltering" @click="applyFilters" class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50">
@@ -524,11 +627,12 @@ const handleSectionChange = (): void => {
                                     <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
                                         :class="{
                                             'bg-gray-100 text-gray-700': task.status === 'todo',
+                                            'bg-sky-50 text-sky-700': task.status === 'observed',
                                             'bg-blue-50 text-blue-700': task.status === 'in_progress',
                                             'bg-green-50 text-green-700': task.status === 'completed',
-                                            'bg-red-50 text-red-700': task.status === 'cancelled',
+                                            'bg-red-50 text-red-700': ['cancelled', 'cannot_continue'].includes(task.status),
                                         }">
-                                        {{ statusLabels[task.status] ?? task.status }}
+                                        {{ statusLabels[task.status] ? (task.sub_status && !['completed', 'cancelled', 'cannot_continue'].includes(task.status) ? `${statusLabels[task.status]} (${subStatusLabels[task.sub_status] ?? task.sub_status})` : statusLabels[task.status]) : task.status }}
                                     </span>
                                 </td>
                                 <td class="px-4 py-3.5">

@@ -4,6 +4,7 @@ namespace App\Core\Departments\Actions;
 
 use App\Core\Departments\Models\Department;
 use App\Core\CustomFields\Services\CustomFieldService;
+use App\Modules\Projects\Actions\EnsureDepartmentProjectSectionAction;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -11,6 +12,7 @@ class UpdateDepartmentAction
 {
     public function __construct(
         private readonly CustomFieldService $customFieldService,
+        private readonly EnsureDepartmentProjectSectionAction $ensureDepartmentProjectSectionAction,
     ) {
     }
 
@@ -60,12 +62,16 @@ class UpdateDepartmentAction
                 'parent_id' => $parentId,
                 'manager_id' => $managerId,
                 'name' => $data['name'],
+                'code' => array_key_exists('code', $data) ? (filled($data['code']) ? strtoupper(trim((string) $data['code'])) : null) : $department->code,
                 'icon' => $data['icon'] ?? 'building-2',
                 'description' => $data['description'] ?? null,
                 'is_active' => $data['is_active'] ?? true,
+                'manager_signature_path' => array_key_exists('manager_signature_path', $data) ? $data['manager_signature_path'] : $department->manager_signature_path,
+                'manager_signature_active' => $data['manager_signature_active'] ?? false,
             ]);
 
             $this->customFieldService->sync($department, $data['custom_fields'] ?? []);
+            $this->ensureDepartmentProjectSectionAction->execute($department->refresh());
 
             return $department->refresh();
         });

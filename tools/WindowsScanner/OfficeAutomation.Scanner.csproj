@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PlatformTarget>x64</PlatformTarget>
+    <AssemblyName>OfficeAutomation.Scanner</AssemblyName>
+    <RootNamespace>OfficeAutomation.Scanner</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="NAPS2.Sdk" Version="1.5.0" />
+    <PackageReference Include="NAPS2.Images.Gdi" Version="1.5.0" />
+    <PackageReference Include="NAPS2.Sdk.Worker.Win32" Version="1.5.0" />
+  </ItemGroup>
+</Project>

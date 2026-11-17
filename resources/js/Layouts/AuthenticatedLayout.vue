@@ -1,17 +1,59 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import UserAvatar from '@/Components/UserAvatar.vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import { ChevronDown } from '@lucide/vue';
 
 const page = usePage();
 const showingNavigationDropdown = ref(false);
 const openDesktopMenu = ref<string | null>(null);
+const notificationDropdownOpen = ref(false);
+const unreadNotificationCount = ref(0);
+const latestNotifications = ref<Array<{ id: string; type: string; title: string; message: string; url: string | null; read_at: string | null; created_at: string | null }>>([]);
+let notificationRefreshTimer: number | undefined;
+
+async function refreshNotificationSummary(): Promise<void> {
+    try {
+        const response = await fetch(route('notifications.summary'), {
+            headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin',
+        });
+        if (!response.ok) return;
+        const data = await response.json() as {
+            unreadCount: number;
+            notifications: Array<{ id: string; type: string; title: string; message: string; url: string | null; read_at: string | null; created_at: string | null }>;
+        };
+        unreadNotificationCount.value = data.unreadCount;
+        latestNotifications.value = data.notifications;
+    } catch {
+        // Keep navigation usable if the optional notification refresh fails.
+    }
+}
+
+function toggleNotificationDropdown(): void {
+    openDesktopMenu.value = null;
+    notificationDropdownOpen.value = !notificationDropdownOpen.value;
+    if (notificationDropdownOpen.value) void refreshNotificationSummary();
+}
+
+function openNotification(item: { id: string; url: string | null; read_at: string | null }): void {
+    notificationDropdownOpen.value = false;
+    const destination = item.url || route('notifications.index');
+    if (item.read_at) {
+        router.visit(destination);
+        return;
+    }
+    router.patch(route('notifications.read', item.id), {}, {
+        preserveScroll: true,
+        onSuccess: () => router.visit(destination),
+        onError: () => router.visit(destination),
+    });
+}
 const expandedMobileMenus = ref<Record<string, boolean>>({
     work: false,
     organization: false,
@@ -25,7 +67,7 @@ const abilities = computed(
 const can = (ability: string): boolean => Boolean(abilities.value[ability]);
 
 const hasWorkMenu = computed(() =>
-    ['cartable_view', 'tasks_view', 'projects_view', 'notification_view'].some(can),
+    ['cartable_view', 'tasks_view', 'projects_view', 'correspondence_view'].some(can) || Boolean(page.props.auth.user),
 );
 
 const hasOrganizationMenu = computed(() =>
@@ -35,6 +77,7 @@ const hasOrganizationMenu = computed(() =>
 const hasSettingsMenu = computed(() => can('settings_manage'));
 
 function toggleDesktopMenu(menu: string): void {
+    notificationDropdownOpen.value = false;
     openDesktopMenu.value =
         openDesktopMenu.value === menu ? null : menu;
 }
@@ -47,12 +90,26 @@ function closeMobileNavigation(): void {
     showingNavigationDropdown.value = false;
 }
 
+function closeHeaderPopoversOnOutsidePointer(event: PointerEvent): void {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+
+    const menu = target.closest('[data-header-menu]')?.getAttribute('data-header-menu') ?? null;
+    const isNotificationArea = target.closest('[data-header-notifications]') !== null;
+
+    if (menu !== openDesktopMenu.value) openDesktopMenu.value = null;
+    if (!isNotificationArea) notificationDropdownOpen.value = false;
+}
+
 onMounted(() => {
+    document.addEventListener('pointerdown', closeHeaderPopoversOnOutsidePointer);
+
     if (
         route().current('cartable.*') ||
         route().current('notifications.*') ||
         route().current('tasks.*') ||
-        route().current('projects.*')
+        route().current('projects.*') ||
+        route().current('correspondence.*')
     ) {
         expandedMobileMenus.value.work = true;
     }
@@ -69,6 +126,14 @@ onMounted(() => {
     if (route().current('settings.*')) {
         expandedMobileMenus.value.settings = true;
     }
+
+    void refreshNotificationSummary();
+    notificationRefreshTimer = window.setInterval(() => void refreshNotificationSummary(), 30000);
+});
+
+onUnmounted(() => {
+    document.removeEventListener('pointerdown', closeHeaderPopoversOnOutsidePointer);
+    if (notificationRefreshTimer !== undefined) window.clearInterval(notificationRefreshTimer);
 });
 </script>
 
@@ -97,7 +162,7 @@ onMounted(() => {
                                     داشبورد
                                 </NavLink>
 
-                                <div v-if="hasWorkMenu" class="relative h-full">
+                                <div v-if="hasWorkMenu" class="relative h-full" data-header-menu="work">
                                     <button
                                         type="button"
                                         class="inline-flex h-10 items-center gap-2 rounded-xl border border-transparent px-3 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
@@ -105,7 +170,8 @@ onMounted(() => {
                                             route().current('cartable.*') ||
                                             route().current('notifications.*') ||
                                             route().current('tasks.*') ||
-                                            route().current('projects.*')
+                                            route().current('projects.*') ||
+                                            route().current('correspondence.*')
                                                 ? 'border-indigo-100 bg-indigo-50 text-indigo-700 shadow-sm'
                                                 : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
                                         "
@@ -151,8 +217,15 @@ onMounted(() => {
                                             پروژه‌ها
                                         </NavLink>
                                         <NavLink
-                                            v-if="can('notification_view')"
-                                            :href="route('notifications.index')"
+                                            v-if="can('correspondence_view') || can('correspondence_create')"
+                                            :href="can('correspondence_view') ? route('correspondence.index') : route('correspondence.create')"
+                                            :active="route().current('correspondence.*')"
+                                            class="w-full justify-start rounded-lg border-0 px-3 py-2 text-right"
+                                        >
+                                            مکاتبات اداری
+                                        </NavLink>
+                                        <NavLink
+                                                                                        :href="route('notifications.index')"
                                             :active="route().current('notifications.*')"
                                             class="w-full justify-start rounded-lg border-0 px-3 py-2 text-right"
                                         >
@@ -161,7 +234,7 @@ onMounted(() => {
                                     </div>
                                 </div>
 
-                                <div v-if="hasOrganizationMenu" class="relative h-full">
+                                <div v-if="hasOrganizationMenu" class="relative h-full" data-header-menu="organization">
                                     <button
                                         type="button"
                                         class="inline-flex h-10 items-center gap-2 rounded-xl border border-transparent px-3 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
@@ -233,7 +306,7 @@ onMounted(() => {
                                     برون‌سازمانی
                                 </NavLink>
 
-                                <div v-if="hasSettingsMenu" class="relative h-full">
+                                <div v-if="hasSettingsMenu" class="relative h-full" data-header-menu="settings">
                                     <button
                                         type="button"
                                         class="inline-flex h-10 items-center gap-2 rounded-xl border border-transparent px-3 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
@@ -271,8 +344,27 @@ onMounted(() => {
                             </div>
                         </div>
 
-                        <!-- سمت چپ: کاربر -->
+                        <!-- اعلان‌ها و کاربر -->
                         <div class="hidden sm:ms-6 sm:flex sm:items-center">
+                            <div class="relative me-3" data-header-notifications>
+                                <button type="button" class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500" aria-label="اعلان‌ها" :aria-expanded="notificationDropdownOpen" aria-haspopup="dialog" @click="toggleNotificationDropdown" @keydown.escape="notificationDropdownOpen = false">
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+                                    <span v-if="unreadNotificationCount > 0" class="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold text-white ring-2 ring-white">{{ unreadNotificationCount > 99 ? '99+' : unreadNotificationCount }}</span>
+                                </button>
+                                <div v-if="notificationDropdownOpen" class="absolute left-0 z-50 mt-2 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl" role="dialog" aria-label="فهرست اعلان‌ها">
+                                    <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                                        <div><p class="text-sm font-bold text-slate-900">اعلان‌ها</p><p class="mt-0.5 text-xs text-slate-500">{{ unreadNotificationCount }} خوانده‌نشده</p></div>
+                                        <button v-if="unreadNotificationCount > 0" type="button" class="text-xs font-semibold text-indigo-700 hover:underline" @click="router.patch(route('notifications.read-all'), {}, { preserveScroll: true, onSuccess: () => void refreshNotificationSummary() })">خواندن همه</button>
+                                    </div>
+                                    <div v-if="latestNotifications.length === 0" class="px-4 py-8 text-center text-sm text-slate-500">اعلانی برای نمایش وجود ندارد.</div>
+                                    <div v-else class="max-h-[22rem] overflow-y-auto divide-y divide-slate-100">
+                                        <Link v-for="item in latestNotifications" :key="item.id" :href="item.url || route('notifications.index')" class="block px-4 py-3 transition hover:bg-slate-50" :class="{ 'bg-indigo-50/50': !item.read_at }" @click.prevent="openNotification(item)">
+                                            <div class="flex items-start gap-2"><span class="mt-1.5 h-2 w-2 shrink-0 rounded-full" :class="item.read_at ? 'bg-transparent' : 'bg-indigo-600'"></span><span class="min-w-0 flex-1"><span class="block text-sm font-semibold text-slate-900">{{ item.title }}</span><span class="mt-1 block line-clamp-2 text-xs leading-5 text-slate-600">{{ item.message }}</span><span v-if="item.created_at" class="mt-1 block text-[10px] text-slate-400">{{ new Intl.DateTimeFormat('fa-IR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.created_at)) }}</span></span></div>
+                                        </Link>
+                                    </div>
+                                    <Link :href="route('notifications.index')" class="block border-t border-slate-100 px-4 py-3 text-center text-xs font-bold text-indigo-700 hover:bg-slate-50" @click="notificationDropdownOpen = false">مشاهده همه اعلان‌ها</Link>
+                                </div>
+                            </div>
                             <div class="relative ms-3">
                                 <Dropdown align="left" width="48">
                                     <template #trigger>
@@ -320,8 +412,20 @@ onMounted(() => {
                             </div>
                         </div>
 
-                        <!-- منوی موبایل -->
-                        <div class="-ms-2 flex items-center sm:hidden">
+                        <!-- اعلان‌ها و منوی موبایل -->
+                        <div class="-ms-2 flex items-center gap-2 sm:hidden">
+                            <div class="relative" data-header-notifications>
+                                <button type="button" class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-600 hover:bg-slate-100" aria-label="اعلان‌ها" :aria-expanded="notificationDropdownOpen" @click="toggleNotificationDropdown">
+                                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+                                    <span v-if="unreadNotificationCount > 0" class="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[9px] font-bold text-white">{{ unreadNotificationCount > 99 ? '99+' : unreadNotificationCount }}</span>
+                                </button>
+                                <div v-if="notificationDropdownOpen" class="absolute left-0 z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl" role="dialog" aria-label="فهرست اعلان‌ها">
+                                    <div class="flex items-center justify-between border-b px-4 py-3"><div><p class="text-sm font-bold text-slate-900">اعلان‌ها</p><p class="mt-0.5 text-xs text-slate-500">{{ unreadNotificationCount }} خوانده‌نشده</p></div><button v-if="unreadNotificationCount > 0" type="button" class="text-xs font-semibold text-indigo-700" @click="router.patch(route('notifications.read-all'), {}, { preserveScroll: true, onSuccess: () => void refreshNotificationSummary() })">خواندن همه</button></div>
+                                    <div v-if="latestNotifications.length === 0" class="px-4 py-8 text-center text-sm text-slate-500">اعلانی برای نمایش وجود ندارد.</div>
+                                    <div v-else class="max-h-[20rem] overflow-y-auto divide-y divide-slate-100"><Link v-for="item in latestNotifications" :key="item.id" :href="item.url || route('notifications.index')" class="block px-4 py-3 hover:bg-slate-50" :class="{ 'bg-indigo-50/50': !item.read_at }" @click.prevent="openNotification(item)"><span class="block text-sm font-semibold text-slate-900">{{ item.title }}</span><span class="mt-1 block line-clamp-2 text-xs leading-5 text-slate-600">{{ item.message }}</span></Link></div>
+                                    <Link :href="route('notifications.index')" class="block border-t px-4 py-3 text-center text-xs font-bold text-indigo-700" @click="notificationDropdownOpen = false">مشاهده همه اعلان‌ها</Link>
+                                </div>
+                            </div>
                             <button
                                 @click="
                                     showingNavigationDropdown =
@@ -430,7 +534,14 @@ onMounted(() => {
                                     پروژه‌ها
                                 </ResponsiveNavLink>
                                 <ResponsiveNavLink
-                                    v-if="can('notification_view')"
+                                    v-if="can('correspondence_view') || can('correspondence_create')"
+                                    :href="can('correspondence_view') ? route('correspondence.index') : route('correspondence.create')"
+                                    :active="route().current('correspondence.*')"
+                                    @click="closeMobileNavigation"
+                                >
+                                    مکاتبات اداری
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink
                                     :href="route('notifications.index')"
                                     :active="route().current('notifications.*')"
                                     @click="closeMobileNavigation"
@@ -594,7 +705,10 @@ onMounted(() => {
                     <Link v-if="can('projects_view')" :href="route('projects.index')" :class="route().current('projects.*') ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4V2M16 4V2M3 9h18"/></svg>پروژه‌ها
                     </Link>
-                    <Link v-if="can('notification_view')" :href="route('notifications.index')" :class="route().current('notifications.*') ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
+                    <Link v-if="can('correspondence_view') || can('correspondence_create')" :href="can('correspondence_view') ? route('correspondence.index') : route('correspondence.create')" :class="route().current('correspondence.*') ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M4 5h16v14H4z"/><path d="m4 7 8 6 8-6"/></svg>مکاتبات اداری
+                    </Link>
+                    <Link :href="route('notifications.index')" :class="route().current('notifications.*') ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>اعلان‌ها
                     </Link>
                     <p v-if="hasOrganizationMenu" class="px-3 pb-1 pt-5 text-[11px] font-bold text-slate-400">مدیریت سازمان</p>

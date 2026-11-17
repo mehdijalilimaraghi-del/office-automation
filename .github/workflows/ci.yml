@@ -1,0 +1,134 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - development
+  pull_request:
+    branches:
+      - development
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  php-tests:
+    name: Laravel tests (SQL Server)
+    runs-on: ubuntu-24.04
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: "CI_only_StrongPassw0rd!2026"
+        ports:
+          - 1433:1433
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      DB_CONNECTION: sqlsrv
+      DB_HOST: 127.0.0.1
+      DB_PORT: 1433
+      DB_DATABASE: office_automation_test
+      DB_USERNAME: sa
+      DB_PASSWORD: "CI_only_StrongPassw0rd!2026"
+      DB_ENCRYPT: "no"
+      DB_TRUST_SERVER_CERTIFICATE: "true"
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install Microsoft ODBC Driver 18
+        run: |
+          curl -sSL https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc
+          curl -sSL https://packages.microsoft.com/config/ubuntu/24.04/prod.list | sudo tee /etc/apt/sources.list.d/mssql-release.list
+          sudo apt-get update
+          sudo ACCEPT_EULA=Y apt-get install -y msodbcsql18
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          extensions: bcmath, curl, fileinfo, gd, intl, mbstring, pdo_sqlsrv, sqlsrv, zip
+          coverage: none
+
+      - name: Prepare environment
+        run: cp .env.example .env
+
+      - name: Validate Composer configuration
+        run: composer validate --no-check-publish
+
+      - name: Install PHP dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Wait for SQL Server and create isolated test database
+        run: |
+          php <<'PHP'
+          <?php
+          $password = getenv('DB_PASSWORD');
+          $deadline = time() + 120;
+          $pdo = null;
+
+          do {
+              try {
+                  $pdo = new PDO(
+                      'sqlsrv:Server=127.0.0.1,1433;Database=master;Encrypt=0;TrustServerCertificate=1',
+                      'sa',
+                      $password,
+                      [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION],
+                  );
+                  break;
+              } catch (Throwable $exception) {
+                  if (time() >= $deadline) {
+                      throw $exception;
+                  }
+
+                  sleep(3);
+              }
+          } while (true);
+
+          $pdo->exec("IF DB_ID(N'office_automation_test') IS NULL CREATE DATABASE [office_automation_test]");
+          PHP
+
+      - name: Run Laravel test suite
+        run: php artisan test
+
+  frontend-build:
+    name: Vue type-check and production build
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up PHP for generated Ziggy types
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          extensions: bcmath, curl, fileinfo, gd, intl, mbstring, zip
+          coverage: none
+
+      - name: Prepare Laravel environment
+        run: cp .env.example .env
+
+      - name: Install Composer dependencies for frontend type-check
+        run: composer install --no-scripts --prefer-dist --no-interaction --no-progress
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Pin npm version without npm 11 install-script policy changes
+        run: npm install --global npm@10.9.4
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build

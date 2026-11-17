@@ -5,6 +5,8 @@ namespace App\Core\ExternalParties\Services;
 use App\Core\ExternalParties\Contracts\ExternalPartyServiceInterface;
 use App\Core\CustomFields\Services\CustomFieldService;
 use App\Core\ExternalParties\Models\{ExternalContact, ExternalDepartment, ExternalOrganization};
+use App\Modules\Correspondence\Models\Correspondence;
+use App\Modules\Tasks\Models\Task;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -27,7 +29,7 @@ class ExternalPartyService implements ExternalPartyServiceInterface
     public function departments(): Collection
     {
         return ExternalDepartment::query()
-            ->with(['organization:id,name', 'customFieldValues.field'])
+            ->with(['organization:id,name', 'managerContact:id,name,mobile,phone,email', 'customFieldValues.field'])
             ->orderBy('name')
             ->get();
     }
@@ -35,6 +37,19 @@ class ExternalPartyService implements ExternalPartyServiceInterface
     public function contacts(): Collection
     {
         return ExternalContact::query()
+            ->select([
+                'id',
+                'external_organization_id',
+                'external_department_id',
+                'code',
+                'name',
+                'mobile',
+                'phone',
+                'extension',
+                'email',
+                'notes',
+                'status',
+            ])
             ->with(['organization:id,name', 'department:id,name', 'customFieldValues.field'])
             ->orderBy('name')
             ->get();
@@ -46,12 +61,23 @@ class ExternalPartyService implements ExternalPartyServiceInterface
         $departmentId = ! empty($data['external_department_id']) ? (int) $data['external_department_id'] : null;
         $contactId = ! empty($data['external_contact_id']) ? (int) $data['external_contact_id'] : null;
 
+        if ($organizationId !== null && ! ExternalOrganization::query()
+            ->whereKey($organizationId)
+            ->where('status', 'active')
+            ->exists()) {
+            throw ValidationException::withMessages(['external_organization_id' => 'سازمان خارجی انتخاب‌شده فعال نیست یا وجود ندارد.']);
+        }
+
         if ($departmentId !== null) {
             if ($organizationId === null) {
                 throw ValidationException::withMessages(['external_department_id' => 'برای انتخاب واحد خارجی، ابتدا سازمان خارجی را انتخاب کنید.']);
             }
-            if (! ExternalDepartment::query()->whereKey($departmentId)->where('external_organization_id', $organizationId)->exists()) {
-                throw ValidationException::withMessages(['external_department_id' => 'واحد خارجی انتخاب‌شده متعلق به سازمان انتخاب‌شده نیست.']);
+            if (! ExternalDepartment::query()
+                ->whereKey($departmentId)
+                ->where('external_organization_id', $organizationId)
+                ->where('status', 'active')
+                ->exists()) {
+                throw ValidationException::withMessages(['external_department_id' => 'واحد خارجی باید فعال و متعلق به سازمان انتخاب‌شده باشد.']);
             }
         }
 
@@ -59,11 +85,14 @@ class ExternalPartyService implements ExternalPartyServiceInterface
             if ($organizationId === null) {
                 throw ValidationException::withMessages(['external_contact_id' => 'برای انتخاب شخص خارجی، ابتدا سازمان خارجی را انتخاب کنید.']);
             }
-            $contact = ExternalContact::query()->find($contactId);
+            $contact = ExternalContact::query()
+                ->whereKey($contactId)
+                ->where('status', 'active')
+                ->first();
             if ($contact === null) {
-                throw ValidationException::withMessages(['external_contact_id' => 'شخص خارجی انتخاب‌شده یافت نشد.']);
+                throw ValidationException::withMessages(['external_contact_id' => 'شخص خارجی انتخاب‌شده فعال نیست یا وجود ندارد.']);
             }
-            if ($organizationId !== null && (int) $contact->external_organization_id !== $organizationId) {
+            if ((int) $contact->external_organization_id !== $organizationId) {
                 throw ValidationException::withMessages(['external_contact_id' => 'شخص خارجی انتخاب‌شده متعلق به سازمان انتخاب‌شده نیست.']);
             }
             if ($departmentId !== null && (int) $contact->external_department_id !== $departmentId) {
@@ -98,7 +127,10 @@ class ExternalPartyService implements ExternalPartyServiceInterface
     }
     public function deleteOrganization(ExternalOrganization $organization): void
     {
-        if ($organization->departments()->exists() || $organization->contacts()->exists()) {
+        if ($organization->departments()->exists()
+            || $organization->contacts()->exists()
+            || Task::query()->where('external_organization_id', $organization->id)->exists()
+            || Correspondence::query()->where('external_organization_id', $organization->id)->exists()) {
             throw ValidationException::withMessages([
                 'organization' => 'سازمان خارجی دارای واحد یا شخص است و قابل حذف نیست.',
             ]);
@@ -124,6 +156,26 @@ class ExternalPartyService implements ExternalPartyServiceInterface
         return DB::transaction(function () use ($department, $data): ExternalDepartment {
             
                     $this->validateDepartmentParent($data, $department->id);
+                    if (! empty($data['manager_contact_id'])) {
+                        $manager = ExternalContact::query()
+                            ->whereKey((int) $data['manager_contact_id'])
+                            ->where('external_organization_id', (int) $data['external_organization_id'])
+                            ->where('external_department_id', $department->id)
+                            ->where('status', 'active')
+                            ->exists();
+
+                        if (! $manager) {
+                            throw ValidationException::withMessages([
+                                'manager_contact_id' => 'مدیر واحد باید شخص فعال متعلق به همین واحد باشد.',
+                            ]);
+                        }
+                    }
+                    if ((int) $department->external_organization_id !== (int) $data['external_organization_id']
+                        && ($department->children()->exists() || $department->contacts()->exists())) {
+                        throw ValidationException::withMessages([
+                            'external_organization_id' => 'برای تغییر سازمان یک واحد، ابتدا زیرواحدها و اشخاص وابسته را منتقل کنید.',
+                        ]);
+                    }
                     $customFields = $data['custom_fields'] ?? [];
                     unset($data['code'], $data['custom_fields']);
                     $department->update($data);
@@ -134,7 +186,10 @@ class ExternalPartyService implements ExternalPartyServiceInterface
     }
     public function deleteDepartment(ExternalDepartment $department): void
     {
-        if ($department->children()->exists() || $department->contacts()->exists()) {
+        if ($department->children()->exists()
+            || $department->contacts()->exists()
+            || Task::query()->where('external_department_id', $department->id)->exists()
+            || Correspondence::query()->where('external_department_id', $department->id)->exists()) {
             throw ValidationException::withMessages([
                 'department' => 'واحد خارجی دارای زیرواحد یا شخص است و قابل حذف نیست.',
             ]);
@@ -150,6 +205,7 @@ class ExternalPartyService implements ExternalPartyServiceInterface
                     $customFields = $data['custom_fields'] ?? [];
                     unset($data['code'], $data['custom_fields']);
                     $contact = ExternalContact::create($data);
+                    $this->syncDefaultContact($contact);
                     $this->customFieldService->sync($contact, $customFields);
                     return $contact->refresh();
         });
@@ -160,15 +216,40 @@ class ExternalPartyService implements ExternalPartyServiceInterface
         return DB::transaction(function () use ($contact, $data): ExternalContact {
             
                     $this->validateContactDepartment($data);
+                    $isAssignedManager = ExternalDepartment::query()
+                        ->where('manager_contact_id', $contact->id)
+                        ->exists();
+
+                    if ($isAssignedManager
+                        && (($data['status'] ?? $contact->status) !== 'active'
+                            || (int) ($data['external_department_id'] ?? 0) !== (int) $contact->external_department_id
+                            || (int) ($data['external_organization_id'] ?? 0) !== (int) $contact->external_organization_id)) {
+                        throw ValidationException::withMessages([
+                            'contact' => 'این شخص مدیر یک واحد بیرونی است؛ ابتدا مدیر واحد را تغییر دهید، سپس وضعیت یا واحد انتسابی او را ویرایش کنید.',
+                        ]);
+                    }
+
                     $customFields = $data['custom_fields'] ?? [];
                     unset($data['code'], $data['custom_fields']);
                     $contact->update($data);
+                    $this->syncDefaultContact($contact);
                     $this->customFieldService->sync($contact, $customFields);
                     return $contact->refresh();
         });
 
     }
-    public function deleteContact(ExternalContact $contact): void { $contact->delete(); }
+    public function deleteContact(ExternalContact $contact): void
+    {
+        if (DB::table('task_external_contacts')->where('external_contact_id', $contact->id)->exists()
+            || Correspondence::query()->where('external_contact_id', $contact->id)->exists()
+            || ExternalDepartment::query()->where('manager_contact_id', $contact->id)->exists()) {
+            throw ValidationException::withMessages([
+                'contact' => 'این شخص خارجی به فعالیت یا مکاتبه ثبت‌شده متصل است و قابل حذف نیست؛ در صورت نیاز وضعیت آن را غیرفعال کنید.',
+            ]);
+        }
+
+        $contact->delete();
+    }
 
     private function validateDepartmentParent(array $data, ?int $currentId = null): void
     {
@@ -176,19 +257,60 @@ class ExternalPartyService implements ExternalPartyServiceInterface
             return;
         }
 
-        $query = ExternalDepartment::query()
-            ->whereKey((int) $data['parent_id'])
-            ->where('external_organization_id', (int) $data['external_organization_id']);
+        $parentId = (int) $data['parent_id'];
+        $organizationId = (int) $data['external_organization_id'];
+        $parent = ExternalDepartment::query()
+            ->whereKey($parentId)
+            ->where('external_organization_id', $organizationId)
+            ->first();
 
-        if ($currentId !== null) {
-            $query->where('id', '<>', $currentId);
-        }
-
-        if (! $query->exists()) {
+        if ($parent === null || ($currentId !== null && $parent->id === $currentId)) {
             throw ValidationException::withMessages([
-                'parent_id' => 'واحد بالادست باید متعلق به همان سازمان خارجی باشد.',
+                'parent_id' => 'واحد بالادست باید متعلق به همان سازمان خارجی باشد و نمی‌تواند خود واحد باشد.',
             ]);
         }
+
+        if ($currentId !== null) {
+            $visited = [];
+            $cursor = $parent;
+
+            while ($cursor !== null) {
+                if ($cursor->id === $currentId || isset($visited[$cursor->id])) {
+                    throw ValidationException::withMessages([
+                        'parent_id' => 'ساختار واحدهای بیرونی نمی‌تواند چرخه ایجاد کند.',
+                    ]);
+                }
+
+                $visited[$cursor->id] = true;
+                $cursor = $cursor->parent;
+            }
+        }
+    }
+
+    private function syncDefaultContact(ExternalContact $contact): void
+    {
+        if ($contact->status !== 'active' && $contact->is_default) {
+            $contact->forceFill(['is_default' => false])->save();
+            return;
+        }
+
+        if (! $contact->is_default) {
+            return;
+        }
+
+        ExternalOrganization::query()->whereKey($contact->external_organization_id)->lockForUpdate()->first();
+
+        $query = ExternalContact::query()
+            ->where('external_organization_id', $contact->external_organization_id)
+            ->where('id', '<>', $contact->id);
+
+        if ($contact->external_department_id === null) {
+            $query->whereNull('external_department_id');
+        } else {
+            $query->where('external_department_id', $contact->external_department_id);
+        }
+
+        $query->update(['is_default' => false]);
     }
 
     private function validateContactDepartment(array $data): void

@@ -10,16 +10,50 @@ use App\Core\ExternalParties\Models\{ExternalContact, ExternalDepartment, Extern
 use App\Models\User;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Tasks\Models\Task;
+use App\Modules\Projects\Models\ProjectSection;
 
 class TaskFormOptionsService
 {
+    public function __construct(
+        private readonly TaskAccessService $taskAccessService,
+    ) {
+    }
+
+    /**
+     * @return array{projects: array<int, array{id:int,name:string}>, departments: array<int, array{id:int,name:string,parent_id:int|null,icon:string|null}>, users: array<int, array{id:int,name:string}>}
+     */
+    public function forFilters(User $user): array
+    {
+        $visibleTasks = $this->taskAccessService->applyScope(Task::query(), $user, 'tasks.view');
+        $projectIds = (clone $visibleTasks)->whereNotNull('tasks.project_id')->distinct()->pluck('tasks.project_id');
+        $departmentIds = (clone $visibleTasks)->whereNotNull('tasks.department_id')->distinct()->pluck('tasks.department_id');
+        $sectionIds = (clone $visibleTasks)->whereNotNull('tasks.section_id')->select('tasks.section_id');
+        $sectionDepartmentIds = ProjectSection::query()
+            ->whereIn('id', $sectionIds)
+            ->whereNotNull('department_id')
+            ->distinct()
+            ->pluck('department_id');
+
+        return [
+            'projects' => Project::query()->whereIn('id', $projectIds)->orderBy('name')->get(['id', 'name'])
+                ->map(fn (Project $project): array => ['id' => (int) $project->id, 'name' => $project->name])->values()->all(),
+            'departments' => Department::query()->whereIn('id', $departmentIds->merge($sectionDepartmentIds)->unique())
+                ->orderBy('name')->get(['id', 'name', 'parent_id', 'icon'])
+                ->map(fn (Department $department): array => ['id' => (int) $department->id, 'name' => $department->name, 'parent_id' => $department->parent_id !== null ? (int) $department->parent_id : null, 'icon' => $department->icon])->values()->all(),
+            'users' => User::query()->operational()->where('status', 'active')
+                ->whereIn('id', (clone $visibleTasks)->whereNotNull('tasks.assignee_id')->select('tasks.assignee_id'))
+                ->orderBy('name')->get(['id', 'name'])
+                ->map(fn (User $user): array => ['id' => (int) $user->id, 'name' => $user->name])->values()->all(),
+        ];
+    }
+
     /**
      * @return array{
      *     projects: array<int, array{id:int,name:string,member_ids:array<int,int>}>,
-     *     departments: array<int, array{id:int,name:string}>,
+     *     departments: array<int, array{id:int,name:string,parent_id:int|null}>,
      *     users: array<int, array{id:int,name:string}>,
      *     external_organizations: array<int, array{id:int,name:string}>,
-     *     external_departments: array<int, array{id:int,external_organization_id:int,name:string}>,
+     *     external_departments: array<int, array{id:int,external_organization_id:int,parent_id:int|null,name:string}>,
      *     external_contacts: array<int, array{id:int,external_organization_id:int,external_department_id:int|null,name:string,position:string|null,mobile:string|null,phone:string|null,extension:string|null}>
      * }
      */
@@ -88,6 +122,24 @@ class TaskFormOptionsService
             });
         }
 
+        $managedDepartmentIds = $user->managedDepartments()
+            ->where('is_active', true)
+            ->pluck('departments.id')
+            ->map(fn ($id): int => (int) $id)
+            ->values()
+            ->all();
+
+        if ($managedDepartmentIds !== []) {
+            $projectsQuery->orWhere(function ($sharedProjectQuery) use ($managedDepartmentIds): void {
+                $sharedProjectQuery->where('projects.is_active', true)
+                    ->where('projects.is_system_default', true)
+                    ->whereNull('projects.department_id')
+                    ->whereHas('sections', fn ($sectionQuery) => $sectionQuery
+                        ->whereIn('department_id', $managedDepartmentIds)
+                        ->where('manager_can_create_tasks', true));
+            });
+        }
+
         $projects = $projectsQuery
             ->orderBy('projects.name')
             ->get()
@@ -125,16 +177,18 @@ class TaskFormOptionsService
             'departments' => Department::query()
                 ->where('is_active', true)
                 ->orderBy('name')
-                ->get(['id', 'name'])
+                ->get(['id', 'name', 'parent_id', 'icon'])
                 ->map(fn (Department $department): array => [
                     'id' => (int) $department->id,
                     'name' => $department->name,
+                    'parent_id' => $department->parent_id !== null ? (int) $department->parent_id : null,
+                    'icon' => $department->icon,
                 ])
                 ->values()
                 ->all(),
             'users' => $this->activeUsers(),
             'external_organizations' => ExternalOrganization::query()->where('status', 'active')->orderBy('name')->get(['id','name'])->map(fn (ExternalOrganization $item): array => ['id'=>(int)$item->id,'name'=>$item->name])->values()->all(),
-            'external_departments' => ExternalDepartment::query()->where('status', 'active')->orderBy('name')->get(['id','external_organization_id','name'])->map(fn (ExternalDepartment $item): array => ['id'=>(int)$item->id,'external_organization_id'=>(int)$item->external_organization_id,'name'=>$item->name])->values()->all(),
+            'external_departments' => ExternalDepartment::query()->where('status', 'active')->orderBy('name')->get(['id','external_organization_id','parent_id','name'])->map(fn (ExternalDepartment $item): array => ['id'=>(int)$item->id,'external_organization_id'=>(int)$item->external_organization_id,'parent_id'=>$item->parent_id !== null ? (int)$item->parent_id : null,'name'=>$item->name])->values()->all(),
             'external_contacts' => ExternalContact::query()->where('status', 'active')->orderBy('name')->get(['id','external_organization_id','external_department_id','name','position','mobile','phone','extension','email'])->map(fn (ExternalContact $item): array => ['id'=>(int)$item->id,'external_organization_id'=>(int)$item->external_organization_id,'external_department_id'=>$item->external_department_id !== null ? (int)$item->external_department_id : null,'name'=>$item->name,'position'=>$item->position,'mobile'=>$item->mobile,'phone'=>$item->phone,'extension'=>$item->extension,'email'=>$item->email])->values()->all(),
         ];
     }

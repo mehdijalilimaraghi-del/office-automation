@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Modules\Projects\Models\Project;
 use App\Modules\Tasks\Models\Task;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\Feature\Core\Concerns\InteractsWithPermissions;
 use Tests\TestCase;
 
@@ -56,7 +58,7 @@ class DepartmentControllerTest extends TestCase
             ]
         );
 
-        $response->assertRedirect();
+        $response->assertRedirect()->assertInertiaFlash('saveSuccess', session('success'));
 
         $this->assertDatabaseHas('departments', [
             'name' => 'فناوری اطلاعات',
@@ -126,6 +128,60 @@ class DepartmentControllerTest extends TestCase
     }
 
 
+    public function test_department_manager_signature_is_stored_as_a_private_unit_asset(): void
+    {
+        Storage::fake('local');
+        $user = $this->user();
+        $manager = User::factory()->create(['status' => 'active']);
+        $this->grant($user, 'departments.create');
+
+        $this->actingAs($user)->post(route('departments.store'), [
+            'name' => 'واحد دارای امضا',
+            'code' => 'SIGN-'.strtoupper(bin2hex(random_bytes(2))),
+            'manager_id' => $manager->id,
+            'manager_signature' => UploadedFile::fake()->image('signature.png', 400, 180),
+            'manager_signature_active' => true,
+            'is_active' => true,
+        ])->assertRedirect();
+
+        $department = Department::query()->where('manager_id', $manager->id)->firstOrFail();
+
+        $this->assertNotEmpty($department->manager_signature_path);
+        $this->assertTrue($department->manager_signature_active);
+        Storage::disk('local')->assertExists($department->manager_signature_path);
+    }
+
+    public function test_changing_department_manager_deactivates_the_previous_manager_signature(): void
+    {
+        Storage::fake('local');
+        Storage::disk('local')->put('organization/department-signatures/current.png', 'signature');
+        $editor = $this->user();
+        $oldManager = User::factory()->create(['status' => 'active']);
+        $newManager = User::factory()->create(['status' => 'active']);
+        $department = Department::query()->create([
+            'name' => 'واحد تغییر مدیر',
+            'code' => 'MGR-'.strtoupper(bin2hex(random_bytes(2))),
+            'manager_id' => $oldManager->id,
+            'manager_signature_path' => 'organization/department-signatures/current.png',
+            'manager_signature_active' => true,
+            'is_active' => true,
+        ]);
+        $this->grant($editor, 'departments.edit');
+
+        $this->actingAs($editor)->put(route('departments.update', $department), [
+            'name' => $department->name,
+            'code' => $department->code,
+            'manager_id' => $newManager->id,
+            'manager_signature_active' => true,
+            'is_active' => true,
+        ])->assertRedirect();
+
+        $department->refresh();
+        $this->assertSame((int) $newManager->id, (int) $department->manager_id);
+        $this->assertFalse($department->manager_signature_active);
+        $this->assertTrue($department->members()->whereKey($newManager->id)->exists());
+    }
+
     public function test_authenticated_user_can_create_department_with_icon(): void
     {
         $user = $this->user();
@@ -144,10 +200,11 @@ class DepartmentControllerTest extends TestCase
             ]
         );
 
-        $response->assertRedirect();
+        $response->assertRedirect()->assertInertiaFlash('saveSuccess', session('success'));
 
         $this->assertDatabaseHas('departments', [
             'name' => 'فناوری اطلاعات',
+            'code' => 'IT',
             'icon' => 'handshake',
         ]);
     }
