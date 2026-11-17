@@ -1,3 +1,7 @@
+## V3 — Scan, versions and custody
+
+Archive custody events are append-only and serialized on the document row. Cartable exposes pending approval only to eligible editors other than the requester. Archive scanning reuses the installed Windows helper callback while status, preview and registration remain purpose- and user-scoped.
+
 ## V3 — Archive registration
 
 Archive metadata currently extends Documents with nullable type, location and retention columns. Archive uploads use the same document version storage, and downloads continue through DocumentPolicy.

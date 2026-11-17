@@ -35,6 +35,7 @@ interface CartableData {
     pendingApprovals: TaskItem[];
     referrals: Referral[];
     correspondenceItems: CorrespondenceItem[];
+    archiveApprovals: { id: number; title: string }[];
 }
 
 const props = defineProps<{ cartable: CartableData }>();
@@ -226,5 +227,13 @@ function formatDate(value: string | null | undefined): string {
                 </section>
             </div>
         </div>
+        <section v-if="props.cartable.archiveApprovals?.length" dir="rtl" class="mx-auto mb-6 max-w-7xl space-y-3 rounded-xl border bg-white p-4">
+            <h2 class="font-semibold">درخواست‌های خروج اصل مدرک</h2>
+            <ul class="divide-y">
+                <li v-for="item in props.cartable.archiveApprovals" :key="item.id" class="py-2">
+                    <Link :href="route('archive.show', item.id)" class="text-indigo-700 hover:underline">{{ item.title }}</Link>
+                </li>
+            </ul>
+        </section>
     </AuthenticatedLayout>
 </template>

@@ -1,3 +1,7 @@
+## V3 — Scan, versions and custody
+
+Archive now supports direct NAPS2 scan, version history, and a custody workflow with approval in Cartable. The current custody policy requires approval for every physical checkout. Remaining scope includes category-based policy, a structured location catalog and archive links to business records.
+
 ## V3 — Archive registration
 
 Archive registration, file upload and scoped search are implemented. Continue with direct NAPS2 scan, structured locations, custody and approvals, document version UI and linking to business records.

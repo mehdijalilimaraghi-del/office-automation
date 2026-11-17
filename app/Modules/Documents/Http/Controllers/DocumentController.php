@@ -155,7 +155,10 @@ class DocumentController extends Controller
     public function download(Request $request, Document $document): StreamedResponse
     {
         Gate::authorize('view', $document);
-        $version = $document->latestVersion()->firstOrFail();
+        $versionNumber = $request->validate(['version' => ['sometimes', 'required', 'integer', 'min:1']])['version'] ?? null;
+        $version = $versionNumber === null
+            ? $document->latestVersion()->firstOrFail()
+            : $document->versions()->where('version_number', $versionNumber)->firstOrFail();
         $disk = Storage::disk($version->disk);
         abort_unless($disk->exists($version->path), 404);
 

@@ -7,6 +7,7 @@ namespace App\Modules\Cartable\Services;
 use App\Models\User;
 use App\Modules\Correspondence\Models\Correspondence;
 use App\Modules\Correspondence\Services\CorrespondenceAccessService;
+use App\Modules\Documents\Models\Document;
 use App\Modules\Tasks\Models\Task;
 use App\Modules\Tasks\Models\TaskAssignment;
 use Illuminate\Database\Eloquent\Builder;
@@ -37,12 +38,38 @@ class CartableService
                 ->latest('created_at')
                 ->limit(10)
                 ->get(),
+            'archiveApprovals' => $this->archiveApprovals($user),
             'correspondenceItems' => $this->correspondenceActionsQuery($user)
                 ->with(['currentDepartment:id,name'])
                 ->latest('updated_at')
                 ->limit(10)
                 ->get(['id', 'type', 'classification', 'subject', 'registration_number', 'status', 'workflow_state', 'current_department_id', 'current_user_id', 'updated_at']),
         ];
+    }
+
+    private function archiveApprovals(User $user): array
+    {
+        if (! $user->isActive() || ! $user->hasAllPermissions(['documents.view', 'documents.update'])) {
+            return [];
+        }
+
+        return Document::query()
+            ->where('archive_kind', 'physical')
+            ->where('is_active', true)
+            ->where(function (Builder $query) use ($user): void {
+                $query->where('created_by', $user->id)
+                    ->orWhereHas('accesses', fn (Builder $access) => $access
+                        ->where('user_id', $user->id)->where('access_level', 'edit'));
+            })
+            ->whereHas('latestCustodyEvent', fn (Builder $event) => $event
+                ->where('action', 'request')->where('actor_id', '!=', $user->id))
+            ->latest('id')
+            ->limit(10)
+            ->get(['id', 'title', 'created_by', 'is_active'])
+            ->filter(fn (Document $document): bool => $user->can('update', $document))
+            ->map(fn (Document $document): array => $document->only(['id', 'title']))
+            ->values()
+            ->all();
     }
 
     private function myTasksQuery(User $user): Builder

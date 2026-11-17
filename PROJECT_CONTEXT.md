@@ -1,3 +1,7 @@
+## V3 — Scan, versions and custody
+
+A physical archive request records the intended recipient, reason and due date. For now an authorized second user approves all physical checkouts. Actual checkout and return are recorded separately, and return records the new storage location.
+
 ## V3 — Archive registration
 
 Initial archive registration requires a category and a digital file or image/PDF of the physical original. Physical registration also requires an initial storage location. Custody and release approval remain pending.

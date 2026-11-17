@@ -67,6 +67,7 @@ class DocumentService
 
         try {
             return DB::transaction(function () use ($document, $file, $uploader, &$stored): DocumentVersion {
+                Document::query()->whereKey($document->id)->lockForUpdate()->firstOrFail();
                 $versionNumber = ((int) $document->versions()->max('version_number')) + 1;
                 $stored = $this->storage->store($file, 'documents/'.$document->id);
 

@@ -1,3 +1,7 @@
+## V3 — Scan, versions and custody
+
+Exercise Archive/Index direct scan and Archive/Show version history and physical custody. Use a second authorized user to verify the Cartable approval and confirm the physical return location. The archive callback uses the installed NAPS2 helper path.
+
 ## V3 — Archive registration
 
 To verify archive registration, run DocumentFoundationTest and the full isolated SQL Server suite. In the browser, open the archive from the Work menu and verify physical and digital upload, filters, pagination and download as the owner and a second user.

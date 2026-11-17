@@ -1,3 +1,7 @@
+## V3 — Scan, versions and custody
+
+Archive direct NAPS2 upload, preview, version history and downloads, and physical custody events with Cartable approval are implemented. Physical checkout currently always requires a second authorized user’s approval. Structured location catalogs, configurable approval by category and linking existing archive documents to business records remain open. Physical scanner and browser acceptance remain pending.
+
 ## V3 — Archive registration
 
 Archive registration and search support digital files and copies of physical originals, with initial storage location and retention date. Search results are restricted to the document creator and explicit grantees with document-view permission. Direct NAPS2 scanning, structured locations, custody events, approval, archive version management and record linking remain open.

@@ -24,7 +24,7 @@ class CorrespondenceScannerController
 
     public function upload(Request $request, string $token): JsonResponse
     {
-        return $this->scanner->upload($request, 'correspondence', $token);
+        return $this->scanner->upload($request, $token);
     }
 
     public function status(Request $request, string $token): JsonResponse

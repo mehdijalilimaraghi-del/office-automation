@@ -224,6 +224,86 @@ class DocumentFoundationTest extends TestCase
         $this->actingAs($this->userWithPermissions([]))->get(route('archive.index'))->assertForbidden();
     }
 
+    public function test_archive_scan_uses_installed_helper_callback_but_is_scoped_to_archive_and_owner(): void
+    {
+        Storage::fake('local');
+        $user = $this->userWithPermissions(['documents.view', 'documents.create']);
+        $other = $this->userWithPermissions(['documents.view', 'documents.create']);
+        $session = $this->actingAs($user)->postJson(route('archive.scanner.start'))->assertOk()->json();
+
+        $this->assertSame(route('correspondence.scanner.upload', $session['token']), $session['upload_url']);
+        $this->postJson($session['upload_url'], [
+            'file' => UploadedFile::fake()->create('scan.pdf', 5, 'application/pdf'),
+        ])->assertOk();
+        $this->actingAs($other)->getJson($session['status_url'])->assertNotFound();
+        $this->actingAs($user)->getJson($session['status_url'])->assertJsonPath('status', 'ready');
+        $this->get(route('archive.scanner.preview', $session['token']))->assertOk();
+        $this->assertNull(app(\App\Modules\Documents\Services\ScannerStagingService::class)
+            ->readyUpload('correspondence', $session['token'], $user));
+
+        $payload = [
+            'title' => 'NAPS2 archive',
+            'document_type' => 'Contract',
+            'archive_kind' => 'digital',
+            'scanner_upload_token' => $session['token'],
+        ];
+
+        $this->post(route('archive.store'), $payload)->assertRedirect(route('archive.index'))->assertSessionHas('success');
+        $this->post(route('archive.store'), $payload)->assertSessionHasErrors('scanner_upload_token');
+        $this->assertSame(1, Document::query()->where('title', 'NAPS2 archive')->count());
+    }
+
+    public function test_archive_retains_versions_and_records_custody_only_in_valid_order(): void
+    {
+        $permissions = ['documents.view', 'documents.create', 'documents.update'];
+        $creator = $this->userWithPermissions($permissions);
+        $reviewer = $this->userWithPermissions($permissions);
+        $viewer = $this->userWithPermissions($permissions);
+
+        $this->actingAs($creator)->post(route('archive.store'), [
+            'title' => 'Custody test record',
+            'document_type' => 'Contract',
+            'archive_kind' => 'physical',
+            'archive_location' => 'Shelf 1',
+            'file' => UploadedFile::fake()->create('first.pdf', 5, 'application/pdf'),
+        ])->assertRedirect(route('archive.index'));
+        $record = Document::query()->where('title', 'Custody test record')->firstOrFail();
+        $documents = app(DocumentService::class);
+        $documents->grantAccess($record, $reviewer, $creator, 'edit');
+        $documents->grantAccess($record, $viewer, $creator);
+
+        $this->post(route('archive.versions.store', $record), [
+            'file' => UploadedFile::fake()->create('second.pdf', 5, 'application/pdf'),
+        ])->assertSessionHas('success');
+        $this->get(route('archive.show', $record))->assertInertia(fn ($page) => $page
+            ->component('Archive/Show')->has('versions', 2)->where('versions.0.version_number', 2));
+        $this->get(route('documents.download', ['document' => $record, 'version' => 1]))
+            ->assertDownload('first.pdf');
+        $this->actingAs($viewer)->post(route('archive.versions.store', $record))->assertForbidden();
+
+        $url = route('archive.custody.store', $record);
+        $this->post($url, ['action' => 'checkout'])->assertForbidden();
+        $this->actingAs($creator)->post($url, ['action' => 'checkout'])->assertSessionHasErrors('action');
+        $this->post($url, [
+            'action' => 'request', 'recipient' => 'Records office', 'note' => 'Verification',
+            'due_on' => now()->addDays(7)->toDateString(),
+        ])->assertSessionHas('success');
+        $cartable = app(\App\Modules\Cartable\Services\CartableService::class);
+        $this->assertSame([], $cartable->for($creator)['archiveApprovals']);
+        $this->assertSame([], $cartable->for($viewer)['archiveApprovals']);
+        $this->assertSame([$record->id], array_column($cartable->for($reviewer)['archiveApprovals'], 'id'));
+        $this->post($url, ['action' => 'approve'])->assertSessionHasErrors('action');
+        $this->actingAs($reviewer)->post($url, ['action' => 'approve'])->assertSessionHas('success');
+        $this->assertSame('Shelf 1', $record->refresh()->archive_location);
+        $this->post($url, ['action' => 'checkout'])->assertSessionHas('success');
+        $this->post($url, ['action' => 'checkout'])->assertSessionHasErrors('action');
+        $this->get(route('archive.show', $record))->assertInertia(fn ($page) => $page
+            ->where('custodyCurrent.action', 'checkout')->where('custodyCurrent.recipient', 'Records office'));
+        $this->post($url, ['action' => 'return', 'location' => 'Shelf 2'])->assertSessionHas('success');
+        $this->assertSame('Shelf 2', $record->refresh()->archive_location);
+        $this->assertSame(['request', 'approve', 'checkout', 'return'], $record->custodyEvents()->orderBy('id')->pluck('action')->all());
+    }
+
     private function createTask(User $user, string $title): Task
     {
         return Task::query()->create([

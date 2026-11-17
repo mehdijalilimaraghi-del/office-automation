@@ -1,3 +1,7 @@
+## V3 — Scan, versions and custody
+
+Archive PDF scans from installed Windows helpers use the existing callback with archive-scoped tokens. Trace archive custody through ArchiveCustodyService and Cartable approvals.
+
 ## V3 — Archive registration
 
 Archive registration and search currently start at the archive routes. Check the V3 code map before tracing Documents, scanner, Cartable or Workflow callers.

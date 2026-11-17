@@ -32,15 +32,20 @@ class ScannerStagingService
 
         return response()->json([
             'token' => $token,
-            'upload_url' => route($purpose.'.scanner.upload', ['token' => $token]),
+            'upload_url' => route('correspondence.scanner.upload', ['token' => $token]),
             'status_url' => route($purpose.'.scanner.status', ['token' => $token]),
         ]);
     }
 
-    public function upload(Request $request, string $purpose, string $token): JsonResponse
+    public function upload(Request $request, string $token): JsonResponse
     {
-        $key = self::cacheKey($purpose, $token);
+        // Both forms use the callback already accepted by installed Windows helpers.
+        $key = self::cacheKey('correspondence', $token);
         $state = Cache::get($key);
+        if ($state === null) {
+            $key = self::cacheKey('archive', $token);
+            $state = Cache::get($key);
+        }
 
         abort_unless(is_array($state) && ($state['status'] ?? null) === 'pending', 404);
 
@@ -103,6 +108,12 @@ class ScannerStagingService
                 // Cleanup is best-effort; it must not prevent a new scan.
             }
         }
+    }
+
+    public function discard(array $upload): void
+    {
+        Cache::forget($upload['key']);
+        Storage::disk('local')->delete($upload['path']);
     }
 
     public function readyUpload(string $purpose, string $token, User $user): ?array

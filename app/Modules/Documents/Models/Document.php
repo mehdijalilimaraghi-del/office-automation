@@ -39,6 +39,16 @@ class Document extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function custodyEvents(): HasMany
+    {
+        return $this->hasMany(ArchiveCustodyEvent::class);
+    }
+
+    public function latestCustodyEvent(): HasOne
+    {
+        return $this->hasOne(ArchiveCustodyEvent::class)->latestOfMany();
+    }
+
     public function versions(): HasMany
     {
         return $this->hasMany(DocumentVersion::class);
