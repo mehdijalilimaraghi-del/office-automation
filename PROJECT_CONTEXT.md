@@ -1,3 +1,7 @@
+## V3 — Archive scanning
+
+A V3 archive record may represent a digital-only document or a physical original with an attached digital copy. Custody changes and approvals are tracked independently, with actual handover marking the time the original leaves storage.
+
 ## 2026-11-17 — Save feedback and local text sample migration
 
 - After a successful save, one confirmation is displayed. When a controller supplies a specific message it takes precedence over the general save confirmation.

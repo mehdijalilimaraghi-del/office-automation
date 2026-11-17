@@ -1,3 +1,8 @@
+## V3 kickoff — shared document scanning
+
+- V3 started by owner direction after the V1/V2 correspondence release. The remaining V2 Forms & Requests scope stays tracked.
+- NAPS2 scan staging now lives in the Documents module. Incoming correspondence still uses its existing endpoints, capabilities and Windows helper. Archive registration and physical custody are the next implementation slice.
+
 ## 2026-11-17 — Save feedback and local text sample migration
 
 - The letter text sample table was missing on the local development SQL Server. Applied the existing additive migration there. Added application-wide confirmation for successful redirecting saves.

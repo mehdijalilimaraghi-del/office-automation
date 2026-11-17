@@ -433,7 +433,10 @@ Deliver a first-class, searchable, access-controlled digital archive that builds
 - Searchable archive references
 - Retention metadata
 - Access control
-- Scan/upload integration
+- Scan/upload integration using the existing NAPS2 Windows helper and shared PDF staging
+- Physical originals linked to the same archive record as their digital copy, with structured storage locations
+- Custody history for intake, moves, handover and return, including current custodian and due date
+- Category-based approval for removal, using existing Workflow and Cartable, with approval and physical handover recorded independently
 - Archive links to correspondence, tasks, workflows and other business records
 - Reuse existing document/version references instead of duplicating files
 
@@ -762,7 +765,7 @@ A version closes only when all of the following are true:
 
 # Current Position — 2026-10-13
 
-**Current version: V2 — Office Automation**
+**Active development: V3 — Digital Archive, authorized by the project owner.** V2 correspondence has shipped and V2 Forms & Requests remains open.
 
 **V1 implementation status:** complete.
 

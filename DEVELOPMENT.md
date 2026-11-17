@@ -1,3 +1,7 @@
+## V3 — Archive scanning
+
+For scanner changes, run the correspondence scanner HTTP regression and document tests. Verify the actual Windows NAPS2 scan, preview and draft save with a physical scanner before accepting the workflow.
+
 ## 2026-11-17 — Save feedback and local text sample migration
 
 - If the text sample table does not exist, apply the existing body templates migration on the intended environment. ProfileTest covers default save feedback, delivery once, and no success on validation failure.

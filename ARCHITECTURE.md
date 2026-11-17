@@ -1,3 +1,7 @@
+## V3 — Archive scanning
+
+Documents owns temporary PDF staging for Windows scanner uploads. The calling module owns authorization and final attachment. Incoming correspondence retains its existing callback. The Windows helper currently allowlists the correspondence upload path, so a future archive callback needs an explicitly allowlisted path.
+
 ## 2026-11-17 — Save feedback and local text sample migration
 
 - HandleInertiaRequests forwards redirect success messages to native Inertia flash data. The app root renders SaveFeedback so it can survive navigation without being restored from browser history.

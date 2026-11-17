@@ -23,10 +23,10 @@ use App\Modules\Correspondence\Services\CorrespondenceNumberingService;
 use App\Modules\Correspondence\Services\CorrespondenceAccessService;
 use App\Modules\Correspondence\Services\CorrespondenceService;
 use App\Modules\Correspondence\Services\CorrespondenceWorkflowService;
-use App\Modules\Correspondence\Http\Controllers\CorrespondenceScannerController;
 use App\Core\Settings\Services\SystemSettingsService;
 use App\Core\Settings\Services\OrganizationDepartmentRoleService;
 use App\Modules\Documents\Services\DocumentService;
+use App\Modules\Documents\Services\ScannerStagingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -781,6 +781,7 @@ class CorrespondenceController extends Controller
         Request $request,
         CorrespondenceService $service,
         DocumentService $documents,
+        ScannerStagingService $scanner,
         CorrespondenceAccessService $access,
         CorrespondenceWorkflowService $workflow,
         CorrespondenceNumberingService $numbering,
@@ -929,7 +930,7 @@ class CorrespondenceController extends Controller
         $originalLetters = array_values(array_filter((array) $request->file('original_letters', [])));
         $scannerUpload = null;
         if (! empty($data['scanner_upload_token'])) {
-            $scannerUpload = CorrespondenceScannerController::consume($data['scanner_upload_token'], $request->user());
+            $scannerUpload = $scanner->readyUpload('correspondence', $data['scanner_upload_token'], $request->user());
             if ($scannerUpload === null || $data['type'] !== Correspondence::TYPE_INCOMING) {
                 return back()->withErrors(['scanner_upload_token' => 'فایل اسکن‌شده معتبر نیست یا مهلت آن پایان یافته است؛ دوباره اسکن کنید.'])->withInput();
             }

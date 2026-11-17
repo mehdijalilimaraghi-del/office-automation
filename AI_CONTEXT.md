@@ -1,3 +1,7 @@
+## V3 — Archive scanning
+
+V3 is active by owner direction. Reuse Documents scan staging and the existing NAPS2 helper when connecting archive registration. Keep scan tokens scoped to their issuing module and user.
+
 ## 2026-11-17 — Save feedback and local text sample migration
 
 - Save confirmations use one-time Inertia flash data. Controllers with explicit success feedback keep their own message. JSON-only saves use their existing local feedback.
