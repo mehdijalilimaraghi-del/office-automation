@@ -1,3 +1,7 @@
+## V3 — Locations and business references
+
+V3 structured location catalogs and links to correspondence, tasks and workflow instances are implemented. Physical NAPS2 and Persian RTL acceptance remain pending.
+
 ## V3 — Category-based checkout approval
 
 Settings managers can exempt named archive categories from physical checkout approval. The policy is snapshotted on each request. Structured locations and business-record links remain open.

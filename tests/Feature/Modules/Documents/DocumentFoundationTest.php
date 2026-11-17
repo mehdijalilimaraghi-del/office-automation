@@ -335,6 +335,71 @@ class DocumentFoundationTest extends TestCase
         $this->assertSame('checkout', $record->latestCustodyEvent()->firstOrFail()->action);
     }
 
+    public function test_archive_location_catalog_and_references_preserve_document_and_target_permissions(): void
+    {
+        $owner = $this->userWithPermissions(['documents.view', 'documents.create', 'documents.update', 'tasks.view', 'correspondence.view']);
+        $administrator = $this->userWithPermissions(['documents.view', 'settings.manage']);
+        $viewer = $this->userWithPermissions(['documents.view', 'documents.update']);
+        $settings = route('archive.locations.update');
+        $this->actingAs($owner)->put($settings, ['locations' => 'Archive / Room'])->assertForbidden();
+        $this->actingAs($administrator)->put($settings, ['locations' => 'Invalid'])->assertSessionHasErrors('locations');
+        $this->put($settings, ['locations' => "Archive/Room/Shelf 1\nArchive / Room / Shelf 2"])
+            ->assertSessionHas('success');
+
+        $attributes = [
+            'title' => 'Catalog record',
+            'document_type' => 'Contract',
+            'archive_kind' => 'physical',
+        ];
+        $this->actingAs($owner)->post(route('archive.store'), [
+            ...$attributes,
+            'archive_location' => 'Unlisted',
+            'file' => UploadedFile::fake()->create('archive.pdf', 5, 'application/pdf'),
+        ])->assertSessionHasErrors('archive_location');
+        $this->post(route('archive.store'), [
+            ...$attributes,
+            'archive_location' => 'Archive / Room / Shelf 1',
+            'file' => UploadedFile::fake()->create('archive.pdf', 5, 'application/pdf'),
+        ])->assertSessionHas('success');
+
+        $record = Document::query()->where('title', $attributes['title'])->firstOrFail();
+        $custody = route('archive.custody.store', $record);
+        $this->post($custody, ['action' => 'move', 'location' => 'Unlisted'])->assertSessionHasErrors('location');
+        $this->post($custody, ['action' => 'move', 'location' => 'Archive / Room / Shelf 2'])->assertSessionHas('success');
+
+        $task = $this->createTask($owner, 'Linked task');
+        $url = route('archive.references.store', $record);
+        $payload = ['target_type' => 'task', 'target_id' => $task->id];
+        $this->post($url, $payload)->assertSessionHas('success');
+        $this->post($url, $payload)->assertSessionHas('success');
+        $this->assertSame(1, $record->archiveReferences()->count());
+        $this->assertSame(1, $record->versions()->count());
+        $this->get(route('archive.show', $record))->assertInertia(fn ($page) => $page
+            ->has('references', 1)->where('references.0.id', $task->id));
+
+        $letter = \App\Modules\Correspondence\Models\Correspondence::query()->create([
+            'type' => 'outgoing', 'subject' => 'Linked correspondence', 'status' => 'draft',
+            'created_by' => $owner->id,
+        ]);
+        $definition = \App\Modules\Workflows\Models\WorkflowDefinition::query()->create([
+            'name' => 'Linked workflow', 'code' => 'archive-workflow', 'created_by' => $owner->id, 'is_active' => true,
+        ]);
+        $instance = \App\Modules\Workflows\Models\WorkflowInstance::query()->create([
+            'workflow_definition_id' => $definition->id, 'initiated_by' => $owner->id,
+            'status' => 'running', 'started_at' => now(),
+        ]);
+        $this->post($url, ['target_type' => 'correspondence', 'target_id' => $letter->id])->assertSessionHas('success');
+        $this->post($url, ['target_type' => 'workflow', 'target_id' => $instance->id])->assertSessionHas('success');
+        $this->get(route('archive.show', $record))->assertInertia(fn ($page) => $page
+            ->has('references', 3)->where('references.0.title', 'Linked workflow'));
+        $this->assertSame(1, $record->versions()->count());
+
+        app(DocumentService::class)->grantAccess($record, $viewer, $owner, 'edit');
+        $this->actingAs($viewer)->get(route('archive.show', $record))
+            ->assertInertia(fn ($page) => $page->has('references', 0));
+        $this->post($url, $payload)->assertNotFound();
+    }
+
     private function createTask(User $user, string $title): Task
     {
         return Task::query()->create([

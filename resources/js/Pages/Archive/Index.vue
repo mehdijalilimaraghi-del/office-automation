@@ -19,8 +19,10 @@ const props = defineProps<{
     filters: { search?: string; kind?: Kind };
     canCreate: boolean;
     approvalExceptions: string[] | null;
+    locations: string[];
 }>();
 
+const locationForm = useForm({ locations: props.locations.join('\n') });
 const approvalForm = useForm({ categories: props.approvalExceptions?.join('\n') ?? '' });
 const filters = useForm({ search: props.filters.search ?? '', kind: props.filters.kind ?? '' });
 const form = useForm({
@@ -112,7 +114,11 @@ function register(event: Event): void {
                     </select>
                 </label>
                 <label v-if="form.archive_kind === 'physical'" class="grid gap-1">محل نگهداری اصل
-                    <input v-model="form.archive_location" class="rounded-md border p-2" placeholder="بایگانی، قفسه، زونکن" maxlength="255" required />
+                    <select v-if="locations.length" v-model="form.archive_location" required class="rounded-md border p-2">
+                        <option value="">انتخاب محل</option>
+                        <option v-for="location in locations" :key="location" :value="location">{{ location }}</option>
+                    </select>
+                    <input v-else v-model="form.archive_location" class="rounded-md border p-2" placeholder="بایگانی، قفسه، زونکن" maxlength="255" required />
                 </label>
                 <div class="grid gap-1" role="group" aria-labelledby="retain-until-label">
                     <span id="retain-until-label">تاریخ پایان نگهداری</span>
@@ -148,6 +154,17 @@ function register(event: Event): void {
                 </div>
             </form>
 
+            <details v-if="approvalExceptions !== null" class="rounded-xl border bg-white p-4">
+                <summary class="cursor-pointer font-semibold">فهرست محل‌های نگهداری</summary>
+                <form class="mt-3 grid gap-3" @submit.prevent="locationForm.put(route('archive.locations.update'), { preserveScroll: true })">
+                    <label class="grid gap-1">مسیر محل‌ها
+                        <textarea v-model="locationForm.locations" rows="4" maxlength="10000" class="rounded-md border p-2" aria-describedby="archive-location-help" />
+                    </label>
+                    <p id="archive-location-help" class="text-sm text-slate-600">هر محل را در یک خط وارد کنید و اجزا را با / جدا کنید. نمونه: بایگانی مرکزی / اتاق ۲ / قفسه ۳ / زونکن ۱۴</p>
+                    <p v-if="locationForm.errors.locations" role="alert" class="text-sm text-red-700">{{ locationForm.errors.locations }}</p>
+                    <button type="submit" :disabled="locationForm.processing" class="justify-self-start rounded-md bg-indigo-700 px-4 py-2 text-white disabled:opacity-60">ذخیره محل‌ها</button>
+                </form>
+            </details>
             <details v-if="approvalExceptions !== null" class="rounded-xl border bg-white p-4">
                 <summary class="cursor-pointer font-semibold">سیاست تأیید خروج اصل مدرک</summary>
                 <form class="mt-3 grid gap-3" @submit.prevent="approvalForm.put(route('archive.approval-policy.update'), { preserveScroll: true })">

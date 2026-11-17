@@ -39,6 +39,11 @@ class Document extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function archiveReferences(): HasMany
+    {
+        return $this->hasMany(ArchiveReference::class);
+    }
+
     public function custodyEvents(): HasMany
     {
         return $this->hasMany(ArchiveCustodyEvent::class);

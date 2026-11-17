@@ -1,3 +1,7 @@
+## V3 — Locations and business references
+
+Test archive location selection during intake and moves, and link each supported record type. Use a user with document access but no target access to verify the reference is hidden.
+
 ## V3 — Category-based checkout approval
 
 Verify both mandatory and exempt categories. Check that settings permissions protect edits, and a policy change leaves already-registered requests unchanged.

@@ -1,3 +1,7 @@
+## V3 — Locations and business references
+
+Implemented V3 location catalogs and business-record references. Manual acceptance covers real NAPS2 scanning, owner and viewer permissions, custody, and linked records.
+
 ## V3 — Category-based checkout approval
 
 Category-based physical checkout approval is implemented. Structured physical locations and links to business records are the remaining archive implementation work.

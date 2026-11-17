@@ -17,6 +17,8 @@ const props = defineProps<{
     record: { id: number; title: string; description: string | null; document_type: string; archive_kind: string; archive_location: string | null };
     versions: { version_number: number; original_name: string; created_at: string }[];
     canUpdate: boolean;
+    locations: string[];
+    references: { type: 'correspondence' | 'task' | 'workflow'; id: number; title: string | null; url: string | null }[];
     custody: { data: CustodyEvent[]; prev_page_url: string | null; next_page_url: string | null } | null;
     custodyCurrent: Pick<CustodyEvent, 'action' | 'recipient' | 'due_on' | 'approval_required'> | null;
 }>();
@@ -39,6 +41,15 @@ function saveCustody(): void {
 const dateFormatter = new Intl.DateTimeFormat('fa-IR-u-ca-persian', { dateStyle: 'medium', timeZone: 'Asia/Tehran' });
 function formatDate(value: string): string {
     return dateFormatter.format(new Date(value));
+}
+
+const referenceTypes = { correspondence: 'مکاتبه', task: 'دستورکار', workflow: 'گردش کار' };
+const referenceForm = useForm({ target_type: 'correspondence', target_id: '' as string | number });
+function saveReference(): void {
+    referenceForm.post(route('archive.references.store', props.record.id), {
+        preserveScroll: true,
+        onSuccess: () => referenceForm.reset('target_id'),
+    });
 }
 
 const form = useForm({ file: null as File | null });
@@ -81,6 +92,32 @@ function save(event: Event): void {
                     <p v-if="form.errors.file" role="alert" class="w-full text-sm text-red-700">{{ form.errors.file }}</p>
                 </form>
             </section>
+            <section class="space-y-3 rounded-xl border bg-white p-4">
+                <h2 class="font-semibold">سوابق مرتبط</h2>
+                <ul v-if="references.length" class="divide-y">
+                    <li v-for="reference in references" :key="reference.type + '-' + reference.id" class="py-2">
+                        <Link v-if="reference.url" :href="reference.url" class="text-indigo-700 hover:underline">
+                            {{ referenceTypes[reference.type] }} {{ reference.id }} · {{ reference.title }}
+                        </Link>
+                        <span v-else>{{ referenceTypes[reference.type] }} {{ reference.id }} · {{ reference.title }}</span>
+                    </li>
+                </ul>
+                <p v-else class="text-sm text-slate-600">سابقه مرتبطی برای نمایش وجود ندارد.</p>
+                <form v-if="canUpdate" class="flex flex-wrap items-end gap-3 border-t pt-3" @submit.prevent="saveReference">
+                    <label class="grid gap-1">نوع سابقه
+                        <select v-model="referenceForm.target_type" class="rounded-md border p-2">
+                            <option v-for="(label, type) in referenceTypes" :key="type" :value="type">{{ label }}</option>
+                        </select>
+                    </label>
+                    <label class="grid gap-1">شناسه سابقه
+                        <input v-model="referenceForm.target_id" type="number" min="1" required class="w-36 rounded-md border p-2" />
+                    </label>
+                    <button type="submit" :disabled="referenceForm.processing" class="rounded-md bg-indigo-700 px-4 py-2 text-white disabled:opacity-60">ثبت پیوند</button>
+                    <ul v-if="referenceForm.hasErrors" role="alert" class="w-full text-sm text-red-700">
+                        <li v-for="(error, field) in referenceForm.errors" :key="field">{{ error }}</li>
+                    </ul>
+                </form>
+            </section>
             <section v-if="custody" class="space-y-3 rounded-xl border bg-white p-4">
                 <h2 class="font-semibold">گردش اصل مدرک</h2>
                 <p v-if="custodyCurrent?.action === 'checkout'" class="text-amber-800">
@@ -108,7 +145,11 @@ function save(event: Event): void {
                         </select>
                     </label>
                     <label v-if="['move', 'return'].includes(custodyForm.action)" class="grid gap-1">محل جدید
-                        <input v-model="custodyForm.location" maxlength="255" required class="rounded-md border p-2" />
+                        <select v-if="locations.length" v-model="custodyForm.location" required class="rounded-md border p-2">
+                            <option value="">انتخاب محل</option>
+                            <option v-for="location in locations" :key="location" :value="location">{{ location }}</option>
+                        </select>
+                        <input v-else v-model="custodyForm.location" maxlength="255" required class="rounded-md border p-2" />
                     </label>
                     <template v-if="custodyForm.action === 'request'">
                         <label class="grid gap-1">تحویل‌گیرنده

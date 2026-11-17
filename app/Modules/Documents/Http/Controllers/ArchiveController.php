@@ -7,6 +7,8 @@ namespace App\Modules\Documents\Http\Controllers;
 use App\Modules\Documents\Models\Document;
 use App\Modules\Documents\Services\ArchiveApprovalPolicy;
 use App\Modules\Documents\Services\ArchiveCustodyService;
+use App\Modules\Documents\Services\ArchiveLocationCatalog;
+use App\Modules\Documents\Services\ArchiveReferenceService;
 use App\Modules\Documents\Services\DocumentService;
 use App\Modules\Documents\Services\ScannerStagingService;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,7 +27,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ArchiveController
 {
-    public function index(Request $request, ArchiveApprovalPolicy $approval): Response
+    public function index(Request $request, ArchiveApprovalPolicy $approval, ArchiveLocationCatalog $locations): Response
     {
         Gate::authorize('viewAny', Document::class);
 
@@ -59,9 +61,32 @@ class ArchiveController
         return Inertia::render('Archive/Index', [
             'records' => $records,
             'filters' => $filters,
+            'locations' => $locations->paths(),
             'canCreate' => Gate::allows('create', Document::class),
             'approvalExceptions' => $request->user()->hasPermission('settings.manage') ? $approval->exceptions() : null,
         ]);
+    }
+
+    public function updateLocationCatalog(Request $request, ArchiveLocationCatalog $locations): RedirectResponse
+    {
+        Gate::authorize('viewAny', Document::class);
+        $data = $request->validate(['locations' => ['nullable', 'string', 'max:10000']]);
+        $locations->save($data['locations'] ?? '');
+
+        return back()->with('success', 'فهرست محل‌های بایگانی ذخیره شد.');
+    }
+
+    public function addReference(Request $request, Document $document, ArchiveReferenceService $references): RedirectResponse
+    {
+        $this->authorizeArchiveDocument($request, $document);
+        abort_unless($this->canUpdate($request, $document), 403);
+        $data = $request->validate([
+            'target_type' => ['required', Rule::in(['correspondence', 'task', 'workflow'])],
+            'target_id' => ['required', 'integer', 'min:1'],
+        ]);
+        $references->add($document, $request->user(), $data['target_type'], (int) $data['target_id']);
+
+        return back()->with('success', 'پیوند مدرک ثبت شد.');
     }
 
     public function updateApprovalPolicy(Request $request, ArchiveApprovalPolicy $approval): RedirectResponse
@@ -77,12 +102,14 @@ class ArchiveController
         return back()->with('success', 'سیاست تأیید خروج ذخیره شد.');
     }
 
-    public function show(Request $request, Document $document): Response
+    public function show(Request $request, Document $document, ArchiveReferenceService $references, ArchiveLocationCatalog $locations): Response
     {
         $this->authorizeArchiveDocument($request, $document);
 
         return Inertia::render('Archive/Show', [
             'record' => $document->only(['id', 'title', 'description', 'document_type', 'archive_kind', 'archive_location']),
+            'locations' => $locations->paths(),
+            'references' => $references->visible($document, $request->user()),
             'versions' => $document->versions()->orderByDesc('version_number')
                 ->get(['version_number', 'original_name', 'created_at']),
             'custody' => $document->archive_kind === 'physical'
@@ -106,7 +133,7 @@ class ArchiveController
         return back()->with('success', 'نسخه جدید مدرک ذخیره شد.');
     }
 
-    public function recordCustody(Request $request, Document $document, ArchiveCustodyService $custody): RedirectResponse
+    public function recordCustody(Request $request, Document $document, ArchiveCustodyService $custody, ArchiveLocationCatalog $locations): RedirectResponse
     {
         $this->authorizeArchiveDocument($request, $document);
         abort_unless($this->canUpdate($request, $document), 403);
@@ -118,6 +145,9 @@ class ArchiveController
             'due_on' => ['exclude_unless:action,request', 'required', 'date_format:Y-m-d', 'after_or_equal:today'],
             'note' => ['nullable', 'required_if:action,request,reject', 'string', 'max:500'],
         ]);
+        if (array_key_exists('location', $data)) {
+            $locations->validatePath($data['location'], 'location');
+        }
         $custody->record($document, $request->user(), $data);
 
         return back()->with('success', 'اقدام بایگانی ثبت شد.');
@@ -174,7 +204,7 @@ class ArchiveController
         Gate::authorize('create', Document::class);
     }
 
-    public function store(Request $request, DocumentService $documents, ScannerStagingService $scanner): RedirectResponse
+    public function store(Request $request, DocumentService $documents, ScannerStagingService $scanner, ArchiveLocationCatalog $locations): RedirectResponse
     {
         Gate::authorize('viewAny', Document::class);
         Gate::authorize('create', Document::class);
@@ -191,6 +221,10 @@ class ArchiveController
             'scanner_upload_token' => ['nullable', 'string', 'size:64', 'alpha_num:ascii', 'prohibits:file'],
             'file' => ['required_without:scanner_upload_token', 'nullable', 'file', 'max:20480', $fileTypes],
         ]);
+
+        if ($data['archive_kind'] === 'physical') {
+            $locations->validatePath($data['archive_location'], 'archive_location');
+        }
 
         $token = $data['scanner_upload_token'] ?? null;
         if ($token === null) {

@@ -1,3 +1,7 @@
+## V3 — Locations and business references
+
+Settings managers configure hierarchical location paths. Existing location text stays visible and new locations use the catalog when configured. A reference to an existing business record does not duplicate a file or grant access.
+
 ## V3 — Category-based checkout approval
 
 Physical checkout requires an independent approval by default. Authorized settings managers can exempt specific categories for future requests, which still require recorded request and handover events.

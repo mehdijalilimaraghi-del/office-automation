@@ -1,3 +1,7 @@
+## V3 — Locations and business references
+
+Location paths are configured as structured arrays in SystemSettings and recorded as display snapshots on the document and custody events. Archive references are separate from attachment links, so they do not change attachment inheritance or file ownership.
+
 ## V3 — Category-based checkout approval
 
 The category exception list uses SystemSettings. The custody event stores approval_required, defaulting existing events to true, and Cartable filters out exempt requests.

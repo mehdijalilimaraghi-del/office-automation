@@ -1,3 +1,7 @@
+## V3 — Locations and business references
+
+V3 locations use ArchiveLocationCatalog. Archive references check both document authorization and source-record visibility in ArchiveReferenceService. These links confer no additional access.
+
 ## V3 — Category-based checkout approval
 
 Archive checkout approval is captured when the request is registered. Trace the category exceptions to ArchiveApprovalPolicy.
