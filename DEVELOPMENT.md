@@ -1,3 +1,7 @@
+## 2026-11-17 — Save feedback and local text sample migration
+
+- If the text sample table does not exist, apply the existing body templates migration on the intended environment. ProfileTest covers default save feedback, delivery once, and no success on validation failure.
+
 ## V1 and V2 acceptance fixes
 
 - The additive correspondence body template migration must be applied for template storage. Use the release-readiness.html and correspondence-form.html browser fixtures for the new flows.

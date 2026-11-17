@@ -1,3 +1,7 @@
+## 2026-11-17 — Save feedback and local text sample migration
+
+- HandleInertiaRequests forwards redirect success messages to native Inertia flash data. The app root renders SaveFeedback so it can survive navigation without being restored from browser history.
+
 ## V1 and V2 acceptance fixes
 
 - Letter templates use an owner-indexed table. Dashboard counts group existing task access scopes by stored local date.

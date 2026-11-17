@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -55,5 +56,24 @@ class HandleInertiaRequests extends Middleware
                 ],
             ],
         ];
+    }
+
+    protected function reflash(Request $request): void
+    {
+        if ($request->user() && $request->hasSession() && ! $request->isMethodSafe()) {
+            $session = $request->session();
+            if (! $session->hasAny(['errors', 'error', 'warning'])) {
+                $message = $session->get('success');
+                $action = $request->route()?->getActionMethod() ?? '';
+                if (! filled($message) && preg_match('/^(store|update|save)([A-Z]|$)/', $action)) {
+                    $message = 'تغییرات ذخیره شد.';
+                }
+                if (is_string($message) && filled($message)) {
+                    Inertia::flash('saveSuccess', $message);
+                }
+            }
+        }
+
+        parent::reflash($request);
     }
 }

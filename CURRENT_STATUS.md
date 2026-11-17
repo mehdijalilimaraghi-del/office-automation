@@ -1,3 +1,7 @@
+## 2026-11-17 — Save feedback and local text sample migration
+
+- The letter text sample table was missing on the local development SQL Server. Applied the existing additive migration there. Added application-wide confirmation for successful redirecting saves.
+
 ## V1 and V2 acceptance fixes
 
 - V1/V2 changes cover Jalali dashboard periods, personal reusable letter bodies (نمونه‌های متن نامه), external organization directories and internal department dialog scrolling.

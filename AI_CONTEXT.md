@@ -1,3 +1,7 @@
+## 2026-11-17 — Save feedback and local text sample migration
+
+- Save confirmations use one-time Inertia flash data. Controllers with explicit success feedback keep their own message. JSON-only saves use their existing local feedback.
+
 ## V1 and V2 acceptance fixes
 
 - Dashboard uses scoped daily counts and Jalali date grouping. Letter body templates are private to each user and reuse the correspondence sanitizer.

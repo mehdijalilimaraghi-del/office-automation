@@ -1,3 +1,7 @@
+## 2026-11-17 — Save feedback and local text sample migration
+
+- Verify that successful saves visibly confirm completion, and that failed validation does not show a success message.
+
 ## V1 and V2 acceptance fixes
 
 - Owner acceptance covers all four V1/V2 changes before approval for master and deployment.

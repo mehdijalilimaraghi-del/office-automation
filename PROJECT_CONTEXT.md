@@ -1,3 +1,7 @@
+## 2026-11-17 — Save feedback and local text sample migration
+
+- After a successful save, one confirmation is displayed. When a controller supplies a specific message it takes precedence over the general save confirmation.
+
 ## V1 and V2 acceptance fixes
 
 - The dashboard defaults to seven days with current Jalali month, season and year options. Applying a personal body template asks before replacing existing letter text.

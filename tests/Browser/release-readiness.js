@@ -1,6 +1,7 @@
 import '/resources/css/app.css';
 import { createApp, h, nextTick, shallowRef } from 'vue';
-import { createInertiaApp } from '@inertiajs/vue3';
+import { createInertiaApp, router } from '@inertiajs/vue3';
+import SaveFeedback from '/resources/js/Components/SaveFeedback.vue';
 import Dashboard from '/resources/js/Pages/Dashboard.vue';
 import ExternalParties from '/resources/js/Pages/Core/ExternalParties/Index.vue';
 import Departments from '/resources/js/Pages/Core/Departments/Index.vue';
@@ -29,12 +30,24 @@ window.editorImageTests = (async () => {
         page: { component: 'TestSurface', props: { errors: {}, auth: { user: { id: 1, name: 'آزمایش', email: 'test@example.com' }, abilities: { departments_create: true } } }, url: location.pathname, version: 'test', clearHistory: false, encryptHistory: false },
         resolve: () => ({ setup: () => () => h(view.value, viewProps.value) }),
         setup({ el, App, props, plugin }) {
-            const app = createApp({ render: () => h(App, props) }).use(plugin);
+            const app = createApp({ render: () => [h(App, props), h(SaveFeedback)] }).use(plugin);
             app.config.globalProperties.route = window.route;
             app.mount(el);
         },
     });
     await new Promise(resolve => setTimeout(resolve, 500));
+    router.flash('saveSuccess', 'تغییرات ذخیره شد.');
+    await nextTick();
+    assert(document.querySelector('[role="status"]')?.textContent === 'تغییرات ذخیره شد.', 'Save message not announced');
+    document.querySelector('[aria-label="بستن پیام"]').click();
+    await nextTick();
+    assert(!document.querySelector('[aria-label="بستن پیام"]'), 'Save message could not be dismissed');
+    router.flash('saveSuccess', 'تغییرات ذخیره شد.');
+    await nextTick();
+    assert(document.querySelector('[aria-label="بستن پیام"]'), 'Repeated save message not shown');
+    document.querySelector('[aria-label="بستن پیام"]').click();
+    results.push('global save message is announced, dismissible and repeatable');
+
     const period = document.querySelector('select');
     assert(period.value === 'week' && text().includes('۸/۲۵'), 'Dashboard did not default to seven Jalali days');
     for (const [value, label] of [['month', '۲۲ تا ۲۵'], ['season', 'مهر'], ['year', 'فروردین']]) {

@@ -58,7 +58,7 @@ class DepartmentControllerTest extends TestCase
             ]
         );
 
-        $response->assertRedirect();
+        $response->assertRedirect()->assertInertiaFlash('saveSuccess', session('success'));
 
         $this->assertDatabaseHas('departments', [
             'name' => 'فناوری اطلاعات',
@@ -200,7 +200,7 @@ class DepartmentControllerTest extends TestCase
             ]
         );
 
-        $response->assertRedirect();
+        $response->assertRedirect()->assertInertiaFlash('saveSuccess', session('success'));
 
         $this->assertDatabaseHas('departments', [
             'name' => 'فناوری اطلاعات',
