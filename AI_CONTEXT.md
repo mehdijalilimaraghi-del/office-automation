@@ -1,3 +1,7 @@
+## V3 — Archive access
+
+Archive uses role permissions for menu, registration and delegation, plus explicit document grants. Check ArchiveController and DocumentPolicy before changing this boundary.
+
 ## V3 — Locations and business references
 
 V3 locations use ArchiveLocationCatalog. Archive references check both document authorization and source-record visibility in ArchiveReferenceService. These links confer no additional access.

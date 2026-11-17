@@ -1,3 +1,7 @@
+## V3 — Archive access
+
+Apply the V3 migrations before opening Archive on a development database. Test reader, uploader, owner with delegation permission, and revoked user separately.
+
 ## V3 — Locations and business references
 
 Test archive location selection during intake and moves, and link each supported record type. Use a user with document access but no target access to verify the reference is hidden.

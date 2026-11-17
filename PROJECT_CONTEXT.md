@@ -1,3 +1,7 @@
+## V3 — Archive access
+
+Assign View Documents to archive readers, Create Document to uploaders, and Manage Document Access to owners who can share. Per-document View or Edit grants never supply missing role permissions.
+
 ## V3 — Locations and business references
 
 Settings managers configure hierarchical location paths. Existing location text stays visible and new locations use the catalog when configured. A reference to an existing business record does not duplicate a file or grant access.

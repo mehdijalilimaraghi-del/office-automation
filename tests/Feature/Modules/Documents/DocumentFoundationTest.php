@@ -400,6 +400,32 @@ class DocumentFoundationTest extends TestCase
         $this->post($url, $payload)->assertNotFound();
     }
 
+    public function test_archive_owner_can_share_and_revoke_a_record_without_granting_global_permissions(): void
+    {
+        $owner = $this->userWithPermissions(['documents.view', 'documents.create', 'documents.manage_access']);
+        $viewer = $this->userWithPermissions(['documents.view']);
+        $nonViewer = $this->userWithPermissions([]);
+        $this->actingAs($owner)->post(route('archive.store'), [
+            'title' => 'Shareable archive', 'document_type' => 'Contract', 'archive_kind' => 'digital',
+            'file' => UploadedFile::fake()->create('shared.pdf', 5, 'application/pdf'),
+        ])->assertSessionHas('success');
+
+        $record = Document::query()->where('title', 'Shareable archive')->firstOrFail();
+        $url = route('archive.access.update', $record);
+        $this->get(route('archive.show', $record))->assertInertia(fn ($page) => $page->has('accessManagement.users'));
+        $this->put($url, ['user_id' => $nonViewer->id, 'access_level' => 'view'])->assertSessionHasErrors('user_id');
+        $this->put($url, ['user_id' => $viewer->id, 'access_level' => 'edit'])->assertSessionHasErrors('access_level');
+        $this->put($url, ['user_id' => $viewer->id, 'access_level' => 'view'])->assertSessionHas('success');
+        $this->actingAs($viewer)->get(route('archive.show', $record))->assertInertia(fn ($page) => $page
+            ->where('accessManagement', null)->where('canUpdate', false));
+        $this->get(route('documents.download', $record))->assertOk();
+        $this->put($url, ['user_id' => $nonViewer->id, 'access_level' => 'view'])->assertForbidden();
+
+        $this->actingAs($owner)->delete(route('archive.access.destroy', ['document' => $record, 'user' => $viewer]))
+            ->assertSessionHas('success');
+        $this->actingAs($viewer)->get(route('documents.download', $record))->assertForbidden();
+    }
+
     private function createTask(User $user, string $title): Task
     {
         return Task::query()->create([

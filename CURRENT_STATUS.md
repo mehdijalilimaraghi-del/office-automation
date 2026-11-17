@@ -1,3 +1,7 @@
+## V3 — Archive access
+
+Applied the four pending V3 schema migrations to the isolated local development application database at localhost:1433. Archive document owners with documents.manage_access can share and revoke individual access.
+
 ## V3 — Locations and business references
 
 V3 structured location catalogs and links to correspondence, tasks and workflow instances are implemented. Physical NAPS2 and Persian RTL acceptance remain pending.

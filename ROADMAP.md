@@ -1,3 +1,7 @@
+## V3 — Archive access
+
+V3 acceptance includes role-based archive entry and upload plus per-document viewing, editing and revocation.
+
 ## V3 — Locations and business references
 
 Implemented V3 location catalogs and business-record references. Manual acceptance covers real NAPS2 scanning, owner and viewer permissions, custody, and linked records.

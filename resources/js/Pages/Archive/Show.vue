@@ -17,6 +17,10 @@ const props = defineProps<{
     record: { id: number; title: string; description: string | null; document_type: string; archive_kind: string; archive_location: string | null };
     versions: { version_number: number; original_name: string; created_at: string }[];
     canUpdate: boolean;
+    accessManagement: {
+        grants: { id: number; user_id: number; access_level: 'view' | 'edit'; user: { name: string } | null }[];
+        users: { id: number; name: string }[];
+    } | null;
     locations: string[];
     references: { type: 'correspondence' | 'task' | 'workflow'; id: number; title: string | null; url: string | null }[];
     custody: { data: CustodyEvent[]; prev_page_url: string | null; next_page_url: string | null } | null;
@@ -50,6 +54,18 @@ function saveReference(): void {
         preserveScroll: true,
         onSuccess: () => referenceForm.reset('target_id'),
     });
+}
+
+const accessForm = useForm({ user_id: '' as string | number, access_level: 'view' });
+const revokeForm = useForm({});
+function saveAccess(): void {
+    accessForm.put(route('archive.access.update', props.record.id), {
+        preserveScroll: true,
+        onSuccess: () => accessForm.reset(),
+    });
+}
+function revokeAccess(userId: number): void {
+    revokeForm.delete(route('archive.access.destroy', { document: props.record.id, user: userId }), { preserveScroll: true });
 }
 
 const form = useForm({ file: null as File | null });
@@ -115,6 +131,35 @@ function save(event: Event): void {
                     <button type="submit" :disabled="referenceForm.processing" class="rounded-md bg-indigo-700 px-4 py-2 text-white disabled:opacity-60">ثبت پیوند</button>
                     <ul v-if="referenceForm.hasErrors" role="alert" class="w-full text-sm text-red-700">
                         <li v-for="(error, field) in referenceForm.errors" :key="field">{{ error }}</li>
+                    </ul>
+                </form>
+            </section>
+            <section v-if="accessManagement" class="space-y-3 rounded-xl border bg-white p-4">
+                <h2 class="font-semibold">دسترسی به این مدرک</h2>
+                <p class="text-sm text-slate-600">کاربر باید مجوز نقش «مشاهده اسناد» را هم داشته باشد. برای ویرایش، مجوز نقش «ویرایش سند» لازم است.</p>
+                <ul v-if="accessManagement.grants.length" class="divide-y">
+                    <li v-for="grant in accessManagement.grants" :key="grant.id" class="flex flex-wrap items-center justify-between gap-2 py-2">
+                        <span>{{ grant.user?.name }} · {{ grant.access_level === 'edit' ? 'ویرایش' : 'مشاهده' }}</span>
+                        <button type="button" :disabled="revokeForm.processing" class="text-red-700 hover:underline disabled:opacity-60"
+                            :aria-label="'لغو دسترسی ' + (grant.user?.name ?? '')" @click="revokeAccess(grant.user_id)">لغو دسترسی</button>
+                    </li>
+                </ul>
+                <p v-else class="text-sm text-slate-600">هنوز دسترسی مستقیمی واگذار نشده است.</p>
+                <form class="flex flex-wrap items-end gap-3 border-t pt-3" @submit.prevent="saveAccess">
+                    <label class="grid gap-1">کاربر
+                        <select v-model="accessForm.user_id" required class="rounded-md border p-2">
+                            <option value="">انتخاب کاربر</option>
+                            <option v-for="user in accessManagement.users" :key="user.id" :value="user.id">{{ user.name }}</option>
+                        </select>
+                    </label>
+                    <label class="grid gap-1">سطح دسترسی
+                        <select v-model="accessForm.access_level" class="rounded-md border p-2">
+                            <option value="view">مشاهده</option><option value="edit">ویرایش</option>
+                        </select>
+                    </label>
+                    <button type="submit" :disabled="accessForm.processing" class="rounded-md bg-indigo-700 px-4 py-2 text-white disabled:opacity-60">ذخیره دسترسی</button>
+                    <ul v-if="accessForm.hasErrors" role="alert" class="w-full text-sm text-red-700">
+                        <li v-for="(error, field) in accessForm.errors" :key="field">{{ error }}</li>
                     </ul>
                 </form>
             </section>

@@ -46,6 +46,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/archive', [ArchiveController::class, 'store'])->name('archive.store');
     Route::put('/archive/locations', [ArchiveController::class, 'updateLocationCatalog'])
         ->middleware('permission:settings.manage')->name('archive.locations.update');
+    Route::put('/archive/{document}/access', [ArchiveController::class, 'updateAccess'])->whereNumber('document')->name('archive.access.update');
+    Route::delete('/archive/{document}/access/{user}', [ArchiveController::class, 'revokeAccess'])->whereNumber(['document', 'user'])->name('archive.access.destroy');
     Route::post('/archive/{document}/references', [ArchiveController::class, 'addReference'])->whereNumber('document')->name('archive.references.store');
     Route::put('/archive/approval-policy', [ArchiveController::class, 'updateApprovalPolicy'])
         ->middleware('permission:settings.manage')->name('archive.approval-policy.update');

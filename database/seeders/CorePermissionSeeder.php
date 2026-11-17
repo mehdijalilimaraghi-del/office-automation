@@ -264,7 +264,6 @@ class CorePermissionSeeder extends Seeder
         // records for audit/history, but prevent them from being granted.
         $retiredCodes = [
             'notifications.manage',
-            'documents.manage_access',
             'permissions.create',
             'permissions.edit',
             'permissions.delete',

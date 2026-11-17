@@ -1,3 +1,7 @@
+## V3 — Archive access
+
+Archive grants reuse document_accesses and DocumentPolicy. Permission activation is an additive data migration and creates no role assignments.
+
 ## V3 — Locations and business references
 
 Location paths are configured as structured arrays in SystemSettings and recorded as display snapshots on the document and custody events. Archive references are separate from attachment links, so they do not change attachment inheritance or file ownership.

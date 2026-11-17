@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Documents\Http\Controllers;
 
+use App\Models\User;
 use App\Modules\Documents\Models\Document;
 use App\Modules\Documents\Services\ArchiveApprovalPolicy;
 use App\Modules\Documents\Services\ArchiveCustodyService;
@@ -106,7 +107,14 @@ class ArchiveController
     {
         $this->authorizeArchiveDocument($request, $document);
 
+        $canManageAccess = Gate::allows('manageAccess', $document);
+
         return Inertia::render('Archive/Show', [
+            'accessManagement' => $canManageAccess ? [
+                'grants' => $document->accesses()->with('user:id,name')->orderBy('id')->get(['id', 'user_id', 'access_level']),
+                'users' => User::query()->where('status', 'active')->whereKeyNot($document->created_by)
+                    ->orderBy('name')->get(['id', 'name']),
+            ] : null,
             'record' => $document->only(['id', 'title', 'description', 'document_type', 'archive_kind', 'archive_location']),
             'locations' => $locations->paths(),
             'references' => $references->visible($document, $request->user()),
@@ -120,6 +128,36 @@ class ArchiveController
                 : null,
             'canUpdate' => $this->canUpdate($request, $document),
         ]);
+    }
+
+    public function updateAccess(Request $request, Document $document, DocumentService $documents): RedirectResponse
+    {
+        $this->authorizeArchiveDocument($request, $document);
+        Gate::authorize('manageAccess', $document);
+        $data = $request->validate([
+            'user_id' => ['required', 'integer', Rule::exists('users', 'id')->where('status', 'active')],
+            'access_level' => ['required', Rule::in(['view', 'edit'])],
+        ]);
+        $recipient = User::query()->findOrFail($data['user_id']);
+        if ((int) $document->created_by === (int) $recipient->id || ! $recipient->hasPermission('documents.view')) {
+            throw ValidationException::withMessages(['user_id' => 'کاربر باید مجوز مشاهده اسناد داشته باشد و مالک مدرک نباشد.']);
+        }
+        if ($data['access_level'] === 'edit' && ! $recipient->hasPermission('documents.update')) {
+            throw ValidationException::withMessages(['access_level' => 'برای واگذاری ویرایش، کاربر باید مجوز ویرایش اسناد داشته باشد.']);
+        }
+
+        $documents->grantAccess($document, $recipient, $request->user(), $data['access_level']);
+
+        return back()->with('success', 'دسترسی مدرک ذخیره شد.');
+    }
+
+    public function revokeAccess(Request $request, Document $document, User $user): RedirectResponse
+    {
+        $this->authorizeArchiveDocument($request, $document);
+        Gate::authorize('manageAccess', $document);
+        $document->accesses()->where('user_id', $user->id)->delete();
+
+        return back()->with('success', 'دسترسی کاربر به مدرک لغو شد.');
     }
 
     public function addVersion(Request $request, Document $document, DocumentService $documents): RedirectResponse
