@@ -15,6 +15,13 @@ Use this skill for implementation, debugging, refactoring, and maintenance tasks
 4. Never switch to, modify, merge into, or push to `master`, `release`, or `server`.
 5. Inspect the target code, related tests, migrations, and current implementation before editing. Preserve unrelated working-tree changes.
 
+## Find the affected files
+
+- For V3 archive, documents, scanner, Cartable or workflow work, start with [the V3 code map](references/v3-code-map.md). Verify entry points against the current checkout.
+- Start from a route name, error text, permission or symbol. Use `rg -l` or `rg --files` within the affected module, then read the relevant line ranges and follow callers, authorization and tests. Expand to other modules when the route or dependency crosses a module boundary.
+- Use the current status and relevant headings to locate project context. Read the full applicable sections for architectural, security or release decisions. Follow the project owner’s onboarding document order when a full review is requested.
+- Keep test and build output to the result summary and actionable warnings. On failure, read the relevant error and surrounding output. Review the complete staged diff before committing.
+
 ## Implementation
 
 - State the root cause and smallest intended change before broad edits.
