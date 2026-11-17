@@ -69,10 +69,12 @@ class OrganizationSettingsTest extends TestCase
             'management_department_id' => $management->id,
             'project_management_department_id' => $projects->id,
             'secretariat_department_id' => $secretariat->id,
+            'central_archive_department_id' => $secretariat->id,
         ]);
 
         $response->assertRedirect();
         $response->assertSessionHas('success');
+        $this->assertDatabaseHas('system_settings', ['key' => 'organization.department_roles.central_archive', 'value' => (string) $secretariat->id]);
 
         $this->assertDatabaseHas('system_settings', [
             'key' => 'organization.name',

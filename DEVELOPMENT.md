@@ -1,3 +1,7 @@
+## V3 — Central and departmental archives
+
+Before a new workflow build, document roles, tasks, page boundaries, validation, empty states, errors and success. Verify separate registration, browse, details and settings routes at representative RTL viewport widths.
+
 ## V3 — Archive access
 
 Apply the V3 migrations before opening Archive on a development database. Test reader, uploader, owner with delegation permission, and revoked user separately.

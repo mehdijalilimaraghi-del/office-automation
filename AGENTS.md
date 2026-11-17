@@ -275,6 +275,9 @@ Rules:
 
 ## UI / UX
 
+Before implementing a new workflow, agree on who uses it, what decisions they make, and which screens support those tasks. Separate browsing, registration, document details and administration when the tasks or roles differ. Use configured selections for controlled fields and define validation, empty, loading, error and success states. Check the workflow with representative user roles and RTL desktop and mobile layouts.
+
+
 The UI should be:
 
 * Persian

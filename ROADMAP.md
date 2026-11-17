@@ -1,3 +1,7 @@
+## V3 — Central and departmental archives
+
+The approved V3 revision introduces central and unit archives, unit-owned categories and locations, department-scoped access, and transfer without creating a new document. The central unit selector is the first slice.
+
 ## V3 — Archive access
 
 V3 acceptance includes role-based archive entry and upload plus per-document viewing, editing and revocation.

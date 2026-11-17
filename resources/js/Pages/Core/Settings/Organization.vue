@@ -25,6 +25,7 @@ interface OrganizationSettings {
     management_department_id: string | null;
     project_management_department_id: string | null;
     secretariat_department_id: string | null;
+    central_archive_department_id: string | null;
     default_response_department_id: string | null;
     numbering_template: string | null;
     registration_numbering_template: string | null;
@@ -78,6 +79,7 @@ const form = useForm({
     management_department_id: props.settings.management_department_id ?? '',
     project_management_department_id: props.settings.project_management_department_id ?? '',
     secretariat_department_id: props.settings.secretariat_department_id ?? '',
+    central_archive_department_id: props.settings.central_archive_department_id ?? '',
     default_response_department_id: props.settings.default_response_department_id ?? '',
     numbering_template: props.settings.numbering_template ?? '{{PYY}}/{{Dept}}/{{Num-6-r}}',
     registration_numbering_template: props.settings.registration_numbering_template ?? '{{PYY}}/{{Num-6-r}}',
@@ -232,6 +234,11 @@ function submit(): void {
                                     <label for="secretariat_department_id" class="mb-2 block text-sm font-semibold text-slate-700">دبیرخانه</label>
                                     <DepartmentTreeSelect id="secretariat_department_id" v-model="form.secretariat_department_id" :departments="departments" placeholder="انتخاب نشده" />
                                     <InputError class="mt-1.5" :message="form.errors.secretariat_department_id" />
+                                </div>
+                                <div>
+                                    <label for="central_archive_department_id" class="mb-2 block text-sm font-semibold text-slate-700">واحد مسئول بایگانی مرکزی</label>
+                                    <DepartmentTreeSelect id="central_archive_department_id" v-model="form.central_archive_department_id" :departments="departments" placeholder="انتخاب واحد" />
+                                    <InputError class="mt-1.5" :message="form.errors.central_archive_department_id" />
                                 </div>
                             </div>
                         </section>

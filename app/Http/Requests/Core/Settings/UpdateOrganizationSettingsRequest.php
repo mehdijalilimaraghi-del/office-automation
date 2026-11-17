@@ -47,6 +47,7 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'management_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')],
             'project_management_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')],
             'secretariat_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')],
+            'central_archive_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')->where('is_active', true)],
             'default_response_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')->where(fn ($query) => $query->where('is_active', true)->whereNotNull('manager_id'))],
         ];
     }
@@ -123,6 +124,7 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'management_department_id' => 'واحد مدیریتی',
             'project_management_department_id' => 'واحد مدیریت پروژه‌ها',
             'secretariat_department_id' => 'دبیرخانه',
+            'central_archive_department_id' => 'واحد مسئول بایگانی مرکزی',
         ];
     }
 }

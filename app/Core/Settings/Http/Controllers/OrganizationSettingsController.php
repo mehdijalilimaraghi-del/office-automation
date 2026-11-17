@@ -59,6 +59,7 @@ class OrganizationSettingsController extends Controller
             OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::MANAGEMENT) => null,
             OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::PROJECT_MANAGEMENT) => null,
             OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT) => null,
+            OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::CENTRAL_ARCHIVE) => null,
         ]);
 
         return Inertia::render('Core/Settings/Organization', [
@@ -91,6 +92,7 @@ class OrganizationSettingsController extends Controller
                 'management_department_id' => $roleSettings[OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::MANAGEMENT)],
                 'project_management_department_id' => $roleSettings[OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::PROJECT_MANAGEMENT)],
                 'secretariat_department_id' => $roleSettings[OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT)],
+                'central_archive_department_id' => $roleSettings[OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::CENTRAL_ARCHIVE)],
                 'default_response_department_id' => $stored['projects.response_department.default'],
             ],
             'departments' => Department::query()
@@ -152,6 +154,9 @@ class OrganizationSettingsController extends Controller
             OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::MANAGEMENT) => $data['management_department_id'] ?? null,
             OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::PROJECT_MANAGEMENT) => $data['project_management_department_id'] ?? null,
             OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::SECRETARIAT) => $data['secretariat_department_id'] ?? null,
+            ...(array_key_exists('central_archive_department_id', $data) ? [
+                OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::CENTRAL_ARCHIVE) => $data['central_archive_department_id'],
+            ] : []),
             'projects.response_department.default' => $data['default_response_department_id'] ?? null,
         ]);
 

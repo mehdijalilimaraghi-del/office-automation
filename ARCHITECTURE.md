@@ -1,3 +1,7 @@
+## V3 — Central and departmental archives
+
+The central archive department is an independent organization department role and may point to the same department as Secretariat. Future archive ownership and custody checks must distinguish the related unit from the storing unit.
+
 ## V3 — Archive access
 
 Archive grants reuse document_accesses and DocumentPolicy. Permission activation is an additive data migration and creates no role assignments.

@@ -1,3 +1,7 @@
+## V3 — Central and departmental archives
+
+For new workflows, agree on users, decisions and screens before editing. V3 distinguishes the business department from the custodian department.
+
 ## V3 — Archive access
 
 Archive uses role permissions for menu, registration and delegation, plus explicit document grants. Check ArchiveController and DocumentPolicy before changing this boundary.

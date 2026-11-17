@@ -14,11 +14,13 @@ class OrganizationDepartmentRoleService
     public const MANAGEMENT = 'management';
     public const PROJECT_MANAGEMENT = 'project_management';
     public const SECRETARIAT = 'secretariat';
+    public const CENTRAL_ARCHIVE = 'central_archive';
 
     public const ROLES = [
         self::MANAGEMENT,
         self::PROJECT_MANAGEMENT,
         self::SECRETARIAT,
+        self::CENTRAL_ARCHIVE,
     ];
 
     public function departmentId(string $role): ?int
@@ -105,6 +107,7 @@ class OrganizationDepartmentRoleService
             self::MANAGEMENT => 'واحد مدیریتی',
             self::PROJECT_MANAGEMENT => 'واحد مدیریت پروژه‌ها',
             self::SECRETARIAT => 'دبیرخانه',
+            self::CENTRAL_ARCHIVE => 'بایگانی مرکزی',
         ];
     }
 

@@ -1,3 +1,7 @@
+## V3 — Central and departmental archives
+
+The unit that retains the record registers it. For a unit archive, active members file to their own unit and choose its defined locations. Central archive staff register records held centrally and record the related business unit. Ordinary records use authorized membership of the related unit. Restricted records require explicit users or roles. Unit managers can delegate archive configuration to a member. Central staff confirm transfers after receipt on the same record, preserving the identifier, file versions and both locations in history.
+
 ## V3 — Archive access
 
 Assign View Documents to archive readers, Create Document to uploaders, and Manage Document Access to owners who can share. Per-document View or Edit grants never supply missing role permissions.

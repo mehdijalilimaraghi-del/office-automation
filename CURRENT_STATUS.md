@@ -1,3 +1,7 @@
+## V3 — Central and departmental archives
+
+The organization settings now allow selecting the central archive department, including the Secretariat. Department-scoped filing, delegation, classification and central transfer are still to be implemented.
+
 ## V3 — Archive access
 
 Applied the four pending V3 schema migrations to the isolated local development application database at localhost:1433. Archive document owners with documents.manage_access can share and revoke individual access.
