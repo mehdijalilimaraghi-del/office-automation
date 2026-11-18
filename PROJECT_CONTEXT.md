@@ -1,3 +1,7 @@
+## Approved release preparation
+
+Owner verified notification audio and authorized promotion to master and server deployment. Temporary sound-test controls removed; automatic native audio and conditional browser sound activation remain. Verify release identity, additive migrations, backup and rollback before activation.
+
 ## Notification audio playback diagnostics
 
 Users can test notification audio at any time from the bell menu, including after closing a reminder. Browser playback denial or an unavailable sound file produces visible feedback.

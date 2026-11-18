@@ -1,3 +1,7 @@
+## Approved release preparation
+
+Owner verified notification audio and authorized promotion to master and server deployment. Temporary sound-test controls removed; automatic native audio and conditional browser sound activation remain. Verify release identity, additive migrations, backup and rollback before activation.
+
 ## Notification audio playback diagnostics
 
 Replaced synthesized notification audio with a bundled chime and direct media playback. Added persistent sound-test buttons to both notification menus and the reminder banner, with blocked/unavailable playback feedback. Validation passed: 517 SQL Server tests (3309 assertions), TypeScript/production build and browser checks confirming WAV decode, completed media playback and nonzero waveform (peak 46/128), with desktop/mobile menu tests and no poll replay. Mobile notification menu positioning corrected. Actual speaker audibility requires owner acceptance.

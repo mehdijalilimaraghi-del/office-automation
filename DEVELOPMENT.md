@@ -1,3 +1,7 @@
+## Approved release preparation
+
+Owner verified notification audio and authorized promotion to master and server deployment. Temporary sound-test controls removed; automatic native audio and conditional browser sound activation remain. Verify release identity, additive migrations, backup and rollback before activation.
+
 ## Notification audio playback diagnostics
 
 Verify the WAV asset loads, native media currentTime advances and ended fires after a trusted click, automatic playback follows interaction, polling does not replay it, and both notification menus expose a sound test. Muted browser tabs and physical speaker output require manual acceptance.

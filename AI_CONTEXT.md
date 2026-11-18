@@ -1,3 +1,7 @@
+## Approved release preparation
+
+Owner verified notification audio and authorized promotion to master and server deployment. Temporary sound-test controls removed; automatic native audio and conditional browser sound activation remain. Verify release identity, additive migrations, backup and rollback before activation.
+
 ## Notification audio playback diagnostics
 
 Notification audio is a bundled PCM WAV played with HTMLAudioElement. Invoke playback directly from the sound-test click; do not hide the control on pointerdown or equate API success with speaker output.
