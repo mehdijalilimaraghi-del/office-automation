@@ -1,3 +1,7 @@
+## Incoming-letter archive registration
+
+Verify incoming registration redirects, postponed archiving via the letter button, prefilled category and manual override, duplicate POSTs, all original/attachment files, and confidential access. Apply the additive correspondence/archive-link migration locally.
+
 ## Central archive and document audiences
 
 Verify central registration as the central department manager, publication as a responsible archivist, and viewing as a user without unit membership. Check selected-role deactivation and scope reduction on both the list and direct downloads. Browser QA passed for the central list, registration and audience editor at desktop and mobile widths; physical NAPS2 hardware acceptance remains separate.

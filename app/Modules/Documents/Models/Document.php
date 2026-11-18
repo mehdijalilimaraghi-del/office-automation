@@ -41,6 +41,11 @@ class Document extends Model
         ];
     }
 
+    public function sourceCorrespondence(): HasOne
+    {
+        return $this->hasOne(\App\Modules\Correspondence\Models\Correspondence::class, 'archive_document_id');
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

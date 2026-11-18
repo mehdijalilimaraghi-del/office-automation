@@ -1,3 +1,7 @@
+## Incoming-letter archive registration
+
+Registered incoming correspondence can open archive registration via CorrespondenceArchiveService. Use the existing source files and serialize registration on the correspondence row. The configured incoming category is an editable default.
+
 ## Central archive and document audiences
 
 Central archive routes are archive.central.index/create. Audience rules are enforced by ArchiveAccessService for both listings and downloads. ArchiveAudienceService changes the read scope without granting edit permissions.

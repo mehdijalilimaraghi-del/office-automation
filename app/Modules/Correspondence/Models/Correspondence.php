@@ -199,6 +199,11 @@ class Correspondence extends Model
             ->withTimestamps();
     }
 
+    public function archivedDocument(): BelongsTo
+    {
+        return $this->belongsTo(\App\Modules\Documents\Models\Document::class, 'archive_document_id');
+    }
+
     public function documents(): MorphMany
     {
         return $this->morphMany(DocumentLink::class, 'linkable');

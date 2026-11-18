@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Modules\Documents\Http\Controllers;
 
 use App\Models\User;
+use App\Modules\Correspondence\Models\Correspondence;
+use App\Modules\Documents\Services\CorrespondenceArchiveService;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use App\Modules\Documents\Models\Document;
 use App\Modules\Documents\Services\ArchiveApprovalPolicy;
 use App\Modules\Documents\Services\ArchiveAudienceService;
@@ -33,7 +36,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ArchiveController
 {
-    public function __construct(private readonly \App\Modules\Documents\Services\ArchiveAccessService $access) {}
+    public function __construct(private readonly \App\Modules\Documents\Services\ArchiveAccessService $access, private readonly CorrespondenceArchiveService $letters) {}
     public function index(Request $request, ArchiveApprovalPolicy $approval, ArchiveLocationCatalog $locations): Response
     {
         abort_unless($this->access->canEnter($request->user()), 403);
@@ -86,9 +89,18 @@ class ArchiveController
         ]);
     }
 
-    public function create(Request $request): Response
+    public function create(Request $request): Response|RedirectResponse
     {
         $this->authorizeRegistration();
+        $query = $request->validate(['correspondence_id' => ['nullable', 'integer']]);
+        $source = null;
+        if (! empty($query['correspondence_id'])) {
+            $source = Correspondence::query()->findOrFail($query['correspondence_id']);
+            $this->letters->authorize($source, $request->user());
+            if ($source->archive_document_id !== null) {
+                return redirect()->route('correspondence.show', $source)->with('success', 'بایگانی این نامه قبلاً ثبت شده است.');
+            }
+        }
         $centralMode = $request->routeIs('archive.central.create');
         $central = $this->centralArchive($request);
         if ($centralMode) {
@@ -108,6 +120,7 @@ class ArchiveController
                 'locations' => array_map(static fn (array $location): string => implode(' / ', array_filter($location, fn ($part) => filled($part))), $settings->get($department->id)?->locations ?? []),
             ]),
             'relatedDepartments' => \App\Core\Departments\Models\Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'sourceLetter' => $source !== null ? $this->letters->context($source) : null,
             'centralMode' => $centralMode,
             'audienceDepartments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'audienceRoles' => Role::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
@@ -137,6 +150,10 @@ class ArchiveController
         $this->authorizeArchiveDocument($request, $document);
         Gate::authorize('manageAccess', $document);
         $data = $request->validate($audiences->rules(requireVisibility: true));
+        if ($document->sourceCorrespondence()->where('classification', Correspondence::CLASSIFICATION_CONFIDENTIAL)->exists()
+            && $data['archive_visibility'] !== 'restricted') {
+            throw ValidationException::withMessages(['archive_visibility' => 'این مدرک از نامه محرمانه آمده است و باید برای افراد مشخص باقی بماند.']);
+        }
         $audiences->apply($document, $data);
 
         if (! $this->access->canView($request->user(), $document)) {
@@ -208,6 +225,7 @@ class ArchiveController
                 static fn (array $location): string => implode(' / ', array_filter($location, fn ($part) => filled($part))),
                 \App\Modules\Documents\Models\DepartmentArchiveSetting::query()->where('department_id', $document->archive_department_id)->first()?->locations ?? [],
             ),
+            'correspondenceFiles' => DB::table('archive_correspondence_files')->where('document_id', $document->id)->orderBy('id')->get(['id', 'purpose', 'original_name', 'size']),
             'references' => $references->visible($document, $request->user()),
             'versions' => $document->versions()->orderByDesc('version_number')
                 ->get(['version_number', 'original_name', 'created_at']),
@@ -237,6 +255,10 @@ class ArchiveController
             throw ValidationException::withMessages(['access_level' => 'برای واگذاری ویرایش، کاربر باید مجوز ویرایش اسناد داشته باشد.']);
         }
 
+        $source = $document->sourceCorrespondence()->where('classification', Correspondence::CLASSIFICATION_CONFIDENTIAL)->first();
+        if ($source !== null && ! app(\App\Modules\Correspondence\Services\CorrespondenceAccessService::class)->canView($source, $recipient)) {
+            throw ValidationException::withMessages(['user_id' => 'کاربر باید به نامه محرمانه مبدأ نیز دسترسی داشته باشد.']);
+        }
         $documents->grantAccess($document, $recipient, $request->user(), $data['access_level']);
 
         return back()->with('success', 'دسترسی مدرک ذخیره شد.');
@@ -249,6 +271,17 @@ class ArchiveController
         $document->accesses()->where('user_id', $user->id)->delete();
 
         return back()->with('success', 'دسترسی کاربر به مدرک لغو شد.');
+    }
+
+    public function downloadCorrespondenceFile(Request $request, Document $document, int $file): StreamedResponse
+    {
+        Gate::authorize('view', $document);
+        $stored = DB::table('archive_correspondence_files')->where('document_id', $document->id)->where('id', $file)->first();
+        abort_if($stored === null, 404);
+        $disk = Storage::disk($stored->disk);
+        abort_unless($disk->exists($stored->path), 404);
+
+        return $disk->download($stored->path, $stored->original_name);
     }
 
     public function addVersion(Request $request, Document $document, DocumentService $documents): RedirectResponse
@@ -345,7 +378,8 @@ class ArchiveController
 
         $data = $request->validate([
             ...$audiences->rules(),
-            'archive_department_id' => ['nullable', 'integer'],
+            'correspondence_id' => ['nullable', 'integer', 'prohibits:file,scanner_upload_token'],
+            'archive_department_id' => ['required_with:correspondence_id', 'nullable', 'integer'],
             'related_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')->where('is_active', true)],
             'archive_restricted' => ['sometimes', 'boolean'],
             'title' => ['required', 'string', 'max:255'],
@@ -355,7 +389,7 @@ class ArchiveController
             'archive_location' => ['exclude_unless:archive_kind,physical', 'required', 'string', 'max:255'],
             'retain_until' => ['nullable', 'date_format:Y-m-d'],
             'scanner_upload_token' => ['nullable', 'string', 'size:64', 'alpha_num:ascii', 'prohibits:file'],
-            'file' => ['required_without:scanner_upload_token', 'nullable', 'file', 'max:20480', $fileTypes],
+            'file' => ['required_without_all:scanner_upload_token,correspondence_id', 'nullable', 'file', 'max:20480', $fileTypes],
         ]);
 
         $departmentId = $data['archive_department_id'] ?? null;
@@ -396,6 +430,18 @@ class ArchiveController
             $data['archive_visibility'] = $visibility;
         } elseif (isset($data['archive_visibility'])) {
             abort_unless($request->user()->hasPermission('documents.manage_access'), 403);
+        }
+
+        if (! empty($data['correspondence_id'])) {
+            $source = Correspondence::query()->findOrFail($data['correspondence_id']);
+            $this->letters->authorize($source, $request->user());
+            $record = $this->letters->register($source, $data, $request->user());
+
+            if ($request->user()->can('view', $record)) {
+                return redirect()->route('archive.show', $record)->with('success', 'نامه با فایل‌های موجود در بایگانی ثبت شد.');
+            }
+
+            return redirect()->route('correspondence.show', $source)->with('success', 'بایگانی این نامه قبلاً ثبت شده است.');
         }
 
         $token = $data['scanner_upload_token'] ?? null;

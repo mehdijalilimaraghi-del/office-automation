@@ -1,3 +1,7 @@
+## Incoming-letter archive registration
+
+An incoming letter and its archive record have one registration association. Leaving the archive form does not register an archive record. Existing files and their metadata are reused; the archive requires its own category, custodian and physical location when applicable. The default incoming category comes from correspondence settings and remains editable.
+
 ## Central archive and document audiences
 
 The default new archive document audience is its related unit and custodian unit. A department manager or assigned archivist can publish read access to all active organization users, choose active units or roles, or restrict to explicit individuals. Read scope never supplies editing or access-management authority. Central registration fixes the custodian to the configured central archive department and requires the related unit.

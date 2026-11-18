@@ -40,6 +40,11 @@ class OrganizationSettingsTest extends TestCase
             'is_active' => true,
         ]);
 
+        \App\Modules\Documents\Models\DepartmentArchiveSetting::query()->create([
+            'department_id' => $secretariat->id,
+            'categories' => [['name' => 'نامه‌های وارده', 'approval_required' => true]],
+        ]);
+
         $response = $this->actingAs($admin)->put(route('settings.organization.update'), [
             'name' => 'شرکت نمونه',
             'short_name' => 'نمونه',
@@ -70,10 +75,13 @@ class OrganizationSettingsTest extends TestCase
             'project_management_department_id' => $projects->id,
             'secretariat_department_id' => $secretariat->id,
             'central_archive_department_id' => $secretariat->id,
+            'incoming_archive_category' => 'نامه‌های وارده',
         ]);
 
         $response->assertRedirect();
         $response->assertSessionHas('success');
+        $this->assertDatabaseHas('system_settings', ['key' => 'correspondence.archive.incoming_category', 'value' => 'نامه‌های وارده']);
+        $this->get(route('settings.organization.edit'))->assertInertia(fn ($page) => $page->where('settings.incoming_archive_category', 'نامه‌های وارده'));
         $this->assertDatabaseHas('system_settings', ['key' => 'organization.department_roles.central_archive', 'value' => (string) $secretariat->id]);
 
         $this->assertDatabaseHas('system_settings', [

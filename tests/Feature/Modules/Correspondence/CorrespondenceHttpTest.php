@@ -1436,7 +1436,7 @@ class CorrespondenceHttpTest extends TestCase
             'registered_by' => $secretariatUser->id,
         ]);
         app(SystemSettingsService::class)->set(['correspondence.approval.incoming' => 'direct']);
-        $this->actingAs($secretariatUser)->post(route('correspondence.store'), [
+        $directResponse = $this->actingAs($secretariatUser)->post(route('correspondence.store'), [
             'type' => Correspondence::TYPE_INCOMING,
             'received_at' => '2026-10-25',
             'recipient_department_id' => $this->recipientDepartmentId(),
@@ -1444,7 +1444,9 @@ class CorrespondenceHttpTest extends TestCase
             'letter_number' => 'IN-1405-002',
             'subject' => 'نامه وارده ثبت مستقیم',
             'original_letters' => [UploadedFile::fake()->create('direct-original.pdf', 10, 'application/pdf')],
-        ])->assertRedirect(route('correspondence.index'));
+        ]);
+        $directLetter = Correspondence::query()->where('subject', 'نامه وارده ثبت مستقیم')->firstOrFail();
+        $directResponse->assertRedirect(route('archive.create', ['correspondence_id' => $directLetter->id]));
         $this->assertDatabaseHas('correspondences', [
             'type' => Correspondence::TYPE_INCOMING,
             'subject' => 'نامه وارده ثبت مستقیم',

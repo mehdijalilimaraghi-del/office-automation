@@ -13,3 +13,5 @@ Paths are relative to the repository root. Start with the row for the behavior b
 Department configuration starts at `archive.departments.index` and `DepartmentArchiveController`. Department ownership and ordinary record visibility are defined in `ArchiveAccessService`. The separate upload page is `Archive/Create.vue`.
 
 Central registration starts at `archive.central.create`. Read scope changes use `ArchiveAudienceService` and `ArchiveVisibilityFields.vue`. Listings and downloads share `ArchiveAccessService`.
+
+Incoming-letter integration starts at `CorrespondenceArchiveService`. The correspondence register action redirects to `archive.create` or `archive.central.create` with `correspondence_id`. Archive forms and the letter details button use the same source association.

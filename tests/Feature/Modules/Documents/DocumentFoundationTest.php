@@ -604,6 +604,113 @@ class DocumentFoundationTest extends TestCase
         $this->actingAs($member)->get(route('documents.download', $record))->assertOk();
     }
 
+    public function test_registered_incoming_letter_opens_prefilled_archive_and_reuses_all_files_once(): void
+    {
+        [$owner, $department, $recipient, $letter, $sources] = $this->incomingArchiveFixture();
+        $formUrl = route('archive.central.create', ['correspondence_id' => $letter->id]);
+        $this->actingAs($owner)->post(route('correspondence.register', $letter))->assertRedirect($formUrl);
+        $this->get(route('correspondence.show', $letter))->assertInertia(fn ($page) => $page
+            ->where('archiveRegistrationUrl', $formUrl));
+        $this->get($formUrl)->assertInertia(fn ($page) => $page
+            ->where('sourceLetter.title', 'Incoming archive test')
+            ->where('sourceLetter.default_category', 'Incoming letters')
+            ->where('sourceLetter.related_department_id', $recipient->id)
+            ->has('sourceLetter.files', 3));
+        $filesBefore = Storage::disk(config('filesystems.default'))->allFiles('documents');
+        $data = [
+            'correspondence_id' => $letter->id, 'archive_department_id' => $department->id,
+            'related_department_id' => $recipient->id, 'archive_kind' => 'physical',
+            'archive_location' => 'Archive / Room / Shelf',
+            'title' => $letter->subject, 'document_type' => 'Contracts',
+        ];
+        $this->post(route('archive.store'), $data)->assertSessionHas('success');
+        $record = Document::query()->findOrFail($letter->refresh()->archive_document_id);
+        $this->assertSame('Contracts', $record->document_type);
+        $this->assertSame($sources[0]->latestVersion->path, $record->latestVersion->path);
+        $this->assertSame($filesBefore, Storage::disk(config('filesystems.default'))->allFiles('documents'));
+        $this->assertSame(3, \Illuminate\Support\Facades\DB::table('archive_correspondence_files')->where('document_id', $record->id)->count());
+        $this->post(route('archive.store'), $data)->assertRedirect(route('archive.show', $record));
+        $this->assertSame(1, Document::query()->where('archive_kind', 'physical')->count());
+        $this->get(route('correspondence.show', $letter))->assertInertia(fn ($page) => $page
+            ->where('archiveRegistrationUrl', null));
+        $file = \Illuminate\Support\Facades\DB::table('archive_correspondence_files')->where('document_id', $record->id)->first();
+        $this->get(route('archive.correspondence-files.download', ['document' => $record, 'file' => $file->id]))->assertOk();
+        $outsider = $this->userWithPermissions([]);
+        $this->actingAs($outsider)->get($formUrl)->assertForbidden();
+        $this->get(route('archive.correspondence-files.download', ['document' => $record, 'file' => $file->id]))->assertForbidden();
+        $this->actingAs($owner);
+        $secondary = \Illuminate\Support\Facades\DB::table('archive_correspondence_files')
+            ->where('document_id', $record->id)->where('source_version_id', $sources[1]->latestVersion->id)->first();
+        app(DocumentService::class)->delete($sources[1]);
+        Storage::disk($secondary->disk)->assertExists($secondary->path);
+        $this->get(route('archive.correspondence-files.download', ['document' => $record, 'file' => $secondary->id]))->assertOk();
+        app(DocumentService::class)->delete($sources[0]);
+        Storage::disk($record->latestVersion->disk)->assertExists($record->latestVersion->path);
+        $this->get(route('documents.download', $record))->assertOk();
+    }
+
+    public function test_archive_of_confidential_incoming_letter_keeps_letter_access_restrictions(): void
+    {
+        [$owner, $department, $recipient, $letter] = $this->incomingArchiveFixture();
+        $letter->update(['status' => 'registered', 'classification' => 'confidential']);
+        $this->actingAs($owner)->post(route('archive.store'), [
+            'correspondence_id' => $letter->id, 'archive_department_id' => $department->id,
+            'related_department_id' => $recipient->id, 'archive_kind' => 'digital',
+            'title' => $letter->subject, 'document_type' => 'Incoming letters', 'archive_visibility' => 'organization',
+        ])->assertSessionHas('success');
+        $record = Document::query()->findOrFail($letter->refresh()->archive_document_id);
+        $this->assertSame('restricted', $record->archive_visibility);
+        $this->put(route('archive.visibility.update', $record), ['archive_visibility' => 'organization'])
+            ->assertSessionHasErrors('archive_visibility');
+        $outsider = $this->userWithPermissions([]);
+        $this->put(route('archive.access.update', $record), ['user_id' => $outsider->id, 'access_level' => 'view'])
+            ->assertSessionHasErrors('user_id');
+        app(DocumentService::class)->grantAccess($record, $outsider, $owner);
+        $this->actingAs($outsider)->get(route('documents.download', $record))->assertForbidden();
+    }
+
+    private function incomingArchiveFixture(): array
+    {
+        $owner = $this->userWithPermissions(['correspondence.view', 'correspondence.create']);
+        $department = \App\Core\Departments\Models\Department::query()->create([
+            'name' => 'Incoming records', 'manager_id' => $owner->id, 'is_active' => true,
+        ]);
+        $recipient = \App\Core\Departments\Models\Department::query()->create([
+            'name' => 'Recipient unit', 'manager_id' => $owner->id, 'is_active' => true,
+        ]);
+        foreach (['central_archive', 'secretariat'] as $role) {
+            \App\Core\Settings\Models\SystemSetting::query()->updateOrCreate(
+                ['key' => 'organization.department_roles.'.$role], ['value' => (string) $department->id],
+            );
+        }
+        \App\Core\Settings\Models\SystemSetting::query()->updateOrCreate(
+            ['key' => 'correspondence.archive.incoming_category'], ['value' => 'Incoming letters'],
+        );
+        \App\Modules\Documents\Models\DepartmentArchiveSetting::query()->create([
+            'department_id' => $department->id,
+            'categories' => [
+                ['name' => 'Incoming letters', 'approval_required' => true],
+                ['name' => 'Contracts', 'approval_required' => true],
+            ],
+            'locations' => [['building' => 'Archive', 'room' => 'Room', 'shelf' => 'Shelf']],
+        ]);
+        $letter = \App\Modules\Correspondence\Models\Correspondence::query()->create([
+            'type' => 'incoming', 'status' => 'draft', 'workflow_state' => 'approved_for_registration',
+            'subject' => 'Incoming archive test', 'sender_name' => 'Sender office', 'letter_number' => 'IN-101',
+            'received_at' => '2026-11-18', 'created_by' => $owner->id,
+            'created_department_id' => $department->id, 'recipient_department_id' => $recipient->id,
+        ]);
+        $sources = [];
+        foreach (['correspondence_original', 'correspondence_original', 'correspondence_attachment'] as $index => $purpose) {
+            $sources[] = app(DocumentService::class)->create(
+                ['title' => 'Source '.$index], UploadedFile::fake()->create('source-'.$index.'.pdf', 5, 'application/pdf'),
+                $owner, $letter, $purpose,
+            )->load('latestVersion');
+        }
+
+        return [$owner, $department, $recipient, $letter, $sources];
+    }
+
     private function createTask(User $user, string $title): Task
     {
         return Task::query()->create([

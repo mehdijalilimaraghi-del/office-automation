@@ -1,3 +1,7 @@
+## Incoming-letter archive registration
+
+Incoming correspondence now enters the archive registration workflow without repeat upload. Its default archive category is configured under correspondence settings. Central physical transfer remains separate open work.
+
 ## Central archive and document audiences
 
 Central archive has a distinct entry and registration route. Organizational and selected-unit/role viewing are implemented. The physical central-transfer receipt workflow remains open.

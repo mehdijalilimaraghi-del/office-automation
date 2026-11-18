@@ -65,6 +65,35 @@ class DocumentService
         }
     }
 
+    public function createFromVersion(array $data, DocumentVersion $source, User $creator): Document
+    {
+        return DB::transaction(function () use ($data, $source, $creator): Document {
+            Document::query()->whereKey($source->document_id)->lockForUpdate()->firstOrFail();
+            $version = DocumentVersion::query()->findOrFail($source->id);
+            $record = Document::query()->create([
+                'title' => $data['title'],
+                'document_type' => $data['document_type'],
+                'description' => $data['description'] ?? null,
+                'created_by' => $creator->id,
+                'is_active' => true,
+                ...array_intersect_key($data, array_flip([
+                    'archive_kind', 'archive_location', 'retain_until',
+                    'archive_department_id', 'related_department_id', 'archive_restricted',
+                ])),
+            ]);
+            $record->versions()->create([
+                ...$version->only(['disk', 'path', 'original_name', 'mime_type', 'size', 'checksum']),
+                'version_number' => 1,
+                'uploaded_by' => $creator->id,
+            ]);
+            if (isset($data['archive_visibility'])) {
+                app(ArchiveAudienceService::class)->apply($record, $data);
+            }
+
+            return $record->refresh();
+        });
+    }
+
     public function addVersion(Document $document, UploadedFile $file, User $uploader): DocumentVersion
     {
         $stored = null;
@@ -121,6 +150,11 @@ class DocumentService
         });
 
         foreach ($versions as $version) {
+            $shared = DocumentVersion::query()->where('disk', $version->disk)->where('path', $version->path)->exists()
+                || DB::table('archive_correspondence_files')->where('disk', $version->disk)->where('path', $version->path)->exists();
+            if ($shared) {
+                continue;
+            }
             $this->storage->delete($version->disk, $version->path);
         }
     }

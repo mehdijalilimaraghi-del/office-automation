@@ -1,3 +1,7 @@
+## Incoming-letter archive registration
+
+correspondences.archive_document_id is populated under a row lock. Archive records reuse immutable file paths through a primary document version and archive_correspondence_files snapshots for all source files. File deletion skips paths still referenced by versions or archive snapshots. Confidential source-letter access also constrains archive visibility.
+
 ## Central archive and document audiences
 
 Nullable documents.archive_visibility preserves the previous archive_restricted behavior for legacy records. archive_audiences stores selected unit/role identifiers. ArchiveAudienceService replaces audience rows atomically while keeping explicit individual grants. Inactive users and inactive roles do not gain audience access.

@@ -460,6 +460,7 @@ class CorrespondenceController extends Controller
                 'actions' => $correspondence->actions,
                 'copies' => $correspondence->copies,
             ],
+            'archiveRegistrationUrl' => app(\App\Modules\Documents\Services\CorrespondenceArchiveService::class)->entry($correspondence, $request->user()),
             'originalLetters' => $correspondence->documents
                 ->filter(fn ($link) => $link->purpose === 'correspondence_original' && $link->document !== null && $link->document->latestVersion !== null)
                 ->map(fn ($link) => [
@@ -1070,6 +1071,13 @@ class CorrespondenceController extends Controller
                 ->with('success', 'پیش‌نویس مرتبط ایجاد شد و برای بررسی مدیر ارسال شد.');
         }
 
+        if ($registeredImmediately && $correspondence->type === Correspondence::TYPE_INCOMING) {
+            $archiveUrl = app(\App\Modules\Documents\Services\CorrespondenceArchiveService::class)->entry($correspondence->refresh(), $request->user());
+            if ($archiveUrl !== null) {
+                return redirect()->to($archiveUrl)->with('success', 'نامه ثبت شد؛ اطلاعات بایگانی را تکمیل کنید.');
+            }
+        }
+
         return redirect()->route('correspondence.index')
             ->with('success', $registeredImmediately
                 ? 'مکاتبه با موفقیت ثبت نهایی شد.'
@@ -1284,6 +1292,12 @@ class CorrespondenceController extends Controller
 
             // Keep replies as separate records, but remove their pointer to the deleted letter.
             $locked->replies()->update(['reply_to_id' => null]);
+            if ($locked->archive_document_id !== null) {
+                app(\App\Modules\Documents\Services\ArchiveAudienceService::class)->apply(
+                    \App\Modules\Documents\Models\Document::query()->findOrFail($locked->archive_document_id),
+                    ['archive_visibility' => 'restricted'],
+                );
+            }
             $locked->documents()->delete();
             $locked->relatedLetters()->detach();
             $locked->relatedFromLetters()->detach();
@@ -1483,6 +1497,11 @@ class CorrespondenceController extends Controller
             $workflow->onRegistered($correspondence, $request->user());
         } catch (InvalidArgumentException $exception) {
             return back()->withErrors(['registration' => $exception->getMessage()]);
+        }
+
+        $archiveUrl = app(\App\Modules\Documents\Services\CorrespondenceArchiveService::class)->entry($correspondence->refresh(), $request->user());
+        if ($archiveUrl !== null) {
+            return redirect()->to($archiveUrl)->with('success', 'نامه ثبت شد؛ اطلاعات بایگانی را تکمیل کنید.');
         }
 
         return back()->with('success', 'مکاتبه با موفقیت ثبت نهایی شد.');

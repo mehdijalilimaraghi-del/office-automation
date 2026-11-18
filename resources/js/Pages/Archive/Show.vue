@@ -18,6 +18,7 @@ const props = defineProps<{
     record: { id: number; title: string; description: string | null; document_type: string; archive_kind: string; archive_location: string | null; archive_visibility: string; central: boolean };
     versions: { version_number: number; original_name: string; created_at: string }[];
     canUpdate: boolean;
+    correspondenceFiles: { id: number; purpose: string; original_name: string; size: number }[];
     visibilityManagement: { departments: { id: number; name: string }[]; roles: { id: number; name: string }[]; selectedDepartments: (number | string)[]; selectedRoles: (number | string)[] } | null;
     accessManagement: {
         grants: { id: number; user_id: number; access_level: 'view' | 'edit'; user: { name: string } | null }[];
@@ -152,6 +153,15 @@ function save(event: Event): void {
                         <li v-for="(error, field) in referenceForm.errors" :key="field">{{ error }}</li>
                     </ul>
                 </form>
+            </section>
+            <section v-if="correspondenceFiles.length" class="space-y-3 rounded-xl border bg-white p-4">
+                <h2 class="font-semibold">فایل‌های نامه مبدأ</h2>
+                <ul class="divide-y">
+                    <li v-for="file in correspondenceFiles" :key="file.id" class="flex flex-wrap items-center justify-between gap-3 py-3">
+                        <div class="min-w-0"><bdi class="break-all text-sm font-medium">{{ file.original_name }}</bdi><p class="mt-1 text-xs text-slate-500">{{ file.purpose === 'correspondence_original' ? 'اصل نامه' : 'پیوست نامه' }}</p></div>
+                        <a :href="route('archive.correspondence-files.download', { document: record.id, file: file.id })" class="text-sm font-semibold text-indigo-700 hover:underline">دریافت فایل</a>
+                    </li>
+                </ul>
             </section>
             <section v-if="accessManagement" class="space-y-3 rounded-xl border bg-white p-4">
                 <h2 class="font-semibold">دسترسی به این مدرک</h2>

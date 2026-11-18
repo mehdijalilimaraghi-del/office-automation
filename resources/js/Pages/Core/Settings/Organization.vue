@@ -6,7 +6,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import DepartmentTreeSelect from '@/Components/DepartmentTreeSelect.vue';
 import { Head, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 interface OrganizationSettings {
     name: string | null;
@@ -36,6 +36,7 @@ interface OrganizationSettings {
     correspondence_table_border_color: string | null;
     correspondence_shape_border_color: string | null;
     correspondence_page_size: string | null;
+    incoming_archive_category: string | null;
     approval_incoming: string | null;
     approval_outgoing: string | null;
     approval_internal: string | null;
@@ -52,6 +53,7 @@ interface OrganizationDepartment {
 const props = defineProps<{
     settings: OrganizationSettings;
     departments: OrganizationDepartment[];
+    archiveCategoryOptions: Record<string, string[]>;
 }>();
 
 const activeTab = ref<'organization' | 'structure' | 'correspondence'>('organization');
@@ -90,9 +92,17 @@ const form = useForm({
     correspondence_table_border_color: props.settings.correspondence_table_border_color ?? '#000000',
     correspondence_shape_border_color: props.settings.correspondence_shape_border_color ?? '#000000',
     correspondence_page_size: props.settings.correspondence_page_size ?? 'A4',
+    incoming_archive_category: props.settings.incoming_archive_category ?? '',
     approval_incoming: props.settings.approval_incoming ?? 'approval',
     approval_outgoing: props.settings.approval_outgoing ?? 'approval',
     approval_internal: props.settings.approval_internal ?? 'direct',
+});
+
+const incomingArchiveCategories = computed(() =>
+    props.archiveCategoryOptions[String(form.central_archive_department_id || form.secretariat_department_id)] ?? [],
+);
+watch(incomingArchiveCategories, categories => {
+    if (!categories.includes(form.incoming_archive_category)) form.incoming_archive_category = '';
 });
 
 function submit(): void {
@@ -287,6 +297,16 @@ function submit(): void {
                                 <h4 class="font-semibold text-slate-800">سیاست تأیید بر اساس نوع نامه</h4>
                                 <p class="mt-1 text-sm text-slate-500">تعیین کنید کدام نوع نامه به تأیید نیاز دارد؛ مسیر ثبت نهایی باید این سیاست را رعایت کند.</p>
                                 <div class="mt-4 grid gap-4 md:grid-cols-3">
+                                    <div class="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4 md:col-span-3">
+                                        <label for="incoming_archive_category" class="mb-2 block text-sm font-semibold text-slate-800">دسته پیش‌فرض بایگانی نامه‌های وارده</label>
+                                        <AppSelect id="incoming_archive_category" v-model="form.incoming_archive_category" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm">
+                                            <option value="">انتخاب دسته در زمان ثبت بایگانی</option>
+                                            <option v-for="category in incomingArchiveCategories" :key="category" :value="category">{{ category }}</option>
+                                        </AppSelect>
+                                        <p class="mt-2 text-xs leading-6 text-slate-600">دسته از تنظیمات بایگانی مرکزی انتخاب می‌شود و در فرم بایگانی نامه پیشنهاد می‌شود. کاربر می‌تواند آن را تغییر دهد.</p>
+                                        <p v-if="!incomingArchiveCategories.length" class="mt-1 text-xs text-amber-800">ابتدا دسته‌های بایگانی مرکزی را تعریف کنید. در صورت تعیین‌نشدن واحد مرکزی، دسته‌های دبیرخانه نمایش داده می‌شود.</p>
+                                        <InputError class="mt-1.5" :message="form.errors.incoming_archive_category" />
+                                    </div>
                                     <div><label for="approval_incoming" class="mb-2 block text-sm font-semibold text-slate-700">نامه وارده</label><AppSelect id="approval_incoming" v-model="form.approval_incoming" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm"><option value="direct">ثبت مستقیم توسط کاربر مجاز</option><option value="approval">نیازمند تأیید</option></AppSelect><InputError class="mt-1.5" :message="form.errors.approval_incoming" /></div>
                                     <div><label for="approval_outgoing" class="mb-2 block text-sm font-semibold text-slate-700">نامه صادره</label><AppSelect id="approval_outgoing" v-model="form.approval_outgoing" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm"><option value="direct">ثبت مستقیم توسط کاربر مجاز</option><option value="approval">نیازمند تأیید</option></AppSelect><InputError class="mt-1.5" :message="form.errors.approval_outgoing" /></div>
                                     <div><label for="approval_internal" class="mb-2 block text-sm font-semibold text-slate-700">نامه داخلی</label><AppSelect id="approval_internal" v-model="form.approval_internal" class="block min-h-11 w-full rounded-xl border-slate-300 text-right text-sm shadow-sm"><option value="direct">ثبت مستقیم توسط کاربر مجاز</option><option value="approval">نیازمند تأیید</option></AppSelect><InputError class="mt-1.5" :message="form.errors.approval_internal" /></div>

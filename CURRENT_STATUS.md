@@ -1,3 +1,7 @@
+## Incoming-letter archive registration
+
+Added archive registration after final incoming-letter registration and a letter-details button while archiving remains incomplete. Archive forms prefill the letter title, sender/number details, related unit and configured incoming category; users may change the category. Original and attachment files are reused. Validation passed: full SQL Server suite (514 tests, 3228 assertions), focused integration suite (101 tests, 1878 assertions), TypeScript and production build, and nine browser checks covering desktop/mobile autofill, manual category preservation, actual registration and hiding the completed archive button. The additive migration and lookup index are applied to the local development database. Temporary browser fixtures and helper processes were removed.
+
 ## Central archive and document audiences
 
 Added a distinct central archive entry and organizational registration screen, plus read scopes for related units, all active users, selected units or roles, and explicit individuals. Existing scope remains unchanged until explicitly edited. Local visibility migration applied. Browser verification passed for the central list, registration and audience editor at 1440px and 390px, with screenshots inspected and no horizontal overflow. The temporary test fixtures and review processes were removed. Validation passed: full SQL Server suite (512 tests), final focused document suite (15 tests, 426 assertions), TypeScript/production build, and six browser viewport checks.

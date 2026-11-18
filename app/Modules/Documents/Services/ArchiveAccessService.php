@@ -39,6 +39,11 @@ class ArchiveAccessService
 
     public function visible(Builder $query, User $user): Builder
     {
+        $sourceAccess = app(\App\Modules\Correspondence\Services\CorrespondenceAccessService::class);
+        $query->where(function (Builder $privacy) use ($sourceAccess, $user): void {
+            $privacy->whereDoesntHave('sourceCorrespondence', fn (Builder $source) => $source->where('classification', 'confidential'))
+                ->orWhereHas('sourceCorrespondence', fn (Builder $source) => $sourceAccess->visibleToQuery($source, $user));
+        });
         $departments = $this->departments($user)->pluck('id');
         $roles = $user->roles()->where('roles.is_active', true)->pluck('roles.id');
 

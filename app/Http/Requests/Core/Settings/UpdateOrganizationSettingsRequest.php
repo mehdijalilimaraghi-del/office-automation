@@ -16,6 +16,11 @@ class UpdateOrganizationSettingsRequest extends FormRequest
 
     public function rules(): array
     {
+        $roles = app(\App\Core\Settings\Services\OrganizationDepartmentRoleService::class);
+        $archiveDepartment = $this->input('central_archive_department_id', $roles->activeDepartmentId($roles::CENTRAL_ARCHIVE))
+            ?: $this->input('secretariat_department_id', $roles->activeDepartmentId($roles::SECRETARIAT));
+        $categories = \App\Modules\Documents\Models\DepartmentArchiveSetting::query()->where('department_id', $archiveDepartment)->first()?->categories ?? [];
+
         return [
             'name' => ['required', 'string', 'max:150'],
             'short_name' => ['nullable', 'string', 'max:100'],
@@ -41,6 +46,7 @@ class UpdateOrganizationSettingsRequest extends FormRequest
             'correspondence_table_border_color' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'correspondence_shape_border_color' => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'correspondence_page_size' => ['required', 'string', Rule::in(['A4', 'A5'])],
+            'incoming_archive_category' => ['sometimes', 'nullable', 'string', 'max:100', Rule::in(array_column($categories, 'name'))],
             'approval_incoming' => ['required', 'string', Rule::in(['direct', 'approval'])],
             'approval_outgoing' => ['required', 'string', Rule::in(['direct', 'approval'])],
             'approval_internal' => ['required', 'string', Rule::in(['direct', 'approval'])],

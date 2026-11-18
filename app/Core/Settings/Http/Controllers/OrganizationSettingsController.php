@@ -41,6 +41,7 @@ class OrganizationSettingsController extends Controller
         'correspondence.composition.table_border_color' => '#000000',
         'correspondence.composition.shape_border_color' => '#000000',
         'correspondence.composition.page_size' => 'A4',
+        'correspondence.archive.incoming_category' => null,
         'correspondence.approval.incoming' => 'approval',
         'correspondence.approval.outgoing' => 'approval',
         'correspondence.approval.internal' => 'direct',
@@ -86,6 +87,7 @@ class OrganizationSettingsController extends Controller
                 'correspondence_table_border_color' => $stored['correspondence.composition.table_border_color'],
                 'correspondence_shape_border_color' => $stored['correspondence.composition.shape_border_color'],
                 'correspondence_page_size' => $stored['correspondence.composition.page_size'],
+                'incoming_archive_category' => $stored['correspondence.archive.incoming_category'],
                 'approval_incoming' => $stored['correspondence.approval.incoming'],
                 'approval_outgoing' => $stored['correspondence.approval.outgoing'],
                 'approval_internal' => $stored['correspondence.approval.internal'],
@@ -95,6 +97,9 @@ class OrganizationSettingsController extends Controller
                 'central_archive_department_id' => $roleSettings[OrganizationDepartmentRoleService::settingKey(OrganizationDepartmentRoleService::CENTRAL_ARCHIVE)],
                 'default_response_department_id' => $stored['projects.response_department.default'],
             ],
+            'archiveCategoryOptions' => \App\Modules\Documents\Models\DepartmentArchiveSetting::query()->get()->mapWithKeys(
+                fn ($setting) => [(string) $setting->department_id => array_values(array_column($setting->categories ?? [], 'name'))],
+            ),
             'departments' => Department::query()
                 ->orderBy('name')
                 ->get(['id', 'name', 'parent_id', 'icon', 'is_active']),
@@ -148,6 +153,9 @@ class OrganizationSettingsController extends Controller
             'correspondence.composition.table_border_color' => $data['correspondence_table_border_color'],
             'correspondence.composition.shape_border_color' => $data['correspondence_shape_border_color'],
             'correspondence.composition.page_size' => $data['correspondence_page_size'],
+            ...(array_key_exists('incoming_archive_category', $data) ? [
+                'correspondence.archive.incoming_category' => $data['incoming_archive_category'],
+            ] : []),
             'correspondence.approval.incoming' => $data['approval_incoming'],
             'correspondence.approval.outgoing' => $data['approval_outgoing'],
             'correspondence.approval.internal' => $data['approval_internal'],
