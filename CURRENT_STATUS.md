@@ -1,3 +1,7 @@
+## Central archive and document audiences
+
+Added a distinct central archive entry and organizational registration screen, plus read scopes for related units, all active users, selected units or roles, and explicit individuals. Existing scope remains unchanged until explicitly edited. Local visibility migration applied. Browser verification passed for the central list, registration and audience editor at 1440px and 390px, with screenshots inspected and no horizontal overflow. The temporary test fixtures and review processes were removed. Validation passed: full SQL Server suite (512 tests), final focused document suite (15 tests, 426 assertions), TypeScript/production build, and six browser viewport checks.
+
 ## Department archive workflow
 
 Added separate archive browse, registration, department selection and department-settings screens. Managers assign an active member as archivist. Members register department-owned documents using configured categories and structured locations. Ordinary records are visible to their related unit; legacy records retain private access. Central transfer is still pending. Browser visual verification is pending.

@@ -6,6 +6,7 @@ const props = defineProps<{
     department: { id: number; name: string };
     settings: { archivist_id: number | null; categories: { name: string; approval_required: boolean }[]; locations: { building: string; room: string; shelf: string; folder: string }[] };
     canAssign: boolean;
+    centralMode: boolean;
     members: { id: number; name: string }[];
 }>();
 const form = useForm({
@@ -18,7 +19,7 @@ function save(): void { form.put(route('archive.departments.update', props.depar
 <template>
     <Head :title="'بایگانی ' + department.name" />
     <AuthenticatedLayout>
-        <template #header><h1 class="text-xl font-bold">بایگانی {{ department.name }}</h1></template>
+        <template #header><h1 class="text-xl font-bold">{{ centralMode ? 'تنظیمات بایگانی مرکزی سازمان' : 'بایگانی ' + department.name }}</h1></template>
         <main dir="rtl" class="mx-auto max-w-5xl space-y-6 p-4 pb-28 sm:p-6">
             <Link :href="route('archive.departments.index')" class="text-sm font-semibold text-indigo-700">بازگشت به واحدهای من</Link>
             <form class="space-y-6" @submit.prevent="save">

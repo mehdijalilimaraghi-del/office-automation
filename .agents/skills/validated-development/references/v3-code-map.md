@@ -11,3 +11,5 @@ Paths are relative to the repository root. Start with the row for the behavior b
 | Workflow and permissions | `app/Modules/Workflows/Services/WorkflowService.php` and `app/Modules/Workflows/Models/`. Permission registrations are in `database/seeders/CorePermissionSeeder.php`. | `tests/Feature/Modules/Workflows/WorkflowServiceTest.php`. Search `database/migrations` for `create_workflow`. |
 
 Department configuration starts at `archive.departments.index` and `DepartmentArchiveController`. Department ownership and ordinary record visibility are defined in `ArchiveAccessService`. The separate upload page is `Archive/Create.vue`.
+
+Central registration starts at `archive.central.create`. Read scope changes use `ArchiveAudienceService` and `ArchiveVisibilityFields.vue`. Listings and downloads share `ArchiveAccessService`.

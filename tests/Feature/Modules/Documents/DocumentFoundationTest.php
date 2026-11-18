@@ -221,7 +221,7 @@ class DocumentFoundationTest extends TestCase
         app(DocumentService::class)->grantAccess($record, $other, $creator);
         $this->get(route('archive.index'))->assertInertia(fn ($page) => $page->has('records.data', 1));
         $this->get(route('documents.download', $record))->assertOk();
-        $this->actingAs($this->userWithPermissions([]))->get(route('archive.index'))->assertForbidden();
+        $this->actingAs($this->userWithPermissions([]))->get(route('archive.index'))->assertInertia(fn ($page) => $page->has('records.data', 0));
     }
 
     public function test_archive_scan_uses_installed_helper_callback_but_is_scoped_to_archive_and_owner(): void
@@ -405,6 +405,7 @@ class DocumentFoundationTest extends TestCase
         $owner = $this->userWithPermissions(['documents.view', 'documents.create', 'documents.manage_access']);
         $viewer = $this->userWithPermissions(['documents.view']);
         $nonViewer = $this->userWithPermissions([]);
+        $nonViewer->update(['status' => 'inactive']);
         $this->actingAs($owner)->post(route('archive.store'), [
             'title' => 'Shareable archive', 'document_type' => 'Contract', 'archive_kind' => 'digital',
             'file' => UploadedFile::fake()->create('shared.pdf', 5, 'application/pdf'),
@@ -486,9 +487,9 @@ class DocumentFoundationTest extends TestCase
             ->has('records.data', 1)->where('canCreate', true)->where('auth.abilities.documents_view', true));
         $this->get(route('archive.show', $record))->assertOk();
         $this->get(route('documents.download', $record))->assertOk();
-        $this->actingAs($outsider)->get(route('archive.index'))->assertForbidden();
+        $this->actingAs($outsider)->get(route('archive.index'))->assertInertia(fn ($page) => $page->has('records.data', 0));
         $this->get(route('documents.download', $record))->assertForbidden();
-        $record->update(['archive_restricted' => true]);
+        $record->update(['archive_restricted' => true, 'archive_visibility' => 'restricted']);
         $this->actingAs($colleague)->get(route('archive.index'))->assertInertia(fn ($page) => $page->has('records.data', 0));
         $this->get(route('documents.download', $record))->assertForbidden();
         $this->actingAs($owner)->put(route('archive.access.update', $record), [
@@ -498,6 +499,109 @@ class DocumentFoundationTest extends TestCase
         $this->actingAs($owner)->put(route('archive.access.update', $record), [
             'user_id' => $colleague->id, 'access_level' => 'edit',
         ])->assertSessionHasErrors('access_level');
+    }
+
+    public function test_central_archive_registration_and_organization_selected_and_private_visibility(): void
+    {
+        $manager = $this->userWithPermissions([]);
+        $relatedMember = $this->userWithPermissions([]);
+        $roleViewer = $this->userWithPermissions([]);
+        $outsider = $this->userWithPermissions([]);
+        $central = \App\Core\Departments\Models\Department::query()->create([
+            'name' => 'Central records', 'manager_id' => $manager->id, 'is_active' => true,
+        ]);
+        $related = \App\Core\Departments\Models\Department::query()->create([
+            'name' => 'Purchasing', 'is_active' => true,
+        ]);
+        $related->members()->attach($relatedMember);
+        \App\Core\Settings\Models\SystemSetting::query()->updateOrCreate(
+            ['key' => 'organization.department_roles.central_archive'], ['value' => (string) $central->id],
+        );
+        \App\Modules\Documents\Models\DepartmentArchiveSetting::query()->create([
+            'department_id' => $central->id,
+            'categories' => [['name' => 'Contracts', 'approval_required' => true]],
+            'locations' => [],
+        ]);
+
+        $this->actingAs($manager)->get(route('archive.central.create'))->assertInertia(fn ($page) => $page
+            ->component('Archive/Create')->where('centralMode', true)->has('departments', 1)
+            ->where('departments.0.id', $central->id)->where('auth.abilities.archive_central', true));
+        $this->get(route('archive.create'))->assertInertia(fn ($page) => $page->where('centralMode', false)->has('departments', 0));
+        $this->post(route('archive.store'), [
+            'title' => 'Central contract', 'archive_kind' => 'digital', 'document_type' => 'Contracts',
+            'archive_department_id' => $central->id, 'related_department_id' => $related->id,
+            'file' => UploadedFile::fake()->create('contract.pdf', 5, 'application/pdf'),
+        ])->assertSessionHas('success');
+        $record = Document::query()->where('title', 'Central contract')->firstOrFail();
+        $this->assertSame('department', $record->archive_visibility);
+        $this->assertSame($central->id, $record->archive_department_id);
+        $this->assertSame($related->id, $record->related_department_id);
+        $this->actingAs($relatedMember)->get(route('documents.download', $record))->assertOk();
+        $this->actingAs($outsider)->get(route('documents.download', $record))->assertForbidden();
+        $this->get(route('archive.central.create'))->assertForbidden();
+
+        $scopeUrl = route('archive.visibility.update', $record);
+        $this->actingAs($manager)->put($scopeUrl, ['archive_visibility' => 'organization'])->assertSessionHas('success');
+        $this->actingAs($outsider)->get(route('archive.index'))->assertInertia(fn ($page) => $page
+            ->has('records.data', 1)->where('canCreate', false)->where('locations', []));
+        $this->get(route('documents.download', $record))->assertOk();
+        $this->post(route('archive.versions.store', $record))->assertForbidden();
+        $this->put($scopeUrl, ['archive_visibility' => 'restricted'])->assertForbidden();
+
+        $role = $roleViewer->roles()->firstOrFail();
+        $this->actingAs($manager)->put($scopeUrl, ['archive_visibility' => 'selected'])
+            ->assertSessionHasErrors('archive_visibility');
+        $this->assertSame('organization', $record->refresh()->archive_visibility);
+        $this->put($scopeUrl, [
+            'archive_visibility' => 'selected', 'audience_departments' => [$related->id], 'audience_roles' => [$role->id],
+        ])->assertSessionHas('success');
+        $this->assertDatabaseCount('archive_audiences', 2);
+        $this->actingAs($outsider)->get(route('documents.download', $record))->assertForbidden();
+        $this->get(route('archive.index'))->assertInertia(fn ($page) => $page->has('records.data', 0));
+        $this->actingAs($relatedMember)->get(route('documents.download', $record))->assertOk();
+        $this->actingAs($roleViewer)->get(route('documents.download', $record))->assertOk();
+        $role->update(['is_active' => false]);
+        $this->get(route('documents.download', $record))->assertForbidden();
+
+        $this->actingAs($manager)->put($scopeUrl, ['archive_visibility' => 'restricted', 'audience_roles' => [$role->id]])->assertSessionHas('success');
+        $this->assertDatabaseCount('archive_audiences', 0);
+        $this->put(route('archive.access.update', $record), ['user_id' => $outsider->id, 'access_level' => 'view'])
+            ->assertSessionHas('success');
+        $this->actingAs($relatedMember)->get(route('documents.download', $record))->assertForbidden();
+        $this->actingAs($outsider)->get(route('documents.download', $record))->assertOk();
+        $this->assertSame(1, $record->versions()->count());
+    }
+
+    public function test_department_member_cannot_publish_a_document_to_the_organization(): void
+    {
+        $member = $this->userWithPermissions([]);
+        $manager = $this->userWithPermissions([]);
+        $department = \App\Core\Departments\Models\Department::query()->create([
+            'name' => 'Design standards', 'manager_id' => $manager->id, 'is_active' => true,
+        ]);
+        $department->members()->attach($member);
+        \App\Modules\Documents\Models\DepartmentArchiveSetting::query()->create([
+            'department_id' => $department->id,
+            'categories' => [['name' => 'Standards', 'approval_required' => true]],
+        ]);
+
+        $this->actingAs($member)->post(route('archive.store'), [
+            'title' => 'Unauthorized publication', 'archive_kind' => 'digital', 'document_type' => 'Standards',
+            'archive_department_id' => $department->id, 'archive_visibility' => 'organization',
+            'file' => UploadedFile::fake()->create('standard.pdf', 5, 'application/pdf'),
+        ])->assertForbidden();
+        $this->assertDatabaseMissing('documents', ['title' => 'Unauthorized publication']);
+        $this->post(route('archive.store'), [
+            'title' => 'Member record', 'archive_kind' => 'digital', 'document_type' => 'Standards',
+            'archive_department_id' => $department->id,
+            'file' => UploadedFile::fake()->create('member.pdf', 5, 'application/pdf'),
+        ])->assertSessionHas('success');
+        $record = Document::query()->where('title', 'Member record')->firstOrFail();
+        $this->actingAs($manager)->put(route('archive.visibility.update', $record), [
+            'archive_visibility' => 'restricted',
+        ])->assertRedirect(route('archive.index'))->assertSessionHas('success');
+        $this->get(route('documents.download', $record))->assertForbidden();
+        $this->actingAs($member)->get(route('documents.download', $record))->assertOk();
     }
 
     private function createTask(User $user, string $title): Task

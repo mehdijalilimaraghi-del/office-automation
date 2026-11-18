@@ -38,6 +38,7 @@ class HandleInertiaRequests extends Middleware
                     'tasks_view' => $request->user()?->hasPermission('tasks.view') ?? false,
                     'correspondence_view' => $request->user()?->hasPermission('correspondence.view') ?? false,
                     'correspondence_create' => $request->user()?->hasPermission('correspondence.create') ?? false,
+                    'archive_central' => $request->user() !== null && $request->user()->isActive() && app(\App\Core\Settings\Services\OrganizationDepartmentRoleService::class)->userBelongsTo($request->user(), \App\Core\Settings\Services\OrganizationDepartmentRoleService::CENTRAL_ARCHIVE),
                     'archive_units_manage' => $request->user()?->isActive() && ($request->user()->isSystemAdmin() || $request->user()->managedDepartments()->where('is_active', true)->exists() || \App\Modules\Documents\Models\DepartmentArchiveSetting::query()->where('archivist_id', $request->user()->id)->whereIn('department_id', $request->user()->departments()->where('departments.is_active', true)->select('departments.id'))->exists()),
                     'documents_view' => $request->user() !== null && app(\App\Modules\Documents\Services\ArchiveAccessService::class)->canEnter($request->user()),
                     'projects_view' => $request->user()?->hasPermission('projects.view') ?? false,

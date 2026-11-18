@@ -51,6 +51,10 @@ class DocumentService
                     $this->link($document, $linkable, $creator, $purpose);
                 }
 
+                if (isset($data['archive_visibility'])) {
+                    app(ArchiveAudienceService::class)->apply($document, $data);
+                }
+
                 return $document->refresh()->load(['creator', 'versions', 'links']);
             });
         } catch (Throwable $exception) {

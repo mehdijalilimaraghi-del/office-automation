@@ -23,7 +23,7 @@ class ArchiveAccessService
 
     public function canEnter(User $user): bool
     {
-        return $user->isActive() && ($user->hasPermission('documents.view') || $this->departments($user)->isNotEmpty());
+        return $user->isActive();
     }
 
     public function manages(User $user, ?int $departmentId): bool
@@ -40,14 +40,36 @@ class ArchiveAccessService
     public function visible(Builder $query, User $user): Builder
     {
         $departments = $this->departments($user)->pluck('id');
+        $roles = $user->roles()->where('roles.is_active', true)->pluck('roles.id');
 
-        return $query->where(function (Builder $query) use ($user, $departments): void {
+        return $query->where(function (Builder $query) use ($user, $departments, $roles): void {
             $query->where('created_by', $user->id)
                 ->orWhereHas('accesses', fn (Builder $access) => $access->where('user_id', $user->id))
+                ->orWhere('archive_visibility', 'organization')
                 ->orWhere(function (Builder $query) use ($departments): void {
-                    $query->where('archive_restricted', false)->where(function (Builder $query) use ($departments): void {
-                        $query->whereIn('related_department_id', $departments)->orWhereIn('archive_department_id', $departments);
+                    $query->where(function (Builder $scope): void {
+                        $scope->where('archive_visibility', 'department')
+                            ->orWhere(function (Builder $legacy): void {
+                                $legacy->whereNull('archive_visibility')->where('archive_restricted', false);
+                            });
+                    })->where(function (Builder $units) use ($departments): void {
+                        $units->whereIn('related_department_id', $departments)
+                            ->orWhereIn('archive_department_id', $departments);
                     });
+                })
+                ->orWhere(function (Builder $query) use ($departments, $roles): void {
+                    $query->where('archive_visibility', 'selected')
+                        ->whereExists(function ($audience) use ($departments, $roles): void {
+                            $audience->selectRaw('1')->from('archive_audiences')
+                                ->whereColumn('archive_audiences.document_id', 'documents.id')
+                                ->where(function ($targets) use ($departments, $roles): void {
+                                    $targets->where(function ($target) use ($departments): void {
+                                        $target->where('target_type', 'department')->whereIn('target_id', $departments);
+                                    })->orWhere(function ($target) use ($roles): void {
+                                        $target->where('target_type', 'role')->whereIn('target_id', $roles);
+                                    });
+                                });
+                        });
                 });
         });
     }

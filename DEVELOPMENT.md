@@ -1,3 +1,7 @@
+## Central archive and document audiences
+
+Verify central registration as the central department manager, publication as a responsible archivist, and viewing as a user without unit membership. Check selected-role deactivation and scope reduction on both the list and direct downloads. Browser QA passed for the central list, registration and audience editor at desktop and mobile widths; physical NAPS2 hardware acceptance remains separate.
+
 ## Department archive workflow
 
 Verify the workflow with a manager without global permissions, a delegated archivist, a same-unit member and an outsider. Browse, registration and department settings are separate pages. Apply the two additive unit-archive migrations locally before opening these screens.

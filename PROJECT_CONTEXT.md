@@ -1,3 +1,7 @@
+## Central archive and document audiences
+
+The default new archive document audience is its related unit and custodian unit. A department manager or assigned archivist can publish read access to all active organization users, choose active units or roles, or restrict to explicit individuals. Read scope never supplies editing or access-management authority. Central registration fixes the custodian to the configured central archive department and requires the related unit.
+
 ## Department archive workflow
 
 Archive membership supplies entry and filing for active department members. Unit managers and assigned active-member archivists configure their unit. Every new departmental record states the holding unit and related unit. Restricted records retain explicit access. Older documents remain private pending deliberate classification.

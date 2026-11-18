@@ -28,6 +28,7 @@ class Document extends Model
         'archive_department_id',
         'related_department_id',
         'archive_restricted',
+        'archive_visibility',
     ];
 
     protected function casts(): array

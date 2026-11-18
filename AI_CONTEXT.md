@@ -1,3 +1,7 @@
+## Central archive and document audiences
+
+Central archive routes are archive.central.index/create. Audience rules are enforced by ArchiveAccessService for both listings and downloads. ArchiveAudienceService changes the read scope without granting edit permissions.
+
 ## Department archive workflow
 
 Use ArchiveAccessService for departmental archive entry, visibility and editing. Department managers configure their own archive without organization-wide department administration permissions.

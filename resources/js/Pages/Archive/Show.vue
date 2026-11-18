@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ArchiveVisibilityFields from '@/Components/ArchiveVisibilityFields.vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import { computed } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
@@ -14,9 +15,10 @@ const actions: Record<Action, string> = {
     reject: 'رد یا لغو خروج', checkout: 'تحویل اصل مدرک', return: 'بازگشت اصل مدرک',
 };
 const props = defineProps<{
-    record: { id: number; title: string; description: string | null; document_type: string; archive_kind: string; archive_location: string | null };
+    record: { id: number; title: string; description: string | null; document_type: string; archive_kind: string; archive_location: string | null; archive_visibility: string; central: boolean };
     versions: { version_number: number; original_name: string; created_at: string }[];
     canUpdate: boolean;
+    visibilityManagement: { departments: { id: number; name: string }[]; roles: { id: number; name: string }[]; selectedDepartments: (number | string)[]; selectedRoles: (number | string)[] } | null;
     accessManagement: {
         grants: { id: number; user_id: number; access_level: 'view' | 'edit'; user: { name: string } | null }[];
         users: { id: number; name: string }[];
@@ -56,6 +58,19 @@ function saveReference(): void {
     });
 }
 
+const scopeLabels: Record<string, string> = {
+    department: 'واحد مرتبط با سند', organization: 'کل سازمان',
+    selected: 'واحدها یا نقش‌های منتخب', restricted: 'افراد مشخص',
+};
+const visibilityForm = useForm({
+    archive_visibility: props.record.archive_visibility,
+    audience_departments: props.visibilityManagement?.selectedDepartments.map(Number) ?? [],
+    audience_roles: props.visibilityManagement?.selectedRoles.map(Number) ?? [],
+});
+function saveVisibility(): void {
+    visibilityForm.put(route('archive.visibility.update', props.record.id), { preserveScroll: true });
+}
+
 const accessForm = useForm({ user_id: '' as string | number, access_level: 'view' });
 const revokeForm = useForm({});
 function saveAccess(): void {
@@ -85,6 +100,7 @@ function save(event: Event): void {
         <div dir="rtl" class="mx-auto grid max-w-4xl gap-4 p-4 sm:p-6">
             <Link :href="route('archive.index')" class="text-indigo-700 hover:underline">بازگشت به آرشیو</Link>
             <section class="space-y-2 rounded-xl border bg-white p-4">
+                <div class="flex flex-wrap gap-2 text-xs"><span class="rounded-md bg-indigo-50 px-2 py-1 text-indigo-700">{{ record.central ? 'بایگانی مرکزی سازمان' : 'بایگانی واحد' }}</span><span class="rounded-md bg-slate-100 px-2 py-1 text-slate-600">مشاهده: {{ scopeLabels[record.archive_visibility] }}</span></div>
                 <p>{{ record.document_type }} · {{ record.archive_kind === 'physical' ? 'مدرک فیزیکی' : 'مدرک دیجیتال' }}</p>
                 <p v-if="record.archive_location">محل نگهداری اصل: {{ record.archive_location }}</p>
                 <p v-if="record.description" class="whitespace-pre-wrap">{{ record.description }}</p>
@@ -99,8 +115,11 @@ function save(event: Event): void {
                 </ul>
                 <form v-if="canUpdate" class="flex flex-wrap items-end gap-3 border-t pt-3" @submit.prevent="save">
                     <label class="grid gap-1">فایل نسخه جدید
-                        <input type="file" required class="max-w-full rounded-md border p-2"
-                            @change="form.file = ($event.target as HTMLInputElement).files?.[0] ?? null" />
+                        <span class="flex max-w-full items-center gap-3 rounded-lg border border-slate-300 p-2 focus-within:ring-2 focus-within:ring-indigo-500">
+                            <span class="shrink-0 rounded-md bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">انتخاب فایل</span>
+                            <bdi class="min-w-0 truncate text-sm text-slate-500">{{ form.file?.name ?? 'فایلی انتخاب نشده است' }}</bdi>
+                            <input type="file" required class="sr-only" @change="form.file = ($event.target as HTMLInputElement).files?.[0] ?? null" />
+                        </span>
                     </label>
                     <button type="submit" :disabled="form.processing" class="rounded-md bg-indigo-700 px-4 py-2 text-white disabled:opacity-60">
                         {{ form.processing ? 'در حال ذخیره…' : 'ذخیره نسخه جدید' }}
@@ -136,6 +155,13 @@ function save(event: Event): void {
             </section>
             <section v-if="accessManagement" class="space-y-3 rounded-xl border bg-white p-4">
                 <h2 class="font-semibold">دسترسی به این مدرک</h2>
+                <form v-if="visibilityManagement" class="space-y-4 rounded-xl border p-4" @submit.prevent="saveVisibility">
+                    <ArchiveVisibilityFields v-model:scope="visibilityForm.archive_visibility" v-model:department-ids="visibilityForm.audience_departments" v-model:role-ids="visibilityForm.audience_roles"
+                        :departments="visibilityManagement.departments" :roles="visibilityManagement.roles" />
+                    <ul v-if="visibilityForm.hasErrors" role="alert" class="text-sm text-red-700"><li v-for="(error, key) in visibilityForm.errors" :key="key">{{ error }}</li></ul>
+                    <button type="submit" :disabled="visibilityForm.processing" class="rounded-lg bg-indigo-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">{{ visibilityForm.processing ? 'در حال ذخیره…' : 'ذخیره دامنه مشاهده' }}</button>
+                </form>
+                <h3 class="pt-3 text-sm font-semibold">دسترسی مستقیم افراد</h3>
                 <p class="text-sm text-slate-600">اسناد عادی برای اعضای واحد مرتبط قابل مشاهده‌اند. برای سند محدود، مشاهده را به افراد مشخص واگذار کنید. واگذاری ویرایش به مجوز ویرایش اسناد در نقش کاربر نیاز دارد.</p>
                 <ul v-if="accessManagement.grants.length" class="divide-y">
                     <li v-for="grant in accessManagement.grants" :key="grant.id" class="flex flex-wrap items-center justify-between gap-2 py-2">

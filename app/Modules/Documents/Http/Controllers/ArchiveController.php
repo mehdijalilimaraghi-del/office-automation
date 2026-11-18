@@ -7,6 +7,11 @@ namespace App\Modules\Documents\Http\Controllers;
 use App\Models\User;
 use App\Modules\Documents\Models\Document;
 use App\Modules\Documents\Services\ArchiveApprovalPolicy;
+use App\Modules\Documents\Services\ArchiveAudienceService;
+use App\Core\Settings\Services\OrganizationDepartmentRoleService;
+use App\Core\Departments\Models\Department;
+use App\Core\Roles\Models\Role;
+use Illuminate\Support\Facades\DB;
 use App\Modules\Documents\Services\ArchiveCustodyService;
 use App\Modules\Documents\Services\ArchiveLocationCatalog;
 use App\Modules\Documents\Services\ArchiveReferenceService;
@@ -40,12 +45,16 @@ class ArchiveController
             'access' => ['nullable', Rule::in(['mine', 'shared'])],
         ]);
 
+        $central = $this->centralArchive($request);
+        $centralMode = $request->routeIs('archive.central.index');
+        abort_if($centralMode && $central === null, 404);
         $userId = $request->user()->id;
         $categories = $this->access->visible(Document::query()->whereNotNull('archive_kind')->where('is_active', true), $request->user())->distinct()->orderBy('document_type')->pluck('document_type');
         $records = Document::query()
-            ->select(['id', 'title', 'document_type', 'archive_kind', 'archive_location', 'retain_until', 'archive_restricted'])
+            ->select(['id', 'title', 'document_type', 'archive_kind', 'archive_location', 'retain_until', 'archive_restricted', 'archive_visibility', 'archive_department_id'])
             ->where('is_active', true)
             ->whereNotNull('archive_kind')
+            ->when($centralMode, fn (Builder $query) => $query->where('archive_department_id', $central['id']))
             ->tap(fn (Builder $query) => $this->access->visible($query, $request->user()))
             ->when(filled($filters['search'] ?? null), function (Builder $query) use ($filters): void {
                 $pattern = '%'.str_replace(['[', '%', '_'], ['[[]', '[%]', '[_]'], $filters['search']).'%';
@@ -67,8 +76,12 @@ class ArchiveController
             'records' => $records,
             'filters' => $filters,
             'categories' => $categories,
-            'locations' => $locations->paths(),
-            'canCreate' => Gate::allows('create', Document::class) || $this->access->departments($request->user())->isNotEmpty(),
+            'centralArchive' => $central,
+            'centralMode' => $centralMode,
+            'locations' => $request->user()->hasPermission('settings.manage') ? $locations->paths() : [],
+            'canCreate' => $this->access->departments($request->user())->contains(
+                fn ($department) => (int) $department->id !== ($central['id'] ?? null)
+            ),
             'approvalExceptions' => $request->user()->hasPermission('settings.manage') ? $approval->exceptions() : null,
         ]);
     }
@@ -76,7 +89,15 @@ class ArchiveController
     public function create(Request $request): Response
     {
         $this->authorizeRegistration();
-        $departments = $this->access->departments($request->user());
+        $centralMode = $request->routeIs('archive.central.create');
+        $central = $this->centralArchive($request);
+        if ($centralMode) {
+            abort_unless($central !== null && $central['canFile'], 403);
+        }
+        $departments = $this->access->departments($request->user())
+            ->filter(fn ($department) => $centralMode
+                ? (int) $department->id === $central['id']
+                : (int) $department->id !== ($central['id'] ?? null))->values();
         $settings = \App\Modules\Documents\Models\DepartmentArchiveSetting::query()
             ->whereIn('department_id', $departments->pluck('id'))->get()->keyBy('department_id');
 
@@ -87,9 +108,42 @@ class ArchiveController
                 'locations' => array_map(static fn (array $location): string => implode(' / ', array_filter($location, fn ($part) => filled($part))), $settings->get($department->id)?->locations ?? []),
             ]),
             'relatedDepartments' => \App\Core\Departments\Models\Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'centralMode' => $centralMode,
+            'audienceDepartments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'audienceRoles' => Role::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'audienceManagers' => $departments->filter(fn ($department) => $this->access->manages($request->user(), (int) $department->id))->pluck('id')->values(),
             'centralDepartmentId' => app(\App\Core\Settings\Services\OrganizationDepartmentRoleService::class)
                 ->activeDepartmentId(\App\Core\Settings\Services\OrganizationDepartmentRoleService::CENTRAL_ARCHIVE),
         ]);
+    }
+
+    private function centralArchive(Request $request): ?array
+    {
+        $id = app(OrganizationDepartmentRoleService::class)->activeDepartmentId(OrganizationDepartmentRoleService::CENTRAL_ARCHIVE);
+        if ($id === null) {
+            return null;
+        }
+
+        return [
+            'id' => $id,
+            'name' => Department::query()->whereKey($id)->value('name'),
+            'canFile' => $this->access->departments($request->user())->contains('id', $id),
+            'canManage' => $this->access->manages($request->user(), $id) || $request->user()->isSystemAdmin(),
+        ];
+    }
+
+    public function updateVisibility(Request $request, Document $document, ArchiveAudienceService $audiences): RedirectResponse
+    {
+        $this->authorizeArchiveDocument($request, $document);
+        Gate::authorize('manageAccess', $document);
+        $data = $request->validate($audiences->rules(requireVisibility: true));
+        $audiences->apply($document, $data);
+
+        if (! $this->access->canView($request->user(), $document)) {
+            return redirect()->route('archive.index')->with('success', 'دامنه مشاهده سند ذخیره شد.');
+        }
+
+        return back()->with('success', 'دامنه مشاهده سند ذخیره شد.');
     }
 
     public function updateLocationCatalog(Request $request, ArchiveLocationCatalog $locations): RedirectResponse
@@ -139,7 +193,17 @@ class ArchiveController
                 'users' => User::query()->where('status', 'active')->whereKeyNot($document->created_by)
                     ->orderBy('name')->get(['id', 'name']),
             ] : null,
-            'record' => $document->only(['id', 'title', 'description', 'document_type', 'archive_kind', 'archive_location']),
+            'visibilityManagement' => $canManageAccess ? [
+                'departments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+                'roles' => Role::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+                'selectedDepartments' => Department::query()->where('is_active', true)->whereIn('id', DB::table('archive_audiences')->where('document_id', $document->id)->where('target_type', 'department')->select('target_id'))->pluck('id'),
+                'selectedRoles' => Role::query()->where('is_active', true)->whereIn('id', DB::table('archive_audiences')->where('document_id', $document->id)->where('target_type', 'role')->select('target_id'))->pluck('id'),
+            ] : null,
+            'record' => [
+                ...$document->only(['id', 'title', 'description', 'document_type', 'archive_kind', 'archive_location']),
+                'archive_visibility' => $document->archive_visibility ?? ($document->archive_restricted ? 'restricted' : 'department'),
+                'central' => $document->archive_department_id !== null && $document->archive_department_id === ($this->centralArchive($request)['id'] ?? null),
+            ],
             'locations' => $document->archive_department_id === null ? $locations->paths() : array_map(
                 static fn (array $location): string => implode(' / ', array_filter($location, fn ($part) => filled($part))),
                 \App\Modules\Documents\Models\DepartmentArchiveSetting::query()->where('department_id', $document->archive_department_id)->first()?->locations ?? [],
@@ -273,13 +337,14 @@ class ArchiveController
         abort_unless($this->access->canEnter($user) && ($user->hasPermission('documents.create') || $this->access->departments($user)->isNotEmpty()), 403);
     }
 
-    public function store(Request $request, DocumentService $documents, ScannerStagingService $scanner, ArchiveLocationCatalog $locations): RedirectResponse
+    public function store(Request $request, DocumentService $documents, ScannerStagingService $scanner, ArchiveLocationCatalog $locations, ArchiveAudienceService $audiences): RedirectResponse
     {
         $this->authorizeRegistration();
 
         $fileTypes = $this->fileTypes($request->string('archive_kind')->toString());
 
         $data = $request->validate([
+            ...$audiences->rules(),
             'archive_department_id' => ['nullable', 'integer'],
             'related_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')->where('is_active', true)],
             'archive_restricted' => ['sometimes', 'boolean'],
@@ -323,6 +388,16 @@ class ArchiveController
             $locations->validatePath($data['archive_location'], 'archive_location');
         }
 
+        if ($departmentId !== null) {
+            $visibility = $data['archive_visibility'] ?? (($data['archive_restricted'] ?? false) ? 'restricted' : 'department');
+            if (in_array($visibility, ['organization', 'selected'], true)) {
+                abort_unless($this->access->manages($request->user(), (int) $departmentId), 403);
+            }
+            $data['archive_visibility'] = $visibility;
+        } elseif (isset($data['archive_visibility'])) {
+            abort_unless($request->user()->hasPermission('documents.manage_access'), 403);
+        }
+
         $token = $data['scanner_upload_token'] ?? null;
         if ($token === null) {
             $documents->create($data, $request->file('file'), $request->user());
@@ -351,6 +426,8 @@ class ArchiveController
             }
         }
 
-        return redirect()->route('archive.index')->with('success', 'مدرک در آرشیو ثبت شد.');
+        $destination = isset($centralId) && (int) $departmentId === $centralId ? 'archive.central.index' : 'archive.index';
+
+        return redirect()->route($destination)->with('success', 'مدرک در آرشیو ثبت شد.');
     }
 }

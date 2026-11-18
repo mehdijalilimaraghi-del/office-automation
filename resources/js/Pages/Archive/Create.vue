@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue';
+import ArchiveVisibilityFields from '@/Components/ArchiveVisibilityFields.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import axios from 'axios';
@@ -9,10 +10,15 @@ const props = defineProps<{
     departments: { id: number; name: string; categories: { name: string; approval_required: boolean }[]; locations: string[] }[];
     relatedDepartments: { id: number; name: string }[];
     centralDepartmentId: number | null;
+    centralMode: boolean;
+    audienceDepartments: { id: number; name: string }[];
+    audienceRoles: { id: number; name: string }[];
+    audienceManagers: number[];
 }>();
 const form = useForm({
     archive_department_id: props.departments.length === 1 ? props.departments[0].id : '' as number | string,
     related_department_id: '' as number | string, archive_restricted: false,
+    archive_visibility: 'department', audience_departments: [] as number[], audience_roles: [] as number[],
     title: '', document_type: '', description: '', archive_kind: 'digital',
     archive_location: '', retain_until: null as string | null, file: null as File | null, scanner_upload_token: '',
 });
@@ -87,18 +93,19 @@ function register(event: Event): void {
 
 const department = computed(() => props.departments.find(unit => Number(unit.id) === Number(form.archive_department_id)));
 const locations = computed(() => department.value?.locations ?? []);
-watch(() => form.archive_department_id, () => { form.document_type = ''; form.archive_location = ''; form.related_department_id = ''; });
+watch(() => form.archive_department_id, () => { form.document_type = ''; form.archive_location = ''; form.related_department_id = ''; form.archive_visibility = 'department'; form.audience_departments = []; form.audience_roles = []; });
 </script>
 <template>
-    <Head title="ثبت سند" />
+    <Head :title="centralMode ? 'ثبت سند سازمانی' : 'ثبت سند واحد'" />
     <AuthenticatedLayout>
-        <template #header><h1 class="text-xl font-bold">ثبت سند در بایگانی</h1></template>
+        <template #header><h1 class="text-xl font-bold">{{ centralMode ? 'ثبت سند در بایگانی مرکزی سازمان' : 'ثبت سند در بایگانی واحد' }}</h1></template>
         <main dir="rtl" class="mx-auto max-w-4xl space-y-5 p-4 sm:p-6">
-            <Link :href="route('archive.index')" class="text-sm font-semibold text-indigo-700">بازگشت به فهرست اسناد</Link>
-            <p class="text-sm leading-7 text-slate-600">سند را برای واحدی ثبت کنید که اصل یا فایل آن را نگهداری می‌کند. اسناد عادی برای همکاران همان واحد قابل مشاهده‌اند.</p>
+            <Link :href="route(centralMode ? 'archive.central.index' : 'archive.index')" class="text-sm font-semibold text-indigo-700">بازگشت به فهرست اسناد</Link>
+            <p class="text-sm leading-7 text-slate-600">{{ centralMode ? 'اصل یا فایل این سند در بایگانی مرکزی نگهداری می‌شود. واحد مرتبط با سند را انتخاب کنید و دامنه مشاهده را مشخص کنید.' : 'سند در واحد انتخاب‌شده نگهداری می‌شود. دسته و محل را از تنظیمات همان واحد انتخاب کنید.' }}</p>
             <form v-if="departments.length" class="grid gap-4 rounded-xl border bg-white p-4 sm:grid-cols-2" @submit.prevent="register">
                 <h2 class="font-semibold sm:col-span-2">مشخصات سند</h2>
-                <label class="grid gap-2 text-sm font-medium">واحد نگهدارنده
+                <div v-if="centralMode" class="rounded-xl border border-indigo-100 bg-indigo-50 p-4 text-sm text-indigo-900 sm:col-span-2"><strong>بایگانی مرکزی سازمان</strong><p class="mt-1">واحد نگهدارنده: {{ department?.name }}</p></div>
+                <label v-else class="grid gap-2 text-sm font-medium">واحد نگهدارنده
                     <select v-model="form.archive_department_id" required class="rounded-lg border-slate-300"><option value="">انتخاب واحد</option><option v-for="unit in departments" :key="unit.id" :value="unit.id">{{ unit.name }}</option></select>
                 </label>
                 <label v-if="Number(form.archive_department_id) === centralDepartmentId" class="grid gap-2 text-sm font-medium">واحد مرتبط با سند
@@ -119,11 +126,18 @@ watch(() => form.archive_department_id, () => { form.document_type = ''; form.ar
                     </select>
 <p v-if="!locations.length" role="status" class="text-sm text-amber-800">برای ثبت اصل فیزیکی، مسئول بایگانی باید ابتدا محل نگهداری تعریف کند.</p>
                 </label>
-                <label class="flex items-center gap-2 rounded-lg bg-slate-50 p-3 text-sm sm:col-span-2"><input v-model="form.archive_restricted" type="checkbox" class="rounded text-indigo-600" />سند محدود است؛ دسترسی فقط به ثبت‌کننده و افراد تعیین‌شده داده می‌شود.</label>
+                <div class="rounded-xl border bg-slate-50/50 p-4 sm:col-span-2">
+                    <ArchiveVisibilityFields v-model:scope="form.archive_visibility" v-model:department-ids="form.audience_departments" v-model:role-ids="form.audience_roles"
+                        :departments="audienceDepartments" :roles="audienceRoles" :can-broaden="audienceManagers.map(Number).includes(Number(form.archive_department_id))" />
+                </div>
                 <label class="grid gap-1">توضیحات<textarea v-model="form.description" class="rounded-md border p-2" maxlength="5000" /></label>
                 <label v-if="!form.scanner_upload_token" class="grid gap-1">{{ form.archive_kind === 'physical' ? 'تصویر یا فایل اسکن اصل' : 'فایل مدرک' }}
-                    <input type="file" class="w-full rounded-md border p-2" :accept="form.archive_kind === 'physical' ? '.pdf,.jpg,.jpeg,.png,.tif,.tiff' : '.pdf,.jpg,.jpeg,.png,.tif,.tiff,.doc,.docx,.xls,.xlsx'" required
-                        @change="form.file = ($event.target as HTMLInputElement).files?.[0] ?? null" />
+                    <span class="flex min-h-12 items-center gap-3 rounded-lg border border-slate-300 p-2 focus-within:ring-2 focus-within:ring-indigo-500">
+                        <span class="shrink-0 rounded-md bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">انتخاب فایل</span>
+                        <bdi class="min-w-0 truncate text-sm text-slate-500">{{ form.file?.name ?? 'فایلی انتخاب نشده است' }}</bdi>
+                        <input type="file" class="sr-only" :accept="form.archive_kind === 'physical' ? '.pdf,.jpg,.jpeg,.png,.tif,.tiff' : '.pdf,.jpg,.jpeg,.png,.tif,.tiff,.doc,.docx,.xls,.xlsx'" required
+                            @change="form.file = ($event.target as HTMLInputElement).files?.[0] ?? null" />
+                    </span>
                 </label>
                 <div class="space-y-2 rounded-md border p-3 sm:col-span-2">
                     <div class="flex flex-wrap items-center gap-3">

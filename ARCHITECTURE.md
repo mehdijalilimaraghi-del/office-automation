@@ -1,3 +1,7 @@
+## Central archive and document audiences
+
+Nullable documents.archive_visibility preserves the previous archive_restricted behavior for legacy records. archive_audiences stores selected unit/role identifiers. ArchiveAudienceService replaces audience rows atomically while keeping explicit individual grants. Inactive users and inactive roles do not gain audience access.
+
 ## Department archive workflow
 
 DepartmentArchiveSetting owns per-unit archivist and JSON category/location catalogs. Nullable document department references allow legacy access behavior. ArchiveAccessService centralizes entry and visibility and is reused by document downloads and Cartable.

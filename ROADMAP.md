@@ -1,3 +1,7 @@
+## Central archive and document audiences
+
+Central archive has a distinct entry and registration route. Organizational and selected-unit/role viewing are implemented. The physical central-transfer receipt workflow remains open.
+
 ## Department archive workflow
 
 Department archive UI and member filing are implemented. Remaining work includes the agreed central receipt/transfer workflow and browser acceptance. Do not close V3 while these are pending.

@@ -32,7 +32,10 @@ class DepartmentArchiveController
                 });
             })->orderBy('name')->get(['id', 'name', 'manager_id']);
 
-        return Inertia::render('Archive/Departments', ['departments' => $departments]);
+        return Inertia::render('Archive/Departments', [
+            'departments' => $departments,
+            'centralDepartmentId' => app(\App\Core\Settings\Services\OrganizationDepartmentRoleService::class)->activeDepartmentId(\App\Core\Settings\Services\OrganizationDepartmentRoleService::CENTRAL_ARCHIVE),
+        ]);
     }
 
     public function edit(Request $request, Department $department): Response
@@ -42,6 +45,7 @@ class DepartmentArchiveController
 
         return Inertia::render('Archive/DepartmentSettings', [
             'department' => $department->only(['id', 'name']),
+            'centralMode' => (int) $department->id === app(\App\Core\Settings\Services\OrganizationDepartmentRoleService::class)->activeDepartmentId(\App\Core\Settings\Services\OrganizationDepartmentRoleService::CENTRAL_ARCHIVE),
             'settings' => [
                 'archivist_id' => $setting?->archivist_id,
                 'categories' => $setting?->categories ?? [],
