@@ -1,3 +1,7 @@
+## Scheduled task and archive reminders
+
+Module dispatchers supply reminder payloads to ReminderDeliveryService. A SQL Server delivery ledger plus user row locks make database notification and delivery identity atomic. Task identity includes scheduled timestamp; archive identity includes checkout event and local date. Nullable custody recipient_user_id preserves historical free-text loans. Future external channels require outbox/retry semantics.
+
 ## Hierarchical archive locations
 
 ArchiveLocationTree and recursive ArchiveLocationNode project the existing flat department location catalog into a hierarchy. Persistence remains compatible with existing document location strings; DepartmentArchiveController validates uniqueness and protects occupied paths.

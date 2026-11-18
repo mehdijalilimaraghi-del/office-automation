@@ -47,3 +47,15 @@ Artisan::command('projects:sync-organization-sections', function (EnsureDepartme
 
     return 0;
 })->purpose('همگام‌سازی بخش‌های پروژه عمومی با واحدهای سازمانی');
+
+Artisan::command('reminders:dispatch', function (
+    \App\Modules\Tasks\Services\TaskReminderDispatcher $tasks,
+    \App\Modules\Documents\Services\ArchiveReminderDispatcher $archive,
+): int {
+    $this->info('Task reminder notifications: '.$tasks->dispatch());
+    $this->info('Archive reminder notifications: '.$archive->dispatch());
+    return 0;
+})->purpose('Dispatch due task and archive return reminders');
+
+\Illuminate\Support\Facades\Schedule::command('reminders:dispatch')
+    ->everyMinute()->withoutOverlapping(10);

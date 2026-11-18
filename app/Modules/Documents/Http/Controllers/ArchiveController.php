@@ -46,6 +46,7 @@ class ArchiveController
             'kind' => ['nullable', Rule::in(['digital', 'physical'])],
             'category' => ['nullable', 'string', 'max:100'],
             'access' => ['nullable', Rule::in(['mine', 'shared'])],
+            'custody' => ['nullable', Rule::in(['out', 'due_soon', 'overdue'])],
         ]);
 
         $central = $this->centralArchive($request);
@@ -54,6 +55,7 @@ class ArchiveController
         $userId = $request->user()->id;
         $categories = $this->access->visible(Document::query()->whereNotNull('archive_kind')->where('is_active', true), $request->user())->distinct()->orderBy('document_type')->pluck('document_type');
         $records = Document::query()
+            ->with('latestCustodyEvent')
             ->select(['id', 'title', 'document_type', 'archive_kind', 'archive_location', 'retain_until', 'archive_restricted', 'archive_visibility', 'archive_department_id'])
             ->where('is_active', true)
             ->whereNotNull('archive_kind')
@@ -71,6 +73,13 @@ class ArchiveController
             ->when($filters['category'] ?? null, fn (Builder $query, string $category) => $query->where('document_type', $category))
             ->when(($filters['access'] ?? null) === 'mine', fn (Builder $query) => $query->where('created_by', $userId))
             ->when(($filters['access'] ?? null) === 'shared', fn (Builder $query) => $query->whereHas('accesses', fn (Builder $access) => $access->where('user_id', $userId)))
+            ->when($filters['custody'] ?? null, function (Builder $query, string $filter): void {
+                $query->where('archive_kind', 'physical')->whereHas('latestCustodyEvent', function (Builder $event) use ($filter): void {
+                    $event->where('action', 'checkout');
+                    if ($filter === 'due_soon') $event->whereBetween('due_on', [today()->toDateString(), today()->addDay()->toDateString()]);
+                    if ($filter === 'overdue') $event->where('due_on', '<', today()->toDateString());
+                });
+            })
             ->latest('id')
             ->paginate(25)
             ->withQueryString();
@@ -235,6 +244,7 @@ class ArchiveController
             'custodyCurrent' => $document->archive_kind === 'physical'
                 ? $document->custodyEvents()->latest('id')->first(['action', 'recipient', 'due_on', 'approval_required'])
                 : null,
+            'custodyUsers' => $this->canUpdate($request, $document) ? User::query()->where('status', 'active')->orderBy('name')->get(['id', 'name']) : [],
             'canUpdate' => $this->canUpdate($request, $document),
         ]);
     }
@@ -303,10 +313,14 @@ class ArchiveController
         $data = $request->validate([
             'action' => ['required', Rule::in(['move', 'request', 'approve', 'reject', 'checkout', 'return'])],
             'location' => ['exclude_unless:action,move,return', 'required', 'string', 'max:255'],
-            'recipient' => ['exclude_unless:action,request', 'required', 'string', 'max:255'],
+            'recipient' => ['exclude_unless:action,request', 'required_without:recipient_user_id', 'nullable', 'string', 'max:255'],
+            'recipient_user_id' => ['exclude_unless:action,request', 'nullable', 'integer', Rule::exists('users', 'id')->where('status', 'active')],
             'due_on' => ['exclude_unless:action,request', 'required', 'date_format:Y-m-d', 'after_or_equal:today'],
             'note' => ['nullable', 'required_if:action,request,reject', 'string', 'max:500'],
         ]);
+        if (! empty($data['recipient_user_id'])) {
+            $data['recipient'] = User::query()->findOrFail($data['recipient_user_id'])->name;
+        }
         if (array_key_exists('location', $data)) {
             if ($document->archive_department_id !== null) {
                 $setting = \App\Modules\Documents\Models\DepartmentArchiveSetting::query()->where('department_id', $document->archive_department_id)->first();

@@ -50,6 +50,7 @@ class ArchiveCustodyService
             } elseif (in_array($action, ['approve', 'reject', 'checkout', 'return'], true)) {
                 $event['approval_required'] = $last->approval_required;
                 $event['recipient'] = $last->recipient;
+                $event['recipient_user_id'] = $last->recipient_user_id;
                 $event['due_on'] = $last->due_on;
             }
 

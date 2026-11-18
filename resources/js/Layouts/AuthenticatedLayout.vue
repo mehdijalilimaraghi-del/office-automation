@@ -16,6 +16,8 @@ const notificationDropdownOpen = ref(false);
 const unreadNotificationCount = ref(0);
 const latestNotifications = ref<Array<{ id: string; type: string; title: string; message: string; url: string | null; read_at: string | null; created_at: string | null }>>([]);
 let notificationRefreshTimer: number | undefined;
+const reminderBanner = ref<{ title: string; message: string; url: string | null } | null>(null);
+const seenReminderIds = new Set<string>();
 
 async function refreshNotificationSummary(): Promise<void> {
     try {
@@ -30,6 +32,18 @@ async function refreshNotificationSummary(): Promise<void> {
         };
         unreadNotificationCount.value = data.unreadCount;
         latestNotifications.value = data.notifications;
+        if (!reminderBanner.value) {
+            for (const item of data.notifications) {
+                if (item.read_at || !['task_reminder', 'archive_return_reminder'].includes(item.type) || seenReminderIds.has(item.id)) continue;
+                seenReminderIds.add(item.id);
+                let alreadyShown = false;
+                try {
+                    alreadyShown = sessionStorage.getItem('office-reminder:' + item.id) === 'shown';
+                    sessionStorage.setItem('office-reminder:' + item.id, 'shown');
+                } catch { /* Keep reminders available when browser storage is disabled. */ }
+                if (!alreadyShown) { reminderBanner.value = item; break; }
+            }
+        }
     } catch {
         // Keep navigation usable if the optional notification refresh fails.
     }
@@ -139,6 +153,7 @@ onUnmounted(() => {
 
 <template>
     <div dir="rtl">
+        <aside v-if="reminderBanner" role="status" aria-live="polite" class="fixed inset-x-4 bottom-5 z-[80] mx-auto max-w-lg rounded-2xl border border-indigo-200 bg-white p-4 shadow-xl"><div class="flex items-start justify-between gap-3"><div><p class="font-bold text-indigo-900">{{ reminderBanner.title }}</p><p class="mt-2 text-sm leading-6 text-slate-700">{{ reminderBanner.message }}</p><Link v-if="reminderBanner.url" :href="reminderBanner.url" class="mt-3 inline-block text-sm font-semibold text-indigo-700" @click="reminderBanner = null">مشاهده و پیگیری</Link></div><button type="button" aria-label="بستن پیام یادآوری" class="rounded-lg px-2 py-1 text-slate-500 hover:bg-slate-100" @click="reminderBanner = null">بستن</button></div></aside>
         <div class="app-shell min-h-screen">
             <nav class="app-topbar sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 shadow-[0_1px_0_rgba(15,23,42,0.02)] backdrop-blur-xl">
                 <div class="mx-auto max-w-[1600px] px-4 sm:px-6 xl:px-8">

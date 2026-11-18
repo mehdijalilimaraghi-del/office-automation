@@ -1,3 +1,7 @@
+## Scheduled task and archive reminders
+
+Implemented timed task notifications and physical-checkout reminders (day before, due date, daily overdue, manager escalation at three overdue days). Internal holders have user identities, generic messages protect inaccessible documents, and return ends future delivery. Server scheduler activation is pending separate deployment approval. Validation passed: full SQL Server suite (517 tests, 3308 assertions), focused document/reminder suite (20 tests, 566 assertions), TypeScript/production build, isolated browser checks of reminder banners and holder controls at desktop/mobile widths, and PowerShell runner success/failure/logging probes. Local additive migration applied and schedule:list confirms minutely dispatch. Live server scheduling, reboot and signed-out acceptance remain pending.
+
 ## Hierarchical archive locations
 
 Replaced repeated location inputs with a building/room/shelf/folder tree. Existing locations are grouped, siblings are added under their parent, duplicate paths are rejected and occupied locations cannot be removed. Validation passed: full SQL Server suite (515 tests, 3252 assertions), independent focused document suite (18 tests, 510 assertions), TypeScript/production build and isolated component browser checks for shared-parent folder creation, duplicate rejection, and desktop/mobile layouts. Final mobile screenshot inspected. No schema migration required.

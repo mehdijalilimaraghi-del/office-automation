@@ -12,7 +12,7 @@ class ArchiveCustodyEvent extends Model
 {
     public const UPDATED_AT = null;
 
-    protected $fillable = ['actor_id', 'action', 'location', 'recipient', 'due_on', 'note', 'approval_required'];
+    protected $fillable = ['actor_id', 'action', 'location', 'recipient', 'due_on', 'note', 'approval_required', 'recipient_user_id'];
 
     protected function casts(): array
     {

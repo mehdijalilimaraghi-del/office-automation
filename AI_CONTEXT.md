@@ -1,3 +1,7 @@
+## Scheduled task and archive reminders
+
+Scheduled reminders dispatch through module-specific TaskReminderDispatcher and ArchiveReminderDispatcher and shared ReminderDeliveryService. Dispatch only against an explicitly verified environment. Do not activate server scheduling without release approval.
+
 ## Hierarchical archive locations
 
 Archive location settings use a tree editor backed by existing department location paths. Preserve occupied paths; do not replace existing document addresses on catalog edits.

@@ -1,3 +1,7 @@
+## Scheduled task and archive reminders
+
+Pending task reminders notify their recipient when due, retaining explicit completed/cancelled status. Archive reminders go to the responsible archivist and internal holder; external loans are followed by the archive. Managers are included after three overdue days. Return ends that loan cycle. Restricted metadata is omitted when recipients cannot view the document.
+
 ## Hierarchical archive locations
 
 Archive managers define shared buildings, rooms and shelves once and add folders underneath. Documents select a complete configured location. Occupied locations must be vacated using custody movement before removal.

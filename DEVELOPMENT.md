@@ -1,3 +1,7 @@
+## Scheduled task and archive reminders
+
+Run reminders:dispatch only in controlled development/test contexts. Laravel schedule runs it every minute without overlap. tools/Scheduler contains a runner, explicit installer and operational verification steps; activation must use the stable application junction and a database-capable service account. Test repeated dispatch, edited due time, cancelled/finalized/inaccessible reminders, return/recheckout, escalation and UI notification display.
+
 ## Hierarchical archive locations
 
 Verify tree hydration from existing paths, adding two folders under a shared shelf, duplicate sibling names, incomplete locations and rejection of occupied-location removal. Check desktop and mobile layouts.

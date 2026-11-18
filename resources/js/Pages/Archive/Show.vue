@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import ArchiveVisibilityFields from '@/Components/ArchiveVisibilityFields.vue';
 import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
@@ -18,6 +18,7 @@ const props = defineProps<{
     record: { id: number; title: string; description: string | null; document_type: string; archive_kind: string; archive_location: string | null; archive_visibility: string; central: boolean };
     versions: { version_number: number; original_name: string; created_at: string }[];
     canUpdate: boolean;
+    custodyUsers: { id: number; name: string }[];
     correspondenceFiles: { id: number; purpose: string; original_name: string; size: number }[];
     visibilityManagement: { departments: { id: number; name: string }[]; roles: { id: number; name: string }[]; selectedDepartments: (number | string)[]; selectedRoles: (number | string)[] } | null;
     accessManagement: {
@@ -38,8 +39,11 @@ const availableActions = computed<Action[]>(() => {
         default: return ['move', 'request'];
     }
 });
-const custodyForm = useForm({ action: '' as Action | '', location: '', recipient: '', due_on: null as string | null, note: '' });
+const recipientKind = ref('internal');
+const custodyForm = useForm({ recipient_user_id: '' as string | number, action: '' as Action | '', location: '', recipient: '', due_on: null as string | null, note: '' });
 function saveCustody(): void {
+    if (recipientKind.value === 'internal') custodyForm.recipient = '';
+    else custodyForm.recipient_user_id = '';
     custodyForm.post(route('archive.custody.store', props.record.id), {
         preserveScroll: true,
         onSuccess: () => custodyForm.reset(),
@@ -233,9 +237,12 @@ function save(event: Event): void {
                         <input v-else v-model="custodyForm.location" maxlength="255" required class="rounded-md border p-2" />
                     </label>
                     <template v-if="custodyForm.action === 'request'">
-                        <label class="grid gap-1">تحویل‌گیرنده
-                            <input v-model="custodyForm.recipient" maxlength="255" required class="rounded-md border p-2" />
-                        </label>
+                        <div class="grid gap-1" role="group" aria-label="تحویل‌گیرنده">
+                            <select v-model="recipientKind" aria-label="نوع تحویل‌گیرنده" class="rounded-md border-slate-300"><option value="internal">کاربر داخل سازمان</option><option value="external">شخص یا سازمان بیرونی</option></select>
+                            <select v-if="recipientKind === 'internal'" v-model="custodyForm.recipient_user_id" aria-label="کاربر تحویل‌گیرنده" required class="rounded-md border-slate-300"><option value="">انتخاب تحویل‌گیرنده</option><option v-for="user in custodyUsers" :key="user.id" :value="user.id">{{ user.name }}</option></select>
+                            <input v-else v-model="custodyForm.recipient" aria-label="نام تحویل‌گیرنده بیرونی" maxlength="255" required placeholder="نام شخص یا سازمان بیرونی" class="rounded-md border p-2" />
+                            <span class="text-xs leading-6 text-slate-500">یادآوری بازگشت برای مسئول بایگانی و تحویل‌گیرنده داخلی ارسال می‌شود؛ پیگیری تحویل بیرونی با مسئول بایگانی است.</span>
+                        </div>
                         <div class="grid gap-1" role="group" aria-labelledby="archive-due-label">
                             <span id="archive-due-label">موعد بازگشت</span><JalaliDatePicker v-model="custodyForm.due_on" required />
                         </div>

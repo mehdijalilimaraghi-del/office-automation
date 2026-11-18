@@ -743,6 +743,99 @@ class DocumentFoundationTest extends TestCase
         return [$owner, $department, $recipient, $letter, $sources];
     }
 
+    public function test_due_task_reminders_deliver_once_and_respect_status_and_access(): void
+    {
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-18 10:00:00'));
+        $user = $this->userWithPermissions(['tasks.view']);
+        $task = $this->createTask($user, 'Scheduled task');
+        $reminder = $task->reminders()->create([
+            'user_id' => $user->id, 'created_by' => $user->id, 'title' => 'Follow up',
+            'remind_at' => now(), 'status' => 'pending',
+        ]);
+        $dispatcher = app(\App\Modules\Tasks\Services\TaskReminderDispatcher::class);
+        $this->assertSame(1, $dispatcher->dispatch());
+        $this->assertSame(0, $dispatcher->dispatch());
+        $this->assertSame(1, $user->notifications()->count());
+        $reminder->update(['remind_at' => now()->addHour()]);
+        $this->assertSame(0, $dispatcher->dispatch());
+        $this->travel(61)->minutes();
+        $this->assertSame(1, $dispatcher->dispatch());
+        $reminder->update(['remind_at' => now(), 'status' => 'cancelled']);
+        $this->assertSame(0, $dispatcher->dispatch());
+        $reminder->update(['status' => 'pending']);
+        $task->update(['status' => 'completed']);
+        $this->assertSame(0, $dispatcher->dispatch());
+        $task->update(['status' => 'todo']);
+        $user->update(['status' => 'inactive']);
+        $this->assertSame(0, $dispatcher->dispatch());
+        $user->update(['status' => 'active']);
+        $user->roles()->detach();
+        $other = $this->userWithPermissions([]);
+        $task->update(['assignee_id' => $other->id, 'created_by' => $other->id]);
+        $this->assertSame(0, $dispatcher->dispatch());
+    }
+
+    public function test_archive_reminders_follow_custody_cycle_and_escalate_after_three_days(): void
+    {
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-18 10:00:00'));
+        $manager = $this->userWithPermissions([]);
+        $archivist = $this->userWithPermissions([]);
+        $holder = $this->userWithPermissions([]);
+        $department = \App\Core\Departments\Models\Department::query()->create([
+            'name' => 'Reminder archive', 'manager_id' => $manager->id, 'is_active' => true,
+        ]);
+        $department->members()->attach($archivist);
+        \App\Modules\Documents\Models\DepartmentArchiveSetting::query()->create([
+            'department_id' => $department->id, 'archivist_id' => $archivist->id,
+            'categories' => [['name' => 'Contracts', 'approval_required' => false]],
+        ]);
+        $record = Document::query()->create([
+            'title' => 'Private custody metadata', 'created_by' => $manager->id, 'document_type' => 'Contracts',
+            'archive_kind' => 'physical', 'archive_department_id' => $department->id, 'is_active' => true,
+        ]);
+        $custody = app(\App\Modules\Documents\Services\ArchiveCustodyService::class);
+        $this->actingAs($manager)->post(route('archive.custody.store', $record), [
+            'action' => 'request', 'recipient_user_id' => 999999999,
+            'due_on' => '2026-11-20', 'note' => 'Loan',
+        ])->assertSessionHasErrors('recipient_user_id');
+        $this->post(route('archive.custody.store', $record), [
+            'action' => 'request', 'recipient_user_id' => $holder->id,
+            'due_on' => '2026-11-20', 'note' => 'Loan',
+        ])->assertSessionHas('success');
+        $custody->record($record, $manager, ['action' => 'checkout']);
+        $this->assertEquals($holder->id, $record->latestCustodyEvent()->first()->recipient_user_id);
+        $dispatcher = app(\App\Modules\Documents\Services\ArchiveReminderDispatcher::class);
+        $this->assertSame(0, $dispatcher->dispatch());
+        $this->travel(1)->days();
+        $this->assertSame(2, $dispatcher->dispatch());
+        $this->assertSame(0, $dispatcher->dispatch());
+        $notice = $holder->notifications()->first()->data;
+        $this->assertNull($notice['url']);
+        $this->assertStringNotContainsString($record->title, $notice['message']);
+        $this->travel(1)->days();
+        $this->assertSame(2, $dispatcher->dispatch());
+        $this->travel(3)->days();
+        $this->assertSame(3, $dispatcher->dispatch());
+        $this->assertSame(1, $manager->notifications()->count());
+        $custody->record($record, $manager, ['action' => 'return', 'location' => 'Archive / Shelf']);
+        $this->travel(1)->days();
+        $this->assertSame(0, $dispatcher->dispatch());
+        $custody->record($record, $manager, ['action' => 'request', 'recipient' => 'External office',
+            'due_on' => today()->toDateString(), 'note' => 'New loan']);
+        $custody->record($record, $manager, ['action' => 'checkout']);
+        $this->assertNull($record->latestCustodyEvent()->first()->recipient_user_id);
+        $this->assertSame(1, $dispatcher->dispatch());
+        $this->actingAs($manager)->get(route('archive.index', ['custody' => 'out']))
+            ->assertInertia(fn ($page) => $page->has('records.data', 1));
+        $this->get(route('archive.index', ['custody' => 'overdue']))
+            ->assertInertia(fn ($page) => $page->has('records.data', 0));
+        $this->travel(1)->days();
+        $this->get(route('archive.index', ['custody' => 'overdue']))
+            ->assertInertia(fn ($page) => $page->has('records.data', 1));
+        $this->artisan('reminders:dispatch')->assertExitCode(0);
+        $this->assertSame(0, $dispatcher->dispatch());
+    }
+
     private function createTask(User $user, string $title): Task
     {
         return Task::query()->create([

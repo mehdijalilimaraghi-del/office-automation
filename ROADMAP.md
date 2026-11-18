@@ -1,3 +1,7 @@
+## Scheduled task and archive reminders
+
+V1 timed reminder delivery and V3 physical-return follow-up are implemented together. Server activation/acceptance remains pending. SMS integration is a future adapter; no SMS provider is connected.
+
 ## Hierarchical archive locations
 
 Hierarchical archive location management is implemented without a schema migration. Central physical transfer remains separate open work.
