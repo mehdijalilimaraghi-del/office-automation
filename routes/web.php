@@ -42,6 +42,10 @@ Route::get('/dashboard', DashboardController::class)
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/archive/departments', [\App\Modules\Documents\Http\Controllers\DepartmentArchiveController::class, 'index'])->name('archive.departments.index');
+    Route::get('/archive/departments/{department}', [\App\Modules\Documents\Http\Controllers\DepartmentArchiveController::class, 'edit'])->name('archive.departments.edit');
+    Route::put('/archive/departments/{department}', [\App\Modules\Documents\Http\Controllers\DepartmentArchiveController::class, 'update'])->name('archive.departments.update');
+    Route::get('/archive/create', [ArchiveController::class, 'create'])->name('archive.create');
     Route::get('/archive', [ArchiveController::class, 'index'])->name('archive.index');
     Route::post('/archive', [ArchiveController::class, 'store'])->name('archive.store');
     Route::put('/archive/locations', [ArchiveController::class, 'updateLocationCatalog'])

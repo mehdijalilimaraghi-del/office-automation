@@ -28,24 +28,25 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ArchiveController
 {
+    public function __construct(private readonly \App\Modules\Documents\Services\ArchiveAccessService $access) {}
     public function index(Request $request, ArchiveApprovalPolicy $approval, ArchiveLocationCatalog $locations): Response
     {
-        Gate::authorize('viewAny', Document::class);
+        abort_unless($this->access->canEnter($request->user()), 403);
 
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
             'kind' => ['nullable', Rule::in(['digital', 'physical'])],
+            'category' => ['nullable', 'string', 'max:100'],
+            'access' => ['nullable', Rule::in(['mine', 'shared'])],
         ]);
 
         $userId = $request->user()->id;
+        $categories = $this->access->visible(Document::query()->whereNotNull('archive_kind')->where('is_active', true), $request->user())->distinct()->orderBy('document_type')->pluck('document_type');
         $records = Document::query()
-            ->select(['id', 'title', 'document_type', 'archive_kind', 'archive_location', 'retain_until'])
+            ->select(['id', 'title', 'document_type', 'archive_kind', 'archive_location', 'retain_until', 'archive_restricted'])
             ->where('is_active', true)
             ->whereNotNull('archive_kind')
-            ->where(function (Builder $query) use ($userId): void {
-                $query->where('created_by', $userId)
-                    ->orWhereHas('accesses', fn (Builder $access) => $access->where('user_id', $userId));
-            })
+            ->tap(fn (Builder $query) => $this->access->visible($query, $request->user()))
             ->when(filled($filters['search'] ?? null), function (Builder $query) use ($filters): void {
                 $pattern = '%'.str_replace(['[', '%', '_'], ['[[]', '[%]', '[_]'], $filters['search']).'%';
                 $query->where(function (Builder $query) use ($pattern): void {
@@ -55,6 +56,9 @@ class ArchiveController
                 });
             })
             ->when($filters['kind'] ?? null, fn (Builder $query, string $kind) => $query->where('archive_kind', $kind))
+            ->when($filters['category'] ?? null, fn (Builder $query, string $category) => $query->where('document_type', $category))
+            ->when(($filters['access'] ?? null) === 'mine', fn (Builder $query) => $query->where('created_by', $userId))
+            ->when(($filters['access'] ?? null) === 'shared', fn (Builder $query) => $query->whereHas('accesses', fn (Builder $access) => $access->where('user_id', $userId)))
             ->latest('id')
             ->paginate(25)
             ->withQueryString();
@@ -62,9 +66,29 @@ class ArchiveController
         return Inertia::render('Archive/Index', [
             'records' => $records,
             'filters' => $filters,
+            'categories' => $categories,
             'locations' => $locations->paths(),
-            'canCreate' => Gate::allows('create', Document::class),
+            'canCreate' => Gate::allows('create', Document::class) || $this->access->departments($request->user())->isNotEmpty(),
             'approvalExceptions' => $request->user()->hasPermission('settings.manage') ? $approval->exceptions() : null,
+        ]);
+    }
+
+    public function create(Request $request): Response
+    {
+        $this->authorizeRegistration();
+        $departments = $this->access->departments($request->user());
+        $settings = \App\Modules\Documents\Models\DepartmentArchiveSetting::query()
+            ->whereIn('department_id', $departments->pluck('id'))->get()->keyBy('department_id');
+
+        return Inertia::render('Archive/Create', [
+            'departments' => $departments->map(fn ($department) => [
+                'id' => $department->id, 'name' => $department->name,
+                'categories' => $settings->get($department->id)?->categories ?? [],
+                'locations' => array_map(static fn (array $location): string => implode(' / ', array_filter($location, fn ($part) => filled($part))), $settings->get($department->id)?->locations ?? []),
+            ]),
+            'relatedDepartments' => \App\Core\Departments\Models\Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'centralDepartmentId' => app(\App\Core\Settings\Services\OrganizationDepartmentRoleService::class)
+                ->activeDepartmentId(\App\Core\Settings\Services\OrganizationDepartmentRoleService::CENTRAL_ARCHIVE),
         ]);
     }
 
@@ -116,7 +140,10 @@ class ArchiveController
                     ->orderBy('name')->get(['id', 'name']),
             ] : null,
             'record' => $document->only(['id', 'title', 'description', 'document_type', 'archive_kind', 'archive_location']),
-            'locations' => $locations->paths(),
+            'locations' => $document->archive_department_id === null ? $locations->paths() : array_map(
+                static fn (array $location): string => implode(' / ', array_filter($location, fn ($part) => filled($part))),
+                \App\Modules\Documents\Models\DepartmentArchiveSetting::query()->where('department_id', $document->archive_department_id)->first()?->locations ?? [],
+            ),
             'references' => $references->visible($document, $request->user()),
             'versions' => $document->versions()->orderByDesc('version_number')
                 ->get(['version_number', 'original_name', 'created_at']),
@@ -139,7 +166,7 @@ class ArchiveController
             'access_level' => ['required', Rule::in(['view', 'edit'])],
         ]);
         $recipient = User::query()->findOrFail($data['user_id']);
-        if ((int) $document->created_by === (int) $recipient->id || ! $recipient->hasPermission('documents.view')) {
+        if ((int) $document->created_by === (int) $recipient->id || ! $this->access->canEnter($recipient)) {
             throw ValidationException::withMessages(['user_id' => 'کاربر باید مجوز مشاهده اسناد داشته باشد و مالک مدرک نباشد.']);
         }
         if ($data['access_level'] === 'edit' && ! $recipient->hasPermission('documents.update')) {
@@ -184,7 +211,15 @@ class ArchiveController
             'note' => ['nullable', 'required_if:action,request,reject', 'string', 'max:500'],
         ]);
         if (array_key_exists('location', $data)) {
-            $locations->validatePath($data['location'], 'location');
+            if ($document->archive_department_id !== null) {
+                $setting = \App\Modules\Documents\Models\DepartmentArchiveSetting::query()->where('department_id', $document->archive_department_id)->first();
+                $paths = array_map(static fn (array $location): string => implode(' / ', array_filter($location, fn ($part) => filled($part))), $setting?->locations ?? []);
+                if (! in_array($data['location'], $paths, true)) {
+                    throw ValidationException::withMessages(['location' => 'محل نگهداری را از فهرست بایگانی واحد انتخاب کنید.']);
+                }
+            } else {
+                $locations->validatePath($data['location'], 'location');
+            }
         }
         $custody->record($document, $request->user(), $data);
 
@@ -193,19 +228,15 @@ class ArchiveController
 
     private function authorizeArchiveDocument(Request $request, Document $document): void
     {
-        Gate::authorize('viewAny', Document::class);
+        abort_unless($this->access->canEnter($request->user()), 403);
         abort_if($document->archive_kind === null, 404);
-        abort_unless((int) $document->created_by === (int) $request->user()->id
-            || $document->accesses()->where('user_id', $request->user()->id)->exists(), 403);
+        abort_unless($this->access->canView($request->user(), $document), 403);
         Gate::authorize('view', $document);
     }
 
     private function canUpdate(Request $request, Document $document): bool
     {
-        return Gate::allows('update', $document) && (
-            (int) $document->created_by === (int) $request->user()->id
-            || $document->accesses()->where('user_id', $request->user()->id)->where('access_level', 'edit')->exists()
-        );
+        return $this->access->canEdit($request->user(), $document);
     }
 
     private function fileTypes(?string $kind): string
@@ -238,18 +269,20 @@ class ArchiveController
 
     private function authorizeRegistration(): void
     {
-        Gate::authorize('viewAny', Document::class);
-        Gate::authorize('create', Document::class);
+        $user = request()->user();
+        abort_unless($this->access->canEnter($user) && ($user->hasPermission('documents.create') || $this->access->departments($user)->isNotEmpty()), 403);
     }
 
     public function store(Request $request, DocumentService $documents, ScannerStagingService $scanner, ArchiveLocationCatalog $locations): RedirectResponse
     {
-        Gate::authorize('viewAny', Document::class);
-        Gate::authorize('create', Document::class);
+        $this->authorizeRegistration();
 
         $fileTypes = $this->fileTypes($request->string('archive_kind')->toString());
 
         $data = $request->validate([
+            'archive_department_id' => ['nullable', 'integer'],
+            'related_department_id' => ['nullable', 'integer', Rule::exists('departments', 'id')->where('is_active', true)],
+            'archive_restricted' => ['sometimes', 'boolean'],
             'title' => ['required', 'string', 'max:255'],
             'document_type' => ['required', 'string', 'max:100'],
             'description' => ['nullable', 'string', 'max:5000'],
@@ -260,7 +293,33 @@ class ArchiveController
             'file' => ['required_without:scanner_upload_token', 'nullable', 'file', 'max:20480', $fileTypes],
         ]);
 
-        if ($data['archive_kind'] === 'physical') {
+        $departmentId = $data['archive_department_id'] ?? null;
+        if ($departmentId !== null) {
+            abort_unless($this->access->departments($request->user())->contains('id', $departmentId), 403);
+            $centralId = app(\App\Core\Settings\Services\OrganizationDepartmentRoleService::class)
+                ->activeDepartmentId(\App\Core\Settings\Services\OrganizationDepartmentRoleService::CENTRAL_ARCHIVE);
+            if ((int) $departmentId !== $centralId) {
+                $data['related_department_id'] = $departmentId;
+            } elseif (empty($data['related_department_id'])) {
+                throw ValidationException::withMessages(['related_department_id' => 'واحد مرتبط با سند را انتخاب کنید.']);
+            }
+            $setting = \App\Modules\Documents\Models\DepartmentArchiveSetting::query()->where('department_id', $departmentId)->first();
+            $categoryNames = array_column($setting?->categories ?? [], 'name');
+            if (! in_array($data['document_type'], $categoryNames, true)) {
+                throw ValidationException::withMessages(['document_type' => 'دسته سند باید در تنظیمات بایگانی همین واحد تعریف شده باشد.']);
+            }
+            $data['archive_restricted'] = $data['archive_restricted'] ?? false;
+            if ($data['archive_kind'] === 'physical') {
+                $paths = array_map(static fn (array $location): string => implode(' / ', array_filter($location, fn ($part) => filled($part))), $setting?->locations ?? []);
+                if (! in_array($data['archive_location'], $paths, true)) {
+                    throw ValidationException::withMessages(['archive_location' => 'محل نگهداری را از فهرست همین واحد انتخاب کنید.']);
+                }
+            }
+        } elseif (! $request->user()->hasPermission('documents.create')) {
+            throw ValidationException::withMessages(['archive_department_id' => 'واحد نگهدارنده را انتخاب کنید.']);
+        }
+
+        if ($departmentId === null && $data['archive_kind'] === 'physical') {
             $locations->validatePath($data['archive_location'], 'archive_location');
         }
 

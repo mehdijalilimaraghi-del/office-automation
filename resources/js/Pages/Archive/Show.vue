@@ -136,7 +136,7 @@ function save(event: Event): void {
             </section>
             <section v-if="accessManagement" class="space-y-3 rounded-xl border bg-white p-4">
                 <h2 class="font-semibold">دسترسی به این مدرک</h2>
-                <p class="text-sm text-slate-600">کاربر باید مجوز نقش «مشاهده اسناد» را هم داشته باشد. برای ویرایش، مجوز نقش «ویرایش سند» لازم است.</p>
+                <p class="text-sm text-slate-600">اسناد عادی برای اعضای واحد مرتبط قابل مشاهده‌اند. برای سند محدود، مشاهده را به افراد مشخص واگذار کنید. واگذاری ویرایش به مجوز ویرایش اسناد در نقش کاربر نیاز دارد.</p>
                 <ul v-if="accessManagement.grants.length" class="divide-y">
                     <li v-for="grant in accessManagement.grants" :key="grant.id" class="flex flex-wrap items-center justify-between gap-2 py-2">
                         <span>{{ grant.user?.name }} · {{ grant.access_level === 'edit' ? 'ویرایش' : 'مشاهده' }}</span>

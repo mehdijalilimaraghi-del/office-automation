@@ -1,211 +1,53 @@
 <script setup lang="ts">
-import JalaliDatePicker from '@/Components/JalaliDatePicker.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import axios from 'axios';
-import { onBeforeUnmount, onMounted, ref } from 'vue';
-
-type Kind = '' | 'digital' | 'physical';
-interface ArchiveRecord {
-    id: number;
-    title: string;
-    document_type: string;
-    archive_kind: Exclude<Kind, ''>;
-    archive_location: string | null;
-    retain_until: string | null;
-}
+import { Archive, Plus, Search, SlidersHorizontal, FileText, FolderOpen, Building2, ArrowDownToLine } from '@lucide/vue';
+interface RecordItem { id: number; title: string; document_type: string; archive_kind: string; archive_location: string | null; created_at: string; archive_restricted: boolean }
 const props = defineProps<{
-    records: { data: ArchiveRecord[]; prev_page_url: string | null; next_page_url: string | null };
-    filters: { search?: string; kind?: Kind };
+    records: { data: RecordItem[]; total: number; from: number | null; to: number | null; prev_page_url: string | null; next_page_url: string | null };
+    filters: { search?: string; kind?: string; category?: string; access?: string };
     canCreate: boolean;
-    approvalExceptions: string[] | null;
-    locations: string[];
+    categories: string[];
 }>();
-
-const locationForm = useForm({ locations: props.locations.join('\n') });
-const approvalForm = useForm({ categories: props.approvalExceptions?.join('\n') ?? '' });
-const filters = useForm({ search: props.filters.search ?? '', kind: props.filters.kind ?? '' });
-const form = useForm({
-    title: '', document_type: '', description: '', archive_kind: 'digital',
-    archive_location: '', retain_until: null as string | null, file: null as File | null, scanner_upload_token: '',
-});
-interface ScanSession { token: string; upload_url: string; status_url: string }
-const scanner = ref<ScanSession | null>(null);
-const scanState = ref<'preparing' | 'ready' | 'scanning' | 'error'>('preparing');
-const scanPreview = ref('');
-const scanName = ref('');
-const scannerAbort = new AbortController();
-async function prepareScan(): Promise<void> {
-    scanState.value = 'preparing';
-    try {
-        const { data } = await axios.post<ScanSession>(route('archive.scanner.start'), {}, { signal: scannerAbort.signal });
-        scanner.value = data;
-        scanState.value = 'ready';
-    } catch {
-        scanState.value = 'error';
-    }
-}
-onMounted(() => { if (props.canCreate) void prepareScan(); });
-onBeforeUnmount(() => scannerAbort.abort());
-
-async function startScan(): Promise<void> {
-    const session = scanner.value;
-    if (!session || scanState.value !== 'ready') return;
-    scanPreview.value = '';
-    scanName.value = '';
-    form.scanner_upload_token = '';
-    scanState.value = 'scanning';
-    window.open('officeautomation-scanner://scan?uploadUrl=' + encodeURIComponent(session.upload_url), '_blank');
-    try {
-        for (let attempt = 0; attempt < 300 && !scannerAbort.signal.aborted; attempt += 1) {
-            await new Promise(resolve => window.setTimeout(resolve, 2000));
-            const { data } = await axios.get(session.status_url, { signal: scannerAbort.signal });
-            if (data.status === 'ready') {
-                scanPreview.value = data.preview_url;
-                scanName.value = data.file_name;
-                return;
-            }
-        }
-        scanState.value = 'error';
-    } catch {
-        scanState.value = 'error';
-    }
-}
-
-function acceptScan(): void {
-    if (!scanner.value || !scanPreview.value) return;
-    form.scanner_upload_token = scanner.value.token;
-    form.file = null;
-}
-
-function clearScan(): void {
-    form.scanner_upload_token = '';
-    scanner.value = null;
-    scanPreview.value = '';
-    scanName.value = '';
-    void prepareScan();
-}
-
-function register(event: Event): void {
-    const element = event.currentTarget as HTMLFormElement;
-    form.post(route('archive.store'), {
-        preserveScroll: true,
-        onSuccess: () => {
-            element.reset();
-            form.reset();
-            if (scanPreview.value) clearScan();
-        },
-    });
-}
+const filters = useForm({ search: props.filters.search ?? '', kind: props.filters.kind ?? '', category: props.filters.category ?? '', access: props.filters.access ?? '' });
+function search(): void { filters.get(route('archive.index'), { preserveState: true, preserveScroll: true }); }
+function reset(): void { filters.reset(); filters.search = ''; filters.kind = ''; filters.category = ''; filters.access = ''; search(); }
 </script>
-
 <template>
     <Head title="آرشیو اسناد" />
     <AuthenticatedLayout>
-        <template #header><h1 class="text-xl font-semibold">آرشیو اسناد</h1></template>
-        <div dir="rtl" class="mx-auto grid max-w-6xl gap-6 p-4 sm:p-6">
-            <form v-if="canCreate" class="grid gap-4 rounded-xl border bg-white p-4 sm:grid-cols-2" @submit.prevent="register">
-                <h2 class="font-semibold sm:col-span-2">ثبت مدرک</h2>
-                <label class="grid gap-1">عنوان<input v-model="form.title" class="rounded-md border p-2" maxlength="255" required /></label>
-                <label class="grid gap-1">دسته مدرک<input v-model="form.document_type" class="rounded-md border p-2" maxlength="100" required /></label>
-                <label class="grid gap-1">نوع مدرک
-                    <select v-model="form.archive_kind" class="rounded-md border p-2">
-                        <option value="digital">دیجیتال</option><option value="physical">فیزیکی</option>
-                    </select>
-                </label>
-                <label v-if="form.archive_kind === 'physical'" class="grid gap-1">محل نگهداری اصل
-                    <select v-if="locations.length" v-model="form.archive_location" required class="rounded-md border p-2">
-                        <option value="">انتخاب محل</option>
-                        <option v-for="location in locations" :key="location" :value="location">{{ location }}</option>
-                    </select>
-                    <input v-else v-model="form.archive_location" class="rounded-md border p-2" placeholder="بایگانی، قفسه، زونکن" maxlength="255" required />
-                </label>
-                <div class="grid gap-1" role="group" aria-labelledby="retain-until-label">
-                    <span id="retain-until-label">تاریخ پایان نگهداری</span>
-                    <JalaliDatePicker v-model="form.retain_until" />
+        <template #header><h1 class="text-xl font-bold">آرشیو اسناد</h1></template>
+        <main dir="rtl" class="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3"><span class="rounded-2xl bg-indigo-50 p-3 text-indigo-700"><Archive class="size-7" /></span><div><h2 class="text-xl font-bold text-slate-900">اسناد در دسترس من</h2><p class="mt-1 text-sm text-slate-500">اسناد واحدهای شما و مدارکی که دسترسی آن‌ها به شما واگذار شده است.</p></div></div>
+                <div class="flex flex-wrap gap-2">
+                    <Link :href="route('archive.departments.index')" class="inline-flex items-center gap-2 rounded-lg border bg-white px-4 py-2.5 text-sm font-semibold text-slate-700"><Building2 class="size-4" />بایگانی واحدهای من</Link>
+                    <Link v-if="canCreate" :href="route('archive.create')" class="inline-flex items-center gap-2 rounded-lg bg-indigo-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm"><Plus class="size-4" />ثبت سند</Link>
                 </div>
-                <label class="grid gap-1">توضیحات<textarea v-model="form.description" class="rounded-md border p-2" maxlength="5000" /></label>
-                <label v-if="!form.scanner_upload_token" class="grid gap-1">{{ form.archive_kind === 'physical' ? 'تصویر یا فایل اسکن اصل' : 'فایل مدرک' }}
-                    <input type="file" class="w-full rounded-md border p-2" :accept="form.archive_kind === 'physical' ? '.pdf,.jpg,.jpeg,.png,.tif,.tiff' : '.pdf,.jpg,.jpeg,.png,.tif,.tiff,.doc,.docx,.xls,.xlsx'" required
-                        @change="form.file = ($event.target as HTMLInputElement).files?.[0] ?? null" />
-                </label>
-                <div class="space-y-2 rounded-md border p-3 sm:col-span-2">
-                    <div class="flex flex-wrap items-center gap-3">
-                        <button v-if="scanState === 'ready'" type="button" class="rounded-md border px-3 py-1" :disabled="form.processing" @click="startScan">اسکن با NAPS2</button>
-                        <button v-if="scanState === 'error'" type="button" class="rounded-md border px-3 py-1" @click="clearScan">آماده‌سازی دوباره اسکنر</button>
-                        <p v-if="scanState === 'preparing'" role="status" class="text-sm">در حال آماده‌سازی اسکنر…</p>
-                        <p v-if="scanState === 'scanning' && !scanPreview" role="status" class="text-sm">در انتظار دریافت فایل از NAPS2…</p>
-                        <p v-if="scanState === 'error'" role="alert" class="text-sm text-red-700">دریافت اسکن انجام نشد. اتصال اسکنر و اجازه اجرای برنامه را بررسی کنید.</p>
+            </div>
+            <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <form class="space-y-4 border-b bg-slate-50/70 p-5" @submit.prevent="search">
+                    <div class="flex flex-wrap gap-3">
+                        <label class="relative min-w-52 flex-1"><span class="sr-only">عنوان یا توضیحات سند</span><Search class="pointer-events-none absolute right-3 top-3 size-5 text-slate-400" /><input v-model="filters.search" maxlength="100" placeholder="جست‌وجو در عنوان و توضیحات سند…" class="w-full rounded-lg border-slate-300 py-2.5 pr-10 text-sm" /></label>
+                        <button type="submit" :disabled="filters.processing" class="rounded-lg bg-indigo-700 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">جست‌وجو</button>
                     </div>
-                    <div v-if="scanPreview" class="flex flex-wrap items-center gap-3">
-                        <a :href="scanPreview" target="_blank" rel="noopener" class="text-indigo-700 underline">پیش‌نمایش {{ scanName }}</a>
-                        <button v-if="!form.scanner_upload_token" type="button" class="rounded-md border px-3 py-1" @click="acceptScan">استفاده از اسکن</button>
-                        <span v-else role="status" class="text-sm text-green-700">اسکن برای ثبت آماده است.</span>
-                        <button type="button" class="rounded-md border px-3 py-1" :disabled="form.processing" @click="clearScan">حذف اسکن</button>
+                    <div class="flex flex-wrap items-end gap-3">
+                        <span class="hidden self-center text-slate-400 sm:block"><SlidersHorizontal class="size-4" /></span>
+                        <label class="grid min-w-36 gap-1.5 text-xs font-semibold text-slate-600">نوع نگهداری<select v-model="filters.kind" class="rounded-lg border-slate-300 text-sm"><option value="">همه اسناد</option><option value="digital">فایل دیجیتال</option><option value="physical">اصل فیزیکی</option></select></label>
+                        <label class="grid min-w-36 gap-1.5 text-xs font-semibold text-slate-600">دسته سند<select v-model="filters.category" class="rounded-lg border-slate-300 text-sm"><option value="">همه دسته‌ها</option><option v-for="category in categories" :key="category" :value="category">{{ category }}</option></select></label>
+                        <label class="grid min-w-36 gap-1.5 text-xs font-semibold text-slate-600">نحوه دسترسی<select v-model="filters.access" class="rounded-lg border-slate-300 text-sm"><option value="">همه اسناد مجاز</option><option value="mine">ثبت‌شده توسط من</option><option value="shared">اشتراک‌گذاری‌شده با من</option></select></label>
+                        <button type="button" class="rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100" @click="reset">پاک‌کردن فیلترها</button>
                     </div>
+                </form>
+                <div class="flex items-center justify-between border-b px-5 py-4"><h3 class="font-semibold">فهرست اسناد</h3><span class="text-sm text-slate-500">{{ new Intl.NumberFormat('fa-IR').format(records.total) }} سند</span></div>
+                <div v-if="!records.data.length" class="grid justify-items-center gap-3 px-5 py-16 text-center"><FolderOpen class="size-12 text-slate-300" /><h3 class="font-semibold">سندی پیدا نشد</h3><p class="max-w-sm text-sm leading-6 text-slate-500">فیلترها را تغییر دهید یا اولین سند واحدتان را ثبت کنید. اسناد محدود با دسترسی مشخص نمایش داده می‌شوند.</p></div>
+                <div v-else class="overflow-x-auto">
+                    <table class="w-full min-w-[620px] text-right text-sm"><thead class="border-b bg-slate-50 text-xs text-slate-500"><tr><th class="px-5 py-3 font-medium">عنوان سند</th><th class="px-4 py-3 font-medium">دسته</th><th class="px-4 py-3 font-medium">نگهداری</th><th class="px-4 py-3 font-medium">دسترسی</th><th class="px-5 py-3"><span class="sr-only">عملیات</span></th></tr></thead>
+                        <tbody class="divide-y divide-slate-100"><tr v-for="record in records.data" :key="record.id" class="hover:bg-indigo-50/30"><td class="px-5 py-4"><Link :href="route('archive.show', record.id)" class="inline-flex items-center gap-2 font-semibold text-slate-900 hover:text-indigo-700"><FileText class="size-5 shrink-0 text-indigo-500" />{{ record.title }}</Link><p v-if="record.archive_location" class="mr-7 mt-1 text-xs text-slate-500">{{ record.archive_location }}</p></td><td class="px-4 py-4 text-slate-600">{{ record.document_type }}</td><td class="px-4 py-4"><span class="rounded-md bg-slate-100 px-2 py-1 text-xs">{{ record.archive_kind === 'physical' ? 'اصل فیزیکی' : 'دیجیتال' }}</span></td><td class="px-4 py-4 text-slate-600">{{ record.archive_restricted ? 'محدود' : 'واحد مرتبط' }}</td><td class="px-5 py-4"><a :href="route('documents.download', record.id)" :aria-label="'دریافت ' + record.title" class="inline-flex rounded-lg border p-2 text-slate-600 hover:bg-white"><ArrowDownToLine class="size-4" /></a></td></tr></tbody>
+                    </table>
                 </div>
-                <ul v-if="form.hasErrors" role="alert" class="list-inside list-disc text-sm text-red-700 sm:col-span-2">
-                    <li v-for="(error, field) in form.errors" :key="field">{{ error }}</li>
-                </ul>
-                <div class="sm:col-span-2">
-                    <button type="submit" :disabled="form.processing" class="rounded-md bg-indigo-700 px-4 py-2 text-white disabled:opacity-60">
-                        {{ form.processing ? 'در حال ثبت…' : 'ثبت در آرشیو' }}
-                    </button>
-                </div>
-            </form>
-
-            <details v-if="approvalExceptions !== null" class="rounded-xl border bg-white p-4">
-                <summary class="cursor-pointer font-semibold">فهرست محل‌های نگهداری</summary>
-                <form class="mt-3 grid gap-3" @submit.prevent="locationForm.put(route('archive.locations.update'), { preserveScroll: true })">
-                    <label class="grid gap-1">مسیر محل‌ها
-                        <textarea v-model="locationForm.locations" rows="4" maxlength="10000" class="rounded-md border p-2" aria-describedby="archive-location-help" />
-                    </label>
-                    <p id="archive-location-help" class="text-sm text-slate-600">هر محل را در یک خط وارد کنید و اجزا را با / جدا کنید. نمونه: بایگانی مرکزی / اتاق ۲ / قفسه ۳ / زونکن ۱۴</p>
-                    <p v-if="locationForm.errors.locations" role="alert" class="text-sm text-red-700">{{ locationForm.errors.locations }}</p>
-                    <button type="submit" :disabled="locationForm.processing" class="justify-self-start rounded-md bg-indigo-700 px-4 py-2 text-white disabled:opacity-60">ذخیره محل‌ها</button>
-                </form>
-            </details>
-            <details v-if="approvalExceptions !== null" class="rounded-xl border bg-white p-4">
-                <summary class="cursor-pointer font-semibold">سیاست تأیید خروج اصل مدرک</summary>
-                <form class="mt-3 grid gap-3" @submit.prevent="approvalForm.put(route('archive.approval-policy.update'), { preserveScroll: true })">
-                    <label class="grid gap-1">
-                        دسته‌های معاف از تأیید
-                        <textarea v-model="approvalForm.categories" rows="4" maxlength="5000" class="rounded-md border p-2"
-                            aria-describedby="archive-approval-help" />
-                    </label>
-                    <p id="archive-approval-help" class="text-sm text-slate-600">نام هر دسته را در یک خط وارد کنید. سایر دسته‌ها نیاز به تأیید دارند. این تنظیم برای درخواست‌های جدید اعمال می‌شود.</p>
-                    <ul v-if="approvalForm.hasErrors" role="alert" class="text-sm text-red-700">
-                        <li v-for="(error, field) in approvalForm.errors" :key="field">{{ error }}</li>
-                    </ul>
-                    <button type="submit" :disabled="approvalForm.processing" class="justify-self-start rounded-md bg-indigo-700 px-4 py-2 text-white disabled:opacity-60">ذخیره سیاست تأیید</button>
-                </form>
-            </details>
-            <section class="grid gap-4 rounded-xl border bg-white p-4">
-                <form class="grid gap-3 sm:grid-cols-[1fr_auto_auto]" @submit.prevent="filters.get(route('archive.index'), { preserveState: true, preserveScroll: true })">
-                    <label class="grid gap-1">جست‌وجوی مدارک<input v-model="filters.search" maxlength="100" class="rounded-md border p-2" /></label>
-                    <label class="grid gap-1">نوع مدرک
-                        <select v-model="filters.kind" class="rounded-md border p-2">
-                            <option value="">همه</option><option value="digital">دیجیتال</option><option value="physical">فیزیکی</option>
-                        </select>
-                    </label>
-                    <button type="submit" :disabled="filters.processing" class="self-end rounded-md border px-4 py-2">جست‌وجو</button>
-                </form>
-                <p v-if="!records.data.length" class="text-sm text-slate-600">مدرکی پیدا نشد.</p>
-                <ul v-else class="divide-y">
-                    <li v-for="record in records.data" :key="record.id" class="flex flex-wrap items-center justify-between gap-3 py-3">
-                        <div>
-                            <Link :href="route('archive.show', record.id)" class="font-semibold text-indigo-700 hover:underline">{{ record.title }}</Link>
-                            <p class="text-sm text-slate-600">{{ record.document_type }} · {{ record.archive_kind === 'physical' ? 'فیزیکی' : 'دیجیتال' }}</p>
-                            <p v-if="record.archive_location" class="text-sm text-slate-600">{{ record.archive_location }}</p>
-                        </div>
-                        <a :href="route('documents.download', record.id)" class="text-sm font-semibold text-indigo-700">دریافت فایل {{ record.title }}</a>
-                    </li>
-                </ul>
-                <nav v-if="records.prev_page_url || records.next_page_url" aria-label="صفحه‌بندی آرشیو" class="flex gap-4">
-                    <Link v-if="records.prev_page_url" :href="records.prev_page_url" preserve-state>صفحه قبل</Link>
-                    <Link v-if="records.next_page_url" :href="records.next_page_url" preserve-state>صفحه بعد</Link>
-                </nav>
+                <nav v-if="records.prev_page_url || records.next_page_url" aria-label="صفحه‌بندی اسناد" class="flex items-center justify-between border-t px-5 py-4 text-sm"><span class="text-slate-500">{{ records.from }} تا {{ records.to }} از {{ records.total }}</span><div class="flex gap-2"><Link v-if="records.prev_page_url" :href="records.prev_page_url" class="rounded-lg border px-3 py-2">قبلی</Link><Link v-if="records.next_page_url" :href="records.next_page_url" class="rounded-lg border px-3 py-2">بعدی</Link></div></nav>
             </section>
-        </div>
+        </main>
     </AuthenticatedLayout>
 </template>

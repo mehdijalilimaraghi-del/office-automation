@@ -1,3 +1,7 @@
+## Department archive workflow
+
+Verify the workflow with a manager without global permissions, a delegated archivist, a same-unit member and an outsider. Browse, registration and department settings are separate pages. Apply the two additive unit-archive migrations locally before opening these screens.
+
 ## V3 — Central and departmental archives
 
 Before a new workflow build, document roles, tasks, page boundaries, validation, empty states, errors and success. Verify separate registration, browse, details and settings routes at representative RTL viewport widths.

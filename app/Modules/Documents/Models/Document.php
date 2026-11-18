@@ -25,12 +25,18 @@ class Document extends Model
         'archive_kind',
         'archive_location',
         'retain_until',
+        'archive_department_id',
+        'related_department_id',
+        'archive_restricted',
     ];
 
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
+            'archive_restricted' => 'boolean',
+            'archive_department_id' => 'integer',
+            'related_department_id' => 'integer',
         ];
     }
 

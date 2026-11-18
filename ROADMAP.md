@@ -1,3 +1,7 @@
+## Department archive workflow
+
+Department archive UI and member filing are implemented. Remaining work includes the agreed central receipt/transfer workflow and browser acceptance. Do not close V3 while these are pending.
+
 ## V3 — Central and departmental archives
 
 The approved V3 revision introduces central and unit archives, unit-owned categories and locations, department-scoped access, and transfer without creating a new document. The central unit selector is the first slice.

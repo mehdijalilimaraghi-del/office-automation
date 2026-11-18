@@ -1,3 +1,7 @@
+## Department archive workflow
+
+Archive membership supplies entry and filing for active department members. Unit managers and assigned active-member archivists configure their unit. Every new departmental record states the holding unit and related unit. Restricted records retain explicit access. Older documents remain private pending deliberate classification.
+
 ## V3 — Central and departmental archives
 
 The unit that retains the record registers it. For a unit archive, active members file to their own unit and choose its defined locations. Central archive staff register records held centrally and record the related business unit. Ordinary records use authorized membership of the related unit. Restricted records require explicit users or roles. Unit managers can delegate archive configuration to a member. Central staff confirm transfers after receipt on the same record, preserving the identifier, file versions and both locations in history.

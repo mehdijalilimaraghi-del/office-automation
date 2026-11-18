@@ -1,3 +1,7 @@
+## Department archive workflow
+
+Use ArchiveAccessService for departmental archive entry, visibility and editing. Department managers configure their own archive without organization-wide department administration permissions.
+
 ## V3 — Central and departmental archives
 
 For new workflows, agree on users, decisions and screens before editing. V3 distinguishes the business department from the custodian department.

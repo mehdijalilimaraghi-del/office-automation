@@ -49,24 +49,21 @@ class CartableService
 
     private function archiveApprovals(User $user): array
     {
-        if (! $user->isActive() || ! $user->hasAllPermissions(['documents.view', 'documents.update'])) {
+        $archive = app(\App\Modules\Documents\Services\ArchiveAccessService::class);
+        if (! $archive->canEnter($user)) {
             return [];
         }
 
         return Document::query()
             ->where('archive_kind', 'physical')
             ->where('is_active', true)
-            ->where(function (Builder $query) use ($user): void {
-                $query->where('created_by', $user->id)
-                    ->orWhereHas('accesses', fn (Builder $access) => $access
-                        ->where('user_id', $user->id)->where('access_level', 'edit'));
-            })
+            ->tap(fn (Builder $query) => $archive->visible($query, $user))
             ->whereHas('latestCustodyEvent', fn (Builder $event) => $event
                 ->where('action', 'request')->where('approval_required', true)->where('actor_id', '!=', $user->id))
             ->latest('id')
             ->limit(10)
-            ->get(['id', 'title', 'created_by', 'is_active'])
-            ->filter(fn (Document $document): bool => $user->can('update', $document))
+            ->get(['id', 'title', 'created_by', 'is_active', 'archive_department_id', 'archive_kind'])
+            ->filter(fn (Document $document): bool => $archive->canEdit($user, $document))
             ->map(fn (Document $document): array => $document->only(['id', 'title']))
             ->values()
             ->all();

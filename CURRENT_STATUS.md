@@ -1,3 +1,7 @@
+## Department archive workflow
+
+Added separate archive browse, registration, department selection and department-settings screens. Managers assign an active member as archivist. Members register department-owned documents using configured categories and structured locations. Ordinary records are visible to their related unit; legacy records retain private access. Central transfer is still pending. Browser visual verification is pending.
+
 ## V3 — Central and departmental archives
 
 The organization settings now allow selecting the central archive department, including the Secretariat. Department-scoped filing, delegation, classification and central transfer are still to be implemented.

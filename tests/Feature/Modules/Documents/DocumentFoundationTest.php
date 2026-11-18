@@ -426,6 +426,80 @@ class DocumentFoundationTest extends TestCase
         $this->actingAs($viewer)->get(route('documents.download', $record))->assertForbidden();
     }
 
+    public function test_unit_manager_configures_only_their_archive_and_delegates_to_an_active_member(): void
+    {
+        $manager = $this->userWithPermissions([]);
+        $member = $this->userWithPermissions([]);
+        $outsider = $this->userWithPermissions([]);
+        $department = \App\Core\Departments\Models\Department::query()->create([
+            'name' => 'Engineering archive', 'manager_id' => $manager->id, 'is_active' => true,
+        ]);
+        $department->members()->attach($member);
+        $url = route('archive.departments.edit', $department);
+        $this->actingAs($manager)->get(route('archive.departments.index'))->assertInertia(fn ($page) => $page
+            ->component('Archive/Departments')->has('departments', 1)->where('auth.abilities.archive_units_manage', true));
+        $this->get($url)->assertInertia(fn ($page) => $page->where('canAssign', true)->has('members', 1));
+        $payload = [
+            'archivist_id' => $member->id,
+            'categories' => [['name' => 'Design standards', 'approval_required' => false]],
+            'locations' => [['building' => 'Main', 'room' => 'Design', 'shelf' => 'A', 'folder' => 'Standards']],
+        ];
+        $update = route('archive.departments.update', $department);
+        $this->put($update, [...$payload, 'archivist_id' => $outsider->id])->assertSessionHasErrors('archivist_id');
+        $this->put($update, $payload)->assertSessionHas('success');
+        $this->actingAs($member)->get($url)->assertInertia(fn ($page) => $page->where('canAssign', false));
+        $this->put($update, $payload)->assertSessionHasErrors('archivist_id');
+        unset($payload['archivist_id']);
+        $this->put($update, $payload)->assertSessionHas('success');
+        $this->actingAs($outsider)->get($url)->assertForbidden();
+        $department->members()->detach($member);
+        $this->actingAs($member)->get($url)->assertForbidden();
+    }
+
+    public function test_department_member_files_and_reads_ordinary_records_without_admin_permissions(): void
+    {
+        $owner = $this->userWithPermissions([]);
+        $colleague = $this->userWithPermissions([]);
+        $outsider = $this->userWithPermissions([]);
+        $department = \App\Core\Departments\Models\Department::query()->create([
+            'name' => 'Design office', 'manager_id' => $owner->id, 'is_active' => true,
+        ]);
+        $department->members()->attach([$owner->id, $colleague->id]);
+        \App\Modules\Documents\Models\DepartmentArchiveSetting::query()->create([
+            'department_id' => $department->id,
+            'categories' => [['name' => 'Standards', 'approval_required' => true]],
+            'locations' => [['building' => 'Office', 'room' => 'Design', 'shelf' => 'A', 'folder' => '']],
+        ]);
+        $this->actingAs($owner)->get(route('archive.create'))->assertInertia(fn ($page) => $page
+            ->component('Archive/Create')->has('departments', 1));
+        $payload = [
+            'title' => 'Unit specification', 'document_type' => 'Standards', 'archive_kind' => 'physical',
+            'archive_department_id' => $department->id, 'archive_restricted' => false,
+            'archive_location' => 'Office / Design / A',
+        ];
+        $this->post(route('archive.store'), [
+            ...$payload, 'file' => UploadedFile::fake()->create('spec.pdf', 5, 'application/pdf'),
+        ])->assertSessionHas('success');
+        $record = Document::query()->where('title', 'Unit specification')->firstOrFail();
+        $this->assertSame($department->id, (int) $record->related_department_id);
+        $this->actingAs($colleague)->get(route('archive.index'))->assertInertia(fn ($page) => $page
+            ->has('records.data', 1)->where('canCreate', true)->where('auth.abilities.documents_view', true));
+        $this->get(route('archive.show', $record))->assertOk();
+        $this->get(route('documents.download', $record))->assertOk();
+        $this->actingAs($outsider)->get(route('archive.index'))->assertForbidden();
+        $this->get(route('documents.download', $record))->assertForbidden();
+        $record->update(['archive_restricted' => true]);
+        $this->actingAs($colleague)->get(route('archive.index'))->assertInertia(fn ($page) => $page->has('records.data', 0));
+        $this->get(route('documents.download', $record))->assertForbidden();
+        $this->actingAs($owner)->put(route('archive.access.update', $record), [
+            'user_id' => $colleague->id, 'access_level' => 'view',
+        ])->assertSessionHas('success');
+        $this->actingAs($colleague)->get(route('documents.download', $record))->assertOk();
+        $this->actingAs($owner)->put(route('archive.access.update', $record), [
+            'user_id' => $colleague->id, 'access_level' => 'edit',
+        ])->assertSessionHasErrors('access_level');
+    }
+
     private function createTask(User $user, string $title): Task
     {
         return Task::query()->create([

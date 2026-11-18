@@ -26,6 +26,10 @@ class DocumentPolicy
             return false;
         }
 
+        if ($document->archive_kind !== null) {
+            return app(\App\Modules\Documents\Services\ArchiveAccessService::class)->canView($user, $document);
+        }
+
         // Correspondence attachments must never bypass the letter's own access rules.
         $correspondenceLinks = $document->links()
             ->where('linkable_type', Correspondence::class)
@@ -93,6 +97,10 @@ class DocumentPolicy
 
     public function manageAccess(User $user, Document $document): bool
     {
+        if ($document->archive_kind !== null && $document->archive_department_id !== null) {
+            $archive = app(\App\Modules\Documents\Services\ArchiveAccessService::class);
+            return $archive->canView($user, $document) && $archive->manages($user, $document->archive_department_id);
+        }
         return $this->view($user, $document)
             && $user->hasPermission('documents.manage_access')
             && (int) $document->created_by === (int) $user->id;

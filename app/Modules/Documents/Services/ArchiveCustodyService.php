@@ -42,6 +42,11 @@ class ArchiveCustodyService
             ];
             if ($action === 'request') {
                 $event['approval_required'] = $this->approval->requiresApproval($locked->document_type);
+                if ($locked->archive_department_id !== null) {
+                    $setting = \App\Modules\Documents\Models\DepartmentArchiveSetting::query()->where('department_id', $locked->archive_department_id)->first();
+                    $category = collect($setting?->categories ?? [])->firstWhere('name', $locked->document_type);
+                    $event['approval_required'] = $category['approval_required'] ?? true;
+                }
             } elseif (in_array($action, ['approve', 'reject', 'checkout', 'return'], true)) {
                 $event['approval_required'] = $last->approval_required;
                 $event['recipient'] = $last->recipient;
