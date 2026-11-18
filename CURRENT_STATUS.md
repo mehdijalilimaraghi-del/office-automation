@@ -1,3 +1,7 @@
+## Hierarchical archive locations
+
+Replaced repeated location inputs with a building/room/shelf/folder tree. Existing locations are grouped, siblings are added under their parent, duplicate paths are rejected and occupied locations cannot be removed. Validation passed: full SQL Server suite (515 tests, 3252 assertions), independent focused document suite (18 tests, 510 assertions), TypeScript/production build and isolated component browser checks for shared-parent folder creation, duplicate rejection, and desktop/mobile layouts. Final mobile screenshot inspected. No schema migration required.
+
 ## Incoming-letter archive registration
 
 Added archive registration after final incoming-letter registration and a letter-details button while archiving remains incomplete. Archive forms prefill the letter title, sender/number details, related unit and configured incoming category; users may change the category. Original and attachment files are reused. Validation passed: full SQL Server suite (514 tests, 3228 assertions), focused integration suite (101 tests, 1878 assertions), TypeScript and production build, and nine browser checks covering desktop/mobile autofill, manual category preservation, actual registration and hiding the completed archive button. The additive migration and lookup index are applied to the local development database. Temporary browser fixtures and helper processes were removed.

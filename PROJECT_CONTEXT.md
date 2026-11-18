@@ -1,3 +1,7 @@
+## Hierarchical archive locations
+
+Archive managers define shared buildings, rooms and shelves once and add folders underneath. Documents select a complete configured location. Occupied locations must be vacated using custody movement before removal.
+
 ## Incoming-letter archive registration
 
 An incoming letter and its archive record have one registration association. Leaving the archive form does not register an archive record. Existing files and their metadata are reused; the archive requires its own category, custodian and physical location when applicable. The default incoming category comes from correspondence settings and remains editable.

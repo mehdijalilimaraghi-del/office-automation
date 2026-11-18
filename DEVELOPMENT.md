@@ -1,3 +1,7 @@
+## Hierarchical archive locations
+
+Verify tree hydration from existing paths, adding two folders under a shared shelf, duplicate sibling names, incomplete locations and rejection of occupied-location removal. Check desktop and mobile layouts.
+
 ## Incoming-letter archive registration
 
 Verify incoming registration redirects, postponed archiving via the letter button, prefilled category and manual override, duplicate POSTs, all original/attachment files, and confidential access. Apply the additive correspondence/archive-link migration locally.

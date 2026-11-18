@@ -457,6 +457,38 @@ class DocumentFoundationTest extends TestCase
         $this->actingAs($member)->get($url)->assertForbidden();
     }
 
+    public function test_archive_location_tree_rejects_duplicates_and_preserves_occupied_locations(): void
+    {
+        $manager = $this->userWithPermissions([]);
+        $department = \App\Core\Departments\Models\Department::query()->create([
+            'name' => 'Location tree', 'manager_id' => $manager->id, 'is_active' => true,
+        ]);
+        $url = route('archive.departments.update', $department);
+        $first = ['building' => 'Main', 'room' => 'Archive', 'shelf' => 'A', 'folder' => 'Contracts'];
+        $second = [...$first, 'folder' => 'Letters'];
+        $payload = ['categories' => [], 'locations' => [$first, $second]];
+        $this->actingAs($manager)->put($url, $payload)->assertSessionHas('success');
+        $this->get(route('archive.departments.edit', $department))->assertInertia(fn ($page) => $page
+            ->has('settings.locations', 2)->where('settings.locations.1.folder', 'Letters'));
+        $this->put($url, [...$payload, 'locations' => [$first, [...$first, 'folder' => ' Contracts ']]])
+            ->assertSessionHasErrors('locations');
+        $this->put($url, [...$payload, 'locations' => [[...$first, 'room' => '']]])
+            ->assertSessionHasErrors('locations.0.room');
+        $this->put($url, [...$payload, 'locations' => [[...$first, 'folder' => 'A/B']]])
+            ->assertSessionHasErrors('locations.0.folder');
+        $record = Document::query()->create([
+            'title' => 'Stored contract', 'document_type' => 'Contract', 'created_by' => $manager->id,
+            'is_active' => true, 'archive_kind' => 'physical', 'archive_department_id' => $department->id,
+            'archive_location' => 'Main / Archive / A / Contracts',
+        ]);
+        $this->put($url, [...$payload, 'locations' => [$second]])->assertSessionHasErrors('locations');
+        $this->assertSame(2, count(\App\Modules\Documents\Models\DepartmentArchiveSetting::query()
+            ->where('department_id', $department->id)->firstOrFail()->locations));
+        $this->put($url, $payload)->assertSessionHas('success');
+        $record->update(['archive_location' => 'Main / Archive / A / Letters']);
+        $this->put($url, [...$payload, 'locations' => [$second]])->assertSessionHas('success');
+    }
+
     public function test_department_member_files_and_reads_ordinary_records_without_admin_permissions(): void
     {
         $owner = $this->userWithPermissions([]);

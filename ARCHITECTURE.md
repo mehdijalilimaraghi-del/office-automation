@@ -1,3 +1,7 @@
+## Hierarchical archive locations
+
+ArchiveLocationTree and recursive ArchiveLocationNode project the existing flat department location catalog into a hierarchy. Persistence remains compatible with existing document location strings; DepartmentArchiveController validates uniqueness and protects occupied paths.
+
 ## Incoming-letter archive registration
 
 correspondences.archive_document_id is populated under a row lock. Archive records reuse immutable file paths through a primary document version and archive_correspondence_files snapshots for all source files. File deletion skips paths still referenced by versions or archive snapshots. Confidential source-letter access also constrains archive visibility.

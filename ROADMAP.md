@@ -1,3 +1,7 @@
+## Hierarchical archive locations
+
+Hierarchical archive location management is implemented without a schema migration. Central physical transfer remains separate open work.
+
 ## Incoming-letter archive registration
 
 Incoming correspondence now enters the archive registration workflow without repeat upload. Its default archive category is configured under correspondence settings. Central physical transfer remains separate open work.

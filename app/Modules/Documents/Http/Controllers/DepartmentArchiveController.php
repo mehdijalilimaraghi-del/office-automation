@@ -66,16 +66,46 @@ class DepartmentArchiveController
             'categories.*.name' => ['required', 'string', 'max:100', 'distinct'],
             'categories.*.approval_required' => ['required', 'boolean'],
             'locations' => ['present', 'array', 'max:200'],
-            'locations.*.building' => ['required', 'string', 'max:60'],
-            'locations.*.room' => ['required', 'string', 'max:60'],
-            'locations.*.shelf' => ['required', 'string', 'max:60'],
-            'locations.*.folder' => ['nullable', 'string', 'max:60'],
+            'locations.*.building' => ['required', 'string', 'max:60', 'not_regex:~[/\\\\]~'],
+            'locations.*.room' => ['required', 'string', 'max:60', 'not_regex:~[/\\\\]~'],
+            'locations.*.shelf' => ['required', 'string', 'max:60', 'not_regex:~[/\\\\]~'],
+            'locations.*.folder' => ['nullable', 'string', 'max:60', 'not_regex:~[/\\\\]~'],
+        ], [
+            'locations.*.room.required' => 'برای هر ساختمان، اتاق تعریف کنید و محل را تا قفسه تکمیل کنید.',
+            'locations.*.shelf.required' => 'برای هر اتاق، حداقل یک قفسه یا کمد تعریف کنید.',
+            'locations.*.*.not_regex' => 'نام محل نباید شامل علامت / یا بک‌اسلش باشد.',
         ]);
 
         if (! empty($data['archivist_id']) && ! User::query()->whereKey($data['archivist_id'])->where('status', 'active')->exists()) {
             throw ValidationException::withMessages(['archivist_id' => 'مسئول بایگانی باید عضو فعال واحد باشد.']);
         }
-        DepartmentArchiveSetting::query()->updateOrCreate(['department_id' => $department->id], $data);
+        $paths = [];
+        foreach ($data['locations'] as &$location) {
+            $location = array_map(static fn ($value): string => trim((string) $value), array_intersect_key($location, array_flip(['building', 'room', 'shelf', 'folder'])));
+            $path = implode(' / ', array_filter([
+                $location['building'], $location['room'], $location['shelf'], $location['folder'] ?? '',
+            ], static fn ($part): bool => $part !== ''));
+            if (in_array($path, $paths, true)) {
+                throw ValidationException::withMessages(['locations' => 'یک محل نگهداری بیش از یک بار تعریف شده است.']);
+            }
+            if (mb_strlen($path) > 255) {
+                throw ValidationException::withMessages(['locations' => 'نشانی کامل محل نگهداری نباید بیش از ۲۵۵ نویسه باشد.']);
+            }
+            $paths[] = $path;
+        }
+        unset($location);
+
+        DB::transaction(function () use ($department, $data, $paths): void {
+            Department::query()->whereKey($department->id)->lockForUpdate()->firstOrFail();
+            $used = \App\Modules\Documents\Models\Document::query()
+                ->where('archive_department_id', $department->id)
+                ->whereNotNull('archive_location')->where('archive_location', '<>', '')
+                ->pluck('archive_location')->unique()->all();
+            if (array_diff($used, $paths) !== []) {
+                throw ValidationException::withMessages(['locations' => 'محل دارای سند قابل حذف نیست. ابتدا اسناد را از بخش جابه‌جایی به محل دیگری منتقل کنید.']);
+            }
+            DepartmentArchiveSetting::query()->updateOrCreate(['department_id' => $department->id], $data);
+        });
 
         return back()->with('success', 'تنظیمات بایگانی واحد ذخیره شد.');
     }

@@ -1,3 +1,7 @@
+## Hierarchical archive locations
+
+Archive location settings use a tree editor backed by existing department location paths. Preserve occupied paths; do not replace existing document addresses on catalog edits.
+
 ## Incoming-letter archive registration
 
 Registered incoming correspondence can open archive registration via CorrespondenceArchiveService. Use the existing source files and serialize registration on the correspondence row. The configured incoming category is an editable default.

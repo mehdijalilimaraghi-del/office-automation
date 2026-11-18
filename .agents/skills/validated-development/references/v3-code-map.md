@@ -15,3 +15,4 @@ Department configuration starts at `archive.departments.index` and `DepartmentAr
 Central registration starts at `archive.central.create`. Read scope changes use `ArchiveAudienceService` and `ArchiveVisibilityFields.vue`. Listings and downloads share `ArchiveAccessService`.
 
 Incoming-letter integration starts at `CorrespondenceArchiveService`. The correspondence register action redirects to `archive.create` or `archive.central.create` with `correspondence_id`. Archive forms and the letter details button use the same source association.
+Location settings use ArchiveLocationTree.vue and recursive ArchiveLocationNode.vue; DepartmentArchiveController protects occupied document paths during catalog updates.
