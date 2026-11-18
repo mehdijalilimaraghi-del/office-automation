@@ -722,7 +722,7 @@ const loggedActivities = computed(() => props.task.activities?.filter(activity =
                                 <button v-if="abilities.create_reminder && canEditTaskContent" type="button" class="shrink-0 rounded-lg bg-gray-900 px-3 py-2 text-xs font-medium text-white hover:bg-gray-800" @click="showReminderModal = true">ثبت یادآوری</button>
                             </div>
                             <div v-if="task.reminders.length" class="space-y-3 p-4">
-                                <article v-for="reminder in task.reminders" :key="reminder.id" class="rounded-lg border p-4">
+                                <article v-for="reminder in task.reminders" :key="reminder.id" :id="'task-reminder-' + reminder.id" tabindex="-1" class="scroll-mt-28 rounded-lg border p-4 target:border-indigo-400 target:bg-indigo-50 target:ring-2 target:ring-indigo-200">
                                     <div class="flex items-start justify-between gap-3">
                                         <div class="min-w-0">
                                             <p class="text-sm font-semibold">{{ reminder.title }}</p>

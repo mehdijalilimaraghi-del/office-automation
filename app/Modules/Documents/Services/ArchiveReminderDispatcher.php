@@ -57,7 +57,7 @@ final class ArchiveReminderDispatcher
                                 $user, 'archive:'.$event->id.':'.today()->toDateString(),
                                 ['type' => 'archive_return_reminder', 'title' => $title,
                                     'message' => $canView ? $record->title : 'برای پیگیری بازگشت مدرک با بایگانی هماهنگ کنید.',
-                                    'url' => $canView ? route('archive.show', $record) : null],
+                                    'url' => $canView ? route('archive.show', $record, false) : null],
                             );
                         }
 

@@ -756,6 +756,7 @@ class DocumentFoundationTest extends TestCase
         $this->assertSame(1, $dispatcher->dispatch());
         $this->assertSame(0, $dispatcher->dispatch());
         $this->assertSame(1, $user->notifications()->count());
+        $this->assertSame('/tasks/'.$task->id.'#task-reminder-'.$reminder->id, $user->notifications()->first()->data['url']);
         $reminder->update(['remind_at' => now()->addHour()]);
         $this->assertSame(0, $dispatcher->dispatch());
         $this->travel(61)->minutes();

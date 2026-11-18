@@ -1,3 +1,7 @@
+## Reminder sound and follow-up navigation
+
+Moved reminder banners to the top, added a short audio chime with an explicit enable-sound fallback, and corrected follow-up links that previously used CLI localhost URLs. New task reminders target their specific card. Validation passed: full SQL Server suite (517 tests, 3309 assertions), TypeScript/production build, and isolated browser checks of desktop/mobile top placement, legacy-host follow-up with read-state callback, blocked-audio fallback, real Web Audio oscillator start after trusted interaction and no repeated sound on polling. Physical speaker output remains user acceptance.
+
 ## Scheduled task and archive reminders
 
 Implemented timed task notifications and physical-checkout reminders (day before, due date, daily overdue, manager escalation at three overdue days). Internal holders have user identities, generic messages protect inaccessible documents, and return ends future delivery. Server scheduler activation is pending separate deployment approval. Validation passed: full SQL Server suite (517 tests, 3308 assertions), focused document/reminder suite (20 tests, 566 assertions), TypeScript/production build, isolated browser checks of reminder banners and holder controls at desktop/mobile widths, and PowerShell runner success/failure/logging probes. Local additive migration applied and schedule:list confirms minutely dispatch. Live server scheduling, reboot and signed-out acceptance remain pending.

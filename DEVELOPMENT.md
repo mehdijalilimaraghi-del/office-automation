@@ -1,3 +1,7 @@
+## Reminder sound and follow-up navigation
+
+Verify legacy absolute localhost follow-up URLs on a browser using another port, new task-card anchors, top banner placement, read-state update, explicit sound activation and automatic sound after interaction. Actual audible playback needs human acceptance.
+
 ## Scheduled task and archive reminders
 
 Run reminders:dispatch only in controlled development/test contexts. Laravel schedule runs it every minute without overlap. tools/Scheduler contains a runner, explicit installer and operational verification steps; activation must use the stable application junction and a database-capable service account. Test repeated dispatch, edited due time, cancelled/finalized/inaccessible reminders, return/recheckout, escalation and UI notification display.

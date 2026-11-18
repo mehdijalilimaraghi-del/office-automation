@@ -1,3 +1,7 @@
+## Reminder sound and follow-up navigation
+
+Reminder presentation now includes top-of-page alerts and audio; local follow-up navigation supports host/port differences. Live server activation remains pending.
+
 ## Scheduled task and archive reminders
 
 V1 timed reminder delivery and V3 physical-return follow-up are implemented together. Server activation/acceptance remains pending. SMS integration is a future adapter; no SMS provider is connected.

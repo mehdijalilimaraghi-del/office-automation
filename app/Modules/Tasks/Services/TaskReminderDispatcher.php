@@ -28,7 +28,7 @@ final class TaskReminderDispatcher
                         return (int) app(ReminderDeliveryService::class)->sendOnce(
                             $locked->user, 'task:'.$locked->id.':'.$locked->remind_at->format('Y-m-d H:i:s'),
                             ['type' => 'task_reminder', 'title' => 'یادآوری دستورکار', 'message' => $locked->title,
-                                'task_id' => (int) $locked->task_id, 'url' => route('tasks.show', $locked->task)],
+                                'task_id' => (int) $locked->task_id, 'url' => route('tasks.show', $locked->task, false).'#task-reminder-'.$locked->id],
                         );
                     });
                 }

@@ -1,3 +1,7 @@
+## Reminder sound and follow-up navigation
+
+Reminder follow-up opens the related record on the current application host. Task reminder cards can be addressed directly. When browser autoplay is blocked, users can explicitly enable the notification sound.
+
 ## Scheduled task and archive reminders
 
 Pending task reminders notify their recipient when due, retaining explicit completed/cancelled status. Archive reminders go to the responsible archivist and internal holder; external loans are followed by the archive. Managers are included after three overdue days. Return ends that loan cycle. Restricted metadata is omitted when recipients cannot view the document.

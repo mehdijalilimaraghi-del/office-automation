@@ -1,3 +1,7 @@
+## Reminder sound and follow-up navigation
+
+Reminder dispatchers emit relative paths. AuthenticatedLayout normalizes historical internal notification URLs and follows the existing mark-read flow. A shared notificationSound utility primes Web Audio on user gestures and plays a brief two-tone chime.
+
 ## Scheduled task and archive reminders
 
 Module dispatchers supply reminder payloads to ReminderDeliveryService. A SQL Server delivery ledger plus user row locks make database notification and delivery identity atomic. Task identity includes scheduled timestamp; archive identity includes checkout event and local date. Nullable custody recipient_user_id preserves historical free-text loans. Future external channels require outbox/retry semantics.

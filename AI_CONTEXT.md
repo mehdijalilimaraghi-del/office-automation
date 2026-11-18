@@ -1,3 +1,7 @@
+## Reminder sound and follow-up navigation
+
+Reminder URLs must be relative: CLI APP_URL can differ from the browser host/port. Older absolute notification URLs are normalized in the layout. AudioContext is primed only by user interaction.
+
 ## Scheduled task and archive reminders
 
 Scheduled reminders dispatch through module-specific TaskReminderDispatcher and ArchiveReminderDispatcher and shared ReminderDeliveryService. Dispatch only against an explicitly verified environment. Do not activate server scheduling without release approval.

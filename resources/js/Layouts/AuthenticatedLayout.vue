@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { primeNotificationSound, playNotificationSound } from '@/Utils/notificationSound';
 import UserAvatar from '@/Components/UserAvatar.vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import Dropdown from '@/Components/Dropdown.vue';
@@ -16,7 +17,26 @@ const notificationDropdownOpen = ref(false);
 const unreadNotificationCount = ref(0);
 const latestNotifications = ref<Array<{ id: string; type: string; title: string; message: string; url: string | null; read_at: string | null; created_at: string | null }>>([]);
 let notificationRefreshTimer: number | undefined;
-const reminderBanner = ref<{ title: string; message: string; url: string | null } | null>(null);
+const reminderBanner = ref<{ id: string; title: string; message: string; url: string | null; read_at: string | null } | null>(null);
+const soundBlocked = ref(false);
+async function unlockReminderSound(): Promise<void> {
+    if (await primeNotificationSound()) {
+        document.removeEventListener('pointerdown', unlockReminderSound);
+        document.removeEventListener('keydown', unlockReminderSound);
+    }
+}
+async function enableReminderSound(): Promise<void> {
+    await unlockReminderSound();
+    soundBlocked.value = !(await playNotificationSound());
+}
+function notificationDestination(url: string | null): string {
+    if (!url) return new URL(route('notifications.index'), window.location.href).pathname;
+    try {
+        const target = new URL(url, window.location.href);
+        if (!['http:', 'https:'].includes(target.protocol)) return '/notifications';
+        return target.pathname + target.search + target.hash;
+    } catch { return '/notifications'; }
+}
 const seenReminderIds = new Set<string>();
 
 async function refreshNotificationSummary(): Promise<void> {
@@ -41,7 +61,11 @@ async function refreshNotificationSummary(): Promise<void> {
                     alreadyShown = sessionStorage.getItem('office-reminder:' + item.id) === 'shown';
                     sessionStorage.setItem('office-reminder:' + item.id, 'shown');
                 } catch { /* Keep reminders available when browser storage is disabled. */ }
-                if (!alreadyShown) { reminderBanner.value = item; break; }
+                if (!alreadyShown) {
+                    reminderBanner.value = item;
+                    void playNotificationSound().then(played => { soundBlocked.value = !played; });
+                    break;
+                }
             }
         }
     } catch {
@@ -57,15 +81,16 @@ function toggleNotificationDropdown(): void {
 
 function openNotification(item: { id: string; url: string | null; read_at: string | null }): void {
     notificationDropdownOpen.value = false;
-    const destination = item.url || route('notifications.index');
+    const destination = notificationDestination(item.url);
+    const navigate = (): void => { reminderBanner.value = null; router.visit(destination); };
     if (item.read_at) {
-        router.visit(destination);
+        navigate();
         return;
     }
     router.patch(route('notifications.read', item.id), {}, {
         preserveScroll: true,
-        onSuccess: () => router.visit(destination),
-        onError: () => router.visit(destination),
+        onSuccess: navigate,
+        onError: navigate,
     });
 }
 const expandedMobileMenus = ref<Record<string, boolean>>({
@@ -116,6 +141,8 @@ function closeHeaderPopoversOnOutsidePointer(event: PointerEvent): void {
 }
 
 onMounted(() => {
+    document.addEventListener('pointerdown', unlockReminderSound);
+    document.addEventListener('keydown', unlockReminderSound);
     document.addEventListener('pointerdown', closeHeaderPopoversOnOutsidePointer);
 
     if (
@@ -146,6 +173,8 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+    document.removeEventListener('pointerdown', unlockReminderSound);
+    document.removeEventListener('keydown', unlockReminderSound);
     document.removeEventListener('pointerdown', closeHeaderPopoversOnOutsidePointer);
     if (notificationRefreshTimer !== undefined) window.clearInterval(notificationRefreshTimer);
 });
@@ -153,7 +182,7 @@ onUnmounted(() => {
 
 <template>
     <div dir="rtl">
-        <aside v-if="reminderBanner" role="status" aria-live="polite" class="fixed inset-x-4 bottom-5 z-[80] mx-auto max-w-lg rounded-2xl border border-indigo-200 bg-white p-4 shadow-xl"><div class="flex items-start justify-between gap-3"><div><p class="font-bold text-indigo-900">{{ reminderBanner.title }}</p><p class="mt-2 text-sm leading-6 text-slate-700">{{ reminderBanner.message }}</p><Link v-if="reminderBanner.url" :href="reminderBanner.url" class="mt-3 inline-block text-sm font-semibold text-indigo-700" @click="reminderBanner = null">مشاهده و پیگیری</Link></div><button type="button" aria-label="بستن پیام یادآوری" class="rounded-lg px-2 py-1 text-slate-500 hover:bg-slate-100" @click="reminderBanner = null">بستن</button></div></aside>
+        <aside v-if="reminderBanner" role="status" aria-live="polite" class="fixed inset-x-4 top-20 z-[80] mx-auto max-w-lg rounded-2xl border border-indigo-200 bg-white p-4 shadow-xl"><div class="flex items-start justify-between gap-3"><div><p class="font-bold text-indigo-900">{{ reminderBanner.title }}</p><p class="mt-2 text-sm leading-6 text-slate-700">{{ reminderBanner.message }}</p><button type="button" class="mt-3 inline-block text-sm font-semibold text-indigo-700" @click="openNotification(reminderBanner)">مشاهده و پیگیری</button><button v-if="soundBlocked" type="button" class="ms-4 mt-3 text-xs font-semibold text-slate-600" @click="enableReminderSound">فعال‌کردن صدا</button></div><button type="button" aria-label="بستن پیام یادآوری" class="rounded-lg px-2 py-1 text-slate-500 hover:bg-slate-100" @click="reminderBanner = null">بستن</button></div></aside>
         <div class="app-shell min-h-screen">
             <nav class="app-topbar sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 shadow-[0_1px_0_rgba(15,23,42,0.02)] backdrop-blur-xl">
                 <div class="mx-auto max-w-[1600px] px-4 sm:px-6 xl:px-8">
