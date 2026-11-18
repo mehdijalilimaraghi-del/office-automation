@@ -1,6 +1,6 @@
 ## Approved release preparation
 
-Owner verified notification audio and authorized promotion to master and server deployment. Temporary sound-test controls removed; automatic native audio and conditional browser sound activation remain. Verify release identity, additive migrations, backup and rollback before activation.
+Owner verified notification audio; temporary sound-test controls removed. Approved source 67827dea636e is on origin/master and artifact 5bfb9530d85d was built from it and pushed to the server. Final validation passed: 517 tests, 3309 assertions, TypeScript/build and clean production build. Ten additive migrations were reviewed. Activation remains unverified because remote administration is unavailable; new audio HTTP 404 confirms it is not yet served. An exact-hash activation helper and release report are staged in the server Incoming share. Production backup, migrations, activation and scheduler verification must finish through that guarded helper on the server.
 
 ## Notification audio playback diagnostics
 
