@@ -1,3 +1,7 @@
+## Notification audio playback diagnostics
+
+Replaced synthesized notification audio with a bundled chime and direct media playback. Added persistent sound-test buttons to both notification menus and the reminder banner, with blocked/unavailable playback feedback. Validation passed: 517 SQL Server tests (3309 assertions), TypeScript/production build and browser checks confirming WAV decode, completed media playback and nonzero waveform (peak 46/128), with desktop/mobile menu tests and no poll replay. Mobile notification menu positioning corrected. Actual speaker audibility requires owner acceptance.
+
 ## Reminder sound and follow-up navigation
 
 Moved reminder banners to the top, added a short audio chime with an explicit enable-sound fallback, and corrected follow-up links that previously used CLI localhost URLs. New task reminders target their specific card. Validation passed: full SQL Server suite (517 tests, 3309 assertions), TypeScript/production build, and isolated browser checks of desktop/mobile top placement, legacy-host follow-up with read-state callback, blocked-audio fallback, real Web Audio oscillator start after trusted interaction and no repeated sound on polling. Physical speaker output remains user acceptance.

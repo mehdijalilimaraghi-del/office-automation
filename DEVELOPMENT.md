@@ -1,3 +1,7 @@
+## Notification audio playback diagnostics
+
+Verify the WAV asset loads, native media currentTime advances and ended fires after a trusted click, automatic playback follows interaction, polling does not replay it, and both notification menus expose a sound test. Muted browser tabs and physical speaker output require manual acceptance.
+
 ## Reminder sound and follow-up navigation
 
 Verify legacy absolute localhost follow-up URLs on a browser using another port, new task-card anchors, top banner placement, read-state update, explicit sound activation and automatic sound after interaction. Actual audible playback needs human acceptance.

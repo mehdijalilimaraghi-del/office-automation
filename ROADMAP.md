@@ -1,3 +1,7 @@
+## Notification audio playback diagnostics
+
+Notification sound now includes a direct playback test and visible failure diagnostics. Physical audio output remains an acceptance check.
+
 ## Reminder sound and follow-up navigation
 
 Reminder presentation now includes top-of-page alerts and audio; local follow-up navigation supports host/port differences. Live server activation remains pending.

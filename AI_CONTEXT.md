@@ -1,3 +1,7 @@
+## Notification audio playback diagnostics
+
+Notification audio is a bundled PCM WAV played with HTMLAudioElement. Invoke playback directly from the sound-test click; do not hide the control on pointerdown or equate API success with speaker output.
+
 ## Reminder sound and follow-up navigation
 
 Reminder URLs must be relative: CLI APP_URL can differ from the browser host/port. Older absolute notification URLs are normalized in the layout. AudioContext is primed only by user interaction.

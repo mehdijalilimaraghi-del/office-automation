@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
-import { primeNotificationSound, playNotificationSound } from '@/Utils/notificationSound';
+import { playNotificationSound } from '@/Utils/notificationSound';
 import UserAvatar from '@/Components/UserAvatar.vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import Dropdown from '@/Components/Dropdown.vue';
@@ -19,15 +19,15 @@ const latestNotifications = ref<Array<{ id: string; type: string; title: string;
 let notificationRefreshTimer: number | undefined;
 const reminderBanner = ref<{ id: string; title: string; message: string; url: string | null; read_at: string | null } | null>(null);
 const soundBlocked = ref(false);
-async function unlockReminderSound(): Promise<void> {
-    if (await primeNotificationSound()) {
-        document.removeEventListener('pointerdown', unlockReminderSound);
-        document.removeEventListener('keydown', unlockReminderSound);
-    }
-}
+const soundFeedback = ref('');
 async function enableReminderSound(): Promise<void> {
-    await unlockReminderSound();
-    soundBlocked.value = !(await playNotificationSound());
+    const result = await playNotificationSound();
+    soundBlocked.value = result !== 'playing';
+    soundFeedback.value = result === 'playing'
+        ? 'پخش صدا آغاز شد؛ اگر نمی‌شنوید، صدای برگه مرورگر و خروجی سیستم را بررسی کنید.'
+        : result === 'blocked'
+            ? 'مرورگر اجازه پخش صدا را نداد. اجازه صدای سایت را در تنظیمات مرورگر بررسی کنید.'
+            : 'فایل صدای اعلان قابل پخش نیست. صفحه را تازه‌سازی و دوباره آزمایش کنید.';
 }
 function notificationDestination(url: string | null): string {
     if (!url) return new URL(route('notifications.index'), window.location.href).pathname;
@@ -63,7 +63,7 @@ async function refreshNotificationSummary(): Promise<void> {
                 } catch { /* Keep reminders available when browser storage is disabled. */ }
                 if (!alreadyShown) {
                     reminderBanner.value = item;
-                    void playNotificationSound().then(played => { soundBlocked.value = !played; });
+                    void playNotificationSound().then(result => { soundBlocked.value = result !== 'playing'; });
                     break;
                 }
             }
@@ -141,8 +141,6 @@ function closeHeaderPopoversOnOutsidePointer(event: PointerEvent): void {
 }
 
 onMounted(() => {
-    document.addEventListener('pointerdown', unlockReminderSound);
-    document.addEventListener('keydown', unlockReminderSound);
     document.addEventListener('pointerdown', closeHeaderPopoversOnOutsidePointer);
 
     if (
@@ -173,8 +171,6 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-    document.removeEventListener('pointerdown', unlockReminderSound);
-    document.removeEventListener('keydown', unlockReminderSound);
     document.removeEventListener('pointerdown', closeHeaderPopoversOnOutsidePointer);
     if (notificationRefreshTimer !== undefined) window.clearInterval(notificationRefreshTimer);
 });
@@ -182,7 +178,7 @@ onUnmounted(() => {
 
 <template>
     <div dir="rtl">
-        <aside v-if="reminderBanner" role="status" aria-live="polite" class="fixed inset-x-4 top-20 z-[80] mx-auto max-w-lg rounded-2xl border border-indigo-200 bg-white p-4 shadow-xl"><div class="flex items-start justify-between gap-3"><div><p class="font-bold text-indigo-900">{{ reminderBanner.title }}</p><p class="mt-2 text-sm leading-6 text-slate-700">{{ reminderBanner.message }}</p><button type="button" class="mt-3 inline-block text-sm font-semibold text-indigo-700" @click="openNotification(reminderBanner)">مشاهده و پیگیری</button><button v-if="soundBlocked" type="button" class="ms-4 mt-3 text-xs font-semibold text-slate-600" @click="enableReminderSound">فعال‌کردن صدا</button></div><button type="button" aria-label="بستن پیام یادآوری" class="rounded-lg px-2 py-1 text-slate-500 hover:bg-slate-100" @click="reminderBanner = null">بستن</button></div></aside>
+        <aside v-if="reminderBanner" role="status" aria-live="polite" class="fixed inset-x-4 top-20 z-[80] mx-auto max-w-lg rounded-2xl border border-indigo-200 bg-white p-4 shadow-xl"><div class="flex items-start justify-between gap-3"><div><p class="font-bold text-indigo-900">{{ reminderBanner.title }}</p><p class="mt-2 text-sm leading-6 text-slate-700">{{ reminderBanner.message }}</p><button type="button" class="mt-3 inline-block text-sm font-semibold text-indigo-700" @click="openNotification(reminderBanner)">مشاهده و پیگیری</button><button type="button" class="ms-4 mt-3 text-xs font-semibold text-slate-600" @click="enableReminderSound">آزمایش صدا</button><p v-if="soundBlocked && !soundFeedback" class="mt-2 text-xs text-amber-800">صدا فعال نشد؛ دکمه آزمایش صدا را بزنید.</p><p v-if="soundFeedback" role="status" class="mt-2 text-xs leading-6 text-slate-600">{{ soundFeedback }}</p></div><button type="button" aria-label="بستن پیام یادآوری" class="rounded-lg px-2 py-1 text-slate-500 hover:bg-slate-100" @click="reminderBanner = null">بستن</button></div></aside>
         <div class="app-shell min-h-screen">
             <nav class="app-topbar sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 shadow-[0_1px_0_rgba(15,23,42,0.02)] backdrop-blur-xl">
                 <div class="mx-auto max-w-[1600px] px-4 sm:px-6 xl:px-8">
@@ -403,6 +399,7 @@ onUnmounted(() => {
                                         <div><p class="text-sm font-bold text-slate-900">اعلان‌ها</p><p class="mt-0.5 text-xs text-slate-500">{{ unreadNotificationCount }} خوانده‌نشده</p></div>
                                         <button v-if="unreadNotificationCount > 0" type="button" class="text-xs font-semibold text-indigo-700 hover:underline" @click="router.patch(route('notifications.read-all'), {}, { preserveScroll: true, onSuccess: () => void refreshNotificationSummary() })">خواندن همه</button>
                                     </div>
+                                    <div class="border-b bg-slate-50 px-4 py-3"><button type="button" class="text-xs font-semibold text-indigo-700" @click="enableReminderSound">آزمایش صدای اعلان</button><p v-if="soundFeedback" role="status" class="mt-2 text-xs leading-6 text-slate-600">{{ soundFeedback }}</p></div>
                                     <div v-if="latestNotifications.length === 0" class="px-4 py-8 text-center text-sm text-slate-500">اعلانی برای نمایش وجود ندارد.</div>
                                     <div v-else class="max-h-[22rem] overflow-y-auto divide-y divide-slate-100">
                                         <Link v-for="item in latestNotifications" :key="item.id" :href="item.url || route('notifications.index')" class="block px-4 py-3 transition hover:bg-slate-50" :class="{ 'bg-indigo-50/50': !item.read_at }" @click.prevent="openNotification(item)">
@@ -466,8 +463,9 @@ onUnmounted(() => {
                                     <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
                                     <span v-if="unreadNotificationCount > 0" class="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[9px] font-bold text-white">{{ unreadNotificationCount > 99 ? '99+' : unreadNotificationCount }}</span>
                                 </button>
-                                <div v-if="notificationDropdownOpen" class="absolute left-0 z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl" role="dialog" aria-label="فهرست اعلان‌ها">
+                                <div v-if="notificationDropdownOpen" class="fixed inset-x-4 top-16 z-50 mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl" role="dialog" aria-label="فهرست اعلان‌ها">
                                     <div class="flex items-center justify-between border-b px-4 py-3"><div><p class="text-sm font-bold text-slate-900">اعلان‌ها</p><p class="mt-0.5 text-xs text-slate-500">{{ unreadNotificationCount }} خوانده‌نشده</p></div><button v-if="unreadNotificationCount > 0" type="button" class="text-xs font-semibold text-indigo-700" @click="router.patch(route('notifications.read-all'), {}, { preserveScroll: true, onSuccess: () => void refreshNotificationSummary() })">خواندن همه</button></div>
+                                    <div class="border-b bg-slate-50 px-4 py-3"><button type="button" class="text-xs font-semibold text-indigo-700" @click="enableReminderSound">آزمایش صدای اعلان</button><p v-if="soundFeedback" role="status" class="mt-2 text-xs leading-6 text-slate-600">{{ soundFeedback }}</p></div>
                                     <div v-if="latestNotifications.length === 0" class="px-4 py-8 text-center text-sm text-slate-500">اعلانی برای نمایش وجود ندارد.</div>
                                     <div v-else class="max-h-[20rem] overflow-y-auto divide-y divide-slate-100"><Link v-for="item in latestNotifications" :key="item.id" :href="item.url || route('notifications.index')" class="block px-4 py-3 hover:bg-slate-50" :class="{ 'bg-indigo-50/50': !item.read_at }" @click.prevent="openNotification(item)"><span class="block text-sm font-semibold text-slate-900">{{ item.title }}</span><span class="mt-1 block line-clamp-2 text-xs leading-5 text-slate-600">{{ item.message }}</span></Link></div>
                                     <Link :href="route('notifications.index')" class="block border-t px-4 py-3 text-center text-xs font-bold text-indigo-700" @click="notificationDropdownOpen = false">مشاهده همه اعلان‌ها</Link>

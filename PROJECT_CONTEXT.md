@@ -1,3 +1,7 @@
+## Notification audio playback diagnostics
+
+Users can test notification audio at any time from the bell menu, including after closing a reminder. Browser playback denial or an unavailable sound file produces visible feedback.
+
 ## Reminder sound and follow-up navigation
 
 Reminder follow-up opens the related record on the current application host. Task reminder cards can be addressed directly. When browser autoplay is blocked, users can explicitly enable the notification sound.

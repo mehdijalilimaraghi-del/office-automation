@@ -1,3 +1,7 @@
+## Notification audio playback diagnostics
+
+notificationSound.ts reuses one HTMLAudioElement and a versioned Vite-bundled notification.wav asset. Playback returns playing, blocked or unavailable; the layout exposes a direct user-gesture test without an asynchronous audio-unlock prerequisite.
+
 ## Reminder sound and follow-up navigation
 
 Reminder dispatchers emit relative paths. AuthenticatedLayout normalizes historical internal notification URLs and follows the existing mark-read flow. A shared notificationSound utility primes Web Audio on user gestures and plays a brief two-tone chime.
