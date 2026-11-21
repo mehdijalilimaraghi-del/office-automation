@@ -1,3 +1,7 @@
+## V4 discovery and release closeout — 2026-11-21
+
+V4 discovery is authorized. Start with .agents/skills/validated-development/references/v4-code-map.md. PBX product/version and test environment are not yet known; do not implement assumed provisioning or change live telephone routing.
+
 ## Approved release preparation
 
 Owner verified notification audio and authorized promotion to master and server deployment. Temporary sound-test controls removed; automatic native audio and conditional browser sound activation remain. Verify release identity, additive migrations, backup and rollback before activation.
@@ -8,7 +12,7 @@ Notification audio is a bundled PCM WAV played with HTMLAudioElement. Invoke pla
 
 ## Reminder sound and follow-up navigation
 
-Reminder URLs must be relative: CLI APP_URL can differ from the browser host/port. Older absolute notification URLs are normalized in the layout. AudioContext is primed only by user interaction.
+Reminder URLs must be relative: CLI APP_URL can differ from the browser host/port. Older absolute notification URLs are normalized in the layout. Native PCM audio is played through HTMLAudioElement; synthesized AudioContext playback has been replaced.
 
 ## Scheduled task and archive reminders
 

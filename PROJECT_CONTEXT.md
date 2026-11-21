@@ -1,10 +1,14 @@
+## V4 discovery and release closeout — 2026-11-21
+
+V4 is standalone organizational telephony: internal extensions, calls, routing, history and controlled recordings. CRM/customer matching remains deferred. The current PBX product, version and available integration environment must be established with the owner before implementation.
+
 ## Approved release preparation
 
 Owner verified notification audio and authorized promotion to master and server deployment. Temporary sound-test controls removed; automatic native audio and conditional browser sound activation remain. Verify release identity, additive migrations, backup and rollback before activation.
 
 ## Notification audio playback diagnostics
 
-Users can test notification audio at any time from the bell menu, including after closing a reminder. Browser playback denial or an unavailable sound file produces visible feedback.
+Automatic native notification audio is retained. Temporary test controls were removed after owner acceptance; browser-denied playback offers conditional sound activation.
 
 ## Reminder sound and follow-up navigation
 

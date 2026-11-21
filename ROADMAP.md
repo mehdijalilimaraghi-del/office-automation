@@ -1,3 +1,7 @@
+## V4 discovery and release closeout — 2026-11-21
+
+Proceed to the existing V4 Organizational Telephony scope. Create the code map before implementation. Determine supported PBX product/version and integration environment before agreeing the initial delivery slice. Keep remaining central physical-transfer and earlier manual hardware acceptance items visible rather than claiming them complete.
+
 ## Approved release preparation
 
 Owner verified notification audio and authorized promotion to master and server deployment. Temporary sound-test controls removed; automatic native audio and conditional browser sound activation remain. Verify release identity, additive migrations, backup and rollback before activation.

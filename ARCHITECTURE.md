@@ -1,3 +1,7 @@
+## V4 discovery and release closeout — 2026-11-21
+
+V4 retains the Laravel modular monolith and introduces a conditionally loaded telephony boundary with a PBX driver contract. Actual read, event and provisioning adapters depend on the verified PBX product/version; no protocol or external interface has yet been selected.
+
 ## Approved release preparation
 
 Owner verified notification audio and authorized promotion to master and server deployment. Temporary sound-test controls removed; automatic native audio and conditional browser sound activation remain. Verify release identity, additive migrations, backup and rollback before activation.

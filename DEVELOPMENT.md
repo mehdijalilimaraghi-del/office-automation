@@ -1,3 +1,7 @@
+## V4 discovery and release closeout — 2026-11-21
+
+Use the V4 code map for focused file discovery. Asterisk integration requires an identified non-production endpoint and real call acceptance; neither is currently established. No PBX connection, configuration mutation or live telephone changes have been performed.
+
 ## Approved release preparation
 
 Owner verified notification audio and authorized promotion to master and server deployment. Temporary sound-test controls removed; automatic native audio and conditional browser sound activation remain. Verify release identity, additive migrations, backup and rollback before activation.
