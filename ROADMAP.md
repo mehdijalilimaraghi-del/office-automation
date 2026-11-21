@@ -1,3 +1,7 @@
+## Voice-mode inbound ring — 2026-11-21
+
+V4 next hardware gate is helper v4 inbound-ring validation. The v3 report reaches waiting with successful setup but no recognized ring. Support DLE-R and collect bounded waiting data/settings before changing event masks, telephone routing or hardware. Then validate actual duplex and PBX integration.
+
 ## Descriptive modem format correction — 2026-11-21
 
 V4 next gate: run helper v3 on the modem PC after closing VentaFax. Descriptive current-format preparation now passes with the exact owner reply in software tests. Validate the remaining flow-control/duplex commands and actual audio before PBX integration; do not treat the parser fix as hardware acceptance.

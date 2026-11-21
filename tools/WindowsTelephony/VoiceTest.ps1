@@ -10,7 +10,7 @@ function Show-ModemVoiceTest {
     $state = @{ session=$null; wantClose=$false; result=$null; recording=$null; player=$null; report=$null; autoReport=$null }
     $challenge = [string](Get-Random -Minimum 100 -Maximum 1000)
     $window = New-Object Windows.Forms.Form
-    $window.Text='آزمون عملی صدای مودم — نسخه ۳'
+    $window.Text='آزمون عملی صدای مودم — نسخه ۴'
     $window.Size=New-Object Drawing.Size(820,700)
     $window.MinimumSize=New-Object Drawing.Size(700,620)
     $window.StartPosition='CenterParent'
@@ -75,7 +75,7 @@ function Show-ModemVoiceTest {
         } elseif($r.Cancelled){
             $details+='آزمون به درخواست شما متوقف شد.'
         } elseif($r.ErrorCode -eq 'incoming_call_timeout'){
-            $details+='در زمان انتظار، زنگ ورودی شناسایی نشد. سیم‌کشی خط و شماره تماس را بررسی و آزمون تازه ایجاد کنید.'
+            $details+=if($r.RingBytesObserved -eq 0){'مودم هنگام انتظار هیچ پیامی نفرستاد. گزارش تنظیمات زنگ را برای بررسی ذخیره کنید.'}else{'پیام‌هایی از مودم دریافت شد، اما علامت زنگ شناسایی نشد. داده‌ها در گزارش ثبت شده‌اند؛ گزارش را برای بررسی ذخیره کنید.'}
         } elseif($r.ErrorCode -eq 'cannot_preserve_original_format' -or $r.ErrorCode -eq 'cannot_preserve_flow_control'){
             $details+='پاسخ تنظیمات فعلی مودم قابل تشخیص نبود؛ هنوز به تماسی پاسخ داده نشده است. پاسخ خام در گزارش ثبت شده است. گزارش را برای بررسی ذخیره کنید.'
         } elseif($r.ErrorCode -like 'command_rejected:*' -or $r.ErrorCode -eq 'no_supported_8khz_mulaw'){
@@ -95,6 +95,7 @@ function Show-ModemVoiceTest {
                 'read_supported_formats' {'خواندن قالب‌های صوتی'}
                 'read_current_format' {'خواندن تنظیم فعلی صدا'}
                 'read_flow_control' {'خواندن تنظیم انتقال داده'}
+                'inspect_ring_settings' {'بررسی تنظیمات گزارش زنگ'}
                 'configure_audio' {'تنظیم صدا'}
                 'wait_for_incoming_call' {'انتظار تماس'}
                 'answer_incoming_call' {'پاسخ‌گویی'}

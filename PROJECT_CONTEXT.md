@@ -1,3 +1,7 @@
+## Voice-mode inbound ring — 2026-11-21
+
+Owner confirms VentaFax receives calls on the same connected line and is fully closed during helper tests. Treat this as evidence the line/modem can receive calls; do not ask the owner to reconfigure working fax software. A helper timeout is inconclusive about the modem. Distinguish no incoming messages from messages whose ring format was not recognized.
+
 ## Descriptive modem format correction — 2026-11-21
 
 The actual LSI current-format response includes a display label, bit depth and timing metadata in addition to the four settable voice parameters. The helper must support this response generically rather than rejecting a working modem or hardcoding its model. The previous attempt did not answer a call.

@@ -1,3 +1,9 @@
+## Voice-mode inbound ring — 2026-11-21
+
+Audio diagnostics cover fourteen fake-port outcomes, with DLE-R session acceptance, non-ring timeout evidence, bounded-input overflow, optional-query rejection and parser negatives for lowercase ringback/escaped DLE/lookalike text/caller-ID/numeric data. Capability cases and PS syntax remain required. Real hardware retest uses OfficeAutomation-ModemAudioTest-v4.zip; wait evidence may include caller-ID data, so keep reports local and out of Git.
+
+Validation passed: 538 SQL Server tests / 3387 assertions, TypeScript/build, fourteen fake-port audio outcomes and ring/parser regressions, 10 capability-parser cases, PS syntax and fake-port GUI/automatic JSON evidence checks. Offline artifact: storage/app/private/OfficeAutomation-ModemAudioTest-v4.zip. No real call was made from this computer.
+
 ## Descriptive modem format correction — 2026-11-21
 
 Audio diagnostics now cover eleven simulated session outcomes, including the exact owner VSM? response and restoration command AT+VSM=0,8000,128,0. Parser cases cover other codec labels, numeric compatibility, range listings, incomplete/failed replies and conflicts. A fake-port GUI test verifies the mapped values and helper version in automatically saved JSON. Physical testing uses a fresh extraction of OfficeAutomation-ModemAudioTest-v3.zip; no real call was run here.

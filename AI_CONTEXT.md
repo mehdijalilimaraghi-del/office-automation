@@ -1,3 +1,7 @@
+## Voice-mode inbound ring — 2026-11-21
+
+Voice-mode inbound ring may be DLE-R rather than text RING. RingDetector handles both incrementally; lowercase ringback and escaped DLE must never answer a call. Helper v2026.11.21.4 retains bounded waiting-input bytes and only queries VEM/VDR/VLS without changing their settings. The owner v3 timeout does not establish which ring event was emitted.
+
 ## Descriptive modem format correction — 2026-11-21
 
 The second owner report confirms VSM? returns descriptive metadata: 0,"Signed PCM",16,0,8000,128,0. ParseFormat maps this to settable codec/rate/sensitivity/expansion (0,8000,128,0); never send the quoted label, bit depth or timing metadata back as configuration. Helper version is 2026.11.21.3. Actual duplex remains unverified.

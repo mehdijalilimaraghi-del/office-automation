@@ -9,7 +9,8 @@ public sealed class DiagnosticFakePort : IVoicePort
 {
     private readonly Queue<byte> input = new Queue<byte>();
     private bool configured, ringSent, duplex;
-    public bool NoRing, RejectDuplex, RejectHangup, Released, Disposed, RejectFormatQuery, PartialFormatReply, ResidualAudioOnStop;
+    public bool NoRing, RejectDuplex, RejectHangup, Released, Disposed, RejectFormatQuery, PartialFormatReply, ResidualAudioOnStop, RejectRingQueries;
+    public string RingReply = "\r\nRING\r\n";
     public string CurrentFormat = "0,8000";
     public readonly List<string> Commands = new List<string>();
     private void Enqueue(string value) { foreach(byte b in Encoding.ASCII.GetBytes(value)) input.Enqueue(b); }
@@ -17,7 +18,7 @@ public sealed class DiagnosticFakePort : IVoicePort
     public int Available
     {
         get {
-            if(configured && !ringSent && !NoRing && input.Count == 0) { ringSent=true; Enqueue("\r\nRING\r\n"); }
+            if(configured && !ringSent && !NoRing && input.Count == 0) { ringSent=true; Enqueue(RingReply); }
             return input.Count;
         }
     }
@@ -30,6 +31,7 @@ public sealed class DiagnosticFakePort : IVoicePort
             foreach(byte sample in VoiceCodec.Escape(audio))input.Enqueue(sample);return;
         }
         string command=Encoding.ASCII.GetString(b,o,n).Trim();Commands.Add(command);
+        if(RejectRingQueries && (command=="AT+VEM?" || command=="AT+VDR?" || command=="AT+VLS?")){Enqueue("\r\nERROR\r\n");return;}
         switch(command) {
             case "ATI": Enqueue("\r\nLSI Test Fixture\r\nOK\r\n");break;
             case "AT+FCLASS?": Enqueue("\r\n0\r\nOK\r\n");break;
@@ -75,6 +77,10 @@ public static class VoiceDiagnosticChecks
         Check(VoiceSettings.ParseFormat(actualLsiCurrent.Replace("OK", "ERROR"))=="","failed descriptive reply rejected");
         Check(VoiceSettings.ParseFormat(actualLsiCurrent.Replace("OK", "4,8000,128,0\r\nOK"))=="","mixed conflicting replies rejected");
         Check(VoiceSettings.ParseFormat("+VSM: 0,8000,128,0\r\nOK\r\n")=="0,8000,128,0","numeric format remains supported");
+        var ringParser=new RingDetector();ringParser.Feed(16);Check(!ringParser.Detected,"incomplete DLE does not answer");ringParser.Feed((byte)'R');Check(ringParser.Detected && ringParser.Signal=="dle_ring","split DLE ring event");
+        ringParser=new RingDetector();foreach(byte b in Encoding.ASCII.GetBytes("\r\n RING \r"))ringParser.Feed(b);Check(ringParser.Detected,"text ring whitespace and CR termination");
+        foreach(string input in new[]{"SPRING\r\n","RINGBACK\r\n","2\r\n","\u0010r","\u0010\u0010R\r\n","NMBR=123456\r\n"})
+        { ringParser=new RingDetector();foreach(byte b in Encoding.ASCII.GetBytes(input))ringParser.Feed(b);Check(!ringParser.Detected,"non-ring input cannot answer"); }
         var decoder=new VoiceDecoder();
         decoder.Feed(new byte[]{255,16},2);
         decoder.Feed(new byte[]{16,16,(byte)'b',127,16},5);
@@ -114,6 +120,14 @@ public static class VoiceDiagnosticChecks
             Check(session.Result.Status=="captured" && session.Result.DuplexStarted && session.Result.CleanupConfirmed,"actual LSI reply passes preparation in fixture");
             Check(session.Result.OriginalFormat=="0,8000,128,0" && lsi.Commands.Contains("AT+VSM=0,8000,128,0"),"LSI restoration preserves settable values without metadata");
             Check(!lsi.Commands.Exists(c=>c.StartsWith("AT+VSM=0,\"")),"descriptive labels are never sent as settings");
+            var shielded=new DiagnosticFakePort {RingReply="\r\n\u0010R",RejectRingQueries=true};session=new VoiceSession(shielded,folder,300,100);session.Start();Finish(session);
+            Check(session.Result.RingDetected && session.Result.RingSignal=="dle_ring" && session.Result.DuplexStarted && session.Result.CleanupConfirmed,"voice ring event answers in simulated session");
+            Check(session.Result.RingInputHex.Contains("10-52"),"ring control bytes preserved");
+            Check(session.Result.Trace.Exists(t=>t.Command=="AT+VEM?" && t.Error.Length>0),"unsupported ring query recorded without blocking");
+            var noisy=new DiagnosticFakePort {RingReply=new string('X',5000)+"\r\n\u0010R"};session=new VoiceSession(noisy,folder,1000,100);session.Start();Finish(session);
+            Check(session.Result.RingDetected && session.Result.RingInputTruncated && session.Result.RingInputHex.Length==4096*3-1 && session.Result.RingBytesObserved>4096,"bounded capture continues detecting after overflow");
+            var unrelated=new DiagnosticFakePort {RingReply="\r\nRINGBACK\r\n\u0010r"};session=new VoiceSession(unrelated,folder,100,100);session.Start();Finish(session);
+            Check(!session.Result.RingDetected && !unrelated.Commands.Contains("AT+VLS=1") && session.Result.RingBytesObserved>0 && session.Result.RingInputHex.Length>0,"non-ring timeout retains input without answering");
             var unknown=new DiagnosticFakePort {CurrentFormat="not-a-numeric-snapshot"};session=new VoiceSession(unknown,folder,300,100);session.Start();Finish(session);
             Check(session.Result.FailureStage=="read_current_format" && session.Result.CurrentFormatReply.Contains("not-a-numeric-snapshot"),"failed current-format response retained");
             Check(!unknown.Commands.Contains("AT+VSM=4,8000") && !unknown.Commands.Contains("AT+IFC=0,0") && !unknown.Commands.Contains("AT+VLS=1") && session.Result.CleanupConfirmed,"unknown settings stop before audio changes or answering");
@@ -125,7 +139,7 @@ public static class VoiceDiagnosticChecks
             for(int i=0;i<400 && session.Progress!="streaming" && !session.Completed;i++)Thread.Sleep(5);
             session.Cancel();Finish(session);
             Check(session.Result.Cancelled && session.Result.DuplexStarted && session.Result.CleanupConfirmed && streaming.Commands.Contains("ATH"),"streaming cancellation restores and hangs up");
-            return "PASS: settings snapshots, raw/partial/rejected traces, codec/framing/WAV/acceptance gates and eleven simulated session outcomes; no real port opened.";
+            return "PASS: settings snapshots, raw/partial/rejected traces, codec/framing/WAV/acceptance gates and fourteen simulated session outcomes; no real port opened.";
         } finally { foreach(string file in Directory.GetFiles(folder))File.Delete(file);Directory.Delete(folder); }
     }
 }

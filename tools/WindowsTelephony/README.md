@@ -42,7 +42,7 @@ The current path requires serial AT voice commands, G.711 mu-law at 8 kHz and AT
 
 ## Software verification
 
-Test-Audio.ps1 compiles the runtime engine and injectable fake-port fixtures in Windows PowerShell 5.1. It checks codec vectors, cross-chunk DLE escaping, WAV structure, human acceptance gates and eleven simulated session outcomes, including complete four-value restoration, unrecognized settings, rejected/partial queries and cancellation while streaming. These tests open no real COM port and do not establish hardware compatibility. The wizard was visually rendered without starting a call.
+Test-Audio.ps1 compiles the runtime engine and injectable fake-port fixtures in Windows PowerShell 5.1. It checks codec vectors, cross-chunk DLE escaping, WAV structure, human acceptance gates and fourteen simulated session outcomes, including complete four-value restoration, unrecognized settings, rejected/partial queries and cancellation while streaming. These tests open no real COM port and do not establish hardware compatibility. The wizard was visually rendered without starting a call.
 
 Command references: [USR voice reference](https://ads.usr.com/support/5637/5637-ug/ref_voice.html), [MultiTech SocketModem AT guide](https://multitech.com/wp-content/uploads/s000468.pdf). Exact device/driver support must be tested; generic manuals do not establish LSI support.
 
@@ -59,3 +59,9 @@ After a completed attempt, an automatic JSON snapshot is stored beside local aud
 The second owner report captured VSM? as `0,"Signed PCM",16,0,8000,128,0`. The previous numeric-only parser rejected this complete descriptive reply. ParseFormat now maps the codec, sample rate, sensitivity and expansion to `0,8000,128,0` for restoration, preserving descriptive metadata in the raw trace. Codec labels, bit depth and timing metadata are not command arguments. The parser is generic across codecs/models, and still rejects ranges, incomplete, failed and conflicting replies. Eleven fake-port session outcomes now include this exact owner response. JSON schema remains 2; the window title shows version 3. Actual two-way audio still requires a hardware test.
 
 The settable VSM parameter order is documented in [MultiTech AT reference, page 34](https://multitech.com/wp-content/uploads/s000273g.pdf); the descriptive query layout is evidenced by the actual owner report, not assumed for all modems.
+
+## Diagnostic helper version 2026.11.21.4
+
+The owner v3 report confirms setup/cleanup success and incoming-call timeout. The former parser recognized text RING only and did not retain waiting input. RingDetector now recognizes complete text RING lines and the documented voice-mode DLE-R event, including split bytes. It rejects lowercase ringback, escaped DLE, lookalike text, numeric data and caller-ID text as answer triggers. Waiting input is captured up to 4096 bytes as hex, with a total count/truncation flag. Read-only VEM/VDR/VLS queries collect settings without changing event masks or fax profiles. Unsupported optional reads are traced, not required for the test. The UI distinguishes silence from unrecognized input. The exact on-device cause and duplex remain unverified.
+
+DLE-R is documented in the manufacturer [USR softmodem command reference, Voice Commands](https://support.usr.com/support/3092/3092-files/Softmodem-Command-Reference.pdf). This does not prove that the owner modem emitted it. Keep reports local: waiting input can contain caller-ID information.

@@ -114,6 +114,35 @@ namespace OfficeAutomation.Telephony.Diagnostics
             }
         }
     }
+    public sealed class RingDetector
+    {
+        private bool dle;
+        private readonly StringBuilder line = new StringBuilder();
+        public bool Detected { get; private set; }
+        public string Signal { get; private set; }
+        public void Feed(byte value)
+        {
+            if (Detected) return;
+            if (dle)
+            {
+                dle = false;
+                if (value == (byte)'R') { Detected = true; Signal = "dle_ring"; }
+                return; // Escaped DLE and other voice events are not ring indications.
+            }
+            if (value == 16) { dle = true; line.Clear(); line.Append('!'); return; }
+            if (value == 13 || value == 10)
+            {
+                if (Regex.IsMatch(line.ToString(), @"^[ \t]*RING[ \t]*$", RegexOptions.IgnoreCase))
+                { Detected = true; Signal = "text_ring"; }
+                line.Clear();
+            }
+            else
+            {
+                line.Append((char)value);
+                if (line.Length > 256) { line.Clear(); line.Append('!'); }
+            }
+        }
+    }
     public static class VoiceSettings
     {
         // Some drivers include codec metadata in VSM?; only codec/rate/sensitivity/expansion are settable.
@@ -164,7 +193,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
     }
     public sealed class VoiceResult
     {
-        public string DiagnosticVersion = "2026.11.21.3";
+        public string DiagnosticVersion = "2026.11.21.4";
         public string FailureStage = "";
         public string FailureError = "";
         public string CleanupError = "";
@@ -176,6 +205,10 @@ namespace OfficeAutomation.Telephony.Diagnostics
         public string Status = "not_started";
         public string ErrorCode = "";
         public bool RingDetected;
+        public string RingSignal = "";
+        public string RingInputHex = "";
+        public int RingBytesObserved;
+        public bool RingInputTruncated;
         public bool Answered;
         public bool DuplexStarted;
         public bool CleanupConfirmed;
@@ -279,9 +312,20 @@ namespace OfficeAutomation.Telephony.Diagnostics
         {
             return Exchange(command, Encoding.ASCII.GetBytes(command + "\r"), connect, cancellable);
         }
+        private void ReadRingDiagnostics()
+        {
+            // Read-only queries: unsupported settings must not prevent an otherwise valid test.
+            foreach (string query in new[] { "AT+VEM?", "AT+VDR?", "AT+VLS?" })
+            {
+                try { Command(query, false, true); }
+                catch (InvalidOperationException) { }
+                catch (TimeoutException) { }
+            }
+        }
         private void Run()
         {
             VoiceDecoder decoder = new VoiceDecoder();
+            var ringInput = new List<byte>();
             try
             {
                 progress = "preparing"; port.Open(); opened = true;
@@ -308,19 +352,23 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 originalFlow = VoiceSettings.Parse(result.CurrentFlowReply, "IFC", 2, 2);
                 result.OriginalFlow = originalFlow;
                 if (originalFlow.Length == 0) throw new InvalidOperationException("cannot_preserve_flow_control");
+                stage = "inspect_ring_settings";
+                ReadRingDiagnostics();
                 stage = "configure_audio";
                 Command("AT+IFC=0,0", false, true);
                 Command("AT+VSM=" + codec.ToString(CultureInfo.InvariantCulture) + ",8000", false, true);
                 progress = "waiting_ring"; stage = "wait_for_incoming_call";
-                var ringWatch = Stopwatch.StartNew(); var text = new StringBuilder();
+                var ringWatch = Stopwatch.StartNew(); var ring = new RingDetector();
                 while (ringWatch.ElapsedMilliseconds < ringTimeout)
                 {
                     stop.Token.ThrowIfCancellationRequested();
                     if (port.Available > 0)
                     {
-                        byte[] b = new byte[1]; port.Read(b, 0, 1); text.Append((char)b[0]);
-                        if (Regex.IsMatch(text.ToString(), @"(?:^|[\r\n])RING\r?\n$")) { result.RingDetected = true; break; }
-                        if (text.Length > 4096) text.Remove(0, 2048);
+                        byte[] b = new byte[1]; port.Read(b, 0, 1);
+                        result.RingBytesObserved++;
+                        if (ringInput.Count < 4096) ringInput.Add(b[0]); else result.RingInputTruncated = true;
+                        ring.Feed(b[0]);
+                        if (ring.Detected) { result.RingDetected = true; result.RingSignal = ring.Signal; break; }
                     }
                     else Thread.Sleep(10);
                 }
@@ -363,6 +411,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
             catch (Exception exception) { result.Status = "failed"; result.ErrorCode = exception.Message; result.FailureStage = stage; result.FailureError = exception.Message; }
             finally
             {
+                result.RingInputHex = BitConverter.ToString(ringInput.ToArray());
                 progress = "hanging_up";
                 if (opened)
                 {

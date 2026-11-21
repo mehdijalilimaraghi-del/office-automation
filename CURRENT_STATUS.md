@@ -1,3 +1,9 @@
+## Voice-mode inbound ring — 2026-11-21
+
+Owner v3 report confirms all voice/flow setup and cleanup commands succeeded, with incoming_call_timeout before answer. Waiting input was not logged. Fixed the text-only ring detector to recognize documented DLE-R, added bounded wait-byte evidence and optional read-only VEM/VDR/VLS diagnostics. This addresses a confirmed parser gap; actual LSI ring delivery and two-way audio remain unverified. Offline helper v4 requires a real incoming-call retest.
+
+Validation passed: 538 SQL Server tests / 3387 assertions, TypeScript/build, fourteen fake-port audio outcomes and ring/parser regressions, 10 capability-parser cases, PS syntax and fake-port GUI/automatic JSON evidence checks. Offline artifact: storage/app/private/OfficeAutomation-ModemAudioTest-v4.zip. No real call was made from this computer.
+
 ## Descriptive modem format correction — 2026-11-21
 
 The v2 report identifies the preparation failure as unsupported descriptive VSM? syntax in our parser. Added generic descriptive-current-format normalization and an end-to-end fake-port regression using the exact owner response. Numeric snapshots remain supported; supported ranges and malformed/ambiguous replies remain rejected. New offline helper v3 is prepared; real hardware retest is still required. No migration, dependency or server changes.

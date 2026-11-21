@@ -40,3 +40,5 @@ Real supported inbound/outbound call tests; authorization for logs/recordings; e
 - VoiceSettings and CommandTrace in VoiceDiagnostics.cs: complete current-setting snapshots and versioned bounded diagnostics; VoiceTest automatically saves local schema v2 reports. First real owner attempt stopped before answering at current-format parsing; next report must retain that raw response.
 
 - ParseFormat supports the actual descriptive LSI VSM? response, mapping only settable fields. VoiceDiagnostics.Tests includes exact-response session and restore coverage; helper v3 still needs live acceptance.
+
+- RingDetector in VoiceDiagnostics.cs recognizes text and DLE-R ring events; waiting evidence is bounded. VEM/VDR/VLS queries are read-only and optional. Helper v4 addresses the text-only parser gap; owner v3 report confirms timeout after setup but does not capture its ring input.

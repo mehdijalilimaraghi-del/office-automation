@@ -1,3 +1,7 @@
+## Voice-mode inbound ring — 2026-11-21
+
+RingDetector is a stateful byte parser shared by the diagnostic wait path: exact text RING lines or DLE-R events, preserving split escapes and rejecting ringback/escaped DLE. VoiceResult v2026.11.21.4 adds RingSignal, RingBytesObserved, RingInputHex capped at 4096 bytes and a truncation flag. Optional VEM/VDR/VLS reads enter existing command traces; rejected/timeout queries do not change settings or block a supported path. No new answer trigger other than a recognized ring.
+
 ## Descriptive modem format correction — 2026-11-21
 
 VoiceSettings.ParseFormat normalizes complete descriptive VSM current-value rows to codec/rate/sensitivity/expansion before the shared numeric snapshot validator. Full metadata is retained in raw diagnostics; restoration uses only settable fields. Response success, range rejection and ambiguity validation remain enforced. Diagnostic version changes to 2026.11.21.3; JSON schema stays 2.
