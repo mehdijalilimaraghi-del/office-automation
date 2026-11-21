@@ -1,3 +1,7 @@
+## Controlled modem audio test — 2026-11-21
+
+The practical audio wizard is separate from automatic discovery. Only an explicit consent checkbox and Start click may open the voice session. Never certify hardware from simulated tests, byte counters or class 8; require hearing both directions and acknowledged cleanup. Recordings stay local and are not uploaded by discovery.
+
 ## Equipment compatibility policy
 
 Compatibility must be assessed automatically by the selected equipment adapter, with a human-readable result and reason. Windows modem, FXO gateway and SIP-trunk paths must remain distinct; only the modem discovery adapter is currently implemented. Initial modem queries now run on selection. A positive voice advertisement remains a candidate until an explicit, controlled two-way call test passes; uncertain results must not be presented as proven compatibility or universal incompatibility.

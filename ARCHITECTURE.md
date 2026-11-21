@@ -1,3 +1,7 @@
+## Controlled modem audio test — 2026-11-21
+
+WindowsTelephony/VoiceDiagnostics.cs provides the serial AT/G.711 diagnostic engine, isolated behind IVoicePort for tests; VoiceTest.ps1 supplies the RTL wizard. VoiceSession executes on a background task with bounded command replies and explicit cancellation, restores voice/flow/class settings and uses DTR release on unacknowledged cleanup. Audio remains in per-user LocalAppData; local JSON/WAV export is deliberately separate from the authenticated discovery-report schema. No SIP bridge or production enablement state is introduced.
+
 ## Equipment compatibility policy
 
 Compatibility must be assessed automatically by the selected equipment adapter, with a human-readable result and reason. Windows modem, FXO gateway and SIP-trunk paths must remain distinct; only the modem discovery adapter is currently implemented. Initial modem queries now run on selection. A positive voice advertisement remains a candidate until an explicit, controlled two-way call test passes; uncertain results must not be presented as proven compatibility or universal incompatibility.

@@ -109,7 +109,7 @@ try {
     [void]$layout.RowStyles.Add((New-Object Windows.Forms.RowStyle([Windows.Forms.SizeType]::Percent,100)))
     [void]$layout.RowStyles.Add((New-Object Windows.Forms.RowStyle([Windows.Forms.SizeType]::Absolute,60)))
     $label = New-Object Windows.Forms.Label
-    $label.Dock = 'Fill'; $label.Text = 'با انتخاب مودم، بررسی اولیه خودکار اجرا می‌شود. این برنامه شماره‌گیری نمی‌کند. قبل از بررسی، نرم‌افزارهای فکس و اینترنت دایال‌آپ را ببندید.'
+    $label.Dock = 'Fill'; $label.Text = 'با انتخاب مودم، بررسی اولیه خودکار اجرا می‌شود. آزمون تماس فقط با تأیید جداگانه شما فعال می‌شود. قبل از بررسی، برنامه‌های فکس و دایال‌آپ را ببندید.'
     $choice = New-Object Windows.Forms.ComboBox
     $choice.Dock = 'Top'; $choice.DropDownStyle = 'DropDownList'; $choice.DisplayMember = 'name'
     foreach ($device in $devices) { [void]$choice.Items.Add($device) }
@@ -123,6 +123,25 @@ try {
     $probe.Text = 'بررسی قابلیت'; $probe.AutoSize = $true; $probe.Enabled = $devices.Count -gt 0
     $send = New-Object Windows.Forms.Button
     $send.Text = if ($Offline) { 'ذخیره گزارش بررسی' } else { 'ارسال گزارش به سامانه' }; $send.AutoSize = $true
+    $audioTest = New-Object Windows.Forms.Button
+    $audioTest.Text = 'آزمون عملی صدا'; $audioTest.AutoSize = $true; $audioTest.Enabled = $devices.Count -gt 0
+    $audioTest.Add_Click({
+        $device = $choice.SelectedItem
+        if (-not $device -or -not (Test-VoiceClass $device.evidence['classes'])) {
+            [Windows.Forms.MessageBox]::Show('ابتدا مودم دارای قابلیت صوت را انتخاب و بررسی اولیه را تکمیل کنید.','آزمون صدا') | Out-Null
+            return
+        }
+        $choice.Enabled = $false; $probe.Enabled = $false; $send.Enabled = $false; $audioTest.Enabled = $false
+        try {
+            . (Join-Path $PSScriptRoot 'VoiceTest.ps1')
+            $result = Show-ModemVoiceTest -Port $device.port -DeviceName $device.name
+            if ($result) {
+                $output.Text = if ($result.CompatibleForNextStep) { 'آزمون محلی صدای دوطرفه موفق بود. اتصال به مرکز تلفن و داخلی شبکه مرحله بعد است.' } else { 'آزمون عملی هنوز تأیید نشده است. نتیجه را در پنجره آزمون ذخیره کنید تا محدودیت بررسی شود.' }
+            }
+        } catch {
+            [Windows.Forms.MessageBox]::Show('بازکردن آزمون صدا ممکن نشد. همه فایل‌های بسته جدید را استخراج کنید.','آزمون صدا') | Out-Null
+        } finally { $choice.Enabled = $true; $probe.Enabled = $true; $send.Enabled = $true; $audioTest.Enabled = $true }
+    })
     $probeAction = {
         $device = $choice.SelectedItem
         $probe.Enabled = $false
@@ -183,7 +202,7 @@ try {
             if ($handler) { $handler.Dispose() }
         }
     })
-    [void]$buttons.Controls.Add($probe); [void]$buttons.Controls.Add($send)
+    [void]$buttons.Controls.Add($probe); [void]$buttons.Controls.Add($audioTest); [void]$buttons.Controls.Add($send)
     [void]$layout.Controls.Add($label,0,0); [void]$layout.Controls.Add($choice,0,1)
     [void]$layout.Controls.Add($output,0,2); [void]$layout.Controls.Add($buttons,0,3)
     [void]$form.Controls.Add($layout)

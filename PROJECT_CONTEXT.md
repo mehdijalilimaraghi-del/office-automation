@@ -1,3 +1,7 @@
+## Controlled modem audio test — 2026-11-21
+
+The owner can test an existing modem before buying equipment. Automatic read-only discovery remains distinct from the user-armed incoming call. The audio test waits up to 60 seconds, captures up to 12 seconds, uses a spoken random challenge and requires the owner to confirm both remote beeps and recorded speech. Busy/end events alone do not prove remote hangup detection. Failure of this serial codec path is not universal hardware incompatibility.
+
 ## Equipment compatibility policy
 
 Compatibility must be assessed automatically by the selected equipment adapter, with a human-readable result and reason. Windows modem, FXO gateway and SIP-trunk paths must remain distinct; only the modem discovery adapter is currently implemented. Initial modem queries now run on selection. A positive voice advertisement remains a candidate until an explicit, controlled two-way call test passes; uncertain results must not be presented as proven compatibility or universal incompatibility.

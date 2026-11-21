@@ -18,7 +18,9 @@ if (Test-Path -LiteralPath $commandKey) {
 }
 if ($PSCmdlet.ShouldProcess($destination, 'Install the per-user Office Automation modem helper')) {
     New-Item -ItemType Directory -Force -Path $destination | Out-Null
-    Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'ModemHelper.ps1') -Destination (Join-Path $destination 'ModemHelper.ps1') -Force
+    foreach ($file in @('ModemHelper.ps1', 'VoiceTest.ps1', 'VoiceDiagnostics.cs')) {
+        Copy-Item -LiteralPath (Join-Path $PSScriptRoot $file) -Destination (Join-Path $destination $file) -Force
+    }
     @{server_url=$uri.GetLeftPart([UriPartial]::Authority)} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $destination 'settings.json') -Encoding utf8
     New-Item -Path $protocolKey -Force | Out-Null
     Set-Item -Path $protocolKey -Value 'Office Automation Telephony'

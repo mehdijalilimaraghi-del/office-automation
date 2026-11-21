@@ -111,6 +111,8 @@ class ModemDiscoveryTest extends TestCase
         $this->assertSame('http://127.0.0.1:8000',json_decode($zip->getFromName('settings.json'),true)['server_url']);
         $this->assertNotFalse($zip->getFromName('ModemHelper.ps1'));
         $this->assertNotFalse($zip->getFromName('Install.ps1'));
+        $this->assertNotFalse($zip->getFromName('VoiceTest.ps1'));
+        $this->assertNotFalse($zip->getFromName('VoiceDiagnostics.cs'));
         $zip->close();unlink($path);
     }
 }

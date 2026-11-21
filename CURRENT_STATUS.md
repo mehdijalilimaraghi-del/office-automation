@@ -1,3 +1,9 @@
+## Controlled modem audio test — 2026-11-21
+
+Implemented a separate incoming-call audio wizard for Windows AT voice modems with G.711 mu-law at 8 kHz: ring detection, explicit answer, simultaneous transmit/capture, playback, two human confirmations, cancellation, mode restoration and local JSON/WAV export. No actual modem or telephone call was tested on this development computer. PBX/SIP bridging and V4 completion remain pending. No database migration or dependency change in this step.
+
+Validation: focused modem HTTP tests passed (6 tests, 61 assertions); full SQL Server suite passed (538 tests, 3387 assertions); TypeScript/build, 10 Windows parser cases, PowerShell syntax, audio-engine fixtures and simulated GUI result display passed. The first artisan suite run hit the PHP CLI 128 MB limit; direct PHPUnit with a 512 MB limit passed. Offline artifact: storage/app/private/OfficeAutomation-ModemAudioTest.zip (ignored by Git).
+
 ## Equipment compatibility policy
 
 Compatibility must be assessed automatically by the selected equipment adapter, with a human-readable result and reason. Windows modem, FXO gateway and SIP-trunk paths must remain distinct; only the modem discovery adapter is currently implemented. Initial modem queries now run on selection. A positive voice advertisement remains a candidate until an explicit, controlled two-way call test passes; uncertain results must not be presented as proven compatibility or universal incompatibility.

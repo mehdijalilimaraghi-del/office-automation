@@ -1,3 +1,7 @@
+## Controlled modem audio test — 2026-11-21
+
+V4 equipment evaluation now includes a practical incoming-call wizard. Next acceptance: owner runs it on the LSI/Gnet computer and verifies mobile beeps, recorded challenge speech and line release. Investigate unsupported driver/AT paths from the result before choosing another adapter or equipment. Then establish a test PBX and implement/test the audio bridge and extension routing; no production trunk activation is implied.
+
 ## Equipment compatibility policy
 
 Compatibility must be assessed automatically by the selected equipment adapter, with a human-readable result and reason. Windows modem, FXO gateway and SIP-trunk paths must remain distinct; only the modem discovery adapter is currently implemented. Initial modem queries now run on selection. A positive voice advertisement remains a candidate until an explicit, controlled two-way call test passes; uncertain results must not be presented as proven compatibility or universal incompatibility.

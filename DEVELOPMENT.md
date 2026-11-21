@@ -1,3 +1,9 @@
+## Controlled modem audio test — 2026-11-21
+
+Run tools/WindowsTelephony/Test-Audio.ps1 in Windows PowerShell 5.1 for codec, DLE framing, WAV and five simulated session outcomes without opening hardware; also run Test-Capabilities.ps1. The voice wizard was rendered without arming a call. Physical acceptance must use Run-Offline.cmd on the modem PC, explicit consent, an incoming mobile call, playback and both hearing confirmations. Preserve the exported JSON/WAV locally; do not commit call audio or report identities. AT command references: https://ads.usr.com/support/5637/5637-ug/ref_voice.html and https://multitech.com/wp-content/uploads/s000468.pdf .
+
+Full regression command used: php -d memory_limit=512M vendor/phpunit/phpunit/phpunit --no-progress (test database only); 538 tests / 3387 assertions passed after the initial 128 MB artisan run exhausted memory. Focused modem HTTP tests: 6 / 61 passed. TypeScript/build, parser cases, audio fixtures, PS syntax and simulated GUI result display passed.
+
 ## Equipment compatibility policy
 
 Compatibility must be assessed automatically by the selected equipment adapter, with a human-readable result and reason. Windows modem, FXO gateway and SIP-trunk paths must remain distinct; only the modem discovery adapter is currently implemented. Initial modem queries now run on selection. A positive voice advertisement remains a candidate until an explicit, controlled two-way call test passes; uncertain results must not be presented as proven compatibility or universal incompatibility.

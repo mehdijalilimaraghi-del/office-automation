@@ -44,7 +44,7 @@ class ModemController
             abort(503);
         }
         try {
-            foreach (['ModemHelper.ps1', 'Install.ps1', 'Run-Offline.cmd', 'README.md'] as $name) {
+            foreach (['ModemHelper.ps1', 'VoiceTest.ps1', 'VoiceDiagnostics.cs', 'Install.ps1', 'Run-Offline.cmd', 'README.md'] as $name) {
                 if (! $zip->addFile(base_path('tools/WindowsTelephony/'.$name), $name)) {
                     throw new \RuntimeException('Helper file unavailable');
                 }

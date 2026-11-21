@@ -19,10 +19,10 @@ function select(id: number): void { selection.modem_id = id; selection.put(route
     <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-white px-5 py-4"><p class="text-sm text-slate-600">برنامه واسط را فقط روی کامپیوتر دارای مودم نصب کنید.</p><a :href="route('telephony.helper')" class="text-sm font-semibold text-indigo-700">دریافت برنامه واسط ویندوز</a></div>
     <section class="grid gap-3 sm:grid-cols-3" aria-label="مراحل راه‌اندازی">
         <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-4"><p class="font-semibold text-indigo-900">۱. شناسایی و بررسی مودم</p><p class="mt-2 text-xs leading-6 text-indigo-800">با برنامه واسط روی کامپیوتر متصل به خط</p></div>
-        <div class="rounded-xl border bg-white p-4"><p class="font-semibold">۲. آزمون مکالمه دوطرفه</p><p class="mt-2 text-xs leading-6 text-slate-500">پس از تأیید قابلیت‌های واقعی سخت‌افزار</p></div>
+        <div class="rounded-xl border bg-white p-4"><p class="font-semibold">۲. آزمون مکالمه دوطرفه</p><p class="mt-2 text-xs leading-6 text-slate-500">در واسط، با اجازه شما و یک تماس ورودی</p></div>
         <div class="rounded-xl border bg-white p-4"><p class="font-semibold">۳. داخلی‌ها و مسیر تماس</p><p class="mt-2 text-xs leading-6 text-slate-500">پس از اتصال به مرکز تلفن آزمایشی</p></div>
     </section>
-    <p class="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-7 text-amber-950"><Info class="mt-1 size-5 shrink-0" />اعلام قابلیت صوت توسط مودم، تأیید مکالمه دوطرفه نیست. در این مرحله هیچ تماس یا تغییری روی خط انجام نمی‌شود.</p>
+    <p class="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-7 text-amber-950"><Info class="mt-1 size-5 shrink-0" />اعلام قابلیت صوت توسط مودم، تأیید مکالمه دوطرفه نیست. انتخاب مودم خط را فعال نمی‌کند. آزمون عملی تماس در واسط، فقط با تأیید صریح شما شروع می‌شود.</p>
     <p v-if="selection.errors.modem_id" role="alert" class="rounded-xl bg-red-50 p-4 text-sm text-red-700">{{ selection.errors.modem_id }}</p>
     <section class="rounded-2xl border bg-white p-5 sm:p-6">
         <h2 class="font-bold">مودم‌های شناسایی‌شده</h2>

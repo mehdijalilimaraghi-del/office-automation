@@ -29,3 +29,10 @@ The owner has no installed PBX. The modem is a Gnet FM56PCI with LSI PCI-SV92PP 
 ## Acceptance
 
 Real supported inbound/outbound call tests; authorization for logs/recordings; extension and trunk/queue/IVR behavior; disabled-module isolation; existing module regression checks. Never represent a fake driver as proof of a working PBX integration.
+
+## Controlled audio diagnostic
+
+- tools/WindowsTelephony/VoiceDiagnostics.cs: injectable serial AT engine, G.711 codec, DLE framing, local WAV and conservative acceptance gate.
+- tools/WindowsTelephony/VoiceTest.ps1: explicit-consent incoming-call wizard; ModemHelper.ps1 opens it separately from discovery.
+- tools/WindowsTelephony/Test-Audio.ps1 and VoiceDiagnostics.Tests.cs: no-hardware session regressions.
+- ModemController helper ZIP and Install.ps1 include both runtime dependencies. Local audio results are not silently added to discovery uploads.
