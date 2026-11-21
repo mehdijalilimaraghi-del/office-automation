@@ -1,3 +1,7 @@
+## Windows PBX engine preparation — 2026-11-21
+
+Next V4 gate: install verified FreeSWITCH 1.11.4 native Windows core on the owner modem PC, then prepare isolated lab configuration, test internal calls and implement modem audio integration. Initial two extensions are a test scenario, not a product limit. Add/manage extensions for people and units; benchmark simultaneous-call capacity. Installation must support another compatible Windows PC without EDARII/IP/hardware hardcoding. Define export/restore/re-enrollment and secret rekeying before claiming migration support. One analog modem line remains one external call channel.
+
 ## Native Windows PBX requirement — 2026-11-21
 
 Owner decision: implement the next V4 slice natively on the modem Windows PC without Linux or a virtual machine. First obtain telephony-host-report.json and verify a maintained native Windows PBX build (FreeSWITCH candidate). Then implement the provider driver, audio bridge and extension routing, followed by real call/quality/hangup acceptance. The earlier mandatory Asterisk driver assumption is superseded for this deployment; V4 acceptance outcomes remain unchanged.

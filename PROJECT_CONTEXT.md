@@ -1,3 +1,7 @@
+## Windows PBX engine preparation — 2026-11-21
+
+Owner requires more extensions and ability to install or move the PBX to another computer. Two extensions describe the initial acceptance test only. Internal extension count and simultaneous external line capacity are different concepts. Future installation and migration must preserve settings, extension ownership and call records; move/re-detect the modem and re-establish protected credentials. No machine-specific product licensing or hardcoded EDARII assumption is introduced.
+
 ## Native Windows PBX requirement — 2026-11-21
 
 All telephony components must run natively on the existing Windows modem computer; no Linux or virtual machine is acceptable to the owner. The passed modem diagnostic must be preserved. Host inspection is read-only, offline, without administrator installation steps or changes to fax operation. A new PBX engine and modem-to-extension bridge have not been delivered yet.

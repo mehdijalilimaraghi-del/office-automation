@@ -1,3 +1,9 @@
+## Windows PBX engine preparation — 2026-11-21
+
+Run Install-PbxEngine.ps1 -CheckOnly -InstallerPath <official MSI> to validate the package without installation/UAC. Tested using Windows PowerShell 5.1 on development Windows. Actual owner installation uses the separate launcher and Windows Administrator consent, core-only features, logging and stopped-service verification; it was not executed in development. The pinned MSI size is 166219776 bytes. Do not commit installers, owner inventory, audio, install logs or credentials. More extensions and another-host installation/migration must be included in subsequent acceptance.
+
+Validation passed: official MSI size/SHA256 and SignalWire signature; actual read-only MSI product/feature/service-table inspection; installer CheckOnly acceptance and same-size invalid-hash rejection; PowerShell syntax; 14 simulated modem sessions and 10 parser cases; full SQL Server suite 538 tests / 3387 assertions; TypeScript/build. Administrator/UAC installation and runtime activation have not been executed. Offline artifact: storage/app/private/OfficeAutomation-PbxEngine-1.11.4-Windows.zip.
+
 ## Native Windows PBX requirement — 2026-11-21
 
 Inspect-Computer.cmd starts Inspect-TelephonyHost.ps1 in Windows PowerShell STA, presenting a JSON save dialog. The NoUI/OutputPath path supports local validation without user interaction. Inventory contains Windows build/architecture, CPU, memory and fixed-drive free space; no modem/network access or system changes. Run syntax and actual Windows PowerShell inventory validation. A development-host report does not establish readiness of the owner modem PC. Native PBX binary and bridge tests remain unavailable until those components exist.

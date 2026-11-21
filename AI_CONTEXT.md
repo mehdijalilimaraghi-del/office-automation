@@ -1,3 +1,7 @@
+## Windows PBX engine preparation — 2026-11-21
+
+Owner host EDARII: Windows 10 Pro x64 build 19045, i3-2120 (2 cores/4 logical), about 10 GiB RAM. Suitable for an initial small lab only; do not promise final call capacity. FreeSWITCH 1.11.4 official Windows MSI is now obtained: SHA256 331cdd876c7ee73cc6d60bbdd7c9b7e60c157d3760226986fd7d6e604c83d8b6 matches GitHub asset digest and SignalWire Authenticode is Valid. No Linux/VM. Installer CheckOnly is tested; actual installation/bridge is pending. More extensions and migration to another compatible PC are required, not delivered features.
+
 ## Native Windows PBX requirement — 2026-11-21
 
 The owner now explicitly requires all telephony components on the modem Windows PC, without Linux or a VM. This supersedes the earlier Asterisk deployment assumption; preserve the provider boundary. FreeSWITCH is a native-Windows candidate only, pending a maintained build and owner-host checks. Never install Linux/WSL/VM or claim the PBX bridge exists. Inspect-TelephonyHost.ps1 is read-only and excludes credentials.

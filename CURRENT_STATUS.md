@@ -1,3 +1,9 @@
+## Windows PBX engine preparation — 2026-11-21
+
+Owner host report confirms Windows 10 Pro x64, i3-2120 2-core/4-thread, 10645467136 bytes RAM and about 85 GB free on C:. Preliminary small-lab resource assessment only. Resolved package discovery through official GitHub v1.11.4 release: Windows MSI downloaded, digest matched, Authenticode Valid (SignalWire), product version read from MSI. Added pinned-package installer with read-only CheckOnly, refusal of existing installations, core-only feature selection, manual/stopped service verification, install report and no automatic restart. Actual installation, extension registration and modem bridge have not run.
+
+Validation passed: official MSI size/SHA256 and SignalWire signature; actual read-only MSI product/feature/service-table inspection; installer CheckOnly acceptance and same-size invalid-hash rejection; PowerShell syntax; 14 simulated modem sessions and 10 parser cases; full SQL Server suite 538 tests / 3387 assertions; TypeScript/build. Administrator/UAC installation and runtime activation have not been executed. Offline artifact: storage/app/private/OfficeAutomation-PbxEngine-1.11.4-Windows.zip.
+
 ## Native Windows PBX requirement — 2026-11-21
 
 The owner selected the modem computer as the PBX host and requires native Windows only (no Linux/VM). Added an offline read-only Windows/CPU/RAM/disk inventory tool and launcher. FreeSWITCH Windows is under evaluation; the official package listing was not reachable from this environment, so no engine release has been approved or installed. Driver/bridge/internal-call implementation remains pending host evidence and engine verification. The local modem audio acceptance remains passed.

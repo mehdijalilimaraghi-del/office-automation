@@ -1,3 +1,7 @@
+## Windows PBX engine preparation — 2026-11-21
+
+Native Windows engine candidate is pinned for lab evaluation to the official FreeSWITCH 1.11.4 x64 MSI, independently of Laravel/Vue/SQL Server packages. Install-PbxEngine.ps1 validates fixed size/hash and trusted SignalWire signature, checks Windows/x64 and refuses existing service/folder, then installs ProductFeature only. Vendor MSI inspection confirms manual service start and stop/delete controls, not start-on-install. The wrapper checks final stopped state and emits a local JSON report; no automatic service activation, firewall change or reboot is added. Provider/media integration and migration contracts remain pending.
+
 ## Native Windows PBX requirement — 2026-11-21
 
 The owner Windows-only constraint changes the PBX provider choice, not the existing modular monolith or Laravel/Vue/SQL Server stack. Keep telephony behind a provider contract rather than coupling the module to Asterisk. Evaluate native FreeSWITCH Windows only after verifying a maintained build. Host inventory is a standalone PowerShell 5.1 helper under WindowsTelephony; no new runtime/package or database schema is introduced in this step.
