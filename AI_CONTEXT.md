@@ -1,3 +1,7 @@
+## Native Windows PBX requirement — 2026-11-21
+
+The owner now explicitly requires all telephony components on the modem Windows PC, without Linux or a VM. This supersedes the earlier Asterisk deployment assumption; preserve the provider boundary. FreeSWITCH is a native-Windows candidate only, pending a maintained build and owner-host checks. Never install Linux/WSL/VM or claim the PBX bridge exists. Inspect-TelephonyHost.ps1 is read-only and excludes credentials.
+
 ## Voice-mode inbound ring — 2026-11-21
 
 Owner v4 hardware report confirms this LSI modem emits DLE-R (10-52) and passes the local incoming audio test: answered, duplex started, both human hearing checks and cleanup true. Keep DLE-R support generic. This is local diagnostic acceptance, not PBX certification. RX 120060 versus TX 96000 over 12012 ms needs timing review before bridging; no remote-disconnect event was recorded.

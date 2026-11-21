@@ -1,3 +1,9 @@
+## Native Windows PBX requirement — 2026-11-21
+
+The owner selected the modem computer as the PBX host and requires native Windows only (no Linux/VM). Added an offline read-only Windows/CPU/RAM/disk inventory tool and launcher. FreeSWITCH Windows is under evaluation; the official package listing was not reachable from this environment, so no engine release has been approved or installed. Driver/bridge/internal-call implementation remains pending host evidence and engine verification. The local modem audio acceptance remains passed.
+
+Validation: actual inventory execution and JSON structure checks passed on the development Windows computer (not the modem PC), PS syntax passed, existing 14 audio-session and 10 capability cases passed, full SQL Server suite passed (538 tests / 3387 assertions), and TypeScript/build passed. Local read-only WAV inspection confirms 120060 samples / 8000 Hz = 15.0075 s versus the reported 12.012 s capture window; cause remains unverified and must be resolved before a live bridge.
+
 ## Voice-mode inbound ring — 2026-11-21
 
 Owner v4 hardware report (2026-11-21, helper 2026.11.21.4) passes the controlled incoming audio test on LSI PCI-SV92PP / LSI SoftModem 2.2.98: DLE-R bytes 10-52 detected, call answered, AT+VTR returned CONNECT, both human hearing checks true, cleanup acknowledged and CompatibleForNextStep true. This confirms the text-only ring parser was the prior obstacle. The report records 96000 TX and 120060 RX samples over 12012 ms; timing/sample-rate consistency must be checked before streaming to a PBX. No remote-hangup event was captured. PBX/SIP bridging, outgoing calls and internal extensions remain pending; V4 is not complete.

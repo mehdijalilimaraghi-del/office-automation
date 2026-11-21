@@ -1,3 +1,7 @@
+## Native Windows PBX requirement — 2026-11-21
+
+Owner decision: implement the next V4 slice natively on the modem Windows PC without Linux or a virtual machine. First obtain telephony-host-report.json and verify a maintained native Windows PBX build (FreeSWITCH candidate). Then implement the provider driver, audio bridge and extension routing, followed by real call/quality/hangup acceptance. The earlier mandatory Asterisk driver assumption is superseded for this deployment; V4 acceptance outcomes remain unchanged.
+
 ## Voice-mode inbound ring — 2026-11-21
 
 The controlled local incoming-call hardware gate is now passed by the owner v4 report: DLE-R, simultaneous audio start, both hearing confirmations and acknowledged cleanup. Next: establish the test PBX environment and implement/test its audio bridge and extension routing. Before live use validate stream timing (reported RX count differs from 8 kHz wall-clock expectation), network quality/echo, remote hangup, outgoing calls, retries and coexistence with fax operation. Do not activate a production trunk from this short local test alone.
@@ -543,7 +547,7 @@ Deliver a first-class, searchable, access-controlled digital archive that builds
 Deliver a usable standalone organizational telephone system before CRM, without making PBX depend on customer records.
 
 ## Scope
-- PBX driver interface and Asterisk driver
+- PBX driver interface and a verified native Windows provider (owner requirement: no Linux/VM; Asterisk deployment deferred)
 - Extension management and registration status
 - Trunks and gateways
 - IVR
@@ -551,7 +555,7 @@ Deliver a usable standalone organizational telephone system before CRM, without 
 - Call routing and call state handling
 - Call logs and history
 - Recording management and access control
-- Conference and voicemail where supported by the selected Asterisk integration
+- Conference and voicemail where supported by the selected native Windows PBX integration
 - Phone book for internal extensions
 - Click-to-call where supported
 - PBX dashboard and operational reports
@@ -564,7 +568,7 @@ Deliver a usable standalone organizational telephone system before CRM, without 
 - Cross-module communication must use stable contracts/events; PBX must not directly query CRM tables.
 
 ## V4 Acceptance Gate
-- Core inbound/outbound call flows work against the supported Asterisk environment.
+- Core inbound/outbound call flows work against the supported native Windows PBX environment.
 - Extension, trunk, queue and IVR behavior is covered by integration tests where practical.
 - Call logs and recordings respect backend authorization.
 - PBX can be disabled without loading its routes, jobs, events or UI.

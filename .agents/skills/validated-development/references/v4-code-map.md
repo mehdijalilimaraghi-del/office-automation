@@ -24,6 +24,8 @@
 
 ## Decisions needed before integration code
 
+Owner update: PBX host is the existing modem PC, native Windows only; Linux and VM deployment are ruled out. Asterisk-specific deployment assumption is superseded. Evaluate a maintained native Windows provider/build; FreeSWITCH is a candidate, not installed or verified. Start with Inspect-TelephonyHost.ps1 / Inspect-Computer.cmd and WINDOWS-PBX.md.
+
 The owner has no installed PBX. The modem is a Gnet FM56PCI with LSI PCI-SV92PP Soft Modem driver on another Windows computer. Obtain its capability report, then establish a non-production PBX environment and test the voice path. Do not assume that an Asterisk-compatible distribution exposes the same provisioning API. Read-only discovery comes before any changes to telephone routing.
 
 ## Acceptance

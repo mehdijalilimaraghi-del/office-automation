@@ -1,3 +1,7 @@
+## Native Windows PBX requirement — 2026-11-21
+
+The owner Windows-only constraint changes the PBX provider choice, not the existing modular monolith or Laravel/Vue/SQL Server stack. Keep telephony behind a provider contract rather than coupling the module to Asterisk. Evaluate native FreeSWITCH Windows only after verifying a maintained build. Host inventory is a standalone PowerShell 5.1 helper under WindowsTelephony; no new runtime/package or database schema is introduced in this step.
+
 ## Voice-mode inbound ring — 2026-11-21
 
 RingDetector is a stateful byte parser shared by the diagnostic wait path: exact text RING lines or DLE-R events, preserving split escapes and rejecting ringback/escaped DLE. VoiceResult v2026.11.21.4 adds RingSignal, RingBytesObserved, RingInputHex capped at 4096 bytes and a truncation flag. Optional VEM/VDR/VLS reads enter existing command traces; rejected/timeout queries do not change settings or block a supported path. No new answer trigger other than a recognized ring.

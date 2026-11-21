@@ -1,3 +1,7 @@
+## Native Windows PBX requirement — 2026-11-21
+
+All telephony components must run natively on the existing Windows modem computer; no Linux or virtual machine is acceptable to the owner. The passed modem diagnostic must be preserved. Host inspection is read-only, offline, without administrator installation steps or changes to fax operation. A new PBX engine and modem-to-extension bridge have not been delivered yet.
+
 ## Voice-mode inbound ring — 2026-11-21
 
 Owner confirms VentaFax receives calls on the same connected line and is fully closed during helper tests. Treat this as evidence the line/modem can receive calls; do not ask the owner to reconfigure working fax software. A helper timeout is inconclusive about the modem. Distinguish no incoming messages from messages whose ring format was not recognized.

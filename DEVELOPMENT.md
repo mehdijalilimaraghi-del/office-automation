@@ -1,3 +1,9 @@
+## Native Windows PBX requirement — 2026-11-21
+
+Inspect-Computer.cmd starts Inspect-TelephonyHost.ps1 in Windows PowerShell STA, presenting a JSON save dialog. The NoUI/OutputPath path supports local validation without user interaction. Inventory contains Windows build/architecture, CPU, memory and fixed-drive free space; no modem/network access or system changes. Run syntax and actual Windows PowerShell inventory validation. A development-host report does not establish readiness of the owner modem PC. Native PBX binary and bridge tests remain unavailable until those components exist.
+
+Validation: actual inventory execution and JSON structure checks passed on the development Windows computer (not the modem PC), PS syntax passed, existing 14 audio-session and 10 capability cases passed, full SQL Server suite passed (538 tests / 3387 assertions), and TypeScript/build passed. Local read-only WAV inspection confirms 120060 samples / 8000 Hz = 15.0075 s versus the reported 12.012 s capture window; cause remains unverified and must be resolved before a live bridge.
+
 ## Voice-mode inbound ring — 2026-11-21
 
 Audio diagnostics cover fourteen fake-port outcomes, with DLE-R session acceptance, non-ring timeout evidence, bounded-input overflow, optional-query rejection and parser negatives for lowercase ringback/escaped DLE/lookalike text/caller-ID/numeric data. Capability cases and PS syntax remain required. Real hardware retest uses OfficeAutomation-ModemAudioTest-v4.zip; wait evidence may include caller-ID data, so keep reports local and out of Git.
