@@ -1,6 +1,6 @@
 ## Voice-mode inbound ring — 2026-11-21
 
-V4 next hardware gate is helper v4 inbound-ring validation. The v3 report reaches waiting with successful setup but no recognized ring. Support DLE-R and collect bounded waiting data/settings before changing event masks, telephone routing or hardware. Then validate actual duplex and PBX integration.
+The controlled local incoming-call hardware gate is now passed by the owner v4 report: DLE-R, simultaneous audio start, both hearing confirmations and acknowledged cleanup. Next: establish the test PBX environment and implement/test its audio bridge and extension routing. Before live use validate stream timing (reported RX count differs from 8 kHz wall-clock expectation), network quality/echo, remote hangup, outgoing calls, retries and coexistence with fax operation. Do not activate a production trunk from this short local test alone.
 
 ## Descriptive modem format correction — 2026-11-21
 

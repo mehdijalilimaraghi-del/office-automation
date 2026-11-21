@@ -1,6 +1,6 @@
 ## Voice-mode inbound ring — 2026-11-21
 
-Owner v3 report confirms all voice/flow setup and cleanup commands succeeded, with incoming_call_timeout before answer. Waiting input was not logged. Fixed the text-only ring detector to recognize documented DLE-R, added bounded wait-byte evidence and optional read-only VEM/VDR/VLS diagnostics. This addresses a confirmed parser gap; actual LSI ring delivery and two-way audio remain unverified. Offline helper v4 requires a real incoming-call retest.
+Owner v4 hardware report (2026-11-21, helper 2026.11.21.4) passes the controlled incoming audio test on LSI PCI-SV92PP / LSI SoftModem 2.2.98: DLE-R bytes 10-52 detected, call answered, AT+VTR returned CONNECT, both human hearing checks true, cleanup acknowledged and CompatibleForNextStep true. This confirms the text-only ring parser was the prior obstacle. The report records 96000 TX and 120060 RX samples over 12012 ms; timing/sample-rate consistency must be checked before streaming to a PBX. No remote-hangup event was captured. PBX/SIP bridging, outgoing calls and internal extensions remain pending; V4 is not complete.
 
 Validation passed: 538 SQL Server tests / 3387 assertions, TypeScript/build, fourteen fake-port audio outcomes and ring/parser regressions, 10 capability-parser cases, PS syntax and fake-port GUI/automatic JSON evidence checks. Offline artifact: storage/app/private/OfficeAutomation-ModemAudioTest-v4.zip. No real call was made from this computer.
 

@@ -41,4 +41,4 @@ Real supported inbound/outbound call tests; authorization for logs/recordings; e
 
 - ParseFormat supports the actual descriptive LSI VSM? response, mapping only settable fields. VoiceDiagnostics.Tests includes exact-response session and restore coverage; helper v3 still needs live acceptance.
 
-- RingDetector in VoiceDiagnostics.cs recognizes text and DLE-R ring events; waiting evidence is bounded. VEM/VDR/VLS queries are read-only and optional. Helper v4 addresses the text-only parser gap; owner v3 report confirms timeout after setup but does not capture its ring input.
+- RingDetector in VoiceDiagnostics.cs recognizes text and DLE-R ring events; waiting evidence is bounded. VEM/VDR/VLS queries are read-only and optional. Owner v4 report now confirms DLE-R input and local incoming audio acceptance with both human checks and cleanup. Next: PBX bridge, timing/sample-count review and remote-hangup validation; no production line certification.

@@ -1,6 +1,6 @@
 ## Voice-mode inbound ring — 2026-11-21
 
-Voice-mode inbound ring may be DLE-R rather than text RING. RingDetector handles both incrementally; lowercase ringback and escaped DLE must never answer a call. Helper v2026.11.21.4 retains bounded waiting-input bytes and only queries VEM/VDR/VLS without changing their settings. The owner v3 timeout does not establish which ring event was emitted.
+Owner v4 hardware report confirms this LSI modem emits DLE-R (10-52) and passes the local incoming audio test: answered, duplex started, both human hearing checks and cleanup true. Keep DLE-R support generic. This is local diagnostic acceptance, not PBX certification. RX 120060 versus TX 96000 over 12012 ms needs timing review before bridging; no remote-disconnect event was recorded.
 
 ## Descriptive modem format correction — 2026-11-21
 
