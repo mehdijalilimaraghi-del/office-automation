@@ -1,3 +1,7 @@
+## V4 modem discovery — 2026-11-21
+
+Enable TELEPHONY_ENABLED only in a controlled development environment. Apply the additive telephony discovery migration. Test disabled-route isolation, manager authorization, token expiry/reuse/revocation, candidate freshness, report limits and ZIP origin binding. Windows helper supports -DiscoverOnly and interactive -Offline modes; actual LSI/Gnet voice and COM-port behavior remain untested until the owner runs it.
+
 ## V4 discovery and release closeout — 2026-11-21
 
 Use the V4 code map for focused file discovery. Asterisk integration requires an identified non-production endpoint and real call acceptance; neither is currently established. No PBX connection, configuration mutation or live telephone changes have been performed.

@@ -1,3 +1,7 @@
+## V4 modem discovery — 2026-11-21
+
+V4 stage 1 adds manager-only modem discovery, expiring one-use report sessions, helper downloads, read-only Windows capability queries and selection for later voice testing. The local machine has no modem; owner hardware is on another computer. Asterisk, audio bridging, internal calling and provisioning remain pending hardware evaluation. Validation passed: full SQL Server suite (524 tests, 3371 assertions), TypeScript/production build, six isolated browser viewport checks, PowerShell syntax and actual no-modem discovery/GUI render. Local additive migration applied; development feature enabled locally only. The offline review ZIP is prepared. Physical COM querying and full-duplex audio still require the owner computer.
+
 ## V4 discovery and release closeout — 2026-11-21
 
 V3 release activation confirmed by server transcript: artifact 5bfb9530d85d, source 67827dea636e, ten migrations completed, verified database backup retained, login/audio HTTP 200 and scheduler result 0. Owner reports completion. V4 telephony discovery started; integration environment details are pending.

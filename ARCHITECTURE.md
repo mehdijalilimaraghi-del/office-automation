@@ -1,3 +1,7 @@
+## V4 modem discovery — 2026-11-21
+
+TelephonyServiceProvider loads its routes only when telephony.enabled is true. Discovery sessions store only hashed one-use tokens and expire after ten minutes. Report upload has token authentication without browser session/CSRF coupling; management uses the existing active settings.manage capability. A fresh capability report can select a candidate but cannot enable a line.
+
 ## V4 discovery and release closeout — 2026-11-21
 
 V4 retains the Laravel modular monolith and introduces a conditionally loaded telephony boundary with a PBX driver contract. Actual read, event and provisioning adapters depend on the verified PBX product/version; no protocol or external interface has yet been selected.

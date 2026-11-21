@@ -47,6 +47,7 @@ class HandleInertiaRequests extends Middleware
                     'roles_view' => $request->user()?->hasPermission('roles.view') ?? false,
                     'external_parties_view' => $request->user()?->hasPermission('external_parties.view') ?? false,
                     'notification_view' => $request->user()?->hasPermission('notifications.view') ?? false,
+                    'telephony_manage' => config('telephony.enabled', false) && $request->user()?->isActive() && $request->user()->hasPermission('settings.manage'),
                     'settings_manage' => $request->user()?->hasPermission('settings.manage') ?? false,
                     'departments_create' => $request->user()?->hasPermission('departments.create') ?? false,
                     'departments_edit' => $request->user()?->hasPermission('departments.edit') ?? false,

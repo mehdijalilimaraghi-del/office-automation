@@ -2,8 +2,8 @@
 
 ## Confirmed existing entry points
 
-- bootstrap/providers.php: current provider registration; PBX must be conditionally registered.
-- routes/web.php: current authenticated module routes. No PBX routes exist.
+- app/Providers/AppServiceProvider.php conditionally registers TelephonyServiceProvider using config/telephony.php.
+- app/Modules/Telephony/routes.php: isolated management and token-report routes. EnsureTelephonyEnabled also protects previously cached routes.
 - app/Core/Settings/Services/SystemSettingsService.php: non-secret organization settings.
 - app/Core/Users/Http/Controllers/UserController.php and app/Models/User.php: organization users; extension ownership must be explicit.
 - app/Core/Departments/Models/Department.php: department context for scoped access.
@@ -13,17 +13,18 @@
 - database/seeders/CorePermissionSeeder.php: permission catalog.
 - tests/Feature: SQL Server-backed authorization and HTTP tests.
 
-## Planned V4 module (not implemented)
+## V4 implementation and remaining scope
 
-- app/Modules/Telephony: contracts, driver, configuration/application services, policies, controllers and models.
-- resources/js/Pages/Telephony: separate dashboard, extensions/phone book, call history, recordings and connection settings.
+- Implemented: app/Modules/Telephony/Providers/TelephonyServiceProvider.php, routes.php, ModemController, ModemDiscoveryService and Discovery/Modem models. Driver contracts and audio integration remain pending.
+- Implemented: resources/js/Pages/Telephony/Index.vue and Discovery.vue. Windows helper and installer: tools/WindowsTelephony. Tests: tests/Feature/Modules/Telephony.
+- Pending UI: extensions/phone book, call history, recordings and PBX configuration.
 - Dedicated additive migrations and integration tests for the selected supported PBX.
 - Feature disablement must avoid registering telephony routes, jobs, listeners or navigation.
 - Telephony must not query or require CRM data.
 
 ## Decisions needed before integration code
 
-Determine the installed PBX product/version, whether it is existing production infrastructure, supported read/event interfaces, extension and trunk topology, and availability of a non-production integration environment. Do not assume that an Asterisk-compatible distribution exposes the same provisioning API. Read-only discovery comes before any changes to telephone routing.
+The owner has no installed PBX. The modem is a Gnet FM56PCI with LSI PCI-SV92PP Soft Modem driver on another Windows computer. Obtain its capability report, then establish a non-production PBX environment and test the voice path. Do not assume that an Asterisk-compatible distribution exposes the same provisioning API. Read-only discovery comes before any changes to telephone routing.
 
 ## Acceptance
 

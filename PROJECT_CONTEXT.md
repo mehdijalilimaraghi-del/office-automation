@@ -1,3 +1,7 @@
+## V4 modem discovery — 2026-11-21
+
+A Windows helper on the modem computer identifies its installed modems and queries ATI, AT+FCLASS=? and AT+VSM=? only after a user action. The manager may select a recent voice-advertising candidate for testing. Offline review is supported while development has not been deployed to that computer.
+
 ## V4 discovery and release closeout — 2026-11-21
 
 V4 is standalone organizational telephony: internal extensions, calls, routing, history and controlled recordings. CRM/customer matching remains deferred. The current PBX product, version and available integration environment must be established with the owner before implementation.

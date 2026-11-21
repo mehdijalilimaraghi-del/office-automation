@@ -1,3 +1,7 @@
+## V4 modem discovery — 2026-11-21
+
+V4 modem discovery is implemented behind TELEPHONY_ENABLED (default false). See the V4 map and tools/WindowsTelephony. Voice class 8 is only a test candidate, never a verified SIP/PSTN bridge. No live line commands are permitted in discovery.
+
 ## V4 discovery and release closeout — 2026-11-21
 
 V4 discovery is authorized. Start with .agents/skills/validated-development/references/v4-code-map.md. PBX product/version and test environment are not yet known; do not implement assumed provisioning or change live telephone routing.

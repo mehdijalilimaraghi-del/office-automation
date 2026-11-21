@@ -1,3 +1,7 @@
+## V4 modem discovery — 2026-11-21
+
+V4 stage 1: discover Windows modems, report declared voice capabilities and select a test candidate. Subsequent work remains: validate real full-duplex audio, bridge to a supported PBX, extensions/internal calling, then external routing, history/recordings, IVR and queues. Do not mark V4 complete from discovery tests.
+
 ## V4 discovery and release closeout — 2026-11-21
 
 Proceed to the existing V4 Organizational Telephony scope. Create the code map before implementation. Determine supported PBX product/version and integration environment before agreeing the initial delivery slice. Keep remaining central physical-transfer and earlier manual hardware acceptance items visible rather than claiming them complete.

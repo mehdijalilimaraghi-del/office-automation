@@ -28,6 +28,9 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        if (config('telephony.enabled')) {
+            $this->app->register(\App\Modules\Telephony\Providers\TelephonyServiceProvider::class);
+        }
         $this->app->bind(CustomFieldServiceInterface::class, CustomFieldService::class);
         $this->app->bind(AuditServiceInterface::class, AuditService::class);
 

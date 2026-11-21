@@ -225,6 +225,7 @@ onUnmounted(() => {
                                         class="absolute right-0 z-50 mt-2 w-56 rounded-2xl border border-slate-200/80 bg-white p-2 shadow-xl shadow-slate-900/10 ring-1 ring-black/[0.02]"
                                         role="menu"
                                     >
+<Link v-if="can('telephony_manage')" :href="route('telephony.index')" class="block rounded-lg px-3 py-2 text-sm font-semibold text-indigo-700">تلفن سازمانی</Link>
 <NavLink v-if="can('archive_central')" :href="route('archive.central.index')" :active="route().current('archive.central.*')" class="w-full justify-start rounded-lg border-0 px-3 py-2 text-right">بایگانی مرکزی سازمان</NavLink>
                                         <NavLink v-if="can('archive_units_manage')" :href="route('archive.departments.index')" :active="route().current('archive.departments.*')" class="w-full justify-start rounded-lg border-0 px-3 py-2 text-right">بایگانی واحدهای من</NavLink>
                                         <NavLink v-if="can('documents_view')" :href="route('archive.index')" :active="(route().current('archive.index') || route().current('archive.create') || route().current('archive.show'))" class="w-full justify-start rounded-lg border-0 px-3 py-2 text-right">آرشیو اسناد</NavLink>
@@ -547,6 +548,7 @@ onUnmounted(() => {
                             </button>
 
                             <div v-show="expandedMobileMenus.work" class="space-y-1 px-2 pb-2">
+<ResponsiveNavLink v-if="can('telephony_manage')" :href="route('telephony.index')" :active="route().current('telephony.*')" @click="closeMobileNavigation">تلفن سازمانی</ResponsiveNavLink>
 <ResponsiveNavLink v-if="can('archive_central')" :href="route('archive.central.index')" :active="route().current('archive.central.*')" @click="closeMobileNavigation">بایگانی مرکزی سازمان</ResponsiveNavLink>
                                 <ResponsiveNavLink v-if="can('archive_units_manage')" :href="route('archive.departments.index')" :active="route().current('archive.departments.*')" @click="closeMobileNavigation">بایگانی واحدهای من</ResponsiveNavLink>
                                 <ResponsiveNavLink v-if="can('documents_view')" :href="route('archive.index')" :active="(route().current('archive.index') || route().current('archive.create') || route().current('archive.show'))" @click="closeMobileNavigation">آرشیو اسناد</ResponsiveNavLink>
@@ -737,6 +739,7 @@ onUnmounted(() => {
                         داشبورد
                     </Link>
                     <p class="px-3 pb-1 pt-5 text-[11px] font-bold text-slate-400">کار و عملیات</p>
+<Link v-if="can('telephony_manage')" :href="route('telephony.index')" class="block rounded-lg px-3 py-2 text-sm font-semibold text-indigo-700">تلفن سازمانی</Link>
 <Link v-if="can('archive_central')" :href="route('archive.central.index')" :class="route().current('archive.central.*') ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold">بایگانی مرکزی سازمان</Link>
                     <Link v-if="can('archive_units_manage')" :href="route('archive.departments.index')" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">بایگانی واحدهای من</Link>
                     <Link v-if="can('documents_view')" :href="route('archive.index')" :class="(route().current('archive.index') || route().current('archive.create') || route().current('archive.show')) ? 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'" class="flex h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition">
