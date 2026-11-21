@@ -1,3 +1,7 @@
+## Modem preflight diagnostics — 2026-11-21
+
+VoiceSettings parses complete numeric current-setting lines rather than truncating VSM to two values. VoiceResult v2026.11.21.2 contains bounded CommandTrace entries, current-format/flow raw replies and separate failure-stage/original-error/cleanup-error fields. Voice-stop traces omit residual audio. VoiceTest emits schema_version 2 JSON automatically in the per-user AudioTests folder; manual export remains available. Discovery upload schema and access controls are unchanged.
+
 ## Controlled modem audio test — 2026-11-21
 
 WindowsTelephony/VoiceDiagnostics.cs provides the serial AT/G.711 diagnostic engine, isolated behind IVoicePort for tests; VoiceTest.ps1 supplies the RTL wizard. VoiceSession executes on a background task with bounded command replies and explicit cancellation, restores voice/flow/class settings and uses DTR release on unacknowledged cleanup. Audio remains in per-user LocalAppData; local JSON/WAV export is deliberately separate from the authenticated discovery-report schema. No SIP bridge or production enablement state is introduced.

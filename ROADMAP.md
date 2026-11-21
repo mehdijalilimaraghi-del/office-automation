@@ -1,3 +1,7 @@
+## Modem preflight diagnostics — 2026-11-21
+
+V4 hardware evaluation remains open. Run diagnostic helper v2 on the modem PC with VentaFax fully closed, review the raw current-format response if preflight stops, then validate simultaneous audio before implementing the PBX bridge. Owner-observed VentaFax greeting playback is useful playback evidence, not a duplex acceptance result. Do not recommend new hardware solely from the old parser failure.
+
 ## Controlled modem audio test — 2026-11-21
 
 V4 equipment evaluation now includes a practical incoming-call wizard. Next acceptance: owner runs it on the LSI/Gnet computer and verifies mobile beeps, recorded challenge speech and line release. Investigate unsupported driver/AT paths from the result before choosing another adapter or equipment. Then establish a test PBX and implement/test the audio bridge and extension routing; no production trunk activation is implied.

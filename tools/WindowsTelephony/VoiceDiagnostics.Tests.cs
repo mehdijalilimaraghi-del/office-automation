@@ -9,7 +9,8 @@ public sealed class DiagnosticFakePort : IVoicePort
 {
     private readonly Queue<byte> input = new Queue<byte>();
     private bool configured, ringSent, duplex;
-    public bool NoRing, RejectDuplex, RejectHangup, Released, Disposed;
+    public bool NoRing, RejectDuplex, RejectHangup, Released, Disposed, RejectFormatQuery, PartialFormatReply, ResidualAudioOnStop;
+    public string CurrentFormat = "0,8000";
     public readonly List<string> Commands = new List<string>();
     private void Enqueue(string value) { foreach(byte b in Encoding.ASCII.GetBytes(value)) input.Enqueue(b); }
     public void Open() { }
@@ -23,7 +24,7 @@ public sealed class DiagnosticFakePort : IVoicePort
     public int Read(byte[] b,int o,int n) { int count=0;while(count<n && input.Count>0)b[o+count++]=input.Dequeue();return count; }
     public void Write(byte[] b,int o,int n)
     {
-        if(duplex && n==2 && b[o]==16 && b[o+1]==94) { duplex=false; Enqueue("\r\nOK\r\n");return; }
+        if(duplex && n==2 && b[o]==16 && b[o+1]==94) { duplex=false; if(ResidualAudioOnStop)Enqueue("residual-private-audio");Enqueue("\r\nOK\r\n");return; }
         if(duplex) {
             byte[] audio=new byte[160];for(int i=0;i<audio.Length;i++)audio[i]=VoiceCodec.EncodeMuLaw((short)(3000*Math.Sin(2*Math.PI*440*i/8000)));
             foreach(byte sample in VoiceCodec.Escape(audio))input.Enqueue(sample);return;
@@ -33,7 +34,7 @@ public sealed class DiagnosticFakePort : IVoicePort
             case "ATI": Enqueue("\r\nLSI Test Fixture\r\nOK\r\n");break;
             case "AT+FCLASS?": Enqueue("\r\n0\r\nOK\r\n");break;
             case "AT+VSM=?": Enqueue("\r\n4,\"G.711U\",8,0,8000\r\nOK\r\n");break;
-            case "AT+VSM?": Enqueue("\r\n0,8000\r\nOK\r\n");break;
+            case "AT+VSM?": Enqueue(RejectFormatQuery ? "\r\nERROR\r\n" : "AT+VSM?\r\r\n" + CurrentFormat + (PartialFormatReply ? "\r\n" : "\r\nOK\r\n"));break;
             case "AT+IFC?": Enqueue("\r\n+IFC: 2,2\r\nOK\r\n");break;
             case "AT+VSM=4,8000": configured=true; Enqueue("\r\nOK\r\n");break;
             case "AT+VTR": duplex=!RejectDuplex;Enqueue(RejectDuplex?"\r\nERROR\r\n":"\r\nCONNECT\r\n");break;
@@ -57,6 +58,15 @@ public static class VoiceDiagnosticChecks
         Check(VoiceCodec.FindMuLaw("4,\"G.711U\",8,0,8000\r\nOK")==4,"actual LSI format");
         Check(VoiceCodec.FindMuLaw("131,\"8-bit mu-law\",8000\r\nOK")==131,"alternate codec ID");
         Check(VoiceCodec.FindMuLaw("0,\"Signed PCM\",16,0,8000")==-1,"unsupported serial bandwidth format");
+        Check(VoiceSettings.Parse("AT+VSM?\r\r\n+VSM: 0, 8000, 7, 9\r\nOK\r\n","VSM",2,4)=="0,8000,7,9","all four settings preserved");
+        Check(VoiceSettings.Parse("+vsm = 4,8000\r\nOK\r\n","VSM",2,4)=="4,8000","prefix delimiter and whitespace");
+        Check(VoiceSettings.Parse("0,8000\r\n1,8000\r\nOK\r\n","VSM",2,4)=="","ambiguous current values rejected");
+        Check(VoiceSettings.Parse("0,8000,7,9,2\r\nOK\r\n","VSM",2,4)=="","extra parameters never silently dropped");
+        Check(VoiceSettings.Parse("0,8000 trailing\r\nOK\r\n","VSM",2,4)=="","trailing garbage rejected");
+        Check(VoiceSettings.Parse("0,8000\r\nERROR\r\n","VSM",2,4)=="","rejected query cannot become a snapshot");
+        Check(VoiceSettings.Parse("0,8000\r\n","VSM",2,4)=="","partial query cannot become a snapshot");
+        Check(VoiceSettings.Parse("0,\"Signed PCM\",16,0,8000\r\nOK\r\n","VSM",2,4)=="","codec inventory cannot become current settings");
+        Check(VoiceSettings.Parse("+IFC: 2,2\r\nOK\r\n","IFC",2,2)=="2,2","flow snapshot");
         var decoder=new VoiceDecoder();
         decoder.Feed(new byte[]{255,16},2);
         decoder.Feed(new byte[]{16,16,(byte)'b',127,16},5);
@@ -83,9 +93,27 @@ public static class VoiceDiagnosticChecks
             Check(session.Result.Status=="failed" && !session.Result.DuplexStarted && session.Result.CleanupConfirmed,"unsupported duplex safe cleanup");
             var failed=new DiagnosticFakePort {RejectHangup=true};session=new VoiceSession(failed,folder,300,100);session.Start();Finish(session);
             Check(!session.Result.CleanupConfirmed && failed.Released && !session.Result.CompatibleForNextStep,"unconfirmed hangup cannot pass");
-            var cancelled=new DiagnosticFakePort {NoRing=true};session=new VoiceSession(cancelled,folder,2000,100);session.Start();Thread.Sleep(30);session.Cancel();Finish(session);
+            var cancelled=new DiagnosticFakePort {NoRing=true};session=new VoiceSession(cancelled,folder,2000,100);session.Start();
+            for(int i=0;i<300 && session.Progress!="waiting_ring" && !session.Completed;i++)Thread.Sleep(5);
+            Check(session.Progress=="waiting_ring","fixture reached waiting stage");
+            session.Cancel();Finish(session);
             Check(session.Result.Cancelled && !cancelled.Commands.Contains("AT+VLS=1") && cancelled.Disposed,"cancellation does not answer");
-            return "PASS: codec vectors, escaping, wave format, acceptance gates and five simulated session outcomes; no real port opened.";
+            Check(session.Result.FailureStage=="wait_for_incoming_call","cancel stage retained");
+            var extended=new DiagnosticFakePort {CurrentFormat="+VSM: 0, 8000, 7, 9",ResidualAudioOnStop=true};session=new VoiceSession(extended,folder,300,100);session.Start();Finish(session);
+            Check(session.Result.CleanupConfirmed && extended.Commands.Contains("AT+VSM=0,8000,7,9"),"entire original format restored");
+            Check(session.Result.Trace.Exists(t=>t.Command=="AT+VSM?" && t.Response.Contains("7, 9")) && session.Result.Trace.Exists(t=>t.Command=="<DLE>^" && t.Response=="OK"),"raw query and stop acknowledgement traced");
+            var unknown=new DiagnosticFakePort {CurrentFormat="not-a-numeric-snapshot"};session=new VoiceSession(unknown,folder,300,100);session.Start();Finish(session);
+            Check(session.Result.FailureStage=="read_current_format" && session.Result.CurrentFormatReply.Contains("not-a-numeric-snapshot"),"failed current-format response retained");
+            Check(!unknown.Commands.Contains("AT+VSM=4,8000") && !unknown.Commands.Contains("AT+IFC=0,0") && !unknown.Commands.Contains("AT+VLS=1") && session.Result.CleanupConfirmed,"unknown settings stop before audio changes or answering");
+            var rejectedQuery=new DiagnosticFakePort {RejectFormatQuery=true};session=new VoiceSession(rejectedQuery,folder,300,100);session.Start();Finish(session);
+            Check(session.Result.Trace.Exists(t=>t.Command=="AT+VSM?" && t.Response.Contains("ERROR") && t.Error.Length>0),"rejected replies traced");
+            var partial=new DiagnosticFakePort {PartialFormatReply=true};session=new VoiceSession(partial,folder,300,100);session.Start();Finish(session);
+            Check(session.Result.FailureError=="modem_response_timeout" && session.Result.Trace.Exists(t=>t.Command=="AT+VSM?" && t.Response.Contains("0,8000") && t.Error=="modem_response_timeout"),"timeout retains partial response");
+            var streaming=new DiagnosticFakePort();session=new VoiceSession(streaming,folder,300,2000);session.Start();
+            for(int i=0;i<400 && session.Progress!="streaming" && !session.Completed;i++)Thread.Sleep(5);
+            session.Cancel();Finish(session);
+            Check(session.Result.Cancelled && session.Result.DuplexStarted && session.Result.CleanupConfirmed && streaming.Commands.Contains("ATH"),"streaming cancellation restores and hangs up");
+            return "PASS: settings snapshots, raw/partial/rejected traces, codec/framing/WAV/acceptance gates and ten simulated session outcomes; no real port opened.";
         } finally { foreach(string file in Directory.GetFiles(folder))File.Delete(file);Directory.Delete(folder); }
     }
 }

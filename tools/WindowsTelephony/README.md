@@ -10,7 +10,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install.ps1
 
 The download includes settings.json with the requesting application origin. Installation is per-user in LocalAppData and HKCU; it does not need administrative privileges or install drivers. Explicit ServerUrl overrides must be exact HTTP(S) origins. Use trusted HTTPS where available; LAN HTTP reports have the same transport exposure as the existing application.
 
-Open the application on that same computer, create a discovery request and launch the helper. The browser may ask permission to open the custom protocol. Close other fax/dial-up applications, select a modem and review the automatic initial capability test result, then submit the report. Review a new request if the ten-minute token has expired.
+Open the application on that same computer, create a discovery request and launch the helper. The browser may ask permission to open the custom protocol. Fully close VentaFax and other fax/dial-up applications, select a modem and review the automatic initial capability test result, then submit the report. Review a new request if the ten-minute token has expired.
 
 The token is one-use and the uploader does not follow redirects or bypass TLS certificate validation. Only the exact installed origin and telephony report path are accepted. Tokens and credentials are not stored in settings.json.
 
@@ -42,6 +42,14 @@ The current path requires serial AT voice commands, G.711 mu-law at 8 kHz and AT
 
 ## Software verification
 
-Test-Audio.ps1 compiles the runtime engine and injectable fake-port fixtures in Windows PowerShell 5.1. It checks codec vectors, cross-chunk DLE escaping, WAV structure, human acceptance gates and simulated success, timeout, cancellation, rejected duplex and unconfirmed hangup. These tests open no real COM port and do not establish hardware compatibility. The wizard was visually rendered without starting a call.
+Test-Audio.ps1 compiles the runtime engine and injectable fake-port fixtures in Windows PowerShell 5.1. It checks codec vectors, cross-chunk DLE escaping, WAV structure, human acceptance gates and ten simulated session outcomes, including complete four-value restoration, unrecognized settings, rejected/partial queries and cancellation while streaming. These tests open no real COM port and do not establish hardware compatibility. The wizard was visually rendered without starting a call.
 
 Command references: [USR voice reference](https://ads.usr.com/support/5637/5637-ug/ref_voice.html), [MultiTech SocketModem AT guide](https://multitech.com/wp-content/uploads/s000468.pdf). Exact device/driver support must be tested; generic manuals do not establish LSI support.
+
+## Diagnostic helper version 2026.11.21.2
+
+The first owner audio test stopped at cannot_preserve_original_format before any ring/answer. Its report omitted the current AT+VSM? response, so the exact device-specific cause remains unknown. Owner-confirmed VentaFax greeting playback establishes playback evidence only. Fully exit VentaFax before testing; do not change its modem profile or drivers.
+
+Current-setting snapshots accept complete two-to-four-number VSM replies with bare or prefixed syntax; all supplied values are restored. Unrecognized/ambiguous replies still stop before changing the audio format or answering. Raw query responses, bounded command traces, partial replies after timeout, failure stage and independent cleanup errors are now retained in schema_version 2 JSON. Residual audio drained while stopping voice is omitted from the text trace.
+
+After a completed attempt, an automatic JSON snapshot is stored beside local audio under LocalAppData/OfficeAutomation/Telephony/AudioTests, with no automatic upload. Hearing confirmations update that snapshot. Use Save Result to export it, even if no recording exists. The title shows version 2 to distinguish a fresh extraction from an old running helper. No compatibility pass is inferred from the parser update.

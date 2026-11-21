@@ -1,3 +1,9 @@
+## Modem preflight diagnostics — 2026-11-21
+
+The owner's first audio report failed before ring/answer at cannot_preserve_original_format; cleanup was acknowledged. Its missing current-format reply prevents diagnosing the actual LSI response. Updated helper reads complete two-to-four-value numeric VSM snapshots, restores every value, retains raw/partial/error replies, separates original and cleanup failures, and automatically saves versioned local reports. Exact on-device cause and live two-way compatibility still need the new report. No database/dependency or routing changes.
+
+Validation passed: 538 SQL Server tests / 3387 assertions, TypeScript/production build, 10 Windows capability-parser cases, ten simulated audio sessions plus settings/trace regressions, PowerShell syntax and fake-port GUI/automatic JSON verification. Offline package: storage/app/private/OfficeAutomation-ModemAudioTest-v2.zip. Live modem acceptance remains pending.
+
 ## Controlled modem audio test — 2026-11-21
 
 Implemented a separate incoming-call audio wizard for Windows AT voice modems with G.711 mu-law at 8 kHz: ring detection, explicit answer, simultaneous transmit/capture, playback, two human confirmations, cancellation, mode restoration and local JSON/WAV export. No actual modem or telephone call was tested on this development computer. PBX/SIP bridging and V4 completion remain pending. No database migration or dependency change in this step.

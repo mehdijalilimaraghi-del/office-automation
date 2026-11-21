@@ -114,8 +114,47 @@ namespace OfficeAutomation.Telephony.Diagnostics
             }
         }
     }
+    public static class VoiceSettings
+    {
+        // Accept only complete numeric current-value replies, never a codec inventory or command echo.
+        public static string Parse(string reply, string name, int minimum, int maximum)
+        {
+            if (!Regex.IsMatch(reply, @"(?:^|[\r\n])OK[ \t]*(?:$|[\r\n])")
+                || Regex.IsMatch(reply, @"(?:^|[\r\n])(?:ERROR|NO CARRIER|BUSY)[ \t]*(?:$|[\r\n])")) return "";
+            string snapshot = "";
+            foreach (string raw in Regex.Split(reply, @"[\r\n]+"))
+            {
+                string line = raw.Trim();
+                line = Regex.Replace(line, @"^\+" + Regex.Escape(name) + @"[ \t]*[:=][ \t]*", "", RegexOptions.IgnoreCase);
+                if (!Regex.IsMatch(line, @"^[0-9]{1,5}(?:[ \t]*,[ \t]*[0-9]{1,5})+$")) continue;
+                string[] values = line.Split(',');
+                if (values.Length < minimum || values.Length > maximum) return "";
+                if (values.Any(v => int.Parse(v.Trim(), CultureInfo.InvariantCulture) > 65535)) return "";
+                string normalized = string.Join(",", values.Select(v => v.Trim()).ToArray());
+                if (snapshot.Length > 0 && snapshot != normalized) return "";
+                snapshot = normalized;
+            }
+            return snapshot;
+        }
+    }
+    public sealed class CommandTrace
+    {
+        public string Command = "";
+        public string Response = "";
+        public string Error = "";
+        public long DurationMilliseconds;
+    }
     public sealed class VoiceResult
     {
+        public string DiagnosticVersion = "2026.11.21.2";
+        public string FailureStage = "";
+        public string FailureError = "";
+        public string CleanupError = "";
+        public string CurrentFormatReply = "";
+        public string CurrentFlowReply = "";
+        public string OriginalFormat = "";
+        public string OriginalFlow = "";
+        public readonly List<CommandTrace> Trace = new List<CommandTrace>();
         public string Status = "not_started";
         public string ErrorCode = "";
         public bool RingDetected;
@@ -154,6 +193,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
         private Task worker;
         private readonly VoiceResult result = new VoiceResult();
         private volatile string progress = "ready";
+        private string stage = "open_port";
         private bool opened, changedMode, duplex, answerAttempted;
         private string originalClass = "", originalFormat = "", originalFlow = "";
         public string Progress { get { return progress; } }
@@ -173,30 +213,53 @@ namespace OfficeAutomation.Telephony.Diagnostics
         }
         public void Cancel() { stop.Cancel(); }
         private void Raw(byte[] bytes) { port.Write(bytes, 0, bytes.Length); }
-        private string Reply(int timeout, bool cancellable)
+        private string Reply(int timeout, bool cancellable, CommandTrace trace)
         {
             var watch = Stopwatch.StartNew(); var text = new StringBuilder();
-            while (watch.ElapsedMilliseconds < timeout)
+            try
             {
-                if (cancellable) stop.Token.ThrowIfCancellationRequested();
-                if (port.Available > 0)
+                while (watch.ElapsedMilliseconds < timeout)
                 {
-                    byte[] b = new byte[1];
-                    port.Read(b, 0, 1); text.Append((char)b[0]);
-                    if (text.Length > 8192) throw new InvalidDataException("Reply size limit exceeded");
-                    if (Regex.IsMatch(text.ToString(), @"(?:^|[\r\n])(OK|ERROR|CONNECT|NO CARRIER|BUSY)\r?\n$")) return text.ToString();
+                    if (cancellable) stop.Token.ThrowIfCancellationRequested();
+                    if (port.Available > 0)
+                    {
+                        byte[] b = new byte[1];
+                        port.Read(b, 0, 1); text.Append((char)b[0]);
+                        if (text.Length > 8192) throw new InvalidDataException("Reply size limit exceeded");
+                        if (Regex.IsMatch(text.ToString(), @"(?:^|[\r\n])(OK|ERROR|CONNECT|NO CARRIER|BUSY)\r?\n$")) return text.ToString();
+                    }
+                    else Thread.Sleep(5);
                 }
-                else Thread.Sleep(5);
+                throw new TimeoutException("modem_response_timeout");
             }
-            throw new TimeoutException("modem_response_timeout");
+            finally
+            {
+                // Drain voice-stop replies without copying residual call audio into the text report.
+                trace.Response = trace.Command == "<DLE>^"
+                    ? Regex.Match(text.ToString(), @"(?:^|[\r\n])(OK|ERROR|NO CARRIER|BUSY)[ \t]*(?:$|[\r\n])").Value.Trim()
+                    : text.ToString();
+            }
+        }
+        private string Exchange(string command, byte[] bytes, bool connect, bool cancellable)
+        {
+            if (result.Trace.Count >= 64) throw new InvalidDataException("command_trace_limit");
+            var trace = new CommandTrace { Command = command };
+            result.Trace.Add(trace);
+            var watch = Stopwatch.StartNew();
+            try
+            {
+                Raw(bytes);
+                string reply = Reply(2500, cancellable, trace);
+                string expected = connect ? "CONNECT" : "OK";
+                if (!Regex.IsMatch(reply, @"(?:^|[\r\n])" + expected + @"[ \t]*(?:$|[\r\n])")) throw new InvalidOperationException("command_rejected:" + command);
+                return reply;
+            }
+            catch (Exception exception) { trace.Error = exception.Message; throw; }
+            finally { trace.DurationMilliseconds = watch.ElapsedMilliseconds; }
         }
         private string Command(string command, bool connect, bool cancellable)
         {
-            Raw(Encoding.ASCII.GetBytes(command + "\r"));
-            string reply = Reply(2500, cancellable);
-            string expected = connect ? "CONNECT" : "OK";
-            if (!Regex.IsMatch(reply, @"(?:^|[\r\n])" + expected + @"\s*(?:$|[\r\n])")) throw new InvalidOperationException("command_rejected:" + command.Split('=')[0]);
-            return reply;
+            return Exchange(command, Encoding.ASCII.GetBytes(command + "\r"), connect, cancellable);
         }
         private void Run()
         {
@@ -206,25 +269,31 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 progress = "preparing"; port.Open(); opened = true;
                 Command("AT", false, true);
                 result.Identity = Command("ATI", false, true);
+                stage = "read_original_class";
                 string classes = Command("AT+FCLASS?", false, true);
                 Match original = Regex.Match(classes, @"(?:^|[\r\n])\s*(?:\+FCLASS:\s*)?([0-9]+(?:\.[0-9]+)?)\s*(?:$|[\r\n])");
                 if (!original.Success) throw new InvalidOperationException("cannot_preserve_original_mode");
                 originalClass = original.Groups[1].Value;
+                stage = "enter_voice_class";
                 changedMode = true; Command("AT+FCLASS=8", false, true);
+                stage = "read_supported_formats";
                 result.Formats = Command("AT+VSM=?", false, true);
                 int codec = VoiceCodec.FindMuLaw(result.Formats);
                 if (codec < 0) throw new InvalidOperationException("no_supported_8khz_mulaw");
-                string format = Command("AT+VSM?", false, true);
-                Match oldFormat = Regex.Match(format, @"(?:^|[\r\n])\s*(?:\+VSM:\s*)?([0-9]+\s*,\s*[0-9]+)\s*(?:,|$|[\r\n])");
-                if (!oldFormat.Success) throw new InvalidOperationException("cannot_preserve_original_format");
-                originalFormat = Regex.Replace(oldFormat.Groups[1].Value, @"\s+", "");
-                string flow = Command("AT+IFC?", false, true);
-                Match oldFlow = Regex.Match(flow, @"(?:^|[\r\n])\s*(?:\+IFC:\s*)?([0-9]+\s*,\s*[0-9]+)\s*(?:$|[\r\n])");
-                if (!oldFlow.Success) throw new InvalidOperationException("cannot_preserve_flow_control");
-                originalFlow = Regex.Replace(oldFlow.Groups[1].Value, @"\s+", "");
+                stage = "read_current_format";
+                result.CurrentFormatReply = Command("AT+VSM?", false, true);
+                originalFormat = VoiceSettings.Parse(result.CurrentFormatReply, "VSM", 2, 4);
+                result.OriginalFormat = originalFormat;
+                if (originalFormat.Length == 0) throw new InvalidOperationException("cannot_preserve_original_format");
+                stage = "read_flow_control";
+                result.CurrentFlowReply = Command("AT+IFC?", false, true);
+                originalFlow = VoiceSettings.Parse(result.CurrentFlowReply, "IFC", 2, 2);
+                result.OriginalFlow = originalFlow;
+                if (originalFlow.Length == 0) throw new InvalidOperationException("cannot_preserve_flow_control");
+                stage = "configure_audio";
                 Command("AT+IFC=0,0", false, true);
                 Command("AT+VSM=" + codec.ToString(CultureInfo.InvariantCulture) + ",8000", false, true);
-                progress = "waiting_ring";
+                progress = "waiting_ring"; stage = "wait_for_incoming_call";
                 var ringWatch = Stopwatch.StartNew(); var text = new StringBuilder();
                 while (ringWatch.ElapsedMilliseconds < ringTimeout)
                 {
@@ -239,9 +308,11 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 }
                 if (!result.RingDetected) throw new TimeoutException("incoming_call_timeout");
                 stop.Token.ThrowIfCancellationRequested();
+                stage = "answer_incoming_call";
                 progress = "answering"; answerAttempted = true; Command("AT+VLS=1", false, true); result.Answered = true;
+                stage = "start_duplex";
                 Command("AT+VTR", true, true); duplex = true; result.DuplexStarted = true;
-                progress = "streaming";
+                progress = "streaming"; stage = "stream_audio";
                 var clock = Stopwatch.StartNew(); int frame = 0;
                 while (clock.ElapsedMilliseconds < captureDuration && !decoder.Ended)
                 {
@@ -270,8 +341,8 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 result.StreamMilliseconds = (int)clock.ElapsedMilliseconds;
                 result.Status = "captured";
             }
-            catch (OperationCanceledException) { result.Cancelled = true; result.Status = "cancelled"; result.ErrorCode = "cancelled_by_user"; }
-            catch (Exception exception) { result.Status = "failed"; result.ErrorCode = exception.Message; }
+            catch (OperationCanceledException) { result.Cancelled = true; result.Status = "cancelled"; result.ErrorCode = "cancelled_by_user"; result.FailureStage = stage; result.FailureError = result.ErrorCode; }
+            catch (Exception exception) { result.Status = "failed"; result.ErrorCode = exception.Message; result.FailureStage = stage; result.FailureError = exception.Message; }
             finally
             {
                 progress = "hanging_up";
@@ -279,14 +350,19 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 {
                     try
                     {
-                        if (duplex) { Raw(new byte[] { 16, 94 }); string ended = Reply(2500, false); if (!Regex.IsMatch(ended, @"(?:^|[\r\n])OK\s*(?:$|[\r\n])")) throw new IOException("voice_stop_not_acknowledged"); }
+                        if (duplex) Exchange("<DLE>^", new byte[] { 16, 94 }, false, false);
                         if (answerAttempted) Command("ATH", false, false);
                         if (changedMode && originalFormat.Length > 0) Command("AT+VSM=" + originalFormat, false, false);
                         if (originalFlow.Length > 0) Command("AT+IFC=" + originalFlow, false, false);
                         if (changedMode && originalClass.Length > 0) Command("AT+FCLASS=" + originalClass, false, false);
                         result.CleanupConfirmed = true;
                     }
-                    catch { try { port.ReleaseDtr(); } catch { } result.CleanupConfirmed = false; }
+                    catch (Exception exception)
+                    {
+                        result.CleanupError = exception.Message;
+                        try { port.ReleaseDtr(); } catch { }
+                        result.CleanupConfirmed = false;
+                    }
                 }
                 try { port.Dispose(); } catch { }
                 result.ReceivedSamples = decoder.Audio.Count;
@@ -304,9 +380,17 @@ namespace OfficeAutomation.Telephony.Diagnostics
                         RecordingPath = Path.Combine(folder, result.RecordingFile);
                         VoiceCodec.SaveWave(RecordingPath, decoder.Audio.ToArray());
                     }
-                    catch { result.Status = "failed"; result.ErrorCode = "recording_write_failed"; }
+                    catch
+                    {
+                        result.Status = "failed"; result.ErrorCode = "recording_write_failed";
+                        if (result.FailureStage.Length == 0) { result.FailureStage = "save_recording"; result.FailureError = result.ErrorCode; }
+                    }
                 }
-                if (!result.CleanupConfirmed && opened) { result.Status = "failed"; result.ErrorCode = "hangup_or_restore_not_confirmed"; }
+                if (!result.CleanupConfirmed && opened)
+                {
+                    result.Status = "failed"; result.ErrorCode = "hangup_or_restore_not_confirmed";
+                    if (result.FailureStage.Length == 0) { result.FailureStage = "cleanup"; result.FailureError = result.CleanupError; }
+                }
                 progress = "finished";
             }
         }

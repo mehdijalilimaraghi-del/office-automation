@@ -1,3 +1,7 @@
+## Modem preflight diagnostics — 2026-11-21
+
+Audio helper diagnostic version 2026.11.21.2 captures bounded AT command/reply traces (including failed and partial replies). Never guess unknown current voice settings or skip restoration to get past the owner preflight failure. The owner reports VentaFax playback works; this is evidence of playback only, not simultaneous duplex or a ready PBX bridge.
+
 ## Controlled modem audio test — 2026-11-21
 
 The practical audio wizard is separate from automatic discovery. Only an explicit consent checkbox and Start click may open the voice session. Never certify hardware from simulated tests, byte counters or class 8; require hearing both directions and acknowledged cleanup. Recordings stay local and are not uploaded by discovery.

@@ -1,3 +1,7 @@
+## Modem preflight diagnostics — 2026-11-21
+
+Owner uses VentaFax for incoming faxes and confirms its greeting plays over the modem line. The diagnostic helper must explain the failed preparation stage and retain a usable report even when no audio was recorded. Never answer a call with unknown settings; advise closing competing fax software before testing, without altering its configuration or installed drivers.
+
 ## Controlled modem audio test — 2026-11-21
 
 The owner can test an existing modem before buying equipment. Automatic read-only discovery remains distinct from the user-armed incoming call. The audio test waits up to 60 seconds, captures up to 12 seconds, uses a spoken random challenge and requires the owner to confirm both remote beeps and recorded speech. Busy/end events alone do not prove remote hangup detection. Failure of this serial codec path is not universal hardware incompatibility.

@@ -36,3 +36,5 @@ Real supported inbound/outbound call tests; authorization for logs/recordings; e
 - tools/WindowsTelephony/VoiceTest.ps1: explicit-consent incoming-call wizard; ModemHelper.ps1 opens it separately from discovery.
 - tools/WindowsTelephony/Test-Audio.ps1 and VoiceDiagnostics.Tests.cs: no-hardware session regressions.
 - ModemController helper ZIP and Install.ps1 include both runtime dependencies. Local audio results are not silently added to discovery uploads.
+
+- VoiceSettings and CommandTrace in VoiceDiagnostics.cs: complete current-setting snapshots and versioned bounded diagnostics; VoiceTest automatically saves local schema v2 reports. First real owner attempt stopped before answering at current-format parsing; next report must retain that raw response.

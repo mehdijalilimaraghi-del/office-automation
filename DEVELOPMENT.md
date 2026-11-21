@@ -1,3 +1,9 @@
+## Modem preflight diagnostics — 2026-11-21
+
+Windows audio regressions now cover ten simulated session outcomes, complete four-value restoration, ambiguous/invalid setting rejection, raw/rejected/partial reply retention and cancellation during streaming. GUI verification checks the Persian failure stage and parses an automatically saved v2 JSON report using a fake port. No new real-modem call was made from this computer; the owner's first report stops during preparation. Use a fresh extraction of OfficeAutomation-ModemAudioTest-v2.zip and close VentaFax before physical retesting.
+
+Validation passed: 538 SQL Server tests / 3387 assertions, TypeScript/production build, 10 Windows capability-parser cases, ten simulated audio sessions plus settings/trace regressions, PowerShell syntax and fake-port GUI/automatic JSON verification. Offline package: storage/app/private/OfficeAutomation-ModemAudioTest-v2.zip. Live modem acceptance remains pending.
+
 ## Controlled modem audio test — 2026-11-21
 
 Run tools/WindowsTelephony/Test-Audio.ps1 in Windows PowerShell 5.1 for codec, DLE framing, WAV and five simulated session outcomes without opening hardware; also run Test-Capabilities.ps1. The voice wizard was rendered without arming a call. Physical acceptance must use Run-Offline.cmd on the modem PC, explicit consent, an incoming mobile call, playback and both hearing confirmations. Preserve the exported JSON/WAV locally; do not commit call audio or report identities. AT command references: https://ads.usr.com/support/5637/5637-ug/ref_voice.html and https://multitech.com/wp-content/uploads/s000468.pdf .

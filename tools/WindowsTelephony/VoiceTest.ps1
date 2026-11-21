@@ -7,10 +7,10 @@ function Show-ModemVoiceTest {
     if (-not ('OfficeAutomation.Telephony.Diagnostics.VoiceSession' -as [type])) {
         Add-Type -Path (Join-Path $PSScriptRoot 'VoiceDiagnostics.cs')
     }
-    $state = @{ session=$null; wantClose=$false; result=$null; recording=$null; player=$null }
+    $state = @{ session=$null; wantClose=$false; result=$null; recording=$null; player=$null; report=$null; autoReport=$null }
     $challenge = [string](Get-Random -Minimum 100 -Maximum 1000)
     $window = New-Object Windows.Forms.Form
-    $window.Text='آزمون عملی صدای مودم'
+    $window.Text='آزمون عملی صدای مودم — نسخه ۲'
     $window.Size=New-Object Drawing.Size(820,700)
     $window.MinimumSize=New-Object Drawing.Size(700,620)
     $window.StartPosition='CenterParent'
@@ -26,7 +26,7 @@ function Show-ModemVoiceTest {
     }
     $instructions=New-Object Windows.Forms.Label
     $instructions.Dock='Fill'
-    $instructions.Text="مودم: $DeviceName ($Port)"+[Environment]::NewLine+'۱. خط را به مودم وصل کنید و برنامه‌های فکس و دایال‌آپ را ببندید.'+[Environment]::NewLine+'۲. آزمون را آماده کنید؛ پس از پیام انتظار، با موبایل به شماره خط زنگ بزنید.'+[Environment]::NewLine+"۳. در موبایل باید بوق بشنوید. سپس عدد $challenge را واضح بگویید و بعد از حدود ۸ ثانیه تماس موبایل را قطع کنید."
+    $instructions.Text="مودم: $DeviceName ($Port)"+[Environment]::NewLine+'۱. خط را وصل کنید و VentaFax و سایر برنامه‌های فکس و دایال‌آپ را کامل ببندید.'+[Environment]::NewLine+'۲. آزمون را آماده کنید؛ پس از پیام انتظار، با موبایل به شماره خط زنگ بزنید.'+[Environment]::NewLine+"۳. در موبایل باید بوق بشنوید. سپس عدد $challenge را واضح بگویید و بعد از حدود ۸ ثانیه تماس موبایل را قطع کنید."
     $consent=New-Object Windows.Forms.CheckBox
     $consent.Dock='Fill'
     $consent.Text='خط برای آزمون آزاد است و اجازه پاسخ‌گویی و ضبط همین تماس آزمایشی را می‌دهم. انتظار حداکثر ۶۰ ثانیه و ضبط حداکثر ۱۲ ثانیه است.'
@@ -76,6 +76,8 @@ function Show-ModemVoiceTest {
             $details+='آزمون به درخواست شما متوقف شد.'
         } elseif($r.ErrorCode -eq 'incoming_call_timeout'){
             $details+='در زمان انتظار، زنگ ورودی شناسایی نشد. سیم‌کشی خط و شماره تماس را بررسی و آزمون تازه ایجاد کنید.'
+        } elseif($r.ErrorCode -eq 'cannot_preserve_original_format' -or $r.ErrorCode -eq 'cannot_preserve_flow_control'){
+            $details+='پاسخ تنظیمات فعلی مودم قابل تشخیص نبود؛ هنوز به تماسی پاسخ داده نشده است. پاسخ خام در گزارش ثبت شده است. گزارش را برای بررسی ذخیره کنید.'
         } elseif($r.ErrorCode -like 'command_rejected:*' -or $r.ErrorCode -eq 'no_supported_8khz_mulaw'){
             $details+='مودم یا درایور، مسیر صوتی این واسط را نپذیرفت. این نتیجه تأیید ناسازگاری با همه روش‌ها نیست؛ علت در گزارش فنی ذخیره می‌شود.'
         } else{
@@ -84,7 +86,35 @@ function Show-ModemVoiceTest {
         $details+=[Environment]::NewLine
         $details+=if($r.CleanupConfirmed){'پایان آزمون و بازگرداندن حالت مودم تأیید شد.'}else{'آزادشدن خط تأیید نشد؛ وضعیت خط را با گوشی بررسی کنید.'}
         $details+=[Environment]::NewLine
-        $details+=if($r.Events -contains 'busy_tone'){'علامت بوق اشغال ثبت شد؛ ممکن است نشانه قطع طرف مقابل باشد.'}elseif($r.Events -contains 'stream_end'){'پایان جریان صوت از مودم ثبت شد؛ علت قطع از این علامت به‌تنهایی مشخص نیست.'}else{'علامت مشخصی برای قطع طرف مقابل ثبت نشد؛ این بخش تأیید نشده است.'}
+        $details+=if(-not $r.Answered){'آزمون تماس آغاز نشده است.'}elseif($r.Events -contains 'busy_tone'){'علامت بوق اشغال ثبت شد؛ ممکن است نشانه قطع طرف مقابل باشد.'}elseif($r.Events -contains 'stream_end'){'پایان جریان صوت از مودم ثبت شد؛ علت قطع از این علامت به‌تنهایی مشخص نیست.'}else{'علامت مشخصی برای قطع طرف مقابل ثبت نشد؛ این بخش تأیید نشده است.'}
+        if($r.FailureStage){
+            $stageName=switch($r.FailureStage){
+                'open_port' {'بازکردن درگاه'}
+                'read_original_class' {'خواندن حالت قبلی مودم'}
+                'enter_voice_class' {'آماده‌سازی حالت صوتی'}
+                'read_supported_formats' {'خواندن قالب‌های صوتی'}
+                'read_current_format' {'خواندن تنظیم فعلی صدا'}
+                'read_flow_control' {'خواندن تنظیم انتقال داده'}
+                'configure_audio' {'تنظیم صدا'}
+                'wait_for_incoming_call' {'انتظار تماس'}
+                'answer_incoming_call' {'پاسخ‌گویی'}
+                'start_duplex' {'شروع صدای هم‌زمان'}
+                'stream_audio' {'ارسال و دریافت صدا'}
+                'save_recording' {'ذخیره صدا'}
+                'cleanup' {'آزادکردن خط و بازگرداندن تنظیمات'}
+                default {'بررسی مودم'}
+            }
+            $details+=[Environment]::NewLine+"مرحله توقف: $stageName"
+        }
+        if($state.report -and $state.autoReport){
+            try{
+                [void][IO.Directory]::CreateDirectory((Split-Path -Parent $state.autoReport))
+                [IO.File]::WriteAllText($state.autoReport,($state.report|ConvertTo-Json -Depth 8),[Text.UTF8Encoding]::new($false))
+                $details+=[Environment]::NewLine+'گزارش فنی خودکار نگه‌داری شد. برای ارسال، «ذخیره نتیجه و فایل صدا» را بزنید.'
+            }catch{
+                $details+=[Environment]::NewLine+'ذخیره خودکار گزارش ممکن نشد. گزارش را با دکمه ذخیره در پوشه دیگری نگه دارید.'
+            }
+        }
         $progress.Text=$details
     }
     $heardTone.Add_CheckedChanged($assessment)
@@ -94,6 +124,7 @@ function Show-ModemVoiceTest {
         if(-not $consent.Checked -or $state.session){return}
         try{
             $folder=Join-Path $env:LOCALAPPDATA 'OfficeAutomation\Telephony\AudioTests'
+            $state.autoReport=Join-Path $folder ('modem-audio-'+[Guid]::NewGuid().ToString('N')+'.json')
             $state.session=New-Object OfficeAutomation.Telephony.Diagnostics.VoiceSession($Port,$folder)
             $start.Enabled=$false; $consent.Enabled=$false; $cancel.Enabled=$true
             $state.session.Start(); $timer.Start()
@@ -108,6 +139,7 @@ function Show-ModemVoiceTest {
         if($state.session.Completed){
             $timer.Stop()
             $state.result=$state.session.Result
+            $state.report=@{report_type='modem_audio_test';schema_version=2;device_name=$DeviceName;port=$Port;challenge=$challenge;tested_at=[DateTimeOffset]::Now.ToString('o');result=$state.result}
             $state.recording=$state.session.RecordingPath
             $cancel.Enabled=$false
             $save.Enabled=$true
@@ -139,8 +171,7 @@ function Show-ModemVoiceTest {
         $dialog.Filter='JSON report (*.json)|*.json';$dialog.FileName='modem-audio-result.json'
         if($dialog.ShowDialog() -eq 'OK'){
             try{
-                $report=@{report_type='modem_audio_test';device_name=$DeviceName;port=$Port;challenge=$challenge;tested_at=[DateTimeOffset]::Now.ToString('o');result=$state.result}
-                [IO.File]::WriteAllText($dialog.FileName,($report|ConvertTo-Json -Depth 6),[Text.UTF8Encoding]::new($false))
+                [IO.File]::WriteAllText($dialog.FileName,($state.report|ConvertTo-Json -Depth 8),[Text.UTF8Encoding]::new($false))
                 if($state.recording){
                     $target=Join-Path (Split-Path -Parent $dialog.FileName) $state.result.RecordingFile
                     if([IO.Path]::GetFullPath($state.recording) -ne [IO.Path]::GetFullPath($target)){Copy-Item -LiteralPath $state.recording -Destination $target}
