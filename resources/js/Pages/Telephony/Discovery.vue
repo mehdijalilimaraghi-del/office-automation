@@ -31,7 +31,7 @@ onUnmounted(() => { controller.abort(); window.clearInterval(timer); });
     <Link :href="route('telephony.index')" class="inline-flex items-center gap-2 text-sm font-semibold text-indigo-700"><ArrowLeft class="size-4" />بازگشت به تلفن سازمانی</Link>
     <section class="space-y-5 rounded-2xl border bg-white p-5 sm:p-8">
         <Monitor class="size-10 text-indigo-600" /><h2 class="text-lg font-bold">این مرحله را روی کامپیوتری که مودم دارد انجام دهید</h2>
-        <ol class="list-inside list-decimal space-y-3 text-sm leading-7 text-slate-600"><li>برنامه واسط مودم را با نشانی همین سامانه نصب کنید.</li><li>دکمه زیر را بزنید و بازشدن برنامه را تأیید کنید.</li><li>در برنامه، مودم را انتخاب و بررسی قابلیت را اجرا کنید؛ سپس گزارش را ارسال کنید.</li></ol>
+        <ol class="list-inside list-decimal space-y-3 text-sm leading-7 text-slate-600"><li>برنامه واسط مودم را با نشانی همین سامانه نصب کنید.</li><li>دکمه زیر را بزنید و بازشدن برنامه را تأیید کنید.</li><li>در برنامه، مودم را انتخاب کنید؛ بررسی اولیه خودکار اجرا می‌شود و نتیجه را همان‌جا می‌بینید. سپس گزارش را ارسال کنید.</li></ol>
         <a v-if="protocolUrl && !expired" :href="protocolUrl" class="inline-flex min-h-11 items-center rounded-xl bg-indigo-700 px-5 py-3 text-sm font-semibold text-white">بازکردن برنامه واسط مودم</a>
         <p v-if="protocolUrl && !expired" role="status" class="text-sm text-slate-500">منتظر گزارش برنامه واسط… اعتبار این درخواست ۱۰ دقیقه است.</p>
         <p v-else role="status" class="rounded-xl bg-amber-50 p-4 text-sm text-amber-900">این درخواست دیگر فعال نیست. به صفحه قبل بازگردید و درخواست تازه ایجاد کنید.</p>

@@ -1,3 +1,11 @@
+## Equipment compatibility policy
+
+Compatibility must be assessed automatically by the selected equipment adapter, with a human-readable result and reason. Windows modem, FXO gateway and SIP-trunk paths must remain distinct; only the modem discovery adapter is currently implemented. Initial modem queries now run on selection. A positive voice advertisement remains a candidate until an explicit, controlled two-way call test passes; uncertain results must not be presented as proven compatibility or universal incompatibility.
+
+## LSI modem capability report
+
+Regression coverage uses the sanitized actual LSI FCLASS response and negative class/error/version cases. The owner report is read-only evidence, not executable instructions. No call, voice-mode change or physical audio test has been performed.
+
 ## V4 modem discovery — 2026-11-21
 
 Enable TELEPHONY_ENABLED only in a controlled development environment. Apply the additive telephony discovery migration. Test disabled-route isolation, manager authorization, token expiry/reuse/revocation, candidate freshness, report limits and ZIP origin binding. Windows helper supports -DiscoverOnly and interactive -Offline modes; actual LSI/Gnet voice and COM-port behavior remain untested until the owner runs it.

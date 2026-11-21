@@ -31,6 +31,17 @@ function Get-ModemDevices([string]$ComputerKey) {
     }
     return $devices
 }
+function Test-VoiceClass([string]$Response) {
+    $lines = @($Response -split '[\r\n]+' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+    if ($lines -cnotcontains 'OK' -or $lines -ccontains 'ERROR') { return $false }
+    foreach ($line in $lines) {
+        $value = ($line -replace '^\+FCLASS:\s*','').Trim()
+        if ($value.StartsWith('(') -and $value.EndsWith(')')) { $value = $value.Substring(1,$value.Length-2).Trim() }
+        if ($value -notmatch '^\d+(?:\.\d+)?(?:\s*,\s*\d+(?:\.\d+)?)*$') { continue }
+        if (@($value.Split(',') | ForEach-Object { $_.Trim() }) -ccontains '8') { return $true }
+    }
+    return $false
+}
 function Read-ModemCapabilities([string]$Port) {
     if ($Port -notmatch '^COM[1-9][0-9]{0,4}$') { throw 'درگاه مودم معتبر نیست.' }
     $serial = New-Object IO.Ports.SerialPort($Port, 115200, [IO.Ports.Parity]::None, 8, [IO.Ports.StopBits]::One)
@@ -98,7 +109,7 @@ try {
     [void]$layout.RowStyles.Add((New-Object Windows.Forms.RowStyle([Windows.Forms.SizeType]::Percent,100)))
     [void]$layout.RowStyles.Add((New-Object Windows.Forms.RowStyle([Windows.Forms.SizeType]::Absolute,60)))
     $label = New-Object Windows.Forms.Label
-    $label.Dock = 'Fill'; $label.Text = 'مودم را انتخاب و قابلیت آن را بررسی کنید. این برنامه شماره‌گیری نمی‌کند. قبل از بررسی، نرم‌افزارهای فکس و اینترنت دایال‌آپ را ببندید.'
+    $label.Dock = 'Fill'; $label.Text = 'با انتخاب مودم، بررسی اولیه خودکار اجرا می‌شود. این برنامه شماره‌گیری نمی‌کند. قبل از بررسی، نرم‌افزارهای فکس و اینترنت دایال‌آپ را ببندید.'
     $choice = New-Object Windows.Forms.ComboBox
     $choice.Dock = 'Top'; $choice.DropDownStyle = 'DropDownList'; $choice.DisplayMember = 'name'
     foreach ($device in $devices) { [void]$choice.Items.Add($device) }
@@ -112,21 +123,29 @@ try {
     $probe.Text = 'بررسی قابلیت'; $probe.AutoSize = $true; $probe.Enabled = $devices.Count -gt 0
     $send = New-Object Windows.Forms.Button
     $send.Text = if ($Offline) { 'ذخیره گزارش بررسی' } else { 'ارسال گزارش به سامانه' }; $send.AutoSize = $true
-    $probe.Add_Click({
+    $probeAction = {
         $device = $choice.SelectedItem
         $probe.Enabled = $false
         $form.UseWaitCursor = $true
         $output.Text = 'در حال خواندن قابلیت‌های مودم…'
         $form.Refresh()
         try {
+            if ($device.driver_status -ne 'OK' -or -not $device.port) { throw 'Modem driver or COM port unavailable' }
             $device.evidence = Read-ModemCapabilities $device.port
             $device.probe_status = 'queried'
-            $output.Text = ($device.evidence | ConvertTo-Json -Depth 3) + [Environment]::NewLine + 'این نتیجه به‌تنهایی تأیید مکالمه دوطرفه نیست.'
+            $output.Text = if (Test-VoiceClass $device.evidence['classes']) {
+                'بررسی اولیه موفق بود: مودم قابلیت صوت را اعلام کرده است.' + [Environment]::NewLine + 'مرحله بعد، آزمون مکالمه دوطرفه و انتقال صدا به داخلی است. هنوز خط فعال نشده است.'
+            } else {
+                'قابلیت صوت موردنیاز در این آزمون تأیید نشد.' + [Environment]::NewLine + 'این نتیجه، مودم را با روش فعلی واسط قابل استفاده اعلام نمی‌کند. گزارش بررسی برای تشخیص محدودیت درایور یا انتخاب ابزار دیگر قابل ذخیره است.'
+            }
         } catch {
             $device.probe_status = 'failed'
             $output.Text = 'بررسی انجام نشد. ممکن است درگاه در اختیار برنامه دیگری باشد یا دسترسی صوتی توسط درایور فراهم نشده باشد.'
         } finally { $probe.Enabled = $true; $form.UseWaitCursor = $false }
-    })
+    }
+    $probe.Add_Click($probeAction)
+    $choice.Add_SelectedIndexChanged($probeAction)
+    $form.Add_Shown({ if ($choice.SelectedIndex -ge 0) { & $probeAction } })
     $send.Add_Click({
         $send.Enabled = $false
         $handler = $null; $client = $null

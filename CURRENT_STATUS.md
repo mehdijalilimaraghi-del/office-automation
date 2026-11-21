@@ -1,3 +1,11 @@
+## Equipment compatibility policy
+
+Compatibility must be assessed automatically by the selected equipment adapter, with a human-readable result and reason. Windows modem, FXO gateway and SIP-trunk paths must remain distinct; only the modem discovery adapter is currently implemented. Initial modem queries now run on selection. A positive voice advertisement remains a candidate until an explicit, controlled two-way call test passes; uncertain results must not be presented as proven compatibility or universal incompatibility.
+
+## LSI modem capability report
+
+The owner report confirms LSI SoftModem 2.2.98 on COM3, driver OK, advertised classes 0/1/8 and PCM16, G.711u/A and IMA ADPCM at 8 kHz. Corrected discovery parsing for unprefixed replies and added regression cases. Full SQL Server validation passed (538 tests, 3385 assertions); focused tests passed (21 tests, 76 assertions), plus 10 Windows parser cases. Helper selection now automatically performs initial capability queries and displays a human-readable result. Actual simultaneous receive/transmit and network voice bridging remain unverified.
+
 ## V4 modem discovery — 2026-11-21
 
 V4 stage 1 adds manager-only modem discovery, expiring one-use report sessions, helper downloads, read-only Windows capability queries and selection for later voice testing. The local machine has no modem; owner hardware is on another computer. Asterisk, audio bridging, internal calling and provisioning remain pending hardware evaluation. Validation passed: full SQL Server suite (524 tests, 3371 assertions), TypeScript/production build, six isolated browser viewport checks, PowerShell syntax and actual no-modem discovery/GUI render. Local additive migration applied; development feature enabled locally only. The offline review ZIP is prepared. Physical COM querying and full-duplex audio still require the owner computer.

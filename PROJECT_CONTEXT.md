@@ -1,3 +1,11 @@
+## Equipment compatibility policy
+
+Compatibility must be assessed automatically by the selected equipment adapter, with a human-readable result and reason. Windows modem, FXO gateway and SIP-trunk paths must remain distinct; only the modem discovery adapter is currently implemented. Initial modem queries now run on selection. A positive voice advertisement remains a candidate until an explicit, controlled two-way call test passes; uncertain results must not be presented as proven compatibility or universal incompatibility.
+
+## LSI modem capability report
+
+The Gnet/LSI modem is a candidate for voice testing: its actual class response is a bare 0,1,8 list and it advertises several 8 kHz voice formats. This does not establish a usable PBX trunk.
+
 ## V4 modem discovery — 2026-11-21
 
 A Windows helper on the modem computer identifies its installed modems and queries ATI, AT+FCLASS=? and AT+VSM=? only after a user action. The manager may select a recent voice-advertising candidate for testing. Offline review is supported while development has not been deployed to that computer.

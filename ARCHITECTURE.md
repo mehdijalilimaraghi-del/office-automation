@@ -1,3 +1,11 @@
+## Equipment compatibility policy
+
+Compatibility must be assessed automatically by the selected equipment adapter, with a human-readable result and reason. Windows modem, FXO gateway and SIP-trunk paths must remain distinct; only the modem discovery adapter is currently implemented. Initial modem queries now run on selection. A positive voice advertisement remains a candidate until an explicit, controlled two-way call test passes; uncertain results must not be presented as proven compatibility or universal incompatibility.
+
+## LSI modem capability report
+
+ModemCapabilityParser accepts successful numeric FCLASS lists with or without the +FCLASS prefix and optional parentheses. Exact class matching and OK/error checks prevent firmware versions, codec rates or classes 18/80 from becoming voice evidence.
+
 ## V4 modem discovery — 2026-11-21
 
 TelephonyServiceProvider loads its routes only when telephony.enabled is true. Discovery sessions store only hashed one-use tokens and expire after ten minutes. Report upload has token authentication without browser session/CSRF coupling; management uses the existing active settings.manage capability. A fresh capability report can select a candidate but cannot enable a line.

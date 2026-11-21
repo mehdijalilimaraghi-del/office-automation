@@ -1,3 +1,11 @@
+## Equipment compatibility policy
+
+Compatibility must be assessed automatically by the selected equipment adapter, with a human-readable result and reason. Windows modem, FXO gateway and SIP-trunk paths must remain distinct; only the modem discovery adapter is currently implemented. Initial modem queries now run on selection. A positive voice advertisement remains a candidate until an explicit, controlled two-way call test passes; uncertain results must not be presented as proven compatibility or universal incompatibility.
+
+## LSI modem capability report
+
+The first physical modem capability report is available and advertises voice mode. Normalize prefixed and bare class responses before selecting candidates. The next hardware gate is controlled two-way audio validation; discovery evidence does not close V4.
+
 ## V4 modem discovery — 2026-11-21
 
 V4 stage 1: discover Windows modems, report declared voice capabilities and select a test candidate. Subsequent work remains: validate real full-duplex audio, bridge to a supported PBX, extensions/internal calling, then external routing, history/recordings, IVR and queues. Do not mark V4 complete from discovery tests.

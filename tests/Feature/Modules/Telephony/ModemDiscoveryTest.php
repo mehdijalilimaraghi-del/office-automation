@@ -43,7 +43,7 @@ class ModemDiscoveryTest extends TestCase
         return ['computer_key' => '38be7f4e-e2ed-453b-a0c6-ae1e8b549f70', 'computer_name' => 'MODEM-PC', 'devices' => [[
             'device_key' => str_repeat('a',64), 'name' => 'LSI PCI-SV92PP Soft Modem',
             'port' => 'COM3', 'driver_status' => 'OK', 'probe_status' => 'queried',
-            'evidence' => ['classes' => "AT+FCLASS=?\r\n+FCLASS: 0,1,8\r\nOK\r\n", 'identity' => 'LSI'],
+            'evidence' => ['classes' => "AT+FCLASS=?\r\r\n0,1,8\r\n\r\nOK\r\n", 'identity' => 'LSI'],
         ]]];
     }
     public function test_manager_pairs_helper_and_selects_only_a_fresh_voice_candidate(): void {

@@ -26,8 +26,7 @@ final class ModemDiscoveryService
             foreach ($data['devices'] as $device) {
                 $classes = $device['evidence']['classes'] ?? '';
                 $advertised = $device['probe_status'] === 'queried'
-                    && preg_match('/\+FCLASS:\s*([^\r\n]+)/i', $classes, $match)
-                    && preg_match('/(?:^|[^0-9])8(?:[^0-9]|$)/', $match[1]);
+                    && app(ModemCapabilityParser::class)->advertisesVoice($classes);
                 Modem::query()->updateOrCreate(['device_key' => $device['device_key']], [
                     'computer_key' => $data['computer_key'], 'computer_name' => $data['computer_name'],
                     'name' => $device['name'], 'port' => $device['port'] ?? null,

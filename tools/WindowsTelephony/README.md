@@ -10,7 +10,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install.ps1
 
 The download includes settings.json with the requesting application origin. Installation is per-user in LocalAppData and HKCU; it does not need administrative privileges or install drivers. Explicit ServerUrl overrides must be exact HTTP(S) origins. Use trusted HTTPS where available; LAN HTTP reports have the same transport exposure as the existing application.
 
-Open the application on that same computer, create a discovery request and launch the helper. The browser may ask permission to open the custom protocol. Select a modem, close other fax/dial-up applications, query capabilities and submit the report. Review a new request if the ten-minute token has expired.
+Open the application on that same computer, create a discovery request and launch the helper. The browser may ask permission to open the custom protocol. Close other fax/dial-up applications, select a modem and review the automatic initial capability test result, then submit the report. Review a new request if the ten-minute token has expired.
 
 The token is one-use and the uploader does not follow redirects or bypass TLS certificate validation. Only the exact installed origin and telephony report path are accepted. Tokens and credentials are not stored in settings.json.
 
@@ -28,4 +28,6 @@ Physical testing on the owner's LSI PCI-SV92PP/Gnet card is still required. No w
 
 ## Offline hardware review
 
-On the modem computer, extract the ZIP and double-click Run-Offline.cmd. Select the modem, query its capabilities and save the JSON report. This mode requires neither installation nor an application connection. Send the saved report for review before any voice call test.
+On the modem computer, extract the ZIP and double-click Run-Offline.cmd. Select the modem, review its automatic capability result and save the JSON report. This mode requires neither installation nor an application connection. Send the saved report for review before any voice call test.
+
+Run Test-Capabilities.ps1 to validate the helper parser without opening any modem. Matching PHP regression cases cover bare and prefixed replies and false-positive prevention.

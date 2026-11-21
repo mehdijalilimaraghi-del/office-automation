@@ -1,3 +1,11 @@
+## Equipment compatibility policy
+
+Compatibility must be assessed automatically by the selected equipment adapter, with a human-readable result and reason. Windows modem, FXO gateway and SIP-trunk paths must remain distinct; only the modem discovery adapter is currently implemented. Initial modem queries now run on selection. A positive voice advertisement remains a candidate until an explicit, controlled two-way call test passes; uncertain results must not be presented as proven compatibility or universal incompatibility.
+
+## LSI modem capability report
+
+Use ModemCapabilityParser for modem service-class evidence; LSI SV92PP returns an unprefixed numeric list. Do not infer full-duplex capability from class 8 or codec listings.
+
 ## V4 modem discovery — 2026-11-21
 
 V4 modem discovery is implemented behind TELEPHONY_ENABLED (default false). See the V4 map and tools/WindowsTelephony. Voice class 8 is only a test candidate, never a verified SIP/PSTN bridge. No live line commands are permitted in discovery.
