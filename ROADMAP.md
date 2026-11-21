@@ -1,3 +1,7 @@
+## Descriptive modem format correction — 2026-11-21
+
+V4 next gate: run helper v3 on the modem PC after closing VentaFax. Descriptive current-format preparation now passes with the exact owner reply in software tests. Validate the remaining flow-control/duplex commands and actual audio before PBX integration; do not treat the parser fix as hardware acceptance.
+
 ## Modem preflight diagnostics — 2026-11-21
 
 V4 hardware evaluation remains open. Run diagnostic helper v2 on the modem PC with VentaFax fully closed, review the raw current-format response if preflight stops, then validate simultaneous audio before implementing the PBX bridge. Owner-observed VentaFax greeting playback is useful playback evidence, not a duplex acceptance result. Do not recommend new hardware solely from the old parser failure.

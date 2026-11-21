@@ -1,3 +1,7 @@
+## Descriptive modem format correction — 2026-11-21
+
+The actual LSI current-format response includes a display label, bit depth and timing metadata in addition to the four settable voice parameters. The helper must support this response generically rather than rejecting a working modem or hardcoding its model. The previous attempt did not answer a call.
+
 ## Modem preflight diagnostics — 2026-11-21
 
 Owner uses VentaFax for incoming faxes and confirms its greeting plays over the modem line. The diagnostic helper must explain the failed preparation stage and retain a usable report even when no audio was recorded. Never answer a call with unknown settings; advise closing competing fax software before testing, without altering its configuration or installed drivers.

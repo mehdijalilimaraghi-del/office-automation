@@ -38,3 +38,5 @@ Real supported inbound/outbound call tests; authorization for logs/recordings; e
 - ModemController helper ZIP and Install.ps1 include both runtime dependencies. Local audio results are not silently added to discovery uploads.
 
 - VoiceSettings and CommandTrace in VoiceDiagnostics.cs: complete current-setting snapshots and versioned bounded diagnostics; VoiceTest automatically saves local schema v2 reports. First real owner attempt stopped before answering at current-format parsing; next report must retain that raw response.
+
+- ParseFormat supports the actual descriptive LSI VSM? response, mapping only settable fields. VoiceDiagnostics.Tests includes exact-response session and restore coverage; helper v3 still needs live acceptance.

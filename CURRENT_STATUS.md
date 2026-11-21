@@ -1,3 +1,9 @@
+## Descriptive modem format correction — 2026-11-21
+
+The v2 report identifies the preparation failure as unsupported descriptive VSM? syntax in our parser. Added generic descriptive-current-format normalization and an end-to-end fake-port regression using the exact owner response. Numeric snapshots remain supported; supported ranges and malformed/ambiguous replies remain rejected. New offline helper v3 is prepared; real hardware retest is still required. No migration, dependency or server changes.
+
+Validation passed: 538 SQL Server tests / 3387 assertions, TypeScript/build, 10 capability-parser cases, eleven simulated audio sessions and parser regressions, PowerShell syntax, and fake-port GUI/automatic JSON verification using the actual owner reply. Live call acceptance remains pending.
+
 ## Modem preflight diagnostics — 2026-11-21
 
 The owner's first audio report failed before ring/answer at cannot_preserve_original_format; cleanup was acknowledged. Its missing current-format reply prevents diagnosing the actual LSI response. Updated helper reads complete two-to-four-value numeric VSM snapshots, restores every value, retains raw/partial/error replies, separates original and cleanup failures, and automatically saves versioned local reports. Exact on-device cause and live two-way compatibility still need the new report. No database/dependency or routing changes.

@@ -1,3 +1,9 @@
+## Descriptive modem format correction — 2026-11-21
+
+Audio diagnostics now cover eleven simulated session outcomes, including the exact owner VSM? response and restoration command AT+VSM=0,8000,128,0. Parser cases cover other codec labels, numeric compatibility, range listings, incomplete/failed replies and conflicts. A fake-port GUI test verifies the mapped values and helper version in automatically saved JSON. Physical testing uses a fresh extraction of OfficeAutomation-ModemAudioTest-v3.zip; no real call was run here.
+
+Validation passed: 538 SQL Server tests / 3387 assertions, TypeScript/build, 10 capability-parser cases, eleven simulated audio sessions and parser regressions, PowerShell syntax, and fake-port GUI/automatic JSON verification using the actual owner reply. Live call acceptance remains pending.
+
 ## Modem preflight diagnostics — 2026-11-21
 
 Windows audio regressions now cover ten simulated session outcomes, complete four-value restoration, ambiguous/invalid setting rejection, raw/rejected/partial reply retention and cancellation during streaming. GUI verification checks the Persian failure stage and parses an automatically saved v2 JSON report using a fake port. No new real-modem call was made from this computer; the owner's first report stops during preparation. Use a fresh extraction of OfficeAutomation-ModemAudioTest-v2.zip and close VentaFax before physical retesting.

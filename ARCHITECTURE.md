@@ -1,3 +1,7 @@
+## Descriptive modem format correction — 2026-11-21
+
+VoiceSettings.ParseFormat normalizes complete descriptive VSM current-value rows to codec/rate/sensitivity/expansion before the shared numeric snapshot validator. Full metadata is retained in raw diagnostics; restoration uses only settable fields. Response success, range rejection and ambiguity validation remain enforced. Diagnostic version changes to 2026.11.21.3; JSON schema stays 2.
+
 ## Modem preflight diagnostics — 2026-11-21
 
 VoiceSettings parses complete numeric current-setting lines rather than truncating VSM to two values. VoiceResult v2026.11.21.2 contains bounded CommandTrace entries, current-format/flow raw replies and separate failure-stage/original-error/cleanup-error fields. Voice-stop traces omit residual audio. VoiceTest emits schema_version 2 JSON automatically in the per-user AudioTests folder; manual export remains available. Discovery upload schema and access controls are unchanged.

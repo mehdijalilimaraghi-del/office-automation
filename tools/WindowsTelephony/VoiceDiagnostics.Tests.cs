@@ -67,6 +67,14 @@ public static class VoiceDiagnosticChecks
         Check(VoiceSettings.Parse("0,8000\r\n","VSM",2,4)=="","partial query cannot become a snapshot");
         Check(VoiceSettings.Parse("0,\"Signed PCM\",16,0,8000\r\nOK\r\n","VSM",2,4)=="","codec inventory cannot become current settings");
         Check(VoiceSettings.Parse("+IFC: 2,2\r\nOK\r\n","IFC",2,2)=="2,2","flow snapshot");
+        const string actualLsiCurrent = "AT+VSM?\r\r\n0,\"Signed PCM\",16,0,8000,128,0\r\n\r\nOK\r\n";
+        Check(VoiceSettings.ParseFormat(actualLsiCurrent)=="0,8000,128,0","actual owner descriptive current reply");
+        Check(VoiceSettings.ParseFormat("+VSM: 4,\"G.711U\",8,0,8000,122,1\r\nOK\r\n")=="4,8000,122,1","descriptive reply not tied to model/codec");
+        Check(VoiceSettings.ParseFormat("0,\"Signed PCM\",16,0,8000,(0,122-148),0\r\nOK\r\n")=="","supported range is not a current setting");
+        Check(VoiceSettings.ParseFormat("0,\"Signed PCM\",16,0,8000,128\r\nOK\r\n")=="","incomplete descriptive reply rejected");
+        Check(VoiceSettings.ParseFormat(actualLsiCurrent.Replace("OK", "ERROR"))=="","failed descriptive reply rejected");
+        Check(VoiceSettings.ParseFormat(actualLsiCurrent.Replace("OK", "4,8000,128,0\r\nOK"))=="","mixed conflicting replies rejected");
+        Check(VoiceSettings.ParseFormat("+VSM: 0,8000,128,0\r\nOK\r\n")=="0,8000,128,0","numeric format remains supported");
         var decoder=new VoiceDecoder();
         decoder.Feed(new byte[]{255,16},2);
         decoder.Feed(new byte[]{16,16,(byte)'b',127,16},5);
@@ -102,6 +110,10 @@ public static class VoiceDiagnosticChecks
             var extended=new DiagnosticFakePort {CurrentFormat="+VSM: 0, 8000, 7, 9",ResidualAudioOnStop=true};session=new VoiceSession(extended,folder,300,100);session.Start();Finish(session);
             Check(session.Result.CleanupConfirmed && extended.Commands.Contains("AT+VSM=0,8000,7,9"),"entire original format restored");
             Check(session.Result.Trace.Exists(t=>t.Command=="AT+VSM?" && t.Response.Contains("7, 9")) && session.Result.Trace.Exists(t=>t.Command=="<DLE>^" && t.Response=="OK"),"raw query and stop acknowledgement traced");
+            var lsi=new DiagnosticFakePort {CurrentFormat="0,\"Signed PCM\",16,0,8000,128,0"};session=new VoiceSession(lsi,folder,300,100);session.Start();Finish(session);
+            Check(session.Result.Status=="captured" && session.Result.DuplexStarted && session.Result.CleanupConfirmed,"actual LSI reply passes preparation in fixture");
+            Check(session.Result.OriginalFormat=="0,8000,128,0" && lsi.Commands.Contains("AT+VSM=0,8000,128,0"),"LSI restoration preserves settable values without metadata");
+            Check(!lsi.Commands.Exists(c=>c.StartsWith("AT+VSM=0,\"")),"descriptive labels are never sent as settings");
             var unknown=new DiagnosticFakePort {CurrentFormat="not-a-numeric-snapshot"};session=new VoiceSession(unknown,folder,300,100);session.Start();Finish(session);
             Check(session.Result.FailureStage=="read_current_format" && session.Result.CurrentFormatReply.Contains("not-a-numeric-snapshot"),"failed current-format response retained");
             Check(!unknown.Commands.Contains("AT+VSM=4,8000") && !unknown.Commands.Contains("AT+IFC=0,0") && !unknown.Commands.Contains("AT+VLS=1") && session.Result.CleanupConfirmed,"unknown settings stop before audio changes or answering");
@@ -113,7 +125,7 @@ public static class VoiceDiagnosticChecks
             for(int i=0;i<400 && session.Progress!="streaming" && !session.Completed;i++)Thread.Sleep(5);
             session.Cancel();Finish(session);
             Check(session.Result.Cancelled && session.Result.DuplexStarted && session.Result.CleanupConfirmed && streaming.Commands.Contains("ATH"),"streaming cancellation restores and hangs up");
-            return "PASS: settings snapshots, raw/partial/rejected traces, codec/framing/WAV/acceptance gates and ten simulated session outcomes; no real port opened.";
+            return "PASS: settings snapshots, raw/partial/rejected traces, codec/framing/WAV/acceptance gates and eleven simulated session outcomes; no real port opened.";
         } finally { foreach(string file in Directory.GetFiles(folder))File.Delete(file);Directory.Delete(folder); }
     }
 }

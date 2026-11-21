@@ -116,6 +116,24 @@ namespace OfficeAutomation.Telephony.Diagnostics
     }
     public static class VoiceSettings
     {
+        // Some drivers include codec metadata in VSM?; only codec/rate/sensitivity/expansion are settable.
+        public static string ParseFormat(string reply)
+        {
+            var lines = new List<string>();
+            foreach (string raw in Regex.Split(reply, @"[\r\n]+"))
+            {
+                Match described = Regex.Match(raw.Trim(),
+                    @"^(?:\+VSM[ \t]*[:=][ \t]*)?([0-9]{1,5})[ \t]*,[ \t]*""[^""\r\n]{1,80}""[ \t]*,[ \t]*([0-9]{1,5})[ \t]*,[ \t]*([0-9]{1,5})[ \t]*,[ \t]*([0-9]{1,5})[ \t]*,[ \t]*([0-9]{1,5})[ \t]*,[ \t]*([0-9]{1,5})$",
+                    RegexOptions.IgnoreCase);
+                if (!described.Success) { lines.Add(raw); continue; }
+                for (int i = 1; i <= 6; i++)
+                    if (int.Parse(described.Groups[i].Value, CultureInfo.InvariantCulture) > 65535) return "";
+                lines.Add(described.Groups[1].Value + "," + described.Groups[4].Value + ","
+                    + described.Groups[5].Value + "," + described.Groups[6].Value);
+            }
+            return Parse(string.Join("\r\n", lines.ToArray()), "VSM", 2, 4);
+        }
+
         // Accept only complete numeric current-value replies, never a codec inventory or command echo.
         public static string Parse(string reply, string name, int minimum, int maximum)
         {
@@ -146,7 +164,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
     }
     public sealed class VoiceResult
     {
-        public string DiagnosticVersion = "2026.11.21.2";
+        public string DiagnosticVersion = "2026.11.21.3";
         public string FailureStage = "";
         public string FailureError = "";
         public string CleanupError = "";
@@ -282,7 +300,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 if (codec < 0) throw new InvalidOperationException("no_supported_8khz_mulaw");
                 stage = "read_current_format";
                 result.CurrentFormatReply = Command("AT+VSM?", false, true);
-                originalFormat = VoiceSettings.Parse(result.CurrentFormatReply, "VSM", 2, 4);
+                originalFormat = VoiceSettings.ParseFormat(result.CurrentFormatReply);
                 result.OriginalFormat = originalFormat;
                 if (originalFormat.Length == 0) throw new InvalidOperationException("cannot_preserve_original_format");
                 stage = "read_flow_control";

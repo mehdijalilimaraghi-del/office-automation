@@ -42,7 +42,7 @@ The current path requires serial AT voice commands, G.711 mu-law at 8 kHz and AT
 
 ## Software verification
 
-Test-Audio.ps1 compiles the runtime engine and injectable fake-port fixtures in Windows PowerShell 5.1. It checks codec vectors, cross-chunk DLE escaping, WAV structure, human acceptance gates and ten simulated session outcomes, including complete four-value restoration, unrecognized settings, rejected/partial queries and cancellation while streaming. These tests open no real COM port and do not establish hardware compatibility. The wizard was visually rendered without starting a call.
+Test-Audio.ps1 compiles the runtime engine and injectable fake-port fixtures in Windows PowerShell 5.1. It checks codec vectors, cross-chunk DLE escaping, WAV structure, human acceptance gates and eleven simulated session outcomes, including complete four-value restoration, unrecognized settings, rejected/partial queries and cancellation while streaming. These tests open no real COM port and do not establish hardware compatibility. The wizard was visually rendered without starting a call.
 
 Command references: [USR voice reference](https://ads.usr.com/support/5637/5637-ug/ref_voice.html), [MultiTech SocketModem AT guide](https://multitech.com/wp-content/uploads/s000468.pdf). Exact device/driver support must be tested; generic manuals do not establish LSI support.
 
@@ -53,3 +53,9 @@ The first owner audio test stopped at cannot_preserve_original_format before any
 Current-setting snapshots accept complete two-to-four-number VSM replies with bare or prefixed syntax; all supplied values are restored. Unrecognized/ambiguous replies still stop before changing the audio format or answering. Raw query responses, bounded command traces, partial replies after timeout, failure stage and independent cleanup errors are now retained in schema_version 2 JSON. Residual audio drained while stopping voice is omitted from the text trace.
 
 After a completed attempt, an automatic JSON snapshot is stored beside local audio under LocalAppData/OfficeAutomation/Telephony/AudioTests, with no automatic upload. Hearing confirmations update that snapshot. Use Save Result to export it, even if no recording exists. The title shows version 2 to distinguish a fresh extraction from an old running helper. No compatibility pass is inferred from the parser update.
+
+## Diagnostic helper version 2026.11.21.3
+
+The second owner report captured VSM? as `0,"Signed PCM",16,0,8000,128,0`. The previous numeric-only parser rejected this complete descriptive reply. ParseFormat now maps the codec, sample rate, sensitivity and expansion to `0,8000,128,0` for restoration, preserving descriptive metadata in the raw trace. Codec labels, bit depth and timing metadata are not command arguments. The parser is generic across codecs/models, and still rejects ranges, incomplete, failed and conflicting replies. Eleven fake-port session outcomes now include this exact owner response. JSON schema remains 2; the window title shows version 3. Actual two-way audio still requires a hardware test.
+
+The settable VSM parameter order is documented in [MultiTech AT reference, page 34](https://multitech.com/wp-content/uploads/s000273g.pdf); the descriptive query layout is evidenced by the actual owner report, not assumed for all modems.

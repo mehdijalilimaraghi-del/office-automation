@@ -1,3 +1,7 @@
+## Descriptive modem format correction — 2026-11-21
+
+The second owner report confirms VSM? returns descriptive metadata: 0,"Signed PCM",16,0,8000,128,0. ParseFormat maps this to settable codec/rate/sensitivity/expansion (0,8000,128,0); never send the quoted label, bit depth or timing metadata back as configuration. Helper version is 2026.11.21.3. Actual duplex remains unverified.
+
 ## Modem preflight diagnostics — 2026-11-21
 
 Audio helper diagnostic version 2026.11.21.2 captures bounded AT command/reply traces (including failed and partial replies). Never guess unknown current voice settings or skip restoration to get past the owner preflight failure. The owner reports VentaFax playback works; this is evidence of playback only, not simultaneous duplex or a ready PBX bridge.
