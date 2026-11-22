@@ -1,3 +1,7 @@
+## Modem receive framing correction — 2026-11-22
+
+The owner need not speak or hang up at exactly 12 seconds: the diagnostic captures its own fixed 12-second stream independently of when the caller hangs up. The recorded 15-second WAV resulted from repeated receive samples. Payload-preserving correction restores 12.006 seconds in saved-file replay; no success claim is made for an untested external call bridge.
+
 ## V4 extension management and IVR — 2026-11-22
 
 Internal extension and IVR administration are separate screens. An extension belongs explicitly to one active user or department; department ownership currently identifies a single endpoint and does not implement a ring group. Configuration download contains no passwords; matching numbers retain their local credentials, new numbers get random credentials and omitted numbers are removed from runnable configuration with an explicit UI notice. Greeting upload accepts valid PCM16 WAV, is private, and is automatically converted to 8 kHz mono on Windows. The owner has accepted a plan for future modem linkage and a fax inbox feeding incoming correspondence; these remain dependent work, not delivered functionality.

@@ -1,3 +1,9 @@
+## Modem receive framing correction — 2026-11-22
+
+VoiceDiagnostics.Tests now covers repeated-tail recovery across split serial reads/DLE escaping, ordinary streams, periodic-tone false positives, short streams, changed framing and valid/invalid final partial frames, alongside the existing 14 simulated audio sessions. Private replay of canonical mu-law reconstructed from the owner WAV passed: exact retained payload, raw 120060, removed 24012, output 96048 / 12.006 s. This replay does not prove every original raw serial byte or live modem behavior. Original recording remains unchanged; no new call or serial port access was used.
+
+Validation passed: full SQL Server suite 546 tests / 3445 assertions; TypeScript/build; 14 simulated audio-session outcomes and seven framing regressions; replay of the existing WAV with exact retained payload. The corrected receiver has not yet been exercised on a new physical call.
+
 ## V4 extension management and IVR — 2026-11-22
 
 New SQL Server feature tests cover access/disabled module, ownership/duplicates/reserved numbers, valid/corrupt WAV, active IVR destinations, preventing disabling routed extensions, credential-free ZIP and menus without shortcut keys. Test-OfficeProvisioning.ps1 exercises preserved secrets, rejected configuration, converted WAV and actual native internal calls plus IVR greeting/RFC2833 transfer and clean shutdown; failed profiles are retained until owned processes stop. Existing audio simulations pass with new clock checks rejecting missing evidence/10 kHz while excluding a startup burst. ModemTiming.ps1 records a physical 12-second test with per-second sample windows; this physical timing test has not run here. Migration creates only the new extension table and is rollbackable by dropping that table; no old data changes.

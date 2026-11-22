@@ -65,3 +65,5 @@ Real supported inbound/outbound call tests; authorization for logs/recordings; e
 - Pages/Telephony/Extensions.vue, Ivr.vue, Components/TelephonyNav.vue; explicit apply workflow, no connection-status claim from database flags.
 - PbxLab/Apply-OfficeConfig.*, Normalize-Prompt.cs, Import-PbxOfficeConfiguration and generated native IVR. Tests: PbxConfigurationTest.php, Test-OfficeProvisioning.ps1 and NativeSipSmoke.RunIvr.
 - ModemTiming.ps1/Run-ModemTiming.cmd use VoiceDiagnostics sample windows and VoiceTiming; physical timing result precedes a modem media bridge. Owner LAN calls/audio/hangup already accepted; keep SIP Proxy including port.
+
+- VoiceReceiveFraming/VoiceDecoder in VoiceDiagnostics.cs normalize evidence-proven 60/48 lag-10 repeated tails. Tests cover stream splitting, DLE, linear/tone pass-through, changed and partial framing; existing WAV replay recovered 96048 payload samples. Preserve distinction from untested live bridge/fax.

@@ -1,3 +1,4 @@
+using System.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -87,6 +88,17 @@ public static class VoiceDiagnosticChecks
         decoder.Feed(new byte[]{3},1);
         Check(decoder.Audio.Count==3 && decoder.Audio[1]==16 && decoder.Ended && decoder.Events.Contains("busy_tone"),"cross-frame DLE parsing");
         byte[] escaped=VoiceCodec.Escape(new byte[]{1,16,2});Check(escaped.Length==4 && escaped[2]==16,"transmit DLE escaping");
+        var random=new Random(719);var framed=new System.Collections.Generic.List<byte>();var payload=new System.Collections.Generic.List<byte>();
+        for(int f=0;f<100;f++){int start=framed.Count;for(int n=0;n<48;n++){byte sample=(byte)random.Next(0,256);framed.Add(sample);payload.Add(sample);}for(int n=48;n<60;n++)framed.Add(framed[start+n-10]);}
+        var normalized=new VoiceDecoder(true);var wire=VoiceCodec.Escape(framed.ToArray());
+        for(int offset=0;offset<wire.Length;){int take=Math.Min(37,wire.Length-offset);normalized.Feed(wire.Skip(offset).Take(take).ToArray(),take);offset+=take;}normalized.Finish();
+        Check(normalized.ReceiveFraming=="repeat_60_48_lag10" && normalized.Audio.SequenceEqual(payload) && normalized.RawSampleCount==6000,"repeated-tail framing recovered across arbitrary reads and DLE escaping");
+        var plain=Enumerable.Range(0,6000).Select(i=>(byte)random.Next(0,256)).ToArray();var untouched=new VoiceDecoder(true);wire=VoiceCodec.Escape(plain);untouched.Feed(wire,wire.Length);untouched.Finish();Check(untouched.ReceiveFraming=="linear" && untouched.Audio.SequenceEqual(plain),"ordinary audio is unchanged");
+        var periodic=Enumerable.Range(0,6000).Select(i=>(byte)(1+i%10)).ToArray();untouched=new VoiceDecoder(true);untouched.Feed(periodic,periodic.Length);untouched.Finish();Check(untouched.ReceiveFraming=="linear" && untouched.Audio.SequenceEqual(periodic),"periodic tones cannot trigger false framing correction");
+        untouched=new VoiceDecoder(true);untouched.Feed(new byte[]{1,2,3},3);untouched.Finish();Check(untouched.Audio.SequenceEqual(new byte[]{1,2,3}),"short undecided streams are not lost");
+        bool framingRejected=false;try{normalized.Feed(Enumerable.Repeat((byte)1,48).Concat(Enumerable.Repeat((byte)2,12)).ToArray(),60);}catch(System.IO.InvalidDataException e){framingRejected=e.Message=="voice_receive_framing_changed";}Check(framingRejected && !normalized.FramingValid,"changed framing fails explicitly instead of silently corrupting audio");
+        var partialFrame=new VoiceDecoder(true);wire=VoiceCodec.Escape(framed.Take(4850).ToArray());partialFrame.Feed(wire,wire.Length);partialFrame.Finish();Check(partialFrame.FramingValid && partialFrame.Audio.SequenceEqual(payload.Take(3888)),"valid final partial frame preserves payload and drops only confirmed repeat tail");
+        var badEnding=framed.Take(4850).ToArray();badEnding[4849]=(byte)(badEnding[4839]^255);var invalidEnding=new VoiceDecoder(true);wire=VoiceCodec.Escape(badEnding);invalidEnding.Feed(wire,wire.Length);invalidEnding.Finish();Check(!invalidEnding.FramingValid && invalidEnding.Audio.Count==3840,"inconsistent final tail fails instead of reporting a successful capture");
         var stableWindows=new System.Collections.Generic.List<VoiceSampleWindow>();
         for(int i=1;i<=6;i++)stableWindows.Add(new VoiceSampleWindow {Milliseconds=i*1000,TransmittedSamples=i*8000,ReceivedSamples=24000+i*8000});
         Check(VoiceTiming.Ready(stableWindows),"startup RX burst is excluded from steady-state clock assessment");

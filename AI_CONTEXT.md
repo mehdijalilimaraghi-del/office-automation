@@ -1,3 +1,7 @@
+## Modem receive framing correction — 2026-11-22
+
+Owner timing evidence now confirms sustained raw 10002 versus TX 8000 samples/s. Existing diagnostic WAV has exact repeated tails: every 60 decoded samples contains 48 payload plus 12 samples repeating lag 10. Do not blindly resample 10 kHz to 8 kHz. A conservative stream-evidence detector normalizes only this verified framing. Replay is not live PBX/modem acceptance; do not ask the owner to repeat the old test merely for elapsed call duration.
+
 ## V4 extension management and IVR — 2026-11-22
 
 Owner confirmed native Windows LAN internal calls, bidirectional human audio and hangup after setting MicroSIP SIP Proxy equal to SIP Server including port. Never instruct leaving Proxy empty for this setup. New extension/IVR management uses the existing telephony.manage gate and manual credential-free configuration packages; local existing extension passwords must be preserved. Modem/PBX bridging and fax are not implemented or certified; the next physical prerequisite is per-second modem stream timing evidence.

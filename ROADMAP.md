@@ -1,3 +1,7 @@
+## Modem receive framing correction — 2026-11-22
+
+Modem timing diagnosis is resolved for the saved recording: deterministic repeated receive tails, rather than only a startup backlog. The new receiver correction passed canonical mu-law replay of that WAV. Next implement the modem/PBX media bridge and use its physical acceptance to validate the corrected live stream, remote hangup and IVR; fax is not yet implemented. Avoid another standalone duration-only test.
+
 ## V4 extension management and IVR — 2026-11-22
 
 V4 completed: owner-accepted LAN calls/audio/hangup; extension user/department management; configurable greeting/key routes/operator-on-timeout; manual package application with preserved passwords; native IVR integration test. Next dependency: new modem timing report must distinguish startup buffering from sustained 10 kHz receive behavior before the modem-to-PBX bridge. Then implement and validate analog incoming/outgoing routing, fax internal destination/inbox, history and remaining V4 acceptance. Finding mod_spandsp.dll in the trusted Windows engine does not prove a working fax receiver. No master/server deployment.

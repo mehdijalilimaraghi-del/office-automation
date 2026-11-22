@@ -87,10 +87,67 @@ namespace OfficeAutomation.Telephony.Diagnostics
             return -1;
         }
     }
+    // Recognize repeated trailing data only from stream evidence, never from a modem name.
+    // Detection requires 80 complete frames with exact trailing matches and nonperiodic payload.
+    public sealed class VoiceReceiveFraming
+    {
+        private readonly Action<byte> emit;
+        private readonly List<byte> probe = new List<byte>();
+        private readonly byte[] frame = new byte[60];
+        private int count;
+        private bool failed;
+        public string Mode { get; private set; }
+        public bool Valid { get { return !failed; } }
+        public VoiceReceiveFraming(Action<byte> emit) { this.emit = emit; Mode = "detecting"; }
+        public void Feed(byte value)
+        {
+            if (Mode == "linear") { emit(value); return; }
+            if (Mode == "detecting")
+            {
+                probe.Add(value);
+                if (probe.Count < 4800) return;
+                int trailingMatches = 0, payloadMatches = 0;
+                for (int start = 0; start < probe.Count; start += 60)
+                {
+                    for (int i = 48; i < 60; i++) if (probe[start + i] == probe[start + i - 10]) trailingMatches++;
+                    for (int i = 10; i < 48; i++) if (probe[start + i] == probe[start + i - 10]) payloadMatches++;
+                }
+                Mode = trailingMatches == 80 * 12 && payloadMatches < 80 * 38 / 2 ? "repeat_60_48_lag10" : "linear";
+                if (Mode == "linear") foreach (byte sample in probe) emit(sample);
+                else for (int start = 0; start < probe.Count; start += 60) for (int i = 0; i < 48; i++) emit(probe[start + i]);
+                probe.Clear(); return;
+            }
+            frame[count++] = value;
+            if (count != 60) return;
+            for (int i = 48; i < 60; i++) if (frame[i] != frame[i - 10]) { failed = true; throw new InvalidDataException("voice_receive_framing_changed"); }
+            for (int i = 0; i < 48; i++) emit(frame[i]);
+            count = 0;
+        }
+        public void Finish()
+        {
+            if (failed) return;
+            if (Mode == "detecting") { foreach (byte sample in probe) emit(sample); probe.Clear(); Mode = "linear"; }
+            if (Mode == "repeat_60_48_lag10")
+            {
+                // On a cut-off frame, validate any available repeated tail before emitting its payload.
+                for (int i = 48; i < count; i++) if (frame[i] != frame[i - 10]) { failed = true; return; }
+                for (int i = 0; i < Math.Min(count, 48); i++) emit(frame[i]);
+                count = 0;
+            }
+        }
+    }
     public sealed class VoiceDecoder
     {
         private bool dle;
         public readonly List<byte> Audio = new List<byte>();
+        private readonly VoiceReceiveFraming framing;
+        public int RawSampleCount { get; private set; }
+        public bool FramingValid { get { return framing == null || framing.Valid; } }
+        public string ReceiveFraming { get { return framing == null ? "linear" : framing.Mode; } }
+        public VoiceDecoder() : this(false) { }
+        public VoiceDecoder(bool detectFraming) { if (detectFraming) framing = new VoiceReceiveFraming(value => Audio.Add(value)); }
+        private void AddAudio(byte value) { RawSampleCount++; if (framing == null) Audio.Add(value); else framing.Feed(value); }
+        public void Finish() { if (framing != null) framing.Finish(); }
         public readonly List<string> Events = new List<string>();
         public bool Ended { get; private set; }
         public void Feed(byte[] data, int count)
@@ -101,7 +158,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 if (dle)
                 {
                     dle = false;
-                    if (b == 16) Audio.Add(16);
+                    if (b == 16) AddAudio(16);
                     else if (b == 3) { Events.Add("stream_end"); Ended = true; return; }
                     else if (b == (byte)'b') Events.Add("busy_tone");
                     else if (b == (byte)'h') Events.Add("local_on_hook");
@@ -109,7 +166,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                     else Events.Add("dle_" + b.ToString("X2"));
                 }
                 else if (b == 16) dle = true;
-                else Audio.Add(b);
+                else AddAudio(b);
                 if (Audio.Count > 240000) throw new InvalidDataException("Audio size limit exceeded");
             }
         }
@@ -196,6 +253,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
         public int Milliseconds;
         public int TransmittedSamples;
         public int ReceivedSamples;
+        public int RawReceivedSamples;
     }
     public static class VoiceTiming
     {
@@ -216,7 +274,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
     }
     public sealed class VoiceResult
     {
-        public string DiagnosticVersion = "2026.11.22.1";
+        public string DiagnosticVersion = "2026.11.22.2";
         public string FailureStage = "";
         public string FailureError = "";
         public string CleanupError = "";
@@ -238,6 +296,9 @@ namespace OfficeAutomation.Telephony.Diagnostics
         public bool Cancelled;
         public int TransmittedSamples;
         public int ReceivedSamples;
+        public int RawReceivedSamples;
+        public int RemovedRepeatedSamples;
+        public string ReceiveFraming = "linear";
         public int ReceivedPeak;
         public double ReceivedRms;
         public int StreamMilliseconds;
@@ -351,7 +412,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
         }
         private void Run()
         {
-            VoiceDecoder decoder = new VoiceDecoder();
+            VoiceDecoder decoder = new VoiceDecoder(true);
             var ringInput = new List<byte>();
             try
             {
@@ -432,7 +493,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                     else Thread.Sleep(2);
                     if (clock.ElapsedMilliseconds >= nextWindow)
                     {
-                        result.SampleWindows.Add(new VoiceSampleWindow { Milliseconds = (int)clock.ElapsedMilliseconds, TransmittedSamples = result.TransmittedSamples, ReceivedSamples = decoder.Audio.Count });
+                        result.SampleWindows.Add(new VoiceSampleWindow { Milliseconds = (int)clock.ElapsedMilliseconds, TransmittedSamples = result.TransmittedSamples, ReceivedSamples = decoder.Audio.Count, RawReceivedSamples = decoder.RawSampleCount });
                         nextWindow += 1000;
                     }
                 }
@@ -464,7 +525,16 @@ namespace OfficeAutomation.Telephony.Diagnostics
                     }
                 }
                 try { port.Dispose(); } catch { }
+                decoder.Finish();
                 result.ReceivedSamples = decoder.Audio.Count;
+                result.RawReceivedSamples = decoder.RawSampleCount;
+                result.RemovedRepeatedSamples = decoder.RawSampleCount - decoder.Audio.Count;
+                result.ReceiveFraming = decoder.ReceiveFraming;
+                if (!decoder.FramingValid)
+                {
+                    result.Status = "failed"; result.ErrorCode = "voice_receive_framing_changed";
+                    if (result.FailureStage.Length == 0) { result.FailureStage = "stream_audio"; result.FailureError = result.ErrorCode; }
+                }
                 result.Events = decoder.Events.Distinct().ToArray();
                 if (decoder.Audio.Count > 0)
                 {

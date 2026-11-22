@@ -1,3 +1,9 @@
+## Modem receive framing correction — 2026-11-22
+
+Resolved the receive-count discrepancy in existing-file replay: 120060 raw samples contain 24012 repeated samples; all 2001 frames match, payload comparison is exact and 96048 retained samples span 12.006 s versus 12.005 s measured capture. Implemented opt-in framing detection in VoiceSession after DLE decoding, with raw/retained counters and safe failure on changed framing. Regression simulations pass. Corrected live receiver, analog-to-PBX bridge and fax still require implementation/physical acceptance; internal PBX calls remain owner-accepted. No new phone call was requested for this analysis.
+
+Validation passed: full SQL Server suite 546 tests / 3445 assertions; TypeScript/build; 14 simulated audio-session outcomes and seven framing regressions; replay of the existing WAV with exact retained payload. The corrected receiver has not yet been exercised on a new physical call.
+
 ## V4 extension management and IVR — 2026-11-22
 
 Implemented separate extension and IVR management pages, active user/department ownership, validation, enabled/disabled controls, private WAV prompts and credential-free configuration ZIP. Windows Apply-OfficeConfig preserves matching passwords, backs up private state, rejects active engines/invalid destinations, converts PCM WAV to telephone audio and installs the IVR menu. Actual native test passed internal SIP/RTP plus IVR answer, greeting RTP (94 packets), key 1 routing to 1002 and graceful shutdown. Local additive extension migration applied. Added a dedicated modem timing package with per-second samples and warmup-excluded rate; physical result is required before developing/activating the modem media bridge. Fax receiver/inbox, queues, fallback on busy and password rotation UI remain unimplemented.

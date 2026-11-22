@@ -1,3 +1,7 @@
+## Modem receive framing correction — 2026-11-22
+
+VoiceReceiveFraming buffers 80 frames (4800 unescaped samples), requires exact 12-sample trailing matches at lag 10 and nonperiodic 48-sample payload, then emits only the first 48 of each 60. Linear streams and periodic tones pass unchanged. After activation, a mismatched full or final partial frame fails explicitly. VoiceDecoder remains linear by default; VoiceSession opts into detection. Reports distinguish RawReceivedSamples, RemovedRepeatedSamples and ReceiveFraming. No modem name, fixed blanket drop ratio or sample-rate resampling selects this behavior.
+
 ## V4 extension management and IVR — 2026-11-22
 
 telephony_extensions is an additive SQL Server table with unique number and explicit nullable user/department foreign keys; validation enforces exactly one matching owner. Nonsecret IVR settings use SystemSettingsService; audio stays on the private local disk. PbxConfigurationService exports a versioned password-free manifest; the Windows importer validates destinations and generates protected local credentials/configuration. Native IVR uses mod_dptools/mod_sndfile, exact known extension destinations, a 9197 test entry, bounded retries and operator transfer after timeout/invalid input. XML whitespace must be preserved: flattening the generated document caused native startup failure in testing. No application-to-ESL network controller or automatic agent synchronization is claimed.
