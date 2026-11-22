@@ -1,5 +1,7 @@
 ## Native Windows internal-call lab — 2026-11-22
 
+Changing the PBX host network address must not require recreating internal accounts. Existing extensions and passwords survive; both client accounts must use the updated SIP server/domain shown in the private account page.
+
 The owner has already confirmed installation, reboot and version display. Internal calling is now available as an isolated lab with configurable 3–6 digit extension numbers (initial defaults 1001/1002, 9196 reserved for echo). One protected account per phone; no shared default password. More than two extension numbers are supported during setup, while capacity testing, extension ownership in automation and migrating settings to another PC remain future work. The modem is not opened by the internal-call lab.
 
 ## Installer diagnostics and executable validation — 2026-11-22

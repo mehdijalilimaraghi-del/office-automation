@@ -1,5 +1,7 @@
 ## Native Windows internal-call lab — 2026-11-22
 
+PBX address changes: use Start-PbxLab.cmd with the existing profile. It detects the current private LAN address and preserves passwords; do not ask the owner to create a new profile merely because the host IP changed.
+
 Owner confirms reboot and successful version display; do not request another inventory/version check or reinstall. Native Windows internal-call lab is now implemented in tools/WindowsTelephony/PbxLab. It never opens a modem or changes the Windows service. Owner LAN/audio acceptance, modem media bridge and application extension ownership remain pending.
 
 ## Installer diagnostics and executable validation — 2026-11-22

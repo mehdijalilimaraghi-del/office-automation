@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 [CmdletBinding()]
 param([string]$LabRoot,[string]$EngineDirectory,[switch]$NoBrowser,[switch]$HideConsole)
 $ErrorActionPreference='Stop'
@@ -14,7 +14,7 @@ try {
     $service=Get-Service -Name FreeSWITCH -ErrorAction SilentlyContinue
     if($service -and $service.Status -ne 'Stopped'){throw 'The Windows PBX service is already active. No changes were made.'}
     if(Get-Process -Name FreeSwitchConsole -ErrorAction SilentlyContinue){throw 'A PBX console is already active. Use Stop-PbxLab.cmd before starting another instance.'}
-    if(-not @(Get-NetIPAddress -AddressFamily IPv4|Where-Object IPAddress -eq $labState.bind_address).Count){throw 'The saved LAN address is not assigned to this computer'}
+    $labState=Sync-PbxLabAddress $LabRoot
     if(Get-NetUDPEndpoint -LocalPort $labState.sip_port -ErrorAction SilentlyContinue){throw 'Lab SIP port is already in use'}
     if(Get-NetTCPConnection -LocalPort $labState.esl_port -State Listen -ErrorAction SilentlyContinue){throw 'Lab control port is already in use'}
     $arguments=Get-PbxLabArguments $LabRoot $EngineDirectory

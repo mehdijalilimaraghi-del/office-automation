@@ -1,5 +1,7 @@
 ## Native Windows internal-call lab — 2026-11-22
 
+Get-PbxLabLocalAddress retains an assigned saved address, otherwise selects the sole private IPv4 or sole address on an adapter with a default gateway. Ambiguity fails without mutation. Sync-PbxLabAddress refuses active PBX processes/services, then regenerates config/state/account instructions with unchanged identity and secrets. No firewall or OS address changes are performed.
+
 PbxLab uses independent per-user conf/log/db/runtime paths and random per-extension/control secrets under a private current-user/SYSTEM ACL. ESL binds loopback only and exposes a controller command whitelist; SIP is authenticated on the selected private IPv4, G.711 RTP uses 17000–17199, no trunk/external route/NAT mapping. Start validates readiness; Stop verifies process ID, start time and executable before graceful shutdown. Diagnostic export projects only nonsecret counters/extension identities, never raw XML/state/account pages/SIP logs. No vendor configuration, Windows service or firewall mutation. This lab is separate from the future application PBX provider and modem bridge.
 
 ## Installer diagnostics and executable validation — 2026-11-22

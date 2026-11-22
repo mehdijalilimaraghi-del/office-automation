@@ -1,5 +1,7 @@
 ## Native Windows internal-call lab — 2026-11-22
 
+Address-change fix delivered to the owner shared PbxInternalLab folder with backups of the replaced scripts. Removed the manual address chooser; startup repairs a removed saved IP without rotating accounts. Seven migration checks and the 16-check native call suite passed. Owner LAN registration remains to be retried.
+
 Completed the isolated native Windows PBX lab: LAN/extension setup, protected random credentials, private account page, start/readiness checks, identity-checked graceful stop and password-free diagnostic JSON. Actual FreeSWITCH integration passed: two authenticated registrations, authenticated answered internal call, bidirectional RTP (89/88 packets in the repeat run), and acknowledged hangup. Sixteen focused checks passed; source MSI extraction reproduced 1640 engine files without installation. Owner has confirmed reboot/version. Next: two real LAN clients/audio acceptance, then application provider/ownership and modem bridge; V4 is not complete.
 Validation for this change: full SQL Server test suite passed (538 tests, 3387 assertions); npm run build passed including vue-tsc; all new PowerShell files parsed successfully. Native integration passed 16 checks. No production database, modem, service, master or release branch was changed.
 

@@ -1,5 +1,7 @@
 ## Native Windows internal-call lab — 2026-11-22
 
+Completed automatic lab IP detection and password-preserving recovery after host address changes. Next acceptance remains owner LAN registration and two-way human audio before modem/provider integration.
+
 V4 internal-call laboratory is implemented and protocol/media tested on native Windows. Next acceptance is two owner LAN SIP clients, ringing/answer/audio/hangup; no repeated installation/version check. Then implement provider integration, user/department extension ownership, call history and modem media timing correction/bridge. Extra extension numbers are configurable at initial lab creation; production scaling, live management and another-PC migration are not yet delivered.
 
 ## Installer diagnostics and executable validation — 2026-11-22

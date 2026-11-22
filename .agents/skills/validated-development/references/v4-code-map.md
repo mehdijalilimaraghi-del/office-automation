@@ -56,3 +56,5 @@ Real supported inbound/outbound call tests; authorization for logs/recordings; e
 - tools/WindowsTelephony/PbxLab: Configure/Start/Stop, PbxLab.psm1, isolated freeswitch.template.xml, private accounts page and password-free Collect-PbxLabDiagnostics; README.fa.md describes two-client acceptance.
 - tests/Test-PbxLab.ps1: 16 checks with actual native SIP/RTP/hangup via NativeSipSmoke.cs. Expand-TrustedEngine.ps1/TrustedMsiCab.cs extract only the pinned engine for tests, never execute MSI.
 - Owner reboot/version already confirmed; do not request another check. Next: physical LAN audio acceptance, application provider/ownership and modem timing/bridge. No V4 completion claim.
+
+- Address-change recovery: Get-PbxLabLocalAddress/Sync-PbxLabAddress in PbxLab.psm1; Start uses the original profile with preserved credentials. Test-PbxLabAddress.ps1 covers seven migration and guard checks.

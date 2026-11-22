@@ -57,4 +57,29 @@ function Get-PbxLabArguments([string]$Root,[string]$EngineDirectory){
     foreach($name in @('conf','log','db','run','cache','temp','storage','recordings','scripts','sounds','certs','grammar','htdocs')){$items+=@('-'+$name,('"'+(Join-Path $Root $name)+'"'))}
     return ($items -join ' ')
 }
-Export-ModuleMember -Function New-PbxLabProfile,Read-PbxLabState,Invoke-PbxLabCommand,Get-PbxLabArguments
+function Get-PbxLabLocalAddress([string]$Preferred){
+    $addresses=@(Get-NetIPAddress -AddressFamily IPv4 -AddressState Preferred | Where-Object {$_.IPAddress -match '^(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)' -and -not $_.SkipAsSource})
+    if($Preferred -and @($addresses|Where-Object IPAddress -eq $Preferred).Count){return $Preferred}
+    $unique=@($addresses.IPAddress|Select-Object -Unique)
+    if($unique.Count -eq 1){return $unique[0]}
+    $gatewayInterfaces=@(Get-NetIPConfiguration|Where-Object {$_.IPv4DefaultGateway}|ForEach-Object {$_.InterfaceIndex})
+    $primary=@($addresses|Where-Object {$_.InterfaceIndex -in $gatewayInterfaces}|Select-Object -ExpandProperty IPAddress -Unique)
+    if($primary.Count -eq 1){return $primary[0]}
+    throw 'Cannot choose a unique LAN IPv4 address. Check active network adapters; no settings were changed.'
+}
+function Sync-PbxLabAddress([string]$Root){
+    if(Get-Process -Name FreeSwitchConsole -ErrorAction SilentlyContinue){throw 'Stop the PBX lab before updating its network address.'}
+    $service=Get-Service -Name FreeSWITCH -ErrorAction SilentlyContinue
+    if($service -and $service.Status -ne 'Stopped'){throw 'Stop the PBX service before updating lab settings.'}
+    $state=Read-PbxLabState $Root
+    # Retain loopback-only developer tests; normal lab profiles follow a real LAN adapter.
+    if($state.bind_address -eq '127.0.0.1'){return $state}
+    $address=Get-PbxLabLocalAddress $state.bind_address
+    if($address -ne $state.bind_address){
+        $state.bind_address=$address
+        Write-LabConfiguration $Root $state
+        Write-Host ('Lab network address updated: '+$address+'. Existing extension passwords were preserved.')
+    }
+    return $state
+}
+Export-ModuleMember -Function New-PbxLabProfile,Read-PbxLabState,Invoke-PbxLabCommand,Get-PbxLabArguments,Get-PbxLabLocalAddress,Sync-PbxLabAddress

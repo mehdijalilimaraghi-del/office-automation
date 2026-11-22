@@ -1,5 +1,7 @@
 ## Native Windows internal-call lab — 2026-11-22
 
+Test-PbxLabAddress.ps1 passed seven checks covering IP migration, preserved passwords/identity, updated XML/account instructions, idempotency, ambiguity rejection and active-engine refusal. Test-PbxLab.ps1 again passed all 16 native SIP/RTP checks. Start/Stop launchers continue using the original protected profile.
+
 Run Windows PowerShell 5.1: tools/WindowsTelephony/PbxLab/tests/Test-PbxLab.ps1 -EngineDirectory <trusted engine directory>. Sixteen checks passed, including private ACL/input rejection/no overwrite/bounded ESL frames and an actual authenticated SIP call with bidirectional RTP/hangup. NativeSipSmoke.cs uses only loopback endpoints, no modem or PSTN. Expand-TrustedEngine.ps1 validates the pinned MSI hash and extracts cabinet files for native testing without executing MSI; 1640 files extracted successfully. Collect-PbxLabDiagnostics reports readiness/registrations/call count only; tested ready=true, two extensions, zero remaining calls. Real two-PC LAN audio acceptance is still required. Package excludes tests, binaries, credentials and generated reports.
 Validation for this change: full SQL Server test suite passed (538 tests, 3387 assertions); npm run build passed including vue-tsc; all new PowerShell files parsed successfully. Native integration passed 16 checks. No production database, modem, service, master or release branch was changed.
 
