@@ -45,7 +45,7 @@ Real supported inbound/outbound call tests; authorization for logs/recordings; e
 
 - RingDetector in VoiceDiagnostics.cs recognizes text and DLE-R ring events; waiting evidence is bounded. VEM/VDR/VLS queries are read-only and optional. Owner v4 report now confirms DLE-R input and local incoming audio acceptance with both human checks and cleanup. Next: PBX bridge, timing/sample-count review and remote-hangup validation; no production line certification.
 
-- Install-PbxEngine.ps1 and Install-PbxEngine.cmd: pinned official core-only Windows engine installer, CheckOnly mode and no automatic line activation. Actual installation is pending on the owner host. Future provider/extension/migration work must support more extensions and another Windows machine.
+- Install-PbxEngine.ps1 and Install-PbxEngine.cmd: pinned official core-only Windows engine installer, CheckOnly mode and no automatic line activation. Owner diagnostics now confirm core 1.11.4 installed, Manual/Stopped service and MSI 3010 reboot request; restart completion/runtime readiness remain unconfirmed. Future provider/extension/migration work must support more extensions and another Windows machine.
 
 - Installer path binding fix: resolve omitted MSI path in script body, pass explicit path from CMD and preserve exit status. Test-PbxInstallerPaths.ps1 guards Start-Process while testing Persian/spaced paths and missing root context.
 

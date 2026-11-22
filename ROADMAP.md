@@ -1,6 +1,6 @@
 ## Installer diagnostics and executable validation — 2026-11-22
 
-Before any further installation attempt, collect owner diagnostics and determine whether the previous MSI completed. Resolve wrapper validation and investigate the black screen using MSI/Explorer/RestartManager event evidence. Then verify stopped engine state before configuration and call testing. Do not delete or reinstall existing FreeSWITCH automatically.
+Owner installation evidence now confirms the native Windows FreeSWITCH 1.11.4 core is present and service stopped. MSI requested a reboot (3010); confirm it has been completed before runtime checks. Do not rerun MSI. Next: isolated lab configuration and internal extension testing, then modem integration/timing validation and real call acceptance. Explorer instability must not be dismissed as a PBX install failure or assigned an unproven cause.
 
 ## Installer path binding correction — 2026-11-22
 
