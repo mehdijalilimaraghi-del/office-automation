@@ -1,3 +1,7 @@
+## Native Windows internal-call lab — 2026-11-22
+
+PbxLab uses independent per-user conf/log/db/runtime paths and random per-extension/control secrets under a private current-user/SYSTEM ACL. ESL binds loopback only and exposes a controller command whitelist; SIP is authenticated on the selected private IPv4, G.711 RTP uses 17000–17199, no trunk/external route/NAT mapping. Start validates readiness; Stop verifies process ID, start time and executable before graceful shutdown. Diagnostic export projects only nonsecret counters/extension identities, never raw XML/state/account pages/SIP logs. No vendor configuration, Windows service or firewall mutation. This lab is separate from the future application PBX provider and modem bridge.
+
 ## Installer diagnostics and executable validation — 2026-11-22
 
 Post-install binary detection now matches FreeSwitchConsole.exe from the pinned MSI File table. Installer failures include phase and MSI exit code, with local JSON/text and adjacent log copies. Per-invocation MSIRESTARTMANAGERCONTROL=Disable and REBOOT=ReallySuppress augment /norestart; no global Windows policy is changed. Collect-PbxInstallDiagnostics reads service/files/uninstall registry/events/own logs only, avoids Win32_Product repair side effects and creates a bounded-source diagnostic archive. No service or installer is started by the collector.

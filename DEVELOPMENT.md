@@ -1,3 +1,9 @@
+## Native Windows internal-call lab — 2026-11-22
+
+Run Windows PowerShell 5.1: tools/WindowsTelephony/PbxLab/tests/Test-PbxLab.ps1 -EngineDirectory <trusted engine directory>. Sixteen checks passed, including private ACL/input rejection/no overwrite/bounded ESL frames and an actual authenticated SIP call with bidirectional RTP/hangup. NativeSipSmoke.cs uses only loopback endpoints, no modem or PSTN. Expand-TrustedEngine.ps1 validates the pinned MSI hash and extracts cabinet files for native testing without executing MSI; 1640 files extracted successfully. Collect-PbxLabDiagnostics reports readiness/registrations/call count only; tested ready=true, two extensions, zero remaining calls. Real two-PC LAN audio acceptance is still required. Package excludes tests, binaries, credentials and generated reports.
+Validation for this change: full SQL Server test suite passed (538 tests, 3387 assertions); npm run build passed including vue-tsc; all new PowerShell files parsed successfully. Native integration passed 16 checks. No production database, modem, service, master or release branch was changed.
+
+
 ## Installer diagnostics and executable validation — 2026-11-22
 
 Test-PbxInstallerReports.ps1 exercises mocked MSI success and exit 1603, verifying the real binary name, English errors, failure JSON and copied MSI log. tests/InstallerDoubles.ps1 replaces installer/service operations and is excluded from delivered packages. Existing path tests guard elevation. Run the diagnostic collector on a new/empty output folder and validate its JSON/ZIP; it must not install/repair or change services. The owner machine status and black-screen cause remain unverified. Microsoft Restart Manager reference: https://learn.microsoft.com/en-us/windows/win32/msi/msirestartmanagercontrol .

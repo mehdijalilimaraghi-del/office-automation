@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<document type="freeswitch/xml">
+  <section name="configuration">
+    <configuration name="modules.conf" description="Office lab modules"><modules>
+      <load module="mod_console"/><load module="mod_logfile"/><load module="mod_event_socket"/>
+      <load module="mod_sofia"/><load module="mod_commands"/><load module="mod_dptools"/><load module="mod_dialplan_xml"/><load module="mod_tone_stream"/>
+    </modules></configuration>
+    <configuration name="switch.conf"><settings>
+      <param name="max-sessions" value="20"/><param name="sessions-per-second" value="5"/>
+      <param name="rtp-start-port" value="17000"/><param name="rtp-end-port" value="17199"/>
+      <param name="loglevel" value="info"/>
+    </settings></configuration>
+    <configuration name="console.conf"><mappings><map name="all" value="console,info,notice,warning,err,crit,alert"/></mappings><settings><param name="colorize" value="false"/><param name="loglevel" value="info"/></settings></configuration>
+    <configuration name="logfile.conf"><settings/><profiles><profile name="default"><settings><param name="rollover" value="10485760"/><param name="maximum-rotate" value="3"/></settings><mappings><map name="all" value="console,info,notice,warning,err,crit,alert"/></mappings></profile></profiles></configuration>
+    <configuration name="acl.conf"><network-lists><list name="office_loopback" default="deny"><node type="allow" cidr="127.0.0.1/32"/></list></network-lists></configuration>
+    <configuration name="event_socket.conf"><settings>
+      <param name="listen-ip" value="127.0.0.1"/><param name="listen-port" value="__ESL_PORT__"/>
+      <param name="password" value="__ESL_SECRET__"/><param name="apply-inbound-acl" value="office_loopback"/>
+      <param name="nat-map" value="false"/>
+    </settings></configuration>
+    <configuration name="sofia.conf"><global_settings><param name="log-level" value="0"/></global_settings><profiles><profile name="office_lab"><domains><domain name="all" alias="true" parse="false"/></domains><settings>
+      <param name="sip-ip" value="__IP__"/><param name="rtp-ip" value="__IP__"/>
+      <param name="ext-sip-ip" value="__IP__"/><param name="ext-rtp-ip" value="__IP__"/>
+      <param name="sip-port" value="__SIP_PORT__"/><param name="dialplan" value="XML"/><param name="context" value="office_lab"/>
+      <param name="auth-calls" value="true"/><param name="accept-blind-auth" value="false"/><param name="accept-blind-reg" value="false"/>
+      <param name="auth-subscriptions" value="true"/><param name="inbound-reg-force-matching-username" value="true"/>
+      <param name="force-register-domain" value="__IP__"/><param name="force-register-db-domain" value="__IP__"/><param name="force-subscription-domain" value="__IP__"/>
+      <param name="challenge-realm" value="__IP__"/><param name="inbound-codec-prefs" value="PCMU,PCMA"/><param name="outbound-codec-prefs" value="PCMU,PCMA"/>
+      <param name="rfc2833-pt" value="101"/><param name="dtmf-type" value="rfc2833"/><param name="rtp-timer-name" value="soft"/>
+      <param name="rtp-timeout-sec" value="60"/><param name="rtp-hold-timeout-sec" value="180"/>
+      <param name="log-auth-failures" value="false"/><param name="sip-trace" value="false"/><param name="sip-capture" value="false"/>
+      <param name="enable-info-api-request" value="false"/><param name="enable-chat-api-proto" value="false"/>
+      <param name="disable-transfer" value="true"/><param name="tls" value="false"/><param name="manage-presence" value="false"/>
+    </settings></profile></profiles></configuration>
+  </section>
+  <section name="dialplan"><context name="office_lab">
+    <extension name="echo"><condition field="destination_number" expression="^9196$"><action application="answer"/><action application="echo"/></condition></extension>
+    <extension name="known_extensions"><condition field="destination_number" expression="^(__EXTENSIONS__)$"><action application="set" data="hangup_after_bridge=true"/><action application="set" data="call_timeout=30"/><action application="bridge" data="user/${destination_number}@__IP__"/></condition></extension>
+  </context></section>
+  <section name="directory"><domain name="__IP__"><params><param name="dial-string" value="{sip_invite_domain=${dialed_domain}}${sofia_contact(office_lab/${dialed_user}@${dialed_domain})}"/></params><groups><group name="office"><users>__USERS__</users></group></groups></domain></section>
+</document>

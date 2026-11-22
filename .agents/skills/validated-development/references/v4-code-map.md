@@ -45,8 +45,14 @@ Real supported inbound/outbound call tests; authorization for logs/recordings; e
 
 - RingDetector in VoiceDiagnostics.cs recognizes text and DLE-R ring events; waiting evidence is bounded. VEM/VDR/VLS queries are read-only and optional. Owner v4 report now confirms DLE-R input and local incoming audio acceptance with both human checks and cleanup. Next: PBX bridge, timing/sample-count review and remote-hangup validation; no production line certification.
 
-- Install-PbxEngine.ps1 and Install-PbxEngine.cmd: pinned official core-only Windows engine installer, CheckOnly mode and no automatic line activation. Owner diagnostics now confirm core 1.11.4 installed, Manual/Stopped service and MSI 3010 reboot request; restart completion/runtime readiness remain unconfirmed. Future provider/extension/migration work must support more extensions and another Windows machine.
+- Install-PbxEngine.ps1 and Install-PbxEngine.cmd: pinned official core-only Windows engine installer, CheckOnly mode and no automatic line activation. Owner diagnostics now confirm core 1.11.4 installed, Manual/Stopped service and MSI 3010 reboot request; owner subsequently confirmed reboot and version display. Future provider/extension/migration work must support more extensions and another Windows machine.
 
 - Installer path binding fix: resolve omitted MSI path in script body, pass explicit path from CMD and preserve exit status. Test-PbxInstallerPaths.ps1 guards Start-Process while testing Persian/spaced paths and missing root context.
 
 - Actual engine binary is FreeSwitchConsole.exe per MSI File table. Collect-PbxInstallDiagnostics.ps1/.cmd gathers current state without repair or reinstall; English failure logs and Test-PbxInstallerReports.ps1 cover post-check failures with test-only doubles.
+
+## Internal-call lab — 2026-11-22
+
+- tools/WindowsTelephony/PbxLab: Configure/Start/Stop, PbxLab.psm1, isolated freeswitch.template.xml, private accounts page and password-free Collect-PbxLabDiagnostics; README.fa.md describes two-client acceptance.
+- tests/Test-PbxLab.ps1: 16 checks with actual native SIP/RTP/hangup via NativeSipSmoke.cs. Expand-TrustedEngine.ps1/TrustedMsiCab.cs extract only the pinned engine for tests, never execute MSI.
+- Owner reboot/version already confirmed; do not request another check. Next: physical LAN audio acceptance, application provider/ownership and modem timing/bridge. No V4 completion claim.

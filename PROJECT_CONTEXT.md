@@ -1,3 +1,7 @@
+## Native Windows internal-call lab — 2026-11-22
+
+The owner has already confirmed installation, reboot and version display. Internal calling is now available as an isolated lab with configurable 3–6 digit extension numbers (initial defaults 1001/1002, 9196 reserved for echo). One protected account per phone; no shared default password. More than two extension numbers are supported during setup, while capacity testing, extension ownership in automation and migrating settings to another PC remain future work. The modem is not opened by the internal-call lab.
+
 ## Installer diagnostics and executable validation — 2026-11-22
 
 The owner cannot reliably read Persian PowerShell output; installer and diagnostic-console messages must be English. Every installer failure should leave a transferable text/JSON report and available MSI log. A failed wrapper verification is different from a failed MSI installation. Owner-reported black screen requires evidence before attributing a cause or retrying.

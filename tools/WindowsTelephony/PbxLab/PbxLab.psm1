@@ -1,0 +1,60 @@
+﻿#requires -Version 5.1
+$ErrorActionPreference='Stop'
+function New-LabSecret { $rng=[Security.Cryptography.RandomNumberGenerator]::Create();try{$data=New-Object byte[] 24;$rng.GetBytes($data);return ([BitConverter]::ToString($data)).Replace('-','').ToLowerInvariant()}finally{$rng.Dispose()} }
+function Read-PbxLabState([string]$Root){$state=Get-Content -LiteralPath (Join-Path $Root 'lab-state.json') -Raw -Encoding UTF8|ConvertFrom-Json;if($state.report_type -ne 'office_pbx_lab' -or $state.schema_version -ne 1){throw 'Not an Office Automation lab profile'};return $state}
+function Write-LabConfiguration([string]$Root,$LabState){
+    $template=[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'freeswitch.template.xml'))
+    $users=New-Object Text.StringBuilder
+    foreach($account in $LabState.accounts){[void]$users.Append(('<user id="'+$account.extension+'"><params><param name="password" value="'+$account.password+'"/></params><variables><variable name="user_context" value="office_lab"/><variable name="effective_caller_id_number" value="'+$account.extension+'"/><variable name="effective_caller_id_name" value="Extension '+$account.extension+'"/></variables></user>'))}
+    $xml=$template.Replace('__IP__',$LabState.bind_address).Replace('__SIP_PORT__',[string]$LabState.sip_port).Replace('__ESL_PORT__',[string]$LabState.esl_port).Replace('__ESL_SECRET__',$LabState.esl_secret).Replace('__EXTENSIONS__',(($LabState.accounts|ForEach-Object {$_.extension})-join '|')).Replace('__USERS__',$users.ToString())
+    $validation=New-Object Xml.XmlDocument;$validation.XmlResolver=$null;$validation.LoadXml($xml)
+    [IO.File]::WriteAllText((Join-Path $Root 'conf\freeswitch.xml'),$xml,[Text.UTF8Encoding]::new($false))
+    [IO.File]::WriteAllText((Join-Path $Root 'lab-state.json'),($LabState|ConvertTo-Json -Depth 6),[Text.UTF8Encoding]::new($false))
+    $rows=($LabState.accounts|ForEach-Object {'<tr><td>'+ $_.extension+'</td><td>'+ $_.extension+'</td><td><code>'+ $_.password+'</code></td></tr>'})-join ''
+    $html='<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"><meta name="referrer" content="no-referrer"><title>داخلی‌های آزمایشی</title><style>body{font-family:Tahoma,sans-serif;max-width:950px;margin:40px auto;padding:24px;line-height:2;background:#f8fafc;color:#172554}table{border-collapse:collapse;width:100%;background:white}td,th{padding:12px;border:1px solid #cbd5e1}code,bdi{direction:ltr;unicode-bidi:embed;user-select:all}h1{font-size:24px}</style><h1>مرکز تلفن آزمایشی</h1><p>آدرس سرور: <bdi>'+ $LabState.bind_address+':'+$LabState.sip_port+'</bdi> — دامنه: <bdi>'+$LabState.bind_address+'</bdi> — پروتکل: UDP</p><table><tr><th>داخلی</th><th>نام کاربری و شناسه ورود</th><th>رمز اختصاصی</th></tr>'+$rows+'</table><p>هر حساب را در یک نرم‌افزار تلفن SIP روی یک کامپیوتر تنظیم کنید؛ سپس شماره داخلی دیگر را بگیرید. برای تست صدای همان حساب، 9196 را بگیرید.</p><p>این صفحه شامل رمزهاست؛ آن را برای بررسی یا در گزارش ارسال نکنید. تنظیم داخلی‌ها در اتوماسیون و اتصال مودم هنوز مرحله بعد است.</p></html>'
+    [IO.File]::WriteAllText((Join-Path $Root 'accounts.html'),$html,[Text.UTF8Encoding]::new($false))
+}
+function New-PbxLabProfile {
+    param([string]$Root,[string]$BindAddress,[string[]]$Extensions=@('1001','1002'),[int]$SipPort=5160,[int]$EslPort=18021)
+    $ip=$null
+    if(-not [Net.IPAddress]::TryParse($BindAddress,[ref]$ip) -or $ip.AddressFamily -ne [Net.Sockets.AddressFamily]::InterNetwork){throw 'Select an IPv4 LAN address'}
+    $octets=$ip.GetAddressBytes();if(-not ($octets[0] -eq 10 -or $octets[0] -eq 127 -or ($octets[0] -eq 192 -and $octets[1] -eq 168) -or ($octets[0] -eq 172 -and $octets[1] -ge 16 -and $octets[1] -le 31))){throw 'This lab requires a private LAN or loopback address'}
+    if($SipPort -lt 1024 -or $SipPort -gt 65535 -or $EslPort -lt 1024 -or $EslPort -gt 65535 -or $SipPort -eq $EslPort -or ($SipPort -ge 17000 -and $SipPort -le 17199) -or ($EslPort -ge 17000 -and $EslPort -le 17199)){throw 'Invalid or overlapping lab ports'}
+    if(-not $Extensions.Count -or $Extensions.Count -gt 1000 -or @($Extensions|Select-Object -Unique).Count -ne $Extensions.Count){throw 'Provide unique extensions'}
+    foreach($number in $Extensions){if($number -notmatch '\A[1-9][0-9]{2,5}\z' -or $number -eq '9196'){throw 'Extensions must be 3-6 digits; 9196 is reserved for echo testing'}}
+    if(Test-Path -LiteralPath $Root){throw 'Profile already exists; existing credentials/configuration will not be overwritten'}
+    [void][IO.Directory]::CreateDirectory($Root)
+    $acl=New-Object Security.AccessControl.DirectorySecurity
+    $sid=[Security.Principal.WindowsIdentity]::GetCurrent().User
+    $acl.SetOwner($sid);$acl.SetAccessRuleProtection($true,$false)
+    foreach($identity in @($sid,(New-Object Security.Principal.SecurityIdentifier('S-1-5-18')))){$rule=New-Object Security.AccessControl.FileSystemAccessRule($identity,'FullControl','ContainerInherit,ObjectInherit','None','Allow');[void]$acl.AddAccessRule($rule)}
+    Set-Acl -LiteralPath $Root -AclObject $acl
+    foreach($name in @('conf','log','db','run','cache','temp','storage','recordings','scripts','sounds','certs','grammar','htdocs')){[void][IO.Directory]::CreateDirectory((Join-Path $Root $name))}
+    $state=[pscustomobject]@{report_type='office_pbx_lab';schema_version=1;profile_id=[Guid]::NewGuid().ToString('N');bind_address=$ip.ToString();sip_port=$SipPort;esl_port=$EslPort;esl_secret=(New-LabSecret);accounts=@($Extensions|ForEach-Object {[pscustomobject]@{extension=$_;password=(New-LabSecret)}})}
+    Write-LabConfiguration $Root $state
+    return $state
+}
+function Read-EslFrame($Stream){
+    $bytes=New-Object 'Collections.Generic.List[byte]'
+    while($true){$value=$Stream.ReadByte();if($value -lt 0){throw 'ESL connection closed'};[void]$bytes.Add([byte]$value);if($bytes.Count -gt 16384){throw 'ESL header too large'};$text=[Text.Encoding]::ASCII.GetString($bytes.ToArray()).Replace("`r",'');if($text.EndsWith("`n`n")){break}}
+    $headers=@{};foreach($line in $text.Trim().Split("`n")){if($line -match '^([^:]+):\s*(.*)$'){$headers[$matches[1].ToLowerInvariant()]=$matches[2]}}
+    $length=0;if($headers.ContainsKey('content-length')){if(-not [int]::TryParse($headers['content-length'],[ref]$length) -or $length -lt 0 -or $length -gt 1048576){throw 'Invalid ESL body length'}}
+    $body=New-Object byte[] $length;$offset=0;while($offset -lt $length){$read=$Stream.Read($body,$offset,$length-$offset);if($read -le 0){throw 'Truncated ESL body'};$offset+=$read}
+    return @{headers=$headers;body=[Text.Encoding]::UTF8.GetString($body)}
+}
+function Invoke-PbxLabCommand($LabState,[string]$Command){
+    if($Command -notin @('status','sofia status profile office_lab','sofia status profile office_lab reg','show calls as json','shutdown')){throw 'Command is not allowed by the lab controller'}
+    $client=New-Object Net.Sockets.TcpClient
+    try{$pending=$client.BeginConnect('127.0.0.1',[int]$LabState.esl_port,$null,$null);try{if(-not $pending.AsyncWaitHandle.WaitOne(2000)){throw 'ESL connect timeout'};$client.EndConnect($pending)}finally{$pending.AsyncWaitHandle.Close()};$stream=$client.GetStream();$stream.ReadTimeout=3000;$stream.WriteTimeout=3000
+        $frame=Read-EslFrame $stream;if($frame.headers['content-type'] -ne 'auth/request'){throw 'Unexpected ESL greeting'}
+        $data=[Text.Encoding]::ASCII.GetBytes('auth '+$LabState.esl_secret+"`n`n");$stream.Write($data,0,$data.Length)
+        $frame=Read-EslFrame $stream;if($frame.headers['reply-text'] -notmatch '^\+OK accepted'){throw 'ESL authentication rejected'}
+        $data=[Text.Encoding]::ASCII.GetBytes('api '+$Command+"`n`n");$stream.Write($data,0,$data.Length);$frame=Read-EslFrame $stream;return $frame.body
+    }finally{$client.Close()}
+}
+function Get-PbxLabArguments([string]$Root,[string]$EngineDirectory){
+    $items=@('-nonat','-nonatmap','-np','-base',('"'+$Root+'"'),'-mod',('"'+(Join-Path $EngineDirectory 'mod')+'"'))
+    foreach($name in @('conf','log','db','run','cache','temp','storage','recordings','scripts','sounds','certs','grammar','htdocs')){$items+=@('-'+$name,('"'+(Join-Path $Root $name)+'"'))}
+    return ($items -join ' ')
+}
+Export-ModuleMember -Function New-PbxLabProfile,Read-PbxLabState,Invoke-PbxLabCommand,Get-PbxLabArguments

@@ -1,6 +1,10 @@
+## Native Windows internal-call lab — 2026-11-22
+
+Owner confirms reboot and successful version display; do not request another inventory/version check or reinstall. Native Windows internal-call lab is now implemented in tools/WindowsTelephony/PbxLab. It never opens a modem or changes the Windows service. Owner LAN/audio acceptance, modem media bridge and application extension ownership remain pending.
+
 ## Installer diagnostics and executable validation — 2026-11-22
 
-Owner diagnostic JSON and MSI log confirm FreeSWITCH 1.11.4 core is installed on EDARII: actual FreeSwitchConsole.exe/fs_cli.exe versions match, service Manual/Stopped, MSI installation status 0 and final exit 3010 (restart requested). Do not reinstall. Restart Manager did shut down/restart apps holding runtime DLLs; separate later Explorer crash events do not establish their exact root cause. User reboot completion and runtime readiness remain unconfirmed. Keep service stopped until lab configuration is supplied.
+Owner diagnostic JSON and MSI log confirm FreeSWITCH 1.11.4 core is installed on EDARII: actual FreeSwitchConsole.exe/fs_cli.exe versions match, service Manual/Stopped, MSI installation status 0 and final exit 3010 (restart requested). Do not reinstall. Restart Manager did shut down/restart apps holding runtime DLLs; separate later Explorer crash events do not establish their exact root cause. Owner subsequently confirmed reboot and successful version display; see the current lab status above. Keep service stopped until lab configuration is supplied.
 
 ## Installer path binding correction — 2026-11-22
 

@@ -1,6 +1,10 @@
+## Native Windows internal-call lab — 2026-11-22
+
+V4 internal-call laboratory is implemented and protocol/media tested on native Windows. Next acceptance is two owner LAN SIP clients, ringing/answer/audio/hangup; no repeated installation/version check. Then implement provider integration, user/department extension ownership, call history and modem media timing correction/bridge. Extra extension numbers are configurable at initial lab creation; production scaling, live management and another-PC migration are not yet delivered.
+
 ## Installer diagnostics and executable validation — 2026-11-22
 
-Owner installation evidence now confirms the native Windows FreeSWITCH 1.11.4 core is present and service stopped. MSI requested a reboot (3010); confirm it has been completed before runtime checks. Do not rerun MSI. Next: isolated lab configuration and internal extension testing, then modem integration/timing validation and real call acceptance. Explorer instability must not be dismissed as a PBX install failure or assigned an unproven cause.
+Owner installation evidence now confirms the native Windows FreeSWITCH 1.11.4 core is present and service stopped. MSI requested a reboot (3010); the owner has subsequently confirmed reboot and successful version display. Do not rerun MSI. Next: isolated lab configuration and internal extension testing, then modem integration/timing validation and real call acceptance. Explorer instability must not be dismissed as a PBX install failure or assigned an unproven cause.
 
 ## Installer path binding correction — 2026-11-22
 
