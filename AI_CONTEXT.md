@@ -1,3 +1,7 @@
+## V4 extension management and IVR — 2026-11-22
+
+Owner confirmed native Windows LAN internal calls, bidirectional human audio and hangup after setting MicroSIP SIP Proxy equal to SIP Server including port. Never instruct leaving Proxy empty for this setup. New extension/IVR management uses the existing telephony.manage gate and manual credential-free configuration packages; local existing extension passwords must be preserved. Modem/PBX bridging and fax are not implemented or certified; the next physical prerequisite is per-second modem stream timing evidence.
+
 ## Native Windows internal-call lab — 2026-11-22
 
 PBX address changes: use Start-PbxLab.cmd with the existing profile. It detects the current private LAN address and preserves passwords; do not ask the owner to create a new profile merely because the host IP changed.

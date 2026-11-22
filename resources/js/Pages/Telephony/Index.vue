@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TelephonyNav from '@/Components/TelephonyNav.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { Phone, Monitor, Search, CheckCircle2, Info } from '@lucide/vue';
@@ -12,6 +13,7 @@ function select(id: number): void { selection.modem_id = id; selection.put(route
 <AuthenticatedLayout>
 <template #header><h1 class="text-xl font-bold">تلفن سازمانی</h1></template>
 <main dir="rtl" class="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
+    <TelephonyNav active="modems" />
     <section class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border bg-white p-5 sm:p-6">
         <div class="flex items-center gap-3"><span class="rounded-2xl bg-indigo-50 p-3 text-indigo-600"><Phone class="size-7" /></span><div><h2 class="text-lg font-bold">اتصال خط تلفن شرکت</h2><p class="mt-1 text-sm text-slate-600">مودم‌های کامپیوتر واسط را شناسایی و برای آزمون انتخاب کنید.</p></div></div>
         <button type="button" :disabled="discovery.processing" class="inline-flex min-h-11 items-center gap-2 rounded-xl bg-indigo-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50" @click="discovery.post(route('telephony.discoveries.store'))"><Search class="size-4" />بررسی کامپیوتر مودم</button>

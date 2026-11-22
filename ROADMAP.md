@@ -1,3 +1,7 @@
+## V4 extension management and IVR — 2026-11-22
+
+V4 completed: owner-accepted LAN calls/audio/hangup; extension user/department management; configurable greeting/key routes/operator-on-timeout; manual package application with preserved passwords; native IVR integration test. Next dependency: new modem timing report must distinguish startup buffering from sustained 10 kHz receive behavior before the modem-to-PBX bridge. Then implement and validate analog incoming/outgoing routing, fax internal destination/inbox, history and remaining V4 acceptance. Finding mod_spandsp.dll in the trusted Windows engine does not prove a working fax receiver. No master/server deployment.
+
 ## Native Windows internal-call lab — 2026-11-22
 
 Completed automatic lab IP detection and password-preserving recovery after host address changes. Next acceptance remains owner LAN registration and two-way human audio before modem/provider integration.

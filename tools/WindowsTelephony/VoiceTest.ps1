@@ -10,7 +10,7 @@ function Show-ModemVoiceTest {
     $state = @{ session=$null; wantClose=$false; result=$null; recording=$null; player=$null; report=$null; autoReport=$null }
     $challenge = [string](Get-Random -Minimum 100 -Maximum 1000)
     $window = New-Object Windows.Forms.Form
-    $window.Text='آزمون عملی صدای مودم — نسخه ۴'
+    $window.Text='آزمون عملی صدای مودم — نسخه ۵ (زمان‌بندی)'
     $window.Size=New-Object Drawing.Size(820,700)
     $window.MinimumSize=New-Object Drawing.Size(700,620)
     $window.StartPosition='CenterParent'

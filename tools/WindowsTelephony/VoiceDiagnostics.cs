@@ -191,9 +191,32 @@ namespace OfficeAutomation.Telephony.Diagnostics
         public string Error = "";
         public long DurationMilliseconds;
     }
+    public sealed class VoiceSampleWindow
+    {
+        public int Milliseconds;
+        public int TransmittedSamples;
+        public int ReceivedSamples;
+    }
+    public static class VoiceTiming
+    {
+        public static double Rate(List<VoiceSampleWindow> windows, bool received)
+        {
+            var usable = windows.Where(w => w.Milliseconds >= 2000).ToArray();
+            if (usable.Length < 2) return 0;
+            var first = usable[0]; var last = usable[usable.Length - 1];
+            int duration = last.Milliseconds - first.Milliseconds;
+            if (duration < 3000) return 0;
+            return 1000.0 * ((received ? last.ReceivedSamples : last.TransmittedSamples) - (received ? first.ReceivedSamples : first.TransmittedSamples)) / duration;
+        }
+        public static bool Ready(List<VoiceSampleWindow> windows)
+        {
+            double rx = Rate(windows, true), tx = Rate(windows, false);
+            return rx >= 7600 && rx <= 8400 && tx >= 7600 && tx <= 8400;
+        }
+    }
     public sealed class VoiceResult
     {
-        public string DiagnosticVersion = "2026.11.21.4";
+        public string DiagnosticVersion = "2026.11.22.1";
         public string FailureStage = "";
         public string FailureError = "";
         public string CleanupError = "";
@@ -218,6 +241,10 @@ namespace OfficeAutomation.Telephony.Diagnostics
         public int ReceivedPeak;
         public double ReceivedRms;
         public int StreamMilliseconds;
+        public readonly List<VoiceSampleWindow> SampleWindows = new List<VoiceSampleWindow>();
+        public double ReceiveRateAfterWarmup { get { return VoiceTiming.Rate(SampleWindows, true); } }
+        public double TransmitRateAfterWarmup { get { return VoiceTiming.Rate(SampleWindows, false); } }
+        public bool BridgeTimingReady { get { return VoiceTiming.Ready(SampleWindows); } }
         public string RecordingFile = "";
         public string[] Events = new string[0];
         public string Identity = "";
@@ -379,7 +406,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 stage = "start_duplex";
                 Command("AT+VTR", true, true); duplex = true; result.DuplexStarted = true;
                 progress = "streaming"; stage = "stream_audio";
-                var clock = Stopwatch.StartNew(); int frame = 0;
+                var clock = Stopwatch.StartNew(); int frame = 0, nextWindow = 1000;
                 while (clock.ElapsedMilliseconds < captureDuration && !decoder.Ended)
                 {
                     stop.Token.ThrowIfCancellationRequested();
@@ -403,6 +430,11 @@ namespace OfficeAutomation.Telephony.Diagnostics
                         if (clock.ElapsedMilliseconds - frame * 20L > 250) throw new IOException("audio_transmit_timing_failed");
                     }
                     else Thread.Sleep(2);
+                    if (clock.ElapsedMilliseconds >= nextWindow)
+                    {
+                        result.SampleWindows.Add(new VoiceSampleWindow { Milliseconds = (int)clock.ElapsedMilliseconds, TransmittedSamples = result.TransmittedSamples, ReceivedSamples = decoder.Audio.Count });
+                        nextWindow += 1000;
+                    }
                 }
                 result.StreamMilliseconds = (int)clock.ElapsedMilliseconds;
                 result.Status = "captured";

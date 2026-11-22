@@ -1,3 +1,7 @@
+## V4 extension management and IVR — 2026-11-22
+
+telephony_extensions is an additive SQL Server table with unique number and explicit nullable user/department foreign keys; validation enforces exactly one matching owner. Nonsecret IVR settings use SystemSettingsService; audio stays on the private local disk. PbxConfigurationService exports a versioned password-free manifest; the Windows importer validates destinations and generates protected local credentials/configuration. Native IVR uses mod_dptools/mod_sndfile, exact known extension destinations, a 9197 test entry, bounded retries and operator transfer after timeout/invalid input. XML whitespace must be preserved: flattening the generated document caused native startup failure in testing. No application-to-ESL network controller or automatic agent synchronization is claimed.
+
 ## Native Windows internal-call lab — 2026-11-22
 
 Get-PbxLabLocalAddress retains an assigned saved address, otherwise selects the sole private IPv4 or sole address on an adapter with a default gateway. Ambiguity fails without mutation. Sync-PbxLabAddress refuses active PBX processes/services, then regenerates config/state/account instructions with unchanged identity and secrets. No firewall or OS address changes are performed.

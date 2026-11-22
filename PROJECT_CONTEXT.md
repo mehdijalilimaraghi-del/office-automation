@@ -1,3 +1,7 @@
+## V4 extension management and IVR — 2026-11-22
+
+Internal extension and IVR administration are separate screens. An extension belongs explicitly to one active user or department; department ownership currently identifies a single endpoint and does not implement a ring group. Configuration download contains no passwords; matching numbers retain their local credentials, new numbers get random credentials and omitted numbers are removed from runnable configuration with an explicit UI notice. Greeting upload accepts valid PCM16 WAV, is private, and is automatically converted to 8 kHz mono on Windows. The owner has accepted a plan for future modem linkage and a fax inbox feeding incoming correspondence; these remain dependent work, not delivered functionality.
+
 ## Native Windows internal-call lab — 2026-11-22
 
 Changing the PBX host network address must not require recreating internal accounts. Existing extensions and passwords survive; both client accounts must use the updated SIP server/domain shown in the private account page.

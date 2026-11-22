@@ -68,4 +68,21 @@ public static class NativeSipSmoke {
    if(!result.HangupAcknowledged)throw new Exception("BYE not acknowledged");return result;
   }
  }
-}
+ public static string RunIvr(int sipPort,string userA,string passwordA,string userB,string passwordB){
+  using(var a=new Phone(userA,passwordA,sipPort))using(var b=new Phone(userB,passwordB,sipPort)){
+   a.Register();b.Register();string id=Guid.NewGuid().ToString("N"),from="<"+a.Address+">;tag="+id,to="<sip:9197@127.0.0.1>",uri="sip:9197@127.0.0.1:"+sipPort,branch=Branch();
+   a.Send(a.Request("INVITE",uri,id,1,from,to,"",a.Sdp(),branch));var challenge=a.Wait(m=>m.Code>=200 && m.Header("Call-ID")==id);if(challenge.Code!=401 && challenge.Code!=407)throw new Exception("IVR requires authentication");
+   a.Send(a.Request("ACK",uri,id,1,from,challenge.Header("To"),"","",branch));a.Send(a.Request("INVITE",uri,id,2,from,to,Authorization(challenge,userA,passwordA,"INVITE",uri),a.Sdp(),Branch()));
+   var answer=a.Wait(m=>m.Code>=200 && m.Header("Call-ID")==id);if(answer.Code!=200)throw new Exception("IVR did not answer");a.Send(a.Request("ACK",ContactUri(answer),id,2,from,answer.Header("To"),"","",Branch()));
+   var target=MediaTarget(answer.Body);int received=0;for(int f=0;f<60;f++){SendRtp(a,target,f,440);Thread.Sleep(20);received+=Drain(a);}
+   for(int n=0;n<8;n++){
+    var p=new byte[16];p[0]=0x80;p[1]=(byte)(n==0?229:101);p[2]=1;p[3]=(byte)n;p[5]=1;p[8]=1;p[11]=42;p[12]=1;p[13]=(byte)(n>=5?138:10);int duration=Math.Min(800,(n+1)*160);p[14]=(byte)(duration>>8);p[15]=(byte)duration;a.Media.Send(p,p.Length,target);Thread.Sleep(20);
+   }
+   var incoming=b.Wait(m=>m.First.StartsWith("INVITE "));b.Reply(incoming,486,"Busy Here",Guid.NewGuid().ToString("N"),"");
+   a.Send(a.Request("BYE",ContactUri(answer),id,3,from,answer.Header("To"),"","",Branch()));
+   var ended=a.Wait(m=>(m.Code>=200 || m.First.StartsWith("BYE ")) && m.Header("Call-ID")==id);
+   if(ended.First.StartsWith("BYE "))a.Reply(ended,200,"OK",id,"");
+   if(received<5)throw new Exception("No IVR greeting RTP received");
+   return "PASS: authenticated IVR answered, greeting RTP received ("+received+" packets), RFC2833 key 1 routed to "+userB;
+  }
+ }}

@@ -87,6 +87,12 @@ public static class VoiceDiagnosticChecks
         decoder.Feed(new byte[]{3},1);
         Check(decoder.Audio.Count==3 && decoder.Audio[1]==16 && decoder.Ended && decoder.Events.Contains("busy_tone"),"cross-frame DLE parsing");
         byte[] escaped=VoiceCodec.Escape(new byte[]{1,16,2});Check(escaped.Length==4 && escaped[2]==16,"transmit DLE escaping");
+        var stableWindows=new System.Collections.Generic.List<VoiceSampleWindow>();
+        for(int i=1;i<=6;i++)stableWindows.Add(new VoiceSampleWindow {Milliseconds=i*1000,TransmittedSamples=i*8000,ReceivedSamples=24000+i*8000});
+        Check(VoiceTiming.Ready(stableWindows),"startup RX burst is excluded from steady-state clock assessment");
+        foreach(var w in stableWindows)w.ReceivedSamples=w.Milliseconds*10;
+        Check(!VoiceTiming.Ready(stableWindows),"10 kHz receive stream cannot silently pass the 8 kHz bridge gate");
+        Check(!VoiceTiming.Ready(new System.Collections.Generic.List<VoiceSampleWindow>()),"missing clock evidence cannot pass bridge gate");
         var result=new VoiceResult {Status="captured",DuplexStarted=true,CleanupConfirmed=true,TransmittedSamples=30000,ReceivedSamples=30000,ReceivedRms=0.1};
         Check(!result.CompatibleForNextStep,"data counters are not physical proof");
         result.RemoteToneConfirmed=true;Check(!result.CompatibleForNextStep,"both human checks required");

@@ -58,3 +58,10 @@ Real supported inbound/outbound call tests; authorization for logs/recordings; e
 - Owner reboot/version already confirmed; do not request another check. Next: physical LAN audio acceptance, application provider/ownership and modem timing/bridge. No V4 completion claim.
 
 - Address-change recovery: Get-PbxLabLocalAddress/Sync-PbxLabAddress in PbxLab.psm1; Start uses the original profile with preserved credentials. Test-PbxLabAddress.ps1 covers seven migration and guard checks.
+
+## Extension and IVR administration
+
+- PbxController + PbxConfigurationService + WavePromptValidator: active ownership, private PCM WAV validation, configuration ZIP; extensions/ivr/configuration routes under existing gate. Extension model and 2026_11_22_120000 migration.
+- Pages/Telephony/Extensions.vue, Ivr.vue, Components/TelephonyNav.vue; explicit apply workflow, no connection-status claim from database flags.
+- PbxLab/Apply-OfficeConfig.*, Normalize-Prompt.cs, Import-PbxOfficeConfiguration and generated native IVR. Tests: PbxConfigurationTest.php, Test-OfficeProvisioning.ps1 and NativeSipSmoke.RunIvr.
+- ModemTiming.ps1/Run-ModemTiming.cmd use VoiceDiagnostics sample windows and VoiceTiming; physical timing result precedes a modem media bridge. Owner LAN calls/audio/hangup already accepted; keep SIP Proxy including port.

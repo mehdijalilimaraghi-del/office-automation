@@ -1,12 +1,20 @@
+## V4 extension management and IVR — 2026-11-22
+
+Implemented separate extension and IVR management pages, active user/department ownership, validation, enabled/disabled controls, private WAV prompts and credential-free configuration ZIP. Windows Apply-OfficeConfig preserves matching passwords, backs up private state, rejects active engines/invalid destinations, converts PCM WAV to telephone audio and installs the IVR menu. Actual native test passed internal SIP/RTP plus IVR answer, greeting RTP (94 packets), key 1 routing to 1002 and graceful shutdown. Local additive extension migration applied. Added a dedicated modem timing package with per-second samples and warmup-excluded rate; physical result is required before developing/activating the modem media bridge. Fax receiver/inbox, queues, fallback on busy and password rotation UI remain unimplemented.
+
+Validation: full SQL Server suite passed (546 tests / 3445 assertions), TypeScript/build passed; actual native IVR greeting and key routing passed, plus existing 14 simulated modem sessions and added clock checks. Physical modem timing and human IVR acceptance are still required.
+
 ## Native Windows internal-call lab — 2026-11-22
 
-Address-change fix delivered to the owner shared PbxInternalLab folder with backups of the replaced scripts. Removed the manual address chooser; startup repairs a removed saved IP without rotating accounts. Seven migration checks and the 16-check native call suite passed. Owner LAN registration remains to be retried.
+Address-change fix delivered to the owner shared PbxInternalLab folder with backups of the replaced scripts. Removed the manual address chooser; startup repairs a removed saved IP without rotating accounts. Seven migration checks and the 16-check native call suite passed. Owner subsequently confirmed LAN registration, calls, bidirectional audio and hangup.
 
-Completed the isolated native Windows PBX lab: LAN/extension setup, protected random credentials, private account page, start/readiness checks, identity-checked graceful stop and password-free diagnostic JSON. Actual FreeSWITCH integration passed: two authenticated registrations, authenticated answered internal call, bidirectional RTP (89/88 packets in the repeat run), and acknowledged hangup. Sixteen focused checks passed; source MSI extraction reproduced 1640 engine files without installation. Owner has confirmed reboot/version. Next: two real LAN clients/audio acceptance, then application provider/ownership and modem bridge; V4 is not complete.
+Completed the isolated native Windows PBX lab: LAN/extension setup, protected random credentials, private account page, start/readiness checks, identity-checked graceful stop and password-free diagnostic JSON. Actual FreeSWITCH integration passed: two authenticated registrations, authenticated answered internal call, bidirectional RTP (89/88 packets in the repeat run), and acknowledged hangup. Sixteen focused checks passed; source MSI extraction reproduced 1640 engine files without installation. Owner has confirmed reboot/version. Next: modem stream timing and the modem bridge; V4 is not complete.
 Validation for this change: full SQL Server test suite passed (538 tests, 3387 assertions); npm run build passed including vue-tsc; all new PowerShell files parsed successfully. Native integration passed 16 checks. No production database, modem, service, master or release branch was changed.
 
 
 ## Installer diagnostics and executable validation — 2026-11-22
+
+
 
 Owner diagnostics reviewed: FreeSWITCH (64 bit) 1.11.4 is registered, FreeSwitchConsole.exe and fs_cli.exe exist with matching versions, and its service is Manual/Stopped. MSI completed successfully (status 0), final exit 3010 and a deferred reboot request; this was a wrapper validation failure, not failed MSI installation. Restart Manager explicitly shut down/restarted applications holding shared runtime files, including Explorer in the files-in-use evidence; later Explorer crash events are recorded but their exact cause is not established. Do not reinstall or repair. Owner subsequently confirmed reboot and version display; continue with lab acceptance.
 
