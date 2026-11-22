@@ -22,6 +22,19 @@ function Write-LabConfiguration([string]$Root,$LabState){
         [void]$validation.SelectSingleNode('/document/section[@name="dialplan"]/context').AppendChild($fragment)
         $xml=$validation.OuterXml
     }
+    if($LabState.modem_gateway){
+        $gateway=$LabState.modem_gateway
+        if($gateway.username -ne 'office_modem' -or $gateway.password -notmatch '\A[a-f0-9]{48}\z' -or $gateway.destination -notmatch '\A[1-9][0-9]{2,5}\z'){throw 'Invalid gateway identity'}
+        $allowed=@($LabState.accounts.extension);if($LabState.ivr -and $LabState.ivr.enabled){$allowed+='9197'}
+        if($gateway.destination -notin $allowed){throw 'Existing modem gateway destination is missing; select another destination before applying this configuration.'}
+        $fragment=$validation.CreateDocumentFragment()
+        $fragment.InnerXml='<user id="office_modem"><params><param name="password" value="'+$gateway.password+'"/></params><variables><variable name="user_context" value="office_modem_inbound"/><variable name="effective_caller_id_number" value="office_modem"/></variables></user>'
+        [void]$validation.SelectSingleNode('/document/section[@name="directory"]/domain/groups/group/users').AppendChild($fragment)
+        $fragment=$validation.CreateDocumentFragment()
+        $fragment.InnerXml='<context name="office_modem_inbound"><extension name="modem_selected_destination"><condition field="destination_number" expression="^'+$gateway.destination+'$"><action application="answer"/><action application="start_dtmf"/><action application="sleep" data="750"/><action application="transfer" data="'+$gateway.destination+' XML office_lab"/></condition></extension></context>'
+        [void]$validation.SelectSingleNode('/document/section[@name="dialplan"]').AppendChild($fragment)
+        $xml=$validation.OuterXml
+    }
     [IO.File]::WriteAllText((Join-Path $Root 'conf\freeswitch.xml'),$xml,[Text.UTF8Encoding]::new($false))
     [IO.File]::WriteAllText((Join-Path $Root 'lab-state.json'),($LabState|ConvertTo-Json -Depth 6),[Text.UTF8Encoding]::new($false))
     $rows=($LabState.accounts|ForEach-Object {'<tr><td>'+ $_.extension+'</td><td>'+ $_.extension+'</td><td><code>'+ $_.password+'</code></td></tr>'})-join ''
@@ -133,4 +146,19 @@ function Import-PbxOfficeConfiguration([string]$Root,$Configuration,[string]$Sou
         throw
     }finally{if($scratch -and (Test-Path -LiteralPath $scratch)){Remove-Item -LiteralPath $scratch -Force}}
 }
-Export-ModuleMember -Function New-PbxLabProfile,Read-PbxLabState,Invoke-PbxLabCommand,Get-PbxLabArguments,Get-PbxLabLocalAddress,Sync-PbxLabAddress,Import-PbxOfficeConfiguration
+function Set-PbxModemGateway([string]$Root,[string]$Destination){
+    if(Get-Process -Name FreeSwitchConsole -ErrorAction SilentlyContinue){throw 'Stop the PBX lab before preparing the modem gateway.'}
+    $service=Get-Service -Name FreeSWITCH -ErrorAction SilentlyContinue
+    if($service -and $service.Status -ne 'Stopped'){throw 'The Windows PBX service is active.'}
+    $state=Read-PbxLabState $Root
+    $allowed=@($state.accounts.extension);if($state.ivr -and $state.ivr.enabled){$allowed+='9197'}
+    if($Destination -notin $allowed){throw 'Select an existing extension or enabled IVR destination'}
+    $secret=if($state.modem_gateway){$state.modem_gateway.password}else{New-LabSecret}
+    $backup=Join-Path $Root ('gateway-backup-'+[guid]::NewGuid().ToString('N'));[void][IO.Directory]::CreateDirectory($backup)
+    foreach($name in @('lab-state.json','accounts.html','conf/freeswitch.xml')){Copy-Item -LiteralPath (Join-Path $Root $name) -Destination (Join-Path $backup ([IO.Path]::GetFileName($name)))}
+    try {
+        $state|Add-Member -NotePropertyName modem_gateway -NotePropertyValue ([pscustomobject]@{username='office_modem';password=$secret;destination=$Destination}) -Force
+        Write-LabConfiguration $Root $state
+    }catch{foreach($name in @('lab-state.json','accounts.html','conf/freeswitch.xml')){Copy-Item -LiteralPath (Join-Path $backup ([IO.Path]::GetFileName($name))) -Destination (Join-Path $Root $name) -Force};throw}
+}
+Export-ModuleMember -Function New-PbxLabProfile,Read-PbxLabState,Invoke-PbxLabCommand,Get-PbxLabArguments,Get-PbxLabLocalAddress,Sync-PbxLabAddress,Import-PbxOfficeConfiguration,Set-PbxModemGateway

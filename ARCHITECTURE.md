@@ -1,3 +1,7 @@
+## Controlled incoming modem bridge — 2026-11-22
+
+VoiceSession accepts an optional IVoiceAudioEndpoint while preserving diagnostic constructors. Streaming drains decoded audio with independent total counters and disables WAV recording; failures restore AT state and dispose SIP. LocalSipAudioEndpoint binds only an IPv4 address assigned to the same PC, requires authenticated INVITE/PCMU, validates local SDP/contact, bounds media buffers and handles ACK/re-INVITE/BYE/cancellation and transient Windows UDP resets. Set-PbxModemGateway adds a protected random office_modem account in an exact-destination-only context with inband start_dtmf and a short pre-greeting delay. Configuration changes require a stopped engine and keep private backups; no anonymous trunk, Windows service/firewall change or web-to-ESL controller was added.
+
 ## Modem receive framing correction — 2026-11-22
 
 VoiceReceiveFraming buffers 80 frames (4800 unescaped samples), requires exact 12-sample trailing matches at lag 10 and nonperiodic 48-sample payload, then emits only the first 48 of each 60. Linear streams and periodic tones pass unchanged. After activation, a mismatched full or final partial frame fails explicitly. VoiceDecoder remains linear by default; VoiceSession opts into detection. Reports distinguish RawReceivedSamples, RemovedRepeatedSamples and ReceiveFraming. No modem name, fixed blanket drop ratio or sample-rate resampling selects this behavior.

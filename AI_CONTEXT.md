@@ -1,3 +1,7 @@
+## Controlled incoming modem bridge — 2026-11-22
+
+Implemented a controlled, single-incoming-call modem/SIP bridge, not an always-on or production-certified trunk. Use Start-ModemBridge.cmd after stopping the old lab once to provision a dedicated office_modem credential/context; existing phone passwords remain unchanged. Do not request another version or duration-only test. Next hardware action is the integrated external-call-to-extension test, max 60 s, hang up from the extension first. No automatic call recording, outgoing PSTN or fax implementation is claimed.
+
 ## Modem receive framing correction — 2026-11-22
 
 Owner timing evidence now confirms sustained raw 10002 versus TX 8000 samples/s. Existing diagnostic WAV has exact repeated tails: every 60 decoded samples contains 48 payload plus 12 samples repeating lag 10. Do not blindly resample 10 kHz to 8 kHz. A conservative stream-evidence detector normalizes only this verified framing. Replay is not live PBX/modem acceptance; do not ask the owner to repeat the old test merely for elapsed call duration.

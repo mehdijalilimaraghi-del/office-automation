@@ -67,3 +67,9 @@ Real supported inbound/outbound call tests; authorization for logs/recordings; e
 - ModemTiming.ps1/Run-ModemTiming.cmd use VoiceDiagnostics sample windows and VoiceTiming; physical timing result precedes a modem media bridge. Owner LAN calls/audio/hangup already accepted; keep SIP Proxy including port.
 
 - VoiceReceiveFraming/VoiceDecoder in VoiceDiagnostics.cs normalize evidence-proven 60/48 lag-10 repeated tails. Tests cover stream splitting, DLE, linear/tone pass-through, changed and partial framing; existing WAV replay recovered 96048 payload samples. Preserve distinction from untested live bridge/fax.
+
+## Controlled incoming modem bridge
+
+- LocalSipAudioEndpoint.cs + IVoiceAudioEndpoint/VoiceSession: local SIP/PCMU, streaming counters, bounded queues, no recording, cleanup. Setup uses Set-PbxModemGateway in PbxLab.psm1 with a dedicated exact-destination context.
+- Prepare-ModemBridge.* / Start-ModemBridge.* and MODEM-BRIDGE.fa.md: owner-controlled one-call 60-second lab; package in storage/app/private/OfficeAutomation-ModemBridge, no embedded credentials.
+- Test-BridgeLifecycle.ps1, VoiceBridgeLifecycle.Tests.cs, LocalSipAudioEndpoint.Tests.cs: lifecycle and protocol negatives. ModemBridge.Tests.cs + PbxLab/tests/Test-ModemBridge.ps1 + NativeSipSmoke.ReceiveGateway: actual native engine/fake modem/150 ms inband DTMF/phone BYE integration. Physical modem acceptance remains outstanding.

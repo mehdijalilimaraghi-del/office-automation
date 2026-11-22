@@ -12,6 +12,13 @@ using System.Threading.Tasks;
 
 namespace OfficeAutomation.Telephony.Diagnostics
 {
+    public interface IVoiceAudioEndpoint : IDisposable
+    {
+        void Open(CancellationToken cancellation);
+        void ReceiveAudio(byte[] samples);
+        byte[] TransmitAudio(int count);
+        bool Ended { get; }
+    }
     public interface IVoicePort : IDisposable
     {
         void Open();
@@ -142,11 +149,14 @@ namespace OfficeAutomation.Telephony.Diagnostics
         public readonly List<byte> Audio = new List<byte>();
         private readonly VoiceReceiveFraming framing;
         public int RawSampleCount { get; private set; }
+        public int DecodedSampleCount { get; private set; }
         public bool FramingValid { get { return framing == null || framing.Valid; } }
         public string ReceiveFraming { get { return framing == null ? "linear" : framing.Mode; } }
         public VoiceDecoder() : this(false) { }
-        public VoiceDecoder(bool detectFraming) { if (detectFraming) framing = new VoiceReceiveFraming(value => Audio.Add(value)); }
-        private void AddAudio(byte value) { RawSampleCount++; if (framing == null) Audio.Add(value); else framing.Feed(value); }
+        public VoiceDecoder(bool detectFraming) { if (detectFraming) framing = new VoiceReceiveFraming(EmitAudio); }
+        private void EmitAudio(byte value) { DecodedSampleCount++; Audio.Add(value); }
+        private void AddAudio(byte value) { RawSampleCount++; if (framing == null) EmitAudio(value); else framing.Feed(value); }
+        public byte[] DrainAudio() { var data = Audio.ToArray(); Audio.Clear(); return data; }
         public void Finish() { if (framing != null) framing.Finish(); }
         public readonly List<string> Events = new List<string>();
         public bool Ended { get; private set; }
@@ -274,7 +284,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
     }
     public sealed class VoiceResult
     {
-        public string DiagnosticVersion = "2026.11.22.2";
+        public string DiagnosticVersion = "2026.11.22.3";
         public string FailureStage = "";
         public string FailureError = "";
         public string CleanupError = "";
@@ -292,6 +302,8 @@ namespace OfficeAutomation.Telephony.Diagnostics
         public bool RingInputTruncated;
         public bool Answered;
         public bool DuplexStarted;
+        public bool BridgeStarted;
+        public string EndReason = "";
         public bool CleanupConfirmed;
         public bool Cancelled;
         public int TransmittedSamples;
@@ -325,6 +337,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
     public sealed class VoiceSession
     {
         private readonly IVoicePort port;
+        private readonly IVoiceAudioEndpoint endpoint;
         private readonly string folder;
         private readonly int ringTimeout;
         private readonly int captureDuration;
@@ -336,14 +349,17 @@ namespace OfficeAutomation.Telephony.Diagnostics
         private bool opened, changedMode, duplex, answerAttempted;
         private string originalClass = "", originalFormat = "", originalFlow = "";
         public string Progress { get { return progress; } }
+        public bool Started { get { return worker != null; } }
         public bool Completed { get { return worker != null && worker.IsCompleted; } }
         public VoiceResult Result { get { if (!Completed) throw new InvalidOperationException("Test not finished"); return result; } }
         public string RecordingPath { get; private set; }
         public VoiceSession(string name, string folder) : this(new SerialVoicePort(name), folder, 60000, 12000) { }
-        public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration)
+        public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration) : this(port, folder, ringTimeout, captureDuration, null) { }
+        public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration, IVoiceAudioEndpoint endpoint)
         {
-            if (ringTimeout < 100 || ringTimeout > 60000 || captureDuration < 100 || captureDuration > 30000) throw new ArgumentOutOfRangeException();
-            this.port = port; this.folder = folder; this.ringTimeout = ringTimeout; this.captureDuration = captureDuration;
+            int maximum = endpoint == null ? 30000 : 120000;
+            if (ringTimeout < 100 || ringTimeout > 60000 || captureDuration < 100 || captureDuration > maximum) throw new ArgumentOutOfRangeException();
+            this.port = port; this.folder = folder; this.ringTimeout = ringTimeout; this.captureDuration = captureDuration; this.endpoint = endpoint;
         }
         public void Start()
         {
@@ -462,13 +478,18 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 }
                 if (!result.RingDetected) throw new TimeoutException("incoming_call_timeout");
                 stop.Token.ThrowIfCancellationRequested();
+                if (endpoint != null)
+                {
+                    stage = "connect_pbx"; progress = "connecting_pbx";
+                    endpoint.Open(stop.Token); result.BridgeStarted = true;
+                }
                 stage = "answer_incoming_call";
                 progress = "answering"; answerAttempted = true; Command("AT+VLS=1", false, true); result.Answered = true;
                 stage = "start_duplex";
                 Command("AT+VTR", true, true); duplex = true; result.DuplexStarted = true;
                 progress = "streaming"; stage = "stream_audio";
                 var clock = Stopwatch.StartNew(); int frame = 0, nextWindow = 1000;
-                while (clock.ElapsedMilliseconds < captureDuration && !decoder.Ended)
+                while (clock.ElapsedMilliseconds < captureDuration && !decoder.Ended && (endpoint == null || !endpoint.Ended))
                 {
                     stop.Token.ThrowIfCancellationRequested();
                     int available = port.Available;
@@ -476,31 +497,36 @@ namespace OfficeAutomation.Telephony.Diagnostics
                     {
                         byte[] input = new byte[Math.Min(available, 4096)];
                         int read = port.Read(input, 0, input.Length); decoder.Feed(input, read);
+                        if (endpoint != null && decoder.Audio.Count > 0) endpoint.ReceiveAudio(decoder.DrainAudio());
+                        if (endpoint != null && (decoder.Events.Contains("busy_tone") || decoder.Events.Contains("local_on_hook"))) { result.EndReason = "modem_hangup"; break; }
                     }
                     if (clock.ElapsedMilliseconds >= frame * 20L)
                     {
                         byte[] audio = new byte[160];
-                        for (int i = 0; i < audio.Length; i++)
+                        if (endpoint == null) for (int i = 0; i < audio.Length; i++)
                         {
                             int position = frame * 160 + i;
                             bool beep = position < 32000 && position % 8000 < 1600;
                             short sample = beep ? (short)(3000 * Math.Sin(2 * Math.PI * 660 * position / 8000.0)) : (short)0;
                             audio[i] = VoiceCodec.EncodeMuLaw(sample);
                         }
+                        if (endpoint != null) audio = endpoint.TransmitAudio(160);
+                        if (audio == null || audio.Length != 160) throw new InvalidDataException("invalid_bridge_audio_block");
                         Raw(VoiceCodec.Escape(audio)); result.TransmittedSamples += audio.Length; frame++;
                         if (clock.ElapsedMilliseconds - frame * 20L > 250) throw new IOException("audio_transmit_timing_failed");
                     }
                     else Thread.Sleep(2);
                     if (clock.ElapsedMilliseconds >= nextWindow)
                     {
-                        result.SampleWindows.Add(new VoiceSampleWindow { Milliseconds = (int)clock.ElapsedMilliseconds, TransmittedSamples = result.TransmittedSamples, ReceivedSamples = decoder.Audio.Count, RawReceivedSamples = decoder.RawSampleCount });
+                        result.SampleWindows.Add(new VoiceSampleWindow { Milliseconds = (int)clock.ElapsedMilliseconds, TransmittedSamples = result.TransmittedSamples, ReceivedSamples = decoder.DecodedSampleCount, RawReceivedSamples = decoder.RawSampleCount });
                         nextWindow += 1000;
                     }
                 }
                 result.StreamMilliseconds = (int)clock.ElapsedMilliseconds;
-                result.Status = "captured";
+                result.Status = endpoint == null ? "captured" : "bridged";
+                if (result.EndReason.Length == 0) result.EndReason = endpoint != null && endpoint.Ended ? "pbx_hangup" : decoder.Ended ? "modem_stream_end" : "duration_limit";
             }
-            catch (OperationCanceledException) { result.Cancelled = true; result.Status = "cancelled"; result.ErrorCode = "cancelled_by_user"; result.FailureStage = stage; result.FailureError = result.ErrorCode; }
+            catch (OperationCanceledException) { result.Cancelled = true; result.EndReason = "user_cancelled"; result.Status = "cancelled"; result.ErrorCode = "cancelled_by_user"; result.FailureStage = stage; result.FailureError = result.ErrorCode; }
             catch (Exception exception) { result.Status = "failed"; result.ErrorCode = exception.Message; result.FailureStage = stage; result.FailureError = exception.Message; }
             finally
             {
@@ -526,9 +552,9 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 }
                 try { port.Dispose(); } catch { }
                 decoder.Finish();
-                result.ReceivedSamples = decoder.Audio.Count;
+                result.ReceivedSamples = decoder.DecodedSampleCount;
                 result.RawReceivedSamples = decoder.RawSampleCount;
-                result.RemovedRepeatedSamples = decoder.RawSampleCount - decoder.Audio.Count;
+                result.RemovedRepeatedSamples = decoder.RawSampleCount - decoder.DecodedSampleCount;
                 result.ReceiveFraming = decoder.ReceiveFraming;
                 if (!decoder.FramingValid)
                 {
@@ -536,7 +562,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                     if (result.FailureStage.Length == 0) { result.FailureStage = "stream_audio"; result.FailureError = result.ErrorCode; }
                 }
                 result.Events = decoder.Events.Distinct().ToArray();
-                if (decoder.Audio.Count > 0)
+                if (endpoint == null && decoder.Audio.Count > 0)
                 {
                     try
                     {
@@ -560,6 +586,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                     result.Status = "failed"; result.ErrorCode = "hangup_or_restore_not_confirmed";
                     if (result.FailureStage.Length == 0) { result.FailureStage = "cleanup"; result.FailureError = result.CleanupError; }
                 }
+                if (endpoint != null) try { endpoint.Dispose(); } catch { result.Status = "failed"; result.ErrorCode = "pbx_cleanup_failed"; if (result.FailureStage.Length == 0) { result.FailureStage = "cleanup_pbx"; result.FailureError = result.ErrorCode; } }
                 progress = "finished";
             }
         }

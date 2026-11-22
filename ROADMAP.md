@@ -1,3 +1,7 @@
+## Controlled incoming modem bridge — 2026-11-22
+
+V4 next acceptance: owner launches the controlled ModemBridge package on EDARII and verifies a real incoming call reaches an existing extension, two-way human audio and extension-originated line release. Controlled bridge and native simulated integration are implemented. Then validate caller-originated disconnect/latency and design persistent operation; subsequently implement outgoing routing and fax receiver/inbox. Existing internal calls and web extension/IVR management remain available. Do not mark V4 complete or release from a simulated modem test.
+
 ## Modem receive framing correction — 2026-11-22
 
 Modem timing diagnosis is resolved for the saved recording: deterministic repeated receive tails, rather than only a startup backlog. The new receiver correction passed canonical mu-law replay of that WAV. Next implement the modem/PBX media bridge and use its physical acceptance to validate the corrected live stream, remote hangup and IVR; fax is not yet implemented. Avoid another standalone duration-only test.

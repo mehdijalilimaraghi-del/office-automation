@@ -1,3 +1,7 @@
+## Controlled incoming modem bridge — 2026-11-22
+
+Incoming modem calls use a dedicated device account and selected destination: an existing extension or the already configured IVR. The setup keeps all existing extension credentials. The owner starts each one-call lab explicitly after closing VentaFax, then calls the company line only after the Ready message. The bridge automatically limits the test to 60 seconds, supports safe stop/close and writes a report without passwords or recorded speech. It leaves the PBX running for other internal calls. First hardware acceptance ends from the internal phone; caller-side hangup and continuous operation remain separate acceptance items.
+
 ## Modem receive framing correction — 2026-11-22
 
 The owner need not speak or hang up at exactly 12 seconds: the diagnostic captures its own fixed 12-second stream independently of when the caller hangs up. The recorded 15-second WAV resulted from repeated receive samples. Payload-preserving correction restores 12.006 seconds in saved-file replay; no success claim is made for an untested external call bridge.

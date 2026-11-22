@@ -85,4 +85,12 @@ public static class NativeSipSmoke {
    if(received<5)throw new Exception("No IVR greeting RTP received");
    return "PASS: authenticated IVR answered, greeting RTP received ("+received+" packets), RFC2833 key 1 routed to "+userB;
   }
+ } public static bool ReceiveGateway(int sipPort,string user,string password){
+  using(var b=new Phone(user,password,sipPort)){
+   b.Register();var incoming=b.Wait(m=>m.First.StartsWith("INVITE "));string tag=Guid.NewGuid().ToString("N");b.Reply(incoming,180,"Ringing",tag,"");b.Reply(incoming,200,"OK",tag,b.Sdp());
+   var ack=b.Wait(m=>m.First.StartsWith("ACK "));var target=MediaTarget(incoming.Body.Length>0?incoming.Body:ack.Body);int received=0;for(int n=0;n<75;n++){SendRtp(b,target,n,220);Thread.Sleep(20);received+=Drain(b);}
+   string from=incoming.Header("To");if(!from.Contains(";tag="))from+=";tag="+tag;
+   b.Send(b.Request("BYE",ContactUri(incoming),incoming.Header("Call-ID"),1,from,incoming.Header("From"),"","",Branch()));
+   return received>=10 && b.Wait(m=>m.Code>=200 && m.Header("Call-ID")==incoming.Header("Call-ID")).Code==200;
+  }
  }}

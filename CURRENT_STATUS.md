@@ -1,3 +1,7 @@
+## Controlled incoming modem bridge — 2026-11-22
+
+Delivered controlled bridge code: local-only authenticated PCMU SIP endpoint, bounded duplex queues, corrected modem receive framing, no voice recording, safe cancellation/restoration and password-free reports. Native integration with a simulated modem passed: real PBX rejected a wrong gateway password before modem answer; 150 ms inband key 1 selected 1002 instead of fallback 1003; two-way RTP, phone-originated BYE and modem restoration passed. Lifecycle/protocol regressions and guarded Persian-path CMD/UI rendering passed. Full SQL Server suite 546 tests / 3445 assertions and TypeScript/build passed. Physical bridge acceptance on EDARII, caller-originated disconnect, audio latency/echo, outgoing calls and fax remain pending. No migration or production deployment in this slice.
+
 ## Modem receive framing correction — 2026-11-22
 
 Resolved the receive-count discrepancy in existing-file replay: 120060 raw samples contain 24012 repeated samples; all 2001 frames match, payload comparison is exact and 96048 retained samples span 12.006 s versus 12.005 s measured capture. Implemented opt-in framing detection in VoiceSession after DLE decoding, with raw/retained counters and safe failure on changed framing. Regression simulations pass. Corrected live receiver, analog-to-PBX bridge and fax still require implementation/physical acceptance; internal PBX calls remain owner-accepted. No new phone call was requested for this analysis.
