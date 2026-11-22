@@ -1,9 +1,19 @@
 ﻿#requires -Version 5.1
 [CmdletBinding()]
-param([string]$InstallerPath=(Join-Path $PSScriptRoot 'FreeSWITCH-1.11.4-Release-x64.msi'),[switch]$CheckOnly)
+param([string]$InstallerPath,[switch]$CheckOnly)
 $ErrorActionPreference='Stop'
 $expectedHash='331cdd876c7ee73cc6d60bbdd7c9b7e60c157d3760226986fd7d6e604c83d8b6'
 try {
+    $scriptDirectory=$PSScriptRoot
+    if([string]::IsNullOrWhiteSpace($scriptDirectory)){
+        $scriptFile=$PSCommandPath
+        if([string]::IsNullOrWhiteSpace($scriptFile)){$scriptFile=$MyInvocation.MyCommand.Path}
+        if(-not [string]::IsNullOrWhiteSpace($scriptFile)){$scriptDirectory=[IO.Path]::GetDirectoryName($scriptFile)}
+    }
+    if([string]::IsNullOrWhiteSpace($InstallerPath)){
+        if([string]::IsNullOrWhiteSpace($scriptDirectory)){throw 'مسیر بسته مشخص نیست. فایل Install-PbxEngine.cmd را از پوشه استخراج‌شده اجرا کنید.'}
+        $InstallerPath=Join-Path $scriptDirectory 'FreeSWITCH-1.11.4-Release-x64.msi'
+    }
     if(-not [Environment]::Is64BitOperatingSystem -or [Environment]::OSVersion.Version.Major -lt 10){throw 'این بسته برای ویندوز ۱۰ یا جدیدتر با معماری ۶۴ بیتی آماده شده است.'}
     if(-not [Environment]::Is64BitProcess){throw 'این ابزار باید با Windows PowerShell نسخه ۶۴ بیتی اجرا شود.'}
     $package=Get-Item -LiteralPath $InstallerPath -ErrorAction Stop
@@ -37,8 +47,8 @@ try {
     [IO.File]::WriteAllText($reportPath,($result|ConvertTo-Json),[Text.UTF8Encoding]::new($false))
     Write-Host ('هسته نصب شد. سرویس هنوز فعال نشده است. گزارش نصب: '+$reportPath) -ForegroundColor Green
     if($process.ExitCode -eq 3010){Write-Host 'ویندوز درخواست راه‌اندازی مجدد دارد؛ راه‌اندازی مجدد خودکار انجام نشده است.'}
-    if(Test-Path -LiteralPath (Join-Path $PSScriptRoot 'Install-PbxEngine.cmd')){
-        try {Copy-Item -LiteralPath $reportPath -Destination (Join-Path $PSScriptRoot ('pbx-engine-install-result-'+[Guid]::NewGuid().ToString('N')+'.json')) -ErrorAction Stop} catch {Write-Host 'گزارش را از مسیر نمایش‌داده‌شده بردارید؛ کپی کنار بسته ممکن نشد.'}
+    if($scriptDirectory -and (Test-Path -LiteralPath (Join-Path $scriptDirectory 'Install-PbxEngine.cmd'))){
+        try {Copy-Item -LiteralPath $reportPath -Destination (Join-Path $scriptDirectory ('pbx-engine-install-result-'+[Guid]::NewGuid().ToString('N')+'.json')) -ErrorAction Stop} catch {Write-Host 'گزارش را از مسیر نمایش‌داده‌شده بردارید؛ کپی کنار بسته ممکن نشد.'}
     }
 } catch {
     Write-Error $_.Exception.Message -ErrorAction Continue

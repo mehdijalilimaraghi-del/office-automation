@@ -1,3 +1,7 @@
+## Installer path binding correction — 2026-11-22
+
+Installer file-context resolution occurs after parameter binding, with no current-directory fallback. CMD passes the installer path explicitly and preserves the PowerShell exit code. Test-PbxInstallerPaths.ps1 uses guarded child copies that forbid Start-Process, so path regressions cannot elevate/install during tests. No engine selection, hash/signature policy or runtime behavior is changed.
+
 ## Windows PBX engine preparation — 2026-11-21
 
 Native Windows engine candidate is pinned for lab evaluation to the official FreeSWITCH 1.11.4 x64 MSI, independently of Laravel/Vue/SQL Server packages. Install-PbxEngine.ps1 validates fixed size/hash and trusted SignalWire signature, checks Windows/x64 and refuses existing service/folder, then installs ProductFeature only. Vendor MSI inspection confirms manual service start and stop/delete controls, not start-on-install. The wrapper checks final stopped state and emits a local JSON report; no automatic service activation, firewall change or reboot is added. Provider/media integration and migration contracts remain pending.

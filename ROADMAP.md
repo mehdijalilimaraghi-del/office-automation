@@ -1,3 +1,7 @@
+## Installer path binding correction — 2026-11-22
+
+Resolve the pre-install path-binding blocker with the small installer patch, then obtain the owner installation report before activation/configuration. Keep the verified FreeSWITCH MSI unchanged. Extra extensions, portability, timing validation and modem bridge remain pending as previously scoped.
+
 ## Windows PBX engine preparation — 2026-11-21
 
 Next V4 gate: install verified FreeSWITCH 1.11.4 native Windows core on the owner modem PC, then prepare isolated lab configuration, test internal calls and implement modem audio integration. Initial two extensions are a test scenario, not a product limit. Add/manage extensions for people and units; benchmark simultaneous-call capacity. Installation must support another compatible Windows PC without EDARII/IP/hardware hardcoding. Define export/restore/re-enrollment and secret rekeying before claiming migration support. One analog modem line remains one external call channel.

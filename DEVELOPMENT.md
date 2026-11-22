@@ -1,3 +1,9 @@
+## Installer path binding correction — 2026-11-22
+
+Run Test-PbxInstallerPaths.ps1 -TrustedInstallerPath <official MSI> using Windows PowerShell 5.1. It exercises default and explicit paths, forced PSScriptRoot/PSCommandPath absence with MyCommand.Path fallback, and CMD argument forwarding from a Persian folder with spaces. All child copies block Start-Process and use CheckOnly. The real administrator/MSI installation remains unexecuted.
+
+Validation passed: four guarded Windows PowerShell path/launcher scenarios including Persian/spaced directories and forced missing-root fallback; PS syntax; full SQL Server suite 538 tests / 3387 assertions; TypeScript/build. No MSI installation or UAC process was allowed in path tests. Small patch: storage/app/private/OfficeAutomation-PbxInstaller-PathFix.zip; the complete installer ZIP was refreshed as well.
+
 ## Windows PBX engine preparation — 2026-11-21
 
 Run Install-PbxEngine.ps1 -CheckOnly -InstallerPath <official MSI> to validate the package without installation/UAC. Tested using Windows PowerShell 5.1 on development Windows. Actual owner installation uses the separate launcher and Windows Administrator consent, core-only features, logging and stopped-service verification; it was not executed in development. The pinned MSI size is 166219776 bytes. Do not commit installers, owner inventory, audio, install logs or credentials. More extensions and another-host installation/migration must be included in subsequent acceptance.

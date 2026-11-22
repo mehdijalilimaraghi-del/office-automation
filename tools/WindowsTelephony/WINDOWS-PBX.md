@@ -25,3 +25,7 @@ Inspection of the actual MSI confirms ProductVersion 1.11.4, FreeSWITCH ServiceI
 ## Extension growth and moving hosts
 
 Two extensions are the initial smoke test only. The product must add/manage extensions for people and units without a fixed two-extension limit; concurrency needs hardware benchmarks. One analog modem line permits one simultaneous external call, independently of internal extension count. Installer paths are generic, not bound to EDARII. Full migration/export/restore, modem re-enrollment, call-recording transfer and credential rekeying remain to be implemented and tested. Never copy machine-bound protected credentials blindly.
+
+## Installer path patch (2026-11-22)
+
+InstallerPath is resolved inside the script body rather than a parameter default. The CMD launcher supplies an explicit adjacent MSI path and returns the child exit code after pause. Use OfficeAutomation-PbxInstaller-PathFix.zip to replace only Install-PbxEngine.ps1 and Install-PbxEngine.cmd in an existing extracted package. Keep the signed MSI unchanged. Test-PbxInstallerPaths.ps1 covers Unicode/spaced paths and missing-root fallback with process elevation forbidden in every child.

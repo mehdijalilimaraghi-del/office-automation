@@ -1,3 +1,7 @@
+## Installer path binding correction — 2026-11-22
+
+The installation launcher must work from Persian paths with spaces and from a different working directory. A path-resolution failure must stop before installation and must not be hidden by the launcher pause. Owners can apply a small script-only patch to the extracted package without replacing the large verified MSI.
+
 ## Windows PBX engine preparation — 2026-11-21
 
 Owner requires more extensions and ability to install or move the PBX to another computer. Two extensions describe the initial acceptance test only. Internal extension count and simultaneous external line capacity are different concepts. Future installation and migration must preserve settings, extension ownership and call records; move/re-detect the modem and re-establish protected credentials. No machine-specific product licensing or hardcoded EDARII assumption is introduced.

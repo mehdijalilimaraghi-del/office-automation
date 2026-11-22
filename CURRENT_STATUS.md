@@ -1,3 +1,9 @@
+## Installer path binding correction — 2026-11-22
+
+The owner installer stopped before starting MSI because its InstallerPath default evaluated Join-Path with an empty PSScriptRoot. Moved default resolution into the script body with file-context fallbacks and a clear error if no file context exists; CMD now passes the adjacent MSI path explicitly and returns the real exit code. Preparing a two-file patch so the verified MSI does not need downloading again. Actual installation remains pending.
+
+Validation passed: four guarded Windows PowerShell path/launcher scenarios including Persian/spaced directories and forced missing-root fallback; PS syntax; full SQL Server suite 538 tests / 3387 assertions; TypeScript/build. No MSI installation or UAC process was allowed in path tests. Small patch: storage/app/private/OfficeAutomation-PbxInstaller-PathFix.zip; the complete installer ZIP was refreshed as well.
+
 ## Windows PBX engine preparation — 2026-11-21
 
 Owner host report confirms Windows 10 Pro x64, i3-2120 2-core/4-thread, 10645467136 bytes RAM and about 85 GB free on C:. Preliminary small-lab resource assessment only. Resolved package discovery through official GitHub v1.11.4 release: Windows MSI downloaded, digest matched, Authenticode Valid (SignalWire), product version read from MSI. Added pinned-package installer with read-only CheckOnly, refusal of existing installations, core-only feature selection, manual/stopped service verification, install report and no automatic restart. Actual installation, extension registration and modem bridge have not run.
