@@ -1,3 +1,7 @@
+## Installer diagnostics and executable validation — 2026-11-22
+
+The verified Windows MSI contains FreeSwitchConsole.exe (not freeswitch.exe). Post-install checks must use the actual MSI file table. The owner reports a black screen and unreadable red text; do not assume MSI failed or retry. Use read-only Collect-PbxInstallDiagnostics first. Installer console messages are English/ASCII and failures persist JSON/text plus available MSI logs. Restart Manager shutdown is disabled per invocation, not by global policy.
+
 ## Installer path binding correction — 2026-11-22
 
 Do not evaluate Join-Path $PSScriptRoot in installer parameter defaults. The owner launch exposed an empty-root binding failure before installation. Resolve omitted paths inside the try/body using PSScriptRoot, PSCommandPath or MyCommand.Path; never guess the working directory. CMD supplies an explicit MSI path and preserves the child exit code.

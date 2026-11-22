@@ -1,3 +1,7 @@
+## Installer diagnostics and executable validation — 2026-11-22
+
+The owner cannot reliably read Persian PowerShell output; installer and diagnostic-console messages must be English. Every installer failure should leave a transferable text/JSON report and available MSI log. A failed wrapper verification is different from a failed MSI installation. Owner-reported black screen requires evidence before attributing a cause or retrying.
+
 ## Installer path binding correction — 2026-11-22
 
 The installation launcher must work from Persian paths with spaces and from a different working directory. A path-resolution failure must stop before installation and must not be hidden by the launcher pause. Owners can apply a small script-only patch to the extracted package without replacing the large verified MSI.

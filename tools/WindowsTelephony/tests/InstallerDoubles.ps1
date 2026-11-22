@@ -1,0 +1,6 @@
+# Test-only doubles. Never included in the installer package.
+function Get-Service {param($Name,$ErrorAction);$script:ServiceCalls++;if($script:ServiceCalls -gt 1){[pscustomobject]@{Status='Stopped'}}}
+function Test-Path {param($LiteralPath);if($LiteralPath -match '\\FreeSWITCH\\FreeSwitchConsole\.exe$'){return (-not $script:MockPostCheckFailure)};if($LiteralPath -match '\\FreeSWITCH(?:\\freeswitch\.exe)?$'){return $false};Microsoft.PowerShell.Management\Test-Path -LiteralPath $LiteralPath}
+function Copy-Item {param($LiteralPath,$Destination,$ErrorAction);if($Destination -match 'freeswitch-[0-9a-f]{32}\.msi$'){return};Microsoft.PowerShell.Management\Copy-Item -LiteralPath $LiteralPath -Destination $Destination -ErrorAction Stop}
+function Get-FileHash {param($LiteralPath,$Algorithm);[pscustomobject]@{Hash=$expectedHash}}
+function Start-Process {param($FilePath,$ArgumentList,$Verb,$WindowStyle,[switch]$Wait,[switch]$PassThru);if($ArgumentList -notmatch 'MSIRESTARTMANAGERCONTROL=Disable' -or $ArgumentList -notmatch '/norestart'){throw 'Missing shutdown protection'};[IO.File]::WriteAllText($script:logPath,'Mock MSI log; no installation executed.');[pscustomobject]@{ExitCode=$script:MockExit}}

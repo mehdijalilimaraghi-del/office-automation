@@ -1,3 +1,9 @@
+## Installer diagnostics and executable validation — 2026-11-22
+
+Test-PbxInstallerReports.ps1 exercises mocked MSI success and exit 1603, verifying the real binary name, English errors, failure JSON and copied MSI log. tests/InstallerDoubles.ps1 replaces installer/service operations and is excluded from delivered packages. Existing path tests guard elevation. Run the diagnostic collector on a new/empty output folder and validate its JSON/ZIP; it must not install/repair or change services. The owner machine status and black-screen cause remain unverified. Microsoft Restart Manager reference: https://learn.microsoft.com/en-us/windows/win32/msi/msirestartmanagercontrol .
+
+Validation passed: three mocked installer outcomes (success, MSI 1603, post-check failure); four guarded Unicode/path scenarios; real read-only collector JSON/ZIP creation on development Windows; recursive PowerShell syntax; full SQL Server suite 538 tests / 3387 assertions; TypeScript/build. No real MSI, UAC elevation, repair or service change was performed. Owner diagnostic archive is still required. Small diagnostic-only package: storage/app/private/OfficeAutomation-PbxInstallDiagnostics.zip.
+
 ## Installer path binding correction — 2026-11-22
 
 Run Test-PbxInstallerPaths.ps1 -TrustedInstallerPath <official MSI> using Windows PowerShell 5.1. It exercises default and explicit paths, forced PSScriptRoot/PSCommandPath absence with MyCommand.Path fallback, and CMD argument forwarding from a Persian folder with spaces. All child copies block Start-Process and use CheckOnly. The real administrator/MSI installation remains unexecuted.

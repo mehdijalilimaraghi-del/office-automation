@@ -48,3 +48,5 @@ Real supported inbound/outbound call tests; authorization for logs/recordings; e
 - Install-PbxEngine.ps1 and Install-PbxEngine.cmd: pinned official core-only Windows engine installer, CheckOnly mode and no automatic line activation. Actual installation is pending on the owner host. Future provider/extension/migration work must support more extensions and another Windows machine.
 
 - Installer path binding fix: resolve omitted MSI path in script body, pass explicit path from CMD and preserve exit status. Test-PbxInstallerPaths.ps1 guards Start-Process while testing Persian/spaced paths and missing root context.
+
+- Actual engine binary is FreeSwitchConsole.exe per MSI File table. Collect-PbxInstallDiagnostics.ps1/.cmd gathers current state without repair or reinstall; English failure logs and Test-PbxInstallerReports.ps1 cover post-check failures with test-only doubles.

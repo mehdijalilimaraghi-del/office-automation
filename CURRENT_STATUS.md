@@ -1,3 +1,9 @@
+## Installer diagnostics and executable validation — 2026-11-22
+
+Owner reports desktop blackening followed by unreadable PowerShell failure with no adjacent report. Confirmed a wrapper defect: actual MSI file is FreeSwitchConsole.exe while the success check expected freeswitch.exe. Therefore MSI may already be installed; owner diagnosis is pending. Fixed executable check, converted installer console messages to English, saved preflight/MSI/post-check failures with stage/exit/log details and copies beside the package, and added a read-only collector for service, binaries, uninstall registry, relevant events and existing setup logs. No retry, repair or uninstall was executed.
+
+Validation passed: three mocked installer outcomes (success, MSI 1603, post-check failure); four guarded Unicode/path scenarios; real read-only collector JSON/ZIP creation on development Windows; recursive PowerShell syntax; full SQL Server suite 538 tests / 3387 assertions; TypeScript/build. No real MSI, UAC elevation, repair or service change was performed. Owner diagnostic archive is still required. Small diagnostic-only package: storage/app/private/OfficeAutomation-PbxInstallDiagnostics.zip.
+
 ## Installer path binding correction — 2026-11-22
 
 The owner installer stopped before starting MSI because its InstallerPath default evaluated Join-Path with an empty PSScriptRoot. Moved default resolution into the script body with file-context fallbacks and a clear error if no file context exists; CMD now passes the adjacent MSI path explicitly and returns the real exit code. Preparing a two-file patch so the verified MSI does not need downloading again. Actual installation remains pending.

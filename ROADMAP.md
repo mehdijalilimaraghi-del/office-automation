@@ -1,3 +1,7 @@
+## Installer diagnostics and executable validation — 2026-11-22
+
+Before any further installation attempt, collect owner diagnostics and determine whether the previous MSI completed. Resolve wrapper validation and investigate the black screen using MSI/Explorer/RestartManager event evidence. Then verify stopped engine state before configuration and call testing. Do not delete or reinstall existing FreeSWITCH automatically.
+
 ## Installer path binding correction — 2026-11-22
 
 Resolve the pre-install path-binding blocker with the small installer patch, then obtain the owner installation report before activation/configuration. Keep the verified FreeSWITCH MSI unchanged. Extra extensions, portability, timing validation and modem bridge remain pending as previously scoped.

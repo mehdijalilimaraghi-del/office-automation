@@ -29,3 +29,9 @@ Two extensions are the initial smoke test only. The product must add/manage exte
 ## Installer path patch (2026-11-22)
 
 InstallerPath is resolved inside the script body rather than a parameter default. The CMD launcher supplies an explicit adjacent MSI path and returns the child exit code after pause. Use OfficeAutomation-PbxInstaller-PathFix.zip to replace only Install-PbxEngine.ps1 and Install-PbxEngine.cmd in an existing extracted package. Keep the signed MSI unchanged. Test-PbxInstallerPaths.ps1 covers Unicode/spaced paths and missing-root fallback with process elevation forbidden in every child.
+
+## Diagnose the reported install before retrying
+
+The actual MSI contains FreeSwitchConsole.exe; the former wrapper incorrectly checked freeswitch.exe after MSI success and saved a report only on success. That can report a wrapper failure even when installation completed. The black screen is not diagnosed yet. Run Collect-PbxInstallDiagnostics.cmd first; its archive includes current service/binary/uninstall metadata, relevant recent Application events and the latest own setup logs. It does not run an installer, Win32_Product, repair, reboot or service commands. Reports may contain local user paths/event details; keep them out of Git.
+
+Installer console messages are now English, and failures save JSON/text and available MSI logs. The [Microsoft-documented Restart Manager property](https://learn.microsoft.com/en-us/windows/win32/msi/msirestartmanagercontrol) disables its interaction for future install attempts; /norestart alone controls OS restart rather than all application shutdown. This protection does not establish the cause of the observed black screen. Do not rerun until diagnostics are reviewed.

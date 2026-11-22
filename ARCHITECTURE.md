@@ -1,3 +1,7 @@
+## Installer diagnostics and executable validation — 2026-11-22
+
+Post-install binary detection now matches FreeSwitchConsole.exe from the pinned MSI File table. Installer failures include phase and MSI exit code, with local JSON/text and adjacent log copies. Per-invocation MSIRESTARTMANAGERCONTROL=Disable and REBOOT=ReallySuppress augment /norestart; no global Windows policy is changed. Collect-PbxInstallDiagnostics reads service/files/uninstall registry/events/own logs only, avoids Win32_Product repair side effects and creates a bounded-source diagnostic archive. No service or installer is started by the collector.
+
 ## Installer path binding correction — 2026-11-22
 
 Installer file-context resolution occurs after parameter binding, with no current-directory fallback. CMD passes the installer path explicitly and preserves the PowerShell exit code. Test-PbxInstallerPaths.ps1 uses guarded child copies that forbid Start-Process, so path regressions cannot elevate/install during tests. No engine selection, hash/signature policy or runtime behavior is changed.
