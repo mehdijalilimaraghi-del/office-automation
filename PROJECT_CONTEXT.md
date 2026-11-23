@@ -1,3 +1,7 @@
+## Incoming greeting setup — 2026-11-23
+
+A greeting can be recorded explicitly on any Windows PC with an active microphone, reviewed locally, or supplied as an existing PCM16 WAV. Recording is capped at 30 seconds and never starts automatically. The quick lab menu offers key 1 to existing 1001 and key 2 to existing 1002, with timeout to 1002 after two seven-second waits. Users review destinations before activation. An already enabled menu is preserved unless a replacement file is explicitly supplied; full custom routing remains in the existing automation IVR settings. No call recording is added.
+
 ## Controlled incoming modem bridge — 2026-11-22
 
 Incoming modem calls use a dedicated device account and selected destination: an existing extension or the already configured IVR. The setup keeps all existing extension credentials. The owner starts each one-call lab explicitly after closing VentaFax, then calls the company line only after the Ready message. The bridge automatically limits the test to 60 seconds, supports safe stop/close and writes a report without passwords or recorded speech. It leaves the PBX running for other internal calls. First hardware acceptance ends from the internal phone; caller-side hangup and continuous operation remain separate acceptance items.

@@ -1,3 +1,7 @@
+## Incoming IVR activation and owner evidence — 2026-11-23
+
+Owner confirms real incoming modem calls and two-way human audio to 1002. Muting only the Windows mixer session named Name Not Available stopped unwanted local monitoring without breaking the call; its exact source and persistence after restart remain unverified. Do not disable Multiplicity/global audio or request another version check. Initial destination was direct 1002, so no greeting was expected. Use Record-IvrGreeting.cmd on a PC with an active microphone, or select an existing WAV in Enable-ModemIvr.cmd. Enable preserves all accounts/passwords, reuses existing enabled IVR by default, otherwise creates reviewed 1->1001 / 2->1002 with fallback 1002. Stop PBX before applying. Physical IVR and hangup acceptance remain pending.
+
 ## Controlled incoming modem bridge — 2026-11-22
 
 Implemented a controlled, single-incoming-call modem/SIP bridge, not an always-on or production-certified trunk. Use Start-ModemBridge.cmd after stopping the old lab once to provision a dedicated office_modem credential/context; existing phone passwords remain unchanged. Do not request another version or duration-only test. Next hardware action is the integrated external-call-to-extension test, max 60 s, hang up from the extension first. No automatic call recording, outgoing PSTN or fax implementation is claimed.

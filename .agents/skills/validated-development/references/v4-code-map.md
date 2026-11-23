@@ -73,3 +73,7 @@ Real supported inbound/outbound call tests; authorization for logs/recordings; e
 - LocalSipAudioEndpoint.cs + IVoiceAudioEndpoint/VoiceSession: local SIP/PCMU, streaming counters, bounded queues, no recording, cleanup. Setup uses Set-PbxModemGateway in PbxLab.psm1 with a dedicated exact-destination context.
 - Prepare-ModemBridge.* / Start-ModemBridge.* and MODEM-BRIDGE.fa.md: owner-controlled one-call 60-second lab; package in storage/app/private/OfficeAutomation-ModemBridge, no embedded credentials.
 - Test-BridgeLifecycle.ps1, VoiceBridgeLifecycle.Tests.cs, LocalSipAudioEndpoint.Tests.cs: lifecycle and protocol negatives. ModemBridge.Tests.cs + PbxLab/tests/Test-ModemBridge.ps1 + NativeSipSmoke.ReceiveGateway: actual native engine/fake modem/150 ms inband DTMF/phone BYE integration. Physical modem acceptance remains outstanding.
+
+## Owner real-call gate and greeting helpers — 2026-11-23
+
+Owner confirms real incoming two-way voice to 1002; physical greeting/keys/hangup remain pending. Record-IvrGreeting.ps1/PromptRecorder.cs record a bounded explicit WAV independently of the PBX host. Enable-ModemIvr.ps1 selects a supplied WAV or reuses the enabled menu, preserves all accounts/secrets, uses existing conversion/import/gateway functions and restores protected configuration on failure. Test-IvrActivation.ps1 covers routes, extra accounts, secrets, reuse and invalid-file rollback. Windows mixer session mute is a workaround only; do not disable Multiplicity/global sound.

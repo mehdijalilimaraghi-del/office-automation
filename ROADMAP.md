@@ -1,3 +1,7 @@
+## Current V4 acceptance — 2026-11-23
+
+Real incoming call and human two-way speech to 1002 are owner-accepted. Next: owner records or selects a WAV greeting, activates IVR using Enable-ModemIvr.cmd after stopping the lab, then verifies real-line greeting, keys 1/2 and extension-originated release. Recorder and activation helpers are implemented and isolated activation/native call tests passed; microphone capture and real-line IVR are not yet accepted. Caller-originated disconnect, persistent operation, outgoing calls and fax remain pending. The unnamed Windows audio-session mute is an owner-tested workaround, not a diagnosed driver fix.
+
 ## Controlled incoming modem bridge — 2026-11-22
 
 V4 next acceptance: owner launches the controlled ModemBridge package on EDARII and verifies a real incoming call reaches an existing extension, two-way human audio and extension-originated line release. Controlled bridge and native simulated integration are implemented. Then validate caller-originated disconnect/latency and design persistent operation; subsequently implement outgoing routing and fax receiver/inbox. Existing internal calls and web extension/IVR management remain available. Do not mark V4 complete or release from a simulated modem test.
