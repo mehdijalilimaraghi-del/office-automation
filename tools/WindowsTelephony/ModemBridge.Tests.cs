@@ -18,7 +18,7 @@ public sealed class BridgeFakeModem : IVoicePort, IVoiceFlowControlPort
     private bool configured, ringSent, duplex, transmitOnly;
     private readonly VoiceDecoder greetingPlayback = new VoiceDecoder();
     public byte[] GreetingPlayed { get { return greetingPlayback.Audio.ToArray(); } }
-    private int frames;
+    private int frames,greetingFrames;public bool BargeIn;
     public bool Disposed, Released;
     public readonly List<string> Commands = new List<string>();
     public int PlayedSamples { get { return playback.Audio.Count; } }
@@ -51,7 +51,7 @@ public sealed class BridgeFakeModem : IVoicePort, IVoiceFlowControlPort
     public void Write(byte[] data, int offset, int count)
     {
         if (count == 2 && data[offset] == 16 && (data[offset+1] == 94 || data[offset+1] == 3)) { duplex = false; Enqueue("\r\nOK\r\n"); return; }
-        if (duplex) { var copy = new byte[count]; Array.Copy(data, offset, copy, 0, count); if(transmitOnly)greetingPlayback.Feed(copy,count);else playback.Feed(copy, count); return; }
+        if (duplex) { var copy = new byte[count]; Array.Copy(data, offset, copy, 0, count); if(transmitOnly){greetingPlayback.Feed(copy,count);if(BargeIn&&++greetingFrames==65)Enqueue(string.Concat((char)16,"/",(char)16,"2",(char)16,"2",(char)16,"~"));}else playback.Feed(copy, count); return; }
         string command = Encoding.ASCII.GetString(data, offset, count).Trim(); Commands.Add(command);
         switch (command)
         {
@@ -74,7 +74,8 @@ public static class ModemBridgeIntegration
 {
     public static object Run(int port, string gatewayPassword, string phonePassword) { return Run(port, gatewayPassword, phonePassword, false); }
     public static object Run(int port, string gatewayPassword, string phonePassword, bool pcm16){return Run(port,gatewayPassword,phonePassword,pcm16,0,null,null);}
-    public static object Run(int port,string gatewayPassword,string phonePassword,bool pcm16,int eslPort,string eslSecret,string promptPath)
+    public static object Run(int port,string gatewayPassword,string phonePassword,bool pcm16,int eslPort,string eslSecret,string promptPath){return Run(port,gatewayPassword,phonePassword,pcm16,eslPort,eslSecret,promptPath,false);}
+    public static object Run(int port,string gatewayPassword,string phonePassword,bool pcm16,int eslPort,string eslSecret,string promptPath,bool bargeIn)
     {
         bool localGreeting=promptPath!=null;
         string wrongPassword=(gatewayPassword[0]=='a'?"b":"a")+gatewayPassword.Substring(1);
@@ -89,7 +90,7 @@ public static class ModemBridgeIntegration
         Console.WriteLine("PASS: real PBX rejected invalid gateway credentials before modem answer; settings restored.");
         var recipient = Task.Factory.StartNew(() => NativeSipSmoke.ReceiveGateway(port, "1002", phonePassword,localGreeting?15000:7000));
         Thread.Sleep(100);
-        var modem = new BridgeFakeModem();
+        var modem = new BridgeFakeModem{BargeIn=bargeIn};
         var endpoint = new LocalSipAudioEndpoint("127.0.0.1", port, "office_modem", gatewayPassword, "9197",localGreeting);
         ModemGreetingBridge greeting=null;
         if(localGreeting)greeting=new ModemGreetingBridge(endpoint,new GreetingCallControl(eslPort,eslSecret),promptPath);
@@ -109,7 +110,8 @@ public static class ModemBridgeIntegration
         if(result.ModemTransmitBytes != result.TransmittedSamples*(pcm16 ? 2 : 1) || (pcm16 && result.ModemCodec!=0))throw new Exception("Modem codec or wire length mismatch");
         if(localGreeting){
             var source=new GreetingPrompt(promptPath,30);var expected=Enumerable.Repeat((byte)255,8000).Concat(source.Audio).Concat(Enumerable.Repeat((byte)255,8000+((160-source.Audio.Length%160)%160))).ToArray();
-            if(!modem.GreetingPlayed.SequenceEqual(expected)||!greeting.MenuStarted||!result.TransmitOnlyStarted||!result.SwitchedToDuplex)throw new Exception("Native initial greeting or handoff mismatch");
+            if(!modem.GreetingPlayed.SequenceEqual(bargeIn?expected.Take(modem.GreetingPlayed.Length):expected)||!greeting.MenuStarted||!result.TransmitOnlyStarted||!result.SwitchedToDuplex)throw new Exception("Native initial greeting or handoff mismatch");
+            if(bargeIn&&(!greeting.BargeInRequested||greeting.GreetingSamples>=expected.Length||greeting.RelayedDigitCount!=1||!greeting.HardwareKeypadMode))throw new Exception("Barge-in was lost, duplicated or failed to interrupt");
             Console.WriteLine("PASS: VTX greeting exact serial bytes, authenticated parked dialog, VTR handoff, no initial PBX replay, DTMF routing and two-way call.");
         }
         var measured = modem.PlayedLevels;
@@ -120,7 +122,7 @@ public static class ModemBridgeIntegration
         return new { passed = true, serial_port_opened = false, result.ModemSampleFormat, result.ModemCodec, result.ModemTransmitBytes, result.BridgeStarted, result.CleanupConfirmed, result.EndReason,
             result.RawReceivedSamples, result.ReceivedSamples, result.RemovedRepeatedSamples, result.ReceiveFraming,
             sent_rtp = endpoint.Metrics.SentPackets, received_rtp = endpoint.Metrics.ReceivedPackets,
-            local_greeting=localGreeting, greeting_samples=modem.GreetingPlayed.Length,
+            local_greeting=localGreeting, barge_in=bargeIn, relayed_keys=greeting==null?0:greeting.RelayedDigitCount, greeting_samples=modem.GreetingPlayed.Length,
             source_level = endpoint.Metrics.PbxReceivedAudio, playback_level = endpoint.Metrics.ModemPlaybackAudio, playback_fill = endpoint.Metrics.ModemPlaybackSilenceFillSamples,
             physical_dtmf_simulated = true, private_credentials_exported = false, audio_recorded = false };
     }

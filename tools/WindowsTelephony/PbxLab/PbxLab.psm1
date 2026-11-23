@@ -37,7 +37,10 @@ function Write-LabConfiguration([string]$Root,$LabState){
         if($gateway.destination -eq '9197'){
             $parked='<extension name="modem_local_greeting"><condition field="destination_number" expression="^9197$"/><condition field="${sip_h_X-Office-Modem-Greeting}" expression="^local-v1$"><action application="set" data="sip_rh_X-Office-Modem-Channel=${uuid}"/><action application="set" data="park_timeout=45"/><action application="answer"/><action application="park"/></condition></extension>'
             $fragment=$validation.CreateDocumentFragment()
-            $fragment.InnerXml='<context name="office_modem_menu"><extension name="modem_menu_after_greeting"><condition field="destination_number" expression="^9197$"><action application="start_dtmf"/><action application="sleep" data="750"/><action application="ivr" data="office_modem_after_greeting"/></condition></extension></context>'
+            $fragment.InnerXml='<context name="office_modem_menu"><extension name="modem_menu_after_greeting"><condition field="destination_number" expression="^9197$"><action application="start_dtmf"/><action application="ivr" data="office_modem_after_greeting"/></condition></extension></context>'
+            [void]$validation.SelectSingleNode('/document/section[@name="dialplan"]').AppendChild($fragment)
+            $fragment=$validation.CreateDocumentFragment()
+            $fragment.InnerXml='<context name="office_modem_keypad"><extension name="modem_event_keys"><condition field="destination_number" expression="^9197$"><action application="ivr" data="office_modem_after_greeting"/></condition></extension></context>'
             [void]$validation.SelectSingleNode('/document/section[@name="dialplan"]').AppendChild($fragment)
         }
         $fragment=$validation.CreateDocumentFragment()
@@ -167,7 +170,7 @@ function Set-PbxModemGateway([string]$Root,[string]$Destination){
     $backup=Join-Path $Root ('gateway-backup-'+[guid]::NewGuid().ToString('N'));[void][IO.Directory]::CreateDirectory($backup)
     foreach($name in @('lab-state.json','accounts.html','conf/freeswitch.xml')){Copy-Item -LiteralPath (Join-Path $Root $name) -Destination (Join-Path $backup ([IO.Path]::GetFileName($name)))}
     try {
-        $state|Add-Member -NotePropertyName modem_gateway -NotePropertyValue ([pscustomobject]@{username='office_modem';password=$secret;destination=$Destination;greeting_protocol='vtx_initial_v1'}) -Force
+        $state|Add-Member -NotePropertyName modem_gateway -NotePropertyValue ([pscustomobject]@{username='office_modem';password=$secret;destination=$Destination;greeting_protocol='vtx_initial_v2'}) -Force
         Write-LabConfiguration $Root $state
     }catch{foreach($name in @('lab-state.json','accounts.html','conf/freeswitch.xml')){Copy-Item -LiteralPath (Join-Path $backup ([IO.Path]::GetFileName($name))) -Destination (Join-Path $Root $name) -Force};throw}
 }

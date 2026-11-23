@@ -1,6 +1,6 @@
-## Initial VTX greeting and duplex handoff — 2026-11-23
+## Initial-message keypad and barge-in — 2026-11-23
 
-Owner compared both equal-source modes in physical report modem-greeting-modes-20261123-135418-91c39c.json: VTX louder than VTR; both 106400 samples, source 90259 samples, complete with cleanup and 1ms lag. This proves a mode-dependent difference on this host, not adequate loudness or VentaFax equivalence. Normal IVR bridge now plays the initial configured greeting through VTX, then switches to VTR for keypad/conversation. Authenticate SIP and bind the parked PBX UUID to our random Call-ID through loopback control before answering the modem. No gain/codec guesses. Physical integrated acceptance still pending.
+Owner accepted initial greeting volume, then reported first key ignored until the retry prompt and explicitly requires keypad input during the message. Physical report 143437 has modem DLE digit2 events; old code ignored shielded keypad events and discarded them while draining VTX stop. VoiceDigitDetector now consumes escaped/framed key events in media and command-stop replies. A valid early key interrupts further initial playback and is queued across the VTX/VTR handoff. Pending early input selects an event-only IVR path, relayed once through own-dialog loopback control; no inband duplicate. Without early events the existing inband path remains. Hardware same-call acceptance of keypad correction is pending; do not claim modem VTX event support solely from the earlier report.
 
 ## Preserve and synchronize modem flow control — 2026-11-23
 

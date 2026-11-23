@@ -1,6 +1,7 @@
 #requires -Version 5.1
-param([string]$EngineDirectory,[switch]$Pcm16,[switch]$LocalGreeting)
+param([string]$EngineDirectory,[switch]$Pcm16,[switch]$LocalGreeting,[switch]$BargeIn)
 $ErrorActionPreference='Stop'
+if($BargeIn){$LocalGreeting=$true}
 Import-Module (Join-Path $PSScriptRoot '../PbxLab.psm1') -Force -DisableNameChecking
 $root=Join-Path $env:TEMP ('office-pbx-provision-'+[guid]::NewGuid().ToString('N'))
 $sourceFolder=Join-Path $env:TEMP ('office-pbx-prompt-'+[guid]::NewGuid().ToString('N'))
@@ -11,7 +12,7 @@ try {
  $original=$state.accounts[0].password
  $writer=[IO.BinaryWriter]::new([IO.File]::Create((Join-Path $sourceFolder 'greeting.wav')))
  try{$writer.Write([Text.Encoding]::ASCII.GetBytes('RIFF'));$writer.Write([int]32036);$writer.Write([Text.Encoding]::ASCII.GetBytes('WAVEfmt '));$writer.Write([int]16);$writer.Write([int16]1);$writer.Write([int16]1);$writer.Write([int]8000);$writer.Write([int]16000);$writer.Write([int16]2);$writer.Write([int16]16);$writer.Write([Text.Encoding]::ASCII.GetBytes('data'));$writer.Write([int]32000);for($i=0;$i -lt 16000;$i++){$writer.Write([int16](3000*[Math]::Sin(2*[Math]::PI*440*$i/8000)))}}finally{$writer.Dispose()}
- $config=[pscustomobject]@{schema_version=1;type='office_telephony_configuration';extensions=@([pscustomobject]@{number='1001'},[pscustomobject]@{number='1002'},[pscustomobject]@{number='1003'});ivr=[pscustomobject]@{enabled=$true;timeout_seconds=3;retries=1;operator_number='1002';choices=@([pscustomobject]@{digit='1';number='1002'});audio_file='greeting.wav'}}
+ $config=[pscustomobject]@{schema_version=1;type='office_telephony_configuration';extensions=@([pscustomobject]@{number='1001'},[pscustomobject]@{number='1002'},[pscustomobject]@{number='1003'});ivr=[pscustomobject]@{enabled=$true;timeout_seconds=3;retries=1;operator_number='1002';choices=@([pscustomobject]@{digit='1';number='1002'},[pscustomobject]@{digit='2';number='1002'});audio_file='greeting.wav'}}
  $config.ivr.operator_number='1003'
  Import-PbxOfficeConfiguration $root $config $sourceFolder
  Set-PbxModemGateway $root '9197'
@@ -19,7 +20,7 @@ try {
  $gatewaySecret=$state.modem_gateway.password
  Set-PbxModemGateway $root '9197'
  $state=Read-PbxLabState $root
- if($state.modem_gateway.password -ne $gatewaySecret -or $state.accounts[0].password -ne $original -or $state.modem_gateway.greeting_protocol -ne 'vtx_initial_v1'){throw 'Gateway upgrade changed credentials or lacks greeting support'}
+ if($state.modem_gateway.password -ne $gatewaySecret -or $state.accounts[0].password -ne $original -or $state.modem_gateway.greeting_protocol -ne 'vtx_initial_v2'){throw 'Gateway upgrade changed credentials or lacks greeting support'}
  if($state.accounts[0].password -ne $original -or $state.accounts.Count -ne 3){throw 'Provisioning did not preserve accounts'}
  $xml=[xml][IO.File]::ReadAllText((Join-Path $root 'conf/freeswitch.xml'))
  if(-not $xml.SelectSingleNode('//menu[@name="office_main"]/entry[@digits="1"]')){throw 'IVR route missing'}
@@ -37,7 +38,7 @@ try {
   & (Join-Path $PSScriptRoot '../Start-PbxLab.ps1') -LabRoot $root -EngineDirectory $EngineDirectory -NoBrowser -HideConsole
   try{
    Add-Type -Path @((Join-Path $PSScriptRoot '../../VoiceDiagnostics.cs'),(Join-Path $PSScriptRoot '../../LocalSipAudioEndpoint.cs'),(Join-Path $PSScriptRoot '../../GreetingPrompt.cs'),(Join-Path $PSScriptRoot '../../ModemGreetingBridge.cs'),(Join-Path $PSScriptRoot '../../ModemBridge.Tests.cs'),(Join-Path $PSScriptRoot 'NativeSipSmoke.cs'))
-   if($LocalGreeting){[ModemBridgeIntegration]::Run($state.sip_port,$state.modem_gateway.password,$state.accounts[1].password,$false,$state.esl_port,$state.esl_secret,$state.ivr.prompt_path)|ConvertTo-Json -Depth 6}else{[ModemBridgeIntegration]::Run($state.sip_port,$state.modem_gateway.password,$state.accounts[1].password,[bool]$Pcm16)|ConvertTo-Json -Depth 6}
+   if($LocalGreeting){[ModemBridgeIntegration]::Run($state.sip_port,$state.modem_gateway.password,$state.accounts[1].password,$false,$state.esl_port,$state.esl_secret,$state.ivr.prompt_path,[bool]$BargeIn)|ConvertTo-Json -Depth 6}else{[ModemBridgeIntegration]::Run($state.sip_port,$state.modem_gateway.password,$state.accounts[1].password,[bool]$Pcm16)|ConvertTo-Json -Depth 6}
   }catch{Write-Host $_.Exception.Message;throw}finally{& (Join-Path $PSScriptRoot '../Stop-PbxLab.ps1') -LabRoot $root;$owned=Get-Content (Join-Path $root 'lab-session.json') -Raw|ConvertFrom-Json;if(Get-Process -Id $owned.process_id -ErrorAction SilentlyContinue){throw 'Owned native process has not stopped; profile retained'}}
  }
  $succeeded=$true

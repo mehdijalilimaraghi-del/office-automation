@@ -10,7 +10,8 @@ using OfficeAutomation.Telephony.Diagnostics;
 namespace OfficeAutomation.Telephony.Bridge {
  public interface IGreetingCallControl : IDisposable {
   void Open(string channel,string callId,CancellationToken cancellation);
-  void BeginMenu(CancellationToken cancellation);
+  void BeginMenu(CancellationToken cancellation,bool hardwareDigits);
+  int RelayDigits(string digits,CancellationToken cancellation);
  }
  // Fixed loopback-only commands for this authenticated SIP dialog. No general API exposed.
  public sealed class GreetingCallControl : IGreetingCallControl {
@@ -58,23 +59,38 @@ namespace OfficeAutomation.Telephony.Bridge {
    var watch=Stopwatch.StartNew();
    while(Api("uuid_getvar "+channel+" current_application")!="park"){cancellation.ThrowIfCancellationRequested();if(watch.ElapsedMilliseconds>2000)throw new IOException("local_greeting_channel_not_parked");Thread.Sleep(20);}
   }
-  public void BeginMenu(CancellationToken cancellation) {
+  public void BeginMenu(CancellationToken cancellation,bool hardwareDigits) {
    this.cancellation=cancellation;
    if(Api("uuid_getvar "+channel+" current_application")!="park")throw new IOException("local_greeting_park_lost");
-   if(!Api("uuid_transfer "+channel+" 9197 XML office_modem_menu").StartsWith("+OK",StringComparison.Ordinal))throw new IOException("local_greeting_menu_transfer_failed");
+   if(!Api("uuid_transfer "+channel+" 9197 XML "+(hardwareDigits?"office_modem_keypad":"office_modem_menu")).StartsWith("+OK",StringComparison.Ordinal))throw new IOException("local_greeting_menu_transfer_failed");
+   var watch=Stopwatch.StartNew();
+   while(Api("uuid_getvar "+channel+" current_application")!="ivr"){cancellation.ThrowIfCancellationRequested();if(watch.ElapsedMilliseconds>2000)throw new IOException("local_greeting_menu_not_ready");Thread.Sleep(10);}
+  }
+  public int RelayDigits(string digits,CancellationToken cancellation) {
+   if(!Regex.IsMatch(digits??"","\\A[0-9A-D*#]{1,32}\\z"))throw new ArgumentException("Invalid bounded modem keys");
+   this.cancellation=cancellation;
+   if(Api("uuid_getvar "+channel+" current_application")!="ivr")return 0;
+   if(!Api("uuid_recv_dtmf "+channel+" "+digits).StartsWith("+OK",StringComparison.Ordinal))throw new IOException("modem_key_delivery_failed");
+   return digits.Length;
   }
   public void Dispose(){if(client!=null)client.Close();stream=null;}
  }
- public sealed class ModemGreetingBridge : ITransmitGreetingEndpoint {
+ public sealed class ModemGreetingBridge : ITransmitGreetingEndpoint, IVoiceDigitEndpoint {
   readonly LocalSipAudioEndpoint sip;readonly IVoiceAudioEndpoint audio;readonly IGreetingCallControl control;readonly GreetingPrompt prompt;
-  CancellationToken cancellation;int position;bool opened,duplex,disposed;
+  CancellationToken cancellation;int position,duplexSamples;bool opened,duplex,disposed;
+  readonly StringBuilder pendingDigits=new StringBuilder();
+  public bool BargeInRequested {get;private set;}
+  public bool HardwareKeypadMode {get;private set;}
+  public int BufferedDigitCount {get;private set;}
+  public int RelayedDigitCount {get;private set;}
+  public bool DuplexReady {get{return duplex;}}
   public bool MenuStarted {get;private set;}
   public int GreetingSamples {get;private set;}
   public AudioLevelMeter GreetingPlaybackAudio {get;private set;}
   public int PromptSamples {get{return prompt.Audio.Length;}}
   public string PromptSha256 {get{return prompt.Sha256;}}
   public SipBridgeMetrics Metrics {get{return sip==null?null:sip.Metrics;}}
-  public bool NeedsDuplex {get{return !duplex&&position>=8000+((prompt.Audio.Length+159)/160)*160+8000;}}
+  public bool NeedsDuplex {get{return !duplex&&(pendingDigits.Length>0||position>=8000+((prompt.Audio.Length+159)/160)*160+8000);}}
   public bool Ended {get{return disposed||audio.Ended;}}
   public ModemGreetingBridge(LocalSipAudioEndpoint sip,IGreetingCallControl control,string path):this(sip,control,path,sip.GreetingChannel,sip.DialogCallId){this.sip=sip;}
   // The identifiers are read after Open; the overload permits deterministic audio/control fixtures.
@@ -86,16 +102,31 @@ namespace OfficeAutomation.Telephony.Bridge {
    if(opened||disposed)throw new InvalidOperationException("Invalid greeting bridge lifecycle");
    this.cancellation=cancellation;audio.Open(cancellation);control.Open(sip==null?fixtureChannel:sip.GreetingChannel,sip==null?fixtureCallId:sip.DialogCallId,cancellation);opened=true;
   }
-  public void ReceiveAudio(byte[] data){if(duplex)audio.ReceiveAudio(data);}
+  public void ReceiveDigit(char digit) {
+   if(disposed||!opened||(MenuStarted&&!HardwareKeypadMode))return;
+   if(!((digit>='0'&&digit<='9')||digit=='*'||digit=='#'||(digit>='A'&&digit<='D')))return;
+   if(pendingDigits.Length>=32)throw new InvalidDataException("modem_key_queue_limit");
+   pendingDigits.Append(digit);BufferedDigitCount++;
+   if(!duplex)BargeInRequested=true;
+  }
+  public void ReceiveAudio(byte[] data){if(MenuStarted)audio.ReceiveAudio(data);}
   public byte[] TransmitAudio(int count) {
    if(!opened||disposed||count!=160||NeedsDuplex)throw new InvalidOperationException("Invalid greeting bridge phase");
-   if(duplex)return audio.TransmitAudio(count);
+   if(duplex){
+    if(!MenuStarted&&duplexSamples>=4000){
+     HardwareKeypadMode=pendingDigits.Length>0;control.BeginMenu(cancellation,HardwareKeypadMode);MenuStarted=true;
+    }
+    if(MenuStarted&&HardwareKeypadMode&&pendingDigits.Length>0){
+     string digits=pendingDigits.ToString();pendingDigits.Clear();RelayedDigitCount+=control.RelayDigits(digits,cancellation);
+    }
+    duplexSamples+=count;return audio.TransmitAudio(count);
+   }
    if(sip!=null)sip.ServiceParkedDialog();else audio.TransmitAudio(count);
    byte[] result=new byte[count];
    for(int i=0;i<count;i++){int sample=position++-8000;result[i]=sample>=0&&sample<prompt.Audio.Length?prompt.Audio[sample] :(byte)255;GreetingPlaybackAudio.Observe(result[i]);}
    GreetingSamples+=count;return result;
   }
-  public void BeginDuplex(){if(!opened||disposed||!NeedsDuplex)throw new InvalidOperationException("Unexpected greeting transition");cancellation.ThrowIfCancellationRequested();control.BeginMenu(cancellation);MenuStarted=true;duplex=true;}
+  public void BeginDuplex(){if(!opened||disposed||!NeedsDuplex)throw new InvalidOperationException("Unexpected greeting transition");cancellation.ThrowIfCancellationRequested();duplex=true;}
   public void Dispose(){if(disposed)return;disposed=true;try{audio.Dispose();}finally{control.Dispose();}}
  }
 }

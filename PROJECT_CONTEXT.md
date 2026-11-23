@@ -1,6 +1,6 @@
-## Initial VTX greeting and duplex handoff — 2026-11-23
+## Initial-message keypad and barge-in — 2026-11-23
 
-The initial external-line greeting must use the owner-observed louder VTX state while conversation remains VTR. The PBX selection timeout begins only after the message and modem transition finish, with no duplicate first prompt. Keep normal internal 9197 playback, menu choices, retry settings and operator routing. Enter keypad choices after the initial greeting; this first-message correction does not certify louder retries or parity with VentaFax.
+Callers may enter a menu choice or full configured extension during the initial greeting. Once the modem reports a valid key, stop supplying the rest of the message and preserve ordered keys through audio-mode switching; honor the same configured menu, retry and operator rules. Each physical key must reach the menu once, including repeated digits in extensions. Older/no-early-event paths retain normal inband selection. Source volume and conversation audio remain as accepted by the owner.
 
 ## Preserve and synchronize modem flow control — 2026-11-23
 

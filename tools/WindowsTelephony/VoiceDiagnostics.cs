@@ -25,6 +25,23 @@ namespace OfficeAutomation.Telephony.Diagnostics
         void BeginDuplex();
     }
     public interface IGreetingModeComparison : ITransmitGreetingEndpoint { }
+    public interface IVoiceDigitEndpoint { void ReceiveDigit(char digit); }
+    // Only DLE-shielded key events are digits; escaped audio bytes are never keypad input.
+    public sealed class VoiceDigitDetector {
+        readonly Action<char> receive; bool dle, framed, delivered;
+        public VoiceDigitDetector(Action<char> receive) { this.receive=receive; }
+        public void Feed(byte[] bytes,int count) { for(int i=0;i<count;i++)Feed(bytes[i]); }
+        public void Feed(byte value) {
+            if(!dle){dle=value==16;return;} dle=false;
+            if(value==16)return;
+            if(value==(byte)'/'){framed=true;delivered=false;return;}
+            if(value==(byte)'~'){framed=false;delivered=false;return;}
+            if((value>='0'&&value<='9')||value=='*'||value=='#'||(value>='A'&&value<='D')){
+                if(!framed||!delivered)receive((char)value); delivered=true;
+            }
+        }
+    }
+
     public interface IVoicePort : IDisposable
     {
         void Open();
@@ -368,7 +385,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
     }
     public sealed class VoiceResult
     {
-        public string DiagnosticVersion = "2026.11.23.6";
+        public string DiagnosticVersion = "2026.11.23.7";
         public bool TransmitOnlyStarted, SwitchedToDuplex;
         public int ModeTransitionMilliseconds;
         public string EffectiveFlowControl = "";
@@ -444,6 +461,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
         private readonly CancellationTokenSource stop = new CancellationTokenSource();
         private Task worker;
         private readonly VoiceResult result = new VoiceResult();
+        private readonly VoiceDigitDetector digitDetector;
         private volatile string progress = "ready";
         private string stage = "open_port";
         private bool opened, changedMode, duplex, transmitOnly, answerAttempted;
@@ -465,6 +483,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
             int maximum = endpoint == null ? 30000 : 120000;
             if (ringTimeout < 100 || ringTimeout > 60000 || captureDuration < 100 || captureDuration > maximum) throw new ArgumentOutOfRangeException();
             this.port = port; this.folder = folder; this.ringTimeout = ringTimeout; this.captureDuration = captureDuration; this.endpoint = endpoint;
+            var digitEndpoint=endpoint as IVoiceDigitEndpoint;if(digitEndpoint!=null)digitDetector=new VoiceDigitDetector(digitEndpoint.ReceiveDigit);
         }
         public void Start()
         {
@@ -484,7 +503,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                     if (port.Available > 0)
                     {
                         byte[] b = new byte[1];
-                        port.Read(b, 0, 1); text.Append((char)b[0]);
+                        port.Read(b, 0, 1); if(answerAttempted&&digitDetector!=null)digitDetector.Feed(b[0]);text.Append((char)b[0]);
                         if (text.Length > 8192) throw new InvalidDataException("Reply size limit exceeded");
                         if (Regex.IsMatch(text.ToString(), @"(?:^|[\r\n])(OK|ERROR|CONNECT|NO CARRIER|BUSY)\r?\n$")) return text.ToString();
                     }
@@ -666,11 +685,12 @@ namespace OfficeAutomation.Telephony.Diagnostics
                         phase = Stopwatch.GetTimestamp();
                         int read = port.Read(input, 0, input.Length);
                         result.MaxSerialReadMilliseconds = Math.Max(result.MaxSerialReadMilliseconds, PhaseMilliseconds(phase));
-                        phase = Stopwatch.GetTimestamp(); decoder.Feed(input, read);
+                        phase = Stopwatch.GetTimestamp(); if(digitDetector!=null)digitDetector.Feed(input,read);decoder.Feed(input, read);
                         result.MaxDecodeMilliseconds = Math.Max(result.MaxDecodeMilliseconds, PhaseMilliseconds(phase));
                         if (endpoint != null && decoder.Audio.Count > 0) endpoint.ReceiveAudio(decoder.DrainAudio());
                         if (endpoint != null && (decoder.Events.Contains("busy_tone") || decoder.Events.Contains("local_on_hook"))) { result.EndReason = "modem_hangup"; break; }
                     }
+                    if(comparison!=null&&transmitOnly&&comparison.NeedsDuplex)continue;
                     if (clock.ElapsedMilliseconds >= frame * 20L + controlPause)
                     {
                         byte[] audio = new byte[160];

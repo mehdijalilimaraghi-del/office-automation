@@ -17,9 +17,10 @@ public sealed class GreetingAudioFixture : IVoiceAudioEndpoint {
  public void Dispose(){Disposed=true;}
 }
 public sealed class GreetingControlFixture : IGreetingCallControl {
- public bool Opened,Started,Disposed,RejectOpen,RejectStart;
+ public bool Opened,Started,Disposed,RejectOpen,RejectStart,Hardware;public string Keys="";public Action OnRelay;
  public void Open(string channel,string callId,CancellationToken c){c.ThrowIfCancellationRequested();if(RejectOpen)throw new IOException("rejected_control");Opened=true;}
- public void BeginMenu(CancellationToken c){c.ThrowIfCancellationRequested();if(RejectStart)throw new IOException("rejected_menu");Started=true;}
+ public void BeginMenu(CancellationToken c,bool hardware){Hardware=hardware;c.ThrowIfCancellationRequested();if(RejectStart)throw new IOException("rejected_menu");Started=true;}
+ public int RelayDigits(string keys,CancellationToken c){Keys+=keys;if(OnRelay!=null)OnRelay();return keys.Length;}
  public void Dispose(){Disposed=true;}
 }
 public static class ModemGreetingChecks {
@@ -37,7 +38,7 @@ public static class ModemGreetingChecks {
    var source=new GreetingPrompt(path,30);
    Check(played.Take(8000).All(x=>x==255)&&played.Skip(8000).Take(237).SequenceEqual(source.Audio),"Greeting source was changed");
    Check(!control.Started,"Menu started before modem duplex readiness");
-   endpoint.BeginDuplex();Check(endpoint.MenuStarted&&control.Started,"Menu not started at handoff");
+   endpoint.BeginDuplex();Check(!endpoint.MenuStarted,"Menu must wait for receive-path warmup");for(int i=0;i<26;i++)endpoint.TransmitAudio(160);Check(endpoint.MenuStarted&&control.Started&&!control.Hardware,"Menu not started after warmup");
    Check(endpoint.TransmitAudio(160).All(x=>x==137),"Conversation audio changed");
    endpoint.ReceiveAudio(new byte[160]);Check(audio.Received,"Caller audio not bridged after greeting");
    endpoint.Dispose();Check(audio.Disposed&&control.Disposed,"Endpoints not closed");
@@ -48,25 +49,43 @@ public static class ModemGreetingChecks {
     var session=new VoiceSession(port,Path.GetTempPath(),300,6000,endpoint);session.Start();Wait(session);
     Check(session.Result.Status=="failed"&&session.Result.CleanupConfirmed&&audio.Disposed&&control.Disposed,"Failure cleanup missing");
     Check(session.Result.Answered!=failOpen,"Rejected controller answered the modem");
-    if(!failOpen)Check(session.Result.TransmitOnlyStarted&&session.Result.DuplexStarted&&session.Result.FailureStage=="switch_to_duplex","Transition failure stage lost");
+    if(!failOpen)Check(session.Result.TransmitOnlyStarted&&session.Result.DuplexStarted&&session.Result.FailureStage=="stream_audio","Transition failure stage lost");
    }
    control=new GreetingControlFixture();audio=new GreetingAudioFixture();endpoint=new ModemGreetingBridge(audio,control,path,"fixture","fixture");
    var cancelled=new VoiceSession(new DiagnosticFakePort(),Path.GetTempPath(),300,6000,endpoint);cancelled.Start();
    for(int i=0;i<500&&cancelled.Progress!="streaming"&&!cancelled.Completed;i++)Thread.Sleep(5);
    cancelled.Cancel();Wait(cancelled);Check(cancelled.Result.Cancelled&&cancelled.Result.CleanupConfirmed&&!control.Started,"Cancelled greeting started menu or leaked call");
+   VoiceCodec.SaveWave(path,Enumerable.Repeat((byte)128,16000).ToArray());
+   for(int scenario=0;scenario<3;scenario++){
+    audio=new GreetingAudioFixture();control=new GreetingControlFixture();control.OnRelay=()=>audio.Ended=true;
+    endpoint=new ModemGreetingBridge(audio,control,path,"fixture","fixture");var port=new DiagnosticFakePort();
+    string one=string.Concat((char)16,"/",(char)16,"2",(char)16,"2",(char)16,"~");
+    string number=string.Concat("1002".SelectMany(d=>new[]{(char)16,'/',(char)16,d,(char)16,'~'}));
+    if(scenario==0){port.TransmitEventAfterWrites=65;port.TransmitEvents=one;}
+    if(scenario==1)port.StopEvents=number;
+    if(scenario==2){port.DuplexEventAfterWrites=3;port.DuplexEvents=one;}
+    var early=new VoiceSession(port,Path.GetTempPath(),300,7000,endpoint);early.Start();Wait(early);
+    Check(early.Result.Status=="bridged"&&early.Result.CleanupConfirmed&&control.Hardware&&endpoint.MenuStarted,"Early key session failed");
+    Check(control.Keys==(scenario==1?"1002":"2")&&endpoint.RelayedDigitCount==(scenario==1?4:1),"Keys dropped, reordered or duplicated");
+    if(scenario==0)Check(endpoint.BargeInRequested&&endpoint.GreetingSamples<32000,"Mid-message key failed to interrupt greeting");
+   }
   }finally{if(File.Exists(path))File.Delete(path);}
+  var keys=new StringBuilder();var parser=new VoiceDigitDetector(d=>keys.Append(d));
+  parser.Feed(new byte[]{16,16,50,16},4);
+  foreach(byte value in new byte[]{47,16,48,16,48,16,126,16,47,16,48,16,126,16,35,16,35})parser.Feed(value);
+  Check(keys.ToString()=="00##","Split/escaped DLE, held-key dedup or repeated key handling failed");
   var timing=new VoiceResult{DuplexStartedAtMilliseconds=13000};
   for(int i=0;i<=20;i++)timing.SampleWindows.Add(new VoiceSampleWindow{Milliseconds=i*1000,TransmittedSamples=i*8000,ReceivedSamples=Math.Max(0,i-13)*8000});
   Check(timing.BridgeTimingReady&&timing.ReceiveRateAfterWarmup==8000&&timing.TransmitRateAfterWarmup==8000,"Greeting time polluted duplex rate");
   timing.SampleWindows.RemoveAll(w=>w.Milliseconds>16000);
   Check(!timing.BridgeTimingReady,"Insufficient post-greeting timing was accepted");
   CheckControlProtocol(false);CheckControlProtocol(true);
-  return "PASS: exact greeting payload, delayed menu, unchanged duplex audio, pre-answer rejection, handoff failure, cancellation/cleanup; bounded local control rejects dialog mismatch. No physical modem.";
+  return "PASS: mid-message interruption, stop-gap 1002, early duplex key, held-key dedup, split/escaped events, exact greeting, delayed menu, duplex audio, cancellation/auth cleanup and dialog binding. No physical modem.";
  }
  static void CheckControlProtocol(bool mismatch){
   var listener=new TcpListener(IPAddress.Loopback,0);listener.Start();int port=((IPEndPoint)listener.LocalEndpoint).Port;
   string channel=Guid.NewGuid().ToString(),call=Guid.NewGuid().ToString("N");var commands=new List<string>();
-  var server=Task.Factory.StartNew(()=>{
+  bool transferred=false;var server=Task.Factory.StartNew(()=>{
    using(var client=listener.AcceptTcpClient()){
     var stream=client.GetStream();stream.ReadTimeout=3000;
     Action<string> send=s=>{byte[] b=Encoding.ASCII.GetBytes(s);stream.Write(b,0,b.Length);};
@@ -74,12 +93,13 @@ public static class ModemGreetingChecks {
     while(true){var command=new StringBuilder();int b;while((b=stream.ReadByte())>=0){command.Append((char)b);if(command.ToString().EndsWith("\n\n"))break;}if(b<0)break;
      string text=command.ToString().Trim();commands.Add(text);
      if(text.StartsWith("auth ")){send("Content-Type: command/reply\nReply-Text: +OK accepted\n\n");continue;}
-     string body=text.EndsWith(" sip_call_id")?(mismatch?"wrong":call):text.EndsWith(" current_application")?"park":"+OK";
+     if(text.StartsWith("api uuid_transfer "))transferred=true;
+     string body=text.EndsWith(" sip_call_id")?(mismatch?"wrong":call):text.EndsWith(" current_application")?(transferred?"ivr":"park"):"+OK";
      send("Content-Type: api/response\nContent-Length: "+body.Length+"\n\n"+body);
     }
    }
   });
-  try{using(var control=new GreetingCallControl(port,new string('a',48))){bool rejected=false;try{control.Open(channel,call,CancellationToken.None);if(!mismatch)control.BeginMenu(CancellationToken.None);}catch(IOException){rejected=true;}Check(rejected==mismatch,"Control dialog validation failed");}}
+  try{using(var control=new GreetingCallControl(port,new string('a',48))){bool rejected=false;try{control.Open(channel,call,CancellationToken.None);if(!mismatch)control.BeginMenu(CancellationToken.None,false);}catch(IOException){rejected=true;}Check(rejected==mismatch,"Control dialog validation failed");}}
   finally{listener.Stop();if(!server.Wait(5000))throw new Exception("Control fixture did not close");}
   Check(commands.All(s=>s.StartsWith("auth ")||s=="api uuid_getvar "+channel+" sip_call_id"||s=="api uuid_getvar "+channel+" current_application"||s=="api uuid_transfer "+channel+" 9197 XML office_modem_menu"),"Unexpected controller command");
   Check(commands.Any(s=>s.Contains("uuid_transfer"))!=mismatch,"Mismatched dialog was transferred");

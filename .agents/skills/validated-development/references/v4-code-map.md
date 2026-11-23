@@ -105,3 +105,7 @@ GreetingModeComparison.cs implements IGreetingModeComparison with bounded curren
 ## Initial VTX greeting handoff
 
 GreetingPrompt.cs shared bounded source; ModemGreetingBridge.cs wrapper and fixed loopback GreetingCallControl; LocalSipAudioEndpoint opt-in authenticated parked dialog, UUID/Call-ID binding and parked keepalive without playback meter inflation. PbxLab.psm1 private parked/menu routes clone original choices/retries, skip first greeting only, preserve credentials and backup on upgrade. Start-ModemBridge normal IVR picks new path; comparison stays separate. Test-ModemGreeting.ps1 plus native Test-ModemBridge.ps1 -LocalGreeting; physical integrated acceptance pending.
+
+## Initial-message keypad / barge-in
+
+VoiceDigitDetector in VoiceDiagnostics.cs spans media and stop replies, preserving DLE framing without audio false positives. ModemGreetingBridge owns early queue, greeting interruption, RX warmup and event-vs-inband handoff; GreetingCallControl waits IVR and relays bounded own-channel keys only. PbxLab adds private event-only menu context and profile vtx_initial_v2. Test-ModemGreeting covers mid-message/stop-gap/early-duplex cases and escaping; native Test-ModemBridge -LocalGreeting -BargeIn validates one key routes in the same call. Volume accepted; physical keypad correction pending.

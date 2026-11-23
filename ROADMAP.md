@@ -1,6 +1,6 @@
-## Initial VTX greeting and duplex handoff — 2026-11-23
+## Initial-message keypad and barge-in — 2026-11-23
 
-Next acceptance: close comparison/bridge and VentaFax, Stop-PbxLab.cmd once, then normal Start-ModemBridge.cmd; wait ready, call, hear the first message and enter the menu choice after it ends, verify two-way audio and hangup. Do not repeat diagnostic gain/PCM trials. Initial VTX greeting is implemented; physical loudness/transition acceptance remains open. Menu retry prompts still use the existing PBX duplex path; any broader mode switching needs separate evidence and design.
+Next acceptance: close bridge/VentaFax, Stop-PbxLab.cmd once then normal Start-ModemBridge.cmd. Call and press 2 during the first message: remaining playback should stop and the existing menu choice should connect in that same attempt. Also check an ordinary selection after the message, two-way audio and hangup. The greeting volume has been accepted; keypad/barge-in correction still needs real modem confirmation. Do not require waiting until the message ends as a workaround. Retry greeting volume is a separate existing limitation.
 
 ## Preserve and synchronize modem flow control — 2026-11-23
 
