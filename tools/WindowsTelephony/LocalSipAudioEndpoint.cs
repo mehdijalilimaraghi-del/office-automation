@@ -13,10 +13,29 @@ using OfficeAutomation.Telephony.Diagnostics;
 
 namespace OfficeAutomation.Telephony.Bridge
 {
+    public sealed class AudioLevelMeter
+    {
+        public long Samples { get; private set; }
+        public int Peak { get; private set; }
+        public long ActiveSamples { get; private set; }
+        private double squares, activeSquares;
+        public double? RmsDbfs { get { return Samples == 0 || squares == 0 ? (double?)null : 10 * Math.Log10(squares / Samples / (32768.0 * 32768.0)); } }
+        public double? ActiveRmsDbfs { get { return ActiveSamples == 0 ? (double?)null : 10 * Math.Log10(activeSquares / ActiveSamples / (32768.0 * 32768.0)); } }
+        public void Observe(byte value)
+        {
+            int sample = VoiceCodec.DecodeMuLaw(value), magnitude = Math.Abs(sample);
+            Samples++; Peak = Math.Max(Peak, magnitude); squares += (double)sample * sample;
+            if (magnitude > 500) { ActiveSamples++; activeSquares += (double)sample * sample; }
+        }
+    }
+
     public sealed class SipBridgeMetrics
     {
         public int SentPackets, ReceivedPackets, SilenceSamples, ReceiveQueueDrops, RejectedPackets;
         public bool Authenticated, Answered, RemoteHangup, LocalHangupAcknowledged;
+        public long ModemPlaybackSilenceFillSamples;
+        public readonly AudioLevelMeter PbxReceivedAudio = new AudioLevelMeter();
+        public readonly AudioLevelMeter ModemPlaybackAudio = new AudioLevelMeter();
     }
 
     // A single, bounded, local-PC SIP/PCMU dialog. No registration, external dialing or credential logging.
@@ -218,7 +237,7 @@ namespace OfficeAutomation.Telephony.Bridge
                 if ((packet[0] & 32) != 0) { int padding = packet[end-1]; if (padding < 1) { metrics.RejectedPackets++; continue; } end -= padding; }
                 if (header >= end || end-header > 480) { metrics.RejectedPackets++; continue; }
                 if (incoming.Count + end-header > 4800) { metrics.ReceiveQueueDrops++; continue; }
-                for (int i = header; i < end; i++) incoming.Enqueue(packet[i]);
+                for (int i = header; i < end; i++) { incoming.Enqueue(packet[i]); metrics.PbxReceivedAudio.Observe(packet[i]); }
                 metrics.ReceivedPackets++;
             }
         }
@@ -227,7 +246,12 @@ namespace OfficeAutomation.Telephony.Bridge
             if (!opened || disposed || count != 160) throw new InvalidOperationException("Invalid SIP audio state");
             Pump();
             var result = new byte[count];
-            for (int i = 0; i < count; i++) result[i] = incoming.Count > 0 ? incoming.Dequeue() : (byte)255;
+            for (int i = 0; i < count; i++)
+            {
+                if (incoming.Count > 0) result[i] = incoming.Dequeue();
+                else { result[i] = 255; metrics.ModemPlaybackSilenceFillSamples++; }
+                metrics.ModemPlaybackAudio.Observe(result[i]);
+            }
             if (Ended) return result;
             var packet = new byte[172]; packet[0] = 128; packet[1] = 0;
             packet[2] = (byte)(sequence >> 8); packet[3] = (byte)sequence; sequence++;

@@ -1,3 +1,11 @@
+## Nonrecording external-playback level diagnostics — 2026-11-23
+
+Owner clarifies VGT 128 made the external audio quieter, not distorted. Restore to 0 was acknowledged and read back. Do not repeat nominal/higher-gain trials blindly. Current diagnostic uses regular Start-ModemBridge.cmd, leaves gain/samples unchanged and reports PbxReceivedAudio versus ModemPlaybackAudio numerical peak/RMS/active-RMS/sample counts plus silence fill; no audio recording. Silence fill includes legitimate PBX quiet periods, so it is not by itself packet-loss evidence. Actual low-volume root cause remains open.
+
+## Rejected nominal transmit-level trial — 2026-11-23
+
+Owner reports the VGT=128 trial made playback worse; do not promote this setting or suggest a higher value without new evidence. Actual report modem-bridge-result-20261123-093202-d5d2b1.json confirms 128 applied and read back, owner cancellation, VGT=0 restored and read back, CleanupConfirmed=true. The live modem is back at its original setting. Use regular Start-ModemBridge.cmd; the nominal-volume launcher remains an explicitly rejected experimental setting for this device. Owner clarified that the audio became quieter, not distorted. External-line low greeting volume remains unresolved; direct SIP 9197 was clear. Next evidence should distinguish RTP-to-modem level, buffering and analog path, without recording conversations or guessing modem gain.
+
 ## Controlled modem transmit-volume trial — 2026-11-23
 
 The owner modem reports VGT current 0 and supported (0,126-130), VGR current 0/supported (0,126-133); diagnostic restored FCLASS 0. Do not label gain 0 as mute or assume AGC/AVC causes attenuation. Implemented opt-in Start-ModemBridge-NominalVolume.cmd: set supported VGT 128 for one call only, preserve current VGT, confirm readback after codec setup, restore on exit/cancel/errors. Normal bridge does not query/change gain. Owner still must confirm real-line loudness; no persistent modem gain or RX gain change.

@@ -1,3 +1,7 @@
+## Nonrecording external-playback level diagnostics — 2026-11-23
+
+LocalSipAudioEndpoint.Tests.cs verifies empty/silent metrics, a known PCMU amplitude and the exact 3.0103 dB total-RMS dilution by half silence while active RMS stays constant. Native ModemBridge.Tests.cs compares playback counts, peak and RMS against DLE-decoded serial bytes captured only in the simulated modem fixture. These counters do not assert analog loudness. No PHP/TypeScript code or dependencies changed; their previously passing suites/build are not rerun for this C#-only instrumentation; focused C# and real native PBX tests are the relevant gate.
+
 ## Controlled modem transmit-volume trial — 2026-11-23
 
 Test-BridgeLifecycle.ps1 includes actual LSI gain replies, normal-mode nonmutation, opt-in set/restore, unsupported range, missing snapshot, rejected write, accepted-but-ignored write, cancellation and restore failure while class restoration continues. Test-Audio.ps1 existing 14 diagnostic sessions passed. Actual native PBX integration and existing application regressions are rechecked for this slice; physical output-level acceptance remains separate. Manufacturer background only, not certification of this LSI device: https://multitech.com/wp-content/uploads/plusvoice-command_s000099e.pdf documents VGT zero as automatic control and nominal reference 128.

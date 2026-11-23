@@ -1,3 +1,7 @@
+## Nonrecording external-playback level diagnostics — 2026-11-23
+
+AudioLevelMeter accumulates decoded PCMU sample count, peak, total and active RMS (>500 absolute PCM magnitude) without storing samples. SipBridgeMetrics has PbxReceivedAudio and ModemPlaybackAudio meters plus modem-bound silence-fill count. Input meter observes accepted queued RTP payload; output meter observes the unchanged 160-byte block returned to VoiceSession. Windows/analog output remains outside these counters. Null represents empty/silent RMS, avoiding nonfinite JSON values.
+
 ## Controlled modem transmit-volume trial — 2026-11-23
 
 VoiceTransmitLevel parses acknowledged scalar/range VGT replies separately from codec settings. VoiceSession has a backward-compatible optional sixth constructor argument for transmit level. It snapshots and validates current and requested levels before modifying, verifies after VSM setup, and restores before leaving voice class. Gain-restore failure does not suppress codec/flow/class restoration and keeps CleanupConfirmed false. Start-ModemBridge.ps1 enables this path only with -NominalTransmitVolume; dedicated CMD makes the trial distinct. No local Windows mixer or firewall settings are changed.

@@ -1,3 +1,11 @@
+## Nonrecording external-playback level diagnostics — 2026-11-23
+
+Owner rejected nominal VGT 128 because it reduced volume further; original 0 is confirmed restored. Added numeric-only source/playback level counters in LocalSipAudioEndpoint.cs without modifying media bytes. Unit checks cover known PCMU levels, silence and active-RMS independence; native PBX integration checks meter output against decoded bytes actually written to the fake modem. Real modem level report remains pending. No Laravel/frontend/database/dependency change in this diagnostic slice; previous application build/tests remain unchanged.
+
+## Rejected nominal transmit-level trial — 2026-11-23
+
+Owner reports the VGT=128 trial made playback worse; do not promote this setting or suggest a higher value without new evidence. Actual report modem-bridge-result-20261123-093202-d5d2b1.json confirms 128 applied and read back, owner cancellation, VGT=0 restored and read back, CleanupConfirmed=true. The live modem is back at its original setting. Use regular Start-ModemBridge.cmd; the nominal-volume launcher remains an explicitly rejected experimental setting for this device. Owner clarified that the audio became quieter, not distorted. External-line low greeting volume remains unresolved; direct SIP 9197 was clear. Next evidence should distinguish RTP-to-modem level, buffering and analog path, without recording conversations or guessing modem gain.
+
 ## Controlled modem transmit-volume trial — 2026-11-23
 
 Added controlled transmit-volume trial after the owner confirmed direct 9197 clear but external line quiet. Actual gain inspection returned VGT=0 with allowed 0,126-130 and acknowledged original-class restoration. Optional runtime trial 128 validates both original/requested support, confirms post-codec readback and restores the prior value. Reports expose requested/original/applied/restored values. Simulated tests pass supported gain, unsupported/unknown evidence, rejection, ignored setting, cancellation and restoration failure; normal mode is unchanged. Actual loudness improvement remains pending. No migration, dependency or production setting changes.

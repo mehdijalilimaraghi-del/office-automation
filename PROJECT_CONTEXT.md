@@ -1,3 +1,7 @@
+## Nonrecording external-playback level diagnostics — 2026-11-23
+
+When a hardware calibration worsens intelligible volume, return to the accepted baseline and distinguish quieter from distorted sound. Owner explicitly reports quieter output at VGT 128. Diagnosis must expose source and modem playback levels, preserve other audio/network services and avoid recording or changing live speech merely to obtain measurements.
+
 ## Controlled modem transmit-volume trial — 2026-11-23
 
 Modem volume calibration must be explicit and reversible per hardware. This controlled trial uses advertised VGT 128, without changing receive gain or increasing the greeting file again. Zero is a valid reported setting, not proof of silence; hardware behavior remains to be established. A readback mismatch prevents answer, and incomplete restoration is shown as failure rather than success.

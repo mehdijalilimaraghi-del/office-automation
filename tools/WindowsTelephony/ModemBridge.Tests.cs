@@ -19,6 +19,7 @@ public sealed class BridgeFakeModem : IVoicePort
     public bool Disposed, Released;
     public readonly List<string> Commands = new List<string>();
     public int PlayedSamples { get { return playback.Audio.Count; } }
+    public AudioLevelMeter PlayedLevels { get { var meter = new AudioLevelMeter(); foreach(byte value in playback.Audio) meter.Observe(value); return meter; } }
     private void Enqueue(string value) { foreach (byte b in Encoding.ASCII.GetBytes(value)) buffer.Enqueue(b); }
     public void Open() { }
     private void Generate()
@@ -93,9 +94,15 @@ public static class ModemBridgeIntegration
             || result.EndReason != "pbx_hangup" || !endpoint.Metrics.RemoteHangup || modem.PlayedSamples < 8000
             || endpoint.Metrics.ReceivedPackets < 50 || endpoint.Metrics.SentPackets < 50 || session.RecordingPath != null)
             throw new Exception("Bridge acceptance failed: " + result.Status + "/" + result.FailureStage + "/" + result.ErrorCode + "/" + result.EndReason);
+        var measured = modem.PlayedLevels;
+        if(measured.Samples != endpoint.Metrics.ModemPlaybackAudio.Samples || measured.Peak != endpoint.Metrics.ModemPlaybackAudio.Peak
+            || !measured.RmsDbfs.HasValue || Math.Abs(measured.RmsDbfs.Value-endpoint.Metrics.ModemPlaybackAudio.RmsDbfs.Value)>0.000001
+            || !endpoint.Metrics.PbxReceivedAudio.ActiveRmsDbfs.HasValue)
+            throw new Exception("Playback telemetry does not match actual decoded serial audio");
         return new { passed = true, serial_port_opened = false, result.BridgeStarted, result.CleanupConfirmed, result.EndReason,
             result.RawReceivedSamples, result.ReceivedSamples, result.RemovedRepeatedSamples, result.ReceiveFraming,
             sent_rtp = endpoint.Metrics.SentPackets, received_rtp = endpoint.Metrics.ReceivedPackets,
+            source_level = endpoint.Metrics.PbxReceivedAudio, playback_level = endpoint.Metrics.ModemPlaybackAudio, playback_fill = endpoint.Metrics.ModemPlaybackSilenceFillSamples,
             physical_dtmf_simulated = true, private_credentials_exported = false, audio_recorded = false };
     }
 }

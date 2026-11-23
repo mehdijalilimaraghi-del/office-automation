@@ -19,6 +19,18 @@ public static class LocalSipProtocolChecks
     }
     public static string Run()
     {
+        var meter = new AudioLevelMeter();
+        if (meter.RmsDbfs.HasValue || meter.Samples != 0) throw new Exception("Empty audio must not report a level");
+        for(int i=0;i<8000;i++) meter.Observe(255);
+        if (meter.RmsDbfs.HasValue || meter.Peak != 0 || meter.ActiveSamples != 0) throw new Exception("Silence meter is incorrect");
+        meter = new AudioLevelMeter();
+        byte known = OfficeAutomation.Telephony.Diagnostics.VoiceCodec.EncodeMuLaw(4096);
+        int decoded = OfficeAutomation.Telephony.Diagnostics.VoiceCodec.DecodeMuLaw(known);
+        for(int i=0;i<8000;i++) meter.Observe(known);
+        double expected = 20*Math.Log10(Math.Abs(decoded)/32768.0);
+        if(meter.Samples!=8000 || meter.ActiveSamples!=8000 || meter.Peak!=Math.Abs(decoded) || Math.Abs(meter.RmsDbfs.Value-expected)>0.00001 || Math.Abs(meter.ActiveRmsDbfs.Value-expected)>0.00001) throw new Exception("Known PCMU level is incorrect");
+        for(int i=0;i<8000;i++) meter.Observe(255);
+        if(Math.Abs(meter.RmsDbfs.Value-(expected-10*Math.Log10(2)))>0.00001 || Math.Abs(meter.ActiveRmsDbfs.Value-expected)>0.00001) throw new Exception("Silence fill must change total RMS but preserve active RMS");
         foreach(bool badContact in new[]{false,true})
         {
             using(var server=new UdpClient(new IPEndPoint(IPAddress.Loopback,0)))

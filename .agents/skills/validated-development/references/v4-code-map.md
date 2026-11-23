@@ -81,3 +81,7 @@ Owner confirms real incoming two-way voice to 1002; physical greeting/keys/hangu
 ## Controlled transmit level
 
 VoiceTransmitLevel in VoiceDiagnostics.cs plus optional VoiceSession constructor argument: supported/current VGT, post-codec readback, safe restoration and report fields. Start-ModemBridge-NominalVolume.cmd opts into 128; regular mode untouched. VoiceBridgeLifecycle.Tests.cs / DiagnosticFakePort cover actual LSI evidence and failure/cancel/nonmutation/readback cases. Physical loudness acceptance remains pending.
+
+## External playback metering
+
+AudioLevelMeter / SipBridgeMetrics in LocalSipAudioEndpoint.cs provide numeric-only PBX input and unchanged modem-playback levels/fill counters. LocalSipAudioEndpoint.Tests.cs covers known PCMU/silence levels; ModemBridge.Tests.cs compares with decoded serial bytes on the native PBX/fake modem. Owner rejected VGT 128 as quieter; use regular launcher pending hardware evidence, no further guessed gain.

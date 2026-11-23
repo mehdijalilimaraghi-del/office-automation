@@ -1,3 +1,11 @@
+## Nonrecording external-playback level diagnostics — 2026-11-23
+
+Next hardware action: launch regular Start-ModemBridge.cmd from the updated shared IVR folder and make one external call with the same greeting; use key 2 and end from the extension. Read numeric levels before selecting the next fix. Do not rerun the rejected NominalVolume launcher or repeatedly boost the file. Permanent calibration awaits measured source/playback versus analog-path evidence; no call recording is needed.
+
+## Rejected nominal transmit-level trial — 2026-11-23
+
+Owner reports the VGT=128 trial made playback worse; do not promote this setting or suggest a higher value without new evidence. Actual report modem-bridge-result-20261123-093202-d5d2b1.json confirms 128 applied and read back, owner cancellation, VGT=0 restored and read back, CleanupConfirmed=true. The live modem is back at its original setting. Use regular Start-ModemBridge.cmd; the nominal-volume launcher remains an explicitly rejected experimental setting for this device. Owner clarified that the audio became quieter, not distorted. External-line low greeting volume remains unresolved; direct SIP 9197 was clear. Next evidence should distinguish RTP-to-modem level, buffering and analog path, without recording conversations or guessing modem gain.
+
 ## Controlled modem transmit-volume trial — 2026-11-23
 
 Next physical step: close the old bridge, launch Start-ModemBridge-NominalVolume.cmd from the updated shared IVR folder, call the external line after Ready and compare the same greeting/voice, then hang up from the extension. Inspect automatic report for VGT original/applied/restored and cleanup before considering persistent calibration. Trial 128 is not an accepted permanent fix. Retain the network/mixer/greeting requirements documented below.
