@@ -90,7 +90,7 @@ public static class NativeSipSmoke {
  public static bool ReceiveGateway(int sipPort,string user,string password,int inviteTimeout){
   using(var b=new Phone(user,password,sipPort)){
    b.Register();var incoming=b.Wait(m=>m.First.StartsWith("INVITE "),inviteTimeout);string tag=Guid.NewGuid().ToString("N");b.Reply(incoming,180,"Ringing",tag,"");b.Reply(incoming,200,"OK",tag,b.Sdp());
-   var ack=b.Wait(m=>m.First.StartsWith("ACK "));var target=MediaTarget(incoming.Body.Length>0?incoming.Body:ack.Body);int received=0;for(int n=0;n<75;n++){SendRtp(b,target,n,220);Thread.Sleep(20);received+=Drain(b);}
+   var ack=b.Wait(m=>m.First.StartsWith("ACK "));var target=MediaTarget(incoming.Body.Length>0?incoming.Body:ack.Body);int received=0,frame=0;var voiceClock=Stopwatch.StartNew();while(frame<75){if(voiceClock.ElapsedMilliseconds>=frame*20){SendRtp(b,target,frame++,220);received+=Drain(b);}else Thread.Sleep(1);}received+=Drain(b);
    string from=incoming.Header("To");if(!from.Contains(";tag="))from+=";tag="+tag;
    b.Send(b.Request("BYE",ContactUri(incoming),incoming.Header("Call-ID"),1,from,incoming.Header("From"),"","",Branch()));
    return received>=10 && b.Wait(m=>m.Code>=200 && m.Header("Call-ID")==incoming.Header("Call-ID")).Code==200;

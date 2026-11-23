@@ -13,9 +13,9 @@ try {
  if(-not $CompareGreetingModes){
  if(-not $stateProfile.modem_gateway){& (Join-Path $PSScriptRoot 'Prepare-ModemBridge.ps1') -LabRoot $LabRoot;$stateProfile=Read-PbxLabState $LabRoot}
  $useLocalGreeting=$stateProfile.modem_gateway.destination -eq '9197' -and $stateProfile.ivr -and $stateProfile.ivr.enabled -and -not $Pcm16Modem -and -not $NominalTransmitVolume
- if($useLocalGreeting -and $stateProfile.modem_gateway.greeting_protocol -ne 'vtx_initial_v2'){
+ if($stateProfile.modem_gateway.greeting_protocol -ne 'vtx_initial_v3'){
   if(Get-Process -Name FreeSwitchConsole -ErrorAction SilentlyContinue){throw 'Close the bridge and run Stop-PbxLab.cmd once; then run Start-ModemBridge.cmd. Accounts and greeting are preserved.'}
-  Set-PbxModemGateway $LabRoot '9197';$stateProfile=Read-PbxLabState $LabRoot
+  Set-PbxModemGateway $LabRoot $stateProfile.modem_gateway.destination;$stateProfile=Read-PbxLabState $LabRoot
  }
  if(-not (Get-Process -Name FreeSwitchConsole -ErrorAction SilentlyContinue)){
   & (Join-Path ([IO.Path]::GetDirectoryName($module)) 'Start-PbxLab.ps1') -LabRoot $LabRoot -EngineDirectory $EngineDirectory -NoBrowser -HideConsole

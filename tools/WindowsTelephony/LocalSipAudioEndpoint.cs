@@ -29,9 +29,104 @@ namespace OfficeAutomation.Telephony.Bridge
         }
     }
 
+    public sealed class PlayoutWindow {
+        public int Milliseconds;
+        public long Packets,SourceSamples,WaitingSamples,ConcealedSamples,LatePackets,ReorderedPackets,DuplicatePackets;
+        public int BufferedSamples,SourcePeak,PlaybackPeak;
+        public double? SourceActiveRmsDbfs,PlaybackActiveRmsDbfs;
+    }
+    public sealed class PlayoutMetrics {
+        public long AcceptedPackets,DuplicatePackets,LatePackets,ReorderedPackets,SourceChanges,TimestampResets,RebufferEvents,MediaResets;
+        public long WaitingSamples,ConcealedSamples,ConcealmentSilentSamples,RenderedSourceSamples;
+        public int BufferedSamples,MaxBufferedSamples;
+        public readonly List<PlayoutWindow> Windows=new List<PlayoutWindow>();
+    }
+    // 8kHz PCMU clock: 60ms target, at most 120ms priming and 60ms faded concealment per gap.
+    public sealed class RtpPlayoutBuffer {
+        const int Capacity=8192,MaxAhead=4800,Target=480;
+        readonly byte[] data=new byte[Capacity],previous=new byte[160];
+        readonly long[] tags=new long[Capacity];
+        readonly HashSet<long> sequences=new HashSet<long>();
+        readonly Queue<long> sequenceOrder=new Queue<long>();
+        readonly PlayoutMetrics metrics;
+        AudioLevelMeter sourceWindow=new AudioLevelMeter(),playbackWindow=new AudioLevelMeter();
+        bool clock,playing;uint source,oldSource;bool hasOldSource;
+        long head,latestTimestamp,lastSequence,latestEnd;
+        int waitFrames,missing,renderFrames;
+        long lastPackets,lastSource,lastWaiting,lastConcealed,lastLate,lastReordered,lastDuplicate;
+        public PlayoutMetrics Metrics {get{return metrics;}}
+        public RtpPlayoutBuffer(PlayoutMetrics metrics){this.metrics=metrics;Clear();}
+        void Clear(){
+            for(int i=0;i<tags.Length;i++)tags[i]=long.MinValue;
+            for(int i=0;i<previous.Length;i++)previous[i]=255;
+            sequences.Clear();sequenceOrder.Clear();clock=false;playing=false;waitFrames=0;missing=0;metrics.BufferedSamples=0;
+        }
+        public void Reset(){Clear();hasOldSource=false;}
+        void Start(uint timestamp,ushort sequence,uint ssrc){clock=true;source=ssrc;head=latestTimestamp=timestamp;latestEnd=head;lastSequence=sequence;}
+        public bool Add(ushort sequence,uint timestamp,uint ssrc,byte[] payload) {
+            if(payload==null||payload.Length<1||payload.Length>480)throw new ArgumentException("Invalid PCMU packet size");
+            if(!clock){if(hasOldSource&&ssrc==oldSource){metrics.LatePackets++;return false;}Start(timestamp,sequence,ssrc);}
+            else if(ssrc!=source){
+                if(hasOldSource&&ssrc==oldSource){metrics.LatePackets++;return false;}
+                oldSource=source;hasOldSource=true;metrics.SourceChanges++;Clear();Start(timestamp,sequence,ssrc);
+            }
+            long seq=lastSequence+unchecked((short)(sequence-(ushort)lastSequence));
+            if(sequences.Contains(seq)){metrics.DuplicatePackets++;return false;}
+            long time=latestTimestamp+unchecked((int)(timestamp-(uint)latestTimestamp));
+            if(!playing&&time<head&&latestEnd-time<=MaxAhead)head=time;
+            if(time+payload.Length<=head){metrics.LatePackets++;return false;}
+            if(time+payload.Length-head>MaxAhead){metrics.TimestampResets++;Clear();Start(timestamp,sequence,ssrc);time=timestamp;seq=sequence;}
+            if(seq<lastSequence)metrics.ReorderedPackets++;
+            lastSequence=Math.Max(lastSequence,seq);latestTimestamp=Math.Max(latestTimestamp,time);
+            sequences.Add(seq);sequenceOrder.Enqueue(seq);if(sequenceOrder.Count>128)sequences.Remove(sequenceOrder.Dequeue());
+            for(int i=0;i<payload.Length;i++){
+                long position=time+i;if(position<head||position>=head+MaxAhead)continue;
+                int index=(int)(position&(Capacity-1));
+                if(tags[index]!=position){tags[index]=position;data[index]=payload[i];metrics.BufferedSamples++;}
+            }
+            latestEnd=Math.Max(latestEnd,time+payload.Length);metrics.AcceptedPackets++;foreach(byte sample in payload)sourceWindow.Observe(sample);
+            metrics.MaxBufferedSamples=Math.Max(metrics.MaxBufferedSamples,metrics.BufferedSamples);return true;
+        }
+        public byte[] Read() {
+            var result=new byte[160];
+            if(!clock||(!playing&&(++waitFrames<3||latestEnd-head<Target)&&waitFrames<6)){
+                for(int i=0;i<160;i++)result[i]=255;metrics.WaitingSamples+=160;Window(result);return result;
+            }
+            playing=true;
+            for(int i=0;i<160;i++){
+                int index=(int)(head&(Capacity-1));
+                if(tags[index]==head){result[i]=data[index];tags[index]=long.MinValue;metrics.BufferedSamples--;metrics.RenderedSourceSamples++;missing=0;}
+                else{
+                    missing++;metrics.ConcealedSamples++;
+                    double gain=Math.Max(0,1-missing/480.0);
+                    result[i]=VoiceCodec.EncodeMuLaw((short)(VoiceCodec.DecodeMuLaw(previous[i])*gain));
+                    if(VoiceCodec.DecodeMuLaw(result[i])==0)metrics.ConcealmentSilentSamples++;
+                }
+                head++;
+            }
+            Array.Copy(result,previous,160);
+            if(missing>=480){metrics.RebufferEvents++;Clear();}
+            Window(result);return result;
+        }
+        void Window(byte[] audio){
+            foreach(byte sample in audio)playbackWindow.Observe(sample);
+            renderFrames++;if(renderFrames%50!=0||metrics.Windows.Count>=120)return;
+            metrics.Windows.Add(new PlayoutWindow{Milliseconds=renderFrames*20,Packets=metrics.AcceptedPackets-lastPackets,
+                SourceSamples=metrics.RenderedSourceSamples-lastSource,WaitingSamples=metrics.WaitingSamples-lastWaiting,
+                ConcealedSamples=metrics.ConcealedSamples-lastConcealed,LatePackets=metrics.LatePackets-lastLate,
+                ReorderedPackets=metrics.ReorderedPackets-lastReordered,DuplicatePackets=metrics.DuplicatePackets-lastDuplicate,
+                BufferedSamples=metrics.BufferedSamples,SourcePeak=sourceWindow.Peak,PlaybackPeak=playbackWindow.Peak,
+                SourceActiveRmsDbfs=sourceWindow.ActiveRmsDbfs,PlaybackActiveRmsDbfs=playbackWindow.ActiveRmsDbfs});
+            sourceWindow=new AudioLevelMeter();playbackWindow=new AudioLevelMeter();
+            lastPackets=metrics.AcceptedPackets;lastSource=metrics.RenderedSourceSamples;lastWaiting=metrics.WaitingSamples;
+            lastConcealed=metrics.ConcealedSamples;lastLate=metrics.LatePackets;lastReordered=metrics.ReorderedPackets;lastDuplicate=metrics.DuplicatePackets;
+        }
+    }
+
     public sealed class SipBridgeMetrics
     {
         public int SentPackets, ReceivedPackets, SilenceSamples, ReceiveQueueDrops, RejectedPackets;
+        public readonly PlayoutMetrics Playout=new PlayoutMetrics();
         public bool Authenticated, Answered, RemoteHangup, LocalHangupAcknowledged;
         public long ModemPlaybackSilenceFillSamples;
         public readonly AudioLevelMeter PbxReceivedAudio = new AudioLevelMeter();
@@ -47,11 +142,12 @@ namespace OfficeAutomation.Telephony.Bridge
         private readonly bool deferGreeting;
         public string GreetingChannel { get; private set; }
         public string DialogCallId { get { return callId; } }
-        private readonly Queue<byte> outgoing = new Queue<byte>(), incoming = new Queue<byte>();
+        private readonly Queue<byte> outgoing = new Queue<byte>();
+        private readonly RtpPlayoutBuffer playout;
         private readonly string callId = Guid.NewGuid().ToString("N"), tag = Guid.NewGuid().ToString("N");
         private readonly uint ssrc;
         private IPEndPoint remoteMedia;
-        private string remoteTo, remoteContact, inviteBranch;
+        private string remoteTo, remoteContact, inviteBranch, remoteInviteSequence;
         private int inviteSequence = 1, localSequence = 2, sequence;
         private uint timestamp;
         private bool opened, disposed, invitePending;
@@ -71,7 +167,7 @@ namespace OfficeAutomation.Telephony.Bridge
                 || !Regex.IsMatch(password, @"\A[a-f0-9]{48}\z") || !Regex.IsMatch(destination, @"\A[1-9][0-9]{2,5}\z"))
                 throw new ArgumentException("Invalid local gateway settings");
             if(deferGreeting && (username != "office_modem" || destination != "9197"))throw new ArgumentException("Local greeting requires the configured modem IVR");
-            this.deferGreeting=deferGreeting;
+            this.deferGreeting=deferGreeting;playout=new RtpPlayoutBuffer(metrics.Playout);
             this.host = host; this.username = username; this.password = password; this.destination = destination;
             server = new IPEndPoint(address, port);
             signal = new UdpClient(new IPEndPoint(address, 0));
@@ -187,8 +283,9 @@ namespace OfficeAutomation.Telephony.Bridge
             if (!connection.Success || connection.Groups[1].Value != host || !audio.Success
                 || !int.TryParse(audio.Groups[1].Value, out port) || port < 17000 || port > 17199
                 || !audio.Groups[2].Value.Split(' ').Contains("0")) throw new InvalidOperationException("PBX media must be local G711 PCMU in the lab range");
-            remoteMedia = new IPEndPoint(server.Address, port);
-            incoming.Clear();
+            var nextMedia=new IPEndPoint(server.Address,port);
+            if(remoteMedia!=null)metrics.Playout.MediaResets++;playout.Reset();
+            remoteMedia=nextMedia;
         }
         public void Open(CancellationToken cancellation)
         {
@@ -230,7 +327,7 @@ namespace OfficeAutomation.Telephony.Bridge
                 if (message.First.StartsWith("OPTIONS ")) { Reply(message, 200, "OK", ""); continue; }
                 if (message.Header("Call-ID") != callId) { if (message.First.StartsWith("INVITE ")) Reply(message, 486, "Busy Here", ""); continue; }
                 if (message.First.StartsWith("BYE ")) { Reply(message, 200, "OK", ""); metrics.RemoteHangup = true; Ended = true; }
-                else if (message.First.StartsWith("INVITE ")) { if (message.Body.Length > 0) SetMedia(message.Body); Reply(message, 200, "OK", Sdp()); }
+                else if (message.First.StartsWith("INVITE ")) { string cseq=message.Header("CSeq");if(cseq!=remoteInviteSequence){if(message.Body.Length>0)SetMedia(message.Body);remoteInviteSequence=cseq;} Reply(message, 200, "OK", Sdp()); }
                 else if (message.Code == 200 && message.Header("CSeq") == "2 INVITE" && lastInviteOk != null) Send(lastInviteOk);
                 else if (message.First.StartsWith("CANCEL ")) Reply(message, 481, "Call Does Not Exist", "");
             }
@@ -243,8 +340,11 @@ namespace OfficeAutomation.Telephony.Bridge
                 if ((packet[0] & 16) != 0) { if (header + 4 > end) { metrics.RejectedPackets++; continue; } header += 4 + ((packet[header+2] << 8) | packet[header+3]) * 4; }
                 if ((packet[0] & 32) != 0) { int padding = packet[end-1]; if (padding < 1) { metrics.RejectedPackets++; continue; } end -= padding; }
                 if (header >= end || end-header > 480) { metrics.RejectedPackets++; continue; }
-                if (incoming.Count + end-header > 4800) { metrics.ReceiveQueueDrops++; continue; }
-                for (int i = header; i < end; i++) { incoming.Enqueue(packet[i]); metrics.PbxReceivedAudio.Observe(packet[i]); }
+                var payload=new byte[end-header];Array.Copy(packet,header,payload,0,payload.Length);
+                ushort remoteSequence=(ushort)((packet[2]<<8)|packet[3]);
+                uint remoteTimestamp=((uint)packet[4]<<24)|((uint)packet[5]<<16)|((uint)packet[6]<<8)|packet[7];
+                uint remoteSource=((uint)packet[8]<<24)|((uint)packet[9]<<16)|((uint)packet[10]<<8)|packet[11];
+                if(playout.Add(remoteSequence,remoteTimestamp,remoteSource,payload))foreach(byte sample in payload)metrics.PbxReceivedAudio.Observe(sample);
                 metrics.ReceivedPackets++;
             }
         }
@@ -254,13 +354,10 @@ namespace OfficeAutomation.Telephony.Bridge
         {
             if (!opened || disposed || count != 160) throw new InvalidOperationException("Invalid SIP audio state");
             Pump();
-            var result = new byte[count];
-            for (int i = 0; i < count; i++)
-            {
-                if (incoming.Count > 0) result[i] = incoming.Dequeue();
-                else { result[i] = 255; if(render)metrics.ModemPlaybackSilenceFillSamples++; }
-                if(render)metrics.ModemPlaybackAudio.Observe(result[i]);
-            }
+            long waiting=metrics.Playout.WaitingSamples,silent=metrics.Playout.ConcealmentSilentSamples;
+            byte[] result;
+            if(render){result=playout.Read();metrics.ModemPlaybackSilenceFillSamples+=metrics.Playout.WaitingSamples-waiting+metrics.Playout.ConcealmentSilentSamples-silent;foreach(byte sample in result)metrics.ModemPlaybackAudio.Observe(sample);}
+            else{playout.Reset();result=new byte[count];}
             if (Ended) return result;
             var packet = new byte[172]; packet[0] = 128; packet[1] = 0;
             packet[2] = (byte)(sequence >> 8); packet[3] = (byte)sequence; sequence++;

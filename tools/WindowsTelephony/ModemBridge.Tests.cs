@@ -114,15 +114,17 @@ public static class ModemBridgeIntegration
             if(bargeIn&&(!greeting.BargeInRequested||greeting.GreetingSamples>=expected.Length||greeting.RelayedDigitCount!=1||!greeting.HardwareKeypadMode))throw new Exception("Barge-in was lost, duplicated or failed to interrupt");
             Console.WriteLine("PASS: VTX greeting exact serial bytes, authenticated parked dialog, VTR handoff, no initial PBX replay, DTMF routing and two-way call.");
         }
+        if(endpoint.Metrics.Playout.TimestampResets!=0)throw new Exception("PBX output timestamps are discontinuous");
         var measured = modem.PlayedLevels;
         if(measured.Samples != endpoint.Metrics.ModemPlaybackAudio.Samples || measured.Peak != endpoint.Metrics.ModemPlaybackAudio.Peak
             || !measured.RmsDbfs.HasValue || Math.Abs(measured.RmsDbfs.Value-endpoint.Metrics.ModemPlaybackAudio.RmsDbfs.Value)>0.000001
             || !endpoint.Metrics.PbxReceivedAudio.ActiveRmsDbfs.HasValue)
-            throw new Exception("Playback telemetry does not match actual decoded serial audio");
+            throw new Exception("Playback telemetry mismatch: serial="+measured.Samples+"/"+measured.Peak+"/"+measured.RmsDbfs+" meter="+endpoint.Metrics.ModemPlaybackAudio.Samples+"/"+endpoint.Metrics.ModemPlaybackAudio.Peak+"/"+endpoint.Metrics.ModemPlaybackAudio.RmsDbfs+" sourceActive="+endpoint.Metrics.PbxReceivedAudio.ActiveSamples+" late="+endpoint.Metrics.Playout.LatePackets+" duplicate="+endpoint.Metrics.Playout.DuplicatePackets+" changes="+endpoint.Metrics.Playout.SourceChanges+" media="+endpoint.Metrics.Playout.MediaResets+" reset="+endpoint.Metrics.Playout.TimestampResets);
         return new { passed = true, serial_port_opened = false, result.ModemSampleFormat, result.ModemCodec, result.ModemTransmitBytes, result.BridgeStarted, result.CleanupConfirmed, result.EndReason,
             result.RawReceivedSamples, result.ReceivedSamples, result.RemovedRepeatedSamples, result.ReceiveFraming,
             sent_rtp = endpoint.Metrics.SentPackets, received_rtp = endpoint.Metrics.ReceivedPackets,
             local_greeting=localGreeting, barge_in=bargeIn, relayed_keys=greeting==null?0:greeting.RelayedDigitCount, greeting_samples=modem.GreetingPlayed.Length,
+            playout = new {endpoint.Metrics.Playout.AcceptedPackets,endpoint.Metrics.Playout.LatePackets,endpoint.Metrics.Playout.DuplicatePackets,endpoint.Metrics.Playout.SourceChanges,endpoint.Metrics.Playout.MediaResets,endpoint.Metrics.Playout.TimestampResets,endpoint.Metrics.Playout.ConcealedSamples,endpoint.Metrics.Playout.RebufferEvents},
             source_level = endpoint.Metrics.PbxReceivedAudio, playback_level = endpoint.Metrics.ModemPlaybackAudio, playback_fill = endpoint.Metrics.ModemPlaybackSilenceFillSamples,
             physical_dtmf_simulated = true, private_credentials_exported = false, audio_recorded = false };
     }

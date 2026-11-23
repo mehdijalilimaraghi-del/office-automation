@@ -385,7 +385,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
     }
     public sealed class VoiceResult
     {
-        public string DiagnosticVersion = "2026.11.23.7";
+        public string DiagnosticVersion = "2026.11.23.8";
         public bool TransmitOnlyStarted, SwitchedToDuplex;
         public int ModeTransitionMilliseconds;
         public string EffectiveFlowControl = "";

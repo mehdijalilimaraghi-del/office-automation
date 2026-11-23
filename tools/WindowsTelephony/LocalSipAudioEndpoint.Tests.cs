@@ -17,6 +17,37 @@ public static class LocalSipProtocolChecks
             "\r\nCall-ID: "+Header(request,"Call-ID")+"\r\nCSeq: "+Header(request,"CSeq")+"\r\n"+extra+(body.Length>0?"Content-Type: application/sdp\r\n":"")+"Content-Length: "+Encoding.UTF8.GetByteCount(body)+"\r\n\r\n"+body;
         byte[] bytes=Encoding.UTF8.GetBytes(text);server.Send(bytes,bytes.Length,peer);
     }
+    private static void CheckMediaEpochs()
+    {
+        using(var server=new UdpClient(new IPEndPoint(IPAddress.Loopback,0)))
+        {
+            server.Client.ReceiveTimeout=200;int port=((IPEndPoint)server.Client.LocalEndPoint).Port,replies=0;
+            string sdp="v=0\r\no=test 1 1 IN IP4 127.0.0.1\r\ns=test\r\nc=IN IP4 127.0.0.1\r\nt=0 0\r\nm=audio 17000 RTP/AVP 0\r\na=rtpmap:0 PCMU/8000\r\n";
+            var worker=Task.Factory.StartNew(()=>{
+                var clock=Stopwatch.StartNew();
+                while(clock.ElapsedMilliseconds<5000){
+                    IPEndPoint peer=null;string request;
+                    try{request=Encoding.UTF8.GetString(server.Receive(ref peer));}catch(SocketException error){if(error.SocketErrorCode==SocketError.TimedOut)continue;throw;}
+                    if(request.StartsWith("INVITE ")&&Header(request,"CSeq")=="1 INVITE")Reply(server,peer,request,401,"WWW-Authenticate: Digest realm=\"127.0.0.1\", nonce=\"epoch\", algorithm=MD5, qop=\"auth\"\r\n","");
+                    else if(request.StartsWith("INVITE ")&&Header(request,"CSeq")=="2 INVITE")Reply(server,peer,request,200,"Contact: <sip:test@127.0.0.1:"+port+">\r\n",sdp);
+                    else if(request.StartsWith("ACK ")&&Header(request,"CSeq")=="2 ACK"){
+                        string reinvite="INVITE sip:office_modem@127.0.0.1:"+peer.Port+" SIP/2.0\r\nVia: SIP/2.0/UDP 127.0.0.1:"+port+";branch=z9hG4bK-epoch\r\nFrom: "+Header(request,"To")+"\r\nTo: "+Header(request,"From")+"\r\nCall-ID: "+Header(request,"Call-ID")+"\r\nCSeq: 3 INVITE\r\nContent-Type: application/sdp\r\nContent-Length: "+Encoding.UTF8.GetByteCount(sdp)+"\r\n\r\n"+sdp;
+                        byte[] bytes=Encoding.UTF8.GetBytes(reinvite);server.Send(bytes,bytes.Length,peer);server.Send(bytes,bytes.Length,peer);
+                    }
+                    else if(request.StartsWith("SIP/2.0 200")&&Header(request,"CSeq")=="3 INVITE")Interlocked.Increment(ref replies);
+                    else if(request.StartsWith("BYE ")){Reply(server,peer,request,200,"","");return;}
+                }
+                throw new Exception("Media epoch dialog did not close");
+            });
+            using(var endpoint=new LocalSipAudioEndpoint("127.0.0.1",port,"office_modem",new string('a',48),"1002")){
+                endpoint.Open(CancellationToken.None);var watch=Stopwatch.StartNew();
+                while(Volatile.Read(ref replies)<2&&watch.ElapsedMilliseconds<2000){endpoint.TransmitAudio(160);Thread.Sleep(10);}
+                if(replies!=2||endpoint.Metrics.Playout.MediaResets!=1)throw new Exception("Retransmitted re-INVITE reset media twice or lost response");
+            }
+            if(!worker.Wait(6000))throw new Exception("Media epoch cleanup timed out");
+        }
+    }
+
     public static string Run()
     {
         var meter = new AudioLevelMeter();
@@ -68,6 +99,7 @@ public static class LocalSipProtocolChecks
             using(var endpoint=new LocalSipAudioEndpoint("127.0.0.1",port,"office_modem",new string('a',48),"1002")){try{endpoint.Open(cancel.Token);}catch(OperationCanceledException){rejected=true;}}
             if(!rejected || server.Available!=0)throw new Exception("Cancelled connection emitted SIP traffic");
         }
-        return "PASS: off-host SDP/contact rejected, ACK/BYE cleanup remains local and acknowledged; no physical modem.";
+        CheckMediaEpochs();
+        return "PASS: media re-INVITE reset/retransmission, off-host SDP/contact rejected, ACK/BYE cleanup remains local and acknowledged; no physical modem.";
     }
 }

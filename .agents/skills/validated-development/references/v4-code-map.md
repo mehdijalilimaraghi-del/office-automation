@@ -109,3 +109,7 @@ GreetingPrompt.cs shared bounded source; ModemGreetingBridge.cs wrapper and fixe
 ## Initial-message keypad / barge-in
 
 VoiceDigitDetector in VoiceDiagnostics.cs spans media and stop replies, preserving DLE framing without audio false positives. ModemGreetingBridge owns early queue, greeting interruption, RX warmup and event-vs-inband handoff; GreetingCallControl waits IVR and relays bounded own-channel keys only. PbxLab adds private event-only menu context and profile vtx_initial_v2. Test-ModemGreeting covers mid-message/stop-gap/early-duplex cases and escaping; native Test-ModemBridge -LocalGreeting -BargeIn validates one key routes in the same call. Volume accepted; physical keypad correction pending.
+
+## Duplex downlink transport
+
+LocalSipAudioEndpoint.cs owns RtpPlayoutBuffer/PlayoutMetrics (ordering, bounded jitter/PLC, media epochs, per-second levels). Test-RtpPlayout.ps1 reproduces FIFO gaps with deterministic packets. PbxLab.psm1 scopes timestamp rewriting to modem and receive buffering to its called leg; vtx_initial_v3 triggers safe profile upgrade. NativeSipSmoke.ReceiveGateway uses monotonic media pacing. Greeting/keypad paths remain covered; physical duplex level/continuity pending, not certified from aggregate source RMS.

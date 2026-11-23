@@ -1,6 +1,6 @@
-## Initial-message keypad and barge-in — 2026-11-23
+## Duplex downlink continuity and level diagnosis — 2026-11-23
 
-Callers may enter a menu choice or full configured extension during the initial greeting. Once the modem reports a valid key, stop supplying the rest of the message and preserve ordered keys through audio-mode switching; honor the same configured menu, retry and operator rules. Each physical key must reach the menu once, including repeated digits in extensions. Older/no-early-event paths retain normal inband selection. Source volume and conversation audio remain as accepted by the owner.
+Initial message loudness and keypad/barge-in are accepted separately from extension conversation. Calls need continuous intelligible extension-to-PSTN speech at adequate volume. Buffer small transport jitter and distinguish real missing packets from silence/initial waiting; preserve valid audio amplitude. Diagnostic reports contain bounded counts and levels only, not recorded speech. Current correction addresses transport continuity and PBX clock consistency; analog modem loudness remains an owner acceptance item.
 
 ## Preserve and synchronize modem flow control — 2026-11-23
 

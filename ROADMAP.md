@@ -1,6 +1,6 @@
-## Initial-message keypad and barge-in — 2026-11-23
+## Duplex downlink continuity and level diagnosis — 2026-11-23
 
-Next acceptance: close bridge/VentaFax, Stop-PbxLab.cmd once then normal Start-ModemBridge.cmd. Call and press 2 during the first message: remaining playback should stop and the existing menu choice should connect in that same attempt. Also check an ordinary selection after the message, two-way audio and hangup. The greeting volume has been accepted; keypad/barge-in correction still needs real modem confirmation. Do not require waiting until the message ends as a workaround. Retry greeting volume is a separate existing limitation.
+Next acceptance is extension-to-mobile conversation, not another greeting-only test: close bridge/VentaFax, Stop-PbxLab.cmd once then Start-ModemBridge.cmd; call, press2, speak from extension for15-20seconds and judge continuity and volume separately, then hang up. Inspect new sip.Playout per-second loss/wait/level windows against the report's duplex start time. Do not call all aggregate silence speech loss, claim the entire defect fixed from a software test, raise gain blindly on near-full-scale source audio, or infer TX60/48 framing from RX alone. If continuity is stable but volume remains low with healthy digital speech levels, investigate modem duplex output independently.
 
 ## Preserve and synchronize modem flow control — 2026-11-23
 

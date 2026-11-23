@@ -20,10 +20,13 @@ try {
  $gatewaySecret=$state.modem_gateway.password
  Set-PbxModemGateway $root '9197'
  $state=Read-PbxLabState $root
- if($state.modem_gateway.password -ne $gatewaySecret -or $state.accounts[0].password -ne $original -or $state.modem_gateway.greeting_protocol -ne 'vtx_initial_v2'){throw 'Gateway upgrade changed credentials or lacks greeting support'}
+ if($state.modem_gateway.password -ne $gatewaySecret -or $state.accounts[0].password -ne $original -or $state.modem_gateway.greeting_protocol -ne 'vtx_initial_v3'){throw 'Gateway upgrade changed credentials or lacks greeting support'}
  if($state.accounts[0].password -ne $original -or $state.accounts.Count -ne 3){throw 'Provisioning did not preserve accounts'}
  $xml=[xml][IO.File]::ReadAllText((Join-Path $root 'conf/freeswitch.xml'))
  if(-not $xml.SelectSingleNode('//menu[@name="office_main"]/entry[@digits="1"]')){throw 'IVR route missing'}
+ if(-not $xml.SelectSingleNode('//user[@id="office_modem"]/variables/variable[@name="rtp_rewrite_timestamps" and @value="true"]')){throw 'Modem timestamp rewriting missing'}
+ foreach($route in @('modem_local_greeting','modem_selected_destination')){if(-not $xml.SelectSingleNode('//extension[@name="'+$route+'"]//action[@application="export" and @data="nolocal:jitterbuffer_msec=60:200"]')){throw 'Called-party receive buffer missing'}}
+ if($xml.SelectSingleNode('//user[not(@id="office_modem")]/variables/variable[@name="rtp_rewrite_timestamps"]') -or $xml.SelectSingleNode('//context[@name="office_lab"]//action[@data="nolocal:jitterbuffer_msec=60:200"]')){throw 'Modem timing changes leaked into ordinary internal calls'}
  $normalMenu=$xml.SelectSingleNode('//menu[@name="office_main"]')
  $modemMenu=$xml.SelectSingleNode('//menu[@name="office_modem_after_greeting"]')
  if($modemMenu.GetAttribute('greet-long') -ne 'silence_stream://100' -or $modemMenu.GetAttribute('greet-short') -ne $normalMenu.GetAttribute('greet-short') -or $modemMenu.InnerXml -ne $normalMenu.InnerXml){throw 'Initial greeting duplicated or menu choices/retry prompt changed'}
@@ -41,6 +44,10 @@ try {
    if($LocalGreeting){[ModemBridgeIntegration]::Run($state.sip_port,$state.modem_gateway.password,$state.accounts[1].password,$false,$state.esl_port,$state.esl_secret,$state.ivr.prompt_path,[bool]$BargeIn)|ConvertTo-Json -Depth 6}else{[ModemBridgeIntegration]::Run($state.sip_port,$state.modem_gateway.password,$state.accounts[1].password,[bool]$Pcm16)|ConvertTo-Json -Depth 6}
   }catch{Write-Host $_.Exception.Message;throw}finally{& (Join-Path $PSScriptRoot '../Stop-PbxLab.ps1') -LabRoot $root;$owned=Get-Content (Join-Path $root 'lab-session.json') -Raw|ConvertFrom-Json;if(Get-Process -Id $owned.process_id -ErrorAction SilentlyContinue){throw 'Owned native process has not stopped; profile retained'}}
  }
+ Set-PbxModemGateway $root '1002'
+ $direct=[xml][IO.File]::ReadAllText((Join-Path $root 'conf/freeswitch.xml'))
+ if(-not $direct.SelectSingleNode('//user[@id="office_modem"]//variable[@name="rtp_rewrite_timestamps" and @value="true"]') -or -not $direct.SelectSingleNode('//extension[@name="modem_selected_destination"]//action[@application="export" and @data="nolocal:jitterbuffer_msec=60:200"]') -or $direct.SelectSingleNode('//extension[@name="modem_local_greeting"]')){throw 'Direct-extension gateway timing scope is incorrect'}
+ if((Read-PbxLabState $root).modem_gateway.password -ne $gatewaySecret){throw 'Direct gateway update changed credentials'}
  $succeeded=$true
  Write-Host 'PASS: simulated modem to real native PBX, inband DTMF/IVR routing, two-way RTP and phone hangup'
 }finally{
