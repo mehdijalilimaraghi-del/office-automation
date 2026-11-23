@@ -1,3 +1,7 @@
+## PCM timing failure and native driver evidence — 2026-11-23
+
+VoiceSession now freezes elapsed stream time before cleanup even on errors, retains final subsecond timing/sample evidence and reports maximum serial availability/read/write, decode/encode, endpoint and cumulative lag durations. The existing >250 ms transmit guard is retained; timing aborts have audio_timing_failure reason. DriverVoiceEvidence resolves installed PNP modem-class keys, exports only whitelisted technical VoiceProfile/WaveDriver/format/voice command data, and marks missing/no-device information explicitly. It never opens a modem or writes registry values. No waveform/volume, PBX route or default codec change.
+
 ## Optional PCM16 modem path for quiet greeting — 2026-11-23
 
 VoiceSession retains existing constructors and adds an optional PCM16 modem-format argument. SIP stays PCMU/8 kHz. VoiceCodec converts outgoing PCMU to signed little-endian PCM16 at the serial boundary; VoiceDecoder removes DLE escaping/events before assembling incoming PCM sample pairs, then feeds canonical PCMU to existing evidence-based receive framing. Incomplete terminal PCM samples fail validation. Format is discovered from advertised metadata and read back after VSM setup; default G.711 is unchanged. SerialVoicePort accepts explicit 115200/230400 baud, PCM requesting 230400 to accommodate 16 kB/s plus escaping. Unsupported drivers fail without answering; codec/flow/class cleanup remains acknowledged. No gain/network/service change.

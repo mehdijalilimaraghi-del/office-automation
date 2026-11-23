@@ -15,6 +15,7 @@ public sealed class DiagnosticFakePort : IVoicePort
     public string CurrentFormat = "0,8000";
     public string Formats = "4,\"G.711U\",8,0,8000";
     private bool pcm16Mode;
+    public int AudioWriteDelayMilliseconds;
     public string CurrentTransmitLevel = "0", SupportedTransmitLevels = "(0,126-130)";
     public bool RejectTransmitLevel, RejectTransmitRestore, IgnoreTransmitLevel;
     public readonly List<string> Commands = new List<string>();
@@ -32,6 +33,7 @@ public sealed class DiagnosticFakePort : IVoicePort
     {
         if(duplex && n==2 && b[o]==16 && b[o+1]==94) { duplex=false; if(ResidualAudioOnStop)Enqueue("residual-private-audio");Enqueue("\r\nOK\r\n");return; }
         if(duplex) {
+            if(AudioWriteDelayMilliseconds>0)Thread.Sleep(AudioWriteDelayMilliseconds);
             byte[] audio=new byte[160];for(int i=0;i<audio.Length;i++)audio[i]=VoiceCodec.EncodeMuLaw((short)(3000*Math.Sin(2*Math.PI*440*i/8000)));
             foreach(byte sample in VoiceCodec.Escape(pcm16Mode ? VoiceCodec.Pcm16FromMuLaw(audio) : audio))input.Enqueue(sample);return;
         }

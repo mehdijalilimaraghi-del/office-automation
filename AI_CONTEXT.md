@@ -1,3 +1,7 @@
+## PCM timing failure and native driver evidence — 2026-11-23
+
+Owner PCM pilot failed, not quiet-playback acceptance: report 20261123-110956-2c74c2 has audio_transmit_timing_failed after 26 frames/4160 silence samples, zero received PBX packets, and successful cleanup. Do not ask to repeat PCM or claim hardware inability; no greeting audio reached the bridge. PCM bandwidth/effective driver speed is unverified. Corrected zero-duration failure reports and added read/write/conversion/endpoint timing with a blocking-output regression; 250 ms guard unchanged. Next evidence is read-only installed driver VoiceProfile/WaveDriver/voice commands via DriverVoiceEvidence; opaque VentaFax INI is insufficient. Original G.711 greeting attenuation remains unresolved.
+
 ## Optional PCM16 modem path for quiet greeting — 2026-11-23
 
 Owner clarifies only the initial greeting is quiet; connected-call audio is good, and VentaFax has no visible volume control. Its numeric WLevel=51/WavFormat=2 flags are undocumented: do not equate them to AT gain or a confirmed codec. Recordings showed about 19 dB difference in louder windows. Implemented a separate opt-in Start-ModemBridge-Pcm16.cmd using the modem-advertised signed PCM16/8 kHz format; regular G.711 remains the default and VGT is untouched. PCM serial path requests 230400 baud for 16 kB/s payload; actual driver/line acceptance is still pending. Never claim this matches VentaFax or fixes loudness before owner confirmation.

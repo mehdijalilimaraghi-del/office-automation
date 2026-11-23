@@ -1,3 +1,7 @@
+## PCM timing failure and native driver evidence — 2026-11-23
+
+Pause physical PCM and gain trials. Owner's latest PCM no-sound is a separate startup timing abort with confirmed restoration, not proof about greeting loudness. Next collect installed driver VoiceProfile, WaveDriver speed/transform and LineSetPlayFormat/StartPlay sequences without opening modem or changing Windows settings. Compare authoritative driver instructions against our serial path before selecting a correction; configuration evidence alone must not be called a captured VentaFax runtime trace. Initial G.711 greeting volume remains open; connected-call quality is owner-good.
+
 ## Optional PCM16 modem path for quiet greeting — 2026-11-23
 
 Next acceptance is one real incoming call through Start-ModemBridge-Pcm16.cmd, same greeting, key 2, two-way conversation and extension hangup. Do not repeat volume-128 tests or further config-export rounds: owner confirms no VentaFax volume slider and only greeting is quiet. Compare physical PCM output before choosing a permanent format; regular G.711 stays available. Caller-originated disconnect, persistent operation, outgoing calls and fax remain pending.

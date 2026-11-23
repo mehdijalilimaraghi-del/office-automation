@@ -40,6 +40,11 @@ public static class VoicePcm16Checks {
   Check(!session.Result.Answered && session.Result.FailureStage=="verify_modem_sample_format" && session.Result.CleanupConfirmed,"Unconfirmed codec must stop before answer");
   port=new DiagnosticFakePort{Formats=formats.Replace("\r\nOK\r\n", ""),NoRing=true};endpoint=new BridgeLifecycleEndpoint();session=new VoiceSession(port,folder,2000,60000,endpoint,null,true);session.Start();Thread.Sleep(100);session.Cancel();Finish(session);
   Check(session.Result.Cancelled && session.Result.CleanupConfirmed && port.Disposed,"PCM cancellation must restore and release modem");
+  port=new DiagnosticFakePort{Formats=formats.Replace("\r\nOK\r\n", ""),AudioWriteDelayMilliseconds=35};endpoint=new BridgeLifecycleEndpoint{EndAfterBlocks=10000};
+  session=new VoiceSession(port,folder,300,60000,endpoint,null,true);session.Start();Finish(session);
+  Check(session.Result.ErrorCode=="audio_transmit_timing_failed" && session.Result.EndReason=="audio_timing_failure" && session.Result.StreamMilliseconds>250
+    && session.Result.MaxSerialWriteMilliseconds>=30 && session.Result.MaxTransmitLagMilliseconds>250 && session.Result.SampleWindows.Count>0
+    && session.Result.CleanupConfirmed,"Blocked serial output must report real timing on failure and restore modem");
   return "PASS: PCM16 advertisement, all PCMU amplitudes, split samples/DLE/events, incomplete sample rejection, framing, bridge lifecycle/no recording/no gain, unsupported format and cancellation. No real modem.";
  }
 }

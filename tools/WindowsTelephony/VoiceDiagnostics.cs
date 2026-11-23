@@ -352,7 +352,9 @@ namespace OfficeAutomation.Telephony.Diagnostics
     }
     public sealed class VoiceResult
     {
-        public string DiagnosticVersion = "2026.11.23.2";
+        public string DiagnosticVersion = "2026.11.23.3";
+        public int MaxSerialAvailabilityMilliseconds, MaxSerialReadMilliseconds, MaxSerialWriteMilliseconds;
+        public int MaxDecodeMilliseconds, MaxEncodeMilliseconds, MaxEndpointMilliseconds, MaxTransmitLagMilliseconds;
         public string ModemSampleFormat = "g711u_8000";
         public int ModemCodec;
         public int ModemTransmitBytes;
@@ -508,8 +510,10 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 catch (TimeoutException) { }
             }
         }
+        private static int PhaseMilliseconds(long start) { return (int)Math.Ceiling((Stopwatch.GetTimestamp() - start) * 1000.0 / Stopwatch.Frequency); }
         private void Run()
         {
+            Stopwatch streamClock = null;
             VoiceDecoder decoder = new VoiceDecoder(true, pcm16);
             var ringInput = new List<byte>();
             try
@@ -598,15 +602,21 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 stage = "start_duplex";
                 Command("AT+VTR", true, true); duplex = true; result.DuplexStarted = true;
                 progress = "streaming"; stage = "stream_audio";
-                var clock = Stopwatch.StartNew(); int frame = 0, nextWindow = 1000;
+                var clock = streamClock = Stopwatch.StartNew(); int frame = 0, nextWindow = 1000;
                 while (clock.ElapsedMilliseconds < captureDuration && !decoder.Ended && (endpoint == null || !endpoint.Ended))
                 {
                     stop.Token.ThrowIfCancellationRequested();
+                    long phase = Stopwatch.GetTimestamp();
                     int available = port.Available;
+                    result.MaxSerialAvailabilityMilliseconds = Math.Max(result.MaxSerialAvailabilityMilliseconds, PhaseMilliseconds(phase));
                     if (available > 0)
                     {
                         byte[] input = new byte[Math.Min(available, 4096)];
-                        int read = port.Read(input, 0, input.Length); decoder.Feed(input, read);
+                        phase = Stopwatch.GetTimestamp();
+                        int read = port.Read(input, 0, input.Length);
+                        result.MaxSerialReadMilliseconds = Math.Max(result.MaxSerialReadMilliseconds, PhaseMilliseconds(phase));
+                        phase = Stopwatch.GetTimestamp(); decoder.Feed(input, read);
+                        result.MaxDecodeMilliseconds = Math.Max(result.MaxDecodeMilliseconds, PhaseMilliseconds(phase));
                         if (endpoint != null && decoder.Audio.Count > 0) endpoint.ReceiveAudio(decoder.DrainAudio());
                         if (endpoint != null && (decoder.Events.Contains("busy_tone") || decoder.Events.Contains("local_on_hook"))) { result.EndReason = "modem_hangup"; break; }
                     }
@@ -620,11 +630,18 @@ namespace OfficeAutomation.Telephony.Diagnostics
                             short sample = beep ? (short)(3000 * Math.Sin(2 * Math.PI * 660 * position / 8000.0)) : (short)0;
                             audio[i] = VoiceCodec.EncodeMuLaw(sample);
                         }
-                        if (endpoint != null) audio = endpoint.TransmitAudio(160);
+                        if (endpoint != null) { phase = Stopwatch.GetTimestamp(); audio = endpoint.TransmitAudio(160); result.MaxEndpointMilliseconds = Math.Max(result.MaxEndpointMilliseconds, PhaseMilliseconds(phase)); }
                         if (audio == null || audio.Length != 160) throw new InvalidDataException("invalid_bridge_audio_block");
+                        phase = Stopwatch.GetTimestamp();
                         byte[] modemAudio = pcm16 ? VoiceCodec.Pcm16FromMuLaw(audio) : audio;
-                        Raw(VoiceCodec.Escape(modemAudio)); result.ModemTransmitBytes += modemAudio.Length; result.TransmittedSamples += audio.Length; frame++;
-                        if (clock.ElapsedMilliseconds - frame * 20L > 250) throw new IOException("audio_transmit_timing_failed");
+                        byte[] wireAudio = VoiceCodec.Escape(modemAudio);
+                        result.MaxEncodeMilliseconds = Math.Max(result.MaxEncodeMilliseconds, PhaseMilliseconds(phase));
+                        phase = Stopwatch.GetTimestamp(); Raw(wireAudio);
+                        result.MaxSerialWriteMilliseconds = Math.Max(result.MaxSerialWriteMilliseconds, PhaseMilliseconds(phase));
+                        result.ModemTransmitBytes += modemAudio.Length; result.TransmittedSamples += audio.Length; frame++;
+                        int lag = (int)Math.Max(0, clock.ElapsedMilliseconds - frame * 20L);
+                        result.MaxTransmitLagMilliseconds = Math.Max(result.MaxTransmitLagMilliseconds, lag);
+                        if (lag > 250) { result.EndReason = "audio_timing_failure"; throw new IOException("audio_transmit_timing_failed"); }
                     }
                     else Thread.Sleep(2);
                     if (clock.ElapsedMilliseconds >= nextWindow)
@@ -641,6 +658,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
             catch (Exception exception) { result.Status = "failed"; result.ErrorCode = exception.Message; result.FailureStage = stage; result.FailureError = exception.Message; }
             finally
             {
+                if (streamClock != null) { result.StreamMilliseconds = (int)streamClock.ElapsedMilliseconds; streamClock.Stop(); }
                 result.RingInputHex = BitConverter.ToString(ringInput.ToArray());
                 progress = "hanging_up";
                 if (opened)
@@ -678,6 +696,8 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 result.ReceivedSamples = decoder.DecodedSampleCount;
                 result.RawReceivedSamples = decoder.RawSampleCount;
                 result.RemovedRepeatedSamples = decoder.RawSampleCount - decoder.DecodedSampleCount;
+                if (streamClock != null && (result.SampleWindows.Count == 0 || result.SampleWindows[result.SampleWindows.Count - 1].Milliseconds != result.StreamMilliseconds))
+                    result.SampleWindows.Add(new VoiceSampleWindow { Milliseconds = result.StreamMilliseconds, TransmittedSamples = result.TransmittedSamples, ReceivedSamples = result.ReceivedSamples, RawReceivedSamples = result.RawReceivedSamples });
                 result.ReceiveFraming = decoder.ReceiveFraming;
                 if (!decoder.FramingValid)
                 {

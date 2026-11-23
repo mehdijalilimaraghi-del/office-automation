@@ -1,3 +1,7 @@
+## PCM timing failure and native driver evidence — 2026-11-23
+
+The owner must not be led through repeated speculative hardware experiments. Distinguish an interrupted test that never received a greeting from an audible but quiet greeting. Failure messages must explain that the test stopped and report restoration accurately. Prefer read-only installed-driver evidence before another codec/gain change; preserve the accepted conversation path and do not claim the original problem fixed by diagnostic-only changes.
+
 ## Optional PCM16 modem path for quiet greeting — 2026-11-23
 
 Owner scope clarification: improve the initial IVR greeting without degrading already good connected conversations. The separate PCM16 trial explores a format explicitly advertised by the modem, not louder source-file distortion or another guessed gain. It reuses the same greeting, extension accounts and SIP menu; both greeting loudness and subsequent conversation must pass owner acceptance before changing defaults.

@@ -89,3 +89,7 @@ AudioLevelMeter / SipBridgeMetrics in LocalSipAudioEndpoint.cs provide numeric-o
 ## Optional PCM16 modem format
 
 VoiceCodec.FindPcm16/Pcm16FromMuLaw and VoiceDecoder PCM pairing adapt only serial media; SIP stays PCMU. VoiceSession optional format constructor verifies advertisement/readback and restores existing settings. Start-ModemBridge-Pcm16.cmd / -Pcm16Modem opts into 230400-baud PCM; baseline unchanged. VoicePcm16.Tests.cs/Test-Pcm16.ps1 and ModemBridge.Tests.cs native integration cover conversion, framing, cleanup and both formats. Test-ModemBridge.ps1 -Pcm16 uses a fresh profile per format; real line loudness pending.
+
+## Failed PCM pilot / driver evidence
+
+Owner PCM report failed timing before any PBX packets; do not promote/repeat hardware trial. VoiceSession elapsed-on-failure and phase maxima plus blocking-write regression fix diagnostic gaps without changing media/guard. tools/WindowsTelephony/DriverVoiceEvidence contains read-only installed PNP/VoiceProfile/WaveDriver/command evidence collector, mock filtering tests and README; no registry/modem mutation. Hardware driver evidence is next, not another guessed volume.
