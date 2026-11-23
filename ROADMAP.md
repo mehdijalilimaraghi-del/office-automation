@@ -1,3 +1,7 @@
+## Same-call greeting-mode comparison — 2026-11-23
+
+Next physical evidence: one same-call VTX/VTR comparison with unchanged greeting/codec/gain via Compare-ModemGreetingModes.cmd. It intentionally does not transfer to an extension. Owner reports whether first/second differ; inspect source hash, both phase completion and restoration before drawing conclusions. Do not advertise this as a repair, infer VentaFax mode, or change production/default call routing until a reproducible mode-specific result exists.
+
 ## Preserve and synchronize modem flow control — 2026-11-23
 
 First correct and physically validate the normal G.711 transport's flow-control consistency; no further guessed gain or PCM changes. Same-hardware VentaFax playback is a capability reference, not a mandatory implementation dependency. Do not ask for more Vendor INI/registry collection: current evidence has no runtime serial trace. If greeting remains quiet after the transport correction, isolate documented greeting-transmit state versus full-duplex conversation in a reviewed state-machine design; do not claim that mode difference alone proves the cause.

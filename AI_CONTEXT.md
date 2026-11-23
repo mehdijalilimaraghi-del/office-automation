@@ -1,3 +1,7 @@
+## Same-call greeting-mode comparison — 2026-11-23
+
+Owner confirms flow synchronization did not improve volume. Latest report 133203 uses v23.4, IFC2,2/host sync true, max write7ms/lag6ms, same active RMS before/after bridge and successful cleanup. Stop treating transport correction as the loudness cause. Added isolated same-call comparison using the actual configured greeting: first VTX transmit-only, then VTR duplex, same PCMU bytes/gain/flow; no PBX/extension transfer or caller recording. Source SHA256/sample count reported. This is a diagnostic, not a confirmed fix or proof of VentaFax's runtime mode.
+
 ## Preserve and synchronize modem flow control — 2026-11-23
 
 Owner says VentaFax is only proof the same hardware can play well; do not require VentaFax-specific reverse engineering as the sole path. Supplied command.log contains application lifecycle/UI messages, not a modem voice trace (no AT audio commands in decoded candidates). Manufacturer Lucent docs and mgetty source reviewed. Concrete transport inconsistency fixed: preserve modem IFC 2,2 with host RTS/CTS instead of unconditionally forcing 0,0/None; original 0,0 remains supported, unknown or unsynchronizable modes fail before answer. G.711 format, gains and media samples unchanged. This correction is not yet a proven fix for physical greeting loudness; no new PCM/gain recommendation.

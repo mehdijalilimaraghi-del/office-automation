@@ -1,3 +1,4 @@
 modem-bridge-result-*.json
 modem-bridge-error.txt
 greeting-*.wav
+modem-greeting-modes-*.json

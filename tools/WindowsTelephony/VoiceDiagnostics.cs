@@ -19,6 +19,11 @@ namespace OfficeAutomation.Telephony.Diagnostics
         byte[] TransmitAudio(int count);
         bool Ended { get; }
     }
+    public interface IGreetingModeComparison : IVoiceAudioEndpoint
+    {
+        bool NeedsDuplex { get; }
+        void BeginDuplex();
+    }
     public interface IVoicePort : IDisposable
     {
         void Open();
@@ -362,7 +367,9 @@ namespace OfficeAutomation.Telephony.Diagnostics
     }
     public sealed class VoiceResult
     {
-        public string DiagnosticVersion = "2026.11.23.4";
+        public string DiagnosticVersion = "2026.11.23.5";
+        public bool TransmitOnlyStarted, SwitchedToDuplex;
+        public int ModeTransitionMilliseconds;
         public string EffectiveFlowControl = "";
         public bool HostFlowControlSynchronized;
         public int MaxSerialAvailabilityMilliseconds, MaxSerialReadMilliseconds, MaxSerialWriteMilliseconds;
@@ -437,7 +444,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
         private readonly VoiceResult result = new VoiceResult();
         private volatile string progress = "ready";
         private string stage = "open_port";
-        private bool opened, changedMode, duplex, answerAttempted;
+        private bool opened, changedMode, duplex, transmitOnly, answerAttempted;
         private string originalClass = "", originalFormat = "", originalFlow = "";
         public string Progress { get { return progress; } }
         public bool Started { get { return worker != null; } }
@@ -486,7 +493,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
             finally
             {
                 // Drain voice-stop replies without copying residual call audio into the text report.
-                trace.Response = trace.Command == "<DLE>^"
+                trace.Response = trace.Command == "<DLE>^" || trace.Command == "<DLE><ETX>"
                     ? Regex.Match(text.ToString(), @"(?:^|[\r\n])(OK|ERROR|NO CARRIER|BUSY)[ \t]*(?:$|[\r\n])").Value.Trim()
                     : text.ToString();
             }
@@ -623,13 +630,30 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 }
                 stage = "answer_incoming_call";
                 progress = "answering"; answerAttempted = true; Command("AT+VLS=1", false, true); result.Answered = true;
-                stage = "start_duplex";
-                Command("AT+VTR", true, true); duplex = true; result.DuplexStarted = true;
+                var comparison = endpoint as IGreetingModeComparison;
+                if (comparison != null)
+                {
+                    stage = "start_transmit_only";
+                    Command("AT+VTX", true, true); transmitOnly = true; result.TransmitOnlyStarted = true;
+                }
+                else { stage = "start_duplex"; Command("AT+VTR", true, true); duplex = true; result.DuplexStarted = true; }
                 progress = "streaming"; stage = "stream_audio";
-                var clock = streamClock = Stopwatch.StartNew(); int frame = 0, nextWindow = 1000;
+                var clock = streamClock = Stopwatch.StartNew(); int frame = 0, nextWindow = 1000; long controlPause = 0;
                 while (clock.ElapsedMilliseconds < captureDuration && !decoder.Ended && (endpoint == null || !endpoint.Ended))
                 {
                     stop.Token.ThrowIfCancellationRequested();
+                    if (comparison != null && transmitOnly && comparison.NeedsDuplex)
+                    {
+                        progress = "switching_playback_mode"; stage = "switch_to_duplex";
+                        long transition = clock.ElapsedMilliseconds;
+                        Exchange("<DLE><ETX>", new byte[] { 16, 3 }, false, false); transmitOnly = false;
+                        stop.Token.ThrowIfCancellationRequested();
+                        Command("AT+VTR", true, true); duplex = true; result.DuplexStarted = true;
+                        comparison.BeginDuplex(); result.SwitchedToDuplex = true;
+                        result.ModeTransitionMilliseconds = (int)(clock.ElapsedMilliseconds - transition);
+                        controlPause += result.ModeTransitionMilliseconds;
+                        progress = "streaming"; stage = "stream_audio";
+                    }
                     long phase = Stopwatch.GetTimestamp();
                     int available = port.Available;
                     result.MaxSerialAvailabilityMilliseconds = Math.Max(result.MaxSerialAvailabilityMilliseconds, PhaseMilliseconds(phase));
@@ -644,7 +668,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                         if (endpoint != null && decoder.Audio.Count > 0) endpoint.ReceiveAudio(decoder.DrainAudio());
                         if (endpoint != null && (decoder.Events.Contains("busy_tone") || decoder.Events.Contains("local_on_hook"))) { result.EndReason = "modem_hangup"; break; }
                     }
-                    if (clock.ElapsedMilliseconds >= frame * 20L)
+                    if (clock.ElapsedMilliseconds >= frame * 20L + controlPause)
                     {
                         byte[] audio = new byte[160];
                         if (endpoint == null) for (int i = 0; i < audio.Length; i++)
@@ -663,7 +687,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                         phase = Stopwatch.GetTimestamp(); Raw(wireAudio);
                         result.MaxSerialWriteMilliseconds = Math.Max(result.MaxSerialWriteMilliseconds, PhaseMilliseconds(phase));
                         result.ModemTransmitBytes += modemAudio.Length; result.TransmittedSamples += audio.Length; frame++;
-                        int lag = (int)Math.Max(0, clock.ElapsedMilliseconds - frame * 20L);
+                        int lag = (int)Math.Max(0, clock.ElapsedMilliseconds - frame * 20L - controlPause);
                         result.MaxTransmitLagMilliseconds = Math.Max(result.MaxTransmitLagMilliseconds, lag);
                         if (lag > 250) { result.EndReason = "audio_timing_failure"; throw new IOException("audio_transmit_timing_failed"); }
                     }
@@ -675,8 +699,9 @@ namespace OfficeAutomation.Telephony.Diagnostics
                     }
                 }
                 result.StreamMilliseconds = (int)clock.ElapsedMilliseconds;
-                result.Status = endpoint == null ? "captured" : "bridged";
-                if (result.EndReason.Length == 0) result.EndReason = endpoint != null && endpoint.Ended ? "pbx_hangup" : decoder.Ended ? "modem_stream_end" : "duration_limit";
+                result.Status = endpoint is IGreetingModeComparison ? (endpoint.Ended ? "comparison_completed" : "failed") : endpoint == null ? "captured" : "bridged";
+                if (endpoint is IGreetingModeComparison && !endpoint.Ended) { result.ErrorCode="comparison_not_completed"; result.FailureStage=stage; result.FailureError=result.ErrorCode; }
+                if (result.EndReason.Length == 0) result.EndReason = endpoint is IGreetingModeComparison && endpoint.Ended ? "comparison_completed" : endpoint != null && endpoint.Ended ? "pbx_hangup" : decoder.Ended ? "modem_stream_end" : "duration_limit";
             }
             catch (OperationCanceledException) { result.Cancelled = true; result.EndReason = "user_cancelled"; result.Status = "cancelled"; result.ErrorCode = "cancelled_by_user"; result.FailureStage = stage; result.FailureError = result.ErrorCode; }
             catch (Exception exception) { result.Status = "failed"; result.ErrorCode = exception.Message; result.FailureStage = stage; result.FailureError = exception.Message; }
@@ -689,6 +714,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 {
                     try
                     {
+                        if (transmitOnly) Exchange("<DLE><ETX>", new byte[] { 16, 3 }, false, false);
                         if (duplex) Exchange("<DLE>^", new byte[] { 16, 94 }, false, false);
                         if (answerAttempted) Command("ATH", false, false);
 

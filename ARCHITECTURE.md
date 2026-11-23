@@ -1,3 +1,7 @@
+## Same-call greeting-mode comparison — 2026-11-23
+
+IGreetingModeComparison extends the existing audio endpoint contract. GreetingModeComparison reads only bounded canonical 8kHz mono PCM16 prompt data, converts to PCMU and supplies identical padded frames in each phase. VoiceSession starts VTX, stops with DLE-ETX/OK, starts VTR and finally uses DLE-^ for duplex stop. Stop replies are sanitized, transitions/cancellation restore modem state and source/caller audio is never saved. The shared UI skips PBX start/connect for this flag, labels phases and writes a distinct comparison report. Default endpoints retain VTR behavior.
+
 ## Preserve and synchronize modem flow control — 2026-11-23
 
 Added IVoiceFlowControlPort for explicit host/modem synchronization. SerialVoicePort maps acknowledged IFC 2,2 to Handshake.RequestToSend and 0,0 to Handshake.None; RTS is asserted manually only with None. VoiceSession confirms the modem's existing supported flow mode before setting the host, records EffectiveFlowControl/HostFlowControlSynchronized, and refuses unavailable/unsupported adapters before answering. Existing codec, audio bytes, gain and cleanup policies are retained. Manufacturer VTX greeting versus VTR duplex distinction is research evidence, not yet a changed state machine.

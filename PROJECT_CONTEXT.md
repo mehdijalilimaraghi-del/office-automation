@@ -1,3 +1,7 @@
+## Same-call greeting-mode comparison — 2026-11-23
+
+Distinguish diagnostic comparison from a product fix. One incoming comparison call repeats the same current greeting in two documented modem states; no volume increase, new source selection or separate-call handset gain comparison is required. UI must clearly state that this special mode does not connect an extension. Existing normal call mode is retained; the owner judges real loudness and quality.
+
 ## Preserve and synchronize modem flow control — 2026-11-23
 
 Responsibility for adequate modem integration belongs to this program. The known-good same-hardware application is supporting evidence, not a requirement to reproduce private settings. Research references guide protocol behavior; actual advertised capabilities select numeric codec/gain values. Preserve already-good conversation quality and require physical acceptance before calling a transport correction a volume fix.

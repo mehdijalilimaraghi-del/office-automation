@@ -97,3 +97,7 @@ Owner PCM report failed timing before any PBX packets; do not promote/repeat har
 ## Flow-control synchronization
 
 IVoiceFlowControlPort/SerialVoicePort/VoiceSession preserve acknowledged IFC mode and synchronize Windows handshake; no unconditional disabling. VoiceBridgeLifecycle.Tests covers 2,2,0,0,unsupported mode and host setup failure. Diagnostic/native fixtures implement host-flow capability; media and codec unchanged. Actual greeting improvement pending; reference mgetty setup is not a device-specific numeric profile.
+
+## Same-call VTX/VTR comparison
+
+GreetingModeComparison.cs implements IGreetingModeComparison with bounded current-prompt read, equal padded frames and source hash. VoiceSession VTX→DLE-ETX→VTR transition and cleanup; normal endpoints unchanged. Compare-ModemGreetingModes.cmd opts into shared UI, skips PBX connection, and writes a distinct nonrecording report. Test-GreetingModeComparison.ps1 covers identical audio, controls, timing and cancellations. Owner flow correction failed to improve loudness; physical mode comparison pending, not a certified fix.
