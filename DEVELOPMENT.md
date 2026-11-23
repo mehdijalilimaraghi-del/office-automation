@@ -1,3 +1,7 @@
+## Optional PCM16 modem path for quiet greeting — 2026-11-23
+
+Run Test-Pcm16.ps1 plus Test-BridgeLifecycle.ps1 and Test-Audio.ps1 in Windows PowerShell 5.1. PCM coverage includes all 256 PCMU amplitudes, LE wire encoding, byte splits/DLE/event alignment, odd terminal byte rejection, 60/48 framing after adaptation, lifecycle, missing codec, mismatched readback and cancellation. Run PbxLab/tests/Test-ModemBridge.ps1 with and without -Pcm16 using separate fresh profiles. A combined same-profile two-call attempt failed with a simulated-phone UDP reset; isolated native runs passed, including actual serial-byte level comparison and DTMF routing. SQL Server 546 tests/3445 assertions and TypeScript/build passed. Real modem baud support, PCM greeting loudness and conversation quality are not certified.
+
 ## Nonrecording external-playback level diagnostics — 2026-11-23
 
 LocalSipAudioEndpoint.Tests.cs verifies empty/silent metrics, a known PCMU amplitude and the exact 3.0103 dB total-RMS dilution by half silence while active RMS stays constant. Native ModemBridge.Tests.cs compares playback counts, peak and RMS against DLE-decoded serial bytes captured only in the simulated modem fixture. These counters do not assert analog loudness. No PHP/TypeScript code or dependencies changed; their previously passing suites/build are not rerun for this C#-only instrumentation; focused C# and real native PBX tests are the relevant gate.

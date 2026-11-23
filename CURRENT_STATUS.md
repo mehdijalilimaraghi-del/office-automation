@@ -1,3 +1,7 @@
+## Optional PCM16 modem path for quiet greeting — 2026-11-23
+
+Quiet initial greeting remains unresolved; owner says connected-call quality is good. Current VentaFax config was collected, but proprietary numeric flags cannot establish its actual modem codec. Added an optional PCM16 serial adapter and launcher, preserving normal G.711 and gain settings. PCM format must be advertised and read back before answer; original codec/flow/class restored on cleanup. Unit checks passed endian/level preservation, split PCM/DLE/events, incomplete samples, receive framing, unsupported/mismatched formats and cancellation. Native isolated G.711 and PCM IVR/DTMF/RTP/hangup checks passed; no real modem was opened. Full SQL Server suite 546/3445 and TypeScript/build passed. Hardware greeting volume and PCM call quality remain pending.
+
 ## Nonrecording external-playback level diagnostics — 2026-11-23
 
 Owner rejected nominal VGT 128 because it reduced volume further; original 0 is confirmed restored. Added numeric-only source/playback level counters in LocalSipAudioEndpoint.cs without modifying media bytes. Unit checks cover known PCMU levels, silence and active-RMS independence; native PBX integration checks meter output against decoded bytes actually written to the fake modem. Real modem level report remains pending. No Laravel/frontend/database/dependency change in this diagnostic slice; previous application build/tests remain unchanged.

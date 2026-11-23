@@ -1,5 +1,5 @@
-﻿#requires -Version 5.1
-param([string]$EngineDirectory)
+#requires -Version 5.1
+param([string]$EngineDirectory,[switch]$Pcm16)
 $ErrorActionPreference='Stop'
 Import-Module (Join-Path $PSScriptRoot '../PbxLab.psm1') -Force -DisableNameChecking
 $root=Join-Path $env:TEMP ('office-pbx-provision-'+[guid]::NewGuid().ToString('N'))
@@ -28,7 +28,7 @@ try {
   & (Join-Path $PSScriptRoot '../Start-PbxLab.ps1') -LabRoot $root -EngineDirectory $EngineDirectory -NoBrowser -HideConsole
   try{
    Add-Type -Path @((Join-Path $PSScriptRoot '../../VoiceDiagnostics.cs'),(Join-Path $PSScriptRoot '../../LocalSipAudioEndpoint.cs'),(Join-Path $PSScriptRoot '../../ModemBridge.Tests.cs'),(Join-Path $PSScriptRoot 'NativeSipSmoke.cs'))
-   [ModemBridgeIntegration]::Run($state.sip_port,$state.modem_gateway.password,$state.accounts[1].password)|ConvertTo-Json -Depth 6
+   [ModemBridgeIntegration]::Run($state.sip_port,$state.modem_gateway.password,$state.accounts[1].password,[bool]$Pcm16)|ConvertTo-Json -Depth 6
   }catch{Write-Host $_.Exception.Message;throw}finally{& (Join-Path $PSScriptRoot '../Stop-PbxLab.ps1') -LabRoot $root;$owned=Get-Content (Join-Path $root 'lab-session.json') -Raw|ConvertFrom-Json;if(Get-Process -Id $owned.process_id -ErrorAction SilentlyContinue){throw 'Owned native process has not stopped; profile retained'}}
  }
  $succeeded=$true

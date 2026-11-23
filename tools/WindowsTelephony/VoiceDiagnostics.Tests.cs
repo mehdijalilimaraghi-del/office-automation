@@ -13,6 +13,8 @@ public sealed class DiagnosticFakePort : IVoicePort
     public bool NoRing, RejectDuplex, RejectHangup, Released, Disposed, RejectFormatQuery, PartialFormatReply, ResidualAudioOnStop, RejectRingQueries;
     public string RingReply = "\r\nRING\r\n";
     public string CurrentFormat = "0,8000";
+    public string Formats = "4,\"G.711U\",8,0,8000";
+    private bool pcm16Mode;
     public string CurrentTransmitLevel = "0", SupportedTransmitLevels = "(0,126-130)";
     public bool RejectTransmitLevel, RejectTransmitRestore, IgnoreTransmitLevel;
     public readonly List<string> Commands = new List<string>();
@@ -31,7 +33,7 @@ public sealed class DiagnosticFakePort : IVoicePort
         if(duplex && n==2 && b[o]==16 && b[o+1]==94) { duplex=false; if(ResidualAudioOnStop)Enqueue("residual-private-audio");Enqueue("\r\nOK\r\n");return; }
         if(duplex) {
             byte[] audio=new byte[160];for(int i=0;i<audio.Length;i++)audio[i]=VoiceCodec.EncodeMuLaw((short)(3000*Math.Sin(2*Math.PI*440*i/8000)));
-            foreach(byte sample in VoiceCodec.Escape(audio))input.Enqueue(sample);return;
+            foreach(byte sample in VoiceCodec.Escape(pcm16Mode ? VoiceCodec.Pcm16FromMuLaw(audio) : audio))input.Enqueue(sample);return;
         }
         string command=Encoding.ASCII.GetString(b,o,n).Trim();Commands.Add(command);
         if(RejectRingQueries && (command=="AT+VEM?" || command=="AT+VDR?" || command=="AT+VLS?")){Enqueue("\r\nERROR\r\n");return;}
@@ -42,9 +44,10 @@ public sealed class DiagnosticFakePort : IVoicePort
             case "AT+VGT=0": if(!RejectTransmitRestore)CurrentTransmitLevel="0";Enqueue(RejectTransmitRestore?"\r\nERROR\r\n":"\r\nOK\r\n");break;
             case "ATI": Enqueue("\r\nLSI Test Fixture\r\nOK\r\n");break;
             case "AT+FCLASS?": Enqueue("\r\n0\r\nOK\r\n");break;
-            case "AT+VSM=?": Enqueue("\r\n4,\"G.711U\",8,0,8000\r\nOK\r\n");break;
+            case "AT+VSM=?": Enqueue("\r\n"+Formats+"\r\nOK\r\n");break;
             case "AT+VSM?": Enqueue(RejectFormatQuery ? "\r\nERROR\r\n" : "AT+VSM?\r\r\n" + CurrentFormat + (PartialFormatReply ? "\r\n" : "\r\nOK\r\n"));break;
             case "AT+IFC?": Enqueue("\r\n+IFC: 2,2\r\nOK\r\n");break;
+            case "AT+VSM=0,8000": pcm16Mode=true;configured=true;Enqueue("\r\nOK\r\n");break;
             case "AT+VSM=4,8000": configured=true; Enqueue("\r\nOK\r\n");break;
             case "AT+VTR": duplex=!RejectDuplex;Enqueue(RejectDuplex?"\r\nERROR\r\n":"\r\nCONNECT\r\n");break;
             case "ATH": Enqueue(RejectHangup?"\r\nERROR\r\n":"\r\nOK\r\n");break;

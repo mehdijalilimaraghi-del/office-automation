@@ -85,3 +85,7 @@ VoiceTransmitLevel in VoiceDiagnostics.cs plus optional VoiceSession constructor
 ## External playback metering
 
 AudioLevelMeter / SipBridgeMetrics in LocalSipAudioEndpoint.cs provide numeric-only PBX input and unchanged modem-playback levels/fill counters. LocalSipAudioEndpoint.Tests.cs covers known PCMU/silence levels; ModemBridge.Tests.cs compares with decoded serial bytes on the native PBX/fake modem. Owner rejected VGT 128 as quieter; use regular launcher pending hardware evidence, no further guessed gain.
+
+## Optional PCM16 modem format
+
+VoiceCodec.FindPcm16/Pcm16FromMuLaw and VoiceDecoder PCM pairing adapt only serial media; SIP stays PCMU. VoiceSession optional format constructor verifies advertisement/readback and restores existing settings. Start-ModemBridge-Pcm16.cmd / -Pcm16Modem opts into 230400-baud PCM; baseline unchanged. VoicePcm16.Tests.cs/Test-Pcm16.ps1 and ModemBridge.Tests.cs native integration cover conversion, framing, cleanup and both formats. Test-ModemBridge.ps1 -Pcm16 uses a fresh profile per format; real line loudness pending.

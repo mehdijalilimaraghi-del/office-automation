@@ -13,7 +13,8 @@ public sealed class BridgeFakeModem : IVoicePort
 {
     private readonly Queue<byte> buffer = new Queue<byte>();
     private readonly Stopwatch clock = new Stopwatch();
-    private readonly VoiceDecoder playback = new VoiceDecoder();
+    private VoiceDecoder playback = new VoiceDecoder();
+    private bool pcm16Mode;
     private bool configured, ringSent, duplex;
     private int frames;
     public bool Disposed, Released;
@@ -37,7 +38,7 @@ public sealed class BridgeFakeModem : IVoicePort
                 block[i] = VoiceCodec.EncodeMuLaw((short)value);
             }
             for (int i = 48; i < 60; i++) block[i] = block[i-10];
-            foreach (byte b in VoiceCodec.Escape(block)) buffer.Enqueue(b);
+            foreach (byte b in VoiceCodec.Escape(pcm16Mode ? VoiceCodec.Pcm16FromMuLaw(block) : block)) buffer.Enqueue(b);
             frames++;
         }
     }
@@ -52,9 +53,10 @@ public sealed class BridgeFakeModem : IVoicePort
         {
             case "ATI": Enqueue("\r\nSynthetic bridge modem\r\nOK\r\n"); break;
             case "AT+FCLASS?": Enqueue("\r\n0\r\nOK\r\n"); break;
-            case "AT+VSM=?": Enqueue("\r\n4,\"G.711U\",8,0,8000\r\nOK\r\n"); break;
+            case "AT+VSM=?": Enqueue("\r\n0,\"Signed PCM\",16,0,8000,(0,122-148),0\r\n4,\"G.711U\",8,0,8000\r\nOK\r\n"); break;
             case "AT+VSM?": Enqueue("\r\n0,8000,128,0\r\nOK\r\n"); break;
             case "AT+IFC?": Enqueue("\r\n+IFC:2,2\r\nOK\r\n"); break;
+            case "AT+VSM=0,8000": if(!configured){pcm16Mode=true;playback=new VoiceDecoder(false,true);} configured=true;Enqueue("\r\nOK\r\n");break;
             case "AT+VSM=4,8000": configured = true; Enqueue("\r\nOK\r\n"); break;
             case "AT+VTR": Enqueue("\r\nCONNECT\r\n"); duplex = true; clock.Start(); break;
             default: Enqueue("\r\nOK\r\n"); break;
@@ -65,7 +67,8 @@ public sealed class BridgeFakeModem : IVoicePort
 }
 public static class ModemBridgeIntegration
 {
-    public static object Run(int port, string gatewayPassword, string phonePassword)
+    public static object Run(int port, string gatewayPassword, string phonePassword) { return Run(port, gatewayPassword, phonePassword, false); }
+    public static object Run(int port, string gatewayPassword, string phonePassword, bool pcm16)
     {
         string wrongPassword=(gatewayPassword[0]=='a'?"b":"a")+gatewayPassword.Substring(1);
         var rejectedModem=new BridgeFakeModem();
@@ -81,7 +84,7 @@ public static class ModemBridgeIntegration
         Thread.Sleep(100);
         var modem = new BridgeFakeModem();
         var endpoint = new LocalSipAudioEndpoint("127.0.0.1", port, "office_modem", gatewayPassword, "9197");
-        var session = new VoiceSession(modem, Path.GetTempPath(), 3000, 10000, endpoint);
+        var session = new VoiceSession(modem, Path.GetTempPath(), 3000, 10000, endpoint, null, pcm16);
         session.Start();
         var watch = Stopwatch.StartNew();
         while (!session.Completed && watch.ElapsedMilliseconds < 20000) Thread.Sleep(10);
@@ -94,12 +97,13 @@ public static class ModemBridgeIntegration
             || result.EndReason != "pbx_hangup" || !endpoint.Metrics.RemoteHangup || modem.PlayedSamples < 8000
             || endpoint.Metrics.ReceivedPackets < 50 || endpoint.Metrics.SentPackets < 50 || session.RecordingPath != null)
             throw new Exception("Bridge acceptance failed: " + result.Status + "/" + result.FailureStage + "/" + result.ErrorCode + "/" + result.EndReason);
+        if(result.ModemTransmitBytes != result.TransmittedSamples*(pcm16 ? 2 : 1) || (pcm16 && result.ModemCodec!=0))throw new Exception("Modem codec or wire length mismatch");
         var measured = modem.PlayedLevels;
         if(measured.Samples != endpoint.Metrics.ModemPlaybackAudio.Samples || measured.Peak != endpoint.Metrics.ModemPlaybackAudio.Peak
             || !measured.RmsDbfs.HasValue || Math.Abs(measured.RmsDbfs.Value-endpoint.Metrics.ModemPlaybackAudio.RmsDbfs.Value)>0.000001
             || !endpoint.Metrics.PbxReceivedAudio.ActiveRmsDbfs.HasValue)
             throw new Exception("Playback telemetry does not match actual decoded serial audio");
-        return new { passed = true, serial_port_opened = false, result.BridgeStarted, result.CleanupConfirmed, result.EndReason,
+        return new { passed = true, serial_port_opened = false, result.ModemSampleFormat, result.ModemCodec, result.ModemTransmitBytes, result.BridgeStarted, result.CleanupConfirmed, result.EndReason,
             result.RawReceivedSamples, result.ReceivedSamples, result.RemovedRepeatedSamples, result.ReceiveFraming,
             sent_rtp = endpoint.Metrics.SentPackets, received_rtp = endpoint.Metrics.ReceivedPackets,
             source_level = endpoint.Metrics.PbxReceivedAudio, playback_level = endpoint.Metrics.ModemPlaybackAudio, playback_fill = endpoint.Metrics.ModemPlaybackSilenceFillSamples,

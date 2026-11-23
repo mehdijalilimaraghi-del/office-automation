@@ -1,3 +1,7 @@
+## Optional PCM16 modem path for quiet greeting — 2026-11-23
+
+Next acceptance is one real incoming call through Start-ModemBridge-Pcm16.cmd, same greeting, key 2, two-way conversation and extension hangup. Do not repeat volume-128 tests or further config-export rounds: owner confirms no VentaFax volume slider and only greeting is quiet. Compare physical PCM output before choosing a permanent format; regular G.711 stays available. Caller-originated disconnect, persistent operation, outgoing calls and fax remain pending.
+
 ## Nonrecording external-playback level diagnostics — 2026-11-23
 
 Next hardware action: launch regular Start-ModemBridge.cmd from the updated shared IVR folder and make one external call with the same greeting; use key 2 and end from the extension. Read numeric levels before selecting the next fix. Do not rerun the rejected NominalVolume launcher or repeatedly boost the file. Permanent calibration awaits measured source/playback versus analog-path evidence; no call recording is needed.

@@ -1,3 +1,7 @@
+## Optional PCM16 modem path for quiet greeting — 2026-11-23
+
+Owner clarifies only the initial greeting is quiet; connected-call audio is good, and VentaFax has no visible volume control. Its numeric WLevel=51/WavFormat=2 flags are undocumented: do not equate them to AT gain or a confirmed codec. Recordings showed about 19 dB difference in louder windows. Implemented a separate opt-in Start-ModemBridge-Pcm16.cmd using the modem-advertised signed PCM16/8 kHz format; regular G.711 remains the default and VGT is untouched. PCM serial path requests 230400 baud for 16 kB/s payload; actual driver/line acceptance is still pending. Never claim this matches VentaFax or fixes loudness before owner confirmation.
+
 ## Nonrecording external-playback level diagnostics — 2026-11-23
 
 Owner clarifies VGT 128 made the external audio quieter, not distorted. Restore to 0 was acknowledged and read back. Do not repeat nominal/higher-gain trials blindly. Current diagnostic uses regular Start-ModemBridge.cmd, leaves gain/samples unchanged and reports PbxReceivedAudio versus ModemPlaybackAudio numerical peak/RMS/active-RMS/sample counts plus silence fill; no audio recording. Silence fill includes legitimate PBX quiet periods, so it is not by itself packet-loss evidence. Actual low-volume root cause remains open.

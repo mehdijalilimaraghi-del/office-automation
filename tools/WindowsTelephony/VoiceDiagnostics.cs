@@ -30,10 +30,12 @@ namespace OfficeAutomation.Telephony.Diagnostics
     public sealed class SerialVoicePort : IVoicePort
     {
         private readonly SerialPort port;
-        public SerialVoicePort(string name)
+        public SerialVoicePort(string name) : this(name, 115200) { }
+        public SerialVoicePort(string name, int baudRate)
         {
             if (!Regex.IsMatch(name, @"^COM[1-9][0-9]{0,4}$")) throw new ArgumentException("Invalid COM port");
-            port = new SerialPort(name, 115200, Parity.None, 8, StopBits.One);
+            if (baudRate != 115200 && baudRate != 230400) throw new ArgumentOutOfRangeException("baudRate");
+            port = new SerialPort(name, baudRate, Parity.None, 8, StopBits.One);
             port.ReadTimeout = 100; port.WriteTimeout = 1000;
             port.DtrEnable = true; port.RtsEnable = true; port.Handshake = Handshake.None;
         }
@@ -61,6 +63,21 @@ namespace OfficeAutomation.Telephony.Diagnostics
             int exponent = 7;
             for (int mask = 0x4000; exponent > 0 && (sample & mask) == 0; exponent--, mask >>= 1) { }
             return (byte)(~(sign | (exponent << 4) | ((sample >> (exponent + 3)) & 15)));
+        }
+        public static byte[] Pcm16FromMuLaw(byte[] data)
+        {
+            var result = new byte[data.Length * 2];
+            for (int i = 0; i < data.Length; i++) { short value = DecodeMuLaw(data[i]); result[i*2] = (byte)(value & 255); result[i*2+1] = (byte)((value >> 8) & 255); }
+            return result;
+        }
+        public static int FindPcm16(string reply)
+        {
+            foreach (string line in Regex.Split(reply, @"[\r\n]+"))
+            {
+                Match match = Regex.Match(line, "^\\s*(?:\\+VSM:\\s*)?([0-9]{1,3}),\\s*\"Signed PCM\",\\s*16,\\s*0,\\s*8000(?:\\s*,|\\s*$)", RegexOptions.IgnoreCase);
+                if (match.Success) return int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
+            }
+            return -1;
         }
         public static byte[] Escape(byte[] data)
         {
@@ -145,19 +162,31 @@ namespace OfficeAutomation.Telephony.Diagnostics
     }
     public sealed class VoiceDecoder
     {
-        private bool dle;
+        private bool dle, finished;
+        private readonly bool pcm16;
+        private int lowByte = -1;
+        public bool IncompletePcmSample { get { return finished && pcm16 && lowByte >= 0; } }
         public readonly List<byte> Audio = new List<byte>();
         private readonly VoiceReceiveFraming framing;
         public int RawSampleCount { get; private set; }
         public int DecodedSampleCount { get; private set; }
-        public bool FramingValid { get { return framing == null || framing.Valid; } }
+        public bool FramingValid { get { return (framing == null || framing.Valid) && !IncompletePcmSample; } }
         public string ReceiveFraming { get { return framing == null ? "linear" : framing.Mode; } }
         public VoiceDecoder() : this(false) { }
-        public VoiceDecoder(bool detectFraming) { if (detectFraming) framing = new VoiceReceiveFraming(EmitAudio); }
+        public VoiceDecoder(bool detectFraming) : this(detectFraming, false) { }
+        public VoiceDecoder(bool detectFraming, bool pcm16) { this.pcm16 = pcm16; if (detectFraming) framing = new VoiceReceiveFraming(EmitAudio); }
         private void EmitAudio(byte value) { DecodedSampleCount++; Audio.Add(value); }
-        private void AddAudio(byte value) { RawSampleCount++; if (framing == null) EmitAudio(value); else framing.Feed(value); }
+        private void AddAudio(byte value)
+        {
+            if (pcm16)
+            {
+                if (lowByte < 0) { lowByte = value; return; }
+                value = VoiceCodec.EncodeMuLaw((short)(lowByte | (value << 8))); lowByte = -1;
+            }
+            RawSampleCount++; if (framing == null) EmitAudio(value); else framing.Feed(value);
+        }
         public byte[] DrainAudio() { var data = Audio.ToArray(); Audio.Clear(); return data; }
-        public void Finish() { if (framing != null) framing.Finish(); }
+        public void Finish() { finished = true; if (framing != null) framing.Finish(); }
         public readonly List<string> Events = new List<string>();
         public bool Ended { get; private set; }
         public void Feed(byte[] data, int count)
@@ -323,7 +352,10 @@ namespace OfficeAutomation.Telephony.Diagnostics
     }
     public sealed class VoiceResult
     {
-        public string DiagnosticVersion = "2026.11.23.1";
+        public string DiagnosticVersion = "2026.11.23.2";
+        public string ModemSampleFormat = "g711u_8000";
+        public int ModemCodec;
+        public int ModemTransmitBytes;
         public string OriginalTransmitLevel = "";
         public int? RequestedTransmitLevel;
         public bool TransmitLevelApplied, TransmitLevelRestored;
@@ -381,6 +413,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
         private readonly IVoicePort port;
         private readonly IVoiceAudioEndpoint endpoint;
         private readonly int? transmitLevel;
+        private readonly bool pcm16;
         private bool changedTransmitLevel;
         private readonly string folder;
         private readonly int ringTimeout;
@@ -400,8 +433,10 @@ namespace OfficeAutomation.Telephony.Diagnostics
         public VoiceSession(string name, string folder) : this(new SerialVoicePort(name), folder, 60000, 12000) { }
         public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration) : this(port, folder, ringTimeout, captureDuration, null) { }
         public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration, IVoiceAudioEndpoint endpoint) : this(port, folder, ringTimeout, captureDuration, endpoint, null) { }
-        public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration, IVoiceAudioEndpoint endpoint, int? transmitLevel)
+        public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration, IVoiceAudioEndpoint endpoint, int? transmitLevel) : this(port, folder, ringTimeout, captureDuration, endpoint, transmitLevel, false) { }
+        public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration, IVoiceAudioEndpoint endpoint, int? transmitLevel, bool pcm16)
         {
+            this.pcm16 = pcm16; result.ModemSampleFormat = pcm16 ? "pcm16le_8000" : "g711u_8000";
             if (transmitLevel.HasValue && (transmitLevel.Value < 0 || transmitLevel.Value > 255)) throw new ArgumentOutOfRangeException("transmitLevel");
             this.transmitLevel = transmitLevel; result.RequestedTransmitLevel = transmitLevel;
             int maximum = endpoint == null ? 30000 : 120000;
@@ -475,7 +510,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
         }
         private void Run()
         {
-            VoiceDecoder decoder = new VoiceDecoder(true);
+            VoiceDecoder decoder = new VoiceDecoder(true, pcm16);
             var ringInput = new List<byte>();
             try
             {
@@ -491,8 +526,9 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 changedMode = true; Command("AT+FCLASS=8", false, true);
                 stage = "read_supported_formats";
                 result.Formats = Command("AT+VSM=?", false, true);
-                int codec = VoiceCodec.FindMuLaw(result.Formats);
-                if (codec < 0) throw new InvalidOperationException("no_supported_8khz_mulaw");
+                int codec = pcm16 ? VoiceCodec.FindPcm16(result.Formats) : VoiceCodec.FindMuLaw(result.Formats);
+                if (codec < 0) throw new InvalidOperationException(pcm16 ? "no_supported_8khz_pcm16" : "no_supported_8khz_mulaw");
+                result.ModemCodec = codec;
                 stage = "read_current_format";
                 result.CurrentFormatReply = Command("AT+VSM?", false, true);
                 originalFormat = VoiceSettings.ParseFormat(result.CurrentFormatReply);
@@ -527,6 +563,13 @@ namespace OfficeAutomation.Telephony.Diagnostics
                     if (VoiceTransmitLevel.Current(Command("AT+VGT?", false, true)) != transmitLevel.Value.ToString(CultureInfo.InvariantCulture))
                         throw new InvalidOperationException("transmit_level_not_confirmed");
                     result.TransmitLevelApplied = true;
+                }
+                if (pcm16)
+                {
+                    stage = "verify_modem_sample_format";
+                    string actual = VoiceSettings.ParseFormat(Command("AT+VSM?", false, true));
+                    if (!Regex.IsMatch(actual, "^" + codec.ToString(CultureInfo.InvariantCulture) + ",8000(?:,|$)"))
+                        throw new InvalidOperationException("pcm16_format_not_confirmed");
                 }
                 progress = "waiting_ring"; stage = "wait_for_incoming_call";
                 var ringWatch = Stopwatch.StartNew(); var ring = new RingDetector();
@@ -579,7 +622,8 @@ namespace OfficeAutomation.Telephony.Diagnostics
                         }
                         if (endpoint != null) audio = endpoint.TransmitAudio(160);
                         if (audio == null || audio.Length != 160) throw new InvalidDataException("invalid_bridge_audio_block");
-                        Raw(VoiceCodec.Escape(audio)); result.TransmittedSamples += audio.Length; frame++;
+                        byte[] modemAudio = pcm16 ? VoiceCodec.Pcm16FromMuLaw(audio) : audio;
+                        Raw(VoiceCodec.Escape(modemAudio)); result.ModemTransmitBytes += modemAudio.Length; result.TransmittedSamples += audio.Length; frame++;
                         if (clock.ElapsedMilliseconds - frame * 20L > 250) throw new IOException("audio_transmit_timing_failed");
                     }
                     else Thread.Sleep(2);
@@ -637,7 +681,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 result.ReceiveFraming = decoder.ReceiveFraming;
                 if (!decoder.FramingValid)
                 {
-                    result.Status = "failed"; result.ErrorCode = "voice_receive_framing_changed";
+                    result.Status = "failed"; result.ErrorCode = decoder.IncompletePcmSample ? "voice_pcm16_partial_sample" : "voice_receive_framing_changed";
                     if (result.FailureStage.Length == 0) { result.FailureStage = "stream_audio"; result.FailureError = result.ErrorCode; }
                 }
                 result.Events = decoder.Events.Distinct().ToArray();

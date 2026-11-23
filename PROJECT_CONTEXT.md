@@ -1,3 +1,7 @@
+## Optional PCM16 modem path for quiet greeting — 2026-11-23
+
+Owner scope clarification: improve the initial IVR greeting without degrading already good connected conversations. The separate PCM16 trial explores a format explicitly advertised by the modem, not louder source-file distortion or another guessed gain. It reuses the same greeting, extension accounts and SIP menu; both greeting loudness and subsequent conversation must pass owner acceptance before changing defaults.
+
 ## Nonrecording external-playback level diagnostics — 2026-11-23
 
 When a hardware calibration worsens intelligible volume, return to the accepted baseline and distinguish quieter from distorted sound. Owner explicitly reports quieter output at VGT 128. Diagnosis must expose source and modem playback levels, preserve other audio/network services and avoid recording or changing live speech merely to obtain measurements.
