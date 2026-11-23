@@ -1,3 +1,7 @@
+## Preserve and synchronize modem flow control — 2026-11-23
+
+Responsibility for adequate modem integration belongs to this program. The known-good same-hardware application is supporting evidence, not a requirement to reproduce private settings. Research references guide protocol behavior; actual advertised capabilities select numeric codec/gain values. Preserve already-good conversation quality and require physical acceptance before calling a transport correction a volume fix.
+
 ## PCM timing failure and native driver evidence — 2026-11-23
 
 The owner must not be led through repeated speculative hardware experiments. Distinguish an interrupted test that never received a greeting from an audible but quiet greeting. Failure messages must explain that the test stopped and report restoration accurately. Prefer read-only installed-driver evidence before another codec/gain change; preserve the accepted conversation path and do not claim the original problem fixed by diagnostic-only changes.

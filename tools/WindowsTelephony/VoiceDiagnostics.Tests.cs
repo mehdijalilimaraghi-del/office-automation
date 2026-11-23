@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using OfficeAutomation.Telephony.Diagnostics;
 
-public sealed class DiagnosticFakePort : IVoicePort
+public sealed class DiagnosticFakePort : IVoicePort, IVoiceFlowControlPort
 {
     private readonly Queue<byte> input = new Queue<byte>();
     private bool configured, ringSent, duplex;
@@ -20,6 +20,10 @@ public sealed class DiagnosticFakePort : IVoicePort
     public bool RejectTransmitLevel, RejectTransmitRestore, IgnoreTransmitLevel;
     public readonly List<string> Commands = new List<string>();
     private void Enqueue(string value) { foreach(byte b in Encoding.ASCII.GetBytes(value)) input.Enqueue(b); }
+    public string HostFlow;
+    public string FlowSetting = "2,2";
+    public bool RejectHostFlow;
+    public void SetFlowControl(string setting) { if(RejectHostFlow)throw new InvalidOperationException("synthetic_host_flow_failure"); HostFlow=setting; }
     public void Open() { }
     public int Available
     {
@@ -48,7 +52,7 @@ public sealed class DiagnosticFakePort : IVoicePort
             case "AT+FCLASS?": Enqueue("\r\n0\r\nOK\r\n");break;
             case "AT+VSM=?": Enqueue("\r\n"+Formats+"\r\nOK\r\n");break;
             case "AT+VSM?": Enqueue(RejectFormatQuery ? "\r\nERROR\r\n" : "AT+VSM?\r\r\n" + CurrentFormat + (PartialFormatReply ? "\r\n" : "\r\nOK\r\n"));break;
-            case "AT+IFC?": Enqueue("\r\n+IFC: 2,2\r\nOK\r\n");break;
+            case "AT+IFC?": Enqueue("\r\n+IFC: "+FlowSetting+"\r\nOK\r\n");break;
             case "AT+VSM=0,8000": pcm16Mode=true;configured=true;Enqueue("\r\nOK\r\n");break;
             case "AT+VSM=4,8000": configured=true; Enqueue("\r\nOK\r\n");break;
             case "AT+VTR": duplex=!RejectDuplex;Enqueue(RejectDuplex?"\r\nERROR\r\n":"\r\nCONNECT\r\n");break;

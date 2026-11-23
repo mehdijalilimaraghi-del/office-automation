@@ -93,3 +93,7 @@ VoiceCodec.FindPcm16/Pcm16FromMuLaw and VoiceDecoder PCM pairing adapt only seri
 ## Failed PCM pilot / driver evidence
 
 Owner PCM report failed timing before any PBX packets; do not promote/repeat hardware trial. VoiceSession elapsed-on-failure and phase maxima plus blocking-write regression fix diagnostic gaps without changing media/guard. tools/WindowsTelephony/DriverVoiceEvidence contains read-only installed PNP/VoiceProfile/WaveDriver/command evidence collector, mock filtering tests and README; no registry/modem mutation. Hardware driver evidence is next, not another guessed volume.
+
+## Flow-control synchronization
+
+IVoiceFlowControlPort/SerialVoicePort/VoiceSession preserve acknowledged IFC mode and synchronize Windows handshake; no unconditional disabling. VoiceBridgeLifecycle.Tests covers 2,2,0,0,unsupported mode and host setup failure. Diagnostic/native fixtures implement host-flow capability; media and codec unchanged. Actual greeting improvement pending; reference mgetty setup is not a device-specific numeric profile.

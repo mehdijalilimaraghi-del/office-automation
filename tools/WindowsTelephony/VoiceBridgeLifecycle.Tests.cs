@@ -30,6 +30,13 @@ public static class BridgeLifecycleChecks
         Check(!port.Commands.Contains("AT+VGT?") && !port.Commands.Contains("AT+VGT=128"),"Normal bridge must leave gain untouched");
         Check(session.RecordingPath==null && session.Result.RecordingFile=="" && !Directory.Exists(folder),"Bridge must not record caller audio");
         Check(session.Result.ReceivedSamples>0 && session.Result.RawReceivedSamples>=session.Result.ReceivedSamples,"Streaming counters must survive buffer draining");
+        Check(port.HostFlow=="2,2" && session.Result.EffectiveFlowControl=="2,2" && session.Result.HostFlowControlSynchronized && !port.Commands.Contains("AT+IFC=0,0"),"Hardware flow setting must be preserved and synchronized");
+        port=new DiagnosticFakePort{FlowSetting="0,0"};endpoint=new BridgeLifecycleEndpoint();session=new VoiceSession(port,folder,300,60000,endpoint);session.Start();Finish(session);
+        Check(port.HostFlow=="0,0" && session.Result.Status=="bridged" && session.Result.HostFlowControlSynchronized,"A modem already using no flow must keep that mode");
+        port=new DiagnosticFakePort{FlowSetting="1,1"};endpoint=new BridgeLifecycleEndpoint();session=new VoiceSession(port,folder,300,60000,endpoint);session.Start();Finish(session);
+        Check(!session.Result.Answered && session.Result.ErrorCode=="unsupported_serial_flow_control" && session.Result.CleanupConfirmed && !port.Commands.Contains("AT+IFC=0,0"),"Unknown flow must not be silently disabled");
+        port=new DiagnosticFakePort{RejectHostFlow=true};endpoint=new BridgeLifecycleEndpoint();session=new VoiceSession(port,folder,300,60000,endpoint);session.Start();Finish(session);
+        Check(!session.Result.Answered && !session.Result.HostFlowControlSynchronized && session.Result.CleanupConfirmed && session.Result.FailureStage=="synchronize_flow_control","Host flow failure must stop before answering and restore state");
         port=new DiagnosticFakePort();endpoint=new BridgeLifecycleEndpoint {FailReceive=true};session=new VoiceSession(port,folder,300,60000,endpoint);session.Start();Finish(session);
         Check(session.Result.Status=="failed" && session.Result.ErrorCode=="synthetic_media_failure" && session.Result.CleanupConfirmed && endpoint.Disposed && port.Commands.Contains("ATH"),"Media failure must hang up and dispose endpoint");
         port=new DiagnosticFakePort();endpoint=new BridgeLifecycleEndpoint {EndAfterBlocks=10000};session=new VoiceSession(port,folder,300,60000,endpoint);session.Start();for(int n=0;n<1000 && session.Progress!="streaming" && !session.Completed;n++)Thread.Sleep(5);session.Cancel();Finish(session);

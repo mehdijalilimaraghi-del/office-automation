@@ -1,3 +1,11 @@
+## Preserve and synchronize modem flow control — 2026-11-23
+
+First correct and physically validate the normal G.711 transport's flow-control consistency; no further guessed gain or PCM changes. Same-hardware VentaFax playback is a capability reference, not a mandatory implementation dependency. Do not ask for more Vendor INI/registry collection: current evidence has no runtime serial trace. If greeting remains quiet after the transport correction, isolate documented greeting-transmit state versus full-duplex conversation in a reviewed state-machine design; do not claim that mode difference alone proves the cause.
+
+## Native driver evidence absent; matched recording comparison — 2026-11-23
+
+Owner report matched installed LSI PCI-SV92PP driver 2.2.98.0 (oem11.inf, LSI_PCI_PP, COM3), with no collection errors, but all queried standard VoiceProfile/WaveDriver/voice-command keys are absent. Do not infer intended codec or lack of hardware voice support from absence. Owner copied current VentaFax command.log; it contains application lifecycle/UI events without voice AT commands, not a usable serial protocol trace. Offline matched recording RMS envelopes correlate 0.87025 at tempo 1.0; VentaFax is about 20-21 dB louder across all four matched quarters, suggesting sustained relative attenuation (phone recordings are not calibrated line levels). The shared piper-tts source did not reliably align (r<0.35 even over scale0.5-1.6); do not claim selected-source provenance or a 1.25 sample-rate bug. Original greeting volume remains unresolved; no runtime/audio/driver changes in this step.
+
 ## PCM timing failure and native driver evidence — 2026-11-23
 
 Pause physical PCM and gain trials. Owner's latest PCM no-sound is a separate startup timing abort with confirmed restoration, not proof about greeting loudness. Next collect installed driver VoiceProfile, WaveDriver speed/transform and LineSetPlayFormat/StartPlay sequences without opening modem or changing Windows settings. Compare authoritative driver instructions against our serial path before selecting a correction; configuration evidence alone must not be called a captured VentaFax runtime trace. Initial G.711 greeting volume remains open; connected-call quality is owner-good.

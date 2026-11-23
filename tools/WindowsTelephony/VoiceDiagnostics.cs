@@ -27,7 +27,11 @@ namespace OfficeAutomation.Telephony.Diagnostics
         void Write(byte[] buffer, int offset, int count);
         void ReleaseDtr();
     }
-    public sealed class SerialVoicePort : IVoicePort
+    public interface IVoiceFlowControlPort
+    {
+        void SetFlowControl(string setting);
+    }
+    public sealed class SerialVoicePort : IVoicePort, IVoiceFlowControlPort
     {
         private readonly SerialPort port;
         public SerialVoicePort(string name) : this(name, 115200) { }
@@ -40,6 +44,12 @@ namespace OfficeAutomation.Telephony.Diagnostics
             port.DtrEnable = true; port.RtsEnable = true; port.Handshake = Handshake.None;
         }
         public void Open() { port.Open(); }
+        public void SetFlowControl(string setting)
+        {
+            if (setting != "0,0" && setting != "2,2") throw new InvalidOperationException("unsupported_serial_flow_control");
+            port.Handshake = setting == "2,2" ? Handshake.RequestToSend : Handshake.None;
+            if (setting == "0,0") port.RtsEnable = true;
+        }
         public int Available { get { return port.BytesToRead; } }
         public int Read(byte[] b, int o, int n) { return port.Read(b, o, n); }
         public void Write(byte[] b, int o, int n) { port.Write(b, o, n); }
@@ -352,7 +362,9 @@ namespace OfficeAutomation.Telephony.Diagnostics
     }
     public sealed class VoiceResult
     {
-        public string DiagnosticVersion = "2026.11.23.3";
+        public string DiagnosticVersion = "2026.11.23.4";
+        public string EffectiveFlowControl = "";
+        public bool HostFlowControlSynchronized;
         public int MaxSerialAvailabilityMilliseconds, MaxSerialReadMilliseconds, MaxSerialWriteMilliseconds;
         public int MaxDecodeMilliseconds, MaxEncodeMilliseconds, MaxEndpointMilliseconds, MaxTransmitLagMilliseconds;
         public string ModemSampleFormat = "g711u_8000";
@@ -559,7 +571,19 @@ namespace OfficeAutomation.Telephony.Diagnostics
                     // Read back after codec setup before accepting the trial.
                 }
                 stage = "configure_audio";
-                Command("AT+IFC=0,0", false, true);
+                var flowPort = port as IVoiceFlowControlPort;
+                if (flowPort != null)
+                {
+                    stage = "synchronize_flow_control";
+                    if (originalFlow != "0,0" && originalFlow != "2,2") throw new InvalidOperationException("unsupported_serial_flow_control");
+                    // Acknowledge the modem setting before enabling RTS/CTS on the host.
+                    Command("AT+IFC=" + originalFlow, false, true);
+                    flowPort.SetFlowControl(originalFlow);
+                    result.EffectiveFlowControl = originalFlow;
+                    result.HostFlowControlSynchronized = true;
+                }
+                else throw new InvalidOperationException("serial_flow_control_adapter_missing");
+                stage = "configure_audio";
                 Command("AT+VSM=" + codec.ToString(CultureInfo.InvariantCulture) + ",8000", false, true);
                 if (transmitLevel.HasValue)
                 {

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using OfficeAutomation.Telephony.Diagnostics;
 using OfficeAutomation.Telephony.Bridge;
 
-public sealed class BridgeFakeModem : IVoicePort
+public sealed class BridgeFakeModem : IVoicePort, IVoiceFlowControlPort
 {
     private readonly Queue<byte> buffer = new Queue<byte>();
     private readonly Stopwatch clock = new Stopwatch();
@@ -22,6 +22,8 @@ public sealed class BridgeFakeModem : IVoicePort
     public int PlayedSamples { get { return playback.Audio.Count; } }
     public AudioLevelMeter PlayedLevels { get { var meter = new AudioLevelMeter(); foreach(byte value in playback.Audio) meter.Observe(value); return meter; } }
     private void Enqueue(string value) { foreach (byte b in Encoding.ASCII.GetBytes(value)) buffer.Enqueue(b); }
+    public string HostFlow;
+    public void SetFlowControl(string setting) { HostFlow=setting; }
     public void Open() { }
     private void Generate()
     {

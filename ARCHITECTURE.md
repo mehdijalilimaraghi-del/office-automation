@@ -1,3 +1,7 @@
+## Preserve and synchronize modem flow control — 2026-11-23
+
+Added IVoiceFlowControlPort for explicit host/modem synchronization. SerialVoicePort maps acknowledged IFC 2,2 to Handshake.RequestToSend and 0,0 to Handshake.None; RTS is asserted manually only with None. VoiceSession confirms the modem's existing supported flow mode before setting the host, records EffectiveFlowControl/HostFlowControlSynchronized, and refuses unavailable/unsupported adapters before answering. Existing codec, audio bytes, gain and cleanup policies are retained. Manufacturer VTX greeting versus VTR duplex distinction is research evidence, not yet a changed state machine.
+
 ## PCM timing failure and native driver evidence — 2026-11-23
 
 VoiceSession now freezes elapsed stream time before cleanup even on errors, retains final subsecond timing/sample evidence and reports maximum serial availability/read/write, decode/encode, endpoint and cumulative lag durations. The existing >250 ms transmit guard is retained; timing aborts have audio_timing_failure reason. DriverVoiceEvidence resolves installed PNP modem-class keys, exports only whitelisted technical VoiceProfile/WaveDriver/format/voice command data, and marks missing/no-device information explicitly. It never opens a modem or writes registry values. No waveform/volume, PBX route or default codec change.
