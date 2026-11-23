@@ -11,7 +11,12 @@ try {
  if(-not $LabRoot){$LabRoot=Join-Path $env:LOCALAPPDATA 'OfficeAutomation\Telephony\PbxLab'}
  $LabRoot=[IO.Path]::GetFullPath($LabRoot);$stateProfile=Read-PbxLabState $LabRoot
  if(-not $CompareGreetingModes){
- if(-not $stateProfile.modem_gateway){& (Join-Path $PSScriptRoot 'Prepare-ModemBridge.ps1') -LabRoot $LabRoot}
+ if(-not $stateProfile.modem_gateway){& (Join-Path $PSScriptRoot 'Prepare-ModemBridge.ps1') -LabRoot $LabRoot;$stateProfile=Read-PbxLabState $LabRoot}
+ $useLocalGreeting=$stateProfile.modem_gateway.destination -eq '9197' -and $stateProfile.ivr -and $stateProfile.ivr.enabled -and -not $Pcm16Modem -and -not $NominalTransmitVolume
+ if($useLocalGreeting -and $stateProfile.modem_gateway.greeting_protocol -ne 'vtx_initial_v1'){
+  if(Get-Process -Name FreeSwitchConsole -ErrorAction SilentlyContinue){throw 'Close the bridge and run Stop-PbxLab.cmd once; then run Start-ModemBridge.cmd. Accounts and greeting are preserved.'}
+  Set-PbxModemGateway $LabRoot '9197';$stateProfile=Read-PbxLabState $LabRoot
+ }
  if(-not (Get-Process -Name FreeSwitchConsole -ErrorAction SilentlyContinue)){
   & (Join-Path ([IO.Path]::GetDirectoryName($module)) 'Start-PbxLab.ps1') -LabRoot $LabRoot -EngineDirectory $EngineDirectory -NoBrowser -HideConsole
  }
@@ -19,7 +24,7 @@ try {
  $pbxStatus=Invoke-PbxLabCommand $stateProfile 'status';if($pbxStatus -notmatch 'UP'){throw 'PBX is not ready'}
  }
  Add-Type -AssemblyName System.Windows.Forms;Add-Type -AssemblyName System.Drawing
- if(-not ('OfficeAutomation.Telephony.Bridge.LocalSipAudioEndpoint' -as [type])){$sources=@((Join-Path $PSScriptRoot 'VoiceDiagnostics.cs'),(Join-Path $PSScriptRoot 'LocalSipAudioEndpoint.cs'));if($CompareGreetingModes){$sources+=Join-Path $PSScriptRoot 'GreetingModeComparison.cs'};Add-Type -Path $sources}
+ if(-not ('OfficeAutomation.Telephony.Bridge.LocalSipAudioEndpoint' -as [type])){$sources=@((Join-Path $PSScriptRoot 'VoiceDiagnostics.cs'),(Join-Path $PSScriptRoot 'LocalSipAudioEndpoint.cs'),(Join-Path $PSScriptRoot 'GreetingPrompt.cs'),(Join-Path $PSScriptRoot 'GreetingModeComparison.cs'),(Join-Path $PSScriptRoot 'ModemGreetingBridge.cs'));Add-Type -Path $sources}
  if($NominalTransmitVolume){[Windows.Forms.MessageBox]::Show('آزمون صدای ارسال مودم با مقدار ۱۲۸؛ مقدار قبلی پس از پایان تماس بازیابی می‌شود. بلندی صدای این حالت هنوز تأیید نشده است.','آزمون کنترل‌شده صدا')|Out-Null}
  if($Pcm16Modem){[Windows.Forms.MessageBox]::Show('مسیر آزمایشی PCM شانزده‌بیتی مودم؛ تنظیم بلندی صدا تغییر نمی‌کند. کیفیت و بلندی این مسیر هنوز روی خط واقعی تأیید نشده است.','آزمون قالب صدای مودم')|Out-Null}
  $ports=@([IO.Ports.SerialPort]::GetPortNames()|Sort-Object)
@@ -52,6 +57,10 @@ try {
    if($CompareGreetingModes){
     if(-not $stateProfile.ivr -or -not $stateProfile.ivr.enabled -or -not $stateProfile.ivr.prompt_path){throw 'A configured IVR greeting is required'}
     $run.endpoint=[OfficeAutomation.Telephony.Bridge.GreetingModeComparison]::new($stateProfile.ivr.prompt_path)
+   }elseif($useLocalGreeting){
+    $run.sip=[OfficeAutomation.Telephony.Bridge.LocalSipAudioEndpoint]::new($stateProfile.bind_address,[int]$stateProfile.sip_port,$stateProfile.modem_gateway.username,$stateProfile.modem_gateway.password,'9197',$true)
+    $run.control=[OfficeAutomation.Telephony.Bridge.GreetingCallControl]::new([int]$stateProfile.esl_port,$stateProfile.esl_secret)
+    try{$run.endpoint=[OfficeAutomation.Telephony.Bridge.ModemGreetingBridge]::new($run.sip,$run.control,$stateProfile.ivr.prompt_path)}catch{$run.sip.Dispose();$run.control.Dispose();throw}
    }else{$run.endpoint=[OfficeAutomation.Telephony.Bridge.LocalSipAudioEndpoint]::new($stateProfile.bind_address,[int]$stateProfile.sip_port,$stateProfile.modem_gateway.username,$stateProfile.modem_gateway.password,$stateProfile.modem_gateway.destination)}
    $serial=[OfficeAutomation.Telephony.Diagnostics.SerialVoicePort]::new([string]$portChoice.SelectedItem,$(if($Pcm16Modem){230400}else{115200}))
    $trialLevel=if($NominalTransmitVolume){[Nullable[int]]128}else{$null}
@@ -67,13 +76,14 @@ try {
    $timer.Stop();$stop.Enabled=$false
    $result=$run.session.Result
    $run.report=Join-Path $PSScriptRoot ($(if($CompareGreetingModes){'modem-greeting-modes-'}else{'modem-bridge-result-'})+[datetime]::Now.ToString('yyyyMMdd-HHmmss')+'-'+[guid]::NewGuid().ToString('N').Substring(0,6)+'.json')
-   $report=[ordered]@{report_type=$(if($CompareGreetingModes){'modem_greeting_mode_comparison'}else{'modem_bridge_test'});schema_version=1;comparison_mode=[bool]$CompareGreetingModes;destination=$stateProfile.modem_gateway.destination;port=[string]$portChoice.SelectedItem;audio_recorded=$false;result=($result|Select-Object DiagnosticVersion,TransmitOnlyStarted,SwitchedToDuplex,ModeTransitionMilliseconds,ModemSampleFormat,ModemCodec,ModemTransmitBytes,EffectiveFlowControl,HostFlowControlSynchronized,MaxSerialAvailabilityMilliseconds,MaxSerialReadMilliseconds,MaxSerialWriteMilliseconds,MaxDecodeMilliseconds,MaxEncodeMilliseconds,MaxEndpointMilliseconds,MaxTransmitLagMilliseconds,RequestedTransmitLevel,OriginalTransmitLevel,TransmitLevelApplied,TransmitLevelRestored,Status,ErrorCode,FailureStage,FailureError,CleanupError,RingDetected,Answered,DuplexStarted,BridgeStarted,CleanupConfirmed,Cancelled,EndReason,TransmittedSamples,ReceivedSamples,RawReceivedSamples,RemovedRepeatedSamples,ReceiveFraming,StreamMilliseconds,SampleWindows,ReceiveRateAfterWarmup,TransmitRateAfterWarmup,BridgeTimingReady,Events,Trace);sip=$(if(-not $CompareGreetingModes){$run.endpoint.Metrics}else{$null});comparison=$(if($CompareGreetingModes){$run.endpoint|Select-Object PromptSha256,PromptSamples,CurrentPhase,FirstMode,SecondMode,FirstPhaseSamples,SecondPhaseSamples,AudioRecorded}else{$null})}
+   $report=[ordered]@{report_type=$(if($CompareGreetingModes){'modem_greeting_mode_comparison'}else{'modem_bridge_test'});schema_version=1;comparison_mode=[bool]$CompareGreetingModes;destination=$stateProfile.modem_gateway.destination;port=[string]$portChoice.SelectedItem;audio_recorded=$false;result=($result|Select-Object DiagnosticVersion,DuplexStartedAtMilliseconds,TransmitOnlyStarted,SwitchedToDuplex,ModeTransitionMilliseconds,ModemSampleFormat,ModemCodec,ModemTransmitBytes,EffectiveFlowControl,HostFlowControlSynchronized,MaxSerialAvailabilityMilliseconds,MaxSerialReadMilliseconds,MaxSerialWriteMilliseconds,MaxDecodeMilliseconds,MaxEncodeMilliseconds,MaxEndpointMilliseconds,MaxTransmitLagMilliseconds,RequestedTransmitLevel,OriginalTransmitLevel,TransmitLevelApplied,TransmitLevelRestored,Status,ErrorCode,FailureStage,FailureError,CleanupError,RingDetected,Answered,DuplexStarted,BridgeStarted,CleanupConfirmed,Cancelled,EndReason,TransmittedSamples,ReceivedSamples,RawReceivedSamples,RemovedRepeatedSamples,ReceiveFraming,StreamMilliseconds,SampleWindows,ReceiveRateAfterWarmup,TransmitRateAfterWarmup,BridgeTimingReady,Events,Trace);greeting=$(if($useLocalGreeting){$run.endpoint|Select-Object PromptSha256,PromptSamples,GreetingSamples,GreetingPlaybackAudio,MenuStarted}else{$null});sip=$(if(-not $CompareGreetingModes){$run.endpoint.Metrics}else{$null});comparison=$(if($CompareGreetingModes){$run.endpoint|Select-Object PromptSha256,PromptSamples,CurrentPhase,FirstMode,SecondMode,FirstPhaseSamples,SecondPhaseSamples,AudioRecorded}else{$null})}
    try{[IO.File]::WriteAllText($run.report,($report|ConvertTo-Json -Depth 9),[Text.UTF8Encoding]::new($false));if($result.Status -eq 'failed'){if($result.ErrorCode -eq 'audio_transmit_timing_failed'){$status.Text='ارسال صدا به مودم از زمان مجاز عقب افتاد؛ آزمون متوقف شد. نتیجه بازیابی تنظیمات در گزارش ذخیره شده است.'}else{$status.Text='اتصال خط کامل نشد. گزارش خطا در همین پوشه ذخیره شد.'}}elseif($result.Cancelled){$status.Text='آزمون متوقف و گزارش در همین پوشه ذخیره شد.'}else{$status.Text='آزمون پایان یافت. گزارش در همین پوشه ذخیره شد. نتیجه شنیدن صدا و قطع تماس را اعلام کنید.'}}catch{$status.Text='آزمون پایان یافت؛ ذخیره گزارش ممکن نشد: '+$_.Exception.Message}
    $run.finished=$true
    if($run.wantClose){$form.Close()}
   }else{
+   if($useLocalGreeting -and $run.session.Progress -eq 'streaming' -and -not $run.endpoint.MenuStarted){$status.Text='در حال پخش پیام راهنما؛ پس از پایان پیام شماره داخلی را وارد کنید.';return}
    if($CompareGreetingModes -and $run.session.Progress -eq 'streaming'){$status.Text=('در حال پخش نوبت '+$run.endpoint.CurrentPhase+' از دو نوبت؛ بلندی دو پیام را مقایسه کنید.');return}
-   if($CompareGreetingModes -and $run.session.Progress -eq 'switching_playback_mode'){$status.Text='در حال تغییر از پخش پیام به حالت دوطرفه…';return}
+   if(($CompareGreetingModes -or $useLocalGreeting) -and $run.session.Progress -eq 'switching_playback_mode'){$status.Text='در حال تغییر از پخش پیام به حالت دوطرفه…';return}
    $messages=@{preparing='در حال آماده‌سازی مودم…';waiting_ring='آماده؛ اکنون با گوشی با خط شرکت تماس بگیرید.';connecting_pbx='در حال اتصال به مرکز تلفن…';answering='در حال پاسخ به تماس…';streaming='پل صوتی برقرار است؛ از داخلی پاسخ دهید. اگر مقصد راهنمای صوتی است، کلید آن را از گوشی بزنید. برای پایان، از داخلی قطع کنید.';hanging_up='در حال قطع تماس و بازیابی تنظیمات مودم…'}
    $phase=$run.session.Progress;if($messages.ContainsKey($phase)){$status.Text=$messages[$phase]}
   }

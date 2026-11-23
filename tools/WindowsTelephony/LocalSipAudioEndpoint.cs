@@ -44,6 +44,9 @@ namespace OfficeAutomation.Telephony.Bridge
         private readonly UdpClient signal, media;
         private readonly IPEndPoint server;
         private readonly string host, username, password, destination;
+        private readonly bool deferGreeting;
+        public string GreetingChannel { get; private set; }
+        public string DialogCallId { get { return callId; } }
         private readonly Queue<byte> outgoing = new Queue<byte>(), incoming = new Queue<byte>();
         private readonly string callId = Guid.NewGuid().ToString("N"), tag = Guid.NewGuid().ToString("N");
         private readonly uint ssrc;
@@ -57,7 +60,8 @@ namespace OfficeAutomation.Telephony.Bridge
         public SipBridgeMetrics Metrics { get { return metrics; } }
         public bool Ended { get; private set; }
 
-        public LocalSipAudioEndpoint(string host, int port, string username, string password, string destination)
+        public LocalSipAudioEndpoint(string host, int port, string username, string password, string destination) : this(host,port,username,password,destination,false) { }
+        public LocalSipAudioEndpoint(string host, int port, string username, string password, string destination, bool deferGreeting)
         {
             IPAddress address;
             if (!IPAddress.TryParse(host, out address) || address.AddressFamily != AddressFamily.InterNetwork
@@ -66,6 +70,8 @@ namespace OfficeAutomation.Telephony.Bridge
             if (port < 1024 || port > 65535 || !Regex.IsMatch(username, @"\A[A-Za-z0-9_]{1,32}\z")
                 || !Regex.IsMatch(password, @"\A[a-f0-9]{48}\z") || !Regex.IsMatch(destination, @"\A[1-9][0-9]{2,5}\z"))
                 throw new ArgumentException("Invalid local gateway settings");
+            if(deferGreeting && (username != "office_modem" || destination != "9197"))throw new ArgumentException("Local greeting requires the configured modem IVR");
+            this.deferGreeting=deferGreeting;
             this.host = host; this.username = username; this.password = password; this.destination = destination;
             server = new IPEndPoint(address, port);
             signal = new UdpClient(new IPEndPoint(address, 0));
@@ -189,7 +195,7 @@ namespace OfficeAutomation.Telephony.Bridge
             if (disposed || opened) throw new InvalidOperationException("SIP endpoint already used");
             cancellation.ThrowIfCancellationRequested();
             inviteBranch = Branch(); invitePending = true;
-            var first = Exchange(Request("INVITE", Target, 1, InitialTo, "", Sdp(), inviteBranch), cancellation);
+            var first = Exchange(Request("INVITE", Target, 1, InitialTo, deferGreeting ? "X-Office-Modem-Greeting: local-v1\r\n" : "", Sdp(), inviteBranch), cancellation);
             if (first.Code != 401 && first.Code != 407)
             {
                 Send(Request("ACK", Target, 1, first.Header("To"), "", "", first.Code == 200 ? Branch() : inviteBranch)); invitePending = false;
@@ -198,7 +204,7 @@ namespace OfficeAutomation.Telephony.Bridge
             }
             Send(Request("ACK", Target, 1, first.Header("To"), "", "", inviteBranch));
             inviteSequence = 2; inviteBranch = Branch();
-            var answer = Exchange(Request("INVITE", Target, 2, InitialTo, Authorization(first), Sdp(), inviteBranch), cancellation);
+            var answer = Exchange(Request("INVITE", Target, 2, InitialTo, Authorization(first)+(deferGreeting ? "X-Office-Modem-Greeting: local-v1\r\n" : ""), Sdp(), inviteBranch), cancellation);
             if (answer.Code != 200) { Send(Request("ACK", Target, 2, answer.Header("To"), "", "", inviteBranch)); invitePending = false; throw new InvalidOperationException("PBX rejected gateway call: " + answer.Code); }
             remoteTo = answer.Header("To"); remoteContact = Target; opened = true; invitePending = false;
             var contact = Regex.Match(answer.Header("Contact"), "<(sip:[^>]+)>");
@@ -209,6 +215,7 @@ namespace OfficeAutomation.Telephony.Bridge
             opened = true; invitePending = false; metrics.Authenticated = true;
             lastInviteOk = Request("ACK", remoteContact, 2, remoteTo, "", "", Branch()); Send(lastInviteOk);
             SetMedia(answer.Body); metrics.Answered = true;
+            if(deferGreeting){GreetingChannel=answer.Header("X-Office-Modem-Channel");if(!Regex.IsMatch(GreetingChannel,@"\A[a-fA-F0-9]{8}(?:-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}\z"))throw new InvalidOperationException("PBX local greeting support is missing; stop and restart the lab");}
         }
         public void ReceiveAudio(byte[] samples)
         {
@@ -241,7 +248,9 @@ namespace OfficeAutomation.Telephony.Bridge
                 metrics.ReceivedPackets++;
             }
         }
-        public byte[] TransmitAudio(int count)
+        public byte[] TransmitAudio(int count) { return TransmitAudio(count,true); }
+        public void ServiceParkedDialog() { if(!deferGreeting)throw new InvalidOperationException("Not a deferred greeting dialog");TransmitAudio(160,false); }
+        private byte[] TransmitAudio(int count,bool render)
         {
             if (!opened || disposed || count != 160) throw new InvalidOperationException("Invalid SIP audio state");
             Pump();
@@ -249,8 +258,8 @@ namespace OfficeAutomation.Telephony.Bridge
             for (int i = 0; i < count; i++)
             {
                 if (incoming.Count > 0) result[i] = incoming.Dequeue();
-                else { result[i] = 255; metrics.ModemPlaybackSilenceFillSamples++; }
-                metrics.ModemPlaybackAudio.Observe(result[i]);
+                else { result[i] = 255; if(render)metrics.ModemPlaybackSilenceFillSamples++; }
+                if(render)metrics.ModemPlaybackAudio.Observe(result[i]);
             }
             if (Ended) return result;
             var packet = new byte[172]; packet[0] = 128; packet[1] = 0;

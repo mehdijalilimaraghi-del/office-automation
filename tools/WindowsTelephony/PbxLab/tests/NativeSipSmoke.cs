@@ -35,7 +35,8 @@ public static class NativeSipSmoke {
   public string Contact {get{return "<sip:"+User+"@127.0.0.1:"+Port+">";}}
   public Phone(string user,string password,int serverPort){User=user;Password=password;Server=new IPEndPoint(IPAddress.Loopback,serverPort);Signal.Client.ReceiveTimeout=200;Media.Client.ReceiveTimeout=100;}
   public void Send(string text){byte[] b=Encoding.UTF8.GetBytes(text);Signal.Send(b,b.Length,Server);}
-  public Message Wait(Func<Message,bool> predicate){var clock=Stopwatch.StartNew();while(clock.ElapsedMilliseconds<7000){try{IPEndPoint source=null;var m=Message.Parse(Signal.Receive(ref source));if(source.Address.Equals(IPAddress.Loopback) && source.Port==Server.Port && predicate(m))return m;}catch(SocketException e){if(e.SocketErrorCode!=SocketError.TimedOut)throw;}}throw new Exception("SIP response timed out");}
+  public Message Wait(Func<Message,bool> predicate){return Wait(predicate,7000);}
+  public Message Wait(Func<Message,bool> predicate,int timeout){var clock=Stopwatch.StartNew();while(clock.ElapsedMilliseconds<timeout){try{IPEndPoint source=null;var m=Message.Parse(Signal.Receive(ref source));if(source.Address.Equals(IPAddress.Loopback) && source.Port==Server.Port && predicate(m))return m;}catch(SocketException e){if(e.SocketErrorCode!=SocketError.TimedOut)throw;}}throw new Exception("SIP response timed out");}
   public string Sdp(){return "v=0\r\no="+User+" 1 1 IN IP4 127.0.0.1\r\ns=OfficeLabTest\r\nc=IN IP4 127.0.0.1\r\nt=0 0\r\nm=audio "+MediaPort+" RTP/AVP 0 8 101\r\na=rtpmap:0 PCMU/8000\r\na=rtpmap:8 PCMA/8000\r\na=rtpmap:101 telephone-event/8000\r\na=fmtp:101 0-16\r\na=ptime:20\r\na=sendrecv\r\n";}
   public string Request(string method,string uri,string callId,int sequence,string from,string to,string extra,string body,string branch){return method+" "+uri+" SIP/2.0\r\nVia: SIP/2.0/UDP 127.0.0.1:"+Port+";branch="+branch+";rport\r\nMax-Forwards: 70\r\nFrom: "+from+"\r\nTo: "+to+"\r\nCall-ID: "+callId+"\r\nCSeq: "+sequence+" "+method+"\r\nContact: "+Contact+"\r\n"+extra+(body.Length>0?"Content-Type: application/sdp\r\n":"")+"Content-Length: "+Encoding.UTF8.GetByteCount(body)+"\r\n\r\n"+body;}
   public void Reply(Message request,int code,string phrase,string tag,string body){string to=request.Header("To");if(!to.Contains(";tag="))to+=";tag="+tag;string text="SIP/2.0 "+code+" "+phrase+"\r\n"+string.Join("",request.Headers("Via").Select(v=>"Via: "+v+"\r\n"))+"From: "+request.Header("From")+"\r\nTo: "+to+"\r\nCall-ID: "+request.Header("Call-ID")+"\r\nCSeq: "+request.Header("CSeq")+"\r\nContact: "+Contact+"\r\n"+(body.Length>0?"Content-Type: application/sdp\r\n":"")+"Content-Length: "+Encoding.UTF8.GetByteCount(body)+"\r\n\r\n"+body;Send(text);}
@@ -85,9 +86,10 @@ public static class NativeSipSmoke {
    if(received<5)throw new Exception("No IVR greeting RTP received");
    return "PASS: authenticated IVR answered, greeting RTP received ("+received+" packets), RFC2833 key 1 routed to "+userB;
   }
- } public static bool ReceiveGateway(int sipPort,string user,string password){
+ } public static bool ReceiveGateway(int sipPort,string user,string password){return ReceiveGateway(sipPort,user,password,7000);}
+ public static bool ReceiveGateway(int sipPort,string user,string password,int inviteTimeout){
   using(var b=new Phone(user,password,sipPort)){
-   b.Register();var incoming=b.Wait(m=>m.First.StartsWith("INVITE "));string tag=Guid.NewGuid().ToString("N");b.Reply(incoming,180,"Ringing",tag,"");b.Reply(incoming,200,"OK",tag,b.Sdp());
+   b.Register();var incoming=b.Wait(m=>m.First.StartsWith("INVITE "),inviteTimeout);string tag=Guid.NewGuid().ToString("N");b.Reply(incoming,180,"Ringing",tag,"");b.Reply(incoming,200,"OK",tag,b.Sdp());
    var ack=b.Wait(m=>m.First.StartsWith("ACK "));var target=MediaTarget(incoming.Body.Length>0?incoming.Body:ack.Body);int received=0;for(int n=0;n<75;n++){SendRtp(b,target,n,220);Thread.Sleep(20);received+=Drain(b);}
    string from=incoming.Header("To");if(!from.Contains(";tag="))from+=";tag="+tag;
    b.Send(b.Request("BYE",ContactUri(incoming),incoming.Header("Call-ID"),1,from,incoming.Header("From"),"","",Branch()));

@@ -17,6 +17,9 @@ function Write-LabConfiguration([string]$Root,$LabState){
         foreach($account in $LabState.accounts){[void]$entries.Append(('<entry action="menu-exec-app" digits="'+$account.extension+'" param="transfer '+$account.extension+' XML office_lab"/>'))}
         $fragment=$validation.CreateDocumentFragment()
         $fragment.InnerXml='<configuration name="ivr.conf"><menus><menu name="office_main" greet-long="'+$prompt+'" greet-short="'+$prompt+'" timeout="'+$timeout+'" inter-digit-timeout="1500" max-failures="'+$retries+'" max-timeouts="'+$retries+'" digit-len="6" exec-on-max-failures="transfer '+$operator+' XML office_lab" exec-on-max-timeouts="transfer '+$operator+' XML office_lab">'+$entries.ToString()+'</menu></menus></configuration>'
+        $initialMenu=$fragment.SelectSingleNode('configuration/menus/menu').CloneNode($true)
+        $initialMenu.SetAttribute('name','office_modem_after_greeting');$initialMenu.SetAttribute('greet-long','silence_stream://100')
+        [void]$fragment.SelectSingleNode('configuration/menus').AppendChild($initialMenu)
         [void]$validation.SelectSingleNode('/document/section[@name="configuration"]').AppendChild($fragment)
         $fragment=$validation.CreateDocumentFragment();$fragment.InnerXml='<extension name="office_ivr"><condition field="destination_number" expression="^9197$"><action application="answer"/><action application="ivr" data="office_main"/></condition></extension>'
         [void]$validation.SelectSingleNode('/document/section[@name="dialplan"]/context').AppendChild($fragment)
@@ -30,8 +33,15 @@ function Write-LabConfiguration([string]$Root,$LabState){
         $fragment=$validation.CreateDocumentFragment()
         $fragment.InnerXml='<user id="office_modem"><params><param name="password" value="'+$gateway.password+'"/></params><variables><variable name="user_context" value="office_modem_inbound"/><variable name="effective_caller_id_number" value="office_modem"/></variables></user>'
         [void]$validation.SelectSingleNode('/document/section[@name="directory"]/domain/groups/group/users').AppendChild($fragment)
+        $parked=''
+        if($gateway.destination -eq '9197'){
+            $parked='<extension name="modem_local_greeting"><condition field="destination_number" expression="^9197$"/><condition field="${sip_h_X-Office-Modem-Greeting}" expression="^local-v1$"><action application="set" data="sip_rh_X-Office-Modem-Channel=${uuid}"/><action application="set" data="park_timeout=45"/><action application="answer"/><action application="park"/></condition></extension>'
+            $fragment=$validation.CreateDocumentFragment()
+            $fragment.InnerXml='<context name="office_modem_menu"><extension name="modem_menu_after_greeting"><condition field="destination_number" expression="^9197$"><action application="start_dtmf"/><action application="sleep" data="750"/><action application="ivr" data="office_modem_after_greeting"/></condition></extension></context>'
+            [void]$validation.SelectSingleNode('/document/section[@name="dialplan"]').AppendChild($fragment)
+        }
         $fragment=$validation.CreateDocumentFragment()
-        $fragment.InnerXml='<context name="office_modem_inbound"><extension name="modem_selected_destination"><condition field="destination_number" expression="^'+$gateway.destination+'$"><action application="answer"/><action application="start_dtmf"/><action application="sleep" data="750"/><action application="transfer" data="'+$gateway.destination+' XML office_lab"/></condition></extension></context>'
+        $fragment.InnerXml='<context name="office_modem_inbound">'+$parked+'<extension name="modem_selected_destination"><condition field="destination_number" expression="^'+$gateway.destination+'$"><action application="answer"/><action application="start_dtmf"/><action application="sleep" data="750"/><action application="transfer" data="'+$gateway.destination+' XML office_lab"/></condition></extension></context>'
         [void]$validation.SelectSingleNode('/document/section[@name="dialplan"]').AppendChild($fragment)
         $xml=$validation.OuterXml
     }
@@ -157,7 +167,7 @@ function Set-PbxModemGateway([string]$Root,[string]$Destination){
     $backup=Join-Path $Root ('gateway-backup-'+[guid]::NewGuid().ToString('N'));[void][IO.Directory]::CreateDirectory($backup)
     foreach($name in @('lab-state.json','accounts.html','conf/freeswitch.xml')){Copy-Item -LiteralPath (Join-Path $Root $name) -Destination (Join-Path $backup ([IO.Path]::GetFileName($name)))}
     try {
-        $state|Add-Member -NotePropertyName modem_gateway -NotePropertyValue ([pscustomobject]@{username='office_modem';password=$secret;destination=$Destination}) -Force
+        $state|Add-Member -NotePropertyName modem_gateway -NotePropertyValue ([pscustomobject]@{username='office_modem';password=$secret;destination=$Destination;greeting_protocol='vtx_initial_v1'}) -Force
         Write-LabConfiguration $Root $state
     }catch{foreach($name in @('lab-state.json','accounts.html','conf/freeswitch.xml')){Copy-Item -LiteralPath (Join-Path $backup ([IO.Path]::GetFileName($name))) -Destination (Join-Path $Root $name) -Force};throw}
 }

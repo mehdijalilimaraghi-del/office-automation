@@ -101,3 +101,7 @@ IVoiceFlowControlPort/SerialVoicePort/VoiceSession preserve acknowledged IFC mod
 ## Same-call VTX/VTR comparison
 
 GreetingModeComparison.cs implements IGreetingModeComparison with bounded current-prompt read, equal padded frames and source hash. VoiceSession VTX→DLE-ETX→VTR transition and cleanup; normal endpoints unchanged. Compare-ModemGreetingModes.cmd opts into shared UI, skips PBX connection, and writes a distinct nonrecording report. Test-GreetingModeComparison.ps1 covers identical audio, controls, timing and cancellations. Owner flow correction failed to improve loudness; physical mode comparison pending, not a certified fix.
+
+## Initial VTX greeting handoff
+
+GreetingPrompt.cs shared bounded source; ModemGreetingBridge.cs wrapper and fixed loopback GreetingCallControl; LocalSipAudioEndpoint opt-in authenticated parked dialog, UUID/Call-ID binding and parked keepalive without playback meter inflation. PbxLab.psm1 private parked/menu routes clone original choices/retries, skip first greeting only, preserve credentials and backup on upgrade. Start-ModemBridge normal IVR picks new path; comparison stays separate. Test-ModemGreeting.ps1 plus native Test-ModemBridge.ps1 -LocalGreeting; physical integrated acceptance pending.

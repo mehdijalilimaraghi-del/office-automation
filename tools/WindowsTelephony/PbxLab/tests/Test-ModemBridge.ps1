@@ -1,5 +1,5 @@
 #requires -Version 5.1
-param([string]$EngineDirectory,[switch]$Pcm16)
+param([string]$EngineDirectory,[switch]$Pcm16,[switch]$LocalGreeting)
 $ErrorActionPreference='Stop'
 Import-Module (Join-Path $PSScriptRoot '../PbxLab.psm1') -Force -DisableNameChecking
 $root=Join-Path $env:TEMP ('office-pbx-provision-'+[guid]::NewGuid().ToString('N'))
@@ -16,9 +16,18 @@ try {
  Import-PbxOfficeConfiguration $root $config $sourceFolder
  Set-PbxModemGateway $root '9197'
  $state=Read-PbxLabState $root
+ $gatewaySecret=$state.modem_gateway.password
+ Set-PbxModemGateway $root '9197'
+ $state=Read-PbxLabState $root
+ if($state.modem_gateway.password -ne $gatewaySecret -or $state.accounts[0].password -ne $original -or $state.modem_gateway.greeting_protocol -ne 'vtx_initial_v1'){throw 'Gateway upgrade changed credentials or lacks greeting support'}
  if($state.accounts[0].password -ne $original -or $state.accounts.Count -ne 3){throw 'Provisioning did not preserve accounts'}
  $xml=[xml][IO.File]::ReadAllText((Join-Path $root 'conf/freeswitch.xml'))
  if(-not $xml.SelectSingleNode('//menu[@name="office_main"]/entry[@digits="1"]')){throw 'IVR route missing'}
+ $normalMenu=$xml.SelectSingleNode('//menu[@name="office_main"]')
+ $modemMenu=$xml.SelectSingleNode('//menu[@name="office_modem_after_greeting"]')
+ if($modemMenu.GetAttribute('greet-long') -ne 'silence_stream://100' -or $modemMenu.GetAttribute('greet-short') -ne $normalMenu.GetAttribute('greet-short') -or $modemMenu.InnerXml -ne $normalMenu.InnerXml){throw 'Initial greeting duplicated or menu choices/retry prompt changed'}
+ foreach($attribute in @('timeout','inter-digit-timeout','max-failures','max-timeouts','exec-on-max-failures','exec-on-max-timeouts')){if($modemMenu.GetAttribute($attribute) -ne $normalMenu.GetAttribute($attribute)){throw 'Menu retry/operator policy changed'}}
+ if(-not $xml.SelectSingleNode('//context[@name="office_modem_inbound"]/extension[@name="modem_local_greeting"]') -or $xml.SelectSingleNode('//context[@name="office_lab"]/extension[@name="modem_local_greeting"]')){throw 'Modem greeting park scope is incorrect'}
  if(-not ([IO.File]::ReadAllText((Join-Path $root 'accounts.html'))).Contains('SIP Proxy')){throw 'Proxy instructions missing'}
  $before=(Get-FileHash (Join-Path $root 'lab-state.json')).Hash
  $config.ivr.choices[0].number='9999';$rejected=$false;try{Import-PbxOfficeConfiguration $root $config $sourceFolder}catch{$rejected=$true}
@@ -27,8 +36,8 @@ try {
  if($EngineDirectory){
   & (Join-Path $PSScriptRoot '../Start-PbxLab.ps1') -LabRoot $root -EngineDirectory $EngineDirectory -NoBrowser -HideConsole
   try{
-   Add-Type -Path @((Join-Path $PSScriptRoot '../../VoiceDiagnostics.cs'),(Join-Path $PSScriptRoot '../../LocalSipAudioEndpoint.cs'),(Join-Path $PSScriptRoot '../../ModemBridge.Tests.cs'),(Join-Path $PSScriptRoot 'NativeSipSmoke.cs'))
-   [ModemBridgeIntegration]::Run($state.sip_port,$state.modem_gateway.password,$state.accounts[1].password,[bool]$Pcm16)|ConvertTo-Json -Depth 6
+   Add-Type -Path @((Join-Path $PSScriptRoot '../../VoiceDiagnostics.cs'),(Join-Path $PSScriptRoot '../../LocalSipAudioEndpoint.cs'),(Join-Path $PSScriptRoot '../../GreetingPrompt.cs'),(Join-Path $PSScriptRoot '../../ModemGreetingBridge.cs'),(Join-Path $PSScriptRoot '../../ModemBridge.Tests.cs'),(Join-Path $PSScriptRoot 'NativeSipSmoke.cs'))
+   if($LocalGreeting){[ModemBridgeIntegration]::Run($state.sip_port,$state.modem_gateway.password,$state.accounts[1].password,$false,$state.esl_port,$state.esl_secret,$state.ivr.prompt_path)|ConvertTo-Json -Depth 6}else{[ModemBridgeIntegration]::Run($state.sip_port,$state.modem_gateway.password,$state.accounts[1].password,[bool]$Pcm16)|ConvertTo-Json -Depth 6}
   }catch{Write-Host $_.Exception.Message;throw}finally{& (Join-Path $PSScriptRoot '../Stop-PbxLab.ps1') -LabRoot $root;$owned=Get-Content (Join-Path $root 'lab-session.json') -Raw|ConvertFrom-Json;if(Get-Process -Id $owned.process_id -ErrorAction SilentlyContinue){throw 'Owned native process has not stopped; profile retained'}}
  }
  $succeeded=$true

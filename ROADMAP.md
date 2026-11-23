@@ -1,6 +1,6 @@
-## Same-call greeting-mode comparison — 2026-11-23
+## Initial VTX greeting and duplex handoff — 2026-11-23
 
-Next physical evidence: one same-call VTX/VTR comparison with unchanged greeting/codec/gain via Compare-ModemGreetingModes.cmd. It intentionally does not transfer to an extension. Owner reports whether first/second differ; inspect source hash, both phase completion and restoration before drawing conclusions. Do not advertise this as a repair, infer VentaFax mode, or change production/default call routing until a reproducible mode-specific result exists.
+Next acceptance: close comparison/bridge and VentaFax, Stop-PbxLab.cmd once, then normal Start-ModemBridge.cmd; wait ready, call, hear the first message and enter the menu choice after it ends, verify two-way audio and hangup. Do not repeat diagnostic gain/PCM trials. Initial VTX greeting is implemented; physical loudness/transition acceptance remains open. Menu retry prompts still use the existing PBX duplex path; any broader mode switching needs separate evidence and design.
 
 ## Preserve and synchronize modem flow control — 2026-11-23
 

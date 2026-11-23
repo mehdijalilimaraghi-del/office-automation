@@ -19,11 +19,12 @@ namespace OfficeAutomation.Telephony.Diagnostics
         byte[] TransmitAudio(int count);
         bool Ended { get; }
     }
-    public interface IGreetingModeComparison : IVoiceAudioEndpoint
+    public interface ITransmitGreetingEndpoint : IVoiceAudioEndpoint
     {
         bool NeedsDuplex { get; }
         void BeginDuplex();
     }
+    public interface IGreetingModeComparison : ITransmitGreetingEndpoint { }
     public interface IVoicePort : IDisposable
     {
         void Open();
@@ -367,7 +368,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
     }
     public sealed class VoiceResult
     {
-        public string DiagnosticVersion = "2026.11.23.5";
+        public string DiagnosticVersion = "2026.11.23.6";
         public bool TransmitOnlyStarted, SwitchedToDuplex;
         public int ModeTransitionMilliseconds;
         public string EffectiveFlowControl = "";
@@ -408,11 +409,12 @@ namespace OfficeAutomation.Telephony.Diagnostics
         public string ReceiveFraming = "linear";
         public int ReceivedPeak;
         public double ReceivedRms;
-        public int StreamMilliseconds;
+        public int StreamMilliseconds, DuplexStartedAtMilliseconds;
         public readonly List<VoiceSampleWindow> SampleWindows = new List<VoiceSampleWindow>();
-        public double ReceiveRateAfterWarmup { get { return VoiceTiming.Rate(SampleWindows, true); } }
-        public double TransmitRateAfterWarmup { get { return VoiceTiming.Rate(SampleWindows, false); } }
-        public bool BridgeTimingReady { get { return VoiceTiming.Ready(SampleWindows); } }
+        private List<VoiceSampleWindow> TimingWindows { get { return DuplexStartedAtMilliseconds == 0 ? SampleWindows : SampleWindows.Where(w => w.Milliseconds >= DuplexStartedAtMilliseconds).Select(w => new VoiceSampleWindow { Milliseconds=w.Milliseconds-DuplexStartedAtMilliseconds, TransmittedSamples=w.TransmittedSamples, ReceivedSamples=w.ReceivedSamples, RawReceivedSamples=w.RawReceivedSamples }).ToList(); } }
+        public double ReceiveRateAfterWarmup { get { return VoiceTiming.Rate(TimingWindows, true); } }
+        public double TransmitRateAfterWarmup { get { return VoiceTiming.Rate(TimingWindows, false); } }
+        public bool BridgeTimingReady { get { return VoiceTiming.Ready(TimingWindows); } }
         public string RecordingFile = "";
         public string[] Events = new string[0];
         public string Identity = "";
@@ -630,7 +632,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 }
                 stage = "answer_incoming_call";
                 progress = "answering"; answerAttempted = true; Command("AT+VLS=1", false, true); result.Answered = true;
-                var comparison = endpoint as IGreetingModeComparison;
+                var comparison = endpoint as ITransmitGreetingEndpoint;
                 if (comparison != null)
                 {
                     stage = "start_transmit_only";
@@ -652,6 +654,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                         comparison.BeginDuplex(); result.SwitchedToDuplex = true;
                         result.ModeTransitionMilliseconds = (int)(clock.ElapsedMilliseconds - transition);
                         controlPause += result.ModeTransitionMilliseconds;
+                        result.DuplexStartedAtMilliseconds=(int)clock.ElapsedMilliseconds;
                         progress = "streaming"; stage = "stream_audio";
                     }
                     long phase = Stopwatch.GetTimestamp();

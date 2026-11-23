@@ -1,6 +1,6 @@
-## Same-call greeting-mode comparison — 2026-11-23
+## Initial VTX greeting and duplex handoff — 2026-11-23
 
-Owner confirms flow synchronization did not improve volume. Latest report 133203 uses v23.4, IFC2,2/host sync true, max write7ms/lag6ms, same active RMS before/after bridge and successful cleanup. Stop treating transport correction as the loudness cause. Added isolated same-call comparison using the actual configured greeting: first VTX transmit-only, then VTR duplex, same PCMU bytes/gain/flow; no PBX/extension transfer or caller recording. Source SHA256/sample count reported. This is a diagnostic, not a confirmed fix or proof of VentaFax's runtime mode.
+Owner compared both equal-source modes in physical report modem-greeting-modes-20261123-135418-91c39c.json: VTX louder than VTR; both 106400 samples, source 90259 samples, complete with cleanup and 1ms lag. This proves a mode-dependent difference on this host, not adequate loudness or VentaFax equivalence. Normal IVR bridge now plays the initial configured greeting through VTX, then switches to VTR for keypad/conversation. Authenticate SIP and bind the parked PBX UUID to our random Call-ID through loopback control before answering the modem. No gain/codec guesses. Physical integrated acceptance still pending.
 
 ## Preserve and synchronize modem flow control — 2026-11-23
 

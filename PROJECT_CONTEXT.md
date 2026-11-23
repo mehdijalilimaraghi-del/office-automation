@@ -1,6 +1,6 @@
-## Same-call greeting-mode comparison — 2026-11-23
+## Initial VTX greeting and duplex handoff — 2026-11-23
 
-Distinguish diagnostic comparison from a product fix. One incoming comparison call repeats the same current greeting in two documented modem states; no volume increase, new source selection or separate-call handset gain comparison is required. UI must clearly state that this special mode does not connect an extension. Existing normal call mode is retained; the owner judges real loudness and quality.
+The initial external-line greeting must use the owner-observed louder VTX state while conversation remains VTR. The PBX selection timeout begins only after the message and modem transition finish, with no duplicate first prompt. Keep normal internal 9197 playback, menu choices, retry settings and operator routing. Enter keypad choices after the initial greeting; this first-message correction does not certify louder retries or parity with VentaFax.
 
 ## Preserve and synchronize modem flow control — 2026-11-23
 
