@@ -1,3 +1,11 @@
+## Controlled modem transmit-volume trial — 2026-11-23
+
+VoiceTransmitLevel parses acknowledged scalar/range VGT replies separately from codec settings. VoiceSession has a backward-compatible optional sixth constructor argument for transmit level. It snapshots and validates current and requested levels before modifying, verifies after VSM setup, and restores before leaving voice class. Gain-restore failure does not suppress codec/flow/class restoration and keeps CleanupConfirmed false. Start-ModemBridge.ps1 enables this path only with -NominalTransmitVolume; dedicated CMD makes the trial distinct. No local Windows mixer or firewall settings are changed.
+
+## Physical IVR and final setup requirements — 2026-11-23
+
+Final Windows adapter requirements: separate local process readiness from authenticated-client/LAN diagnostics; identify active interface/profile and scoped firewall status without assuming Public means safe to reclassify. Scope account state to the correct Windows profile and retain secrets. Keep Windows local-monitor routing separate from SIP/modem transport. Greeting preparation needs numeric audio evidence and clipping-safe bounded controls; do not apply universal modem gain commands without querying supported/current values and restoring them. No runtime audio/network implementation was changed in this evidence-only step.
+
 ## Local greeting and activation helpers — 2026-11-23
 
 Record-IvrGreeting.ps1 uses PromptRecorder.cs and Windows winmm MCI waveaudio for explicit, bounded local PCM16 8 kHz mono recording; it needs no PBX profile and never opens a modem. Playback is explicit. Enable-ModemIvr.ps1 uses existing Import-PbxOfficeConfiguration and Set-PbxModemGateway, retains the complete account list, snapshots state/XML/account instructions under the protected profile, and restores all three on failure. Existing enabled IVR is reused; replacement PCM WAV is validated/normalized by the existing converter before routing modem calls to 9197. These helpers do not modify Windows mixer settings or create application-server configuration; web management remains the authoritative custom-menu interface.

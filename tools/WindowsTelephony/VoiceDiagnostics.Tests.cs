@@ -13,6 +13,8 @@ public sealed class DiagnosticFakePort : IVoicePort
     public bool NoRing, RejectDuplex, RejectHangup, Released, Disposed, RejectFormatQuery, PartialFormatReply, ResidualAudioOnStop, RejectRingQueries;
     public string RingReply = "\r\nRING\r\n";
     public string CurrentFormat = "0,8000";
+    public string CurrentTransmitLevel = "0", SupportedTransmitLevels = "(0,126-130)";
+    public bool RejectTransmitLevel, RejectTransmitRestore, IgnoreTransmitLevel;
     public readonly List<string> Commands = new List<string>();
     private void Enqueue(string value) { foreach(byte b in Encoding.ASCII.GetBytes(value)) input.Enqueue(b); }
     public void Open() { }
@@ -34,6 +36,10 @@ public sealed class DiagnosticFakePort : IVoicePort
         string command=Encoding.ASCII.GetString(b,o,n).Trim();Commands.Add(command);
         if(RejectRingQueries && (command=="AT+VEM?" || command=="AT+VDR?" || command=="AT+VLS?")){Enqueue("\r\nERROR\r\n");return;}
         switch(command) {
+            case "AT+VGT?": Enqueue("\r\n"+CurrentTransmitLevel+"\r\nOK\r\n");break;
+            case "AT+VGT=?": Enqueue("\r\n"+SupportedTransmitLevels+"\r\nOK\r\n");break;
+            case "AT+VGT=128": if(!RejectTransmitLevel && !IgnoreTransmitLevel)CurrentTransmitLevel="128";Enqueue(RejectTransmitLevel?"\r\nERROR\r\n":"\r\nOK\r\n");break;
+            case "AT+VGT=0": if(!RejectTransmitRestore)CurrentTransmitLevel="0";Enqueue(RejectTransmitRestore?"\r\nERROR\r\n":"\r\nOK\r\n");break;
             case "ATI": Enqueue("\r\nLSI Test Fixture\r\nOK\r\n");break;
             case "AT+FCLASS?": Enqueue("\r\n0\r\nOK\r\n");break;
             case "AT+VSM=?": Enqueue("\r\n4,\"G.711U\",8,0,8000\r\nOK\r\n");break;

@@ -27,6 +27,7 @@ public static class BridgeLifecycleChecks
         port=new DiagnosticFakePort();endpoint=new BridgeLifecycleEndpoint();session=new VoiceSession(port,folder,300,60000,endpoint);session.Start();Finish(session);
         Console.WriteLine("Lifecycle: "+session.Result.Status+"/"+session.Result.ErrorCode+"/"+session.Result.EndReason+"; received "+endpoint.Samples);
         Check(session.Result.Status=="bridged" && session.Result.EndReason=="pbx_hangup" && session.Result.CleanupConfirmed && endpoint.Disposed && endpoint.Samples>0,"Remote SIP end must release modem");
+        Check(!port.Commands.Contains("AT+VGT?") && !port.Commands.Contains("AT+VGT=128"),"Normal bridge must leave gain untouched");
         Check(session.RecordingPath==null && session.Result.RecordingFile=="" && !Directory.Exists(folder),"Bridge must not record caller audio");
         Check(session.Result.ReceivedSamples>0 && session.Result.RawReceivedSamples>=session.Result.ReceivedSamples,"Streaming counters must survive buffer draining");
         port=new DiagnosticFakePort();endpoint=new BridgeLifecycleEndpoint {FailReceive=true};session=new VoiceSession(port,folder,300,60000,endpoint);session.Start();Finish(session);
@@ -35,6 +36,23 @@ public static class BridgeLifecycleChecks
         Check(session.Result.Cancelled && session.Result.CleanupConfirmed && endpoint.Disposed && port.Disposed,"User cancellation must restore modem and dispose SIP endpoint");
         port=new DiagnosticFakePort();endpoint=new BridgeLifecycleEndpoint {FailDispose=true};session=new VoiceSession(port,folder,300,60000,endpoint);session.Start();Finish(session);
         Check(session.Result.Status=="failed" && session.Result.FailureStage=="cleanup_pbx" && session.Result.ErrorCode=="pbx_cleanup_failed" && session.Result.CleanupConfirmed && port.Disposed,"SIP cleanup failure must be reported after releasing modem");
+        Check(VoiceTransmitLevel.Current("AT+VGT?\r\r\n0\r\nOK\r\n")=="0","Actual scalar zero snapshot must be preserved");
+        Check(VoiceTransmitLevel.Supports("(0,126-130)\r\nOK\r\n",128) && !VoiceTransmitLevel.Supports("(0,126-130)\r\nOK\r\n",131),"Actual advertised range must be enforced");
+        Check(VoiceTransmitLevel.Current("0\r\n128\r\nOK\r\n")=="" && !VoiceTransmitLevel.Supports("(0,130-126)\r\nOK\r\n",128) && !VoiceTransmitLevel.Supports("(0,126-130)\r\nERROR\r\n",128),"Conflicting or rejected gain evidence must fail");
+        port=new DiagnosticFakePort();endpoint=new BridgeLifecycleEndpoint();session=new VoiceSession(port,folder,300,60000,endpoint,128);session.Start();Finish(session);
+        Check(session.Result.TransmitLevelApplied && session.Result.TransmitLevelRestored && session.Result.OriginalTransmitLevel=="0" && session.Result.CleanupConfirmed && port.Commands.Contains("AT+VGT=128") && port.Commands.Contains("AT+VGT=0"),"Opt-in gain must be set then restored after call");
+        port=new DiagnosticFakePort {SupportedTransmitLevels="(0,126-127)"};endpoint=new BridgeLifecycleEndpoint();session=new VoiceSession(port,folder,300,60000,endpoint,128);session.Start();Finish(session);
+        Check(!session.Result.Answered && !port.Commands.Contains("AT+VGT=128") && session.Result.CleanupConfirmed,"Unsupported gain must fail before setting or answering");
+        port=new DiagnosticFakePort {CurrentTransmitLevel="unknown"};endpoint=new BridgeLifecycleEndpoint();session=new VoiceSession(port,folder,300,60000,endpoint,128);session.Start();Finish(session);
+        Check(!session.Result.Answered && !port.Commands.Contains("AT+VGT=128") && session.Result.CleanupConfirmed,"Missing original gain must fail before setting");
+        port=new DiagnosticFakePort {RejectTransmitLevel=true};endpoint=new BridgeLifecycleEndpoint();session=new VoiceSession(port,folder,300,60000,endpoint,128);session.Start();Finish(session);
+        Check(!session.Result.Answered && session.Result.TransmitLevelRestored && port.Commands.Contains("AT+FCLASS=0"),"Rejected setting must still attempt original gain and class restoration");
+        port=new DiagnosticFakePort {IgnoreTransmitLevel=true};endpoint=new BridgeLifecycleEndpoint();session=new VoiceSession(port,folder,300,60000,endpoint,128);session.Start();Finish(session);
+        Check(!session.Result.Answered && !session.Result.TransmitLevelApplied && session.Result.TransmitLevelRestored && session.Result.FailureStage=="verify_transmit_level","Unconfirmed readback must fail before answering and restore gain");
+        port=new DiagnosticFakePort {RejectTransmitRestore=true};endpoint=new BridgeLifecycleEndpoint();session=new VoiceSession(port,folder,300,60000,endpoint,128);session.Start();Finish(session);
+        Check(!session.Result.TransmitLevelRestored && !session.Result.CleanupConfirmed && session.Result.Status=="failed" && port.Commands.Contains("AT+FCLASS=0"),"Gain restore failure must report failure but still restore class");
+        port=new DiagnosticFakePort {NoRing=true};endpoint=new BridgeLifecycleEndpoint();session=new VoiceSession(port,folder,2000,60000,endpoint,128);session.Start();Thread.Sleep(100);session.Cancel();Finish(session);
+        Check(session.Result.Cancelled && session.Result.TransmitLevelRestored && session.Result.CleanupConfirmed,"Cancelled gain trial must restore original gain");
         bool rejected=false;try{new LocalSipAudioEndpoint("8.8.8.8",5160,"office_modem",new string('a',48),"1002");}catch(ArgumentException){rejected=true;}Check(rejected,"Off-host PBX must be rejected");
         using(var sip=new LocalSipAudioEndpoint("127.0.0.1",5160,"office_modem",new string('a',48),"1002")){
             sip.ReceiveAudio(new byte[8000]);rejected=false;try{sip.ReceiveAudio(new byte[1]);}catch(InvalidOperationException){rejected=true;}Check(rejected,"Outgoing media queue must remain bounded");

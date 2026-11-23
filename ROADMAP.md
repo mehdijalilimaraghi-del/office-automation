@@ -1,3 +1,11 @@
+## Controlled modem transmit-volume trial — 2026-11-23
+
+Next physical step: close the old bridge, launch Start-ModemBridge-NominalVolume.cmd from the updated shared IVR folder, call the external line after Ready and compare the same greeting/voice, then hang up from the extension. Inspect automatic report for VGT original/applied/restored and cleanup before considering persistent calibration. Trial 128 is not an accepted permanent fix. Retain the network/mixer/greeting requirements documented below.
+
+## Physical IVR and final setup requirements — 2026-11-23
+
+Final Windows setup must detect host LAN IP/profile and assess SIP reachability beyond local readiness; show actionable Persian diagnostics and offer reviewed, narrowly scoped firewall/network changes rather than disabling security or silently changing Public networks. Preserve account credentials on restart/reconfiguration. Include greeting upload/record/playback, measured level checks and bounded clipping-safe level adjustment; compare direct SIP IVR playback with external-line playback before changing modem gains. Keep local call monitoring separate from media forwarding, preserve Multiplicity/global audio and verify behavior after restart. Comparison completed: direct 9197 is clear while the external line is quiet; controlled modem transmit-level trial is next; caller-side disconnect, persistent operation, outgoing calls and fax remain pending.
+
 ## Current V4 acceptance — 2026-11-23
 
 Real incoming call and human two-way speech to 1002 are owner-accepted. Next: owner records or selects a WAV greeting, activates IVR using Enable-ModemIvr.cmd after stopping the lab, then verifies real-line greeting, keys 1/2 and extension-originated release. Recorder and activation helpers are implemented and isolated activation/native call tests passed; microphone capture and real-line IVR are not yet accepted. Caller-originated disconnect, persistent operation, outgoing calls and fax remain pending. The unnamed Windows audio-session mute is an owner-tested workaround, not a diagnosed driver fix.

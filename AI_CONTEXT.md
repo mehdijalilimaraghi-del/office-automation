@@ -1,3 +1,11 @@
+## Controlled modem transmit-volume trial — 2026-11-23
+
+The owner modem reports VGT current 0 and supported (0,126-130), VGR current 0/supported (0,126-133); diagnostic restored FCLASS 0. Do not label gain 0 as mute or assume AGC/AVC causes attenuation. Implemented opt-in Start-ModemBridge-NominalVolume.cmd: set supported VGT 128 for one call only, preserve current VGT, confirm readback after codec setup, restore on exit/cancel/errors. Normal bridge does not query/change gain. Owner still must confirm real-line loudness; no persistent modem gain or RX gain change.
+
+## Physical IVR and final setup requirements — 2026-11-23
+
+Owner confirms changing EDARII network profile back from Public to Private restored remote SIP registration. Startup readiness alone does not prove LAN reachability. Owner now confirms physical IVR playback (too quiet); report 20261123-090752 ends pbx_hangup with cleanup, closing extension-originated release gate. Never equate muting Multiplicity/global output with fixing modem monitoring. Greeting source/conversion measured -28.31/-28.41 dBFS RMS, only 0.1 dB conversion loss. Separate +7 dB WAV comparison has -3.07 dBFS peak, zero clipped samples; not yet owner-accepted. Do not claim root cause or change modem gains without current-setting snapshots.
+
 ## Incoming IVR activation and owner evidence — 2026-11-23
 
 Owner confirms real incoming modem calls and two-way human audio to 1002. Muting only the Windows mixer session named Name Not Available stopped unwanted local monitoring without breaking the call; its exact source and persistence after restart remain unverified. Do not disable Multiplicity/global audio or request another version check. Initial destination was direct 1002, so no greeting was expected. Use Record-IvrGreeting.cmd on a PC with an active microphone, or select an existing WAV in Enable-ModemIvr.cmd. Enable preserves all accounts/passwords, reuses existing enabled IVR by default, otherwise creates reviewed 1->1001 / 2->1002 with fallback 1002. Stop PBX before applying. Physical IVR and hangup acceptance remain pending.

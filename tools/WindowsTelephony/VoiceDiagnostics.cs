@@ -210,6 +210,45 @@ namespace OfficeAutomation.Telephony.Diagnostics
             }
         }
     }
+    public static class VoiceTransmitLevel
+    {
+        static bool Ok(string reply) { return Regex.IsMatch(reply, @"(?:^|[\r\n])OK[ \t]*(?:$|[\r\n])") && !Regex.IsMatch(reply, @"(?:^|[\r\n])(?:ERROR|NO CARRIER)[ \t]*(?:$|[\r\n])"); }
+        public static string Current(string reply)
+        {
+            if (!Ok(reply)) return "";
+            string value = "";
+            foreach (string raw in Regex.Split(reply, @"[\r\n]+"))
+            {
+                string line = Regex.Replace(raw.Trim(), @"^\+VGT[ \t]*:[ \t]*", "", RegexOptions.IgnoreCase);
+                if (!Regex.IsMatch(line, @"^[0-9]{1,3}$")) continue;
+                int number = int.Parse(line, CultureInfo.InvariantCulture);
+                if (number > 255 || (value.Length > 0 && value != number.ToString(CultureInfo.InvariantCulture))) return "";
+                value = number.ToString(CultureInfo.InvariantCulture);
+            }
+            return value;
+        }
+        public static bool Supports(string reply, int wanted)
+        {
+            if (wanted < 0 || wanted > 255 || !Ok(reply)) return false;
+            foreach (string raw in Regex.Split(reply, @"[\r\n]+"))
+            {
+                string line = Regex.Replace(raw.Trim(), @"^\+VGT[ \t]*:[ \t]*", "", RegexOptions.IgnoreCase);
+                if (!Regex.IsMatch(line, @"^\(?[0-9]{1,3}(?:[ \t]*-[ \t]*[0-9]{1,3})?(?:[ \t]*,[ \t]*[0-9]{1,3}(?:[ \t]*-[ \t]*[0-9]{1,3})?)*\)?$")) continue;
+                if (line.StartsWith("(") != line.EndsWith(")")) return false;
+                bool found = false;
+                foreach (string item in line.Trim('(', ')').Split(','))
+                {
+                    string[] bounds = item.Split('-');
+                    int low = int.Parse(bounds[0].Trim(), CultureInfo.InvariantCulture);
+                    int high = bounds.Length == 1 ? low : int.Parse(bounds[1].Trim(), CultureInfo.InvariantCulture);
+                    if (low > high || high > 255) return false;
+                    if (wanted >= low && wanted <= high) found = true;
+                }
+                return found;
+            }
+            return false;
+        }
+    }
     public static class VoiceSettings
     {
         // Some drivers include codec metadata in VSM?; only codec/rate/sensitivity/expansion are settable.
@@ -284,7 +323,10 @@ namespace OfficeAutomation.Telephony.Diagnostics
     }
     public sealed class VoiceResult
     {
-        public string DiagnosticVersion = "2026.11.22.3";
+        public string DiagnosticVersion = "2026.11.23.1";
+        public string OriginalTransmitLevel = "";
+        public int? RequestedTransmitLevel;
+        public bool TransmitLevelApplied, TransmitLevelRestored;
         public string FailureStage = "";
         public string FailureError = "";
         public string CleanupError = "";
@@ -338,6 +380,8 @@ namespace OfficeAutomation.Telephony.Diagnostics
     {
         private readonly IVoicePort port;
         private readonly IVoiceAudioEndpoint endpoint;
+        private readonly int? transmitLevel;
+        private bool changedTransmitLevel;
         private readonly string folder;
         private readonly int ringTimeout;
         private readonly int captureDuration;
@@ -355,8 +399,11 @@ namespace OfficeAutomation.Telephony.Diagnostics
         public string RecordingPath { get; private set; }
         public VoiceSession(string name, string folder) : this(new SerialVoicePort(name), folder, 60000, 12000) { }
         public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration) : this(port, folder, ringTimeout, captureDuration, null) { }
-        public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration, IVoiceAudioEndpoint endpoint)
+        public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration, IVoiceAudioEndpoint endpoint) : this(port, folder, ringTimeout, captureDuration, endpoint, null) { }
+        public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration, IVoiceAudioEndpoint endpoint, int? transmitLevel)
         {
+            if (transmitLevel.HasValue && (transmitLevel.Value < 0 || transmitLevel.Value > 255)) throw new ArgumentOutOfRangeException("transmitLevel");
+            this.transmitLevel = transmitLevel; result.RequestedTransmitLevel = transmitLevel;
             int maximum = endpoint == null ? 30000 : 120000;
             if (ringTimeout < 100 || ringTimeout > 60000 || captureDuration < 100 || captureDuration > maximum) throw new ArgumentOutOfRangeException();
             this.port = port; this.folder = folder; this.ringTimeout = ringTimeout; this.captureDuration = captureDuration; this.endpoint = endpoint;
@@ -458,9 +505,29 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 if (originalFlow.Length == 0) throw new InvalidOperationException("cannot_preserve_flow_control");
                 stage = "inspect_ring_settings";
                 ReadRingDiagnostics();
+                if (transmitLevel.HasValue)
+                {
+                    stage = "read_transmit_level";
+                    result.OriginalTransmitLevel = VoiceTransmitLevel.Current(Command("AT+VGT?", false, true));
+                    if (result.OriginalTransmitLevel.Length == 0) throw new InvalidOperationException("cannot_preserve_transmit_level");
+                    string supported = Command("AT+VGT=?", false, true);
+                    if (!VoiceTransmitLevel.Supports(supported, transmitLevel.Value)
+                        || !VoiceTransmitLevel.Supports(supported, int.Parse(result.OriginalTransmitLevel, CultureInfo.InvariantCulture)))
+                        throw new InvalidOperationException("unsupported_transmit_level");
+                    stage = "set_transmit_level"; changedTransmitLevel = true;
+                    Command("AT+VGT=" + transmitLevel.Value.ToString(CultureInfo.InvariantCulture), false, true);
+                    // Read back after codec setup before accepting the trial.
+                }
                 stage = "configure_audio";
                 Command("AT+IFC=0,0", false, true);
                 Command("AT+VSM=" + codec.ToString(CultureInfo.InvariantCulture) + ",8000", false, true);
+                if (transmitLevel.HasValue)
+                {
+                    stage = "verify_transmit_level";
+                    if (VoiceTransmitLevel.Current(Command("AT+VGT?", false, true)) != transmitLevel.Value.ToString(CultureInfo.InvariantCulture))
+                        throw new InvalidOperationException("transmit_level_not_confirmed");
+                    result.TransmitLevelApplied = true;
+                }
                 progress = "waiting_ring"; stage = "wait_for_incoming_call";
                 var ringWatch = Stopwatch.StartNew(); var ring = new RingDetector();
                 while (ringWatch.ElapsedMilliseconds < ringTimeout)
@@ -538,10 +605,22 @@ namespace OfficeAutomation.Telephony.Diagnostics
                     {
                         if (duplex) Exchange("<DLE>^", new byte[] { 16, 94 }, false, false);
                         if (answerAttempted) Command("ATH", false, false);
+
                         if (changedMode && originalFormat.Length > 0) Command("AT+VSM=" + originalFormat, false, false);
                         if (originalFlow.Length > 0) Command("AT+IFC=" + originalFlow, false, false);
+                        if (changedTransmitLevel)
+                        {
+                            try
+                            {
+                                Command("AT+VGT=" + result.OriginalTransmitLevel, false, false);
+                                if (VoiceTransmitLevel.Current(Command("AT+VGT?", false, false)) != result.OriginalTransmitLevel)
+                                    throw new InvalidOperationException("transmit_level_restore_not_confirmed");
+                                result.TransmitLevelRestored = true;
+                            }
+                            catch (Exception exception) { result.CleanupError = exception.Message; }
+                        }
                         if (changedMode && originalClass.Length > 0) Command("AT+FCLASS=" + originalClass, false, false);
-                        result.CleanupConfirmed = true;
+                        result.CleanupConfirmed = result.CleanupError.Length == 0;
                     }
                     catch (Exception exception)
                     {

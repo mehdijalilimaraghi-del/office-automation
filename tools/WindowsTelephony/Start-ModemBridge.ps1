@@ -1,6 +1,6 @@
 ﻿#requires -Version 5.1
 [CmdletBinding()]
-param([string]$LabRoot,[string]$EngineDirectory)
+param([string]$LabRoot,[string]$EngineDirectory,[switch]$NominalTransmitVolume)
 $ErrorActionPreference='Stop'
 try {
  $module=Join-Path $PSScriptRoot 'PbxLab.psm1'
@@ -16,6 +16,7 @@ try {
  $pbxStatus=Invoke-PbxLabCommand $stateProfile 'status';if($pbxStatus -notmatch 'UP'){throw 'PBX is not ready'}
  Add-Type -AssemblyName System.Windows.Forms;Add-Type -AssemblyName System.Drawing
  if(-not ('OfficeAutomation.Telephony.Bridge.LocalSipAudioEndpoint' -as [type])){Add-Type -Path @((Join-Path $PSScriptRoot 'VoiceDiagnostics.cs'),(Join-Path $PSScriptRoot 'LocalSipAudioEndpoint.cs'))}
+ if($NominalTransmitVolume){[Windows.Forms.MessageBox]::Show('آزمون صدای ارسال مودم با مقدار ۱۲۸؛ مقدار قبلی پس از پایان تماس بازیابی می‌شود. بلندی صدای این حالت هنوز تأیید نشده است.','آزمون کنترل‌شده صدا')|Out-Null}
  $ports=@([IO.Ports.SerialPort]::GetPortNames()|Sort-Object)
  if(-not $ports.Count){throw 'No modem COM port is available'}
  $run=@{session=$null;endpoint=$null;wantClose=$false;finished=$false;report=$null}
@@ -43,7 +44,8 @@ try {
   try {
    $run.endpoint=[OfficeAutomation.Telephony.Bridge.LocalSipAudioEndpoint]::new($stateProfile.bind_address,[int]$stateProfile.sip_port,$stateProfile.modem_gateway.username,$stateProfile.modem_gateway.password,$stateProfile.modem_gateway.destination)
    $serial=[OfficeAutomation.Telephony.Diagnostics.SerialVoicePort]::new([string]$portChoice.SelectedItem)
-   $run.session=[OfficeAutomation.Telephony.Diagnostics.VoiceSession]::new($serial,(Join-Path $LabRoot 'bridge-reports'),60000,60000,$run.endpoint)
+   $trialLevel=if($NominalTransmitVolume){[Nullable[int]]128}else{$null}
+   $run.session=[OfficeAutomation.Telephony.Diagnostics.VoiceSession]::new($serial,(Join-Path $LabRoot 'bridge-reports'),60000,60000,$run.endpoint,$trialLevel)
    $start.Enabled=$false;$consent.Enabled=$false;$portChoice.Enabled=$false;$stop.Enabled=$true
    $run.session.Start();$timer.Start()
   }catch{if($run.session -and $run.session.Started){$run.session.Cancel();$timer.Start()}else{if($run.endpoint){$run.endpoint.Dispose()};$run.session=$null};$status.Text='شروع آزمون ممکن نشد: '+$_.Exception.Message;$start.Enabled=$false}
@@ -55,7 +57,7 @@ try {
    $timer.Stop();$stop.Enabled=$false
    $result=$run.session.Result
    $run.report=Join-Path $PSScriptRoot ('modem-bridge-result-'+[datetime]::Now.ToString('yyyyMMdd-HHmmss')+'-'+[guid]::NewGuid().ToString('N').Substring(0,6)+'.json')
-   $report=[ordered]@{report_type='modem_bridge_test';schema_version=1;destination=$stateProfile.modem_gateway.destination;port=[string]$portChoice.SelectedItem;audio_recorded=$false;result=($result|Select-Object DiagnosticVersion,Status,ErrorCode,FailureStage,FailureError,CleanupError,RingDetected,Answered,DuplexStarted,BridgeStarted,CleanupConfirmed,Cancelled,EndReason,TransmittedSamples,ReceivedSamples,RawReceivedSamples,RemovedRepeatedSamples,ReceiveFraming,StreamMilliseconds,SampleWindows,ReceiveRateAfterWarmup,TransmitRateAfterWarmup,BridgeTimingReady,Events,Trace);sip=$run.endpoint.Metrics}
+   $report=[ordered]@{report_type='modem_bridge_test';schema_version=1;destination=$stateProfile.modem_gateway.destination;port=[string]$portChoice.SelectedItem;audio_recorded=$false;result=($result|Select-Object DiagnosticVersion,RequestedTransmitLevel,OriginalTransmitLevel,TransmitLevelApplied,TransmitLevelRestored,Status,ErrorCode,FailureStage,FailureError,CleanupError,RingDetected,Answered,DuplexStarted,BridgeStarted,CleanupConfirmed,Cancelled,EndReason,TransmittedSamples,ReceivedSamples,RawReceivedSamples,RemovedRepeatedSamples,ReceiveFraming,StreamMilliseconds,SampleWindows,ReceiveRateAfterWarmup,TransmitRateAfterWarmup,BridgeTimingReady,Events,Trace);sip=$run.endpoint.Metrics}
    try{[IO.File]::WriteAllText($run.report,($report|ConvertTo-Json -Depth 9),[Text.UTF8Encoding]::new($false));if($result.Status -eq 'failed'){$status.Text='اتصال خط کامل نشد. گزارش خطا در همین پوشه ذخیره شد.'}elseif($result.Cancelled){$status.Text='آزمون متوقف و گزارش در همین پوشه ذخیره شد.'}else{$status.Text='آزمون پایان یافت. گزارش در همین پوشه ذخیره شد. نتیجه شنیدن صدا و قطع تماس را اعلام کنید.'}}catch{$status.Text='آزمون پایان یافت؛ ذخیره گزارش ممکن نشد: '+$_.Exception.Message}
    $run.finished=$true
    if($run.wantClose){$form.Close()}

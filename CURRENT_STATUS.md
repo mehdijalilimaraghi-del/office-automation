@@ -1,3 +1,13 @@
+## Controlled modem transmit-volume trial — 2026-11-23
+
+Added controlled transmit-volume trial after the owner confirmed direct 9197 clear but external line quiet. Actual gain inspection returned VGT=0 with allowed 0,126-130 and acknowledged original-class restoration. Optional runtime trial 128 validates both original/requested support, confirms post-codec readback and restores the prior value. Reports expose requested/original/applied/restored values. Simulated tests pass supported gain, unsupported/unknown evidence, rejection, ignored setting, cancellation and restoration failure; normal mode is unchanged. Actual loudness improvement remains pending. No migration, dependency or production setting changes.
+
+Validation: SQL Server suite passed (546 tests / 3445 assertions), TypeScript/build passed, native PBX simulated-modem routing/audio/BYE passed, diagnostic/lifecycle/protocol tests passed, and PowerShell constructor binding passed for both modes. Restoration is read back after codec restoration. Physical external-line volume remains unverified.
+
+## Physical IVR and final setup requirements — 2026-11-23
+
+Physical extension-originated release is confirmed by latest owner report (destination 9197, bridged, pbx_hangup). Owner hears IVR but reports very low volume. Original 22.05 kHz mono PCM16 greeting is 8.54 s, peak -9.87 dBFS/RMS -28.31; converted 8 kHz peak -10.07/RMS -28.41. Conversion does not explain severe attenuation. Prepared separate greeting-telephone-plus7dB.wav on the share: +7 dB, peak -3.07, zero clipped samples, original unchanged; hearing acceptance remains pending. Network Public profile caused remote registration failure; switching to Private fixed it. Unnamed mixer mute stopped extra local sound without breaking call audio, but its source/persistence remain undiagnosed.
+
 ## Incoming IVR activation and owner evidence — 2026-11-23
 
 Owner accepted real modem-to-1002 two-way speech. Local monitoring was silenced through only the unnamed Windows mixer session; no automatic driver fix or restart persistence is claimed. Latest reviewed bridge report ended at the 60-second limit, not PBX BYE. Added a user-started 30-second WAV greeting recorder with playback and a file-select activation helper. Existing enabled menus are reused; replacing their WAV preserves custom routes/timeouts; quick new menu selects 1001/1002 on keys 1/2, with 1002 on timeout, preserving every existing account/password. Invalid audio restores the prior configuration. Activation regression and native simulated-modem IVR/key/audio/BYE checks passed. Physical recording and real-line greeting/key/hangup acceptance remain pending. No database/dependency change or deployment.

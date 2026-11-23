@@ -77,3 +77,7 @@ Real supported inbound/outbound call tests; authorization for logs/recordings; e
 ## Owner real-call gate and greeting helpers — 2026-11-23
 
 Owner confirms real incoming two-way voice to 1002; physical greeting/keys/hangup remain pending. Record-IvrGreeting.ps1/PromptRecorder.cs record a bounded explicit WAV independently of the PBX host. Enable-ModemIvr.ps1 selects a supplied WAV or reuses the enabled menu, preserves all accounts/secrets, uses existing conversion/import/gateway functions and restores protected configuration on failure. Test-IvrActivation.ps1 covers routes, extra accounts, secrets, reuse and invalid-file rollback. Windows mixer session mute is a workaround only; do not disable Multiplicity/global sound.
+
+## Controlled transmit level
+
+VoiceTransmitLevel in VoiceDiagnostics.cs plus optional VoiceSession constructor argument: supported/current VGT, post-codec readback, safe restoration and report fields. Start-ModemBridge-NominalVolume.cmd opts into 128; regular mode untouched. VoiceBridgeLifecycle.Tests.cs / DiagnosticFakePort cover actual LSI evidence and failure/cancel/nonmutation/readback cases. Physical loudness acceptance remains pending.

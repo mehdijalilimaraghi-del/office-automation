@@ -1,3 +1,13 @@
+## Controlled modem transmit-volume trial — 2026-11-23
+
+Test-BridgeLifecycle.ps1 includes actual LSI gain replies, normal-mode nonmutation, opt-in set/restore, unsupported range, missing snapshot, rejected write, accepted-but-ignored write, cancellation and restore failure while class restoration continues. Test-Audio.ps1 existing 14 diagnostic sessions passed. Actual native PBX integration and existing application regressions are rechecked for this slice; physical output-level acceptance remains separate. Manufacturer background only, not certification of this LSI device: https://multitech.com/wp-content/uploads/plusvoice-command_s000099e.pdf documents VGT zero as automatic control and nominal reference 128.
+
+Validation: SQL Server suite passed (546 tests / 3445 assertions), TypeScript/build passed, native PBX simulated-modem routing/audio/BYE passed, diagnostic/lifecycle/protocol tests passed, and PowerShell constructor binding passed for both modes. Restoration is read back after codec restoration. Physical external-line volume remains unverified.
+
+## Physical IVR and final setup requirements — 2026-11-23
+
+Evidence-only checks: LAN ping succeeded while a password-free SIP OPTIONS probe timed out; EDARII collector showed Public profile (enum 0), correct 192.168.1.101:5160 listener/domain and no registrations. Owner switching to Private fixed registration. Latest physical report confirms pbx_hangup. Original-versus-converted WAV measurement found only 0.1 dB RMS loss. Separate +7 dB PCM comparison retained sample count/duration and had zero clipping, peak -3.07 dBFS. No application code changed and no new PHPUnit/build run was needed for this documentation/audio comparison. Do not infer louder hardware playback until owner tests it.
+
 ## IVR helper checks — 2026-11-23
 
 Run Windows PowerShell 5.1 Test-IvrActivation.ps1 for WAV-based activation, both routes, preservation of all credentials including extra accounts, reuse of configured menu/device secret and invalid-file rollback. PromptRecorder.cs compiles on .NET Framework; PowerShell syntax checks pass. The existing native Test-ModemBridge.ps1 passes IVR key routing, bidirectional RTP and PBX-originated release using a simulated serial modem. Recording uses documented Windows MCI waveaudio commands (https://learn.microsoft.com/en-us/windows/win32/multimedia/recording); microphone capture is intentionally not started by automated validation and requires owner acceptance. Do not call these checks a real-line IVR test.

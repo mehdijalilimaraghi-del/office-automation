@@ -1,3 +1,11 @@
+## Controlled modem transmit-volume trial — 2026-11-23
+
+Modem volume calibration must be explicit and reversible per hardware. This controlled trial uses advertised VGT 128, without changing receive gain or increasing the greeting file again. Zero is a valid reported setting, not proof of silence; hardware behavior remains to be established. A readback mismatch prevents answer, and incomplete restoration is shown as failure rather than success.
+
+## Physical IVR and final setup requirements — 2026-11-23
+
+Owner requests that final product incorporate the real setup lessons: reliable remote extension registration, understandable network/profile failures, retained passwords, no unwanted local call playback and audible IVR prompts. Both ready-file upload and explicit greeting recording are required. Volume controls must distinguish source greeting, SIP endpoint and analog modem paths; never mute the entire computer or audio-sharing app as the solution. Extension-originated call release is now physically confirmed; IVR loudness remains open.
+
 ## Incoming greeting setup — 2026-11-23
 
 A greeting can be recorded explicitly on any Windows PC with an active microphone, reviewed locally, or supplied as an existing PCM16 WAV. Recording is capped at 30 seconds and never starts automatically. The quick lab menu offers key 1 to existing 1001 and key 2 to existing 1002, with timeout to 1002 after two seven-second waits. Users review destinations before activation. An already enabled menu is preserved unless a replacement file is explicitly supplied; full custom routing remains in the existing automation IVR settings. No call recording is added.
