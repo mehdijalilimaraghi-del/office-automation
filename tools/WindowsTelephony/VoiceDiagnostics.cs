@@ -427,6 +427,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
         public string EndReason = "";
         public bool CleanupConfirmed;
         public bool Cancelled;
+        public bool PausedForConfiguration;
         public int TransmittedSamples;
         public int ReceivedSamples;
         public int RawReceivedSamples;
@@ -477,6 +478,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
         private bool changedTransmitLevel;
         private readonly string folder;
         private readonly bool receiverMode;
+        private volatile bool idlePauseRequested;
         private readonly int ringTimeout;
         private readonly int captureDuration;
         private readonly CancellationTokenSource stop = new CancellationTokenSource();
@@ -521,6 +523,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
             worker = Task.Factory.StartNew(Run, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
         public void Cancel() { stop.Cancel(); }
+        public void RequestIdlePause() { if(!receiverMode)throw new InvalidOperationException("Idle pause requires receiver mode");idlePauseRequested=true; }
         private void Raw(byte[] bytes) { port.Write(bytes, 0, bytes.Length); }
         private string Reply(int timeout, bool cancellable, CommandTrace trace)
         {
@@ -670,7 +673,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                         ring.Feed(b[0]);
                         if (ring.Detected) { result.RingDetected = true; result.RingSignal = ring.Signal; break; }
                     }
-                    else Thread.Sleep(10);
+                    else { if(idlePauseRequested)throw new OperationCanceledException();Thread.Sleep(10); }
                 }
                 if (!result.RingDetected) throw new TimeoutException("incoming_call_timeout");
                 stop.Token.ThrowIfCancellationRequested();
@@ -762,7 +765,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 if (endpoint is IGreetingModeComparison && !endpoint.Ended) { result.ErrorCode="comparison_not_completed"; result.FailureStage=stage; result.FailureError=result.ErrorCode; }
                 if (result.EndReason.Length == 0) result.EndReason = endpoint is IGreetingModeComparison && endpoint.Ended ? "comparison_completed" : endpoint != null && endpoint.Ended ? "pbx_hangup" : decoder.Ended ? "modem_stream_end" : "duration_limit";
             }
-            catch (OperationCanceledException) { result.Cancelled = true; result.EndReason = "user_cancelled"; result.Status = "cancelled"; result.ErrorCode = "cancelled_by_user"; result.FailureStage = stage; result.FailureError = result.ErrorCode; }
+            catch (OperationCanceledException) { result.Cancelled = true; result.PausedForConfiguration=idlePauseRequested&&!stop.IsCancellationRequested;result.EndReason=result.PausedForConfiguration?"configuration_pause":"user_cancelled";result.Status=result.PausedForConfiguration?"paused":"cancelled";result.ErrorCode=result.PausedForConfiguration?"":"cancelled_by_user";result.FailureStage=result.PausedForConfiguration?"":stage;result.FailureError=result.ErrorCode; }
             catch (Exception exception) { result.Status = "failed"; result.ErrorCode = exception.Message; result.FailureStage = stage; result.FailureError = exception.Message; }
             finally
             {

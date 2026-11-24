@@ -1,3 +1,11 @@
+## Integrated Windows telephony desktop — 2026-11-24
+
+The modem computer uses a Persian graphical Windows desktop application; its operator pairs once with Office Automation, while authorized telephony managers maintain extensions, uploaded greeting and IVR choices in the web interface. The desktop periodically reports health and downloads changed configuration, applying it only after all calls are idle and the receiver has released hardware safely. The operator can preview selected/saved greeting audio in the web page. A new ring takes priority over a configuration pause. Installing/upgrading must retain existing extension passwords, gateway credentials and previous release.
+
+## Reception acceptance and next integration boundary — 2026-11-24
+
+Owner confirms the receiver becomes ready for the next incoming call. This confirms rearming only; do not infer caller-originated hangup or long-run acceptance beyond that statement. The next requested work is unified extension management, call scenarios, initial greeting configuration and connection to Office Automation. Web extension/IVR configuration, ZIP export and automatic Windows runtime synchronization are implemented; integrated physical acceptance is still pending. Preserve the accepted audio path and existing credentials; apply configuration only at a safe idle boundary, with validation and visible application status. Full V4 scope still includes outgoing calls, call history and fax.
+
 ## Continuous incoming reception — 2026-11-24
 
 An operator can start/stop incoming reception from a Persian RTL window. The application stays ready across calls, enables the accepted line echo correction, and stops automatically after transport/cleanup/report failures instead of repeatedly answering on a possibly unreleased line. Diagnostic audio is not recorded. Starting reception is explicit; no automatic Windows startup/service change is made. A hardware modem still supplies one external call channel. Real caller hangup and sustained readiness require owner acceptance.

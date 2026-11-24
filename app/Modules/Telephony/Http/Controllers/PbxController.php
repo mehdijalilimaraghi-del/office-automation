@@ -36,7 +36,7 @@ class PbxController
     {
         Extension::query()->create($this->validated($request));
 
-        return back()->with('success', 'داخلی ثبت شد. برای اعمال روی مرکز تلفن، بسته تنظیمات را دریافت کنید.');
+        return back()->with('success', 'داخلی ثبت شد. کامپیوتر متصل، تنظیمات را در زمان بیکاری دریافت و اعمال می‌کند.');
     }
 
     public function update(Request $request, Extension $extension, PbxConfigurationService $configuration): RedirectResponse
@@ -80,6 +80,18 @@ class PbxController
         ]);
     }
 
+    public function audio(PbxConfigurationService $configuration): BinaryFileResponse
+    {
+        $path = $configuration->menu()['audio_path'];
+        abort_unless($path && Storage::disk('local')->exists($path), 404);
+
+        return response()->file(Storage::disk('local')->path($path), [
+            'Content-Type' => 'audio/wav',
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
     public function saveIvr(Request $request, SystemSettingsService $settings, PbxConfigurationService $configuration): RedirectResponse
     {
         $request->merge(['choices' => $request->input('choices', [])]);
@@ -120,7 +132,7 @@ class PbxController
             throw $exception;
         }
 
-        return back()->with('success', 'تنظیمات راهنمای صوتی ذخیره شد. بسته را روی کامپیوتر مرکز تلفن اعمال کنید.');
+        return back()->with('success', 'تنظیمات راهنمای صوتی ذخیره شد. کامپیوتر متصل، تغییرات را پس از پایان تماس اعمال می‌کند.');
     }
 
     public function download(PbxConfigurationService $configuration): BinaryFileResponse

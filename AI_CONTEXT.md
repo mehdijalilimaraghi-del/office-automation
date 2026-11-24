@@ -1,3 +1,11 @@
+## Integrated Windows telephony desktop — 2026-11-24
+
+Windows telephony desktop now pairs through a manager-created single-use 10-minute code. Durable device tokens are stored only as SHA-256 server-side and DPAPI CurrentUser locally. Configuration downloads contain data/audio only; preserve SIP/gateway secrets and the accepted modem audio path. Never apply settings during an active call; idle pause must yield to a newly arrived ring and completion must persist its report before applying. Keep the Windows package Persian/RTL with readable Segoe UI, native shortcuts and an upgrade path that preserves private profiles. Full V4 remains open for outgoing calls, web history and fax.
+
+## Reception acceptance and next integration boundary — 2026-11-24
+
+Owner confirms the receiver becomes ready for the next incoming call. This confirms rearming only; do not infer caller-originated hangup or long-run acceptance beyond that statement. The next requested work is unified extension management, call scenarios, initial greeting configuration and connection to Office Automation. Web extension/IVR configuration, ZIP export and automatic Windows runtime synchronization are implemented; integrated physical acceptance is still pending. Preserve the accepted audio path and existing credentials; apply configuration only at a safe idle boundary, with validation and visible application status. Full V4 scope still includes outgoing calls, call history and fax.
+
 ## Continuous incoming reception — 2026-11-24
 
 Owner confirms the line-echo correction resolved the reported delayed echo. New Start-OfficeTelephony.cmd selects continuous incoming reception with the accepted echo path. It waits until a ring/cancellation, then creates a fresh SIP/modem/DSP session per call; safe rearm needs successful cleanup and a saved report. The original one-call diagnostic launchers remain available. Full V4 scope includes outbound/history/fax and is not complete. Do not install an always-on Windows service or claim physical caller-disconnect/long-duration acceptance from software tests.

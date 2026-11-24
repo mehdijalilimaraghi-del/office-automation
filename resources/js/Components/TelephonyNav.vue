@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-defineProps<{ active: 'modems' | 'extensions' | 'ivr' }>();
+defineProps<{ active: 'modems' | 'extensions' | 'ivr' | 'devices' }>();
 const items = [
     { key: 'modems', title: 'خط و مودم', route: 'telephony.index' },
+    { key: 'devices', title: 'اتصال کامپیوتر', route: 'telephony.devices.index' },
     { key: 'extensions', title: 'داخلی‌ها', route: 'telephony.extensions.index' },
     { key: 'ivr', title: 'راهنمای صوتی', route: 'telephony.ivr' },
 ];

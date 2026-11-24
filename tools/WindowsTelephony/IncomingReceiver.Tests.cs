@@ -22,6 +22,10 @@ public static class IncomingReceiverChecks {
   }
   var idlePort=new DiagnosticFakePort{NoRing=true};var idleEndpoint=new BridgeLifecycleEndpoint();var idle=VoiceSession.ForIncomingCalls(idlePort,Path.GetTempPath(),idleEndpoint,new ModemLineEcho(library));
   idle.Start();Thread.Sleep(150);idle.Cancel();Finish(idle);Check(!idle.Result.Answered&&idle.Result.Cancelled&&idle.Result.CleanupConfirmed&&idlePort.Disposed&&!IncomingReception.CanRearm(idle.Result,false,true),"Stopping an idle receiver must release the port without answering");
+  var pausedPort=new DiagnosticFakePort{NoRing=true};var paused=VoiceSession.ForIncomingCalls(pausedPort,Path.GetTempPath(),new BridgeLifecycleEndpoint(),new ModemLineEcho(library));paused.Start();Thread.Sleep(100);paused.RequestIdlePause();Finish(paused);
+  Check(paused.Result.PausedForConfiguration&&!paused.Result.Answered&&paused.Result.Status=="paused"&&paused.Result.CleanupConfirmed&&pausedPort.Disposed,"Configuration pause must release only an idle line");
+  var ringingPort=new DiagnosticFakePort();var ringing=VoiceSession.ForIncomingCalls(ringingPort,Path.GetTempPath(),new BridgeLifecycleEndpoint(),new ModemLineEcho(library));ringing.RequestIdlePause();ringing.Start();Finish(ringing);
+  Check(ringing.Result.Answered&&ringing.Result.Status=="bridged"&&!ringing.Result.PausedForConfiguration&&ringing.Result.CleanupConfirmed,"An already available ring must take priority over configuration pause and complete normally");
   var result=new VoiceResult();for(int second=0;second<=3600;second++)result.AddSampleWindow(new VoiceSampleWindow{Milliseconds=second*1000,TransmittedSamples=second*8000,ReceivedSamples=second*8000,RawReceivedSamples=second*10000});
   Check(result.SampleWindows.Count==120&&result.BridgeTimingReady,"Long-call timing diagnostics must remain bounded and accurate");
   var decoder=new VoiceDecoder();for(int i=0;i<10000;i++)decoder.Feed(new byte[]{16,(byte)'s'},2);Check(decoder.Events.Count==1&&decoder.Events.Contains("silence"),"Repeated modem events must not grow memory");

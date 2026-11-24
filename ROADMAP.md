@@ -1,3 +1,11 @@
+## Integrated Windows telephony desktop — 2026-11-24
+
+V4 incoming reception is accepted for rearming and now has implemented desktop installation, extension/IVR data synchronization and manager device status. Next acceptance gate: install the package on EDARII with the same Windows account, pair against the matching development backend, verify repeated calls plus idle configuration changes without credential loss. Continue the authorized full V4 scope with outgoing-call arbitration, web call history and fax after preserving this accepted incoming path. Do not mark V4 complete or deploy/master-merge before the remaining functionality and acceptance gates pass.
+
+## Reception acceptance and next integration boundary — 2026-11-24
+
+Owner confirms the receiver becomes ready for the next incoming call. This confirms rearming only; do not infer caller-originated hangup or long-run acceptance beyond that statement. The next requested work is unified extension management, call scenarios, initial greeting configuration and connection to Office Automation. Web extension/IVR configuration, ZIP export and automatic Windows runtime synchronization are implemented; integrated physical acceptance is still pending. Preserve the accepted audio path and existing credentials; apply configuration only at a safe idle boundary, with validation and visible application status. Full V4 scope still includes outgoing calls, call history and fax.
+
 ## Continuous incoming reception — 2026-11-24
 
 Continuous incoming reception implementation and automated checks are now available. Next physical gate: two consecutive calls without restarting the receiver, including caller-originated hangup and then a new call; verify explicit stop releases the modem. Do not start unattended/autostart operation before real disconnect/long-run acceptance. Full requested V4 scope remains outbound routing, authorized web call history and recording references, fax receiver/inbox, queues and the remaining accepted PBX features. Local numeric receiver reports are not completion of web call history or fax.

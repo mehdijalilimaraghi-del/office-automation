@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onBeforeUnmount, ref, watch } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import TelephonyNav from '@/Components/TelephonyNav.vue';
@@ -6,6 +7,12 @@ import { Download, Plus, Trash2, Volume2 } from '@lucide/vue';
 type Menu = { enabled: boolean; timeout_seconds: number; retries: number; operator_number: string | null; choices: { digit: string; number: string }[]; audio_name: string | null };
 const props = defineProps<{ menu: Menu; extensions: { number: string; label: string }[] }>();
 const form = useForm({ enabled: props.menu.enabled, timeout_seconds: props.menu.timeout_seconds, retries: props.menu.retries, operator_number: props.menu.operator_number, choices: props.menu.choices.map(choice => ({ ...choice })), audio: null as File | null });
+const selectedAudioUrl = ref<string | null>(null);
+watch(() => form.audio, file => {
+    if (selectedAudioUrl.value) URL.revokeObjectURL(selectedAudioUrl.value);
+    selectedAudioUrl.value = file ? URL.createObjectURL(file) : null;
+});
+onBeforeUnmount(() => { if (selectedAudioUrl.value) URL.revokeObjectURL(selectedAudioUrl.value); });
 function add(): void {
     const digit = Array.from({ length: 10 }, (_, index) => String(index)).find(value => !form.choices.some(choice => choice.digit === value));
     if (digit !== undefined) form.choices.push({ digit, number: '' });
@@ -25,6 +32,10 @@ function fileChanged(event: Event): void { form.audio = (event.target as HTMLInp
                 <div class="flex items-center justify-between gap-4"><h3 class="font-bold">پیام راهنما</h3><label class="flex items-center gap-2 text-sm"><input v-model="form.enabled" type="checkbox" class="rounded border-slate-300" />فعال باشد</label></div>
                 <label class="block text-sm font-semibold">فایل صوتی WAV<input type="file" accept=".wav,audio/wav,audio/x-wav" class="mt-3 block w-full rounded-xl border p-3 text-sm" @change="fileChanged" /></label>
                 <p class="text-xs leading-6 text-slate-500">{{ form.audio?.name ?? menu.audio_name ?? 'هنوز فایل صوتی انتخاب نشده است.' }} — فایل PCM تا ۲۰ مگابایت؛ در واسط، صدا به قالب تلفنی تبدیل می‌شود.</p>
+                <div v-if="selectedAudioUrl || menu.audio_name" class="space-y-2 rounded-xl bg-indigo-50 p-4">
+                    <p class="text-sm font-semibold text-indigo-900">{{ selectedAudioUrl ? 'شنیدن فایل انتخاب‌شده پیش از ذخیره' : 'شنیدن پیام ذخیره‌شده' }}</p>
+                    <audio :key="selectedAudioUrl ?? menu.audio_name ?? 'saved'" controls preload="none" class="w-full" :src="selectedAudioUrl ?? route('telephony.ivr.audio')" aria-label="پیش‌نمایش پیام راهنمای تلفن">مرورگر شما پخش صدا را پشتیبانی نمی‌کند.</audio>
+                </div>
                 <p class="rounded-xl bg-slate-50 p-4 text-sm leading-7 text-slate-600">نمونه متن: «به شرکت خوش آمدید. شماره داخلی را وارد کنید؛ برای دبیرخانه عدد ۱ و برای اپراتور عدد صفر را فشار دهید.» پیام ضبط‌شده باید با کلیدهای زیر هماهنگ باشد.</p>
             </section>
             <section class="space-y-5 rounded-2xl border bg-white p-6">
@@ -42,7 +53,7 @@ function fileChanged(event: Event): void { form.audio = (event.target as HTMLInp
             <label class="block text-sm">فرصت ورود شماره (ثانیه)<input v-model.number="form.timeout_seconds" type="number" min="3" max="30" required class="mt-2 w-full rounded-xl border-slate-300" /></label>
             <label class="block text-sm">تعداد تلاش<input v-model.number="form.retries" type="number" min="1" max="3" required class="mt-2 w-full rounded-xl border-slate-300" /></label>
             <label class="block text-sm">داخلی اپراتور<select v-model="form.operator_number" :required="form.enabled" class="mt-2 w-full rounded-xl border-slate-300"><option :value="null">انتخاب داخلی</option><option v-for="extension in extensions" :key="extension.number" :value="extension.number">{{ extension.number }} — {{ extension.label }}</option></select></label>
-            <p class="text-xs leading-6 text-slate-500">پس از پایان فرصت یا ورود نامعتبر، تماس به اپراتور هدایت می‌شود. تغییرات پس از اجرای بسته روی مرکز تلفن اعمال می‌شوند.</p>
+            <p class="text-xs leading-6 text-slate-500">پس از پایان فرصت یا ورود نامعتبر، تماس به اپراتور هدایت می‌شود. کامپیوتر متصل، تغییرات را در زمان بیکاری اعمال می‌کند. وضعیت را در «اتصال کامپیوتر» ببینید.</p>
             <ul v-if="Object.keys(form.errors).length" role="alert" class="space-y-2 rounded-xl bg-red-50 p-3 text-sm text-red-700"><li v-for="(error, field) in form.errors" :key="field">{{ error }}</li></ul>
             <button :disabled="form.processing" class="min-h-11 w-full rounded-xl bg-indigo-700 px-4 py-3 font-semibold text-white disabled:opacity-50">{{ form.processing ? 'در حال ذخیره…' : 'ذخیره راهنمای صوتی' }}</button>
             <p v-if="form.progress" role="status" class="text-sm text-indigo-700">بارگذاری: {{ form.progress.percentage }}٪</p>

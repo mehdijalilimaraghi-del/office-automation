@@ -153,4 +153,18 @@ class PbxConfigurationTest extends TestCase
         $this->post(route('telephony.ivr.save'), $this->menu(['audio' => UploadedFile::fake()->createWithContent('bad.wav', 'RIFF'.pack('V', 12).'WAVEdata'.pack('V', 2000000))]))->assertSessionHasErrors('audio');
         $this->assertSame($before, app(PbxConfigurationService::class)->menu());
     }
+
+    public function test_saved_prompt_preview_requires_manager_and_streams_private_audio(): void
+    {
+        $owner = $this->manager();
+        Extension::query()->create($this->extension($owner));
+        $this->actingAs($owner)->get(route('telephony.ivr.audio'))->assertNotFound();
+        $this->post(route('telephony.ivr.save'), $this->menu(['audio' => $this->wave()]))->assertSessionHas('success');
+        $response = $this->get(route('telephony.ivr.audio'))->assertOk()->assertHeader('Content-Type', 'audio/wav');
+        $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
+        $this->actingAs(User::factory()->create(['status' => 'active']))
+            ->get(route('telephony.ivr.audio'))->assertForbidden();
+        config(['telephony.enabled' => false]);
+        $this->actingAs($owner)->get(route('telephony.ivr.audio'))->assertNotFound();
+    }
 }

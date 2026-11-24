@@ -83,7 +83,7 @@ function Read-EslFrame($Stream){
     return @{headers=$headers;body=[Text.Encoding]::UTF8.GetString($body)}
 }
 function Invoke-PbxLabCommand($LabState,[string]$Command){
-    if($Command -notin @('status','sofia status profile office_lab','sofia status profile office_lab reg','show calls as json','shutdown')){throw 'Command is not allowed by the lab controller'}
+    if($Command -notin @('status','sofia status profile office_lab','sofia status profile office_lab reg','show calls as json','shutdown','fsctl shutdown elegant')){throw 'Command is not allowed by the lab controller'}
     $client=New-Object Net.Sockets.TcpClient
     try{$pending=$client.BeginConnect('127.0.0.1',[int]$LabState.esl_port,$null,$null);try{if(-not $pending.AsyncWaitHandle.WaitOne(2000)){throw 'ESL connect timeout'};$client.EndConnect($pending)}finally{$pending.AsyncWaitHandle.Close()};$stream=$client.GetStream();$stream.ReadTimeout=3000;$stream.WriteTimeout=3000
         $frame=Read-EslFrame $stream;if($frame.headers['content-type'] -ne 'auth/request'){throw 'Unexpected ESL greeting'}
@@ -122,10 +122,7 @@ function Sync-PbxLabAddress([string]$Root){
     }
     return $state
 }
-function Import-PbxOfficeConfiguration([string]$Root,$Configuration,[string]$SourceDirectory){
-    if(Get-Process -Name FreeSwitchConsole -ErrorAction SilentlyContinue){throw 'Stop the PBX lab before applying office settings.'}
-    $service=Get-Service -Name FreeSWITCH -ErrorAction SilentlyContinue
-    if($service -and $service.Status -ne 'Stopped'){throw 'The Windows PBX service is active.'}
+function Assert-PbxOfficeConfiguration($Configuration){
     if($Configuration.type -ne 'office_telephony_configuration' -or $Configuration.schema_version -ne 1){throw 'Unsupported office configuration'}
     $extensions=@($Configuration.extensions)
     if($extensions.Count -lt 1 -or $extensions.Count -gt 1000 -or @($extensions.number|Select-Object -Unique).Count -ne $extensions.Count){throw 'Invalid extension list'}
@@ -137,6 +134,13 @@ function Import-PbxOfficeConfiguration([string]$Root,$Configuration,[string]$Sou
     if($ivr.enabled -and $ivr.operator_number -notin $extensions.number){throw 'Invalid operator destination'}
     if($ivr.audio_file -and $ivr.audio_file -ne 'greeting.wav'){throw 'Invalid prompt path'}
     if($ivr.enabled -and -not $ivr.audio_file){throw 'IVR requires a prompt'}
+}
+function Import-PbxOfficeConfiguration([string]$Root,$Configuration,[string]$SourceDirectory){
+    if(Get-Process -Name FreeSwitchConsole -ErrorAction SilentlyContinue){throw 'Stop the PBX lab before applying office settings.'}
+    $service=Get-Service -Name FreeSWITCH -ErrorAction SilentlyContinue
+    if($service -and $service.Status -ne 'Stopped'){throw 'The Windows PBX service is active.'}
+    Assert-PbxOfficeConfiguration $Configuration
+    $extensions=@($Configuration.extensions);$ivr=$Configuration.ivr
     $scratch=$null;$newPrompt=$null;$backup=$null;$created=$false
     try {
         if($ivr.audio_file){
@@ -174,4 +178,4 @@ function Set-PbxModemGateway([string]$Root,[string]$Destination){
         Write-LabConfiguration $Root $state
     }catch{foreach($name in @('lab-state.json','accounts.html','conf/freeswitch.xml')){Copy-Item -LiteralPath (Join-Path $backup ([IO.Path]::GetFileName($name))) -Destination (Join-Path $Root $name) -Force};throw}
 }
-Export-ModuleMember -Function New-PbxLabProfile,Read-PbxLabState,Invoke-PbxLabCommand,Get-PbxLabArguments,Get-PbxLabLocalAddress,Sync-PbxLabAddress,Import-PbxOfficeConfiguration,Set-PbxModemGateway
+Export-ModuleMember -Function Assert-PbxOfficeConfiguration,New-PbxLabProfile,Read-PbxLabState,Invoke-PbxLabCommand,Get-PbxLabArguments,Get-PbxLabLocalAddress,Sync-PbxLabAddress,Import-PbxOfficeConfiguration,Set-PbxModemGateway
