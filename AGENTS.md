@@ -62,6 +62,8 @@ Infrastructure/future:
 * Current timezone: Asia/Tehran.
 * Localization must remain extensible for future languages.
 
+* Product screens must provide clear Persian workflows, organized settings and visible save/error feedback. Do not leave diagnostic consent or vendor-specific prerequisites in normal user flows. Bundle the Persian desktop font and visually inspect the actual windows, including smaller-screen bounds.
+
 ## Architecture
 
 Use a directory-based Modular Monolith.

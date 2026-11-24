@@ -1,3 +1,7 @@
+## Independent desktop and Persian UI correction — 2026-11-24
+
+Users must be able to use the Windows telephony application without Office Automation and optionally connect later. Local mode owns editable extensions, incoming direct/IVR destination, greeting file/preview and keypad mappings. Connected mode uses automation-managed configuration; switching to local preserves the active profile and stops synchronization. No product flow should refer to VentaFax or another vendor as an operating prerequisite: show actual unavailable/busy/access-denied serial conditions. Use a bundled Persian font and clear, separately organized settings.
+
 ## Integrated Windows telephony desktop — 2026-11-24
 
 The modem computer uses a Persian graphical Windows desktop application; its operator pairs once with Office Automation, while authorized telephony managers maintain extensions, uploaded greeting and IVR choices in the web interface. The desktop periodically reports health and downloads changed configuration, applying it only after all calls are idle and the receiver has released hardware safely. The operator can preview selected/saved greeting audio in the web page. A new ring takes priority over a configuration pause. Installing/upgrading must retain existing extension passwords, gateway credentials and previous release.

@@ -1,3 +1,7 @@
+## Independent desktop and Persian UI correction — 2026-11-24
+
+V4 correction: the Windows desktop is an independently usable telephony application with optional Office Automation integration. Local configuration and explicit configuration-source switching are implemented; a fresh install no longer demands pairing. Deliver/test the replacement standalone installer and retain accepted audio behavior. Remaining V4 scope is still outgoing-call arbitration, web history, fax and physical acceptance; this correction does not close those milestones.
+
 ## Integrated Windows telephony desktop — 2026-11-24
 
 V4 incoming reception is accepted for rearming and now has implemented desktop installation, extension/IVR data synchronization and manager device status. Next acceptance gate: install the package on EDARII with the same Windows account, pair against the matching development backend, verify repeated calls plus idle configuration changes without credential loss. Continue the authorized full V4 scope with outgoing-call arbitration, web call history and fax after preserving this accepted incoming path. Do not mark V4 complete or deploy/master-merge before the remaining functionality and acceptance gates pass.

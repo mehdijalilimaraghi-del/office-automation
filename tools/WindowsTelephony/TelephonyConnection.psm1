@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.Security
 function Resolve-TelephonyConnectionRoot([string]$DataRoot) {
@@ -149,4 +149,10 @@ function Set-TelephonyConfigurationError {
  $root=Resolve-TelephonyConnectionRoot $DataRoot;$state=Read-TelephonySyncState $root;$state.error_code=$ErrorCode
  Write-TelephonyPrivateJson (Join-Path $root 'sync-state.json') $state
 }
-Export-ModuleMember -Function Get-TelephonyConnection,Connect-TelephonyAutomation,Sync-TelephonyAutomation,Complete-TelephonyConfiguration,Get-TelephonyPendingConfiguration,Set-TelephonyConfigurationError
+function Reset-TelephonyAppliedRevision {
+ param([string]$DataRoot)
+ $root=Resolve-TelephonyConnectionRoot $DataRoot;$state=Read-TelephonySyncState $root
+ $state.applied_revision=$null
+ Write-TelephonyPrivateJson (Join-Path $root 'sync-state.json') $state
+}
+Export-ModuleMember -Function Reset-TelephonyAppliedRevision, Get-TelephonyConnection,Connect-TelephonyAutomation,Sync-TelephonyAutomation,Complete-TelephonyConfiguration,Get-TelephonyPendingConfiguration,Set-TelephonyConfigurationError

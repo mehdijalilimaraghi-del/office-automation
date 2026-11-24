@@ -1,3 +1,7 @@
+## Independent desktop and Persian UI correction — 2026-11-24
+
+The Windows telephony product must work independently of Office Automation. A fresh installation defaults to local mode and must not require pairing. Local extension/route/greeting settings belong in a proper Persian UI; automation pairing is optional and selects the configuration source explicitly. Never expose vendor-specific diagnostic consent in the normal UI. Report actual serial access errors generically without guessing the owning application. Bundle and privately load the licensed Persian font in both runtime and installer; verify real rendered windows, not merely Font.Name.
+
 ## Integrated Windows telephony desktop — 2026-11-24
 
 Windows telephony desktop now pairs through a manager-created single-use 10-minute code. Durable device tokens are stored only as SHA-256 server-side and DPAPI CurrentUser locally. Configuration downloads contain data/audio only; preserve SIP/gateway secrets and the accepted modem audio path. Never apply settings during an active call; idle pause must yield to a newly arrived ring and completion must persist its report before applying. Keep the Windows package Persian/RTL with readable Segoe UI, native shortcuts and an upgrade path that preserves private profiles. Full V4 remains open for outgoing calls, web history and fax.

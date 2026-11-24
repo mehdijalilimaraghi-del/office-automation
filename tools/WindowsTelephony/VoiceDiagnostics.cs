@@ -73,7 +73,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
             port.ReadTimeout = 100; port.WriteTimeout = 1000;
             port.DtrEnable = true; port.RtsEnable = true; port.Handshake = Handshake.None;
         }
-        public void Open() { port.Open(); }
+        public void Open() { try { port.Open(); } catch (UnauthorizedAccessException error) { throw new InvalidOperationException("serial_port_unavailable",error); } catch (IOException error) { throw new InvalidOperationException("serial_port_unavailable",error); } }
         public void SetFlowControl(string setting)
         {
             if (setting != "0,0" && setting != "2,2") throw new InvalidOperationException("unsupported_serial_flow_control");

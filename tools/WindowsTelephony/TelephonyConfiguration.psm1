@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 $ErrorActionPreference='Stop'
 $pbxFolder=if(Test-Path -LiteralPath (Join-Path $PSScriptRoot 'PbxLab.psm1')){$PSScriptRoot}else{Join-Path $PSScriptRoot 'PbxLab'}
 Import-Module (Join-Path $pbxFolder 'PbxLab.psm1') -DisableNameChecking
@@ -22,11 +22,15 @@ function Get-TelephonyOwnedPbxStatus {
  return [pscustomobject]@{configured=$true;running=[bool]$process;active_calls=$active;profile=$state;process=$process}
 }
 function Apply-TelephonyConfiguration {
- [CmdletBinding()]param([string]$LabRoot,[Parameter(Mandatory=$true)][string]$EngineDirectory,[string]$DataRoot)
+ [CmdletBinding()]param([string]$LabRoot,[Parameter(Mandatory=$true)][string]$EngineDirectory,[string]$DataRoot,[string]$LocalConfigurationPath)
  if(-not $LabRoot){$LabRoot=Join-Path $env:LOCALAPPDATA 'OfficeAutomation\Telephony\PbxLab'}
  $LabRoot=[IO.Path]::GetFullPath($LabRoot)
  if($LabRoot.StartsWith('\\')){throw 'configuration_requires_local_profile'}
- $pending=Get-TelephonyPendingConfiguration -DataRoot $DataRoot
+ if($LocalConfigurationPath){
+  $source=[IO.Path]::GetFullPath($LocalConfigurationPath)
+  if(-not $source.StartsWith(($LabRoot.TrimEnd('\')+'\local-settings-'),[StringComparison]::OrdinalIgnoreCase)){throw 'configuration_storage_invalid'}
+  $pending=[pscustomobject]@{manifest=([IO.File]::ReadAllText($source)|ConvertFrom-Json);path=[IO.Path]::GetDirectoryName($source);revision=$null}
+ }else{$pending=Get-TelephonyPendingConfiguration -DataRoot $DataRoot}
  if(-not $pending){throw 'configuration_not_ready'}
  Assert-PbxOfficeConfiguration $pending.manifest
  $status=Get-TelephonyOwnedPbxStatus -LabRoot $LabRoot
@@ -65,7 +69,7 @@ function Apply-TelephonyConfiguration {
   & (Join-Path $pbxFolder 'Start-PbxLab.ps1') -LabRoot $LabRoot -EngineDirectory $EngineDirectory -NoBrowser -HideConsole|Out-Null
   $ready=Get-TelephonyOwnedPbxStatus -LabRoot $LabRoot
   if(-not $ready.running){throw 'configuration_pbx_start_failed'}
-  $metadata=Complete-TelephonyConfiguration -Revision $pending.revision -DataRoot $DataRoot
+  $metadata=if($LocalConfigurationPath){Reset-TelephonyAppliedRevision -DataRoot $DataRoot;Get-TelephonyConnection -DataRoot $DataRoot}else{Complete-TelephonyConfiguration -Revision $pending.revision -DataRoot $DataRoot}
   return [pscustomobject]@{connection=$metadata;profile_id=$ready.profile.profile_id;bind_address=$ready.profile.bind_address;sip_port=$ready.profile.sip_port;destination=$ready.profile.modem_gateway.destination;configuration_applied=$true}
  }catch{
   # Never stop an unowned process or force a running call down during rollback.
