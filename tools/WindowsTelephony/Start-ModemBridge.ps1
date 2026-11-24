@@ -1,8 +1,9 @@
 ﻿#requires -Version 5.1
 [CmdletBinding()]
-param([string]$LabRoot,[string]$EngineDirectory,[switch]$NominalTransmitVolume,[switch]$Pcm16Modem,[switch]$CompareGreetingModes,[switch]$LineEchoCancellation)
+param([string]$LabRoot,[string]$EngineDirectory,[switch]$NominalTransmitVolume,[switch]$Pcm16Modem,[switch]$CompareGreetingModes,[switch]$LineEchoCancellation,[switch]$ReceiveCalls)
 $ErrorActionPreference='Stop'
 try {
+ if($ReceiveCalls){if($CompareGreetingModes -or $Pcm16Modem -or $NominalTransmitVolume){throw 'The receiver uses only the accepted normal codec and echo cancellation'};$LineEchoCancellation=$true}
  if($LineEchoCancellation -and ($CompareGreetingModes -or $Pcm16Modem -or $NominalTransmitVolume)){throw 'Use line echo cancellation with the normal codec and gain only'}
  if($CompareGreetingModes -and ($Pcm16Modem -or $NominalTransmitVolume)){throw 'Greeting comparison uses the normal codec/gain only'}
  if($Pcm16Modem -and $NominalTransmitVolume){throw 'Run only one diagnostic mode at a time'}
@@ -31,7 +32,10 @@ try {
  if($LineEchoCancellation){. (Join-Path $PSScriptRoot 'ModemLineEcho.ps1');$lineEchoLibrary=Initialize-ModemLineEchoLibrary -LabRoot $LabRoot -SourceDirectory (Join-Path $PSScriptRoot 'Dsp')}
  $ports=@([IO.Ports.SerialPort]::GetPortNames()|Sort-Object)
  if(-not $ports.Count){throw 'No modem COM port is available'}
- $run=@{session=$null;endpoint=$null;echo=$null;wantClose=$false;finished=$false;report=$null}
+ $run=@{session=$null;endpoint=$null;echo=$null;mutex=$null;stopping=$false;nextStart=$null;completedCalls=0;wantClose=$false;finished=$false;report=$null}
+ function Release-ReceiverLock { if($run.mutex){try{$run.mutex.ReleaseMutex()}finally{$run.mutex.Dispose();$run.mutex=$null}} }
+ $reportFolder=if($ReceiveCalls){Join-Path $LabRoot 'calls'}else{$PSScriptRoot}
+ if($ReceiveCalls){[void][IO.Directory]::CreateDirectory($reportFolder)}
  $form=New-Object Windows.Forms.Form;$form.Text='آزمون اتصال خط به داخلی';$form.Size=New-Object Drawing.Size(760,520);$form.StartPosition='CenterScreen';$form.Font=New-Object Drawing.Font('Segoe UI',10);$form.RightToLeft='Yes';$form.RightToLeftLayout=$true;$form.AutoScroll=$true
  $form.MaximumSize=New-Object Drawing.Size(1100,([int]([Windows.Forms.Screen]::PrimaryScreen.WorkingArea.Height*0.9)))
  $layout=New-Object Windows.Forms.TableLayoutPanel;$layout.Dock='Fill';$layout.Padding=New-Object Windows.Forms.Padding(20);$layout.ColumnCount=1;$layout.RowCount=6;$layout.AutoScroll=$true;$layout.AutoScrollMinSize=New-Object Drawing.Size(0,470)
@@ -50,6 +54,7 @@ try {
  $start=New-Object Windows.Forms.Button;$start.Text='شروع آزمون';$start.Size=New-Object Drawing.Size(160,42);$start.Enabled=$false
  $stop=New-Object Windows.Forms.Button;$stop.Text='توقف امن';$stop.Size=New-Object Drawing.Size(140,42);$stop.Enabled=$false
  if($CompareGreetingModes){$form.Text='مقایسه حالت پخش پیام مودم';$destination.Text='نوبت اول: VTX — نوبت دوم: VTR؛ بدون انتقال به داخلی';$start.Text='شروع مقایسه'}
+ if($ReceiveCalls){$form.Text='تلفن سازمانی — پاسخ‌گویی ورودی';$start.Text='شروع پاسخ‌گویی';$stop.Text='توقف پاسخ‌گویی';$consent.Text='VentaFax بسته است و پاسخ‌گویی به تماس‌های ورودی را فعال می‌کنم.';$notice.Text='پس از شروع، برنامه منتظر تماس می‌ماند و پس از پایان صحیح هر تماس برای تماس بعدی آماده می‌شود. اکوگیر فعال است و صدا ضبط نمی‌شود. برای توقف از همین پنجره استفاده کنید. هر تماس حداکثر ۲۴ ساعت نگه داشته می‌شود.'}
  [void]$buttons.Controls.Add($start);[void]$buttons.Controls.Add($stop)
  foreach($control in @($notice,$destination,$portPanel,$consent,$status,$buttons)){[void]$layout.Controls.Add($control)}
  [void]$form.Controls.Add($layout)
@@ -57,6 +62,14 @@ try {
  $consent.Add_CheckedChanged({$start.Enabled=$consent.Checked -and -not $run.session})
  $start.Add_Click({
   try {
+   if($ReceiveCalls){
+    if(-not $run.mutex){
+     $run.mutex=[Threading.Mutex]::new($false,('Local\OfficeAutomation.ModemReceiver.'+[string]$portChoice.SelectedItem))
+     $acquired=$false;try{$acquired=$run.mutex.WaitOne(0)}catch [Threading.AbandonedMutexException]{$acquired=$true}
+     if(-not $acquired){$run.mutex.Dispose();$run.mutex=$null;throw 'Incoming reception is already running for this modem'}
+    }
+    $run.stopping=$false;$run.finished=$false
+   }
    if($CompareGreetingModes){
     if(-not $stateProfile.ivr -or -not $stateProfile.ivr.enabled -or -not $stateProfile.ivr.prompt_path){throw 'A configured IVR greeting is required'}
     $run.endpoint=[OfficeAutomation.Telephony.Bridge.GreetingModeComparison]::new($stateProfile.ivr.prompt_path)
@@ -68,32 +81,42 @@ try {
    if($LineEchoCancellation){$run.echo=[OfficeAutomation.Telephony.Bridge.ModemLineEcho]::new($lineEchoLibrary)}
    $serial=[OfficeAutomation.Telephony.Diagnostics.SerialVoicePort]::new([string]$portChoice.SelectedItem,$(if($Pcm16Modem){230400}else{115200}))
    $trialLevel=if($NominalTransmitVolume){[Nullable[int]]128}else{$null}
-   $run.session=[OfficeAutomation.Telephony.Diagnostics.VoiceSession]::new($serial,(Join-Path $LabRoot 'bridge-reports'),60000,60000,$run.endpoint,$trialLevel,[bool]$Pcm16Modem,$run.echo)
+   if($ReceiveCalls){$run.session=[OfficeAutomation.Telephony.Diagnostics.VoiceSession]::ForIncomingCalls($serial,$reportFolder,$run.endpoint,$run.echo)}else{$run.session=[OfficeAutomation.Telephony.Diagnostics.VoiceSession]::new($serial,(Join-Path $LabRoot 'bridge-reports'),60000,60000,$run.endpoint,$trialLevel,[bool]$Pcm16Modem,$run.echo)}
    $start.Enabled=$false;$consent.Enabled=$false;$portChoice.Enabled=$false;$stop.Enabled=$true
    $run.session.Start();$timer.Start()
-  }catch{if($run.session -and $run.session.Started){$run.session.Cancel();$timer.Start()}else{if($run.endpoint){$run.endpoint.Dispose()};if($run.echo){$run.echo.Dispose()};$run.session=$null};$status.Text='شروع آزمون ممکن نشد: '+$_.Exception.Message;$start.Enabled=$false}
+  }catch{if($run.session -and $run.session.Started){$run.session.Cancel();$timer.Start()}else{if($run.endpoint){$run.endpoint.Dispose()};if($run.echo){$run.echo.Dispose()};if($ReceiveCalls){Release-ReceiverLock};$run.session=$null};$status.Text='شروع آزمون ممکن نشد: '+$_.Exception.Message;$start.Enabled=$false}
  })
- $stop.Add_Click({if($run.session -and -not $run.session.Completed){$run.session.Cancel();$stop.Enabled=$false;$status.Text='در حال قطع تماس و آزادسازی مودم…'}})
+ $stop.Add_Click({if($ReceiveCalls){$run.stopping=$true;$run.nextStart=$null;if(-not $run.session -or ($run.session.Completed -and $run.finished)){$timer.Stop();Release-ReceiverLock;$stop.Enabled=$false;$run.session=$null;$start.Enabled=$consent.Checked;$consent.Enabled=$true;$portChoice.Enabled=$true;$status.Text='پاسخ‌گویی متوقف شد.'}};if($run.session -and -not $run.session.Completed){$run.session.Cancel();$stop.Enabled=$false;$status.Text='در حال قطع تماس و آزادسازی مودم…'}})
  $timer.Add_Tick({
+  if($ReceiveCalls -and $run.nextStart -and [datetime]::UtcNow -ge $run.nextStart){$run.nextStart=$null;$run.session=$null;$start.Enabled=$true;$start.PerformClick();return}
+  if($ReceiveCalls -and $run.nextStart){return}
   if(-not $run.session){return}
   if($run.session.Completed){
    $timer.Stop();$stop.Enabled=$false
    $result=$run.session.Result
-   $run.report=Join-Path $PSScriptRoot ($(if($CompareGreetingModes){'modem-greeting-modes-'}else{'modem-bridge-result-'})+[datetime]::Now.ToString('yyyyMMdd-HHmmss')+'-'+[guid]::NewGuid().ToString('N').Substring(0,6)+'.json')
-   $report=[ordered]@{report_type=$(if($CompareGreetingModes){'modem_greeting_mode_comparison'}else{'modem_bridge_test'});schema_version=1;comparison_mode=[bool]$CompareGreetingModes;line_echo=$(if($run.echo){$run.echo.Metrics}else{$null});destination=$stateProfile.modem_gateway.destination;port=[string]$portChoice.SelectedItem;audio_recorded=$false;result=($result|Select-Object DiagnosticVersion,DuplexStartedAtMilliseconds,TransmitOnlyStarted,SwitchedToDuplex,ModeTransitionMilliseconds,ModemSampleFormat,ModemCodec,ModemTransmitBytes,EffectiveFlowControl,HostFlowControlSynchronized,MaxSerialAvailabilityMilliseconds,MaxSerialReadMilliseconds,MaxSerialWriteMilliseconds,MaxDecodeMilliseconds,MaxEncodeMilliseconds,MaxEndpointMilliseconds,MaxTransmitLagMilliseconds,RequestedTransmitLevel,OriginalTransmitLevel,TransmitLevelApplied,TransmitLevelRestored,Status,ErrorCode,FailureStage,FailureError,CleanupError,RingDetected,Answered,DuplexStarted,BridgeStarted,CleanupConfirmed,Cancelled,EndReason,TransmittedSamples,ReceivedSamples,RawReceivedSamples,RemovedRepeatedSamples,ReceiveFraming,StreamMilliseconds,SampleWindows,ReceiveRateAfterWarmup,TransmitRateAfterWarmup,BridgeTimingReady,Events,Trace);greeting=$(if($useLocalGreeting){$run.endpoint|Select-Object PromptSha256,PromptSamples,GreetingSamples,GreetingPlaybackAudio,MenuStarted,BargeInRequested,HardwareKeypadMode,BufferedDigitCount,RelayedDigitCount}else{$null});sip=$(if(-not $CompareGreetingModes){$run.endpoint.Metrics}else{$null});comparison=$(if($CompareGreetingModes){$run.endpoint|Select-Object PromptSha256,PromptSamples,CurrentPhase,FirstMode,SecondMode,FirstPhaseSamples,SecondPhaseSamples,AudioRecorded}else{$null})}
-   try{[IO.File]::WriteAllText($run.report,($report|ConvertTo-Json -Depth 9),[Text.UTF8Encoding]::new($false));if($result.Status -eq 'failed'){if($result.ErrorCode -eq 'audio_transmit_timing_failed'){$status.Text='ارسال صدا به مودم از زمان مجاز عقب افتاد؛ آزمون متوقف شد. نتیجه بازیابی تنظیمات در گزارش ذخیره شده است.'}else{$status.Text='اتصال خط کامل نشد. گزارش خطا در همین پوشه ذخیره شد.'}}elseif($result.Cancelled){$status.Text='آزمون متوقف و گزارش در همین پوشه ذخیره شد.'}else{$status.Text='آزمون پایان یافت. گزارش در همین پوشه ذخیره شد. نتیجه شنیدن صدا و قطع تماس را اعلام کنید.'}}catch{$status.Text='آزمون پایان یافت؛ ذخیره گزارش ممکن نشد: '+$_.Exception.Message}
+   $run.report=Join-Path $reportFolder ($(if($CompareGreetingModes){'modem-greeting-modes-'}else{'modem-bridge-result-'})+[datetime]::Now.ToString('yyyyMMdd-HHmmss')+'-'+[guid]::NewGuid().ToString('N').Substring(0,6)+'.json')
+   $report=[ordered]@{report_type=$(if($CompareGreetingModes){'modem_greeting_mode_comparison'}else{'modem_bridge_test'});schema_version=1;receiver_mode=[bool]$ReceiveCalls;comparison_mode=[bool]$CompareGreetingModes;line_echo=$(if($run.echo){$run.echo.Metrics}else{$null});destination=$stateProfile.modem_gateway.destination;port=[string]$portChoice.SelectedItem;audio_recorded=$false;result=($result|Select-Object DiagnosticVersion,DuplexStartedAtMilliseconds,TransmitOnlyStarted,SwitchedToDuplex,ModeTransitionMilliseconds,ModemSampleFormat,ModemCodec,ModemTransmitBytes,EffectiveFlowControl,HostFlowControlSynchronized,MaxSerialAvailabilityMilliseconds,MaxSerialReadMilliseconds,MaxSerialWriteMilliseconds,MaxDecodeMilliseconds,MaxEncodeMilliseconds,MaxEndpointMilliseconds,MaxTransmitLagMilliseconds,RequestedTransmitLevel,OriginalTransmitLevel,TransmitLevelApplied,TransmitLevelRestored,Status,ErrorCode,FailureStage,FailureError,CleanupError,RingDetected,Answered,DuplexStarted,BridgeStarted,CleanupConfirmed,Cancelled,EndReason,TransmittedSamples,ReceivedSamples,RawReceivedSamples,RemovedRepeatedSamples,ReceiveFraming,StreamMilliseconds,SampleWindows,ReceiveRateAfterWarmup,TransmitRateAfterWarmup,BridgeTimingReady,Events,Trace);greeting=$(if($useLocalGreeting){$run.endpoint|Select-Object PromptSha256,PromptSamples,GreetingSamples,GreetingPlaybackAudio,MenuStarted,BargeInRequested,HardwareKeypadMode,BufferedDigitCount,RelayedDigitCount}else{$null});sip=$(if(-not $CompareGreetingModes){$run.endpoint.Metrics}else{$null});comparison=$(if($CompareGreetingModes){$run.endpoint|Select-Object PromptSha256,PromptSamples,CurrentPhase,FirstMode,SecondMode,FirstPhaseSamples,SecondPhaseSamples,AudioRecorded}else{$null})}
+   $reportSaved=$false
+   try{[IO.File]::WriteAllText($run.report,($report|ConvertTo-Json -Depth 9),[Text.UTF8Encoding]::new($false));$reportSaved=$true;if($result.Status -eq 'failed'){if($result.ErrorCode -eq 'audio_transmit_timing_failed'){$status.Text='ارسال صدا به مودم از زمان مجاز عقب افتاد؛ آزمون متوقف شد. نتیجه بازیابی تنظیمات در گزارش ذخیره شده است.'}else{$status.Text='اتصال خط کامل نشد. گزارش خطا در همین پوشه ذخیره شد.'}}elseif($result.Cancelled){$status.Text='آزمون متوقف و گزارش در همین پوشه ذخیره شد.'}else{$status.Text='آزمون پایان یافت. گزارش در همین پوشه ذخیره شد. نتیجه شنیدن صدا و قطع تماس را اعلام کنید.'}}catch{$status.Text='آزمون پایان یافت؛ ذخیره گزارش ممکن نشد: '+$_.Exception.Message}
    $run.finished=$true
+   if($ReceiveCalls){
+    if($result.Answered){$run.completedCalls++}
+    if([OfficeAutomation.Telephony.Diagnostics.IncomingReception]::CanRearm($result,($run.stopping -or $run.wantClose),$reportSaved)){
+     $run.nextStart=[datetime]::UtcNow.AddSeconds(1);$timer.Start();$stop.Enabled=$true;$status.Text=('تماس پایان یافت؛ در حال آماده‌سازی برای تماس بعدی. تعداد تماس‌ها: '+$run.completedCalls)
+    }else{Release-ReceiverLock;$run.session=$null;$consent.Enabled=$true;$portChoice.Enabled=$true;$start.Enabled=$consent.Checked;if($run.stopping){$status.Text='پاسخ‌گویی متوقف و خط آزاد شد.'}else{if($reportSaved){$status.Text='پاسخ‌گویی به دلیل خطا متوقف شد. گزارش بررسی: '+$run.report}else{$status.Text+=' پاسخ‌گویی خودکار متوقف شد.'}}}
+   }
    if($run.wantClose){$form.Close()}
   }else{
    if($useLocalGreeting -and $run.session.Progress -eq 'streaming' -and -not $run.endpoint.MenuStarted){$status.Text=$(if($run.endpoint.DuplexReady){'در حال آماده‌سازی انتخاب داخلی؛ شماره واردشده حفظ می‌شود.'}else{'در حال پخش پیام راهنما؛ می‌توانید همین حالا شماره را وارد کنید.'});return}
    if($CompareGreetingModes -and $run.session.Progress -eq 'streaming'){$status.Text=('در حال پخش نوبت '+$run.endpoint.CurrentPhase+' از دو نوبت؛ بلندی دو پیام را مقایسه کنید.');return}
    if(($CompareGreetingModes -or $useLocalGreeting) -and $run.session.Progress -eq 'switching_playback_mode'){$status.Text='در حال تغییر از پخش پیام به حالت دوطرفه…';return}
    $messages=@{preparing='در حال آماده‌سازی مودم…';waiting_ring='آماده؛ اکنون با گوشی با خط شرکت تماس بگیرید.';connecting_pbx='در حال اتصال به مرکز تلفن…';answering='در حال پاسخ به تماس…';streaming='پل صوتی برقرار است؛ از داخلی پاسخ دهید. اگر مقصد راهنمای صوتی است، کلید آن را از گوشی بزنید. برای پایان، از داخلی قطع کنید.';hanging_up='در حال قطع تماس و بازیابی تنظیمات مودم…'}
+   if($ReceiveCalls){$messages.waiting_ring='آماده دریافت تماس ورودی؛ برنامه را باز نگه دارید.'}
    $phase=$run.session.Progress;if($messages.ContainsKey($phase)){$status.Text=$messages[$phase]}
   }
  })
- $form.Add_FormClosing({param($sender,$event) if($run.session -and -not $run.finished){$event.Cancel=$true;$run.wantClose=$true;$run.session.Cancel();$status.Text='در حال قطع امن تماس…'}})
- try{[void]$form.ShowDialog()}finally{$timer.Stop();$timer.Dispose();$form.Dispose()}
+ $form.Add_FormClosing({param($sender,$event) if($run.session -and -not $run.finished){$event.Cancel=$true;$run.wantClose=$true;$run.stopping=$true;$run.nextStart=$null;$run.session.Cancel();$status.Text='در حال قطع امن تماس…'}})
+ try{[void]$form.ShowDialog()}finally{$timer.Stop();$timer.Dispose();$form.Dispose();Release-ReceiverLock}
  Write-Host ('Test finished. Report: '+$run.report)
 } catch {
  $message='ERROR: '+$_.Exception.Message;Write-Host $message -ForegroundColor Red

@@ -1,3 +1,7 @@
+## Continuous incoming reception — 2026-11-24
+
+An operator can start/stop incoming reception from a Persian RTL window. The application stays ready across calls, enables the accepted line echo correction, and stops automatically after transport/cleanup/report failures instead of repeatedly answering on a possibly unreleased line. Diagnostic audio is not recorded. Starting reception is explicit; no automatic Windows startup/service change is made. A hardware modem still supplies one external call channel. Real caller hangup and sustained readiness require owner acceptance.
+
 ## Graphify workflow and V4 continuation — 2026-11-24
 
 Graphify is a local developer navigation aid required by the owner. It supplements the explicit product/version code map; inferred links do not establish business behavior or permissions. The owner accepted the external-call echo correction and requests the complete V4 organizational telephony scope, including outgoing calls, history and fax.

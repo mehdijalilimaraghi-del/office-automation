@@ -1,7 +1,8 @@
 ﻿#requires -Version 5.1
-param([string]$EngineDirectory,[switch]$Pcm16,[switch]$LocalGreeting,[switch]$BargeIn,[string]$DspDirectory)
+param([string]$EngineDirectory,[switch]$Pcm16,[switch]$LocalGreeting,[switch]$BargeIn,[string]$DspDirectory,[switch]$Receiver)
 $ErrorActionPreference='Stop'
 if($BargeIn){$LocalGreeting=$true}
+if($Receiver -and -not $DspDirectory){throw 'Receiver test requires the verified DSP directory'}
 Import-Module (Join-Path $PSScriptRoot '../PbxLab.psm1') -Force -DisableNameChecking
 $root=Join-Path $env:TEMP ('office-pbx-provision-'+[guid]::NewGuid().ToString('N'))
 $sourceFolder=Join-Path $env:TEMP ('office-pbx-prompt-'+[guid]::NewGuid().ToString('N'))
@@ -41,9 +42,11 @@ try {
   & (Join-Path $PSScriptRoot '../Start-PbxLab.ps1') -LabRoot $root -EngineDirectory $EngineDirectory -NoBrowser -HideConsole
   try{
    Add-Type -Path @((Join-Path $PSScriptRoot '../../VoiceDiagnostics.cs'),(Join-Path $PSScriptRoot '../../LocalSipAudioEndpoint.cs'),(Join-Path $PSScriptRoot '../../GreetingPrompt.cs'),(Join-Path $PSScriptRoot '../../ModemGreetingBridge.cs'),(Join-Path $PSScriptRoot '../../ModemBridge.Tests.cs'),(Join-Path $PSScriptRoot '../../ModemLineEcho.cs'),(Join-Path $PSScriptRoot 'NativeSipSmoke.cs'))
+   for($call=0;$call -lt $(if($Receiver){2}else{1});$call++){
    $processor=$null;if($DspDirectory){$processor=[OfficeAutomation.Telephony.Bridge.ModemLineEcho]::new((Join-Path $DspDirectory 'libspeexdsp-1.dll'))}
-   if($LocalGreeting){[ModemBridgeIntegration]::Run($state.sip_port,$state.modem_gateway.password,$state.accounts[1].password,$false,$state.esl_port,$state.esl_secret,$state.ivr.prompt_path,[bool]$BargeIn,$processor)|ConvertTo-Json -Depth 6}else{[ModemBridgeIntegration]::Run($state.sip_port,$state.modem_gateway.password,$state.accounts[1].password,[bool]$Pcm16,0,$null,$null,$false,$processor)|ConvertTo-Json -Depth 6}
+   if($LocalGreeting){[ModemBridgeIntegration]::Run($state.sip_port,$state.modem_gateway.password,$state.accounts[1].password,$false,$state.esl_port,$state.esl_secret,$state.ivr.prompt_path,[bool]$BargeIn,$processor,[bool]$Receiver)|ConvertTo-Json -Depth 6}else{[ModemBridgeIntegration]::Run($state.sip_port,$state.modem_gateway.password,$state.accounts[1].password,[bool]$Pcm16,0,$null,$null,$false,$processor,[bool]$Receiver)|ConvertTo-Json -Depth 6}
    if($processor -and ($processor.Metrics.ProcessedSamples -lt 8000 -or $processor.Metrics.Epochs -ne 1)){throw 'DSP did not process native duplex media'}
+   }
   }catch{Write-Host $_.Exception.Message;throw}finally{if($processor){$processor.Dispose()};& (Join-Path $PSScriptRoot '../Stop-PbxLab.ps1') -LabRoot $root;$owned=Get-Content (Join-Path $root 'lab-session.json') -Raw|ConvertFrom-Json;if(Get-Process -Id $owned.process_id -ErrorAction SilentlyContinue){throw 'Owned native process has not stopped; profile retained'}}
  }
  Set-PbxModemGateway $root '1002'

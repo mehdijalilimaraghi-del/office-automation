@@ -121,3 +121,7 @@ VoiceDiagnostics.cs owns IVoiceDuplexProcessor lifecycle. ModemLineEcho.cs imple
 ## Graph navigation and current acceptance
 
 Use the local Graphify graph to trace VoiceSession, ModemLineEcho, ModemGreetingBridge and PbxConfigurationService, then verify actual source/test contracts. Refresh with scripts/Update-ProjectGraph.ps1. Owner accepted the line-echo trial and requested the full V4 scope including outbound/history/fax. Continuous incoming reception remains the next dependency; do not equate the current one-call test with a daily receiver or completed V4.
+
+## Continuous receiver
+
+Start-OfficeTelephony.cmd selects ReceiveCalls in Start-ModemBridge.ps1. VoiceSession.ForIncomingCalls and IncomingReception own long-call limits and safe rearm decisions. Test-IncomingReceiver exercises real-DSP fake sessions; Test-IncomingReceiverUi executes actual UI handlers without hardware; native Test-ModemBridge -Receiver uses two calls against one PBX. UI timers must restart on rearm and skip already completed sessions while the rearm deadline is pending. Private local journals are not web call history. Physical caller-disconnect/long-run acceptance and the rest of V4 remain pending.

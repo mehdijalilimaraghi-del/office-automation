@@ -33,7 +33,10 @@ public static class NativeSipSmoke {
   public int MediaPort {get{return ((IPEndPoint)Media.Client.LocalEndPoint).Port;}}
   public string Address {get{return "sip:"+User+"@127.0.0.1";}}
   public string Contact {get{return "<sip:"+User+"@127.0.0.1:"+Port+">";}}
-  public Phone(string user,string password,int serverPort){User=user;Password=password;Server=new IPEndPoint(IPAddress.Loopback,serverPort);Signal.Client.ReceiveTimeout=200;Media.Client.ReceiveTimeout=100;}
+  public Phone(string user,string password,int serverPort){User=user;Password=password;Server=new IPEndPoint(IPAddress.Loopback,serverPort);Signal.Client.ReceiveTimeout=200;Media.Client.ReceiveTimeout=100;
+   // UDP has no reset handshake: avoid treating an earlier port-unreachable as a new media connection failure.
+   // Packet-count and SIP/BYE assertions still require an actual two-way call.
+   Media.Client.IOControl(unchecked((int)0x9800000C),new byte[4],null);}
   public void Send(string text){byte[] b=Encoding.UTF8.GetBytes(text);Signal.Send(b,b.Length,Server);}
   public Message Wait(Func<Message,bool> predicate){return Wait(predicate,7000);}
   public Message Wait(Func<Message,bool> predicate,int timeout){var clock=Stopwatch.StartNew();while(clock.ElapsedMilliseconds<timeout){try{IPEndPoint source=null;var m=Message.Parse(Signal.Receive(ref source));if(source.Address.Equals(IPAddress.Loopback) && source.Port==Server.Port && predicate(m))return m;}catch(SocketException e){if(e.SocketErrorCode!=SocketError.TimedOut)throw;}}throw new Exception("SIP response timed out");}

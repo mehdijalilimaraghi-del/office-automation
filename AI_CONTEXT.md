@@ -1,3 +1,7 @@
+## Continuous incoming reception — 2026-11-24
+
+Owner confirms the line-echo correction resolved the reported delayed echo. New Start-OfficeTelephony.cmd selects continuous incoming reception with the accepted echo path. It waits until a ring/cancellation, then creates a fresh SIP/modem/DSP session per call; safe rearm needs successful cleanup and a saved report. The original one-call diagnostic launchers remain available. Full V4 scope includes outbound/history/fax and is not complete. Do not install an always-on Windows service or claim physical caller-disconnect/long-duration acceptance from software tests.
+
 ## Graphify workflow and V4 continuation — 2026-11-24
 
 Owner requires Graphify in ongoing development and before later versions. User-level graphifyy0.9.118 with Codex skill is installed; optional MCP dependencies are required by this release even for CLI query. Start dependency/impact work from graphify query with a bounded budget, verify returned code and tests, and refresh using scripts/Update-ProjectGraph.ps1. Graph is local structural code analysis, not semantic document indexing; no application dependencies changed. Secrets/private data/vendor/generated output are excluded, graphify-out stays outside Git. Owner confirms the line-echo trial fixed the reported echo; this is not completion of all V4 scope.

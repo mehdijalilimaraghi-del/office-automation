@@ -76,7 +76,8 @@ public static class ModemBridgeIntegration
     public static object Run(int port, string gatewayPassword, string phonePassword, bool pcm16){return Run(port,gatewayPassword,phonePassword,pcm16,0,null,null);}
     public static object Run(int port,string gatewayPassword,string phonePassword,bool pcm16,int eslPort,string eslSecret,string promptPath){return Run(port,gatewayPassword,phonePassword,pcm16,eslPort,eslSecret,promptPath,false);}
     public static object Run(int port,string gatewayPassword,string phonePassword,bool pcm16,int eslPort,string eslSecret,string promptPath,bool bargeIn) { return Run(port,gatewayPassword,phonePassword,pcm16,eslPort,eslSecret,promptPath,bargeIn,null); }
-    public static object Run(int port,string gatewayPassword,string phonePassword,bool pcm16,int eslPort,string eslSecret,string promptPath,bool bargeIn,IVoiceDuplexProcessor processor)
+    public static object Run(int port,string gatewayPassword,string phonePassword,bool pcm16,int eslPort,string eslSecret,string promptPath,bool bargeIn,IVoiceDuplexProcessor processor) { return Run(port,gatewayPassword,phonePassword,pcm16,eslPort,eslSecret,promptPath,bargeIn,processor,false); }
+    public static object Run(int port,string gatewayPassword,string phonePassword,bool pcm16,int eslPort,string eslSecret,string promptPath,bool bargeIn,IVoiceDuplexProcessor processor,bool receiverMode)
     {
         bool localGreeting=!String.IsNullOrEmpty(promptPath);
         string wrongPassword=(gatewayPassword[0]=='a'?"b":"a")+gatewayPassword.Substring(1);
@@ -95,11 +96,14 @@ public static class ModemBridgeIntegration
         var endpoint = new LocalSipAudioEndpoint("127.0.0.1", port, "office_modem", gatewayPassword, "9197",localGreeting);
         ModemGreetingBridge greeting=null;
         if(localGreeting)greeting=new ModemGreetingBridge(endpoint,new GreetingCallControl(eslPort,eslSecret),promptPath);
-        var session = new VoiceSession(modem, Path.GetTempPath(), 3000, localGreeting?20000:10000, (IVoiceAudioEndpoint)greeting??endpoint, null, pcm16,processor);
+        var session = receiverMode ? VoiceSession.ForIncomingCalls(modem,Path.GetTempPath(),(IVoiceAudioEndpoint)greeting??endpoint,processor) : new VoiceSession(modem, Path.GetTempPath(), 3000, localGreeting?20000:10000, (IVoiceAudioEndpoint)greeting??endpoint, null, pcm16,processor);
         session.Start();
         var watch = Stopwatch.StartNew();
-        while (!session.Completed && watch.ElapsedMilliseconds < 30000) Thread.Sleep(10);
-        if (!session.Completed) { session.Cancel(); throw new Exception("Bridge test timeout"); }
+        while (!session.Completed && watch.ElapsedMilliseconds < 30000) {
+            if(recipient.IsFaulted){session.Cancel();for(int n=0;n<1000&&!session.Completed;n++)Thread.Sleep(5);throw new Exception("Recipient: "+recipient.Exception.Flatten().InnerExceptions[0].Message);}
+            Thread.Sleep(10);
+        }
+        if (!session.Completed) { session.Cancel(); for(int n=0;n<1000&&!session.Completed;n++)Thread.Sleep(5);throw new Exception("Bridge test timeout; cleanup finished="+session.Completed); }
         var result = session.Result;
         Console.WriteLine("Bridge result: " + result.Status + "/" + result.FailureStage + "/" + result.ErrorCode + "/" + result.EndReason + "; RTP " + endpoint.Metrics.SentPackets + "/" + endpoint.Metrics.ReceivedPackets + "; rejected " + endpoint.Metrics.RejectedPackets + "; raw/decoded " + result.RawReceivedSamples + "/" + result.ReceivedSamples + "; framing " + result.ReceiveFraming + "; silence " + endpoint.Metrics.SilenceSamples);
         try { if (!recipient.Wait(10000)) throw new Exception("Recipient did not finish"); } catch (AggregateException error) { throw new Exception("Recipient: " + error.Flatten().InnerExceptions[0].Message); }

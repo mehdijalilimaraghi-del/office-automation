@@ -228,6 +228,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
         public byte[] DrainAudio() { var data = Audio.ToArray(); Audio.Clear(); return data; }
         public void Finish() { finished = true; if (framing != null) framing.Finish(); }
         public readonly List<string> Events = new List<string>();
+        private void AddEvent(string value) { if(!Events.Contains(value))Events.Add(value); }
         public bool Ended { get; private set; }
         public void Feed(byte[] data, int count)
         {
@@ -238,11 +239,11 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 {
                     dle = false;
                     if (b == 16) AddAudio(16);
-                    else if (b == 3) { Events.Add("stream_end"); Ended = true; return; }
-                    else if (b == (byte)'b') Events.Add("busy_tone");
-                    else if (b == (byte)'h') Events.Add("local_on_hook");
-                    else if (b == (byte)'s') Events.Add("silence");
-                    else Events.Add("dle_" + b.ToString("X2"));
+                    else if (b == 3) { AddEvent("stream_end"); Ended = true; return; }
+                    else if (b == (byte)'b') AddEvent("busy_tone");
+                    else if (b == (byte)'h') AddEvent("local_on_hook");
+                    else if (b == (byte)'s') AddEvent("silence");
+                    else AddEvent("dle_" + b.ToString("X2"));
                 }
                 else if (b == 16) dle = true;
                 else AddAudio(b);
@@ -392,7 +393,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
     }
     public sealed class VoiceResult
     {
-        public string DiagnosticVersion = "2026.11.23.9";
+        public string DiagnosticVersion = "2026.11.24.1";
         public bool TransmitOnlyStarted, SwitchedToDuplex;
         public int ModeTransitionMilliseconds;
         public string EffectiveFlowControl = "";
@@ -435,6 +436,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
         public double ReceivedRms;
         public int StreamMilliseconds, DuplexStartedAtMilliseconds;
         public readonly List<VoiceSampleWindow> SampleWindows = new List<VoiceSampleWindow>();
+        public void AddSampleWindow(VoiceSampleWindow window) { if(SampleWindows.Count>=120)SampleWindows.RemoveAt(0);SampleWindows.Add(window); }
         private List<VoiceSampleWindow> TimingWindows { get { return DuplexStartedAtMilliseconds == 0 ? SampleWindows : SampleWindows.Where(w => w.Milliseconds >= DuplexStartedAtMilliseconds).Select(w => new VoiceSampleWindow { Milliseconds=w.Milliseconds-DuplexStartedAtMilliseconds, TransmittedSamples=w.TransmittedSamples, ReceivedSamples=w.ReceivedSamples, RawReceivedSamples=w.RawReceivedSamples }).ToList(); } }
         public double ReceiveRateAfterWarmup { get { return VoiceTiming.Rate(TimingWindows, true); } }
         public double TransmitRateAfterWarmup { get { return VoiceTiming.Rate(TimingWindows, false); } }
@@ -455,6 +457,16 @@ namespace OfficeAutomation.Telephony.Diagnostics
             }
         }
     }
+    public static class IncomingReception
+    {
+        // Do not re-answer after transport/cleanup failures, a stop request, or a lost report.
+        public static bool CanRearm(VoiceResult result,bool stopRequested,bool reportSaved)
+        {
+            return !stopRequested && reportSaved && result!=null && result.Status=="bridged"
+                && result.CleanupConfirmed && !result.Cancelled
+                && (result.EndReason=="pbx_hangup" || result.EndReason=="modem_hangup" || result.EndReason=="modem_stream_end");
+        }
+    }
     public sealed class VoiceSession
     {
         private readonly IVoicePort port;
@@ -464,6 +476,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
         private readonly bool pcm16;
         private bool changedTransmitLevel;
         private readonly string folder;
+        private readonly bool receiverMode;
         private readonly int ringTimeout;
         private readonly int captureDuration;
         private readonly CancellationTokenSource stop = new CancellationTokenSource();
@@ -484,13 +497,20 @@ namespace OfficeAutomation.Telephony.Diagnostics
         public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration, IVoiceAudioEndpoint endpoint) : this(port, folder, ringTimeout, captureDuration, endpoint, null) { }
         public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration, IVoiceAudioEndpoint endpoint, int? transmitLevel) : this(port, folder, ringTimeout, captureDuration, endpoint, transmitLevel, false) { }
         public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration, IVoiceAudioEndpoint endpoint, int? transmitLevel, bool pcm16) : this(port, folder, ringTimeout, captureDuration, endpoint, transmitLevel, pcm16, null) { }
-        public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration, IVoiceAudioEndpoint endpoint, int? transmitLevel, bool pcm16, IVoiceDuplexProcessor duplexProcessor)
+        public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration, IVoiceAudioEndpoint endpoint, int? transmitLevel, bool pcm16, IVoiceDuplexProcessor duplexProcessor) : this(port,folder,ringTimeout,captureDuration,endpoint,transmitLevel,pcm16,duplexProcessor,false) { }
+        public static VoiceSession ForIncomingCalls(IVoicePort port,string folder,IVoiceAudioEndpoint endpoint,IVoiceDuplexProcessor processor)
         {
+            if(endpoint==null || processor==null)throw new ArgumentNullException("Incoming receiver requires SIP and echo processing");
+            return new VoiceSession(port,folder,60000,86400000,endpoint,null,false,processor,true);
+        }
+        private VoiceSession(IVoicePort port,string folder,int ringTimeout,int captureDuration,IVoiceAudioEndpoint endpoint,int? transmitLevel,bool pcm16,IVoiceDuplexProcessor duplexProcessor,bool receiverMode)
+        {
+            this.receiverMode=receiverMode;
             this.duplexProcessor = duplexProcessor;
             this.pcm16 = pcm16; result.ModemSampleFormat = pcm16 ? "pcm16le_8000" : "g711u_8000";
             if (transmitLevel.HasValue && (transmitLevel.Value < 0 || transmitLevel.Value > 255)) throw new ArgumentOutOfRangeException("transmitLevel");
             this.transmitLevel = transmitLevel; result.RequestedTransmitLevel = transmitLevel;
-            int maximum = endpoint == null ? 30000 : 120000;
+            int maximum = receiverMode ? 86400000 : endpoint == null ? 30000 : 120000;
             if (ringTimeout < 100 || ringTimeout > 60000 || captureDuration < 100 || captureDuration > maximum) throw new ArgumentOutOfRangeException();
             this.port = port; this.folder = folder; this.ringTimeout = ringTimeout; this.captureDuration = captureDuration; this.endpoint = endpoint;
             var digitEndpoint=endpoint as IVoiceDigitEndpoint;if(digitEndpoint!=null)digitDetector=new VoiceDigitDetector(digitEndpoint.ReceiveDigit);
@@ -639,7 +659,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 }
                 progress = "waiting_ring"; stage = "wait_for_incoming_call";
                 var ringWatch = Stopwatch.StartNew(); var ring = new RingDetector();
-                while (ringWatch.ElapsedMilliseconds < ringTimeout)
+                while (receiverMode || ringWatch.ElapsedMilliseconds < ringTimeout)
                 {
                     stop.Token.ThrowIfCancellationRequested();
                     if (port.Available > 0)
@@ -733,7 +753,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                     else Thread.Sleep(2);
                     if (clock.ElapsedMilliseconds >= nextWindow)
                     {
-                        result.SampleWindows.Add(new VoiceSampleWindow { Milliseconds = (int)clock.ElapsedMilliseconds, TransmittedSamples = result.TransmittedSamples, ReceivedSamples = decoder.DecodedSampleCount, RawReceivedSamples = decoder.RawSampleCount });
+                        result.AddSampleWindow(new VoiceSampleWindow { Milliseconds = (int)clock.ElapsedMilliseconds, TransmittedSamples = result.TransmittedSamples, ReceivedSamples = decoder.DecodedSampleCount, RawReceivedSamples = decoder.RawSampleCount });
                         nextWindow += 1000;
                     }
                 }
@@ -786,7 +806,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                 result.RawReceivedSamples = decoder.RawSampleCount;
                 result.RemovedRepeatedSamples = decoder.RawSampleCount - decoder.DecodedSampleCount;
                 if (streamClock != null && (result.SampleWindows.Count == 0 || result.SampleWindows[result.SampleWindows.Count - 1].Milliseconds != result.StreamMilliseconds))
-                    result.SampleWindows.Add(new VoiceSampleWindow { Milliseconds = result.StreamMilliseconds, TransmittedSamples = result.TransmittedSamples, ReceivedSamples = result.ReceivedSamples, RawReceivedSamples = result.RawReceivedSamples });
+                    result.AddSampleWindow(new VoiceSampleWindow { Milliseconds = result.StreamMilliseconds, TransmittedSamples = result.TransmittedSamples, ReceivedSamples = result.ReceivedSamples, RawReceivedSamples = result.RawReceivedSamples });
                 result.ReceiveFraming = decoder.ReceiveFraming;
                 if (!decoder.FramingValid)
                 {

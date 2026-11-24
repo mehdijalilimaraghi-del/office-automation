@@ -1,3 +1,7 @@
+## Continuous incoming reception — 2026-11-24
+
+Continuous incoming reception implementation and automated checks are now available. Next physical gate: two consecutive calls without restarting the receiver, including caller-originated hangup and then a new call; verify explicit stop releases the modem. Do not start unattended/autostart operation before real disconnect/long-run acceptance. Full requested V4 scope remains outbound routing, authorized web call history and recording references, fax receiver/inbox, queues and the remaining accepted PBX features. Local numeric receiver reports are not completion of web call history or fax.
+
 ## Graphify workflow and V4 continuation — 2026-11-24
 
 Use Graphify for dependency and impact navigation throughout V4 and all subsequent versions; refresh after relevant changes. The owner explicitly requests the full existing V4 scope including outgoing calls, history and fax. The line-echo correction is owner-accepted. Next implement continuous incoming reception with safe stop/rearm, then provider integration/call history and the remaining existing V4 routing/fax gates. Do not call V4 complete or publish from the accepted one-call bridge alone.

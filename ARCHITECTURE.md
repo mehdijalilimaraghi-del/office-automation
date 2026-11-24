@@ -1,3 +1,7 @@
+## Continuous incoming reception — 2026-11-24
+
+VoiceSession.ForIncomingCalls is a separate bridge-only factory requiring an endpoint and duplex processor: indefinite cancellable ring wait and24h per-call upper bound; existing diagnostic constructors retain their original limits. VoiceResult stores the latest120 timing windows; decoded events are unique/bounded. IncomingReception.CanRearm requires bridged status, confirmed cleanup, saved report and no stop request. The existing WinForms launcher adds ReceiveCalls orchestration with a per-COM named mutex, fresh per-call resources, a one-second rearm gap and private local reports. Stop cancels the pending next start and safely ends an active call; failures prevent rearm. No backend schema/API/permission or PBX account/profile contract changed.
+
 ## Graphify workflow and V4 continuation — 2026-11-24
 
 Developer-only Graphify runs as an isolated uv tool, outside Composer/npm and outside application runtime. .graphifyignore excludes environment secrets, private storage, dependencies and generated output. scripts/Update-ProjectGraph.ps1 resolves this repository from its own path and creates/updates the structural graph and report. graphify-out is generated locally and Git-ignored. Dynamic container/route/configuration relationships must still be verified in code; no graph query connects to production data.
