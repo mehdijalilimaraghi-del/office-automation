@@ -1,3 +1,7 @@
+## Explicit local extension add/edit — 2026-11-24
+
+TelephonyLocalSettings owns the modal extension editor and updates its pending configuration grid, direct/operator target and digit mappings coherently. The shared PbxLab import persists each account label alongside extension/password, preserving existing secrets by unchanged extension number. The desktop refreshes the visible destination after successful local application. No database/API/permission contract changed.
+
 ## Independent desktop and Persian UI correction — 2026-11-24
 
 TelephonyLocalSettings provides local configuration and a private native extension-credential viewer. The shared Apply-TelephonyConfiguration service accepts a confined local manifest or validated downloaded revision, retaining the existing idle/busy checks and rollback path. Local changes invalidate the automation applied-revision marker so reconnecting can restore the desired remote revision. A per-profile desktop-source preference defaults to local; no heartbeat or remote apply occurs in that mode. DesktopFont loads Vazirmatn v33.003 privately for WinForms; the installer embeds the same font resource and carries its OFL license. No global font installation, new application dependency or database migration is introduced.

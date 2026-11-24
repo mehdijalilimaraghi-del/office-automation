@@ -1,3 +1,7 @@
+## Explicit local extension add/edit — 2026-11-24
+
+Local extension management must use explicit Add/Edit dialogs, not implicit grid editing. Exercise the actual buttons and text fields against extracted installer runtime. PbxLab provisioning must persist extension labels as well as numbers/passwords. When renumbering the selected destination, update the local destination and digit mappings before applying.
+
 ## Independent desktop and Persian UI correction — 2026-11-24
 
 The Windows telephony product must work independently of Office Automation. A fresh installation defaults to local mode and must not require pairing. Local extension/route/greeting settings belong in a proper Persian UI; automation pairing is optional and selects the configuration source explicitly. Never expose vendor-specific diagnostic consent in the normal UI. Report actual serial access errors generically without guessing the owning application. Bundle and privately load the licensed Persian font in both runtime and installer; verify real rendered windows, not merely Font.Name.

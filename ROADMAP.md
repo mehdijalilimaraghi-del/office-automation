@@ -1,3 +1,7 @@
+## Explicit local extension add/edit — 2026-11-24
+
+V4 corrective gate: verify explicit local extension add/edit, label persistence, destination updates and private credential viewing on the extracted Windows installer. This remains part of the current incoming-call desktop work and does not change the pending outgoing/history/fax scope.
+
 ## Independent desktop and Persian UI correction — 2026-11-24
 
 V4 correction: the Windows desktop is an independently usable telephony application with optional Office Automation integration. Local configuration and explicit configuration-source switching are implemented; a fresh install no longer demands pairing. Deliver/test the replacement standalone installer and retain accepted audio behavior. Remaining V4 scope is still outgoing-call arbitration, web history, fax and physical acceptance; this correction does not close those milestones.

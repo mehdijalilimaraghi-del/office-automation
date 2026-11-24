@@ -151,7 +151,7 @@ function Import-PbxOfficeConfiguration([string]$Root,$Configuration,[string]$Sou
         if(Test-Path -LiteralPath (Join-Path $Root 'lab-state.json')){$state=Read-PbxLabState $Root}else{$state=New-PbxLabProfile -Root $Root -BindAddress (Get-PbxLabLocalAddress) -Extensions $extensions.number;$created=$true}
         $backup=Join-Path $Root ('backup-'+[guid]::NewGuid().ToString('N'));[void][IO.Directory]::CreateDirectory($backup)
         foreach($name in @('lab-state.json','accounts.html','conf/freeswitch.xml')){Copy-Item -LiteralPath (Join-Path $Root $name) -Destination (Join-Path $backup ([IO.Path]::GetFileName($name)))}
-        $accounts=@();foreach($extension in $extensions){$existing=@($state.accounts|Where-Object extension -eq $extension.number);$password=if($existing.Count){$existing[0].password}else{New-LabSecret};$accounts+=[pscustomobject]@{extension=$extension.number;password=$password}}
+        $accounts=@();foreach($extension in $extensions){$existing=@($state.accounts|Where-Object extension -eq $extension.number);$password=if($existing.Count){$existing[0].password}else{New-LabSecret};$accounts+=[pscustomobject]@{extension=$extension.number;label=[string]$extension.label;password=$password}}
         $state.accounts=$accounts
         $menu=[pscustomobject]@{enabled=$ivr.enabled;timeout_seconds=[int]$ivr.timeout_seconds;retries=[int]$ivr.retries;operator_number=$ivr.operator_number;choices=@($ivr.choices);prompt_path=$null}
         if($scratch){$newPrompt=Join-Path $Root ('sounds/greeting-'+[guid]::NewGuid().ToString('N')+'.wav');Copy-Item -LiteralPath $scratch -Destination $newPrompt;$menu.prompt_path=$newPrompt}

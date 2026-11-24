@@ -2,6 +2,44 @@
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 $script:LocalUi=$null
+
+function Show-TelephonyExtensionEditor {
+ param([int]$RowIndex=-1)
+ $ui=$script:LocalUi
+ $row=if($RowIndex -ge 0){$ui.grid.Rows[$RowIndex]}else{$null}
+ $window=[Windows.Forms.Form]::new();$window.Text=if($row){'ویرایش داخلی'}else{'افزودن داخلی'};$window.Size=[Drawing.Size]::new(530,350);$window.FormBorderStyle='FixedDialog';$window.MaximizeBox=$false;$window.MinimizeBox=$false;$window.StartPosition='CenterParent';$window.RightToLeft='Yes';$window.RightToLeftLayout=$true;$window.Font=[OfficeAutomation.Telephony.DesktopFont]::Create(11,[Drawing.FontStyle]::Regular);$window.BackColor=[Drawing.Color]::White
+ $layout=[Windows.Forms.TableLayoutPanel]::new();$layout.Dock='Fill';$layout.Padding=[Windows.Forms.Padding]::new(24);$layout.ColumnCount=2;$layout.RowCount=4
+ [void]$layout.ColumnStyles.Add([Windows.Forms.ColumnStyle]::new([Windows.Forms.SizeType]::Absolute,140));[void]$layout.ColumnStyles.Add([Windows.Forms.ColumnStyle]::new([Windows.Forms.SizeType]::Percent,100))
+ foreach($height in @(55,55,85,55)){[void]$layout.RowStyles.Add([Windows.Forms.RowStyle]::new([Windows.Forms.SizeType]::Absolute,$height))}
+ $numberLabel=[Windows.Forms.Label]::new();$numberLabel.Text='شماره داخلی';$numberLabel.Dock='Fill'
+ $number=[Windows.Forms.TextBox]::new();$number.Dock='Fill';$number.RightToLeft='No';$number.MaxLength=6;$number.Name='extensionNumber'
+ $nameLabel=[Windows.Forms.Label]::new();$nameLabel.Text='نام شخص یا واحد';$nameLabel.Dock='Fill'
+ $name=[Windows.Forms.TextBox]::new();$name.Dock='Fill';$name.MaxLength=100;$name.Name='extensionLabel'
+ if($row){$number.Text=[string]$row.Cells[0].Value;$name.Text=[string]$row.Cells[1].Value}
+ $errorLabel=[Windows.Forms.Label]::new();$errorLabel.Dock='Fill';$errorLabel.ForeColor=[Drawing.Color]::FromArgb(185,28,28)
+ $buttons=[Windows.Forms.FlowLayoutPanel]::new();$buttons.Dock='Fill'
+ $confirm=[Windows.Forms.Button]::new();$confirm.Text='تأیید داخلی';$confirm.Name='confirmExtension';$confirm.Size=[Drawing.Size]::new(150,42);$confirm.BackColor=[Drawing.Color]::FromArgb(67,56,202);$confirm.ForeColor=[Drawing.Color]::White;$confirm.FlatStyle='Flat'
+ $cancel=[Windows.Forms.Button]::new();$cancel.Text='انصراف';$cancel.Size=[Drawing.Size]::new(100,42);$cancel.DialogResult='Cancel'
+ [void]$buttons.Controls.Add($confirm);[void]$buttons.Controls.Add($cancel)
+ [void]$layout.Controls.Add($numberLabel,0,0);[void]$layout.Controls.Add($number,1,0);[void]$layout.Controls.Add($nameLabel,0,1);[void]$layout.Controls.Add($name,1,1);[void]$layout.Controls.Add($errorLabel,0,2);$layout.SetColumnSpan($errorLabel,2);[void]$layout.Controls.Add($buttons,0,3);$layout.SetColumnSpan($buttons,2)
+ [void]$window.Controls.Add($layout);$window.AcceptButton=$confirm;$window.CancelButton=$cancel
+ $script:ExtensionEditor=@{window=$window;number=$number;name=$name;error=$errorLabel;row=$row;index=$RowIndex}
+ $confirm.Add_Click({
+  $edit=$script:ExtensionEditor;$ui=$script:LocalUi;$value=$edit.number.Text.Trim()
+  if($value -notmatch '\A[1-9][0-9]{2,5}\z' -or $value -in @('9196','9197')){$edit.error.Text='شماره باید ۳ تا ۶ رقم باشد؛ ۹۱۹۶ و ۹۱۹۷ رزرو هستند.';return}
+  foreach($candidate in $ui.grid.Rows){if($candidate.Index -ne $edit.index -and [string]$candidate.Cells[0].Value -eq $value){$edit.error.Text='این شماره داخلی قبلاً تعریف شده است.';return}}
+  if(-not $edit.name.Text.Trim()){$edit.error.Text='نام شخص یا واحد را وارد کنید.';return}
+  if($edit.row){
+   $old=[string]$edit.row.Cells[0].Value;$edit.row.Cells[0].Value=$value;$edit.row.Cells[1].Value=$edit.name.Text.Trim()
+   if($ui.target.Text.Trim() -eq $old){$ui.target.Text=$value}
+   foreach($choice in $ui.choices.Rows){if(-not $choice.IsNewRow -and [string]$choice.Cells[1].Value -eq $old){$choice.Cells[1].Value=$value}}
+  }else{[void]$ui.grid.Rows.Add($value,$edit.name.Text.Trim())}
+  $ui.message.Text='تغییر داخلی آماده است؛ برای ثبت در مرکز تلفن «ذخیره و اعمال» را بزنید.'
+  $edit.window.DialogResult='OK';$edit.window.Close()
+ })
+ try{[void]$window.ShowDialog($ui.form)}finally{$window.Dispose();$script:ExtensionEditor=$null}
+}
+
 function Show-TelephonyLocalSettings {
  param([Windows.Forms.Form]$Owner,[string]$LabRoot,[string]$EngineDirectory,[string]$DataRoot)
  $state=Read-PbxLabState $LabRoot
@@ -13,7 +51,7 @@ function Show-TelephonyLocalSettings {
  foreach($height in @(60,210,55,55,70,75,60)){[void]$layout.RowStyles.Add([Windows.Forms.RowStyle]::new([Windows.Forms.SizeType]::Absolute,$height))}
  $layout.AutoScroll=$true
  $title=[Windows.Forms.Label]::new();$title.Text='داخلی‌ها و مسیر تماس را روی همین کامپیوتر مدیریت کنید.';$title.Dock='Fill';$title.ForeColor=[Drawing.Color]::FromArgb(49,46,129)
- $grid=[Windows.Forms.DataGridView]::new();$grid.Dock='Fill';$grid.BackgroundColor=[Drawing.Color]::White;$grid.AutoSizeColumnsMode='Fill';$grid.RowHeadersVisible=$true;$grid.AllowUserToAddRows=$true;$grid.AllowUserToDeleteRows=$true
+ $grid=[Windows.Forms.DataGridView]::new();$grid.Dock='Fill';$grid.BackgroundColor=[Drawing.Color]::White;$grid.AutoSizeColumnsMode='Fill';$grid.RowHeadersVisible=$true;$grid.AllowUserToAddRows=$false;$grid.ReadOnly=$true;$grid.SelectionMode='FullRowSelect';$grid.MultiSelect=$false;$grid.AllowUserToDeleteRows=$true
  $grid.BorderStyle='None';$grid.CellBorderStyle='SingleHorizontal';$grid.GridColor=[Drawing.Color]::FromArgb(226,232,240);$grid.RowHeadersVisible=$false;$grid.RowTemplate.Height=40;$grid.EnableHeadersVisualStyles=$false
  $grid.ColumnHeadersDefaultCellStyle.BackColor=[Drawing.Color]::FromArgb(241,245,249);$grid.ColumnHeadersDefaultCellStyle.ForeColor=[Drawing.Color]::FromArgb(51,65,85);$grid.ColumnHeadersHeight=44
  $grid.DefaultCellStyle.SelectionBackColor=[Drawing.Color]::FromArgb(224,231,255);$grid.DefaultCellStyle.SelectionForeColor=[Drawing.Color]::FromArgb(49,46,129);$grid.DefaultCellStyle.Padding=[Windows.Forms.Padding]::new(8)
@@ -50,7 +88,14 @@ function Show-TelephonyLocalSettings {
  foreach($tab in @($extensionTab,$routeTab,$audioTab)){$tab.Padding=[Windows.Forms.Padding]::new(18);$tab.BackColor=[Drawing.Color]::White;[void]$tabs.TabPages.Add($tab)}
  $extensionLayout=[Windows.Forms.TableLayoutPanel]::new();$extensionLayout.Dock='Fill';$extensionLayout.RowCount=2
  [void]$extensionLayout.RowStyles.Add([Windows.Forms.RowStyle]::new([Windows.Forms.SizeType]::Absolute,70));[void]$extensionLayout.RowStyles.Add([Windows.Forms.RowStyle]::new([Windows.Forms.SizeType]::Percent,100))
- [void]$extensionLayout.Controls.Add($title);[void]$extensionLayout.Controls.Add($grid);[void]$extensionTab.Controls.Add($extensionLayout)
+ $extensionToolbar=[Windows.Forms.FlowLayoutPanel]::new();$extensionToolbar.Dock='Fill'
+ $addExtension=[Windows.Forms.Button]::new();$addExtension.Text='افزودن داخلی';$addExtension.Name='addExtension';$addExtension.Size=[Drawing.Size]::new(165,44)
+ $editExtension=[Windows.Forms.Button]::new();$editExtension.Text='ویرایش داخلی';$editExtension.Name='editExtension';$editExtension.Size=[Drawing.Size]::new(165,44)
+ [void]$extensionToolbar.Controls.Add($addExtension);[void]$extensionToolbar.Controls.Add($editExtension)
+ $addExtension.Add_Click({Show-TelephonyExtensionEditor})
+ $editExtension.Add_Click({$ui=$script:LocalUi;if($ui.grid.CurrentRow){Show-TelephonyExtensionEditor -RowIndex $ui.grid.CurrentRow.Index}else{$ui.message.Text='ابتدا داخلی موردنظر را از فهرست انتخاب کنید.'}})
+ $grid.Add_CellDoubleClick({param($sender,$event)if($event.RowIndex -ge 0){Show-TelephonyExtensionEditor -RowIndex $event.RowIndex}})
+ [void]$extensionLayout.Controls.Add($extensionToolbar);[void]$extensionLayout.Controls.Add($grid);[void]$extensionTab.Controls.Add($extensionLayout)
  $routeLayout=[Windows.Forms.TableLayoutPanel]::new();$routeLayout.Dock='Fill';$routeLayout.RowCount=3
  foreach($height in @(80,70,150)){[void]$routeLayout.RowStyles.Add([Windows.Forms.RowStyle]::new([Windows.Forms.SizeType]::Absolute,$height))}
  $hint=[Windows.Forms.Label]::new();$hint.Dock='Fill';$hint.Text='کلید تماس‌گیرنده و داخلی مقصد را انتخاب کنید. برای حذف، ردیف را انتخاب و کلید Delete را بزنید.'
@@ -64,7 +109,7 @@ function Show-TelephonyLocalSettings {
  foreach($item in @($tabs,$message,$buttons)){[void]$layout.Controls.Add($item)}
  [void]$form.Controls.Add($layout)
  $timer=[Windows.Forms.Timer]::new();$timer.Interval=200
- $script:LocalUi=@{form=$form;grid=$grid;mode=$mode;target=$target;audio=$audio;choices=$choices;message=$message;save=$save;cancel=$cancel;timer=$timer;operation=$null;lab=$LabRoot;engine=$EngineDirectory;data=$DataRoot;success=$false;player=$null}
+ $script:LocalUi=@{form=$form;grid=$grid;mode=$mode;target=$target;audio=$audio;choices=$choices;message=$message;save=$save;cancel=$cancel;timer=$timer;operation=$null;lab=$LabRoot;engine=$EngineDirectory;data=$DataRoot;success=$false;player=$null;addExtension=$addExtension;editExtension=$editExtension}
  $save.Add_Click({
   $ui=$script:LocalUi
   try{

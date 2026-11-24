@@ -12,7 +12,7 @@ $ReceiveCalls=$true;$DesktopMode=$true;$CompareGreetingModes=$false;$LineEchoCan
 $source=[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'Start-ModemBridge.ps1'));$begin=$source.IndexOf(' $form=New-Object Windows.Forms.Form');$end=$source.IndexOf(' $timer=New-Object Windows.Forms.Timer',$begin)
 . ([scriptblock]::Create($source.Substring($begin,$end-$begin)))
 $errors=$null;$ast=[Management.Automation.Language.Parser]::ParseInput($source,[ref]$null,[ref]$errors);if($errors.Count){throw $errors[0]}
-$node=$ast.Find({param($item)$item -is [Management.Automation.Language.IfStatementAst] -and $item.Extent.Text.StartsWith('if($DesktopMode){') -and $item.Extent.Text.Contains('Initialize-TelephonyDesktop -Form')},$true)
+$node=$ast.Find({param($item)$item -is [Management.Automation.Language.IfStatementAst] -and $item.Extent.Text.StartsWith('if($DesktopMode){') -and $item.Extent.Text.Contains('Initialize-TelephonyDesktop ')},$true)
 if(-not $node){throw 'Main UI initialization block missing'}
 . ([scriptblock]::Create($node.Clauses[0].Item2.Extent.Text.Trim().Substring(1).TrimEnd('}')))
 [void][IO.Directory]::CreateDirectory($OutputDirectory)

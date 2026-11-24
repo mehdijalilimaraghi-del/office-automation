@@ -143,7 +143,7 @@ try {
  })
  $form.Add_FormClosing({param($sender,$event) if($run.session -and -not $run.finished){$event.Cancel=$true;$run.wantClose=$true;$run.stopping=$true;$run.nextStart=$null;$run.session.Cancel();$status.Text='در حال قطع امن تماس…'}})
  if($DesktopMode){
-  Initialize-TelephonyDesktop -Form $form -Layout $layout -Run $run -Start $start -Stop $stop -Consent $consent -LabRoot $LabRoot -EngineDirectory $EngineDirectory -DataRoot $ConnectionRoot
+  Initialize-TelephonyDesktop -DestinationLabel $destination -Form $form -Layout $layout -Run $run -Start $start -Stop $stop -Consent $consent -LabRoot $LabRoot -EngineDirectory $EngineDirectory -DataRoot $ConnectionRoot
   if(-not $ports.Count){$consent.Enabled=$false;$start.Enabled=$false;$status.Text='مودم آماده‌ای پیدا نشد؛ اتصال دستگاه و نصب درایور را بررسی کنید. تنظیمات اتوماسیون همچنان در دسترس است.'}
   $form.AutoScaleMode='Dpi';$form.MinimumSize=[Drawing.Size]::new(820,700)
   $layout.Padding=[Windows.Forms.Padding]::new(28);$layout.BackColor=[Drawing.Color]::FromArgb(248,250,252)

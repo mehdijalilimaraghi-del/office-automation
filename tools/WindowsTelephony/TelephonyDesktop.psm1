@@ -116,7 +116,7 @@ function Request-TelephonyDesktopApply {
 }
 
 function Initialize-TelephonyDesktop {
- [CmdletBinding()]param([Windows.Forms.Form]$Form,[Windows.Forms.TableLayoutPanel]$Layout,[hashtable]$Run,[Windows.Forms.Button]$Start,[Windows.Forms.Button]$Stop,[Windows.Forms.CheckBox]$Consent,[string]$LabRoot,[string]$EngineDirectory,[string]$DataRoot)
+ [CmdletBinding()]param([Windows.Forms.Form]$Form,[Windows.Forms.TableLayoutPanel]$Layout,[hashtable]$Run,[Windows.Forms.Button]$Start,[Windows.Forms.Button]$Stop,[Windows.Forms.CheckBox]$Consent,[Windows.Forms.Label]$DestinationLabel,[string]$LabRoot,[string]$EngineDirectory,[string]$DataRoot)
  $Form.Text='تلفن سازمانی — اتوماسیون اداری';$Form.Size=[Drawing.Size]::new(860,730);$Form.Font=[OfficeAutomation.Telephony.DesktopFont]::Create(11,[Drawing.FontStyle]::Regular);$Form.BackColor=[Drawing.Color]::FromArgb(248,250,252)
  $panel=[Windows.Forms.TableLayoutPanel]::new();$panel.Dock='Fill';$panel.RowCount=2;$panel.ColumnCount=1
  [void]$panel.RowStyles.Add([Windows.Forms.RowStyle]::new([Windows.Forms.SizeType]::Absolute,55));[void]$panel.RowStyles.Add([Windows.Forms.RowStyle]::new([Windows.Forms.SizeType]::Percent,100))
@@ -132,7 +132,7 @@ function Initialize-TelephonyDesktop {
  [void]$Layout.RowStyles.Add([Windows.Forms.RowStyle]::new([Windows.Forms.SizeType]::Absolute,160));$Layout.RowCount++;[void]$Layout.Controls.Add($panel,0,($Layout.RowCount-1))
  $timer=[Windows.Forms.Timer]::new();$timer.Interval=500
  $Run.desktopBusy=$false;$Run.resumePending=$false;$Run.pauseForConfiguration=$false;$Run.autoResumeAfterConfig=$false;$Run.lastResult=$null
- $script:Desktop=@{form=$Form;run=$Run;status=$status;connect=$connect;sync=$sync;apply=$apply;start=$Start;stop=$Stop;consent=$Consent;timer=$timer;operation=$null;pbx=$null;blockedRevision=$null;data=$DataRoot;lab=$LabRoot;engine=$EngineDirectory;nextSync=[datetime]::UtcNow;metadata=$null;pairingOpen=$false;retryAt=[datetime]::MinValue;source='local';settings=$settings;ivr=$ivr}
+ $script:Desktop=@{form=$Form;run=$Run;status=$status;connect=$connect;sync=$sync;apply=$apply;start=$Start;stop=$Stop;consent=$Consent;timer=$timer;operation=$null;pbx=$null;blockedRevision=$null;data=$DataRoot;lab=$LabRoot;engine=$EngineDirectory;nextSync=[datetime]::UtcNow;metadata=$null;pairingOpen=$false;retryAt=[datetime]::MinValue;source='local';settings=$settings;ivr=$ivr;destinationLabel=$DestinationLabel}
  $sourceFile=Join-Path $LabRoot 'desktop-source.txt'
  if((Test-Path -LiteralPath $sourceFile) -and [IO.File]::ReadAllText($sourceFile).Trim() -eq 'automation'){$script:Desktop.source='automation'}
  $standalone=[Windows.Forms.Button]::new();$standalone.Text='حالت مستقل';$standalone.Size=[Drawing.Size]::new(145,40)
@@ -142,17 +142,20 @@ function Initialize-TelephonyDesktop {
   $d.source='local';[IO.File]::WriteAllText((Join-Path $d.lab 'desktop-source.txt'),'local')
   $d.status.Text='حالت مستقل فعال است؛ اتصال به اتوماسیون لازم نیست.'
  })
- $local=[Windows.Forms.Button]::new();$local.Text='تنظیمات همین کامپیوتر';$local.Size=[Drawing.Size]::new(200,40)
+ $local=[Windows.Forms.Button]::new();$local.Text='مدیریت داخلی‌ها و تماس';$local.Size=[Drawing.Size]::new(200,40)
  [void]$buttons.Controls.Add($local)
  $local.Add_Click({
   $d=$script:Desktop
   if($d.source -ne 'local'){$d.status.Text='برای ویرایش محلی ابتدا «حالت مستقل» را انتخاب کنید.';return}
   if($d.operation -or ($d.run.session -and -not $d.run.session.Completed) -or ($d.run.session -and -not $d.run.finished)){$d.status.Text='پاسخ‌گویی را متوقف کنید و پس از پایان تماس، تنظیمات را باز کنید.';return}
   $d.pairingOpen=$true
-  try{[void](Show-TelephonyLocalSettings -Owner $d.form -LabRoot $d.lab -EngineDirectory $d.engine -DataRoot $d.data)}
+  try{if(Show-TelephonyLocalSettings -Owner $d.form -LabRoot $d.lab -EngineDirectory $d.engine -DataRoot $d.data){
+   $d.run.profile=Read-PbxLabState $d.lab
+   if($d.destinationLabel){$d.destinationLabel.Text='مقصد تماس: '+$d.run.profile.modem_gateway.destination+'     |     مرکز تلفن: '+$d.run.profile.bind_address}
+  }}
   finally{$d.pairingOpen=$false}
  })
- $accounts=[Windows.Forms.Button]::new();$accounts.Text='مشخصات اتصال داخلی‌ها';$accounts.Size=[Drawing.Size]::new(210,40);[void]$buttons.Controls.Add($accounts)
+ $accounts=[Windows.Forms.Button]::new();$accounts.Text='نام کاربری و رمز داخلی‌ها';$accounts.Size=[Drawing.Size]::new(210,40);[void]$buttons.Controls.Add($accounts)
  $accounts.Add_Click({$d=$script:Desktop;Show-TelephonyLocalAccounts -Owner $d.form -LabRoot $d.lab})
  foreach($button in $buttons.Controls){$button.FlatStyle='Flat';$button.FlatAppearance.BorderColor=[Drawing.Color]::FromArgb(203,213,225);$button.BackColor=[Drawing.Color]::White;$button.ForeColor=[Drawing.Color]::FromArgb(30,41,59);$button.Cursor='Hand';$button.Margin=[Windows.Forms.Padding]::new(5)}
  if($script:Desktop.source -eq 'local'){$status.Text='حالت مستقل — تنظیمات روی همین کامپیوتر مدیریت می‌شوند.'}

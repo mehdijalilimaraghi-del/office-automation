@@ -1,3 +1,7 @@
+## Explicit local extension add/edit — 2026-11-24
+
+The independent Windows application exposes a clearly named extension-management action with separate Add/Edit dialogs. Number/name input and duplicate errors must be explicit. Renumbering a routed extension updates the form's direct/operator destination and keypad mappings together. Users confirm changes with Save/Apply; changing only a name retains the account password.
+
 ## Independent desktop and Persian UI correction — 2026-11-24
 
 Users must be able to use the Windows telephony application without Office Automation and optionally connect later. Local mode owns editable extensions, incoming direct/IVR destination, greeting file/preview and keypad mappings. Connected mode uses automation-managed configuration; switching to local preserves the active profile and stops synchronization. No product flow should refer to VentaFax or another vendor as an operating prerequisite: show actual unavailable/busy/access-denied serial conditions. Use a bundled Persian font and clear, separately organized settings.
