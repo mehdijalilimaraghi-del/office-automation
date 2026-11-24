@@ -19,6 +19,13 @@ namespace OfficeAutomation.Telephony.Diagnostics
         byte[] TransmitAudio(int count);
         bool Ended { get; }
     }
+    // Optional modem-side processing; reference is supplied only after successful duplex writes.
+    public interface IVoiceDuplexProcessor : IDisposable
+    {
+        void StartDuplex();
+        void ObserveTransmit(byte[] samples);
+        byte[] ProcessReceive(byte[] samples);
+    }
     public interface ITransmitGreetingEndpoint : IVoiceAudioEndpoint
     {
         bool NeedsDuplex { get; }
@@ -385,7 +392,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
     }
     public sealed class VoiceResult
     {
-        public string DiagnosticVersion = "2026.11.23.8";
+        public string DiagnosticVersion = "2026.11.23.9";
         public bool TransmitOnlyStarted, SwitchedToDuplex;
         public int ModeTransitionMilliseconds;
         public string EffectiveFlowControl = "";
@@ -452,6 +459,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
     {
         private readonly IVoicePort port;
         private readonly IVoiceAudioEndpoint endpoint;
+        private readonly IVoiceDuplexProcessor duplexProcessor;
         private readonly int? transmitLevel;
         private readonly bool pcm16;
         private bool changedTransmitLevel;
@@ -475,8 +483,10 @@ namespace OfficeAutomation.Telephony.Diagnostics
         public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration) : this(port, folder, ringTimeout, captureDuration, null) { }
         public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration, IVoiceAudioEndpoint endpoint) : this(port, folder, ringTimeout, captureDuration, endpoint, null) { }
         public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration, IVoiceAudioEndpoint endpoint, int? transmitLevel) : this(port, folder, ringTimeout, captureDuration, endpoint, transmitLevel, false) { }
-        public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration, IVoiceAudioEndpoint endpoint, int? transmitLevel, bool pcm16)
+        public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration, IVoiceAudioEndpoint endpoint, int? transmitLevel, bool pcm16) : this(port, folder, ringTimeout, captureDuration, endpoint, transmitLevel, pcm16, null) { }
+        public VoiceSession(IVoicePort port, string folder, int ringTimeout, int captureDuration, IVoiceAudioEndpoint endpoint, int? transmitLevel, bool pcm16, IVoiceDuplexProcessor duplexProcessor)
         {
+            this.duplexProcessor = duplexProcessor;
             this.pcm16 = pcm16; result.ModemSampleFormat = pcm16 ? "pcm16le_8000" : "g711u_8000";
             if (transmitLevel.HasValue && (transmitLevel.Value < 0 || transmitLevel.Value > 255)) throw new ArgumentOutOfRangeException("transmitLevel");
             this.transmitLevel = transmitLevel; result.RequestedTransmitLevel = transmitLevel;
@@ -657,7 +667,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                     stage = "start_transmit_only";
                     Command("AT+VTX", true, true); transmitOnly = true; result.TransmitOnlyStarted = true;
                 }
-                else { stage = "start_duplex"; Command("AT+VTR", true, true); duplex = true; result.DuplexStarted = true; }
+                else { stage = "start_duplex"; Command("AT+VTR", true, true); duplex = true; result.DuplexStarted = true; if(duplexProcessor!=null)duplexProcessor.StartDuplex(); }
                 progress = "streaming"; stage = "stream_audio";
                 var clock = streamClock = Stopwatch.StartNew(); int frame = 0, nextWindow = 1000; long controlPause = 0;
                 while (clock.ElapsedMilliseconds < captureDuration && !decoder.Ended && (endpoint == null || !endpoint.Ended))
@@ -669,7 +679,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                         long transition = clock.ElapsedMilliseconds;
                         Exchange("<DLE><ETX>", new byte[] { 16, 3 }, false, false); transmitOnly = false;
                         stop.Token.ThrowIfCancellationRequested();
-                        Command("AT+VTR", true, true); duplex = true; result.DuplexStarted = true;
+                        Command("AT+VTR", true, true); duplex = true; result.DuplexStarted = true; if(duplexProcessor!=null)duplexProcessor.StartDuplex();
                         comparison.BeginDuplex(); result.SwitchedToDuplex = true;
                         result.ModeTransitionMilliseconds = (int)(clock.ElapsedMilliseconds - transition);
                         controlPause += result.ModeTransitionMilliseconds;
@@ -687,7 +697,12 @@ namespace OfficeAutomation.Telephony.Diagnostics
                         result.MaxSerialReadMilliseconds = Math.Max(result.MaxSerialReadMilliseconds, PhaseMilliseconds(phase));
                         phase = Stopwatch.GetTimestamp(); if(digitDetector!=null)digitDetector.Feed(input,read);decoder.Feed(input, read);
                         result.MaxDecodeMilliseconds = Math.Max(result.MaxDecodeMilliseconds, PhaseMilliseconds(phase));
-                        if (endpoint != null && decoder.Audio.Count > 0) endpoint.ReceiveAudio(decoder.DrainAudio());
+                        if (endpoint != null && decoder.Audio.Count > 0)
+                        {
+                            byte[] received = decoder.DrainAudio();
+                            if (duplex && duplexProcessor != null) received = duplexProcessor.ProcessReceive(received);
+                            if (received.Length > 0) endpoint.ReceiveAudio(received);
+                        }
                         if (endpoint != null && (decoder.Events.Contains("busy_tone") || decoder.Events.Contains("local_on_hook"))) { result.EndReason = "modem_hangup"; break; }
                     }
                     if(comparison!=null&&transmitOnly&&comparison.NeedsDuplex)continue;
@@ -709,6 +724,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                         result.MaxEncodeMilliseconds = Math.Max(result.MaxEncodeMilliseconds, PhaseMilliseconds(phase));
                         phase = Stopwatch.GetTimestamp(); Raw(wireAudio);
                         result.MaxSerialWriteMilliseconds = Math.Max(result.MaxSerialWriteMilliseconds, PhaseMilliseconds(phase));
+                        if (duplex && duplexProcessor != null) duplexProcessor.ObserveTransmit(audio);
                         result.ModemTransmitBytes += modemAudio.Length; result.TransmittedSamples += audio.Length; frame++;
                         int lag = (int)Math.Max(0, clock.ElapsedMilliseconds - frame * 20L - controlPause);
                         result.MaxTransmitLagMilliseconds = Math.Max(result.MaxTransmitLagMilliseconds, lag);
@@ -803,6 +819,7 @@ namespace OfficeAutomation.Telephony.Diagnostics
                     if (result.FailureStage.Length == 0) { result.FailureStage = "cleanup"; result.FailureError = result.CleanupError; }
                 }
                 if (endpoint != null) try { endpoint.Dispose(); } catch { result.Status = "failed"; result.ErrorCode = "pbx_cleanup_failed"; if (result.FailureStage.Length == 0) { result.FailureStage = "cleanup_pbx"; result.FailureError = result.ErrorCode; } }
+                if (duplexProcessor != null) try { duplexProcessor.Dispose(); } catch { result.Status = "failed"; result.ErrorCode = "line_echo_cleanup_failed"; }
                 progress = "finished";
             }
         }

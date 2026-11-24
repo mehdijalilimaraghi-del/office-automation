@@ -15,6 +15,14 @@ public sealed class BridgeLifecycleEndpoint : IVoiceAudioEndpoint
     public byte[] TransmitAudio(int count) { Blocks++; return Enumerable.Repeat((byte)255,count).ToArray(); }
     public void Dispose() { Disposed=true; if(FailDispose)throw new InvalidOperationException("synthetic_dispose_failure"); }
 }
+public sealed class LifecycleDuplexProcessor : IVoiceDuplexProcessor {
+ public bool Started,Disposed,FailReceive;public int Sent,Received;readonly DiagnosticFakePort port;
+ public LifecycleDuplexProcessor(DiagnosticFakePort port){this.port=port;}
+ public void StartDuplex(){if(!port.Commands.Contains("AT+VTR"))throw new Exception("Processor started before duplex acknowledgment");Started=true;}
+ public void ObserveTransmit(byte[] samples){if(!Started)throw new Exception("Reference before duplex");Sent+=samples.Length;}
+ public byte[] ProcessReceive(byte[] samples){if(!Started)throw new Exception("Receive before duplex");if(FailReceive)throw new Exception("synthetic_echo_failure");Received+=samples.Length;return samples;}
+ public void Dispose(){Disposed=true;}
+}
 public static class BridgeLifecycleChecks
 {
     private static void Check(bool condition,string name){if(!condition)throw new Exception(name);}
@@ -60,6 +68,14 @@ public static class BridgeLifecycleChecks
         Check(!session.Result.TransmitLevelRestored && !session.Result.CleanupConfirmed && session.Result.Status=="failed" && port.Commands.Contains("AT+FCLASS=0"),"Gain restore failure must report failure but still restore class");
         port=new DiagnosticFakePort {NoRing=true};endpoint=new BridgeLifecycleEndpoint();session=new VoiceSession(port,folder,2000,60000,endpoint,128);session.Start();Thread.Sleep(100);session.Cancel();Finish(session);
         Check(session.Result.Cancelled && session.Result.TransmitLevelRestored && session.Result.CleanupConfirmed,"Cancelled gain trial must restore original gain");
+        port=new DiagnosticFakePort();endpoint=new BridgeLifecycleEndpoint();var processor=new LifecycleDuplexProcessor(port);session=new VoiceSession(port,folder,300,60000,endpoint,null,false,processor);session.Start();Finish(session);
+        Check(processor.Started && processor.Disposed && processor.Sent==session.Result.TransmittedSamples && processor.Received==endpoint.Samples && session.Result.Status=="bridged","Optional DSP must receive actual duplex samples and be disposed");
+        port=new DiagnosticFakePort();endpoint=new BridgeLifecycleEndpoint();processor=new LifecycleDuplexProcessor(port){FailReceive=true};session=new VoiceSession(port,folder,300,60000,endpoint,null,false,processor);session.Start();Finish(session);
+        Check(session.Result.ErrorCode=="synthetic_echo_failure" && session.Result.CleanupConfirmed && processor.Disposed && endpoint.Disposed && port.Disposed,"DSP failure must still release modem, PBX and native resources");
+        port=new DiagnosticFakePort{NoRing=true};endpoint=new BridgeLifecycleEndpoint();processor=new LifecycleDuplexProcessor(port);session=new VoiceSession(port,folder,2000,60000,endpoint,null,false,processor);session.Start();Thread.Sleep(100);session.Cancel();Finish(session);
+        Check(!processor.Started && processor.Sent==0 && processor.Disposed && session.Result.CleanupConfirmed,"Cancellation before answer must dispose unstarted DSP");
+        port=new DiagnosticFakePort{RejectAudioWrite=true};endpoint=new BridgeLifecycleEndpoint();processor=new LifecycleDuplexProcessor(port);session=new VoiceSession(port,folder,300,60000,endpoint,null,false,processor);session.Start();Finish(session);
+        Check(processor.Sent==0 && processor.Disposed && session.Result.ErrorCode=="synthetic_serial_write_failure" && session.Result.CleanupConfirmed,"Failed serial write must never become echo reference and must release the line");
         bool rejected=false;try{new LocalSipAudioEndpoint("8.8.8.8",5160,"office_modem",new string('a',48),"1002");}catch(ArgumentException){rejected=true;}Check(rejected,"Off-host PBX must be rejected");
         using(var sip=new LocalSipAudioEndpoint("127.0.0.1",5160,"office_modem",new string('a',48),"1002")){
             sip.ReceiveAudio(new byte[8000]);rejected=false;try{sip.ReceiveAudio(new byte[1]);}catch(InvalidOperationException){rejected=true;}Check(rejected,"Outgoing media queue must remain bounded");

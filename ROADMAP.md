@@ -1,6 +1,6 @@
-## Duplex downlink continuity and level diagnosis — 2026-11-23
+## Controlled modem line-echo trial — 2026-11-24
 
-Next acceptance is extension-to-mobile conversation, not another greeting-only test: close bridge/VentaFax, Stop-PbxLab.cmd once then Start-ModemBridge.cmd; call, press2, speak from extension for15-20seconds and judge continuity and volume separately, then hang up. Inspect new sip.Playout per-second loss/wait/level windows against the report's duplex start time. Do not call all aggregate silence speech loss, claim the entire defect fixed from a software test, raise gain blindly on near-full-scale source audio, or infer TX60/48 framing from RX alone. If continuity is stable but volume remains low with healthy digital speech levels, investigate modem duplex output independently.
+V4 next acceptance: compare the isolated line-echo mode with the current normal bridge on EDARII. Verify delayed headset echo, first syllables, both talk directions, simultaneous speech, greeting/keypad and hangup. Do not promote this mode to default from synthetic success. Always-on/outbound/fax/production trunk work remains outside this one-call trial.
 
 ## Preserve and synchronize modem flow control — 2026-11-23
 

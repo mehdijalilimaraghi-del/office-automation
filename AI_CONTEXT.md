@@ -1,6 +1,6 @@
-## Duplex downlink continuity and level diagnosis — 2026-11-23
+## Controlled modem line-echo trial — 2026-11-24
 
-Owner confirms keypad/barge-in fixed but corrects the earlier conversation assumption: extension-to-PSTN speech is both quiet and choppy. Greeting volume acceptance does not certify duplex conversation. Report 145821 has stable 8kHz serial pacing (write7ms/lag11ms), aggregate PBX peak32124 and active RMS-10.73dBFS, but no packet timing/stage separation; those aggregate levels may include tones and do not prove microphone speech is loud. Reproduced an empty-FIFO jitter defect and a native PBX timestamp discontinuity between generated silence and bridged audio. Added bounded RTP playout plus modem-scoped timestamp rewriting/called-leg buffering. Preserve source amplitudes, codec, gain and modem TX framing; RX60/48 repetition alone does not prove matching TX framing is required. Physical downlink quality/volume remain pending.
+Owner confirms delayed self-echo in the internal headset only during modem calls, still present with the mobile microphone muted; do not repeat room/mic blame. Greeting loudness/keypad are accepted separately. Line echo is a hypothesis, not a certified hardware diagnosis. Optional Start-ModemBridge-LineEcho.cmd uses pinned SpeexDSP 1.2.1-2 x64, normal launcher remains unprocessed. No gain/codec/monitoring changes, no recordings. Native synthetic and isolated PBX tests pass; physical echo/double-talk acceptance remains pending. Bundled SpanDSP was rejected after poor high-level synthetic performance and unsolicited debug output.
 
 ## Preserve and synchronize modem flow control — 2026-11-23
 

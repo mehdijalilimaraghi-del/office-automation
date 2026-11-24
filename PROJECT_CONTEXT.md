@@ -1,3 +1,7 @@
+## Controlled modem line-echo trial — 2026-11-24
+
+Internal headset users must not hear a delayed replica of their own speech during PSTN calls. Removing that replica must retain the outside caller during simultaneous speech and at phrase onset. Owner confirms echo persists with the mobile microphone muted and ends with the call. Offer an explicit reversible trial; acceptance must use the actual modem/line, with no conversation recording.
+
 ## Duplex downlink continuity and level diagnosis — 2026-11-23
 
 Initial message loudness and keypad/barge-in are accepted separately from extension conversation. Calls need continuous intelligible extension-to-PSTN speech at adequate volume. Buffer small transport jitter and distinguish real missing packets from silence/initial waiting; preserve valid audio amplitude. Diagnostic reports contain bounded counts and levels only, not recorded speech. Current correction addresses transport continuity and PBX clock consistency; analog modem loudness remains an owner acceptance item.

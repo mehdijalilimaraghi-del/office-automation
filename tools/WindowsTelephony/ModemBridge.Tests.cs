@@ -75,9 +75,10 @@ public static class ModemBridgeIntegration
     public static object Run(int port, string gatewayPassword, string phonePassword) { return Run(port, gatewayPassword, phonePassword, false); }
     public static object Run(int port, string gatewayPassword, string phonePassword, bool pcm16){return Run(port,gatewayPassword,phonePassword,pcm16,0,null,null);}
     public static object Run(int port,string gatewayPassword,string phonePassword,bool pcm16,int eslPort,string eslSecret,string promptPath){return Run(port,gatewayPassword,phonePassword,pcm16,eslPort,eslSecret,promptPath,false);}
-    public static object Run(int port,string gatewayPassword,string phonePassword,bool pcm16,int eslPort,string eslSecret,string promptPath,bool bargeIn)
+    public static object Run(int port,string gatewayPassword,string phonePassword,bool pcm16,int eslPort,string eslSecret,string promptPath,bool bargeIn) { return Run(port,gatewayPassword,phonePassword,pcm16,eslPort,eslSecret,promptPath,bargeIn,null); }
+    public static object Run(int port,string gatewayPassword,string phonePassword,bool pcm16,int eslPort,string eslSecret,string promptPath,bool bargeIn,IVoiceDuplexProcessor processor)
     {
-        bool localGreeting=promptPath!=null;
+        bool localGreeting=!String.IsNullOrEmpty(promptPath);
         string wrongPassword=(gatewayPassword[0]=='a'?"b":"a")+gatewayPassword.Substring(1);
         var rejectedModem=new BridgeFakeModem();
         using(var rejectedEndpoint=new LocalSipAudioEndpoint("127.0.0.1",port,"office_modem",wrongPassword,"9197",localGreeting)){
@@ -94,7 +95,7 @@ public static class ModemBridgeIntegration
         var endpoint = new LocalSipAudioEndpoint("127.0.0.1", port, "office_modem", gatewayPassword, "9197",localGreeting);
         ModemGreetingBridge greeting=null;
         if(localGreeting)greeting=new ModemGreetingBridge(endpoint,new GreetingCallControl(eslPort,eslSecret),promptPath);
-        var session = new VoiceSession(modem, Path.GetTempPath(), 3000, localGreeting?20000:10000, (IVoiceAudioEndpoint)greeting??endpoint, null, pcm16);
+        var session = new VoiceSession(modem, Path.GetTempPath(), 3000, localGreeting?20000:10000, (IVoiceAudioEndpoint)greeting??endpoint, null, pcm16,processor);
         session.Start();
         var watch = Stopwatch.StartNew();
         while (!session.Completed && watch.ElapsedMilliseconds < 30000) Thread.Sleep(10);

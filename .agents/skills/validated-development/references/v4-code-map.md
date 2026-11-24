@@ -113,3 +113,7 @@ VoiceDigitDetector in VoiceDiagnostics.cs spans media and stop replies, preservi
 ## Duplex downlink transport
 
 LocalSipAudioEndpoint.cs owns RtpPlayoutBuffer/PlayoutMetrics (ordering, bounded jitter/PLC, media epochs, per-second levels). Test-RtpPlayout.ps1 reproduces FIFO gaps with deterministic packets. PbxLab.psm1 scopes timestamp rewriting to modem and receive buffering to its called leg; vtx_initial_v3 triggers safe profile upgrade. NativeSipSmoke.ReceiveGateway uses monotonic media pacing. Greeting/keypad paths remain covered; physical duplex level/continuity pending, not certified from aggregate source RMS.
+
+## Optional modem line echo
+
+VoiceDiagnostics.cs owns IVoiceDuplexProcessor lifecycle. ModemLineEcho.cs implements pinned native DSP and sample-paired bounded queues; ModemLineEcho.ps1 stages only the verified local library. Start-ModemBridge-LineEcho.cmd opts in; default launcher is unchanged. Prepare-LineEchoDsp.ps1 pins the official package; licenses/SpeexDSP-LICENSE retains attribution. Test-ModemLineEcho, Test-LineEchoSetup, Test-BridgeLifecycle and native Test-ModemBridge -DspDirectory cover this path. Hardware acceptance remains pending.

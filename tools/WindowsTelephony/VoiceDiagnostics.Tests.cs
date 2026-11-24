@@ -16,7 +16,7 @@ public sealed class DiagnosticFakePort : IVoicePort, IVoiceFlowControlPort
     public string Formats = "4,\"G.711U\",8,0,8000";
     private bool pcm16Mode;
     public int AudioWriteDelayMilliseconds, TransmitStopDelayMilliseconds;
-    public bool RejectTransmitOnly;
+    public bool RejectTransmitOnly, RejectAudioWrite;
     public int TransmitEventAfterWrites,DuplexEventAfterWrites;private int transmitEventWrites,duplexEventWrites;
     public string TransmitEvents="",StopEvents="",DuplexEvents="";
     private bool transmitOnlyData;
@@ -45,6 +45,7 @@ public sealed class DiagnosticFakePort : IVoicePort, IVoiceFlowControlPort
             if(ResidualAudioOnStop)Enqueue("residual-private-audio");Enqueue("\r\nOK\r\n");return;
         }
         if(duplex) {
+            if(RejectAudioWrite)throw new IOException("synthetic_serial_write_failure");
             if(transmitOnlyData){if(++transmitEventWrites==TransmitEventAfterWrites)Enqueue(TransmitEvents);return;}
             if(++duplexEventWrites==DuplexEventAfterWrites)Enqueue(DuplexEvents);
             if(AudioWriteDelayMilliseconds>0)Thread.Sleep(AudioWriteDelayMilliseconds);
