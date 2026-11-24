@@ -1,3 +1,7 @@
+## Graphify workflow and V4 continuation — 2026-11-24
+
+Owner requires Graphify in ongoing development and before later versions. User-level graphifyy0.9.118 with Codex skill is installed; optional MCP dependencies are required by this release even for CLI query. Start dependency/impact work from graphify query with a bounded budget, verify returned code and tests, and refresh using scripts/Update-ProjectGraph.ps1. Graph is local structural code analysis, not semantic document indexing; no application dependencies changed. Secrets/private data/vendor/generated output are excluded, graphify-out stays outside Git. Owner confirms the line-echo trial fixed the reported echo; this is not completion of all V4 scope.
+
 ## Controlled modem line-echo trial — 2026-11-24
 
 Owner confirms delayed self-echo in the internal headset only during modem calls, still present with the mobile microphone muted; do not repeat room/mic blame. Greeting loudness/keypad are accepted separately. Line echo is a hypothesis, not a certified hardware diagnosis. Optional Start-ModemBridge-LineEcho.cmd uses pinned SpeexDSP 1.2.1-2 x64, normal launcher remains unprocessed. No gain/codec/monitoring changes, no recordings. Native synthetic and isolated PBX tests pass; physical echo/double-talk acceptance remains pending. Bundled SpanDSP was rejected after poor high-level synthetic performance and unsolicited debug output.

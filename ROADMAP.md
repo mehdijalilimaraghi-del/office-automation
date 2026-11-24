@@ -1,3 +1,7 @@
+## Graphify workflow and V4 continuation — 2026-11-24
+
+Use Graphify for dependency and impact navigation throughout V4 and all subsequent versions; refresh after relevant changes. The owner explicitly requests the full existing V4 scope including outgoing calls, history and fax. The line-echo correction is owner-accepted. Next implement continuous incoming reception with safe stop/rearm, then provider integration/call history and the remaining existing V4 routing/fax gates. Do not call V4 complete or publish from the accepted one-call bridge alone.
+
 ## Controlled modem line-echo trial — 2026-11-24
 
 V4 next acceptance: compare the isolated line-echo mode with the current normal bridge on EDARII. Verify delayed headset echo, first syllables, both talk directions, simultaneous speech, greeting/keypad and hangup. Do not promote this mode to default from synthetic success. Always-on/outbound/fax/production trunk work remains outside this one-call trial.

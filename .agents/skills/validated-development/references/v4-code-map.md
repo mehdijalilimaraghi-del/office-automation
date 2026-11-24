@@ -117,3 +117,7 @@ LocalSipAudioEndpoint.cs owns RtpPlayoutBuffer/PlayoutMetrics (ordering, bounded
 ## Optional modem line echo
 
 VoiceDiagnostics.cs owns IVoiceDuplexProcessor lifecycle. ModemLineEcho.cs implements pinned native DSP and sample-paired bounded queues; ModemLineEcho.ps1 stages only the verified local library. Start-ModemBridge-LineEcho.cmd opts in; default launcher is unchanged. Prepare-LineEchoDsp.ps1 pins the official package; licenses/SpeexDSP-LICENSE retains attribution. Test-ModemLineEcho, Test-LineEchoSetup, Test-BridgeLifecycle and native Test-ModemBridge -DspDirectory cover this path. Hardware acceptance remains pending.
+
+## Graph navigation and current acceptance
+
+Use the local Graphify graph to trace VoiceSession, ModemLineEcho, ModemGreetingBridge and PbxConfigurationService, then verify actual source/test contracts. Refresh with scripts/Update-ProjectGraph.ps1. Owner accepted the line-echo trial and requested the full V4 scope including outbound/history/fax. Continuous incoming reception remains the next dependency; do not equate the current one-call test with a daily receiver or completed V4.

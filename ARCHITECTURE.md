@@ -1,3 +1,7 @@
+## Graphify workflow and V4 continuation — 2026-11-24
+
+Developer-only Graphify runs as an isolated uv tool, outside Composer/npm and outside application runtime. .graphifyignore excludes environment secrets, private storage, dependencies and generated output. scripts/Update-ProjectGraph.ps1 resolves this repository from its own path and creates/updates the structural graph and report. graphify-out is generated locally and Git-ignored. Dynamic container/route/configuration relationships must still be verified in code; no graph query connects to production data.
+
 ## Controlled modem line-echo trial — 2026-11-24
 
 VoiceSession accepts an optional IVoiceDuplexProcessor, initialized only after successful VTR; only successfully written duplex PCMU bytes become reference. Receive processing follows modem framing normalization and precedes SIP. ModemLineEcho pairs chronological160-sample RX/reference frames with bounded16000-sample queues, preserving initial framing delay alignment. SpeexDSP linear AEC uses8kHz/2048-sample tail; no denoiser/AGC/speech gate. Normal path has a null processor. Native DLL is hash-pinned, copied into the existing protected local PBX profile and loaded with directory/System32-only dependency lookup. VTX greeting/digit events are excluded; DSP is disposed on all run exits.

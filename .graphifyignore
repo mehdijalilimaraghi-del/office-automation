@@ -1,0 +1,15 @@
+# Local source graph: exclude credentials, user data, dependencies and generated files.
+.env*
+auth.json
+.git/
+node_modules/
+vendor/
+storage/
+bootstrap/cache/
+public/build/
+public/storage/
+.tmp-ocr/
+tools/WindowsScanner/bin/
+tools/WindowsScanner/obj/
+tools/WindowsScanner/publish/
+graphify-out/

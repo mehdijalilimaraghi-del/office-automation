@@ -1,3 +1,7 @@
+## Graphify workflow and V4 continuation — 2026-11-24
+
+Graphify is a local developer navigation aid required by the owner. It supplements the explicit product/version code map; inferred links do not establish business behavior or permissions. The owner accepted the external-call echo correction and requests the complete V4 organizational telephony scope, including outgoing calls, history and fax.
+
 ## Controlled modem line-echo trial — 2026-11-24
 
 Internal headset users must not hear a delayed replica of their own speech during PSTN calls. Removing that replica must retain the outside caller during simultaneous speech and at phrase onset. Owner confirms echo persists with the mobile microphone muted and ends with the call. Offer an explicit reversible trial; acceptance must use the actual modem/line, with no conversation recording.

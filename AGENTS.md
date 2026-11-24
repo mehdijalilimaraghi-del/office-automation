@@ -499,3 +499,13 @@ When working with the user:
 * Explain architectural decisions briefly.
 * When a command must be run by the user, provide the exact command.
 * Wait for the result before proceeding when the result determines the next step.
+
+## Project graph workflow
+
+The owner requires Graphify for ongoing work and before each subsequent version. Graphify is a user-level development tool, not an application dependency.
+
+* Start relationship, caller, dependency and impact investigations with `graphify query "<symbols or question>" --budget 1200` or `graphify explain "<symbol>"` from the verified repository root. Read the returned source locations and relevant tests before editing.
+* If no graph exists, run `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Update-ProjectGraph.ps1`. Run it again after related changes so future queries use current code; `-Rebuild` requests cached structural extraction explicitly.
+* Graph generation is local structural code analysis. Do not silently upload the codebase or switch to paid semantic extraction. Use `.graphifyignore` to exclude credentials, private data, dependencies and generated output.
+* Keep `graphify-out/` local and outside Git. It is a navigation aid: missing symbols, dynamic Laravel routes/container bindings, Vue behavior and configuration still require targeted source inspection. Use `rg` when the graph is missing the needed relationship or to verify actual code; never claim complete dependency coverage from the graph alone.
+* Continue using the version-specific code map for product decisions, authorization boundaries and acceptance requirements; Graphify supplements it.
