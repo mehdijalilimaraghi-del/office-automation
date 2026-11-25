@@ -19,6 +19,18 @@ Status: agreed requirements and implementation plan; the capabilities below are 
 7. Caller identity. Capture actual network-provided caller number through supported modem CallerID capability before propagating it into the SIP identity. A fabricated/internal gateway number must not masquerade as the external caller. If absent/withheld, display unknown/private rather than inventing a match. Verify display name/number on actual supported clients, including Persian names.
 8. Basic directory in V4. Reuse Core external organizations/contacts phone/mobile fields and internal extensions; provide a searchable shared directory with authorized management and consistent phone normalization. Exact normalized matches may supply the caller display name. Ambiguous matches show the number without guessing a person. Respect existing visibility and expose only the identity fields required for a call.
 
+## Fax delivery requirements
+- Receive and send fax in V4; support both independent Windows operation and optional Office Automation integration.
+- Deliver received faxes to the active Secretariat department resolved through Core's OrganizationDepartmentRoleService (SECRETARIAT), as configured in organization settings. Do not hardcode a user, department ID or this computer.
+- Provide a Secretariat incoming-fax inbox with private document viewing/download, sender number when available, receipt time, page count and delivery state. Notify authorized Secretariat recipients using existing access boundaries.
+- If Secretariat is missing/inactive or server delivery fails, retain the private local fax and show a pending-delivery error; do not discard it or silently deliver it to an unrelated administrator.
+- Support local retention and authenticated, acknowledged, retryable server transfer with duplicate protection. A successful fax reception and successful server delivery are separate states.
+- Let Secretariat review a received fax and initiate incoming-correspondence registration with the fax attached; do not silently finalize a letter on receipt.
+- Outgoing fax: authorized send request, destination validation, document selection/preview, queue/status, bounded retry and per-attempt result. Preserve received documents and existing call/correspondence permissions.
+- Include fax routing in incoming scenarios: a configured manual fax choice and capability-tested automatic fax-tone detection where supported. Configure relevant prompts and any dedicated logical fax destination in application settings.
+- Fax shares the single analog line with voice. Wait for a free line; never seize it from an ongoing call. Validate actual device fax class/provider behavior rather than assuming the accepted G.711 voice path guarantees fax reliability.
+- Acceptance: native synthetic tests followed by owner-controlled real send/receive, multi-page content, busy/no-answer, cancellation/retry, Secretariat authorization, missing department, offline retention, duplicate delivery and content integrity. No real paid test transmission without a user-selected destination.
+
 ## Product/version boundary
 The roadmap previously limited V4's phonebook to extensions and deferred customer lookups to V8. The owner now explicitly requests a basic directory and caller-name lookup from existing organization/contact records in V4. This is a Core directory projection, not a dependency on future CRM. CRM profiles, customer-linked history and business workflow integration remain V8.
 

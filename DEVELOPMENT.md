@@ -1,3 +1,7 @@
+## Fax send/receive and Secretariat routing — 2026-11-25
+
+Fax requirements were added to docs/V4_TELEPHONY_NEXT.md after verifying the existing Secretariat organization-setting entry point. This docs-only change executes no fax, migration, application test or build. Future tests must cover actual fax-provider compatibility, protected Secretariat access, offline/retry/duplicate handling and document integrity.
+
 ## V4 call-flow continuation and quota guard — 2026-11-25
 
 Use docs/V4_TELEPHONY_NEXT.md as the current V4 continuation/acceptance delta. This is a requirements/docs-only update: source entry points were verified and Graphify queried; no application tests/builds were rerun or claimed. Native and profile-mutating tests must run sequentially. Weekly-quota threshold cannot be read automatically; checkpoint and stop when the owner reports 5% remaining.

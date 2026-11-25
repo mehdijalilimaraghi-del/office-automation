@@ -1,3 +1,7 @@
+## Fax send/receive and Secretariat routing — 2026-11-25
+
+Incoming faxes must be delivered to the organization-configured Secretariat for review and possible incoming-letter registration, without automatic finalization. Outgoing fax also belongs in V4. Missing/inactive Secretariat or unavailable automation must preserve the received fax locally and expose a pending-delivery state.
+
 ## V4 call-flow continuation and quota guard — 2026-11-25
 
 The requested telephony behavior and scenario/voicemail/directory requirements are specified in docs/V4_TELEPHONY_NEXT.md. Caller-selected voicemail is distinct from recording every call. Independent operation must retain messages locally; optional server delivery must not discard a message before acknowledgement. The basic phonebook reuses existing organization/person numbers instead of creating duplicate contact records.

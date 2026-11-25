@@ -1,3 +1,7 @@
+## Fax send/receive and Secretariat routing — 2026-11-25
+
+Fax send/receive is an explicit V4 delivery gate. Incoming faxes belong in the configured Secretariat inbox; include outgoing status/retry, configurable fax routing/prompts, private access, offline retention and real-device tests. Detailed requirements are in docs/V4_TELEPHONY_NEXT.md; existing single-line voice calls must not be interrupted.
+
 ## V4 call-flow continuation and quota guard — 2026-11-25
 
 Owner expands V4's basic directory beyond extensions to existing Core organizations/contacts, including caller-name lookup; future CRM profiles/customer-linked history remain V8. Continue with outbound calls, then audible transfer and configured failure/voicemail/operator scenarios, message delivery, audio-role settings and caller identity. See docs/V4_TELEPHONY_NEXT.md for sequence, existing dependencies and acceptance; preserve remaining fax/history/queue commitments.

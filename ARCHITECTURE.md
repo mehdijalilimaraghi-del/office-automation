@@ -1,3 +1,7 @@
+## Fax send/receive and Secretariat routing — 2026-11-25
+
+Planned fax routing reuses Core OrganizationDepartmentRoleService::SECRETARIAT rather than a hardcoded recipient. Fax decoding/transport, private local document retention, acknowledged device-to-server delivery and Secretariat inbox authorization remain implementation work. Fax and voice share the same line arbiter.
+
 ## V4 call-flow continuation and quota guard — 2026-11-25
 
 Planned telephony changes and verified code relationships are captured in docs/V4_TELEPHONY_NEXT.md. Keep Core directory lookup behind an explicit boundary; do not add a CRM dependency to V4. Plan a single-line arbiter and durable private voicemail delivery using existing Windows runtime/device authentication boundaries. These are planned changes, not existing services or migrations.

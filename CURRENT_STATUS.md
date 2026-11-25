@@ -1,3 +1,7 @@
+## Fax send/receive and Secretariat routing — 2026-11-25
+
+Owner adds explicit fax send/receive requirements and directs incoming faxes to Secretariat. The existing organization setting already provides secretariat_department_id; no new fixed recipient is needed. Fax inbox, protected access, offline retention/server delivery and physical send/receive remain planned, not implemented.
+
 ## V4 call-flow continuation and quota guard — 2026-11-25
 
 Owner confirms an external call answered in MicroSIP has good audio; Android client comparison remains pending. Supplied report shows no significant digital bridge attenuation (-24.048 versus -24.074dBFS); analog output is not measured. Remaining requested V4 work is documented in docs/V4_TELEPHONY_NEXT.md: outbound, audible transfer, no-answer/operator/voicemail scenarios, configurable audio, caller identity and basic shared directory. This update implements none of those features.

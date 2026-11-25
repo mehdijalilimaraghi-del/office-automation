@@ -1,3 +1,7 @@
+## Fax send/receive and Secretariat routing — 2026-11-25
+
+V4 explicitly includes sending and receiving fax. Route incoming fax to the configured Secretariat department through the existing Core department-role service; retain locally on missing destination/offline failure. Do not claim fax implemented or assume the working voice bridge proves fax capability. See docs/V4_TELEPHONY_NEXT.md.
+
 ## V4 call-flow continuation and quota guard — 2026-11-25
 
 Owner requests the next V4 call flows in docs/V4_TELEPHONY_NEXT.md. Preserve the now-clear external-call audio in MicroSIP; Android behavior remains under owner testing. Stop at 5% weekly allowance remaining when the owner reports it; quota percentage is not visible to this assistant. Voicemail recording is authorized only after explicit caller selection; general call recording remains off.
