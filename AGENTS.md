@@ -1,3 +1,7 @@
+## Weekly allowance checkpoint rule
+
+The owner requests a stop when 5% of the weekly allowance remains. This percentage is not exposed to the assistant. When the owner reports the threshold reached, checkpoint the branch/commit, uncommitted work, validation and next step, then stop further development. Never promise automatic quota detection.
+
 # AGENTS.md
 
 ## Project Role

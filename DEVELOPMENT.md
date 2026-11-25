@@ -1,3 +1,7 @@
+## V4 call-flow continuation and quota guard — 2026-11-25
+
+Use docs/V4_TELEPHONY_NEXT.md as the current V4 continuation/acceptance delta. This is a requirements/docs-only update: source entry points were verified and Graphify queried; no application tests/builds were rerun or claimed. Native and profile-mutating tests must run sequentially. Weekly-quota threshold cannot be read automatically; checkpoint and stop when the owner reports 5% remaining.
+
 ## Explicit local extension add/edit — 2026-11-24
 
 Test-TelephonyLocalEditor.ps1 now drives actual Add/Edit dialogs, rejects duplicates, edits a newly added and an existing extension, verifies route propagation and checks the submitted manifest. It accepts RuntimeDirectory for extracted-package verification. Test-TelephonyStandalone.ps1 also accepts RuntimeDirectory and checks native add/name persistence, existing-name edit after reload and password preservation. Execute native and profile-mutating UI tests sequentially; running the visual test during a native PBX test correctly hits the global running-process guard. Telephony PHP feature regression covers the exported configuration helpers; no frontend code changed.

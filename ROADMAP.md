@@ -1,3 +1,7 @@
+## V4 call-flow continuation and quota guard — 2026-11-25
+
+Owner expands V4's basic directory beyond extensions to existing Core organizations/contacts, including caller-name lookup; future CRM profiles/customer-linked history remain V8. Continue with outbound calls, then audible transfer and configured failure/voicemail/operator scenarios, message delivery, audio-role settings and caller identity. See docs/V4_TELEPHONY_NEXT.md for sequence, existing dependencies and acceptance; preserve remaining fax/history/queue commitments.
+
 ## Explicit local extension add/edit — 2026-11-24
 
 V4 corrective gate: verify explicit local extension add/edit, label persistence, destination updates and private credential viewing on the extracted Windows installer. This remains part of the current incoming-call desktop work and does not change the pending outgoing/history/fax scope.

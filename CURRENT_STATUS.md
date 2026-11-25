@@ -1,3 +1,7 @@
+## V4 call-flow continuation and quota guard — 2026-11-25
+
+Owner confirms an external call answered in MicroSIP has good audio; Android client comparison remains pending. Supplied report shows no significant digital bridge attenuation (-24.048 versus -24.074dBFS); analog output is not measured. Remaining requested V4 work is documented in docs/V4_TELEPHONY_NEXT.md: outbound, audible transfer, no-answer/operator/voicemail scenarios, configurable audio, caller identity and basic shared directory. This update implements none of those features.
+
 ## Explicit local extension add/edit — 2026-11-24
 
 Fixed unclear local extension editing and lost labels: Add/Edit dialogs validate numbers/names and duplicates, update routes on renumber, and submit changes through Save/Apply. PbxLab now persists labels; native standalone tests verify added account/name, edited name after reload and unchanged existing passwords. Actual dialog tests use Add/Edit buttons and text fields; the previous test changed grid cells programmatically and did not cover that workflow. Source visual/editor/native checks passed. Extracted-installer Add/Edit dialog tests, native add/edit/name persistence, two-way SIP, existing-password preservation and installer upgrade checks passed. Telephony PHP regression passed24 tests/207 assertions; receiver/desktop guard tests also passed. Physical modem-computer acceptance remains pending.

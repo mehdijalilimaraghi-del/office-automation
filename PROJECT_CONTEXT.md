@@ -1,3 +1,7 @@
+## V4 call-flow continuation and quota guard — 2026-11-25
+
+The requested telephony behavior and scenario/voicemail/directory requirements are specified in docs/V4_TELEPHONY_NEXT.md. Caller-selected voicemail is distinct from recording every call. Independent operation must retain messages locally; optional server delivery must not discard a message before acknowledgement. The basic phonebook reuses existing organization/person numbers instead of creating duplicate contact records.
+
 ## Explicit local extension add/edit — 2026-11-24
 
 The independent Windows application exposes a clearly named extension-management action with separate Add/Edit dialogs. Number/name input and duplicate errors must be explicit. Renumbering a routed extension updates the form's direct/operator destination and keypad mappings together. Users confirm changes with Save/Apply; changing only a name retains the account password.

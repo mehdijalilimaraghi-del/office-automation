@@ -1,3 +1,7 @@
+## V4 call-flow continuation and quota guard — 2026-11-25
+
+Owner requests the next V4 call flows in docs/V4_TELEPHONY_NEXT.md. Preserve the now-clear external-call audio in MicroSIP; Android behavior remains under owner testing. Stop at 5% weekly allowance remaining when the owner reports it; quota percentage is not visible to this assistant. Voicemail recording is authorized only after explicit caller selection; general call recording remains off.
+
 ## Explicit local extension add/edit — 2026-11-24
 
 Local extension management must use explicit Add/Edit dialogs, not implicit grid editing. Exercise the actual buttons and text fields against extracted installer runtime. PbxLab provisioning must persist extension labels as well as numbers/passwords. When renumbering the selected destination, update the local destination and digit mappings before applying.

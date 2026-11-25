@@ -1,3 +1,7 @@
+## V4 call-flow continuation and quota guard — 2026-11-25
+
+Planned telephony changes and verified code relationships are captured in docs/V4_TELEPHONY_NEXT.md. Keep Core directory lookup behind an explicit boundary; do not add a CRM dependency to V4. Plan a single-line arbiter and durable private voicemail delivery using existing Windows runtime/device authentication boundaries. These are planned changes, not existing services or migrations.
+
 ## Explicit local extension add/edit — 2026-11-24
 
 TelephonyLocalSettings owns the modal extension editor and updates its pending configuration grid, direct/operator target and digit mappings coherently. The shared PbxLab import persists each account label alongside extension/password, preserving existing secrets by unchanged extension number. The desktop refreshes the visible destination after successful local application. No database/API/permission contract changed.
